@@ -3230,9 +3230,23 @@ msgstr "Din skrivbordssession är Wayland. Wayland-kompositorer (inklusive KWin)
 msgid "Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don't know what it does!"
 msgstr "Trndi kan starta ett <b>Web-API</b> fôr att kommunicera med <i>tredjepartssystem</i>.<br><br>Detta er en avancerad funksjon, du kan ignorera den sekert om du inte vet vad den gôr!"
 
+#: uconf.rs_weblogin_bad_output
+msgctxt "uconf.rs_weblogin_bad_output"
+msgid "The login helper did not return valid token data."
+msgstr ""
+
+#: uconf.rs_weblogin_btn_busy
+msgid "Signing in…"
+msgstr ""
+
 #: uconf.rs_weblogin_button
 msgctxt "uconf.rs_weblogin_button"
 msgid "Get CareLink token…"
+msgstr ""
+
+#: uconf.rs_weblogin_fail_title
+msgctxt "uconf.rs_weblogin_fail_title"
+msgid "Automatic login unavailable"
 msgstr ""
 
 #: uconf.rs_weblogin_help
@@ -3240,9 +3254,52 @@ msgstr ""
 msgid "CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.<br><br>It needs Node.js installed. In a terminal, run:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field below and click Test.<br><br>Open the helper folder now?"
 msgstr ""
 
+#: uconf.rs_weblogin_installing
+msgctxt "uconf.rs_weblogin_installing"
+msgid "Installing login helper dependencies (first run only)…"
+msgstr ""
+
+#: uconf.rs_weblogin_nonode
+msgctxt "uconf.rs_weblogin_nonode"
+msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
+msgstr ""
+
+#: uconf.rs_weblogin_noscript
+msgctxt "uconf.rs_weblogin_noscript"
+msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
+msgstr ""
+
+#: uconf.rs_weblogin_no_output
+msgctxt "uconf.rs_weblogin_no_output"
+msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
+msgstr ""
+
+#: uconf.rs_weblogin_npm_fail
+msgctxt "uconf.rs_weblogin_npm_fail"
+msgid "Could not install the login helper's dependencies (npm install failed)."
+msgstr ""
+
+#: uconf.rs_weblogin_ok
+msgid "Login captured. Click Test to verify, then Save."
+msgstr ""
+
+#: uconf.rs_weblogin_run_prompt
+msgid "Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token automatically.<br><br>The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.<br><br>Start now?"
+msgstr ""
+
+#: uconf.rs_weblogin_run_title
+msgctxt "uconf.rs_weblogin_run_title"
+msgid "CareLink login"
+msgstr ""
+
 #: uconf.rs_weblogin_title
 msgctxt "uconf.rs_weblogin_title"
 msgid "CareLink login helper"
+msgstr ""
+
+#: uconf.rs_weblogin_waiting
+msgctxt "uconf.rs_weblogin_waiting"
+msgid "Waiting for the browser sign-in to complete…"
 msgstr ""
 
 #: uconf.rs_xdrip
@@ -3441,9 +3498,19 @@ msgstr "Den hôge grensen meste vera stôrre en den loge grensen."
 msgid "Connection testing is not supported for this service."
 msgstr "Anslutningstest stods inte for denna tjenst."
 
+#: uwizard.wz_weblogin_bad_output
+msgctxt "uwizard.wz_weblogin_bad_output"
+msgid "The login helper did not return valid token data."
+msgstr ""
+
 #: uwizard.wz_weblogin_button
 msgctxt "uwizard.wz_weblogin_button"
 msgid "Get CareLink token…"
+msgstr ""
+
+#: uwizard.wz_weblogin_fail_title
+msgctxt "uwizard.wz_weblogin_fail_title"
+msgid "Automatic login unavailable"
 msgstr ""
 
 #: uwizard.wz_weblogin_help
@@ -3462,8 +3529,56 @@ msgid ""
 "Open the helper folder now?"
 msgstr ""
 
+#: uwizard.wz_weblogin_installing
+msgctxt "uwizard.wz_weblogin_installing"
+msgid "Installing login helper dependencies (first run only)…"
+msgstr ""
+
+#: uwizard.wz_weblogin_nonode
+msgctxt "uwizard.wz_weblogin_nonode"
+msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
+msgstr ""
+
+#: uwizard.wz_weblogin_noscript
+msgctxt "uwizard.wz_weblogin_noscript"
+msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
+msgstr ""
+
+#: uwizard.wz_weblogin_no_output
+msgctxt "uwizard.wz_weblogin_no_output"
+msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
+msgstr ""
+
+#: uwizard.wz_weblogin_npm_fail
+msgctxt "uwizard.wz_weblogin_npm_fail"
+msgid "Could not install the login helper's dependencies (npm install failed)."
+msgstr ""
+
+#: uwizard.wz_weblogin_ok
+msgid "Login captured. Click Test to verify."
+msgstr ""
+
+#: uwizard.wz_weblogin_run_prompt
+msgid ""
+"Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token automatically.\n"
+"\n"
+"The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.\n"
+"\n"
+"Start now?"
+msgstr ""
+
+#: uwizard.wz_weblogin_run_title
+msgctxt "uwizard.wz_weblogin_run_title"
+msgid "CareLink login"
+msgstr ""
+
 #: uwizard.wz_weblogin_title
 msgctxt "uwizard.wz_weblogin_title"
 msgid "CareLink login helper"
+msgstr ""
+
+#: uwizard.wz_weblogin_waiting
+msgctxt "uwizard.wz_weblogin_waiting"
+msgid "Waiting for the browser sign-in to complete…"
 msgstr ""
 

@@ -20,7 +20,17 @@ Use a **Care Partner** (follower) account that the patient has invited from the 
 
 ## Capturing the token data (login helper)
 
-Trndi ships a small **login helper** ([`tools/carelink-login`](../tools/carelink-login)) that does the browser login for you and prints the token to paste into Trndi. It needs **Node.js 22.12+** (it downloads a browser on first install). No Python, no OpenSSL.
+Trndi ships a small **login helper** ([`tools/carelink-login`](../tools/carelink-login)) that does the browser login for you and captures the token. It needs **Node.js 22.12+** (it downloads a browser on first install). No Python, no OpenSSL.
+
+### The easy way: let Trndi run it
+
+In Trndi's CareLink settings, click **Get CareLink token…**. If Node.js is installed, Trndi runs the helper for you — installing its dependencies on first use, opening the browser for sign-in, and dropping the captured token straight into the credential field. Just sign in with your **Care Partner** account, solve the CAPTCHA, and click **Test**.
+
+> Keep the Trndi settings window open while the browser sign-in is in progress; the first run also downloads a browser, which can take a minute.
+
+### The manual way
+
+If Node.js isn't found (or the automatic run fails), Trndi falls back to showing these commands, which you can run yourself:
 
 ```
 cd tools/carelink-login
@@ -29,18 +39,15 @@ node carelink-login.mjs        # EU / rest of world
 node carelink-login.mjs --us   # USA region
 ```
 
-A browser window opens on the CareLink login page. Sign in with your **Care Partner** account and solve the CAPTCHA. The helper then prints a JSON block — `access_token`, `refresh_token`, `id_token`, `scope`, `client_id`. **Treat it like a password.**
-
-> In Trndi's CareLink settings, the **Get CareLink token…** button opens this helper's folder and shows the exact command.
+A browser window opens on the CareLink login page. Sign in with your **Care Partner** account and solve the CAPTCHA. The helper then prints a JSON block — `access_token`, `refresh_token`, `id_token`, `scope`, `client_id`. **Treat it like a password** and paste the whole block into the token field.
 
 ## Setting up Trndi
 
 1. Right-click Trndi → **Settings**.
 2. Choose **CareLink Follower (USA)** or **CareLink Follower (EU/Other)** as the system.
-3. Run the login helper above and copy the JSON block it prints.
-4. Paste the **entire JSON** into the token field.
-5. Click **Test** — Trndi resolves Medtronic's endpoints, refreshes the token and probes the data endpoint.
-6. Save.
+3. Click **Get CareLink token…** and sign in when the browser opens (Trndi fills in the token for you). If Node.js isn't installed, follow the manual steps above and paste the **entire JSON** into the token field yourself.
+4. Click **Test** — Trndi resolves Medtronic's endpoints, refreshes the token and probes the data endpoint.
+5. Save.
 
 The username is captured from the token, so there is no username field to fill in.
 

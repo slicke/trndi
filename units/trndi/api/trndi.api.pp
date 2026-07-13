@@ -331,6 +331,18 @@ const
         @returns(True if the backend uses the assisted login flow) }
   class function supportsWebLogin: boolean; virtual;
 
+    {** Path of a Node.js helper script that performs the assisted login and
+        prints the resulting credential (a JSON blob) to stdout. The path is
+        relative to the Trndi executable directory. When non-empty (and
+        @code(supportsWebLogin) is True), the settings UI can run the script via
+        Node and capture its output straight into the credential field instead
+        of asking the user to run it in a terminal. Default: '' (no script — the
+        UI falls back to showing manual instructions).
+        @param(args Receives extra command-line arguments for the script,
+                    e.g. a region flag like "--us"; empty when none.)
+        @returns(Script path relative to the exe dir, or '' when unsupported) }
+  class function webLoginScript(out args: string): string; virtual;
+
     {** Returns the name of the API
         @returns(Name of the API)
      }
@@ -982,6 +994,16 @@ end;
 class function TrndiAPI.supportsWebLogin: boolean;
 begin
   Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  Assisted-login helper script. Default: none. Backends that ship a runnable
+  Node.js login helper (e.g. CareLink) override this to return the script path.
+------------------------------------------------------------------------------}
+class function TrndiAPI.webLoginScript(out args: string): string;
+begin
+  args := '';
+  Result := '';
 end;
 
 {------------------------------------------------------------------------------

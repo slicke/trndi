@@ -54,7 +54,7 @@ interface
 
 uses
 Classes, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
-Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
+Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
 slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
@@ -542,6 +542,13 @@ private
   {** Show/hide the browser-login button and username field for the current
       backend, based on selectedAPIClass.supportsWebLogin. }
   procedure updateWebLoginUI;
+  {** Progress callback for the shared Node login runner: reflects the current
+      stage on the login button. }
+  procedure webLoginProgress(const ACaption: string);
+  {** Show the manual login-helper instructions (terminal commands + open the
+      helper folder). Used as the fallback when the automatic Node login isn't
+      available. }
+  procedure showManualLoginHelp;
 public
   chroma: TRazerChromaBase;
   procedure UpdatePredictionStates;
@@ -750,6 +757,28 @@ RS_WEBLOGIN_HELP =
   'A browser opens — sign in with your Care Partner account and solve the CAPTCHA. ' +
   'The helper then prints a block of JSON: copy it into the token field below and click Test.'+ sHTMLLineBreak+ sHTMLLineBreak +
   'Open the helper folder now?';
+
+RS_WEBLOGIN_RUN_TITLE = 'CareLink login';
+RS_WEBLOGIN_RUN_PROMPT =
+  'Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), ' +
+  'then capture the token automatically.' + sHTMLLineBreak + sHTMLLineBreak +
+  'The first run also downloads the login helper''s dependencies, which can take a ' +
+  'minute. Keep this window open and complete the sign-in in the browser.' + sHTMLLineBreak + sHTMLLineBreak +
+  'Start now?';
+RS_WEBLOGIN_BTN_BUSY = 'Signing in…';
+RS_WEBLOGIN_INSTALLING = 'Installing login helper dependencies (first run only)…';
+RS_WEBLOGIN_WAITING = 'Waiting for the browser sign-in to complete…';
+RS_WEBLOGIN_OK = 'Login captured. Click Test to verify, then Save.';
+RS_WEBLOGIN_NONODE =
+  'Node.js was not found on this system, so Trndi cannot run the login helper for you. ' +
+  'Install Node.js (22.12+) — or run the helper manually.';
+RS_WEBLOGIN_NOSCRIPT =
+  'The bundled CareLink login helper was not found next to Trndi. ' +
+  'You can still run it manually.';
+RS_WEBLOGIN_NPM_FAIL = 'Could not install the login helper''s dependencies (npm install failed).';
+RS_WEBLOGIN_NO_OUTPUT = 'The login helper did not return any token data. The sign-in may have been cancelled or timed out.';
+RS_WEBLOGIN_BAD_OUTPUT = 'The login helper did not return valid token data.';
+RS_WEBLOGIN_FAIL_TITLE = 'Automatic login unavailable';
 
 RS_POS_TITLE = 'Restricted Feature';
 RS_POS = 'This feature depends on your Window Manager (WM). %s may not support this feature.';
@@ -1739,9 +1768,10 @@ end;
 {------------------------------------------------------------------------------
   Point the user at the CareLink login helper (tools/carelink-login), which
   captures the token in a real browser and prints it for pasting into the
-  credential field. Optionally opens the helper folder.
+  credential field. Optionally opens the helper folder. Used as the fallback
+  when Trndi can't run the helper automatically (no Node.js, etc.).
 ------------------------------------------------------------------------------}
-procedure TfConf.bLoginClick(Sender: TObject);
+procedure TfConf.showManualLoginHelp;
 var
   helperDir, cmd: string;
 begin
@@ -1758,6 +1788,83 @@ begin
     else
       OpenURL('https://github.com/slicke/trndi/tree/main/tools/carelink-login');
   end;
+end;
+
+{------------------------------------------------------------------------------
+  Progress callback for RunNodeLoginHelper: reflect the current stage on the
+  login button so the user sees why the dialog is busy.
+------------------------------------------------------------------------------}
+procedure TfConf.webLoginProgress(const ACaption: string);
+begin
+  bLogin.Caption := ACaption;
+  Application.ProcessMessages;
+end;
+
+{------------------------------------------------------------------------------
+  Assisted CareLink login. When the backend ships a runnable Node.js helper and
+  Node is available, run it (installing its deps on first use) and drop the
+  captured token straight into the credential field. Fall back to the manual
+  instructions otherwise (or on any failure). The heavy lifting lives in
+  trndi.weblogin so the settings form and the first-run wizard behave the same.
+------------------------------------------------------------------------------}
+procedure TfConf.bLoginClick(Sender: TObject);
+
+  function ErrText(r: TWebLoginResult): string;
+  begin
+    case r of
+    wlrNoScript:  Result := RS_WEBLOGIN_NOSCRIPT;
+    wlrNoNode:    Result := RS_WEBLOGIN_NONODE;
+    wlrNpmFailed: Result := RS_WEBLOGIN_NPM_FAIL;
+    wlrBadOutput: Result := RS_WEBLOGIN_BAD_OUTPUT;
+    else          Result := RS_WEBLOGIN_NO_OUTPUT; // launch failed / no output
+    end;
+  end;
+
+var
+  cred, scriptArgs, scriptRel: string;
+  cls: TrndiAPIClass;
+  res: TWebLoginResult;
+begin
+  cls := selectedAPIClass;
+  if Assigned(cls) then
+    scriptRel := cls.webLoginScript(scriptArgs)
+  else
+    scriptRel := '';
+
+  // No runnable helper for this backend — keep the manual instructions.
+  if scriptRel = '' then
+  begin
+    showManualLoginHelp;
+    Exit;
+  end;
+
+  // Heads-up before we open a browser and (on first run) install dependencies.
+  if not ExtMsgYesNo(RS_WEBLOGIN_RUN_TITLE, RS_WEBLOGIN_RUN_PROMPT, uxmtInformation, 20) then
+    Exit;
+
+  Screen.Cursor := crHourGlass;
+  bLogin.Enabled := false;
+  try
+    res := RunNodeLoginHelper(scriptRel, scriptArgs,
+      RS_WEBLOGIN_INSTALLING, RS_WEBLOGIN_WAITING, @webLoginProgress, cred);
+  finally
+    bLogin.Caption := RS_WEBLOGIN_BUTTON;
+    bLogin.Enabled := true;
+    Screen.Cursor := crDefault;
+  end;
+
+  if res = wlrOK then
+  begin
+    ePass.Text := cred;
+    // Reveal what we captured so the user can eyeball it before testing.
+    ePass.PasswordChar := #0;
+    UXMessage(RS_WEBLOGIN_RUN_TITLE, RS_WEBLOGIN_OK, uxmtOK, Self);
+    Exit;
+  end;
+
+  // Automatic path unavailable/failed — explain, then offer the manual route.
+  ExtError(uxdAuto, RS_WEBLOGIN_FAIL_TITLE, ErrText(res), uxmtWarning);
+  showManualLoginHelp;
 end;
 
 procedure TfConf.bTestSpeechClick(Sender: TObject);
