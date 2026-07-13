@@ -54,7 +54,7 @@ uses
   Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics, Dialogs, lclintf,
   trndi.native, trndi.api, trndi.api.nightscout, trndi.api.nightscout3,
   trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.xdrip,
-  trndi.types, trndi.strings, slicke.ux.alert;
+  trndi.types, trndi.strings, trndi.weblogin, slicke.ux.alert;
 
 {$I ../../inc/defines.inc}
 
@@ -120,6 +120,8 @@ type
     procedure bBackClick(Sender: TObject);
     procedure bTestClick(Sender: TObject);
     procedure bLoginClick(Sender: TObject);
+    procedure webLoginProgress(const ACaption: string);
+    procedure showManualLoginHelp;
     procedure cbSysChange(Sender: TObject);
     procedure bSysHelpClick(Sender: TObject);
     procedure ePassEnter(Sender: TObject);
@@ -161,6 +163,26 @@ resourcestring
     'A browser opens — sign in with your Care Partner account and solve the CAPTCHA. ' +
     'The helper then prints a block of JSON: copy it into the token field and click Test.'#13#10#13#10 +
     'Open the helper folder now?';
+  WZ_WEBLOGIN_RUN_TITLE = 'CareLink login';
+  WZ_WEBLOGIN_RUN_PROMPT =
+    'Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), ' +
+    'then capture the token automatically.'#13#10#13#10 +
+    'The first run also downloads the login helper''s dependencies, which can take a ' +
+    'minute. Keep this window open and complete the sign-in in the browser.'#13#10#13#10 +
+    'Start now?';
+  WZ_WEBLOGIN_INSTALLING = 'Installing login helper dependencies (first run only)…';
+  WZ_WEBLOGIN_WAITING = 'Waiting for the browser sign-in to complete…';
+  WZ_WEBLOGIN_OK = 'Login captured. Click Test to verify.';
+  WZ_WEBLOGIN_NONODE =
+    'Node.js was not found on this system, so Trndi cannot run the login helper for you. ' +
+    'Install Node.js (22.12+) — or run the helper manually.';
+  WZ_WEBLOGIN_NOSCRIPT =
+    'The bundled CareLink login helper was not found next to Trndi. ' +
+    'You can still run it manually.';
+  WZ_WEBLOGIN_NPM_FAIL = 'Could not install the login helper''s dependencies (npm install failed).';
+  WZ_WEBLOGIN_NO_OUTPUT = 'The login helper did not return any token data. The sign-in may have been cancelled or timed out.';
+  WZ_WEBLOGIN_BAD_OUTPUT = 'The login helper did not return valid token data.';
+  WZ_WEBLOGIN_FAIL_TITLE = 'Automatic login unavailable';
   WZ_ERR_THRESH_HI    = 'Please enter a valid high threshold (a number greater than zero).';
   WZ_ERR_THRESH_LO    = 'Please enter a valid low threshold (a number greater than zero).';
   WZ_ERR_THRESH_ORDER = 'The high threshold must be greater than the low threshold.';
@@ -642,9 +664,10 @@ end;
 {------------------------------------------------------------------------------
   Point the user at the CareLink login helper (tools/carelink-login) that
   captures the token in a browser and prints it for pasting into the token
-  field. Optionally opens the helper folder.
+  field. Optionally opens the helper folder. Fallback for when Trndi can't run
+  the helper automatically (no Node.js, etc.).
 ------------------------------------------------------------------------------}
-procedure TfWizard.bLoginClick(Sender: TObject);
+procedure TfWizard.showManualLoginHelp;
 var
   helperDir, cmd: string;
 begin
@@ -654,13 +677,90 @@ begin
   else
     cmd := 'node carelink-login.mjs';
 
-   if ExtMsgYesNo(WZ_WEBLOGIN_TITLE, Format(WZ_WEBLOGIN_HELP, [helperDir, cmd]), uxmtInformation, 20) then
+  if ExtMsgYesNo(WZ_WEBLOGIN_TITLE, Format(WZ_WEBLOGIN_HELP, [helperDir, cmd]), uxmtInformation, 20) then
   begin
     if DirectoryExists(helperDir) then
       OpenDocument(helperDir)
     else
       OpenURL('https://github.com/slicke/trndi/tree/main/tools/carelink-login');
   end;
+end;
+
+{------------------------------------------------------------------------------
+  Progress callback for RunNodeLoginHelper: reflect the current stage on the
+  login button.
+------------------------------------------------------------------------------}
+procedure TfWizard.webLoginProgress(const ACaption: string);
+begin
+  bLogin.Caption := ACaption;
+  Application.ProcessMessages;
+end;
+
+{------------------------------------------------------------------------------
+  Assisted CareLink login. When the backend ships a runnable Node.js helper and
+  Node is available, run it (installing its deps on first use) and drop the
+  captured token straight into the token field. Fall back to the manual
+  instructions otherwise. Shared with the settings form via trndi.weblogin.
+------------------------------------------------------------------------------}
+procedure TfWizard.bLoginClick(Sender: TObject);
+
+  function ErrText(r: TWebLoginResult): string;
+  begin
+    case r of
+    wlrNoScript:  Result := WZ_WEBLOGIN_NOSCRIPT;
+    wlrNoNode:    Result := WZ_WEBLOGIN_NONODE;
+    wlrNpmFailed: Result := WZ_WEBLOGIN_NPM_FAIL;
+    wlrBadOutput: Result := WZ_WEBLOGIN_BAD_OUTPUT;
+    else          Result := WZ_WEBLOGIN_NO_OUTPUT; // launch failed / no output
+    end;
+  end;
+
+var
+  cred, scriptArgs, scriptRel: string;
+  cls: TrndiAPIClass;
+  res: TWebLoginResult;
+begin
+  cls := selectedAPIClass;
+  if Assigned(cls) then
+    scriptRel := cls.webLoginScript(scriptArgs)
+  else
+    scriptRel := '';
+
+  // No runnable helper for this backend — keep the manual instructions.
+  if scriptRel = '' then
+  begin
+    showManualLoginHelp;
+    Exit;
+  end;
+
+  // Heads-up before we open a browser and (on first run) install dependencies.
+  if not ExtMsgYesNo(WZ_WEBLOGIN_RUN_TITLE, WZ_WEBLOGIN_RUN_PROMPT, uxmtInformation, 20) then
+    Exit;
+
+  Screen.Cursor := crHourGlass;
+  bLogin.Enabled := false;
+  try
+    res := RunNodeLoginHelper(scriptRel, scriptArgs,
+      WZ_WEBLOGIN_INSTALLING, WZ_WEBLOGIN_WAITING, @webLoginProgress, cred);
+  finally
+    bLogin.Caption := WZ_WEBLOGIN_BUTTON;
+    bLogin.Enabled := true;
+    Screen.Cursor := crDefault;
+  end;
+
+  if res = wlrOK then
+  begin
+    ePass.Text := cred;
+    // Reveal what we captured so the user can eyeball it before testing.
+    ePass.EchoMode := emNormal;
+    ePass.PasswordChar := #0;
+    UXMessage(WZ_WEBLOGIN_RUN_TITLE, WZ_WEBLOGIN_OK, uxmtOK, Self);
+    Exit;
+  end;
+
+  // Automatic path unavailable/failed — explain, then offer the manual route.
+  ExtError(uxdAuto, WZ_WEBLOGIN_FAIL_TITLE, ErrText(res), uxmtWarning);
+  showManualLoginHelp;
 end;
 
 procedure TfWizard.bSysHelpClick(Sender: TObject);

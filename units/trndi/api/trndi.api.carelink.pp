@@ -77,6 +77,11 @@ const
   {** The CareLink cloud expects the Connect app's Android UA }
   CARELINK_USER_AGENT = 'Dalvik/2.1.0 (Linux; U; Android 10; Nexus 5X Build/QQ3A.200805.001)';
 
+  {** Node.js login helper shipped with Trndi (see tools/carelink-login), path
+      relative to the executable directory. Used by TrndiAPI.webLoginScript so
+      the settings UI can run the browser login and capture the token itself. }
+  CARELINK_LOGIN_SCRIPT = 'tools/carelink-login/carelink-login.mjs';
+
 type
   {** Region selector for CareLink servers }
   TCareLinkRegion = (crUS, crEU);
@@ -194,6 +199,11 @@ type
         guides/CareLink.md and tools/carelink-login). }
     class function supportsWebLogin: boolean; override;
 
+    {** Returns the bundled Node.js login helper (tools/carelink-login). The
+        base class leaves @code(args) empty (EU/rest-of-world); CareLinkUS adds
+        the region flag. }
+    class function webLoginScript(out args: string): string; override;
+
     {** Test connection for the CareLink follower API }
     class function testConnection(AUser, ACreds: string; var ARes: string; AExtra: string): MaybeBool; overload;
 
@@ -229,6 +239,8 @@ type
   public
     constructor Create(const AUser, ACreds: string); reintroduce; overload;
     class function testConnection(AUser, ACreds: string; var ARes: string): MaybeBool; overload;
+    {** Same helper as the base class, with the US region flag. }
+    class function webLoginScript(out args: string): string; override;
   end;
 
   CareLinkEU = class(CareLink)
@@ -733,6 +745,22 @@ end;
 class function CareLink.supportsWebLogin: boolean;
 begin
   Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  The bundled Node.js login helper. Base class targets EU/rest-of-world (no
+  region flag); CareLinkUS overrides to add --us. See tools/carelink-login.
+ ------------------------------------------------------------------------------}
+class function CareLink.webLoginScript(out args: string): string;
+begin
+  args := '';
+  Result := CARELINK_LOGIN_SCRIPT;
+end;
+
+class function CareLinkUS.webLoginScript(out args: string): string;
+begin
+  Result := inherited webLoginScript(args);
+  args := '--us';
 end;
 
 {------------------------------------------------------------------------------
