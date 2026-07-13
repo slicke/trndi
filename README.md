@@ -255,7 +255,7 @@ Right click or click/hold the reading (or "Setup" text) and choose settings to a
 > See a box instead of an icon? On Debian systems, you may need to install a graphic font. I recommend fonts-noto-color-emoji.
 
 ### Which backend should I use?
-Backends are explained [here](doc/Backends.md)
+Backends are explained [here](doc/Backends.md).
 
 # Support
 Join us on [Discord](https://discord.gg/QXACfpcW) to discuss issues or new features
@@ -368,14 +368,11 @@ Trndi is actively tested on Windows (x64), Fedora Linux (amd64), Debian Linux (a
 ## Linux notes
 If you find yourself having problems running Trndi, i.e., it will not start, you might be missing the Qt6 framework and/or the pascal headers.
 
-#### Any distro
-You can download them for any RPM/DEB distro in this [repo](https://github.com/davidbannon/libqt6pas/releases).
-
 #### Debian / Raspbian
-You can install the ```libqt6pas6``` package on Debian-based distros via ```apt```.
+You can install the ```libqt6pas6``` package on Debian-based distros via ```apt``` (add ```libqt6pas-dev``` only if you're building Trndi yourself).
 
 #### Ubuntu
-You can install the ```libqt6pas6``` package via ```apt```.
+You can install the ```libqt6pas6``` package via ```apt``` (add ```libqt6pas-dev``` only if you're building Trndi yourself).
 
 #### Fedora
 You can install the ```qt6pas``` package in ```DNF```.
