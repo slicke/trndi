@@ -2924,6 +2924,11 @@ msgstr "Version %s finns tillgänglig, vill du besöka nedladdningssidan? Du kan
 msgid "New version available"
 msgstr "Ny version tillgänglig"
 
+#: uconf.rs_newver_pr
+#, object-pascal-format
+msgid "This temporary Trndi build is now outdated, a newer stable version has been released: %s. Would you like to go to the downloads page?"
+msgstr "Detta temporära bygge av Trndi är nu utdaterat, en nyare stabil version har släppts: %s. Vill du gå till nerladdningssidan?"
+
 #: uconf.rs_newver_pre
 #, object-pascal-format
 msgid "A new pre-release for %s is available, would you like to go to the downloads page?"
