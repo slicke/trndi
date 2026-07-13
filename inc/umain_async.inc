@@ -640,7 +640,9 @@ begin
     end
     else if FShowUpToDate then
     begin
-      if BUILD_NUMBER = 'dev' then
+      if IsPRBuild then
+        ShowMessage(Format(RS_UPTODATE_PR, [FLatestRelease]))
+      else if BUILD_NUMBER = 'dev' then
         ShowMessage('Up to date (Dev Build)' + LineEnding +
           'Build: ' + BUILD_NUMBER + LineEnding +
           'Branch: ' + GIT_BRANCH + LineEnding +

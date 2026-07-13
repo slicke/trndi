@@ -75,6 +75,8 @@ function ParseCompilerDate: TDateTime;
 function GetNewerVersionURL(const JsonResponse: string;
 IncludePrerelease: boolean = false;
 Platform: string = ''): string;
+function IsPRBuild: boolean;
+function GetLatestReleaseName(const JsonResponse: string): string;
 
 function privacyIcon(const v: trndi.types.BGValLevel): string;
 
@@ -793,6 +795,38 @@ begin
       end;
     end;
 
+  except
+    Result := '';
+  end;
+
+  if Assigned(JsonData) then
+    JsonData.Free;
+end;
+
+// True when this binary was produced by CI for a pull request
+// (write-buildinfo sets BUILD_NUMBER = 'PR-<n>' on pull_request events)
+function IsPRBuild: boolean;
+begin
+  Result := CI and (Copy(BUILD_NUMBER, 1, 3) = 'PR-');
+end;
+
+// Extract the display name (or tag) of a release from a GitHub
+// /releases/latest JSON response; empty string if it cannot be parsed
+function GetLatestReleaseName(const JsonResponse: string): string;
+var
+  JsonData: TJSONData;
+  JsonObj: TJSONObject;
+begin
+  Result := '';
+  JsonData := nil;
+
+  try
+    JsonData := GetJSON(JsonResponse);
+    if JsonData is TJSONObject then
+    begin
+      JsonObj := TJSONObject(JsonData);
+      Result := JsonObj.Get('name', JsonObj.Get('tag_name', ''));
+    end;
   except
     Result := '';
   end;
