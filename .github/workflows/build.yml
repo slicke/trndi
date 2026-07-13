@@ -412,6 +412,30 @@ jobs:
           pr_number: ${{ github.event.pull_request.number }}
           ref_name: ${{ github.ref_name }}
 
+      - name: Use macOS-specific dock icon (MAINICON)
+        if: matrix.os_target == 'macos'
+        run: |
+          set -euo pipefail
+          # lazbuild embeds Trndi.ico as the MAINICON resource, and the LCL Cocoa
+          # widgetset pushes MAINICON to the Dock at startup (overriding the bundle
+          # .icns). Swap Trndi.ico for one built from the macOS-specific artwork so
+          # the running Dock icon matches. This runs on the macOS job only and is
+          # never committed, so other platforms keep the default Trndi.ico. Finder
+          # still shows the bundle .icns (built from Trndi-macos.png by dist/macos.sh).
+          if [ -f Trndi-macos.png ]; then
+            CONV="$(command -v magick || command -v convert || true)"
+            if [ -z "$CONV" ]; then
+              brew install imagemagick
+              CONV="$(command -v magick || command -v convert)"
+            fi
+            # Cap at 256 (max classic ICO size) so FPC's icon reader parses every entry.
+            "$CONV" Trndi-macos.png -background none \
+              -define icon:auto-resize=256,128,64,48,32,16 Trndi.ico
+            echo "Rebuilt Trndi.ico from Trndi-macos.png for macOS MAINICON"
+          else
+            echo "Trndi-macos.png not found; keeping default Trndi.ico"
+          fi
+
       - name: Build and package on macOS
         if: matrix.os_target == 'macos'
         run: |
