@@ -2060,13 +2060,13 @@ begin
       // stable release, point the user to the latest one instead
       rn := GetLatestReleaseName(res);
       if rn = '' then
-        rn := GetProductVersionMajorMinor('2.x');
+        rn := GetProductVersionMajorMinor('12.x');
       ShowMessage(Format(RS_UPTODATE_PR, [rn]));
     end
     else if CI and (BUILD_NUMBER <> 'dev') then
       ShowMessage(RS_UPTODATE)
     else
-      ShowMessage(Format(RS_UPTODATE_DEV, [GetProductVersionMajorMinor('2.x')]));
+      ShowMessage(Format(RS_UPTODATE_DEV, [GetProductVersionMajorMinor('12.x')]));
   end;
 end;
 
@@ -2183,7 +2183,7 @@ var
   bottomclose: tbutton;
 begin
   // Base app version + build date + widgetset + target CPU
-  lVersion.Caption := GetProductVersionMajorMinor('2.x');
+  lVersion.Caption := GetProductVersionMajorMinor('12.x');
   // If CI embedded a real build number, append it
   if CI and (BUILD_NUMBER <> 'dev') then
     lVersion.Caption := lVersion.Caption + '.' + BUILD_NUMBER
