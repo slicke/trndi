@@ -73,17 +73,21 @@ fi
 # Create icons
 mkdir macos/Trndi.iconset
 
+# macOS dock/app icon: prefer the macOS-specific artwork, fall back to Trndi.png.
+ICON_SRC="${ROOT_DIR}/Trndi-macos.png"
+[ -f "${ICON_SRC}" ] || ICON_SRC="${ROOT_DIR}/Trndi.png"
+
 # Use Apple-standard iconset names so iconutil reliably produces a correct .icns
-sips -z 16 16     "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_16x16.png
-sips -z 32 32     "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_16x16@2x.png
-sips -z 32 32     "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_32x32.png
-sips -z 64 64     "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_32x32@2x.png
-sips -z 128 128   "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_128x128.png
-sips -z 256 256   "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_128x128@2x.png
-sips -z 256 256   "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_256x256.png
-sips -z 512 512   "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_256x256@2x.png
-sips -z 512 512   "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_512x512.png
-sips -z 1024 1024 "${ROOT_DIR}/Trndi.png" --out macos/Trndi.iconset/icon_512x512@2x.png
+sips -z 16 16     "${ICON_SRC}" --out macos/Trndi.iconset/icon_16x16.png
+sips -z 32 32     "${ICON_SRC}" --out macos/Trndi.iconset/icon_16x16@2x.png
+sips -z 32 32     "${ICON_SRC}" --out macos/Trndi.iconset/icon_32x32.png
+sips -z 64 64     "${ICON_SRC}" --out macos/Trndi.iconset/icon_32x32@2x.png
+sips -z 128 128   "${ICON_SRC}" --out macos/Trndi.iconset/icon_128x128.png
+sips -z 256 256   "${ICON_SRC}" --out macos/Trndi.iconset/icon_128x128@2x.png
+sips -z 256 256   "${ICON_SRC}" --out macos/Trndi.iconset/icon_256x256.png
+sips -z 512 512   "${ICON_SRC}" --out macos/Trndi.iconset/icon_256x256@2x.png
+sips -z 512 512   "${ICON_SRC}" --out macos/Trndi.iconset/icon_512x512.png
+sips -z 1024 1024 "${ICON_SRC}" --out macos/Trndi.iconset/icon_512x512@2x.png
 
 iconutil -c icns macos/Trndi.iconset
 cp macos/Trndi.icns macos/Trndi.app/Contents/Resources/
