@@ -142,7 +142,7 @@ public
         @param(region  Region selector: use 'usa' for US servers; otherwise WORLD)
     }
 
-  constructor Create(user, pass: string); overload;
+  constructor Create(user, pass: string); override; overload;
 
   constructor Create(user, pass, region: string); overload;
 
@@ -218,7 +218,7 @@ DexcomUSANew = class(DexcomNew)
 protected
   function getSystemName: string; reintroduce; override;
 public
-  constructor Create(const AUser, APass: string); reintroduce; overload;
+  constructor Create(AUser, APass: string); override; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
   class function testConnection(username, pass: string; var res: string): MaybeBool; override; overload;
 end;
@@ -227,7 +227,7 @@ DexcomWorldNew = class(DexcomNew)
 protected
   function getSystemName: string; reintroduce; override;
 public
-  constructor Create(const AUser, APass: string); reintroduce; overload;
+  constructor Create(AUser, APass: string); override; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
   class function testConnection(username, pass: string; var res: string): MaybeBool; override; overload;
 end;
@@ -236,7 +236,7 @@ DexcomJapanNew = class(DexcomNew)
 protected
   function getSystemName: string; reintroduce; override;
 public
-  constructor Create(const AUser, APass: string); reintroduce; overload;
+  constructor Create(AUser, APass: string); override; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
   class function testConnection(username, pass: string; var res: string): MaybeBool; override; overload;
 end;
@@ -506,7 +506,7 @@ end;
 {------------------------------------------------------------------------------
   Concrete constructors for region-specific subclasses
 ------------------------------------------------------------------------------}
-constructor DexcomUSANew.Create(const AUser, APass: string);
+constructor DexcomUSANew.Create(AUser, APass: string);
 begin
   inherited Create(AUser, APass, 'usa');
 end;
@@ -521,7 +521,7 @@ begin
   result := inherited testConnection(username, pass, res, 'usa');
 end;
 
-constructor DexcomWorldNew.Create(const AUser, APass: string);
+constructor DexcomWorldNew.Create(AUser, APass: string);
 begin
   inherited Create(AUser, APass, 'world');
 end;
@@ -536,7 +536,7 @@ begin
   result := inherited testConnection(username, pass, res, 'world');
 end;
 
-constructor DexcomJapanNew.Create(const AUser, APass: string);
+constructor DexcomJapanNew.Create(AUser, APass: string);
 begin
   inherited Create(AUser, APass, 'japan');
 end;

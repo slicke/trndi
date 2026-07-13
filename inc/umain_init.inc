@@ -440,90 +440,11 @@ begin
   apiTarget := native.GetSetting('remote.target');
   apiCreds := native.GetSetting('remote.creds');
 
-  case native.GetSetting('remote.type') of
-  API_NS,
-  'API_NS':
-    api := NightScout.Create(apiTarget, apiCreds);
-  API_NS3,
-  'API_NS3':
-    api := NightScout3.Create(apiTarget, apiCreds);
-  API_DEX_USA,
-  'API_DEX_USA':
-    api := DexcomUSA.Create(apiTarget, apiCreds);
-  API_DEX_EU,
-  'API_DEX_EU':
-    api := DexcomWorld.Create(apiTarget, apiCreds);
-  API_DEX_NEW_USA,
-  'API_DEX_NEW_USA':
-    api := DexcomUSANew.Create(apiTarget, apiCreds);
-  API_DEX_NEW_EU,
-  'API_DEX_NEW_EU':
-    api := DexcomWorldNew.Create(apiTarget, apiCreds);
-  API_DEX_NEW_JP,
-  'API_DEX_NEW_JP':
-    api := DexcomJapanNew.Create(apiTarget, apiCreds);
-  API_TANDEM_USA,
-  'API_TANDEM_USA':
-    api := TandemUSA.Create(apiTarget, apiCreds);
-  API_TANDEM_EU,
-  'API_TANDEM_EU':
-    api := TandemEU.Create(apiTarget, apiCreds);
-  API_CARELINK_US,
-  'API_CARELINK_US':
-    api := CareLinkUS.Create(apiTarget, apiCreds);
-  API_CARELINK_EU,
-  'API_CARELINK_EU':
-    api := CareLinkEU.Create(apiTarget, apiCreds);
-  API_XDRIP,
-  'API_XDRIP':
-    api := xDrip.Create(apiTarget, apiCreds);
-  {$ifdef DEBUG}
-  API_D_DEBUG,
-  'API_D_DEBUG':
-    api := DebugAPI.Create(apiTarget, apiCreds);
-  API_D_MISSING,
-  'API_D_MISSING':
-    api := DebugMissingAPI.Create(apiTarget, apiCreds);
-  API_D_PERFECT,
-  'API_D_PERFECT':
-    api := DebugPerfectAPI.Create(apiTarget, apiCreds);
-  API_D_CUSTOM,
-  'API_D_CUSTOM':
-    api := DebugCustomAPI.Create(apiTarget, apiCreds);
-  API_D_EDGE,
-  'API_D_EDGE':
-    api := DebugEdgeAPI.Create(apiTarget, apiCreds);
-  API_D_FIRST,
-  'API_D_FIRST':
-    api := DebugFirstMissingAPI.Create(apiTarget, apiCreds);
-  API_D_FIRSTX,
-  'API_D_FIRSTX':
-    api := DebugFirstXMissingAPI.Create(apiTarget, apiCreds);
-  API_D_INTERMITTENT,
-  'API_D_INTERMITTENT':
-    api := DebugIntermittentMissingAPI.Create(apiTarget, apiCreds);
-  API_D_SECOND,
-  'API_D_SECOND':
-    api := DebugSecondMissingAPI.Create(apiTarget, apiCreds);
-  API_D_SLOW,
-  'API_D_SLOW':
-    api := DebugSlowAPI.Create(apiTarget, apiCreds);
-  API_D_FAULTY,
-  'API_D_FAULTY':
-    api := DebugFaultySensorAPI.Create(apiTarget, apiCreds);
-  API_D_LOWSOON,
-  'API_D_LOWSOON':
-    api := DebugLowSoonAPI.Create(apiTarget, apiCreds);
-  API_D_SENSOR_EXPIRY,
-  'API_D_SENSOR_EXPIRY':
-    api := DebugSensorExpiryAPI.Create(apiTarget, apiCreds);
-  API_D_LATE_MISSING,
-  'API_D_LATE_MISSING':
-    api := DebugLateMissingAPI.Create(apiTarget, apiCreds);
-  {$endif}
-  else
+  // The registry resolves both stable codes ('API_NS') and the display names
+  // legacy settings stored, and instantiates the matching backend class.
+  api := CreateBackend(native.GetSetting('remote.type'), apiTarget, apiCreds);
+  if api = nil then
     Result := false;
-  end;
 
   // Scale MAX_RESULT to the API's reporting frequency so all dot slots can be
   // filled even for backends that upload more often than every 5 minutes.

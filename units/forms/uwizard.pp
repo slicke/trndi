@@ -42,6 +42,9 @@
  * - 2026-05-16: Initial implementation of first-run setup wizard.
  * - 2026-05-23: Added trend window step (step 4) — lets users choose how many
  *               readings to display in the main graph during first-run setup.
+ * - 2026-07-13: Backend selection, credential validation, connection testing and
+ *               the assisted browser login now go through the shared
+ *               trndi.api.registry and trndi.weblogin units.
  *)
 
 unit uwizard;
@@ -52,8 +55,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics, Dialogs, lclintf,
-  trndi.native, trndi.api, trndi.api.nightscout, trndi.api.nightscout3,
-  trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.xdrip,
+  trndi.native, trndi.api, trndi.api.registry,
   trndi.types, trndi.strings, trndi.weblogin, slicke.ux.alert;
 
 {$I ../../inc/defines.inc}
@@ -115,13 +117,10 @@ type
     function  selectedAPIClass: TrndiAPIClass;
     procedure updateWebLoginUI;
     procedure UpdateThresholdLabels;
-    function  APIToCode(const displayName: string): string;
     procedure bNextClick(Sender: TObject);
     procedure bBackClick(Sender: TObject);
     procedure bTestClick(Sender: TObject);
     procedure bLoginClick(Sender: TObject);
-    procedure webLoginProgress(const ACaption: string);
-    procedure showManualLoginHelp;
     procedure cbSysChange(Sender: TObject);
     procedure bSysHelpClick(Sender: TObject);
     procedure ePassEnter(Sender: TObject);
@@ -445,14 +444,7 @@ begin
   cbSys.Align     := alClient;
   cbSys.Style     := csDropDownList;
   cbSys.TabOrder  := 0;
-  cbSys.Items.AddStrings([
-    API_NS, API_NS3,
-    API_DEX_USA, API_DEX_EU,
-    API_DEX_NEW_USA, API_DEX_NEW_EU, API_DEX_NEW_JP,
-    API_TANDEM_USA, API_TANDEM_EU,
-    API_CARELINK_US, API_CARELINK_EU,
-    API_XDRIP
-  ]);
+  ListBackendNames(cbSys.Items, false);  // No debug backends during first-run
   cbSys.ItemIndex := 0;
   cbSys.OnChange  := @cbSysChange;
 
@@ -579,23 +571,19 @@ end;
 
 procedure TfWizard.UpdateConnectionLabels;
 var
-  u, p: string;
+  cls: TrndiAPIClass;
 begin
-  u := ''; p := '';
-  if      cbSys.Text = API_NS        then begin u := NightScout.ParamLabel(APLUser);  p := NightScout.ParamLabel(APLPass); end
-  else if cbSys.Text = API_NS3       then begin u := NightScout3.ParamLabel(APLUser); p := NightScout3.ParamLabel(APLPass); end
-  else if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
-                                          begin u := Dexcom.ParamLabel(APLUser);     p := Dexcom.ParamLabel(APLPass); end
-  else if (cbSys.Text = API_DEX_NEW_USA) or (cbSys.Text = API_DEX_NEW_EU)
-       or (cbSys.Text = API_DEX_NEW_JP) then
-                                          begin u := DexcomNew.ParamLabel(APLUser);  p := DexcomNew.ParamLabel(APLPass); end
-  else if cbSys.Text = API_TANDEM_USA then begin u := TandemUSA.ParamLabel(APLUser); p := TandemUSA.ParamLabel(APLPass); end
-  else if cbSys.Text = API_TANDEM_EU  then begin u := TandemEU.ParamLabel(APLUser);  p := TandemEU.ParamLabel(APLPass); end
-  else if (cbSys.Text = API_CARELINK_US) or (cbSys.Text = API_CARELINK_EU) then
-                                          begin u := CareLink.ParamLabel(APLUser);   p := CareLink.ParamLabel(APLPass); end
-  else if cbSys.Text = API_XDRIP      then begin u := xDrip.ParamLabel(APLUser);     p := xDrip.ParamLabel(APLPass); end;
-  lAddrLabel.Caption := u;
-  lPassLabel.Caption := p;
+  cls := selectedAPIClass;
+  if cls = nil then
+  begin
+    lAddrLabel.Caption := '';
+    lPassLabel.Caption := '';
+  end
+  else
+  begin
+    lAddrLabel.Caption := cls.ParamLabel(APLUser);
+    lPassLabel.Caption := cls.ParamLabel(APLPass);
+  end;
   updateWebLoginUI;
 end;
 
@@ -605,19 +593,7 @@ end;
 ------------------------------------------------------------------------------}
 function TfWizard.selectedAPIClass: TrndiAPIClass;
 begin
-  if      cbSys.Text = API_NS          then Result := NightScout
-  else if cbSys.Text = API_NS3         then Result := NightScout3
-  else if cbSys.Text = API_DEX_USA     then Result := DexcomUSA
-  else if cbSys.Text = API_DEX_EU      then Result := DexcomWorld
-  else if cbSys.Text = API_DEX_NEW_USA then Result := DexcomUSANew
-  else if cbSys.Text = API_DEX_NEW_EU  then Result := DexcomWorldNew
-  else if cbSys.Text = API_DEX_NEW_JP  then Result := DexcomJapanNew
-  else if cbSys.Text = API_TANDEM_USA  then Result := TandemUSA
-  else if cbSys.Text = API_TANDEM_EU   then Result := TandemEU
-  else if cbSys.Text = API_CARELINK_US then Result := CareLinkUS
-  else if cbSys.Text = API_CARELINK_EU then Result := CareLinkEU
-  else if cbSys.Text = API_XDRIP       then Result := xDrip
-  else Result := nil;
+  Result := BackendClassOf(cbSys.Text);
 end;
 
 {------------------------------------------------------------------------------
@@ -662,124 +638,41 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Point the user at the CareLink login helper (tools/carelink-login) that
-  captures the token in a browser and prints it for pasting into the token
-  field. Optionally opens the helper folder. Fallback for when Trndi can't run
-  the helper automatically (no Node.js, etc.).
-------------------------------------------------------------------------------}
-procedure TfWizard.showManualLoginHelp;
-var
-  helperDir, cmd: string;
-begin
-  helperDir := ExtractFilePath(Application.ExeName) + 'tools' + PathDelim + 'carelink-login';
-  if cbSys.Text = API_CARELINK_US then
-    cmd := 'node carelink-login.mjs --us'
-  else
-    cmd := 'node carelink-login.mjs';
-
-  if ExtMsgYesNo(WZ_WEBLOGIN_TITLE, Format(WZ_WEBLOGIN_HELP, [helperDir, cmd]), uxmtInformation, 20) then
-  begin
-    if DirectoryExists(helperDir) then
-      OpenDocument(helperDir)
-    else
-      OpenURL('https://github.com/slicke/trndi/tree/main/tools/carelink-login');
-  end;
-end;
-
-{------------------------------------------------------------------------------
-  Progress callback for RunNodeLoginHelper: reflect the current stage on the
-  login button.
-------------------------------------------------------------------------------}
-procedure TfWizard.webLoginProgress(const ACaption: string);
-begin
-  bLogin.Caption := ACaption;
-  Application.ProcessMessages;
-end;
-
-{------------------------------------------------------------------------------
-  Assisted CareLink login. When the backend ships a runnable Node.js helper and
-  Node is available, run it (installing its deps on first use) and drop the
-  captured token straight into the token field. Fall back to the manual
-  instructions otherwise. Shared with the settings form via trndi.weblogin.
+  Assisted CareLink login. The whole flow (confirm, run the backend's Node.js
+  helper, capture the token into the token field, manual-instructions fallback)
+  lives in trndi.weblogin so the wizard and the settings form behave the same;
+  this handler only supplies the localized texts.
 ------------------------------------------------------------------------------}
 procedure TfWizard.bLoginClick(Sender: TObject);
-
-  function ErrText(r: TWebLoginResult): string;
-  begin
-    case r of
-    wlrNoScript:  Result := WZ_WEBLOGIN_NOSCRIPT;
-    wlrNoNode:    Result := WZ_WEBLOGIN_NONODE;
-    wlrNpmFailed: Result := WZ_WEBLOGIN_NPM_FAIL;
-    wlrBadOutput: Result := WZ_WEBLOGIN_BAD_OUTPUT;
-    else          Result := WZ_WEBLOGIN_NO_OUTPUT; // launch failed / no output
-    end;
-  end;
-
 var
-  cred, scriptArgs, scriptRel: string;
-  cls: TrndiAPIClass;
-  res: TWebLoginResult;
+  T: TWebLoginTexts;
 begin
-  cls := selectedAPIClass;
-  if Assigned(cls) then
-    scriptRel := cls.webLoginScript(scriptArgs)
-  else
-    scriptRel := '';
+  T.RunTitle   := WZ_WEBLOGIN_RUN_TITLE;
+  T.RunPrompt  := WZ_WEBLOGIN_RUN_PROMPT;
+  T.Installing := WZ_WEBLOGIN_INSTALLING;
+  T.Waiting    := WZ_WEBLOGIN_WAITING;
+  T.CapturedOK := WZ_WEBLOGIN_OK;
+  T.FailTitle  := WZ_WEBLOGIN_FAIL_TITLE;
+  T.NoScript   := WZ_WEBLOGIN_NOSCRIPT;
+  T.NoNode     := WZ_WEBLOGIN_NONODE;
+  T.NpmFailed  := WZ_WEBLOGIN_NPM_FAIL;
+  T.NoOutput   := WZ_WEBLOGIN_NO_OUTPUT;
+  T.BadOutput  := WZ_WEBLOGIN_BAD_OUTPUT;
+  T.HelpTitle  := WZ_WEBLOGIN_TITLE;
+  T.HelpBody   := WZ_WEBLOGIN_HELP;
 
-  // No runnable helper for this backend — keep the manual instructions.
-  if scriptRel = '' then
-  begin
-    showManualLoginHelp;
-    Exit;
-  end;
-
-  // Heads-up before we open a browser and (on first run) install dependencies.
-  if not ExtMsgYesNo(WZ_WEBLOGIN_RUN_TITLE, WZ_WEBLOGIN_RUN_PROMPT, uxmtInformation, 20) then
-    Exit;
-
-  Screen.Cursor := crHourGlass;
-  bLogin.Enabled := false;
-  try
-    res := RunNodeLoginHelper(scriptRel, scriptArgs,
-      WZ_WEBLOGIN_INSTALLING, WZ_WEBLOGIN_WAITING, @webLoginProgress, cred);
-  finally
-    bLogin.Caption := WZ_WEBLOGIN_BUTTON;
-    bLogin.Enabled := true;
-    Screen.Cursor := crDefault;
-  end;
-
-  if res = wlrOK then
-  begin
-    ePass.Text := cred;
-    // Reveal what we captured so the user can eyeball it before testing.
-    ePass.EchoMode := emNormal;
-    ePass.PasswordChar := #0;
-    UXMessage(WZ_WEBLOGIN_RUN_TITLE, WZ_WEBLOGIN_OK, uxmtOK, Self);
-    Exit;
-  end;
-
-  // Automatic path unavailable/failed — explain, then offer the manual route.
-  ExtError(uxdAuto, WZ_WEBLOGIN_FAIL_TITLE, ErrText(res), uxmtWarning);
-  showManualLoginHelp;
+  RunAssistedWebLogin(selectedAPIClass, bLogin, ePass, WZ_WEBLOGIN_BUTTON, T, Self);
 end;
 
 procedure TfWizard.bSysHelpClick(Sender: TObject);
 var
+  cls: TrndiAPIClass;
   s: string;
 begin
   s := '';
-  if      cbSys.Text = API_NS        then s := NightScout.ParamLabel(APLDesc)
-  else if cbSys.Text = API_NS3       then s := NightScout3.ParamLabel(APLDesc)
-  else if cbSys.Text = API_DEX_USA   then s := DexcomUSA.ParamLabel(APLDesc)
-  else if cbSys.Text = API_DEX_EU    then s := DexcomWorld.ParamLabel(APLDesc)
-  else if cbSys.Text = API_DEX_NEW_USA then s := DexcomUSANew.ParamLabel(APLDesc)
-  else if cbSys.Text = API_DEX_NEW_EU  then s := DexcomWorldNew.ParamLabel(APLDesc)
-  else if cbSys.Text = API_DEX_NEW_JP  then s := DexcomJapanNew.ParamLabel(APLDesc)
-  else if cbSys.Text = API_TANDEM_USA  then s := TandemUSA.ParamLabel(APLDesc)
-  else if cbSys.Text = API_TANDEM_EU   then s := TandemEU.ParamLabel(APLDesc)
-  else if (cbSys.Text = API_CARELINK_US) or (cbSys.Text = API_CARELINK_EU)
-                                       then s := CareLink.ParamLabel(APLDesc)
-  else if cbSys.Text = API_XDRIP       then s := xDrip.ParamLabel(APLDesc);
+  cls := selectedAPIClass;
+  if cls <> nil then
+    s := cls.ParamLabel(APLDesc);
   if s <> '' then
     ShowMessage(s);
 end;
@@ -800,38 +693,19 @@ procedure TfWizard.bTestClick(Sender: TObject);
 var
   res: MaybeBool;
   err: string;
+  cls: TrndiAPIClass;
 begin
   lTestStatus.Caption := RS_WIZARD_TESTING;
   Application.ProcessMessages;
   err := '';
 
-  if cbSys.Text = API_NS then
-    res := NightScout.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_NS3 then
-    res := NightScout3.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_DEX_USA then
-    res := DexcomUSA.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_DEX_EU then
-    res := DexcomWorld.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_DEX_NEW_USA then
-    res := DexcomUSANew.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_DEX_NEW_EU then
-    res := DexcomWorldNew.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_DEX_NEW_JP then
-    res := DexcomJapanNew.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_TANDEM_USA then
-    res := TandemUSA.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_TANDEM_EU then
-    res := TandemEU.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_CARELINK_US then
-    res := CareLinkUS.testConnection(eAddr.Text, ePass.Text, err)
-  else if cbSys.Text = API_CARELINK_EU then
-    res := CareLinkEU.testConnection(eAddr.Text, ePass.Text, err)
-  else
+  cls := selectedAPIClass;
+  if cls = nil then
   begin
     lTestStatus.Caption := WZ_TEST_NO_SUPPORT;
     Exit;
   end;
+  res := cls.testConnection(eAddr.Text, ePass.Text, err);
 
   case res of
   MaybeBool.true:
@@ -848,72 +722,28 @@ end;
 
 function TfWizard.ValidateConnection(out errMsg: string): boolean;
 begin
-  Result := true;
   errMsg := '';
   if Trim(eAddr.Text) = '' then
   begin
     errMsg := WZ_ERR_NEED_ADDR;
-    Result := false;
-    Exit;
+    Exit(false);
   end;
-  case cbSys.Text of
-  API_NS, API_NS3:
-    if Copy(eAddr.Text, 1, 4) <> 'http' then
-    begin
-      errMsg := WZ_ERR_ADDRESS;
-      Result := false;
-    end;
-  API_TANDEM_EU, API_TANDEM_USA:
-    begin
-      if Pos('@', eAddr.Text) = 0 then
-      begin
-        errMsg := WZ_ERR_EMAIL;
-        Result := false;
-        Exit;
-      end;
-      if Length(ePass.Text) < 5 then
-      begin
-        errMsg := WZ_ERR_PASSWORD;
-        Result := false;
-      end;
-    end;
-  API_DEX_EU, API_DEX_USA,
-  API_DEX_NEW_EU, API_DEX_NEW_USA, API_DEX_NEW_JP:
-    if Length(ePass.Text) < 5 then
-    begin
-      errMsg := WZ_ERR_PASSWORD;
-      Result := false;
-    end;
-  API_CARELINK_US, API_CARELINK_EU:
-    // The credential is the captured token blob, which is always JSON
-    if Copy(TrimLeft(ePass.Text), 1, 1) <> '{' then
-    begin
-      errMsg := WZ_ERR_CARELINK_TOKEN;
-      Result := false;
-    end;
+  case CheckBackendCredentials(cbSys.Text, eAddr.Text, ePass.Text) of
+  bceAddress:
+    errMsg := WZ_ERR_ADDRESS;
+  bceEmail:
+    errMsg := WZ_ERR_EMAIL;
+  bcePassword:
+    errMsg := WZ_ERR_PASSWORD;
+  bceToken:
+    errMsg := WZ_ERR_CARELINK_TOKEN;
+  else
+    Exit(true);
   end;
+  Result := false;
 end;
 
 {-- Settings -----------------------------------------------------------------}
-
-function TfWizard.APIToCode(const displayName: string): string;
-begin
-  case displayName of
-  API_NS:          Result := 'API_NS';
-  API_NS3:         Result := 'API_NS3';
-  API_DEX_USA:     Result := 'API_DEX_USA';
-  API_DEX_EU:      Result := 'API_DEX_EU';
-  API_DEX_NEW_USA: Result := 'API_DEX_NEW_USA';
-  API_DEX_NEW_EU:  Result := 'API_DEX_NEW_EU';
-  API_DEX_NEW_JP:  Result := 'API_DEX_NEW_JP';
-  API_TANDEM_USA:  Result := 'API_TANDEM_USA';
-  API_TANDEM_EU:   Result := 'API_TANDEM_EU';
-  API_CARELINK_US: Result := 'API_CARELINK_US';
-  API_CARELINK_EU: Result := 'API_CARELINK_EU';
-  API_XDRIP:       Result := 'API_XDRIP';
-  else             Result := 'API_NS';
-  end;
-end;
 
 procedure TfWizard.BuildTrendWindowStep;
 var
@@ -1148,7 +978,7 @@ begin
 
   with FNative do
   begin
-    SetSetting('remote.type',   APIToCode(cbSys.Text), false);
+    SetSetting('remote.type',   BackendCode(cbSys.Text), false);
     SetSetting('remote.target', eAddr.Text, false);
     SetSetting('remote.creds',  ePass.Text, false);
     SetBoolSetting('unit', rbMmol.Checked, 'mmol', 'mgdl');
