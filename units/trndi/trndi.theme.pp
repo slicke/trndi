@@ -75,7 +75,7 @@ begin
   // Flat UI palette: calm, high-contrast, minimal.
   // Hex literals are $00BBGGRR (Lazarus COLORREF byte order).
   Result.ColorOk            := $0060AE27; // Emerald    #27AE60
-  Result.ColorOkText        := $00E8FBE8; // Light green
+  Result.ColorOkText        := $000F2204; // Dark green #0F2204 (5.9:1 on emerald; was light green #E8FBE8 at 2.7:1)
 
   Result.ColorHigh          := $00227EE6; // Pumpkin    #E67E22
   Result.ColorHighText      := $00001B2D; // Very dark brown
