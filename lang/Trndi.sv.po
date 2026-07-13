@@ -350,7 +350,7 @@ msgstr "Ladda inställningar"
 #: tfconf.blogin.caption
 msgctxt "tfconf.blogin.caption"
 msgid "Get CareLink token…"
-msgstr "Skaffa CareLink-nyckel"
+msgstr "Skaffa CareLink-nyckel…"
 
 #: tfconf.bremove.caption
 msgid "- Remove"
@@ -2582,7 +2582,7 @@ msgstr "Testa anslutning"
 
 #: trndi.strings.rs_wizard_testing
 msgid "Testing…"
-msgstr "Testar..."
+msgstr "Testar…"
 
 #: trndi.strings.rs_wizard_test_fail
 msgid "✗ Could not connect."
@@ -3121,6 +3121,11 @@ msgstr "Du är uppdaterad"
 msgid "You are using a development version, there's no stable release newer than this! The most recent stable release is %s"
 msgstr "Du använder en utvecklingsversion, det finns ingen stabil version som är nyare än detta! Den senaste stabila versionen är %s"
 
+#: uconf.rs_uptodate_pr
+#, object-pascal-format
+msgid "You are using a newer temporary Trndi build, the latest stable release is: %s"
+msgstr "Du använder ett nyare temporärt Trndi-bygge, den senaste stabila versionen är: %s"
+
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
 msgstr "Trndi kan ladda en adress i din standardwebbläsare när du är hög eller låg."
@@ -3142,7 +3147,7 @@ msgstr "Trndi kan starta ett <b>Web-API</b> för att kommunicera med <i>tredjepa
 #: uconf.rs_weblogin_button
 msgctxt "uconf.rs_weblogin_button"
 msgid "Get CareLink token…"
-msgstr "Skaffa CareLink-nyckel..."
+msgstr "Skaffa CareLink-nyckel…"
 
 #: uconf.rs_weblogin_help
 #, object-pascal-format
@@ -3350,7 +3355,7 @@ msgstr "Anslutningstest stöds inte för denna tjänst."
 #: uwizard.wz_weblogin_button
 msgctxt "uwizard.wz_weblogin_button"
 msgid "Get CareLink token…"
-msgstr "Hämta CareLink-nyckel..."
+msgstr "Hämta CareLink-nyckel…"
 
 #: uwizard.wz_weblogin_help
 #, object-pascal-format

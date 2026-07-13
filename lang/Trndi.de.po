@@ -2966,6 +2966,11 @@ msgstr "Sie sind aktuell"
 msgid "You are using a development version, there's no stable release newer than this! The most recent stable release is %s"
 msgstr "Sie verwenden eine Entwicklungsversion; es gibt keine neuere stabile Version! Die neueste stabile Version ist %s"
 
+#: uconf.rs_uptodate_pr
+#, object-pascal-format
+msgid "You are using a newer temporary Trndi build, the latest stable release is: %s"
+msgstr ""
+
 #: uconf.rs_use_url_help
 msgid "Trndi can load a URL when high or low in your default web browser."
 msgstr "Trndi kann bei hohem oder niedrigem Wert eine URL in Ihrem Standard-Webbrowser laden."
