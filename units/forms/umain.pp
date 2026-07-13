@@ -996,7 +996,7 @@ lastup: tdatetime;
   // Users with stored 'ux.bg_color_*' settings keep their own values.
   // In range
 bg_color_ok: TColor = $0060AE27;     // Emerald    #27AE60
-bg_color_ok_txt: TColor = $00E8FBE8; // Light green
+bg_color_ok_txt: TColor = $000F2204; // Dark green #0F2204 (5.9:1 on emerald; was light green #E8FBE8 at 2.7:1)
   // Hi
 bg_color_hi: TColor = $00227EE6;     // Pumpkin    #E67E22
 bg_color_hi_txt: TColor = $00001B2D; // Very dark brown
