@@ -1482,108 +1482,136 @@ object fConf: TfConf
       ClientHeight = 562
       ClientWidth = 637
       OnShow = tsDisplayShow
-      object pnDisplay: TPanel
+      object pnFontButtons: TPanel
         Left = 0
-        Height = 216
+        Height = 35
         Top = 0
         Width = 637
-        Align = alClient
+        Align = alTop
         BevelOuter = bvNone
-        ClientHeight = 216
+        ClientHeight = 35
         ClientWidth = 637
-        ParentBackground = False
         TabOrder = 0
-        object pnFontButtons: TPanel
+        object bFontReading: TButton
           Left = 0
-          Height = 35
-          Top = 0
-          Width = 637
-          Align = alTop
-          BevelOuter = bvNone
-          ClientHeight = 35
-          ClientWidth = 637
+          Height = 28
+          Top = 3
+          Width = 135
+          Caption = 'Reading font...'
           TabOrder = 0
-          object bFontReading: TButton
-            Left = 0
-            Height = 28
-            Top = 3
-            Width = 135
-            Caption = 'Reading font...'
-            TabOrder = 0
-            OnClick = bFontReadingClick
-          end
-          object bFontArrow: TButton
-            Left = 140
-            Height = 28
-            Top = 3
-            Width = 115
-            Caption = 'Arrow font...'
-            TabOrder = 1
-            OnClick = bFontArrowClick
-          end
-          object bFontTime: TButton
-            Left = 260
-            Height = 28
-            Top = 3
-            Width = 110
-            Caption = 'Time font...'
-            TabOrder = 2
-            OnClick = bFontTimeClick
-          end
-          object bFontReset: TButton
-            Left = 500
-            Height = 28
-            Top = 3
-            Width = 132
-            Caption = 'Reset Fonts'
-            TabOrder = 3
-            OnClick = bFontResetClick
-          end
+          OnClick = bFontReadingClick
+        end
+        object bFontArrow: TButton
+          Left = 140
+          Height = 28
+          Top = 3
+          Width = 115
+          Caption = 'Arrow font...'
+          TabOrder = 1
+          OnClick = bFontArrowClick
+        end
+        object bFontTime: TButton
+          Left = 260
+          Height = 28
+          Top = 3
+          Width = 110
+          Caption = 'Time font...'
+          TabOrder = 2
+          OnClick = bFontTimeClick
+        end
+        object bFontReset: TButton
+          Left = 505
+          Height = 28
+          Top = 3
+          Width = 132
+          Anchors = [akTop, akRight]
+          Caption = 'Reset Fonts'
+          TabOrder = 3
+          OnClick = bFontResetClick
+        end
+      end
+      object pnDisplay: TPanel
+        Left = 8
+        Height = 146
+        Top = 43
+        Width = 621
+        Align = alClient
+        BorderSpacing.Around = 8
+        BevelOuter = bvNone
+        BorderStyle = bsSingle
+        ClientHeight = 144
+        ClientWidth = 619
+        ParentBackground = False
+        TabOrder = 1
+        object lAgo: TLabel
+          Left = 8
+          Height = 20
+          Top = 6
+          Width = 168
+          AutoSize = False
+          Caption = '100 min'
+          Color = clWhite
+          Cursor = crHandPoint
+          Font.Color = clBlack
+          Font.Height = 16
+          OptimalFill = True
+          ParentColor = False
+          ParentFont = False
+          OnClick = lValClick
+        end
+        object lVal: TLabel
+          Left = 0
+          Height = 58
+          Top = 26
+          Width = 619
+          Align = alClient
+          Alignment = taCenter
+          AutoSize = False
+          BorderSpacing.Top = 26
+          Caption = '0,0'
+          Color = 21243
+          Cursor = crHandPoint
+          Font.Color = clBlack
+          Font.Height = 72
+          Layout = tlCenter
+          OptimalFill = True
+          ParentColor = False
+          ParentFont = False
+          OnClick = lValClick
         end
         object lArrow: TLabel
           Left = 0
-          Height = 56
-          Top = 160
-          Width = 637
+          Height = 42
+          Top = 84
+          Width = 619
           Align = alBottom
           Alignment = taCenter
           AutoSize = False
           Caption = '->'
           Color = clWhite
+          Cursor = crHandPoint
           Font.Color = clBlack
-          Font.Height = 56
+          Font.Height = 40
           Layout = tlCenter
           OptimalFill = True
           ParentColor = False
           ParentFont = False
+          OnClick = lValClick
         end
-        object lAgo: TLabel
+        object lDiff: TLabel
           Left = 0
-          Height = 24
-          Top = 35
-          Width = 168
+          Height = 18
+          Top = 126
+          Width = 619
+          Align = alBottom
+          Alignment = taCenter
           AutoSize = False
-          BorderSpacing.Bottom = 5
-          Caption = '100 min'
+          BorderSpacing.Bottom = 4
+          Caption = '+0,0'
           Color = clWhite
           Font.Color = clBlack
-          Font.Height = 19
+          Font.Height = 14
           OptimalFill = True
-          ParentColor = False
-          ParentFont = False
-        end
-        object lVal: TLabel
-          Left = 0
-          Height = 125
-          Top = 35
-          Width = 637
-          Align = alClient
-          Alignment = taCenter
-          Caption = '0,0'
-          Color = 21243
-          Font.Color = clBlack
-          Font.Height = -87
-          Layout = tlCenter
           ParentColor = False
           ParentFont = False
         end
@@ -1598,7 +1626,7 @@ object fConf: TfConf
         ClientHeight = 345
         ClientWidth = 633
         ParentBackground = False
-        TabOrder = 1
+        TabOrder = 2
         object bDecimalHelp: TButton
           Left = 176
           Height = 22
