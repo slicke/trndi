@@ -18,7 +18,9 @@ env:
 
 jobs:
   fpc-console-health:
-    runs-on: ubuntu-latest
+    # Preview image: needed for libqt6pas6/-dev (setup-lazarus), which only
+    # entered the Ubuntu archive in 25.10 (not present on 24.04/ubuntu-latest).
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
 
