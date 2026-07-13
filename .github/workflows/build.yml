@@ -88,8 +88,6 @@ jobs:
             fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-laz_3.2.2-210709_amd64.deb/download"
             fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-src_3.2.2-210709_amd64.deb/download"
             laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/lazarus-project_4.8.0-0_amd64.deb/download"
-            qt6pas_deb: "libqt6pas6_6.2.10-1_amd64.deb"
-            qt6pas_dev_deb: "libqt6pas6-dev_6.2.10-1_amd64.deb"
             qt6_arch_folder: "x86_64-linux"
             deb_arch: amd64
             rpm_arch: x86_64
@@ -106,8 +104,6 @@ jobs:
             fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.8/fpc-laz_3.2.3-240813_arm64.deb/download"
             fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.8/fpc-src_3.2.3-240813_arm64.deb/download"
             laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.8/lazarus-project_4.8.0-0_arm64.deb/download"
-            qt6pas_deb: "libqt6pas6_6.2.10-1_arm64.deb"
-            qt6pas_dev_deb: "libqt6pas6-dev_6.2.10-1_arm64.deb"
             qt6_arch_folder: "aarch64-linux"
             deb_arch: arm64
             rpm_arch: aarch64
@@ -140,8 +136,6 @@ jobs:
           fpc_laz_url: ${{ matrix.fpc_laz_url }}
           fpc_src_url: ${{ matrix.fpc_src_url }}
           laz_url: ${{ matrix.laz_url }}
-          qt6pas_deb: ${{ matrix.qt6pas_deb }}
-          qt6pas_dev_deb: ${{ matrix.qt6pas_dev_deb }}
           extra_packages: build-essential wget git cmake ninja-build
 
       - name: Write buildinfo (Linux)
