@@ -579,6 +579,36 @@ begin
   end;
 end;
 
+// The binary's build timestamp used for release comparisons. CI stamps
+// BUILD_DATE as ISO 8601 UTC ('2026-06-13T17:05:00Z'); prefer it so PR builds
+// (which have no numeric build id) compare by when CI actually built them.
+// Falls back to the compile-time date when BUILD_DATE is not set ('local').
+function GetBuildDateTime: TDateTime;
+var
+  Year, Month, Day, Hour, Min, Sec: integer;
+begin
+  if Length(BUILD_DATE) >= 19 then
+  begin
+    Year := StrToIntDef(Copy(BUILD_DATE, 1, 4), -1);
+    Month := StrToIntDef(Copy(BUILD_DATE, 6, 2), -1);
+    Day := StrToIntDef(Copy(BUILD_DATE, 9, 2), -1);
+    Hour := StrToIntDef(Copy(BUILD_DATE, 12, 2), -1);
+    Min := StrToIntDef(Copy(BUILD_DATE, 15, 2), -1);
+    Sec := StrToIntDef(Copy(BUILD_DATE, 18, 2), -1);
+
+    if (Year >= 0) and (Month >= 0) and (Day >= 0) and (Hour >= 0) and
+      (Min >= 0) and (Sec >= 0) then
+    try
+      // BUILD_DATE is UTC — convert to local time like `published_at`
+      Exit(UniversalTimeToLocal(EncodeDateTime(Year, Month, Day, Hour, Min, Sec, 0)));
+    except
+      // fall through to the compile-time date
+    end;
+  end;
+
+  Result := ParseCompilerDate;
+end;
+
 function HasNewerRelease(const JsonResponse: string;
 out ReleaseName: string;
 IncludePrerelease: boolean = false): boolean;
@@ -597,7 +627,7 @@ function EnsureBuildDate: TDateTime;
   begin
     if not BuildDateValid then
     begin
-      BuildDate := ParseCompilerDate;
+      BuildDate := GetBuildDateTime;
       BuildDateValid := true;
     end;
     Result := BuildDate;
@@ -696,7 +726,7 @@ function EnsureBuildDate: TDateTime;
   begin
     if not BuildDateValid then
     begin
-      BuildDate := ParseCompilerDate;
+      BuildDate := GetBuildDateTime;
       BuildDateValid := true;
     end;
     Result := BuildDate;

@@ -689,6 +689,7 @@ RS_REMOVE_ACC =
 RS_AUTO = 'Auto-detect';
 RS_UPTODATE = 'You are up to date';
 RS_NEWVER = 'Version %s is available, would you like to go to the downloads page? You can also ignore this warning for 2 weeks.';
+RS_NEWVER_PR = 'This temporary Trndi build is now outdated, a newer stable version has been released: %s. Would you like to go to the downloads page?';
 RS_NEWVER_PRE =
   'A new pre-release for %s is available, would you like to go to the downloads page?';
 RS_NEWVER_CAPTION = 'New version available';
@@ -2049,7 +2050,10 @@ begin
   if rok then
   begin
     r := GetNewerVersionURL(res);
-    s := Format(RS_NEWVER, [rn]);
+    if IsPRBuild then
+      s := Format(RS_NEWVER_PR, [rn])
+    else
+      s := Format(RS_NEWVER, [rn]);
     if UXDialog(uxdAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
       OpenURL(r);
   end

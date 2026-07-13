@@ -624,7 +624,10 @@ begin
 
     if FHasNewer then
     begin
-      newVersionMessage := Format(RS_NEWVER, [FReleaseName]);
+      if IsPRBuild then
+        newVersionMessage := Format(RS_NEWVER_PR, [FReleaseName])
+      else
+        newVersionMessage := Format(RS_NEWVER, [FReleaseName]);
       case UXDialog(uxdAuto, RS_NEWVER_CAPTION, newVersionMessage,
         [mbYes, mbNo, mbIgnore], mtInformation) of
       mrYes:
