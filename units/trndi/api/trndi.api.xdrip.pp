@@ -137,6 +137,11 @@ public
         3: (unused)
      }
   class function ParamLabel(LabelName: APIParamLabel): string; override;
+
+    {** Connection testing is not offered for xDrip. Without this override the
+        class would inherit NightScout's test, which probes endpoints the local
+        xDrip web server does not implement. }
+  class function testConnection(user, pass: string; var res: string): maybebool; override;
 protected
   {** Get the value which represents the maximum reading for the backend
   }
@@ -418,6 +423,12 @@ begin
   else
     Result := inherited ParamLabel(LabelName);
   end;
+end;
+
+class function xDrip.testConnection(user, pass: string; var res: string): maybebool;
+begin
+  res := '';
+  Result := maybebool.none; // Not supported; see interface note
 end;
 
 function xDrip.getLimitHigh: integer;

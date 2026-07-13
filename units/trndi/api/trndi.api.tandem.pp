@@ -216,18 +216,18 @@ type
   protected
     function getSystemName: string; override;
   public
-    constructor Create(const AEmail, APass: string); reintroduce; overload;
+    constructor Create(AEmail, APass: string); override; overload;
     constructor Create(const AEmail, APass: string; ACalcDiff: boolean); reintroduce; overload;
-    class function testConnection(AEmail, APass: string; var ARes: string): MaybeBool; overload;
+    class function testConnection(AEmail, APass: string; var ARes: string): MaybeBool; override; overload;
   end;
 
   TandemEU = class(Tandem)
   protected
     function getSystemName: string; override;
   public
-    constructor Create(const AEmail, APass: string); reintroduce; overload;
+    constructor Create(AEmail, APass: string); override; overload;
     constructor Create(const AEmail, APass: string; ACalcDiff: boolean); reintroduce; overload;
-    class function testConnection(AEmail, APass: string; var ARes: string): MaybeBool; overload;
+    class function testConnection(AEmail, APass: string; var ARes: string): MaybeBool; override; overload;
   end;
 
 implementation
@@ -803,7 +803,7 @@ end;
 {------------------------------------------------------------------------------
   Region-specific constructors
  ------------------------------------------------------------------------------}
-constructor TandemUSA.Create(const AEmail, APass: string);
+constructor TandemUSA.Create(AEmail, APass: string);
 begin
   inherited Create(AEmail, APass, trUS);
 end;
@@ -818,7 +818,7 @@ begin
   Result := inherited testConnection(AEmail, APass, ARes, 'US');
 end;
 
-constructor TandemEU.Create(const AEmail, APass: string);
+constructor TandemEU.Create(AEmail, APass: string);
 begin
   inherited Create(AEmail, APass, trEU);
 end;

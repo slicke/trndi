@@ -127,7 +127,7 @@ public
         @param(region  Region selector: use 'usa' for US servers; otherwise WORLD)
     }
 
-  constructor Create(user, pass: string); overload;
+  constructor Create(user, pass: string); override; overload;
 
   constructor Create(user, pass, region: string); overload;
 
@@ -203,18 +203,18 @@ DexcomUSA = class(Dexcom)
 protected
   function getSystemName: string; reintroduce; override;
 public
-  constructor Create(const AUser, APass: string); reintroduce; overload;
+  constructor Create(AUser, APass: string); override; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
-  class function testConnection(username, pass: string; var res: string): MaybeBool; overload;
+  class function testConnection(username, pass: string; var res: string): MaybeBool; override; overload;
 end;
 
 DexcomWorld = class(Dexcom)
 protected
   function getSystemName: string; reintroduce; override;
 public
-  constructor Create(const AUser, APass: string); reintroduce; overload;
+  constructor Create(AUser, APass: string); override; overload;
   constructor Create(const AUser, APass: string; ACalcDiff: boolean); reintroduce; overload;
-  class function testConnection(username, pass: string; var res: string): MaybeBool; overload;
+  class function testConnection(username, pass: string; var res: string): MaybeBool; override; overload;
 end;
 
 DexcomCustom = class(Dexcom);
@@ -329,7 +329,7 @@ end;
 {------------------------------------------------------------------------------
   Concrete constructors for region-specific subclasses
 ------------------------------------------------------------------------------}
-constructor DexcomUSA.Create(const AUser, APass: string);
+constructor DexcomUSA.Create(AUser, APass: string);
 begin
   inherited Create(AUser, APass, 'usa');
 end;
@@ -344,7 +344,7 @@ begin
   result := inherited testConnection(username, pass, res, 'usa');
 end;
 
-constructor DexcomWorld.Create(const AUser, APass: string);
+constructor DexcomWorld.Create(AUser, APass: string);
 begin
   inherited Create(AUser, APass, 'world');
 end;

@@ -17,6 +17,7 @@ uses
   umain_tests,
   native_cookie_tests,
   api_general_tests,
+  api_registry_tests,
   api_dexcom_tests,
   api_dexcom_new_tests,
   api_xdrip_tests,

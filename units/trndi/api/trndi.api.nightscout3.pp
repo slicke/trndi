@@ -130,7 +130,7 @@ private
     // Fetch thresholds using legacy Nightscout status (v1) similar to the v2 controller
   function FetchLegacyThresholds: boolean;
 public
-  constructor Create(user, pass: string); overload;
+  constructor Create(user, pass: string); override; overload;
   function connect: boolean; override;
   function getReadings(minNum, maxNum: integer; extras: string;
     out res: string; noCache: boolean): BGResults; override;

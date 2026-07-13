@@ -44,6 +44,9 @@
  *   + normal-state options.
  * - 2026-02-03: Added a Proxy "Test proxy" button plus wiring so proxy settings
  *   load/save from the settings store, and a proxy-only connectivity test.
+ * - 2026-07-13: Backend selection, credential validation, connection testing and
+ *   the assisted browser login now go through the shared trndi.api.registry and
+ *   trndi.weblogin units instead of per-form dispatch chains.
  *)
 
 unit uconf;
@@ -55,7 +58,7 @@ interface
 uses
 Classes, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
-slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.nightscout, trndi.api.nightscout3, trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.xdrip, razer.chroma, math, trndi.types, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
+slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, math, trndi.types, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -542,13 +545,6 @@ private
   {** Show/hide the browser-login button and username field for the current
       backend, based on selectedAPIClass.supportsWebLogin. }
   procedure updateWebLoginUI;
-  {** Progress callback for the shared Node login runner: reflects the current
-      stage on the login button. }
-  procedure webLoginProgress(const ACaption: string);
-  {** Show the manual login-helper instructions (terminal commands + open the
-      helper folder). Used as the fallback when the automatic Node login isn't
-      available. }
-  procedure showManualLoginHelp;
 public
   chroma: TRazerChromaBase;
   procedure UpdatePredictionStates;
@@ -761,7 +757,7 @@ RS_WEBLOGIN_HELP =
 RS_WEBLOGIN_RUN_TITLE = 'CareLink login';
 RS_WEBLOGIN_RUN_PROMPT =
   'Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), ' +
-  'then capture the token automatically.' + sHTMLLineBreak + sHTMLLineBreak +
+  'then capture the token/login information automatically.' + sHTMLLineBreak + sHTMLLineBreak +
   'The first run also downloads the login helper''s dependencies, which can take a ' +
   'minute. Keep this window open and complete the sign-in in the browser.' + sHTMLLineBreak + sHTMLLineBreak +
   'Start now?';
@@ -1048,66 +1044,23 @@ end;
 
 procedure TfConf.getAPILabels(out user, pass: string);
 var
-  sys: class of TrndiAPI;
+  sys: TrndiAPIClass;
 begin
-  sys := TrndiAPI;
-
-  case cbSys.Text of
-  API_NS:
-    sys := NightScout;
-  API_NS3:
-    sys := NightScout3;
-  API_DEX_USA:
-    sys := Dexcom;
-  API_DEX_EU:
-    sys := Dexcom;
-  API_DEX_NEW_USA:
-    sys := DexcomNew;
-  API_DEX_NEW_EU:
-    sys := DexcomNew;
-  API_DEX_NEW_JP:
-    sys := DexcomNew;
-  API_TANDEM_USA:
-    sys := TandemUSA;
-  API_TANDEM_EU:
-    sys := TandemEU;
-  API_CARELINK_US:
-    sys := CareLinkUS;
-  API_CARELINK_EU:
-    sys := CareLinkEU;
-  API_XDRIP:
-    sys := xDrip;
-  {$ifdef Debug}
-  API_D_FIRSTX:
-    sys := DebugFirstXMissingAPI;
-  API_D_INTERMITTENT:
-    sys := DebugIntermittentMissingAPI;
-  API_D_SLOW:
-    sys := DebugSlowAPI;
-  API_D_FAULTY:
-    sys := DebugFaultySensorAPI;
-  API_D_LOWSOON:
-    sys := DebugLowSoonAPI;
-  API_D_SENSOR_EXPIRY:
-    sys := DebugSensorExpiryAPI;
-  API_D_LATE_MISSING:
-    sys := DebugLateMissingAPI;
-  API_D_CUSTOM:
-    sys := DebugCustomAPI;
-  {$endif}
-  end;
+  sys := BackendClassOf(cbSys.Text);
+  if sys = nil then
+    sys := TrndiAPI;
 
   user := sys.ParamLabel(APLUser);
   pass := sys.ParamLabel(APLPass);
 
   {$ifdef DEBUG}
-  if (cbSys.Text in API_DEBUG) and (sys = TrndiAPI) then
+  // Debug backends that don't provide their own labels get a generic hint
+  if (cbSys.Text in API_DEBUG) and (user = TrndiAPI.ParamLabel(APLUser)) then
   begin
     user := RS_DEBUG_BACKEND_LABEL;
     pass := RS_DEBUG_BACKEND_LABEL;
   end;
   {$endif}
-
 end;
 
 procedure TfConf.cbSysChange({%H-}Sender: TObject);
@@ -1269,49 +1222,20 @@ begin
 end;
 
 function TfConf.validateUser(var error: string): boolean;
-var
-  usr,pass: string;
 begin
-  usr := eAddr.Text;
-  pass := ePass.Text;
-
-  result := true;
-  case cbSys.Text of
-  API_NS,
-  API_NS3:
-  begin
-    result := usr.StartsWith('http');
+  case CheckBackendCredentials(cbSys.Text, eAddr.Text, ePass.Text) of
+  bceAddress:
     error := RS_ERR_ADDRESS;
-  end;
-  API_TANDEM_EU,
-  API_TANDEM_USA:
-  begin
-    result := usr.Contains('@');
+  bceEmail:
     error := RS_ERR_EMAIL;
-    if not result then
-      Exit;
-
-    result := pass.Length > 4;
+  bcePassword:
     error := RS_ERR_PASSWORD;
-  end;
-  API_DEX_EU,
-  API_DEX_USA,
-  API_DEX_NEW_EU,
-  API_DEX_NEW_USA,
-  API_DEX_NEW_JP:
-  begin
-    result := pass.Length > 4;
-    error := RS_ERR_PASSWORD;
-  end;
-  API_CARELINK_US,
-  API_CARELINK_EU:
-  begin
-    // The credential is the captured token blob, which is always JSON
-    result := pass.TrimLeft.StartsWith('{');
+  bceToken:
     error := RS_ERR_CARELINK_TOKEN;
+  else
+    Exit(true);
   end;
-  end;
-
+  Result := false;
 end;
 
 procedure TfConf.cbMediaDisableChange(Sender: TObject);
@@ -1546,58 +1470,12 @@ function HtmlEscapeBasic(const S: string): string;
   end;
 var
   s, c, x: string;
-  i: integer;
-  sys: class of TrndiAPI;
+  sys: TrndiAPIClass;
 begin
 
   s := '';
   c := '';
-  sys := nil;
-
-  {$ifdef DEBUG}
-  if cbSys.Text in API_DEBUG then
-    sys := DebugAPI;
-  {$endif}
-
-  case cbSys.Text of
-  API_NS:
-    sys := NightScout;
-  API_NS3:
-    sys := NightScout3;
-  API_DEX_USA,
-  API_DEX_EU:
-    sys := Dexcom;
-  API_DEX_NEW_USA,
-  API_DEX_NEW_EU,
-  API_DEX_NEW_JP:
-    sys := DexcomNew;
-  API_TANDEM_USA:
-    sys := TandemUSA;
-  API_TANDEM_EU:
-    sys := TandemEU;
-  API_CARELINK_US:
-    sys := CareLinkUS;
-  API_CARELINK_EU:
-    sys := CareLinkEU;
-  API_XDRIP:
-    sys := xDrip;
-  {$ifdef Debug}
-  API_D_FIRSTX:
-    sys := DebugFirstXMissingAPI;
-  API_D_CUSTOM:
-    sys := DebugCustomAPI;
-  API_D_SLOW:
-    sys := DebugSlowAPI;
-  API_D_FAULTY:
-    sys := DebugFaultySensorAPI;
-  API_D_LOWSOON:
-    sys := DebugLowSoonAPI;
-  API_D_SENSOR_EXPIRY:
-    sys := DebugSensorExpiryAPI;
-  API_D_LATE_MISSING:
-    sys := DebugLateMissingAPI;
-  {$endif}
-  end;
+  sys := BackendClassOf(cbSys.Text);
 
   if not assigned(sys) then
     s := RS_CHOOSE_SYSTEM
@@ -1662,44 +1540,16 @@ procedure TfConf.bTestClick(Sender: TObject);
 var
   res: maybeBool;
   err: string;
+  sys: TrndiAPIClass;
 begin
-  if cbSys.Text = API_NS then
-    res := NightScout.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_NS3 then
-    res := NightScout3.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_DEX_USA then
-    res := DexcomUSA.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_DEX_EU then
-    res := DexcomWorld.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_DEX_NEW_USA then
-    res := DexcomUSANew.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_DEX_NEW_EU then
-    res := DexcomWorldNew.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_DEX_NEW_JP then
-    res := DexcomJapanNew.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_TANDEM_USA then
-    res := TandemUSA.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_TANDEM_EU then
-    res := TandemEU.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_CARELINK_US then
-    res := CareLinkUS.testConnection(eAddr.text,ePass.text,err)
-  else
-  if cbSys.Text = API_CARELINK_EU then
-    res := CareLinkEU.testConnection(eAddr.text,ePass.text,err)
-  else
+  err := '';
+  sys := selectedAPIClass;
+  if sys = nil then
   begin
     ShowMessage(RS_TEST_UNSUPPORTED);
     exit;
   end;
+  res := sys.testConnection(eAddr.text, ePass.text, err);
 
   case res of
   MaybeBool.false:
@@ -1718,26 +1568,12 @@ end;
 
 {------------------------------------------------------------------------------
   Resolve the metaclass of the backend currently selected in cbSys. Used for
-  class-level capability queries (e.g. supportsWebLogin). Returns nil for the
-  debug/placeholder entries and anything unmapped.
+  class-level capability queries (e.g. supportsWebLogin). Returns nil for
+  anything unmapped.
 ------------------------------------------------------------------------------}
 function TfConf.selectedAPIClass: TrndiAPIClass;
 begin
-  case cbSys.Text of
-  API_NS:          Result := NightScout;
-  API_NS3:         Result := NightScout3;
-  API_DEX_USA:     Result := DexcomUSA;
-  API_DEX_EU:      Result := DexcomWorld;
-  API_DEX_NEW_USA: Result := DexcomUSANew;
-  API_DEX_NEW_EU:  Result := DexcomWorldNew;
-  API_DEX_NEW_JP:  Result := DexcomNew;
-  API_TANDEM_USA:  Result := TandemUSA;
-  API_TANDEM_EU:   Result := TandemEU;
-  API_CARELINK_US: Result := CareLinkUS;
-  API_CARELINK_EU: Result := CareLinkEU;
-  API_XDRIP:       Result := xDrip;
-  else             Result := nil;
-  end;
+  Result := BackendClassOf(cbSys.Text);
 end;
 
 {------------------------------------------------------------------------------
@@ -1766,105 +1602,30 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Point the user at the CareLink login helper (tools/carelink-login), which
-  captures the token in a real browser and prints it for pasting into the
-  credential field. Optionally opens the helper folder. Used as the fallback
-  when Trndi can't run the helper automatically (no Node.js, etc.).
-------------------------------------------------------------------------------}
-procedure TfConf.showManualLoginHelp;
-var
-  helperDir, cmd: string;
-begin
-  helperDir := ExtractFilePath(Application.ExeName) + 'tools' + PathDelim + 'carelink-login';
-  if cbSys.Text = API_CARELINK_US then
-    cmd := 'node carelink-login.mjs --us'
-  else
-    cmd := 'node carelink-login.mjs';
-
-  if ExtMsgYesNo(RS_WEBLOGIN_TITLE, Format(RS_WEBLOGIN_HELP, [helperDir, cmd]), uxmtInformation, 20) then
-  begin
-    if DirectoryExists(helperDir) then
-      OpenDocument(helperDir)
-    else
-      OpenURL('https://github.com/slicke/trndi/tree/main/tools/carelink-login');
-  end;
-end;
-
-{------------------------------------------------------------------------------
-  Progress callback for RunNodeLoginHelper: reflect the current stage on the
-  login button so the user sees why the dialog is busy.
-------------------------------------------------------------------------------}
-procedure TfConf.webLoginProgress(const ACaption: string);
-begin
-  bLogin.Caption := ACaption;
-  Application.ProcessMessages;
-end;
-
-{------------------------------------------------------------------------------
-  Assisted CareLink login. When the backend ships a runnable Node.js helper and
-  Node is available, run it (installing its deps on first use) and drop the
-  captured token straight into the credential field. Fall back to the manual
-  instructions otherwise (or on any failure). The heavy lifting lives in
-  trndi.weblogin so the settings form and the first-run wizard behave the same.
+  Assisted CareLink login. The whole flow (confirm, run the backend's Node.js
+  helper, capture the token into the credential field, manual-instructions
+  fallback) lives in trndi.weblogin so the settings form and the first-run
+  wizard behave the same; this handler only supplies the localized texts.
 ------------------------------------------------------------------------------}
 procedure TfConf.bLoginClick(Sender: TObject);
-
-  function ErrText(r: TWebLoginResult): string;
-  begin
-    case r of
-    wlrNoScript:  Result := RS_WEBLOGIN_NOSCRIPT;
-    wlrNoNode:    Result := RS_WEBLOGIN_NONODE;
-    wlrNpmFailed: Result := RS_WEBLOGIN_NPM_FAIL;
-    wlrBadOutput: Result := RS_WEBLOGIN_BAD_OUTPUT;
-    else          Result := RS_WEBLOGIN_NO_OUTPUT; // launch failed / no output
-    end;
-  end;
-
 var
-  cred, scriptArgs, scriptRel: string;
-  cls: TrndiAPIClass;
-  res: TWebLoginResult;
+  T: TWebLoginTexts;
 begin
-  cls := selectedAPIClass;
-  if Assigned(cls) then
-    scriptRel := cls.webLoginScript(scriptArgs)
-  else
-    scriptRel := '';
+  T.RunTitle   := RS_WEBLOGIN_RUN_TITLE;
+  T.RunPrompt  := RS_WEBLOGIN_RUN_PROMPT;
+  T.Installing := RS_WEBLOGIN_INSTALLING;
+  T.Waiting    := RS_WEBLOGIN_WAITING;
+  T.CapturedOK := RS_WEBLOGIN_OK;
+  T.FailTitle  := RS_WEBLOGIN_FAIL_TITLE;
+  T.NoScript   := RS_WEBLOGIN_NOSCRIPT;
+  T.NoNode     := RS_WEBLOGIN_NONODE;
+  T.NpmFailed  := RS_WEBLOGIN_NPM_FAIL;
+  T.NoOutput   := RS_WEBLOGIN_NO_OUTPUT;
+  T.BadOutput  := RS_WEBLOGIN_BAD_OUTPUT;
+  T.HelpTitle  := RS_WEBLOGIN_TITLE;
+  T.HelpBody   := RS_WEBLOGIN_HELP;
 
-  // No runnable helper for this backend — keep the manual instructions.
-  if scriptRel = '' then
-  begin
-    showManualLoginHelp;
-    Exit;
-  end;
-
-  // Heads-up before we open a browser and (on first run) install dependencies.
-  if not ExtMsgYesNo(RS_WEBLOGIN_RUN_TITLE, RS_WEBLOGIN_RUN_PROMPT, uxmtInformation, 20) then
-    Exit;
-
-  Screen.Cursor := crHourGlass;
-  bLogin.Enabled := false;
-  try
-    res := RunNodeLoginHelper(scriptRel, scriptArgs,
-      RS_WEBLOGIN_INSTALLING, RS_WEBLOGIN_WAITING, @webLoginProgress, cred);
-  finally
-    bLogin.Caption := RS_WEBLOGIN_BUTTON;
-    bLogin.Enabled := true;
-    Screen.Cursor := crDefault;
-  end;
-
-  if res = wlrOK then
-  begin
-    ePass.Text := cred;
-    // Reveal what we captured so the user can eyeball it before testing.
-    ePass.PasswordChar := #0;
-    UXMessage(RS_WEBLOGIN_RUN_TITLE, RS_WEBLOGIN_OK, uxmtOK, Self);
-    Exit;
-  end;
-
-  // Automatic path unavailable/failed — explain, then offer the manual route.
-  ExtError(uxdAuto, RS_WEBLOGIN_FAIL_TITLE, ErrText(res), uxmtWarning);
-  showManualLoginHelp;
+  RunAssistedWebLogin(selectedAPIClass, bLogin, ePass, RS_WEBLOGIN_BUTTON, T, Self);
 end;
 
 procedure TfConf.bTestSpeechClick(Sender: TObject);

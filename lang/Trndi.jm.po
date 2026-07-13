@@ -3284,7 +3284,7 @@ msgid "Login captured. Click Test to verify, then Save."
 msgstr ""
 
 #: uconf.rs_weblogin_run_prompt
-msgid "Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token automatically.<br><br>The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.<br><br>Start now?"
+msgid "Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token/login information automatically.<br><br>The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.<br><br>Start now?"
 msgstr ""
 
 #: uconf.rs_weblogin_run_title
