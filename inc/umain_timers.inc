@@ -415,7 +415,11 @@ begin
 
   fixWarningPanel;
 
-  if (Length(TrendDots) > 1) and (TrendDots[1].Caption <> DOT_GRAPH) then
+  // Collapse expanded (value-text) dots back to markers after a relayout.
+  // DOT_FRESH counts as a marker too — with a 1-dot window TrendDots[1] is the
+  // latest dot and may carry the fresh ring rather than the plain dot.
+  if (Length(TrendDots) > 1) and (TrendDots[1].Caption <> DOT_GRAPH)
+    and (TrendDots[1].Caption <> DOT_FRESH) then
     actOnTrend(@ExpandDot);
 end;
 
@@ -537,6 +541,12 @@ begin
   begin
     if PredictShortMode then
     begin
+      // The largest short-prediction size gets a bold face so the glyph keeps
+      // its weight at the bigger footprint.
+      if PredictShortSize >= 3 then
+        lPredict.Font.Style := [fsBold]
+      else
+        lPredict.Font.Style := [];
       if PredictShortShowValue then
       begin
         wnum := PRED_WIDTH_NUM[Max(Min(PredictShortSize, 3), 1)];
@@ -554,6 +564,7 @@ begin
     end
     else
     begin
+      lPredict.Font.Style := [];
       lPredict.Width := (ClientWidth * 2) div 5;
       lPredict.Height := ClientHeight div 12;
     end;
