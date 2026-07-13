@@ -363,7 +363,7 @@ var
   S, fontn: string;
   L: TDotControl;
   d, ringWidth, xSize, xOff: integer;
-  dotColor: TColor;
+  dotColor, ringColor: TColor;
 begin
   L := Sender as TDotControl;
   S := L.Caption;
@@ -390,11 +390,19 @@ begin
     end;
 
     if S = DOT_FRESH then
-      ringWidth := Max(2, d div 12)
+    begin
+      // Rim the newest reading in a contrasting tone of its range color; a
+      // same-color ring over a solid disc would be invisible.
+      ringWidth := Max(2, d div 12);
+      ringColor := GetTextColorForBackground(dotColor);
+    end
     else
+    begin
       ringWidth := 0;
+      ringColor := dotColor;
+    end;
 
-    DrawSmoothCircle(L.Canvas, d, dotColor, dotColor, ringWidth);
+    DrawSmoothCircle(L.Canvas, d, dotColor, ringColor, ringWidth);
     Exit;
   end;
 
@@ -626,7 +634,7 @@ begin
   {$endif}
 end;
 
-// Expands a trend dot to show actual bg value with highlighting for latest reading
+// Toggles a trend dot between its marker (dot/fresh ring) and its bg value.
 procedure TfBG.ExpandDot(l: TDotControl; c, ix: integer);
 var
   isDot: boolean;
@@ -637,12 +645,15 @@ begin
   if l.hint = '' then
     Exit;
 
-  isDot := l.Caption = DOT_GRAPH;
+  isDot := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);
 
-  if ix = ACTIVE_DOTS then
-    l.Caption := IfThen(isDot, DOT_FRESH, DOT_GRAPH)
+  if isDot then
+    l.Caption := l.Hint
   else
-    l.Caption := IfThen(isDot, l.Hint, DOT_GRAPH);
+  if (ix = ACTIVE_DOTS) and FLatestIsFresh then
+    l.Caption := DOT_FRESH
+  else
+    l.Caption := DOT_GRAPH;
 
   // Always size the dot here, never inside DotPaint. Resizing during paint
   // re-enters with a stale DC on Cocoa and crashes in TCocoaGDIUtil.checkDC.
@@ -893,23 +904,24 @@ var
   isdot: boolean;
   l: TDotControl;
   {$ifdef TrndiExt}
-  fs: TFormatSettings;
+  hintVal: double;
   {$endif}
 begin
   l := Sender as TDotControl;
 
   actOnTrend(@ExpandDot);
-  isDot := UnicodeSameText(l.Caption, DOT_GRAPH);
+  isDot := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);
 
   {$ifdef TrndiExt}
-  fs := DefaultFormatSettings;
-  fs.DecimalSeparator := '.';
-  callFunc('dotClicked',[
-    isDot,
-    StrToFloat(l.Hint) * BG_CONVERTIONS[mgdl][un],
-    StrToFloat(l.Hint) * BG_CONVERTIONS[mmol][un],
-    l.tag
-    ]);
+  // The Hint is written with the app-wide format settings (updateLocale keeps
+  // DefaultFormatSettings and native.locale in sync), so parse with the same.
+  if TryStrToFloat(l.Hint, hintVal, native.locale) then
+    callFunc('dotClicked',[
+      isDot,
+      hintVal * BG_CONVERTIONS[mgdl][un],
+      hintVal * BG_CONVERTIONS[mmol][un],
+      l.tag
+      ]);
   {$endif}
 
   if isDot then

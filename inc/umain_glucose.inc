@@ -1394,6 +1394,7 @@ var
 begin
   isFresh := MinutesBetween(CurrentTime, LatestReading.date) <=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+  FLatestIsFresh := isFresh;
 
   if (Length(TrendDots) > ACTIVE_DOTS) and Assigned(TrendDots[ACTIVE_DOTS]) then
   begin
@@ -1490,10 +1491,6 @@ begin
           searchStart := i + 1;
           Break;
         end;
-        if PredictShortSize >= 3 then
-          lPredict.Font.Style := [fsBold]
-        else
-          lPredict.Font.Style := [];
       end
       else
       if reading.date < slotStart - (10 / 86400) then
@@ -1634,7 +1631,12 @@ begin
     DecodeTime(reading.date, H, M, S, MS);
     l.Tag := H * 100 + M;
 
-    l.Caption := DOT_GRAPH;
+    // The newest slot's dot gets the ringed "fresh" marker while the reading
+    // is within the freshness threshold; history slots stay plain dots.
+    if (labelNumber = ACTIVE_DOTS) and FLatestIsFresh then
+      l.Caption := DOT_FRESH
+    else
+      l.Caption := DOT_GRAPH;
 
     {$ifdef DARWIN}
     l.AdjustSize;
