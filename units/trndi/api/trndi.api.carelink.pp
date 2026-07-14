@@ -204,6 +204,11 @@ type
         the region flag. }
     class function webLoginScript(out args: string): string; override;
 
+    {** Extracts the embedded login helper (carelink-login.mjs, package.json,
+        package-lock.json — compiled in as Lazarus resources, see
+        carelink_assets.lrs) into AFolder. }
+    class function WriteAssets(const AFolder: string): boolean; override;
+
     {** Test connection for the CareLink follower API }
     class function testConnection(AUser, ACreds: string; var ARes: string; AExtra: string): MaybeBool; overload;
 
@@ -266,6 +271,9 @@ function ParseCareLinkTime(const S: string; out ADate: TDateTime): boolean;
 {$ENDIF}
 
 implementation
+
+uses
+  LResources;
 
 resourcestring
   sErrCareLinkNoCreds = 'No CareLink token data found. Paste the captured login data (JSON) as the credential — see the CareLink guide.';
@@ -761,6 +769,47 @@ class function CareLinkUS.webLoginScript(out args: string): string;
 begin
   Result := inherited webLoginScript(args);
   args := '--us';
+end;
+
+{------------------------------------------------------------------------------
+  Extract one compiled-in resource (carelink_assets.lrs) to AFolder/AFileName,
+  overwriting any existing copy. Raises on I/O failure so WriteAssets can fail
+  as a whole rather than run the helper against a half-written folder.
+ ------------------------------------------------------------------------------}
+procedure ExtractCareLinkAsset(const AResName: string; AResType: PChar;
+  const AFolder, AFileName: string);
+var
+  res: TLazarusResourceStream;
+  outFile: TFileStream;
+begin
+  res := TLazarusResourceStream.Create(AResName, AResType);
+  try
+    outFile := TFileStream.Create(
+      IncludeTrailingPathDelimiter(AFolder) + AFileName, fmCreate);
+    try
+      res.Position := 0;
+      outFile.CopyFrom(res, res.Size);
+    finally
+      outFile.Free;
+    end;
+  finally
+    res.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  Write the CareLink login helper (carelink-login.mjs + package manifests,
+  embedded via carelink_assets.lrs) into AFolder, overwriting so the copy
+  always matches this Trndi build. See guides/CareLink.md.
+ ------------------------------------------------------------------------------}
+class function CareLink.WriteAssets(const AFolder: string): boolean;
+begin
+  if not ForceDirectories(AFolder) then
+    Exit(false);
+  ExtractCareLinkAsset('carelink-login', 'MJS', AFolder, 'carelink-login.mjs');
+  ExtractCareLinkAsset('package', 'JSON', AFolder, 'package.json');
+  ExtractCareLinkAsset('package-lock', 'JSON', AFolder, 'package-lock.json');
+  Result := true;
 end;
 
 {------------------------------------------------------------------------------
@@ -1478,5 +1527,11 @@ function CareLink.getLimitLow: integer;
 begin
   Result := 40; // ... and down to 40 mg/dL
 end;
+
+initialization
+  // Register the embedded login-helper assets (carelink-login.mjs and the
+  // package manifests) so CareLink.WriteAssets can extract them at runtime.
+  // Regenerate with: make.ps1 assets  (lazres carelink_assets.lrs <files>)
+  {$I carelink_assets.lrs}
 
 end.

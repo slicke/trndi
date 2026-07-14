@@ -20,21 +20,22 @@ Use a **Care Partner** (follower) account that the patient has invited from the 
 
 ## Capturing the token data (login helper)
 
-Trndi ships a small **login helper** ([`tools/carelink-login`](../tools/carelink-login)) that does the browser login for you and captures the token. It needs **Node.js 22.12+** (it downloads a browser on first install). No Python, no OpenSSL.
+Trndi has a small **login helper** ([`tools/carelink-login`](../tools/carelink-login)) that does the browser login for you and captures the token. It needs **Node.js 22.12+** (it downloads a browser on first install). No Python, no OpenSSL.
+
+The helper is compiled into Trndi. When you run it, Trndi writes a fresh copy into your **settings folder** (never into the program folder, which is often read-only), so the version always matches your Trndi build.
 
 ### The easy way: let Trndi run it
 
-In Trndi's CareLink settings, click **Get CareLink token…**. If Node.js is installed, Trndi runs the helper for you — installing its dependencies on first use, opening the browser for sign-in, and dropping the captured token straight into the credential field. Just sign in with your **Care Partner** account, solve the CAPTCHA, and click **Test**.
+In Trndi's CareLink settings, click **Get CareLink token…**. If Node.js is installed, Trndi runs the helper for you — installing its dependencies, opening the browser for sign-in, and dropping the captured token straight into the credential field. Just sign in with your **Care Partner** account, solve the CAPTCHA, and click **Test**.
 
 > Keep the Trndi settings window open while the browser sign-in is in progress; the first run also downloads a browser, which can take a minute.
 
 ### The manual way
 
-If Node.js isn't found (or the automatic run fails), Trndi falls back to showing these commands, which you can run yourself:
+If Node.js isn't found (or the automatic run fails), Trndi falls back to showing you the folder it wrote the helper into (under your settings folder) and the commands to run there yourself:
 
 ```
-cd tools/carelink-login
-npm install                    # once
+npm install                    # fetches dependencies
 node carelink-login.mjs        # EU / rest of world
 node carelink-login.mjs --us   # USA region
 ```

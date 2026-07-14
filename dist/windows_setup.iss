@@ -74,12 +74,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "..\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\lang\*"; DestDir: "{app}\lang"; Flags: ignoreversion recursesubdirs createallsubdirs
-; CareLink login helper (sources only — node_modules is installed by the user
-; per the guide). The app looks for it in {app}\tools\carelink-login.
-Source: "..\tools\carelink-login\carelink-login.mjs"; DestDir: "{app}\tools\carelink-login"; Flags: ignoreversion
-Source: "..\tools\carelink-login\package.json"; DestDir: "{app}\tools\carelink-login"; Flags: ignoreversion
-Source: "..\tools\carelink-login\package-lock.json"; DestDir: "{app}\tools\carelink-login"; Flags: ignoreversion
-Source: "..\tools\carelink-login\README.md"; DestDir: "{app}\tools\carelink-login"; Flags: ignoreversion
+; NOTE: The CareLink login helper is no longer shipped as loose files — it is
+; compiled into Trndi.exe and written to the user's writable settings folder on
+; demand (see units/trndi/api/carelink_assets.lrs).
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

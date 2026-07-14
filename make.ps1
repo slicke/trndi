@@ -216,8 +216,31 @@ switch ($firstArg) {
         Print-Node $root 0
         exit 0
     }
+    "assets" {
+        # Regenerate compiled-in resource bundles (.lrs) from their source files.
+        # Currently: the CareLink login helper embedded in trndi.api.carelink.
+        $lazres = $null
+        if ($laz) {
+            $cand = Join-Path (Split-Path -Parent $laz) 'tools\lazres.exe'
+            if (Test-Path $cand) { $lazres = $cand }
+        }
+        if (-not $lazres) {
+            $cmd = Get-Command lazres -ErrorAction SilentlyContinue
+            if ($cmd) { $lazres = $cmd.Path }
+        }
+        if (-not $lazres) { Write-Error "lazres not found (looked next to lazbuild and on PATH)."; exit 1 }
+
+        $out = 'units\trndi\api\carelink_assets.lrs'
+        Write-Host "Regenerating $out via $lazres" -ForegroundColor Cyan
+        & $lazres $out `
+            'tools\carelink-login\carelink-login.mjs' `
+            'tools\carelink-login\package.json' `
+            'tools\carelink-login\package-lock.json'
+        exit $LASTEXITCODE
+    }
     "help" {
-        Write-Host "Usage: ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|clean (use -n|--dry-run to preview)] (no args -> release)" -ForegroundColor Cyan
+        Write-Host "Usage: ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|assets|clean (use -n|--dry-run to preview)] (no args -> release)" -ForegroundColor Cyan
+        Write-Host "  assets  Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper." -ForegroundColor Cyan
         Write-Host "Other arguments are forwarded to lazbuild when using these shortcuts." -ForegroundColor Cyan
         exit 0
     }

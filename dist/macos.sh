@@ -20,16 +20,10 @@ if [ -d "../lang" ]; then
   cp -r ../lang macos/Trndi.app/Contents/MacOS/
 fi
 
-# CareLink login helper (sources only, never node_modules).
-# The app looks for it in "appdir/tools/carelink-login" — Contents/MacOS here.
-if [ -d "../tools/carelink-login" ]; then
-  mkdir -p macos/Trndi.app/Contents/MacOS/tools/carelink-login
-  cp ../tools/carelink-login/carelink-login.mjs \
-     ../tools/carelink-login/package.json \
-     ../tools/carelink-login/package-lock.json \
-     ../tools/carelink-login/README.md \
-     macos/Trndi.app/Contents/MacOS/tools/carelink-login/
-fi
+# The CareLink login helper is compiled into the binary (see
+# units/trndi/api/carelink_assets.lrs) and written to the user's writable
+# settings folder on demand, so nothing is bundled into the .app here —
+# writing into a signed bundle would break its signature anyway.
 
 # Create icons
 mkdir macos/Trndi.iconset
