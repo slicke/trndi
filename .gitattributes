@@ -6,3 +6,10 @@
 # writes CRLF) or Linux/macOS (LF); keeps git history from thrashing and lets the
 # CI staleness check compare cleanly. See make assets / make.ps1 assets.
 *.lrs text eol=lf
+
+# CareLink login-helper sources are embedded verbatim into assets/carelink_assets.lrs
+# (lazres bakes their exact bytes in as #13#10/#10 tokens). Pin to LF so the
+# resource is byte-deterministic across platforms — otherwise a CRLF checkout on
+# Windows regenerates a different .lrs than an LF checkout in CI.
+tools/carelink-login/*.mjs text eol=lf
+tools/carelink-login/*.json text eol=lf
