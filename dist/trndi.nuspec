@@ -21,11 +21,8 @@
     <file src="..\Trndi.png" target="icon.png" />
     <file src="chocolateyinstall.ps1" target="tools\chocolateyinstall.ps1" />
     <file src="chocolateyuninstall.ps1" target="tools\chocolateyuninstall.ps1" />
-    <!-- CareLink login helper (sources only). Trndi.exe looks for it next to
-         itself, i.e. tools\tools\carelink-login inside the package. -->
-    <file src="..\tools\carelink-login\carelink-login.mjs" target="tools\tools\carelink-login\carelink-login.mjs" />
-    <file src="..\tools\carelink-login\package.json" target="tools\tools\carelink-login\package.json" />
-    <file src="..\tools\carelink-login\package-lock.json" target="tools\tools\carelink-login\package-lock.json" />
-    <file src="..\tools\carelink-login\README.md" target="tools\tools\carelink-login\README.md" />
+    <!-- The CareLink login helper is compiled into Trndi.exe (see
+         units/trndi/api/carelink_assets.lrs) and written to the user's
+         writable settings folder on demand, so it is not packaged here. -->
   </files>
 </package>

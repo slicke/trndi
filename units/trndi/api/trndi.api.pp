@@ -333,15 +333,31 @@ const
 
     {** Path of a Node.js helper script that performs the assisted login and
         prints the resulting credential (a JSON blob) to stdout. The path is
-        relative to the Trndi executable directory. When non-empty (and
-        @code(supportsWebLogin) is True), the settings UI can run the script via
-        Node and capture its output straight into the credential field instead
-        of asking the user to run it in a terminal. Default: '' (no script — the
-        UI falls back to showing manual instructions).
+        relative to the Trndi executable directory; only its directory and
+        file name are used when @code(WriteAssets) supplies the script instead
+        (see below). When non-empty (and @code(supportsWebLogin) is True), the
+        settings UI can run the script via Node and capture its output
+        straight into the credential field instead of asking the user to run
+        it in a terminal. Default: '' (no script — the UI falls back to
+        showing manual instructions).
         @param(args Receives extra command-line arguments for the script,
                     e.g. a region flag like "--us"; empty when none.)
         @returns(Script path relative to the exe dir, or '' when unsupported) }
   class function webLoginScript(out args: string): string; virtual;
+
+    {** Write this backend's Node.js login-helper assets (script + package
+        manifest) into AFolder, overwriting whatever is already there so the
+        copy always matches the running Trndi build. The settings UI calls
+        this (with a folder under Trndi's writable settings directory) before
+        running the helper named by @code(webLoginScript), since the folder
+        next to the executable may not be writable (Program Files, a signed
+        .app bundle, a read-only AppImage mount). Backends that ship a helper
+        embed its files as compiled-in resources and extract them here.
+        Default: no embedded assets.
+        @param(AFolder Destination directory; created if missing)
+        @returns(True if assets were written; False if this backend has none
+                — the caller then falls back to the exe-relative path) }
+  class function WriteAssets(const AFolder: string): boolean; virtual;
 
     {** Returns the name of the API
         @returns(Name of the API)
@@ -1004,6 +1020,16 @@ class function TrndiAPI.webLoginScript(out args: string): string;
 begin
   args := '';
   Result := '';
+end;
+
+{------------------------------------------------------------------------------
+  Assisted-login helper assets. Default: none. Backends that embed a Node.js
+  login helper as compiled-in resources (e.g. CareLink) override this to
+  extract them into AFolder.
+------------------------------------------------------------------------------}
+class function TrndiAPI.WriteAssets(const AFolder: string): boolean;
+begin
+  Result := false;
 end;
 
 {------------------------------------------------------------------------------
