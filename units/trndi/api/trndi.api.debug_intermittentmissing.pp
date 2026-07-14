@@ -126,8 +126,7 @@ begin
     Result := result + sLineBreak + sLineBreak + 'This debug backend randomly clears between the specified number of newest readings (default 2-4), selecting them from the most recent 10 readings. Use to reproduce intermittent/misaligned missing values.';
   if LabelName = APLDescHTML then
     Result := result + sLineBreak + sLineBreak + 'Use <b>"2"</b> or <b>"2-4"</b> in the username field to control how many readings are cleared. Readings are chosen randomly from the most recent 10 values.';
-  if LabelName = APLCopyright then
-    Result := 'Björn Lindh <github.com/slicke>';
+  // Copyright inherits DebugAPI's shared default.
 end;
 
 end.

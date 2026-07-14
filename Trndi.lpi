@@ -619,7 +619,7 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="units\trndi\api\trndi.api.debug_missing.pas"/>
+        <Filename Value="units\trndi\api\trndi.api.debug_missing.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
@@ -631,7 +631,7 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="units\trndi\api\trndi.api.debug_custom.pas"/>
+        <Filename Value="units\trndi\api\trndi.api.debug_custom.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
@@ -639,7 +639,7 @@
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>
-        <Filename Value="units\trndi\api\trndi.api.debug_firstmissing.pas"/>
+        <Filename Value="units\trndi\api\trndi.api.debug_firstmissing.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
       <Unit>

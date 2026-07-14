@@ -390,8 +390,7 @@ begin
       '<b>Targeting</b>: append <code>@</code> and a comma-separated list of offsets to target other remaining slots. Offsets are relative to the first remaining reading (0 = first remaining, 1 = second remaining, ...). Examples: <code>2:tandem=duplicate@1</code> (apply to second remaining) or <code>4:tandem=duplicate@0,1</code> (apply to first and second remaining).' +
       sLineBreak + sLineBreak +
       '<b>Examples</b>: <code>2:tandem=duplicate</code>, <code>3:dexcom=future</code>';
-  if LabelName = APLCopyright then
-    Result := 'Björn Lindh <github.com/slicke>';
+  // Copyright inherits DebugAPI's shared default.
 end;
 
 end.
