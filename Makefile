@@ -25,6 +25,24 @@ LPI ?= Trndi.lpi
 TEST_LPI ?= tests/TrndiTest.lpi
 OUTDIR ?= build
 WIDGETSET ?= qt6
+
+# Compiled-in resource bundles (.lrs) and the tool that (re)generates them.
+# The .lrs files are committed and compiled via {$I ...}, so a build never needs
+# lazres — it is only used by the 'assets'/'check-assets' targets. Discover it on
+# PATH, then in a system Lazarus install, then next to lazbuild (Windows layout).
+# lazres lives in Lazarus' tools/ dir, a sibling of lazbuild. Resolve it from
+# lazbuild's real path first (handles system + custom installs), then PATH, then
+# common locations and the Windows layout next to lazbuild.exe.
+LAZRES ?= $(shell \
+  lb=$$(command -v $(LAZBUILD) 2>/dev/null); \
+  if [ -n "$$lb" ] && [ -x "$$(dirname "$$(readlink -f "$$lb")")/tools/lazres" ]; then \
+    echo "$$(dirname "$$(readlink -f "$$lb")")/tools/lazres"; \
+  else \
+    command -v lazres 2>/dev/null || ls /usr/lib/lazarus/*/tools/lazres /usr/share/lazarus/*/tools/lazres 2>/dev/null | head -n1 || ls "$(dir $(LAZBUILD))tools/lazres" "$(dir $(LAZBUILD))tools/lazres.exe" 2>/dev/null | head -n1; \
+  fi)
+# CareLink login helper: source files -> generated resource (in repo-root assets/).
+CARELINK_ASSET_LRS  = assets/carelink_assets.lrs
+CARELINK_ASSET_SRCS = tools/carelink-login/carelink-login.mjs tools/carelink-login/package.json tools/carelink-login/package-lock.json
 # BUILD_MODE is a short hint (Release/Debug) for backward compatibility
 # BUILD_MODE_NAME is the actual project build-mode name as seen in Trndi.lpi
 BUILD_MODE ?= Release
@@ -86,7 +104,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names build-ignore ignore fetch-mormot2 check-mormot2
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names build-ignore ignore fetch-mormot2 check-mormot2 assets check-assets
 
 all: release
 
@@ -108,6 +126,8 @@ help:
 	@echo "  noext      Build without mORMot2 (temporary project; works even if mORMot2 is not installed) - use noext-release/noext-debug to override mode"
 	@echo "  fetch-mormot2  Clone mORMot2 into externals/mORMot2 and attempt to extract QuickJS static files into ./static (requires git and 7z)"
 	@echo "  check-mormot2  Verify mORMot2 presence and QuickJS static artifacts; exits non-zero on failure"
+	@echo "  assets     Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
+	@echo "  check-assets  Fail if a committed .lrs is out of sync with its sources (CI guard)"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
 	@echo "  dist       Create a minimal tarball in $(OUTDIR)"
 	@echo "  run        Build (if needed) and run the built binary (use RUN_ARGS to pass args)"
@@ -270,6 +290,29 @@ noext-test-noserver:
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@echo "Running tests without embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@TRNDI_NO_TESTSERVER=1 ./tests/TrndiTestConsole
+
+# Regenerate compiled-in resource bundles (.lrs) from their source files, e.g.
+# the CareLink login helper. Run after editing tools/carelink-login/* and commit
+# the updated .lrs. Mirrors 'make.ps1 assets' on Windows.
+assets:
+	@if [ -z "$(LAZRES)" ]; then echo "lazres not found; set LAZRES=/path/to/lazres (it ships with Lazarus, e.g. /usr/lib/lazarus/<ver>/tools/lazres)"; exit 1; fi
+	@echo "Regenerating $(CARELINK_ASSET_LRS) via $(LAZRES)"
+	@$(LAZRES) $(CARELINK_ASSET_LRS) $(CARELINK_ASSET_SRCS)
+
+# Fail if a committed .lrs is out of sync with its source files (CI guard). The
+# resource content is keyed off the source file names, not the output path, so a
+# temp regeneration diffs cleanly against the committed copy.
+check-assets:
+	@if [ -z "$(LAZRES)" ]; then echo "lazres not found; cannot verify $(CARELINK_ASSET_LRS) is current. Set LAZRES=/path/to/lazres."; exit 1; fi
+	@tmp=$$(mktemp); \
+	 $(LAZRES) $$tmp $(CARELINK_ASSET_SRCS) >/dev/null; \
+	 if ! diff --strip-trailing-cr -q "$$tmp" "$(CARELINK_ASSET_LRS)" >/dev/null 2>&1; then \
+	   rm -f "$$tmp"; \
+	   echo "ERROR: $(CARELINK_ASSET_LRS) is stale — run 'make assets' and commit the result."; \
+	   exit 1; \
+	 fi; \
+	 rm -f "$$tmp"; \
+	 echo "$(CARELINK_ASSET_LRS) is up to date."
 
 list-modes:
 	@echo "Available build modes in $(LPI):"

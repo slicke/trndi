@@ -230,13 +230,21 @@ switch ($firstArg) {
         }
         if (-not $lazres) { Write-Error "lazres not found (looked next to lazbuild and on PATH)."; exit 1 }
 
-        $out = 'units\trndi\api\carelink_assets.lrs'
+        $out = 'assets\carelink_assets.lrs'
+        if (-not (Test-Path 'assets')) { New-Item -ItemType Directory -Path 'assets' | Out-Null }
         Write-Host "Regenerating $out via $lazres" -ForegroundColor Cyan
         & $lazres $out `
             'tools\carelink-login\carelink-login.mjs' `
             'tools\carelink-login\package.json' `
             'tools\carelink-login\package-lock.json'
-        exit $LASTEXITCODE
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        # lazres.exe writes CRLF; the committed .lrs is pinned to LF
+        # (.gitattributes), so normalize to keep the working tree clean and match
+        # what Linux/macOS lazres and the CI staleness check produce.
+        $text = [IO.File]::ReadAllText($out) -replace "`r`n", "`n"
+        [IO.File]::WriteAllText($out, $text)
+        Write-Host "Normalized $out to LF" -ForegroundColor Cyan
+        exit 0
     }
     "help" {
         Write-Host "Usage: ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|assets|clean (use -n|--dry-run to preview)] (no args -> release)" -ForegroundColor Cyan

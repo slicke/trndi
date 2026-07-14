@@ -21,7 +21,7 @@ if [ -d "../lang" ]; then
 fi
 
 # The CareLink login helper is compiled into the binary (see
-# units/trndi/api/carelink_assets.lrs) and written to the user's writable
+# assets/carelink_assets.lrs) and written to the user's writable
 # settings folder on demand, so nothing is bundled into the .app here —
 # writing into a signed bundle would break its signature anyway.
 
