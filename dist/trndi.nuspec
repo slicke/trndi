@@ -22,7 +22,7 @@
     <file src="chocolateyinstall.ps1" target="tools\chocolateyinstall.ps1" />
     <file src="chocolateyuninstall.ps1" target="tools\chocolateyuninstall.ps1" />
     <!-- The CareLink login helper is compiled into Trndi.exe (see
-         units/trndi/api/carelink_assets.lrs) and written to the user's
+         assets/carelink_assets.lrs) and written to the user's
          writable settings folder on demand, so it is not packaged here. -->
   </files>
 </package>

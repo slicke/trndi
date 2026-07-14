@@ -1531,7 +1531,9 @@ end;
 initialization
   // Register the embedded login-helper assets (carelink-login.mjs and the
   // package manifests) so CareLink.WriteAssets can extract them at runtime.
-  // Regenerate with: make.ps1 assets  (lazres carelink_assets.lrs <files>)
-  {$I carelink_assets.lrs}
+  // The .lrs lives in the repo-root assets/ folder (committed resource bundles);
+  // the path is relative to this unit. Regenerate with: make assets (or
+  // make.ps1 assets).
+  {$I ../../../assets/carelink_assets.lrs}
 
 end.

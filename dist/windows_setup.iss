@@ -76,7 +76,7 @@ Source: "..\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\lang\*"; DestDir: "{app}\lang"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: The CareLink login helper is no longer shipped as loose files — it is
 ; compiled into Trndi.exe and written to the user's writable settings folder on
-; demand (see units/trndi/api/carelink_assets.lrs).
+; demand (see assets/carelink_assets.lrs).
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

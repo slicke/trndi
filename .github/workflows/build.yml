@@ -151,6 +151,43 @@ jobs:
           pr_number: ${{ github.event.pull_request.number }}
           ref_name: ${{ github.ref_name }}
 
+      - name: Verify embedded assets are current (Linux amd64)
+        if: matrix.os_target == 'linux' && matrix.arch == 'amd64'
+        run: |
+          set -euo pipefail
+          # The CareLink login helper is compiled in from a committed .lrs. Fail
+          # here if someone edited tools/carelink-login/* without regenerating it
+          # (make assets / make.ps1 assets). One platform is enough — the .lrs is
+          # platform-neutral. Self-contained (the Linux build calls lazbuild
+          # directly and does not otherwise use the Makefile).
+          # Resolve lazres from lazbuild's real location (tools/ is its sibling),
+          # then fall back to PATH / a filesystem search.
+          LAZRES=""
+          lb=$(command -v lazbuild 2>/dev/null || true)
+          if [ -n "$lb" ]; then
+            cand="$(dirname "$(readlink -f "$lb")")/tools/lazres"
+            [ -x "$cand" ] && LAZRES="$cand"
+          fi
+          [ -n "$LAZRES" ] || LAZRES=$(command -v lazres 2>/dev/null || find /usr/lib/lazarus /usr/share/lazarus -name lazres -type f 2>/dev/null | head -n1 || true)
+          if [ -z "$LAZRES" ]; then
+            echo "::warning::lazres not found on runner; skipping .lrs staleness check"
+            exit 0
+          fi
+          tmp=$(mktemp)
+          "$LAZRES" "$tmp" \
+            tools/carelink-login/carelink-login.mjs \
+            tools/carelink-login/package.json \
+            tools/carelink-login/package-lock.json >/dev/null
+          # --strip-trailing-cr: compare content only. The committed .lrs is LF
+          # (.gitattributes) while lazres line endings are platform-dependent.
+          if ! diff --strip-trailing-cr -q "$tmp" assets/carelink_assets.lrs >/dev/null 2>&1; then
+            rm -f "$tmp"
+            echo "::error::assets/carelink_assets.lrs is stale — run 'make assets' (or make.ps1 assets) and commit the result."
+            exit 1
+          fi
+          rm -f "$tmp"
+          echo "assets/carelink_assets.lrs is up to date."
+
       - name: Build on Linux
         if: matrix.os_target == 'linux'
         run: |
