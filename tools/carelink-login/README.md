@@ -4,6 +4,14 @@ Captures the **CareLink token data** Trndi needs to follow a Medtronic pump/sens
 one-time login, grabs the result, and prints the token as JSON for you to paste
 into Trndi.
 
+> **These files are the source of truth, but they are not shipped loose.** They
+> are compiled into Trndi as a Lazarus resource (`units/trndi/api/carelink_assets.lrs`)
+> and written into the user's settings folder on demand. After editing
+> `carelink-login.mjs`, `package.json`, or `package-lock.json`, regenerate the
+> resource with `./make.ps1 assets` (or `lazres units/trndi/api/carelink_assets.lrs
+> tools/carelink-login/carelink-login.mjs tools/carelink-login/package.json
+> tools/carelink-login/package-lock.json`) and commit the updated `.lrs`.
+
 ## Why this exists
 
 Medtronic protects the CareLink login with a CAPTCHA and only allows its mobile

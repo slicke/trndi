@@ -32,19 +32,10 @@ if [ -d "lang" ]; then
   cp -r lang "${APP_DIR}/usr/share/trndi/"
 fi
 
-# CareLink login helper (sources only, never node_modules). The app looks for
-# it next to the executable; inside the AppImage that is usr/bin. Note the
-# mounted image is read-only, so users must copy the folder out before
-# running "npm install" — the in-app dialog shows them where it lives.
-if [ -d "tools/carelink-login" ]; then
-  echo "Copying CareLink login helper..."
-  mkdir -p "${APP_DIR}/usr/bin/tools/carelink-login"
-  cp tools/carelink-login/carelink-login.mjs \
-     tools/carelink-login/package.json \
-     tools/carelink-login/package-lock.json \
-     tools/carelink-login/README.md \
-     "${APP_DIR}/usr/bin/tools/carelink-login/"
-fi
+# The CareLink login helper is compiled into the binary (see
+# units/trndi/api/carelink_assets.lrs) and written to the user's writable
+# settings folder on demand, so nothing is bundled here — the AppImage mount is
+# read-only, which is exactly the problem this removes.
 
 # Copy GNOME Shell extension if present
 if [ -d "gnome-shell-extension/trndi-current" ]; then

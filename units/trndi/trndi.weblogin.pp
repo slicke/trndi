@@ -71,8 +71,16 @@ type
 
 {** Run a backend's Node.js login helper and capture the credential it prints.
 
+    The helper is extracted fresh (via @code(ACls.WriteAssets)) into a writable
+    folder under Trndi's settings directory on every run, so the copy always
+    matches this build and the folder next to the executable need not be
+    writable. Backends without embedded assets fall back to the exe-relative
+    helper named by @code(AScriptRel).
+
+    @param(ACls        Backend class, used to extract its embedded helper assets)
     @param(AScriptRel  Helper path relative to the executable directory, using
-                       forward slashes, as returned by TrndiAPI.webLoginScript)
+                       forward slashes, as returned by TrndiAPI.webLoginScript;
+                       its folder name and file name drive extraction)
     @param(AScriptArgs Extra command-line argument for the script, e.g. a region
                        flag like "--us"; empty for none)
     @param(ACaptionInstalling Progress caption reported while `npm install` runs)
@@ -80,7 +88,8 @@ type
     @param(AOnProgress Optional progress callback; may be nil)
     @param(ACred       Receives the captured credential (JSON) on success)
     @returns(@code(wlrOK) on success; otherwise a failure code) }
-function RunNodeLoginHelper(const AScriptRel, AScriptArgs: string;
+function RunNodeLoginHelper(ACls: TrndiAPIClass;
+  const AScriptRel, AScriptArgs: string;
   const ACaptionInstalling, ACaptionWaiting: string;
   const AOnProgress: TWebLoginProgress;
   out ACred: string): TWebLoginResult;
@@ -179,53 +188,87 @@ begin
   Application.ProcessMessages;
 end;
 
-function RunNodeLoginHelper(const AScriptRel, AScriptArgs: string;
+{ Writable per-backend folder under Trndi's settings dir where the assisted-
+  login helper is extracted, named after the helper script's own folder (e.g.
+  tools/carelink-login/... -> <config>/carelink-login). Kept separate from the
+  read-only bundle next to the executable, which may live in Program Files, a
+  signed .app bundle, or a read-only AppImage mount. }
+function WebLoginAssetDir(const AScriptRel: string): string;
+var
+  rel, folderName: string;
+begin
+  rel := StringReplace(AScriptRel, '/', PathDelim, [rfReplaceAll]);
+  folderName := ExtractFileName(ExcludeTrailingPathDelimiter(ExtractFilePath(rel)));
+  if folderName = '' then
+    folderName := 'weblogin';
+  Result := IncludeTrailingPathDelimiter(GetAppConfigDir(false)) + folderName;
+end;
+
+function RunNodeLoginHelper(ACls: TrndiAPIClass;
+  const AScriptRel, AScriptArgs: string;
   const ACaptionInstalling, ACaptionWaiting: string;
   const AOnProgress: TWebLoginProgress;
   out ACred: string): TWebLoginResult;
 var
-  scriptPath, helperDir, nodeExe, npmExe, npmOut: string;
+  scriptName, scriptPath, helperDir, nodeExe, npmExe, npmOut: string;
   npmParams: array of string;
   code: integer;
+  usedAssets: boolean;
 begin
   ACred := '';
 
   if AScriptRel = '' then
     Exit(wlrNoScript);
 
-  // Resolve the helper next to the executable (forward slashes in the relative
-  // path become the platform separator).
-  scriptPath := ExtractFilePath(Application.ExeName) +
-    StringReplace(AScriptRel, '/', PathDelim, [rfReplaceAll]);
+  scriptName := ExtractFileName(StringReplace(AScriptRel, '/', PathDelim, [rfReplaceAll]));
+
+  // Prefer a fresh copy the backend writes into a writable settings folder, so
+  // the helper always matches this build and the exe-relative folder need not
+  // be writable. Fall back to the bundled copy when there are no embedded
+  // assets.
+  usedAssets := false;
+  if Assigned(ACls) then
+  begin
+    helperDir := IncludeTrailingPathDelimiter(WebLoginAssetDir(AScriptRel));
+    usedAssets := ACls.WriteAssets(helperDir);
+  end;
+
+  if not usedAssets then
+  begin
+    // Resolve the helper next to the executable (forward slashes in the
+    // relative path become the platform separator).
+    helperDir := ExtractFilePath(ExtractFilePath(Application.ExeName) +
+      StringReplace(AScriptRel, '/', PathDelim, [rfReplaceAll]));
+  end;
+  scriptPath := helperDir + scriptName;
   if not FileExists(scriptPath) then
     Exit(wlrNoScript);
-  helperDir := ExtractFileDir(scriptPath);
 
   nodeExe := FindDefaultExecutablePath('node');
   if nodeExe = '' then
     Exit(wlrNoNode);
 
-  // First run: fetch the helper's dependencies (Puppeteer bundles a browser).
-  if not DirectoryExists(helperDir + PathDelim + 'node_modules') then
-  begin
-    Report(AOnProgress, ACaptionInstalling);
-    {$ifdef WINDOWS}
-    // npm ships as npm.cmd on Windows, which CreateProcess won't run directly;
-    // go through the command interpreter.
-    npmExe := GetEnvironmentVariable('ComSpec');
-    if npmExe = '' then
-      npmExe := 'cmd.exe';
-    npmParams := ['/c', 'npm', 'install', '--no-audit', '--no-fund'];
-    {$else}
-    npmExe := FindDefaultExecutablePath('npm');
-    if npmExe = '' then
-      npmExe := 'npm';
-    npmParams := ['install', '--no-audit', '--no-fund'];
-    {$endif}
-    code := RunProc(npmExe, npmParams, helperDir, npmOut);
-    if code <> 0 then
-      Exit(wlrNpmFailed);
-  end;
+  // Install dependencies every run (Puppeteer bundles a browser). WriteAssets
+  // may have just refreshed package.json for a newer helper, and a stale
+  // node_modules would otherwise mask the dependency change; npm is a fast
+  // no-op when everything is already up to date.
+  Report(AOnProgress, ACaptionInstalling);
+  {$ifdef WINDOWS}
+  // npm ships as npm.cmd on Windows, which CreateProcess won't run directly;
+  // go through the command interpreter.
+  npmExe := GetEnvironmentVariable('ComSpec');
+  if npmExe = '' then
+    npmExe := 'cmd.exe';
+  npmParams := ['/c', 'npm', 'install', '--no-audit', '--no-fund'];
+  {$else}
+  npmExe := FindDefaultExecutablePath('npm');
+  if npmExe = '' then
+    npmExe := 'npm';
+  npmParams := ['install', '--no-audit', '--no-fund'];
+  {$endif}
+  code := RunProc(npmExe, npmParams, helperDir, npmOut);
+  if code <> 0 then
+    Exit(wlrNpmFailed);
 
   // Run the login helper. It opens a browser and prints the token JSON on
   // stdout when the sign-in completes.
@@ -268,7 +311,7 @@ end;
   fallback when the automatic Node login isn't available. }
 procedure ShowManualWebLoginHelp(ACls: TrndiAPIClass; const T: TWebLoginTexts);
 var
-  scriptRel, args, helperDir, cmd: string;
+  scriptRel, args, helperDir, cmd, scriptName: string;
 begin
   args := '';
   if Assigned(ACls) then
@@ -278,9 +321,15 @@ begin
 
   if scriptRel <> '' then
   begin
-    helperDir := ExtractFileDir(ExtractFilePath(Application.ExeName) +
-      StringReplace(scriptRel, '/', PathDelim, [rfReplaceAll]));
-    cmd := 'node ' + ExtractFileName(StringReplace(scriptRel, '/', PathDelim, [rfReplaceAll]));
+    scriptName := ExtractFileName(StringReplace(scriptRel, '/', PathDelim, [rfReplaceAll]));
+    // Drop a fresh copy of the helper into the writable settings folder so the
+    // manual `npm install` + run steps work from there; if the backend has no
+    // embedded assets, point at the bundle next to the executable instead.
+    helperDir := IncludeTrailingPathDelimiter(WebLoginAssetDir(scriptRel));
+    if not (Assigned(ACls) and ACls.WriteAssets(helperDir)) then
+      helperDir := ExtractFileDir(ExtractFilePath(Application.ExeName) +
+        StringReplace(scriptRel, '/', PathDelim, [rfReplaceAll]));
+    cmd := 'npm install && node ' + scriptName;
     if args <> '' then
       cmd := cmd + ' ' + args;
   end
@@ -288,7 +337,7 @@ begin
   begin
     // No helper shipped for this backend; point at the bundled CareLink one.
     helperDir := ExtractFilePath(Application.ExeName) + 'tools' + PathDelim + 'carelink-login';
-    cmd := 'node carelink-login.mjs';
+    cmd := 'npm install && node carelink-login.mjs';
   end;
 
   if ExtMsgYesNo(T.HelpTitle, Format(T.HelpBody, [helperDir, cmd]), uxmtInformation, 20) then
@@ -342,7 +391,7 @@ begin
   ALoginButton.Enabled := false;
   try
     progress.btn := ALoginButton;
-    res := RunNodeLoginHelper(scriptRel, scriptArgs,
+    res := RunNodeLoginHelper(ACls, scriptRel, scriptArgs,
       T.Installing, T.Waiting, @progress.Report, cred);
   finally
     ALoginButton.Caption := AIdleCaption;
