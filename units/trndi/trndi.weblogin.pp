@@ -188,6 +188,63 @@ begin
   Application.ProcessMessages;
 end;
 
+{$ifdef DARWIN}
+{ Apps launched from Finder/Dock (as opposed to a terminal) inherit launchd's
+  minimal PATH (/usr/bin:/bin:/usr/sbin:/sbin), which omits Homebrew
+  (/opt/homebrew/bin, /usr/local/bin) and version managers like nvm/fnm/volta.
+  Ask the user's login shell for its real PATH so `node`/`npm` installed
+  there can still be found. Markers guard against MOTD/rc-file chatter on
+  stdout; RunProc is declared above us in this unit. }
+function MacLoginShellPath: string;
+const
+  MARK_LO = '__TRNDI_PATH_LO__';
+  MARK_HI = '__TRNDI_PATH_HI__';
+var
+  shellExe, shellOut: string;
+  code, p1, p2: integer;
+begin
+  Result := '';
+  shellExe := GetEnvironmentVariable('SHELL');
+  if shellExe = '' then
+    shellExe := '/bin/zsh';
+  code := RunProc(shellExe,
+    ['-ilc', 'echo ' + MARK_LO + '"$PATH"' + MARK_HI], '', shellOut);
+  if code <> 0 then
+    Exit;
+  p1 := Pos(MARK_LO, shellOut);
+  p2 := Pos(MARK_HI, shellOut);
+  if (p1 > 0) and (p2 > p1) then
+    Result := Copy(shellOut, p1 + Length(MARK_LO), p2 - (p1 + Length(MARK_LO)));
+end;
+
+{ Search a ':'-delimited path list (as returned by MacLoginShellPath) for a
+  named executable. }
+function FindOnPathList(const AName, APathList: string): string;
+var
+  dirs: TStringList;
+  i: integer;
+  cand: string;
+begin
+  Result := '';
+  if APathList = '' then
+    Exit;
+  dirs := TStringList.Create;
+  try
+    dirs.Delimiter := ':';
+    dirs.StrictDelimiter := true;
+    dirs.DelimitedText := APathList;
+    for i := 0 to dirs.Count - 1 do
+    begin
+      cand := IncludeTrailingPathDelimiter(dirs[i]) + AName;
+      if FileExists(cand) then
+        Exit(cand);
+    end;
+  finally
+    dirs.Free;
+  end;
+end;
+{$endif}
+
 { Writable per-backend folder under Trndi's settings dir where the assisted-
   login helper is extracted, named after the helper script's own folder (e.g.
   tools/carelink-login/... -> <config>/carelink-login). Kept separate from the
@@ -214,6 +271,9 @@ var
   npmParams: array of string;
   code: integer;
   usedAssets: boolean;
+  {$ifdef DARWIN}
+  macPath: string;
+  {$endif}
 begin
   ACred := '';
 
@@ -245,6 +305,13 @@ begin
     Exit(wlrNoScript);
 
   nodeExe := FindDefaultExecutablePath('node');
+  {$ifdef DARWIN}
+  if nodeExe = '' then
+  begin
+    macPath := MacLoginShellPath;
+    nodeExe := FindOnPathList('node', macPath);
+  end;
+  {$endif}
   if nodeExe = '' then
     Exit(wlrNoNode);
 
@@ -262,6 +329,15 @@ begin
   npmParams := ['/c', 'npm', 'install', '--no-audit', '--no-fund'];
   {$else}
   npmExe := FindDefaultExecutablePath('npm');
+  {$ifdef DARWIN}
+  // npm ships alongside node; try that directory before falling back to a
+  // fresh login-shell PATH lookup (Homebrew/nvm/etc. absent from launchd's).
+  if (npmExe = '') and (nodeExe <> '') and
+     FileExists(ExtractFilePath(nodeExe) + 'npm') then
+    npmExe := ExtractFilePath(nodeExe) + 'npm';
+  if npmExe = '' then
+    npmExe := FindOnPathList('npm', macPath);
+  {$endif}
   if npmExe = '' then
     npmExe := 'npm';
   npmParams := ['install', '--no-audit', '--no-fund'];
