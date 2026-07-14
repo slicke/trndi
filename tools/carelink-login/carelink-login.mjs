@@ -207,7 +207,10 @@ async function main() {
   };
 
   // Only the JSON goes to stdout, so it can be piped or copied cleanly.
-  console.log(JSON.stringify(blob, null, 2));
+  // Compact (single-line): the credential is stored in single-line settings
+  // stores (ini on Linux) and pasted into single-line edit fields, so it must
+  // never contain line breaks.
+  console.log(JSON.stringify(blob));
   log('success — copy the JSON above into Trndi\'s CareLink credential field. Treat it like a password.');
 }
 
