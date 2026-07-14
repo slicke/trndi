@@ -121,8 +121,7 @@ begin
     Result := result + sLineBreak + sLineBreak + 'You can enter any reading (in mg/dL) as username, to have Trndi use that as reading';
    APLDescHTML:
     Result := result + '<br><br>You can enter <b>any</b> reading <i>(in mg/dL)</i> as <u>username</u>, to have Trndi use that as reading';
-   APLCopyright:
-    Result := 'Björn Lindh <github.com/slicke>';
+   // Copyright inherits DebugAPI's shared default.
   end;
 end;
 

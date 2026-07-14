@@ -125,12 +125,10 @@ end;
 
 class function DebugLateMissingAPI.ParamLabel(LabelName: APIParamLabel): string;
 begin
+  // User/pass/copyright inherit DebugAPI's shared defaults; only the
+  // backend-specific description is customised here.
   Result := inherited ParamLabel(LabelName);
   case LabelName of
-    APLUser:
-      Result := '(ignored)';
-    APLPass:
-      Result := '(ignored)';
     APLDesc:
       Result := Result +
         'Debug backend. Last reading is 14 min old at startup; goes missing ' +
@@ -141,8 +139,6 @@ begin
         'Debug backend. Last reading is <b>14 min old</b> at startup; goes ' +
         '<b>missing after 1 minute</b> of operation (reading turns 15 min old). ' +
         'History covers 2 days with a sinusoidal 4–12 mmol/L curve.';
-    APLCopyright:
-      Result := 'Björn Lindh <github.com/slicke>';
   end;
 end;
 
