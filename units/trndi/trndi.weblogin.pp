@@ -393,6 +393,12 @@ begin
   else
     code := RunProc(nodeExe, [scriptPath], helperDir, ACred, childPath);
 
+  // The credential must be a single line on every platform: the Linux/BSD
+  // settings store is an ini file (values cannot span lines) and the target
+  // edit field is single-line. Raw line breaks in JSON only occur between
+  // tokens, so stripping them never alters the payload.
+  ACred := StringReplace(ACred, #13, '', [rfReplaceAll]);
+  ACred := StringReplace(ACred, #10, '', [rfReplaceAll]);
   ACred := Trim(ACred);
   if code = -1 then
     Exit(wlrLaunchFailed);
