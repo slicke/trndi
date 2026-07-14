@@ -134,13 +134,18 @@ end;
 
 { Run an executable to completion, pumping the UI. Captures stdout (the token
   stream) into AStdOut; stderr is drained but discarded (the helper logs
-  progress there). Returns the exit code, or -1 if it could not be started. }
+  progress there). When APathEnv is non-empty the child runs with that PATH
+  instead of ours (needed on macOS, where the child re-resolves node via PATH).
+  Returns the exit code, or -1 if it could not be started. }
 function RunProc(const AExe: string; const AParams: array of string;
-  const AWorkDir: string; out AStdOut: string): integer;
+  const AWorkDir: string; out AStdOut: string;
+  const APathEnv: string = ''): integer;
 var
   proc: TProcess;
   i: integer;
   started: QWord;
+  envLine: string;
+  havePath: boolean;
 begin
   Result := -1;
   AStdOut := '';
@@ -151,6 +156,25 @@ begin
       proc.Parameters.Add(AParams[i]);
     if AWorkDir <> '' then
       proc.CurrentDirectory := AWorkDir;
+    if APathEnv <> '' then
+    begin
+      // An empty TProcess.Environment inherits ours; a non-empty one replaces
+      // it wholesale, so copy everything and swap in the requested PATH.
+      havePath := false;
+      for i := 1 to GetEnvironmentVariableCount do
+      begin
+        envLine := GetEnvironmentString(i);
+        if Copy(envLine, 1, 5) = 'PATH=' then
+        begin
+          proc.Environment.Add('PATH=' + APathEnv);
+          havePath := true;
+        end
+        else
+          proc.Environment.Add(envLine);
+      end;
+      if not havePath then
+        proc.Environment.Add('PATH=' + APathEnv);
+    end;
     proc.Options := [poUsePipes, poNoConsole];
     proc.ShowWindow := swoHIDE;
     try
@@ -267,7 +291,7 @@ function RunNodeLoginHelper(ACls: TrndiAPIClass;
   const AOnProgress: TWebLoginProgress;
   out ACred: string): TWebLoginResult;
 var
-  scriptName, scriptPath, helperDir, nodeExe, npmExe, npmOut: string;
+  scriptName, scriptPath, helperDir, nodeExe, npmExe, npmOut, childPath: string;
   npmParams: array of string;
   code: integer;
   usedAssets: boolean;
@@ -332,17 +356,32 @@ begin
   {$ifdef DARWIN}
   // npm ships alongside node; try that directory before falling back to a
   // fresh login-shell PATH lookup (Homebrew/nvm/etc. absent from launchd's).
-  if (npmExe = '') and (nodeExe <> '') and
+  if (npmExe = '') and
      FileExists(ExtractFilePath(nodeExe) + 'npm') then
     npmExe := ExtractFilePath(nodeExe) + 'npm';
   if npmExe = '' then
+  begin
+    if macPath = '' then
+      macPath := MacLoginShellPath;
     npmExe := FindOnPathList('npm', macPath);
+  end;
   {$endif}
   if npmExe = '' then
     npmExe := 'npm';
   npmParams := ['install', '--no-audit', '--no-fund'];
   {$endif}
-  code := RunProc(npmExe, npmParams, helperDir, npmOut);
+  childPath := '';
+  {$ifdef DARWIN}
+  // npm is itself a Node script behind a `#!/usr/bin/env node` shebang, and
+  // it spawns node again for lifecycle scripts — so the child re-resolves
+  // node via PATH, and the launchd PATH that failed above would fail again
+  // inside npm. Run the children with the login shell's PATH instead, with
+  // node's own directory in front.
+  if macPath <> '' then
+    childPath := ExcludeTrailingPathDelimiter(ExtractFilePath(nodeExe)) +
+      ':' + macPath;
+  {$endif}
+  code := RunProc(npmExe, npmParams, helperDir, npmOut, childPath);
   if code <> 0 then
     Exit(wlrNpmFailed);
 
@@ -350,9 +389,9 @@ begin
   // stdout when the sign-in completes.
   Report(AOnProgress, ACaptionWaiting);
   if AScriptArgs <> '' then
-    code := RunProc(nodeExe, [scriptPath, AScriptArgs], helperDir, ACred)
+    code := RunProc(nodeExe, [scriptPath, AScriptArgs], helperDir, ACred, childPath)
   else
-    code := RunProc(nodeExe, [scriptPath], helperDir, ACred);
+    code := RunProc(nodeExe, [scriptPath], helperDir, ACred, childPath);
 
   ACred := Trim(ACred);
   if code = -1 then
