@@ -4,6 +4,10 @@
 *.so
 *.dylib
 *.lrs
+# ...except committed resource bundles under assets/, which are compiled in via
+# {$I} and must be in the repo (regenerated with `make assets` / `make.ps1
+# assets`, not produced by builds).
+!assets/*.lrs
 *.res
 *.compiled
 *.dbg

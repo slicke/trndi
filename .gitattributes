@@ -1,2 +1,8 @@
 # Enforce LF line endings for all shell scripts
 *.sh text eol=lf
+
+# Generated Lazarus resource bundles (lazres output). Pin to LF so the committed
+# form is stable regardless of whether it was regenerated on Windows (lazres.exe
+# writes CRLF) or Linux/macOS (LF); keeps git history from thrashing and lets the
+# CI staleness check compare cleanly. See make assets / make.ps1 assets.
+*.lrs text eol=lf
