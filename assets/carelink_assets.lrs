@@ -112,11 +112,14 @@ LazarusResources.Add('carelink-login','MJS',[
   +'k.access_token,'#10'    refresh_token: tok.refresh_token,'#10'    ...(tok.i'
   +'d_token ? { id_token: tok.id_token } : {}),'#10'    ...(tok.scope ? { scope'
   +': tok.scope } : {}),'#10'    client_id: cfg.clientId,'#10'  };'#10#10'  // '
-  +'Only the JSON goes to stdout, so it can be piped or copied cleanly.'#10'  c'
-  +'onsole.log(JSON.stringify(blob, null, 2));'#10'  log(''success '#226#128#148
-  +' copy the JSON above into Trndi\''s CareLink credential field. Treat it lik'
-  +'e a password.'');'#10'}'#10#10'main().catch((e) => {'#10'  log(''ERROR:'', '
-  +'e.message || e);'#10'  process.exit(1);'#10'});'#10
+  +'Only the JSON goes to stdout, so it can be piped or copied cleanly.'#10'  /'
+  +'/ Compact (single-line): the credential is stored in single-line settings'
+  +#10'  // stores (ini on Linux) and pasted into single-line edit fields, so i'
+  +'t must'#10'  // never contain line breaks.'#10'  console.log(JSON.stringify'
+  +'(blob));'#10'  log(''success '#226#128#148' copy the JSON above into Trndi\'
+  +'''s CareLink credential field. Treat it like a password.'');'#10'}'#10#10'm'
+  +'ain().catch((e) => {'#10'  log(''ERROR:'', e.message || e);'#10'  process.e'
+  +'xit(1);'#10'});'#10
 ]);
 LazarusResources.Add('package','JSON',[
   '{'#10'  "name": "trndi-carelink-login",'#10'  "version": "1.0.0",'#10'  "des'
