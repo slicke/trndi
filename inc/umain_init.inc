@@ -546,7 +546,6 @@ procedure haltBoot;
   end;
 
 var
-  i: integer;
   guifontName, txtfontName, apiTarget, prevSetup: string;
   fil: boolean;
   userlocale: TFormatSettings;
@@ -704,20 +703,7 @@ begin
           // InitializeAPI will scale this up by the reporting interval below.
           if MAX_RESULT < ACTIVE_DOTS then
             MAX_RESULT := ACTIVE_DOTS;
-          for i := 1 to High(TrendDots) do
-            if Assigned(TrendDots[i]) then
-            begin
-              TrendDots[i].Free;
-              TrendDots[i] := nil;
-            end;
-          SetLength(TrendDots, 0);
-          for i := 1 to High(FWarningDots) do
-            if Assigned(FWarningDots[i]) then
-            begin
-              FWarningDots[i].Free;
-              FWarningDots[i] := nil;
-            end;
-          SetLength(FWarningDots, 0);
+          FreeTrendDotControls;
           CreateTrendDots;
 
           fSplash.Show;

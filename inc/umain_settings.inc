@@ -13,7 +13,6 @@ var
   fontName: string;
   minutesStr: string;
   minutesVal: integer;
-  i: integer;
   langCode: string;
   newDotCount: integer;
 begin
@@ -148,20 +147,7 @@ begin
     ACTIVE_DOTS := newDotCount;
     if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
       MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
-    for i := 1 to High(TrendDots) do
-      if Assigned(TrendDots[i]) then
-      begin
-        TrendDots[i].Free;
-        TrendDots[i] := nil;
-      end;
-    SetLength(TrendDots, 0);
-    for i := 1 to High(FWarningDots) do
-      if Assigned(FWarningDots[i]) then
-      begin
-        FWarningDots[i].Free;
-        FWarningDots[i] := nil;
-      end;
-    SetLength(FWarningDots, 0);
+    FreeTrendDotControls;
     // MAX_RESULT is a reading count, not minutes. Mirror InitializeAPI's
     // reporting-interval scaling with ACTIVE_DOTS as the base.
     if Assigned(api) then
