@@ -117,6 +117,77 @@ begin
 end;
 {$endif}
 
+// Try to satisfy a paint entirely from the rendered-dot cache.
+function TryBlitCachedDot(ACanvas: TCanvas; const AKey: string;
+  ASize, AOffsetX, AOffsetY: integer): boolean;
+var
+  img: TDotImage;
+begin
+  img := GetCachedDotImage(AKey);
+  Result := img <> nil;
+  if Result then
+    BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+end;
+
+// Allocate the square RGBA raster both dot shapes render into.
+function NewDotIntf(ASize: integer): TLazIntfImage;
+var
+  rawDesc: TRawImageDescription;
+begin
+  Result := TLazIntfImage.Create(0, 0);
+  rawDesc.Init_BPP32_B8G8R8A8_BIO_TTB(ASize, ASize);
+  Result.DataDescription := rawDesc;
+  Result.CreateData;
+end;
+
+// Write one straight-alpha pixel (RGB in 0..255, AAlpha in 0..1), converting
+// to what the platform blit expects: premultiplied RGB for Win32 AlphaBlend,
+// straight RGB for the PNG / LCL Draw path.
+procedure PutDotPixel(AIntf: TLazIntfImage; X, Y: integer;
+  AR, AG, AB, AAlpha: double);
+var
+  outR, outG, outB, outA: integer;
+  pix: TFPColor;
+begin
+  if AAlpha < 0 then AAlpha := 0
+  else if AAlpha > 1 then AAlpha := 1;
+
+  {$ifdef Windows}
+  // Win32 AlphaBlend with AC_SRC_ALPHA expects premultiplied RGB.
+  outR := Round(AR * AAlpha);
+  outG := Round(AG * AAlpha);
+  outB := Round(AB * AAlpha);
+  {$else}
+  // PNG / cross-platform draw expects straight (non-premultiplied) RGB.
+  outR := Round(AR);
+  outG := Round(AG);
+  outB := Round(AB);
+  {$endif}
+  outA := Round(AAlpha * 255);
+
+  if outR > 255 then outR := 255 else if outR < 0 then outR := 0;
+  if outG > 255 then outG := 255 else if outG < 0 then outG := 0;
+  if outB > 255 then outB := 255 else if outB < 0 then outB := 0;
+
+  pix.red := outR shl 8 or outR;
+  pix.green := outG shl 8 or outG;
+  pix.blue := outB shl 8 or outB;
+  pix.alpha := outA shl 8 or outA;
+  AIntf.Colors[X, Y] := pix;
+end;
+
+// Wrap the finished raster in the platform image, cache it under AKey and
+// composite it onto the destination canvas. The caller still owns AIntf.
+procedure FinishDotRender(ACanvas: TCanvas; const AKey: string;
+  AIntf: TLazIntfImage; ASize, AOffsetX, AOffsetY: integer);
+var
+  img: TDotImage;
+begin
+  img := DotImageFromIntf(AIntf, ASize);
+  StoreCachedDotImage(AKey, img);
+  BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+end;
+
 // Antialiased X mark, same compositing approach as DrawSmoothCircle. Two
 // corner-to-corner diagonals clipped by the bounding box; alpha derives from
 // the analytical distance to the nearest diagonal so the strokes stay smooth
@@ -125,14 +196,10 @@ procedure DrawSmoothX(ACanvas: TCanvas; ASize: integer; AColor: TColor;
   AThickness: integer; AOffsetX: integer = 0; AOffsetY: integer = 0);
 var
   intf: TLazIntfImage;
-  rawDesc: TRawImageDescription;
   x, y: integer;
   cx, cy, dist1, dist2, dist, halfT, aPix, invSqrt2: double;
   fr, fg, fb: byte;
-  outR, outG, outB, outA: integer;
-  pix: TFPColor;
   key: string;
-  img: TDotImage;
 begin
   if (ASize < 2) or (AThickness < 1) then
     Exit;
@@ -140,12 +207,8 @@ begin
   // The rendered image depends only on these parameters (offsets are applied
   // at blit time), so reuse the finished image across paints.
   key := Format('x|%d|%d|%d', [ASize, Integer(AColor), AThickness]);
-  img := GetCachedDotImage(key);
-  if img <> nil then
-  begin
-    BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+  if TryBlitCachedDot(ACanvas, key, ASize, AOffsetX, AOffsetY) then
     Exit;
-  end;
 
   fr := Red(ColorToRGB(AColor));
   fg := Green(ColorToRGB(AColor));
@@ -156,12 +219,8 @@ begin
   halfT := AThickness / 2.0;
   invSqrt2 := 1.0 / Sqrt(2);
 
-  intf := TLazIntfImage.Create(0, 0);
+  intf := NewDotIntf(ASize);
   try
-    rawDesc.Init_BPP32_B8G8R8A8_BIO_TTB(ASize, ASize);
-    intf.DataDescription := rawDesc;
-    intf.CreateData;
-
     for y := 0 to ASize - 1 do
       for x := 0 to ASize - 1 do
       begin
@@ -176,73 +235,40 @@ begin
         else
           aPix := halfT + 0.5 - dist;
 
-        if aPix < 0 then aPix := 0
-        else if aPix > 1 then aPix := 1;
-
-        {$ifdef Windows}
-        outR := Round(fr * aPix);
-        outG := Round(fg * aPix);
-        outB := Round(fb * aPix);
-        {$else}
-        outR := fr;
-        outG := fg;
-        outB := fb;
-        {$endif}
-        outA := Round(aPix * 255);
-
-        if outR > 255 then outR := 255 else if outR < 0 then outR := 0;
-        if outG > 255 then outG := 255 else if outG < 0 then outG := 0;
-        if outB > 255 then outB := 255 else if outB < 0 then outB := 0;
-        if outA > 255 then outA := 255 else if outA < 0 then outA := 0;
-
-        pix.red := outR shl 8 or outR;
-        pix.green := outG shl 8 or outG;
-        pix.blue := outB shl 8 or outB;
-        pix.alpha := outA shl 8 or outA;
-        intf.Colors[x, y] := pix;
+        PutDotPixel(intf, x, y, fr, fg, fb, aPix);
       end;
 
-    img := DotImageFromIntf(intf, ASize);
-    StoreCachedDotImage(key, img);
-    BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+    FinishDotRender(ACanvas, key, intf, ASize, AOffsetX, AOffsetY);
   finally
     intf.Free;
   end;
 end;
 
 procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
-  ADotColor, ARingColor: TColor; ARingWidth: integer; AHollow: boolean = false;
+  ADotColor, ARingColor: TColor; ARingWidth: integer;
   AOffsetX: integer = 0; AOffsetY: integer = 0);
 var
   intf: TLazIntfImage;
-  rawDesc: TRawImageDescription;
   x, y: integer;
   cx, cy, r, dist: double;
   ringOuter, ringInner: double;
   alphaDisc, alphaRing: double;
   fr, fg, fb: byte;
   rr, rg, rb: byte;
-  pix: TFPColor;
   invRing, aOut: double;
   straightR, straightG, straightB: double;
-  outR, outG, outB, outA: integer;
   hasRing: boolean;
   key: string;
-  img: TDotImage;
 begin
   if ASize < 2 then
     Exit;
 
   // The rendered image depends only on these parameters (offsets are applied
   // at blit time), so reuse the finished image across paints.
-  key := Format('c|%d|%d|%d|%d|%d', [ASize, Integer(ADotColor),
-    Integer(ARingColor), ARingWidth, Ord(AHollow)]);
-  img := GetCachedDotImage(key);
-  if img <> nil then
-  begin
-    BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+  key := Format('c|%d|%d|%d|%d', [ASize, Integer(ADotColor),
+    Integer(ARingColor), ARingWidth]);
+  if TryBlitCachedDot(ACanvas, key, ASize, AOffsetX, AOffsetY) then
     Exit;
-  end;
 
   fr := Red(ColorToRGB(ADotColor));
   fg := Green(ColorToRGB(ADotColor));
@@ -266,12 +292,8 @@ begin
   ringOuter := r;
   ringInner := r - ARingWidth;
 
-  intf := TLazIntfImage.Create(0, 0);
+  intf := NewDotIntf(ASize);
   try
-    rawDesc.Init_BPP32_B8G8R8A8_BIO_TTB(ASize, ASize);
-    intf.DataDescription := rawDesc;
-    intf.CreateData;
-
     for y := 0 to ASize - 1 do
     begin
       for x := 0 to ASize - 1 do
@@ -284,12 +306,6 @@ begin
           alphaDisc := 0.0
         else
           alphaDisc := r + 0.5 - dist;
-
-        // Hollow mode: render the ring only, leave the interior transparent so
-        // predicted readings read as outlined circles distinct from the solid
-        // history dots.
-        if AHollow then
-          alphaDisc := 0.0;
 
         alphaRing := 0.0;
         if hasRing then
@@ -309,7 +325,7 @@ begin
 
         // Porter-Duff "ring over disc over transparent", written in
         // straight-alpha form. Premultiplied conversion (if needed) happens
-        // when we hand the data to the OS below.
+        // in PutDotPixel when the data is handed to the OS.
         invRing := 1.0 - alphaRing;
         aOut := alphaRing + alphaDisc * invRing;
 
@@ -324,35 +340,11 @@ begin
           straightR := 0; straightG := 0; straightB := 0;
         end;
 
-        {$ifdef Windows}
-        // Win32 AlphaBlend with AC_SRC_ALPHA expects premultiplied RGB.
-        outR := Round(straightR * aOut);
-        outG := Round(straightG * aOut);
-        outB := Round(straightB * aOut);
-        {$else}
-        // PNG / cross-platform draw expects straight (non-premultiplied) RGB.
-        outR := Round(straightR);
-        outG := Round(straightG);
-        outB := Round(straightB);
-        {$endif}
-        outA := Round(aOut * 255);
-
-        if outR > 255 then outR := 255 else if outR < 0 then outR := 0;
-        if outG > 255 then outG := 255 else if outG < 0 then outG := 0;
-        if outB > 255 then outB := 255 else if outB < 0 then outB := 0;
-        if outA > 255 then outA := 255 else if outA < 0 then outA := 0;
-
-        pix.red := outR shl 8 or outR;
-        pix.green := outG shl 8 or outG;
-        pix.blue := outB shl 8 or outB;
-        pix.alpha := outA shl 8 or outA;
-        intf.Colors[x, y] := pix;
+        PutDotPixel(intf, x, y, straightR, straightG, straightB, aOut);
       end;
     end;
 
-    img := DotImageFromIntf(intf, ASize);
-    StoreCachedDotImage(key, img);
-    BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+    FinishDotRender(ACanvas, key, intf, ASize, AOffsetX, AOffsetY);
   finally
     intf.Free;
   end;
@@ -467,20 +459,14 @@ begin
   ApplyTrendDotCount(newCount);
 end;
 
-// Apply a new main-trend dot count: persist it, rebuild the dot controls and
-// reflow the graph. Shared by the trend-window submenu and the manual
-// "Set Dot Count" service-menu entry.
-procedure TfBG.ApplyTrendDotCount(newCount: integer);
+// Free and clear the trend-dot and warning-overlay dot controls so
+// CreateTrendDots can rebuild them at a new ACTIVE_DOTS count. Both arrays
+// are 1-based (index 0 unused). Callers must follow up with CreateTrendDots,
+// which also re-points the named lDotN aliases.
+procedure TfBG.FreeTrendDotControls;
 var
   i: integer;
 begin
-  if (newCount < 1) or (newCount > MAX_DOT_COUNT) then Exit;
-
-  native.SetSetting('ux.dot_count', newCount);
-  ACTIVE_DOTS := newCount;
-  if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
-    MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
-
   for i := 1 to High(TrendDots) do
     if Assigned(TrendDots[i]) then
     begin
@@ -495,6 +481,21 @@ begin
       FWarningDots[i] := nil;
     end;
   SetLength(FWarningDots, 0);
+end;
+
+// Apply a new main-trend dot count: persist it, rebuild the dot controls and
+// reflow the graph. Shared by the trend-window submenu and the manual
+// "Set Dot Count" service-menu entry.
+procedure TfBG.ApplyTrendDotCount(newCount: integer);
+begin
+  if (newCount < 1) or (newCount > MAX_DOT_COUNT) then Exit;
+
+  native.SetSetting('ux.dot_count', newCount);
+  ACTIVE_DOTS := newCount;
+  if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
+    MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
+
+  FreeTrendDotControls;
 
   // MAX_RESULT is a reading count, not minutes. Scale by the API's reporting
   // interval so backends that report more often than every INTERVAL_MINUTES

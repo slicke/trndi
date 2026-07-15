@@ -578,8 +578,8 @@ private
 
     // Dynamic array; allocated 1-based (index 0 unused). Size = ACTIVE_DOTS+1.
   TrendDots: array of TDotControl;
-    // Hollow future-prediction dots shown to the right of the trend when dot
-    // mode is enabled. 0-based, fixed length PREDICTION_DOT_COUNT.
+    // Future-prediction markers (drawn as X) shown to the right of the trend
+    // when dot mode is enabled. 0-based, fixed length PREDICTION_DOT_COUNT.
   PredictionDots: array of TDotControl;
   FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user
@@ -642,6 +642,7 @@ private
   procedure ApplyTrendDotTopOffset(const Offset: integer);
   procedure RepaintVisibleTrendDots;
   procedure CreateTrendDots;
+  procedure FreeTrendDotControls;
   procedure ApplyTrendDotCount(newCount: integer);
   procedure placeForm;
 
