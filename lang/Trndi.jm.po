@@ -2947,6 +2947,18 @@ msgstr "Du meste ange ett lôsen"
 msgid "Extensions count: %d"
 msgstr "Tilleggsantal: __PHad46520b-c2bd-41d2-93e4-f69806e260c7__"
 
+#: uconf.rs_ext_changed
+msgid " (changed since approval — Trndi will ask again)"
+msgstr ""
+
+#: uconf.rs_ext_granted
+msgid "Granted: "
+msgstr ""
+
+#: uconf.rs_ext_not_approved
+msgid " (not yet approved)"
+msgstr ""
+
 #: uconf.rs_ext_reload_done
 msgid "Extensions were reloaded."
 msgstr "Tilleggen laddades om."

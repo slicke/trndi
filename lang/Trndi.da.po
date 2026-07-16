@@ -2730,6 +2730,18 @@ msgstr "Du skal angive en adgangskode"
 msgid "Extensions count: %d"
 msgstr "Antal udvidelser: %d"
 
+#: uconf.rs_ext_changed
+msgid " (changed since approval — Trndi will ask again)"
+msgstr ""
+
+#: uconf.rs_ext_granted
+msgid "Granted: "
+msgstr ""
+
+#: uconf.rs_ext_not_approved
+msgid " (not yet approved)"
+msgstr ""
+
 #: uconf.rs_ext_reload_done
 msgid "Extensions were reloaded."
 msgstr "Udvidelserne blev genindlæst."

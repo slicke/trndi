@@ -52,6 +52,8 @@
  *   so the settings window appears faster.
  * - 2026-07-16: The extension list (reading + parsing every extension script)
  *   is likewise deferred to the Extensions tab's OnShow.
+ * - 2026-07-16: The extension info panel now shows the granted permission
+ *   groups (or pending/changed status) next to what the script requests.
  *)
 
 unit uconf;
@@ -331,6 +333,7 @@ TfConf = class(TForm)
   lExtCount: TLabel;
   lArch: TLabel;
   lExtName: TLabel;
+  lExtPerms: TLabel;
   lbChroma: TListBox;
   lHiOver2: TLabel;
   lOS: TLabel;
@@ -759,6 +762,9 @@ RS_ExtCount = 'Extensions count: %d';
 RS_NO_COPYRIGHT = '- Extension has no copyright info -';
 
 RS_EXT_REQUESTS = 'Requests: ';
+RS_EXT_GRANTED = 'Granted: ';
+RS_EXT_NOT_APPROVED = ' (not yet approved)';
+RS_EXT_CHANGED = ' (changed since approval — Trndi will ask again)';
 
 RS_TEST_UNSUPPORTED = 'Sorry! Trndi does not (yet) support connection testing for this service!';
 RS_TEST_SUCCESS = 'Successfully connected!';
@@ -903,9 +909,11 @@ end;
 procedure TfConf.lbExtensionsSelectionChange(Sender: TObject; User: boolean);
 {$ifdef TrndiExt}
 var
-  scriptBuf: TStringList;
-  path, scriptText, permsCsv: string;
+  fileStream: TFileStream;
+  ss: TStringStream;
+  path, scriptText, permsCsv, extId, storedHash: string;
   manifest: TExtManifest;
+  granted: TExtPermSet;
 {$endif}
 begin
   {$ifdef TrndiExt}
@@ -915,19 +923,24 @@ begin
 
   lExtName.Caption := '';
   lExtCopyright.Caption := '';
+  lExtPerms.Caption := '';
 
   path := FExtPaths[lbExtensions.ItemIndex];
   scriptText := '';
-  scriptBuf := TStringList.Create;
+  // Raw read (no TStringList line-ending normalization) so HashScript below
+  // produces the same digest as the load-time grant flow in umain_ext.inc.
   try
+    fileStream := TFileStream.Create(path, fmOpenRead or fmShareDenyWrite);
+    ss := TStringStream.Create;
     try
-      scriptBuf.LoadFromFile(path);
-      scriptText := scriptBuf.Text;
-    except
-      // unreadable: treat as empty so the no-copyright fallback fires
+      ss.CopyFrom(fileStream, fileStream.Size);
+      scriptText := ss.DataString;
+    finally
+      ss.Free;
+      fileStream.Free;
     end;
-  finally
-    scriptBuf.Free;
+  except
+    // unreadable: treat as empty so the no-copyright fallback fires
   end;
 
   manifest := ParseExtManifest(scriptText);
@@ -937,18 +950,32 @@ begin
   else
     lExtName.Caption := ExtractFileName(path);
 
-  permsCsv := PermSetToCSV(manifest.Requested);
   if manifest.Author <> '' then
-  begin
-    if permsCsv <> '' then
-      lExtCopyright.Caption := manifest.Author + '  —  ' + RS_EXT_REQUESTS + permsCsv
-    else
-      lExtCopyright.Caption := manifest.Author;
-  end
-  else if permsCsv <> '' then
-    lExtCopyright.Caption := RS_EXT_REQUESTS + permsCsv
+    lExtCopyright.Caption := manifest.Author
   else
     lExtCopyright.Caption := RS_NO_COPYRIGHT;
+
+  // Grant status for the promptable groups. Grants are keyed to the file's
+  // hash (ext.perm.<id>.hash/.granted), so an edited file shows as pending.
+  permsCsv := PermSetToCSV(manifest.Requested * PermPromptable);
+  if permsCsv <> '' then
+  begin
+    extId := ExtIdFromPath(path);
+    storedHash := tnative.GetSetting('ext.perm.' + extId + '.hash', '');
+    if (storedHash <> '') and (storedHash = HashScript(scriptText)) then
+    begin
+      granted := CSVToPermSet(
+        tnative.GetSetting('ext.perm.' + extId + '.granted', '')) * PermPromptable;
+      if granted <> [] then
+        lExtPerms.Caption := RS_EXT_GRANTED + PermSetToCSV(granted)
+      else
+        lExtPerms.Caption := RS_EXT_REQUESTS + permsCsv + RS_EXT_NOT_APPROVED;
+    end
+    else if storedHash <> '' then
+      lExtPerms.Caption := RS_EXT_REQUESTS + permsCsv + RS_EXT_CHANGED
+    else
+      lExtPerms.Caption := RS_EXT_REQUESTS + permsCsv + RS_EXT_NOT_APPROVED;
+  end;
   {$endif}
 end;
 
@@ -985,6 +1012,7 @@ begin
   lbExtensions.Clear;
   lExtName.Caption := '';
   lExtCopyright.Caption := '';
+  lExtPerms.Caption := '';
 
   extFiles := FindAllFiles(ExtensionsPath, '*.js', false);
   try

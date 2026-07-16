@@ -2874,6 +2874,18 @@ msgstr "Du måste ange ett lösenord"
 msgid "Extensions count: %d"
 msgstr "Tilläggsantal: %d"
 
+#: uconf.rs_ext_changed
+msgid " (changed since approval — Trndi will ask again)"
+msgstr " (ändrad sedan tillåten — Trndi frågar igen)"
+
+#: uconf.rs_ext_granted
+msgid "Granted: "
+msgstr "Tillåtet: "
+
+#: uconf.rs_ext_not_approved
+msgid " (not yet approved)"
+msgstr "(ej tillåtet ännu)"
+
 #: uconf.rs_ext_reload_done
 msgid "Extensions were reloaded."
 msgstr "Tillägg laddades om."
@@ -3482,6 +3494,11 @@ msgid ""
 "\n"
 "Start now?"
 msgstr ""
+"Trndi kommer att öppna ett webbläsarfönster så att du kan logga in till CareLink (med CAPTCHA), för att sedan ladda in nyckeln/token automatiskt.\n"
+"\n"
+"Första gången du utför detta kommer beroenden för hjälpprogrammet att laddas in, vilket kan ta en kort stund. Håll detta fönster öppet tills dess inloggningen är klar.\n"
+"\n"
+"Börja nu?"
 
 #: uwizard.wz_weblogin_run_title
 msgctxt "uwizard.wz_weblogin_run_title"
@@ -3497,4 +3514,3 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
-

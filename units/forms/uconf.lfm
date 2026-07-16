@@ -4050,13 +4050,13 @@ object fConf: TfConf
       end
       object GroupBox3: TGroupBox
         Left = 10
-        Height = 81
-        Top = 416
+        Height = 97
+        Top = 400
         Width = 617
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Extension Info'
-        ClientHeight = 61
+        ClientHeight = 77
         ClientWidth = 613
         ParentBackground = False
         TabOrder = 1
@@ -4075,6 +4075,13 @@ object fConf: TfConf
           Top = 24
           Width = 70
           Caption = 'for more info'
+        end
+        object lExtPerms: TLabel
+          Left = 8
+          Height = 15
+          Top = 40
+          Width = 3
+          Caption = ''
         end
       end
       object Panel3: TPanel
