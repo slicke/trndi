@@ -86,21 +86,25 @@ end;
 {$ENDIF}
 
   {** QuickJS value wrapper with typed variants (bigint, float, string, bool,
-      array, object...). Provides conversion helpers and array access. }
+      array, object...). Provides conversion helpers and array access.
+      Note: a flat record, not a variant one — FPC forbids managed types in
+      variant parts, and the old string[255] shortstring silently truncated
+      JS strings (URLs, HTTP bodies) at 255 characters. Only the field named
+      by @code(match) is meaningful. }
 JSValueVal = record
-  Data: packed record
-    case match: JDValue of
-      JD_BINT: (BigInt: int64);
-      JD_BFLOAT: (BigFloat: double);
-      JD_BDECIMAL: (BigDecimal: double);
-      JD_INT: (Int32Val: int32);
-      JD_F64: (FloatVal: double);
-      JD_STR: (StrVal: string[255]);
-      JD_BOOL: (BoolVal: boolean);
-      JD_FUNC: (Func: Pointer);
-      JD_OBJ: (ObjectVal: Pointer);
-      JD_UNKNOWN: (Parsed: string[255]);
-      JD_ARRAY: (ArrayVal: TJSValList);
+  Data: record
+    match: JDValue;
+    BigInt: int64;
+    BigFloat: double;
+    BigDecimal: double;
+    Int32Val: int32;
+    FloatVal: double;
+    StrVal: string;
+    BoolVal: boolean;
+    Func: Pointer;
+    ObjectVal: Pointer;
+    Parsed: string;
+    ArrayVal: TJSValList;
     end;
 
     // Returns the JDValue type as a string (e.g., "int", "bool", etc.)
@@ -446,7 +450,7 @@ begin
   if val.Data.match = want then
     Result := val
   else
-    FillChar(Result, SizeOf(JSValueVal), 0);
+    Result := Default(JSValueVal); // not FillChar: Data holds managed strings
 end;
 
 function JSValueVal.match(a: JDValue): boolean;
@@ -1078,7 +1082,7 @@ end;
 function StringToValueVal(const s: string): JSValueVal;
 begin
   // Create a JSValueVal from a string
-  FillChar(Result, SizeOf(JSValueVal), 0);
+  Result := Default(JSValueVal); // not FillChar: Data holds managed strings
   Result.Data.match := JD_STR;
   Result.Data.StrVal := s;
 end;

@@ -53,10 +53,6 @@ uses
 type
   TJSFuncs = class(TObject)
   public
-    function asyncget(ctx: pointer; const func: string; const params: JSParameters;
-      out res: JSValueVal): boolean;
-    function asyncpost(ctx: pointer; const func: string; const params: JSParameters;
-      out res: JSValueVal): boolean;
     function httpRequest(ctx: pointer; const func: string; const params: JSParameters;
       out res: JSValueVal): boolean;
     function jsonget(ctx: pointer; const func: string; const params: JSParameters;
@@ -72,10 +68,11 @@ type
 
     constructor Create(cgm: TrndiAPI);
 
-    {** Register the gated promise-style helpers (asyncGet/jsonGet/runCMD/setLimits/
-        setLevelColor/querySvc) into the engine's current registration context.
-        Must be called inside a TTrndiExtEngine.BeginRegistration/EndRegistration
-        block so each call is filtered against that extension's grants. }
+    {** Register the gated promise-style helpers (httpRequest/jsonGet/runCMD/
+        setLimits/setLevelColor/querySvc) and the fetch()/asyncGet/asyncPost JS
+        shims into the engine's current registration context. Must be called
+        inside a TTrndiExtEngine.BeginRegistration/EndRegistration block so
+        each call is filtered against that extension's grants. }
     procedure RegisterForCurrent;
 
   private
@@ -98,7 +95,10 @@ const
       below) in a WHATWG-fetch-shaped API: fetch(url, {method, headers, body})
       resolves to a Response-like object with status/ok/url/headers/text()/json().
       Header lookup is case-insensitive since servers may send lowercase names
-      (HTTP/2). Bodies are buffered — no streaming, AbortController or binary. }
+      (HTTP/2). Bodies are buffered — no streaming, AbortController or binary.
+      Also defines asyncGet/asyncPost as thin aliases over httpRequest so the
+      legacy promises keep working (and gain the non-blocking path) without a
+      native backend. }
 FETCH_SHIM: string =
   '(function () {' + LineEnding +
   '  if (typeof httpRequest !== "function" || typeof globalThis.fetch === "function")' + LineEnding +
@@ -142,14 +142,28 @@ FETCH_SHIM: string =
   '      function (err) { throw new TypeError(String(err)); }' + LineEnding +
   '    );' + LineEnding +
   '  };' + LineEnding +
+  '  globalThis.asyncGet = function (url) {' + LineEnding +
+  '    return httpRequest("GET", String(url), "{}", "").then(' + LineEnding +
+  '      function (raw) { return JSON.parse(raw).body; },' + LineEnding +
+  '      function () { throw "Cannot fetch URL " + url; }' + LineEnding +
+  '    );' + LineEnding +
+  '  };' + LineEnding +
+  '  globalThis.asyncPost = function (url, body, contentType) {' + LineEnding +
+  '    var h = {};' + LineEnding +
+  '    if (contentType === undefined) h["Content-Type"] = "application/json";' + LineEnding +
+  '    else if (contentType !== "") h["Content-Type"] = String(contentType);' + LineEnding +
+  '    return httpRequest("POST", String(url), JSON.stringify(h),' + LineEnding +
+  '      (body === undefined || body === null) ? "" : String(body)).then(' + LineEnding +
+  '      function (raw) { return JSON.parse(raw).body; },' + LineEnding +
+  '      function (err) { throw "Cannot POST to URL " + url + ": " + String(err); }' + LineEnding +
+  '    );' + LineEnding +
+  '  };' + LineEnding +
   '})();';
 
 procedure TJSFuncs.RegisterForCurrent;
 begin
   with TTrndiExtEngine.Instance do
   begin
-    AddPromiseIf(epNet,      'asyncGet',      JSCallbackFunction(@asyncGet));
-    AddPromiseIf(epNet,      'asyncPost',     JSCallbackFunction(@asyncPost), 2, 3);
     AddPromiseIf(epNet,      'jsonGet',       JSCallbackFunction(@jsonGet), 2);
     // Threaded: the HTTP round-trip runs on the promise worker thread so the
     // UI never blocks. httpRequest must therefore stay free of UI/JS calls.
@@ -182,90 +196,6 @@ function TJSFuncs.bgDump(ctx: pointer; const func: string;
 begin
   ShowMsg('bgDump is not yet implemented');
   Result := False;
-end;
-
-// backend for asyncGet in JS
-// Fetches a file from the web
-function TJSFuncs.asyncget(ctx: pointer; const func: string;
-  const params: JSParameters; out res: JSValueVal): boolean;
-var
-  s, r: string;
-  v: JSValueVal;
-begin
-  v := params[0]^;
-  if not v.mustbe(JD_STR, func, 0) then
-  begin
-    Result := False;
-    r := 'Wrong data type for URL';
-    v := StringToValueVal(r);
-    Exit(False);
-  end;
-
-  if not TrndiNative.getURL(v.Data.StrVal, s) then
-  begin
-    Result := False;
-    r := 'Cannot fetch URL ' + v.Data.strval;
-  end
-  else
-  begin
-    r := s;
-    Result := True;
-  end;
-  v := StringToValueVal(r);
-  res := v;
-end;
-
-// backend for asyncPost in JS
-// POSTs a body to a URL. params: (url, body, [contentType])
-// contentType defaults to 'application/json' when omitted.
-function TJSFuncs.asyncpost(ctx: pointer; const func: string;
-  const params: JSParameters; out res: JSValueVal): boolean;
-var
-  s, r, contentType: string;
-  v: JSValueVal;
-begin
-  if not params[0]^.mustbe(JD_STR, func, 0) then
-  begin
-    Result := False;
-    r := 'Wrong data type for URL';
-    res := StringToValueVal(r);
-    Exit(False);
-  end;
-  if not params[1]^.mustbe(JD_STR, func, 1) then
-  begin
-    Result := False;
-    r := 'Wrong data type for body';
-    res := StringToValueVal(r);
-    Exit(False);
-  end;
-
-  if params.Count >= 3 then
-  begin
-    if not params[2]^.mustbe(JD_STR, func, 2) then
-    begin
-      Result := False;
-      r := 'Wrong data type for content type';
-      res := StringToValueVal(r);
-      Exit(False);
-    end;
-    contentType := params[2]^.Data.StrVal;
-  end
-  else
-    contentType := 'application/json';
-
-  if not TrndiNative.postURL(params[0]^.Data.StrVal, params[1]^.Data.StrVal,
-    contentType, s) then
-  begin
-    Result := False;
-    r := 'Cannot POST to URL ' + params[0]^.Data.StrVal + ': ' + s;
-  end
-  else
-  begin
-    r := s;
-    Result := True;
-  end;
-  v := StringToValueVal(r);
-  res := v;
 end;
 
 // Native backend for the JS fetch() shim. Registered with threaded=true, so it
