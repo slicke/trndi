@@ -641,7 +641,9 @@ if (res.ok) {
 
 ### asyncGet 
 #### Fetches a URL
-> Note that theres a size limit of the response, see jsonGet for complex JSONs
+Shorthand for a `fetch()` GET that resolves with the body string. Like
+`fetch`, it runs on a background thread and rejects only on transport
+failure (non-2xx responses resolve with the server's body).
 ```javascript
 asyncGet("https://sample-files.com/downloads/documents/txt/simple.txt")
   .then(result => console.log(result))
@@ -650,7 +652,8 @@ asyncGet("https://sample-files.com/downloads/documents/txt/simple.txt")
 ### asyncPost
 #### POSTs a body to a URL
 Sends an HTTP POST. Useful for outgoing webhooks (Discord, Slack, Home
-Assistant, Mattermost, etc.).
+Assistant, Mattermost, etc.). Shorthand for a `fetch()` POST that resolves
+with the body string.
 ```javascript
 asyncPost(url, body, contentType?)
 ```
