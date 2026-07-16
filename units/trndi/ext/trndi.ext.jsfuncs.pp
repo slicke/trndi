@@ -206,13 +206,13 @@ end;
 function TJSFuncs.httpRequest(ctx: pointer; const func: string;
   const params: JSParameters; out res: JSValueVal): boolean;
 var
-  method, url, hjson, body: string;
+  method, url, hjson, body, hline, hname, hvalue: string;
   hdrs: TStringList;
   net: TrndiNative;
   resp: THTTPResponse;
   envelope, hobj: TJSONObject;
   jd: TJSONData;
-  i: integer;
+  i, p, hidx: integer;
 begin
   Result := false;
 
@@ -274,10 +274,26 @@ begin
     try
       hobj := TJSONObject.Create;
       envelope.Add('headers', hobj); // envelope owns hobj
+      // resp.Headers holds raw 'Name: value' lines (plus the status line),
+      // so split on the first colon — TStringList.Names expects 'Name=value'
+      // and returned '' (or garbage when the value contained '=')
       if Assigned(resp.Headers) then
         for i := 0 to resp.Headers.Count - 1 do
-          if resp.Headers.Names[i] <> '' then
-            hobj.Add(resp.Headers.Names[i], resp.Headers.ValueFromIndex[i]);
+        begin
+          hline := resp.Headers[i];
+          p := Pos(':', hline);
+          if p <= 1 then // no name; also skips the 'HTTP/1.1 200 OK' line
+            Continue;
+          hname := Trim(Copy(hline, 1, p - 1));
+          hvalue := Trim(Copy(hline, p + 1, MaxInt));
+          if hname = '' then
+            Continue;
+          hidx := hobj.IndexOfName(hname, true);
+          if hidx >= 0 then // duplicates combine per the fetch spec
+            hobj.Items[hidx].AsString := hobj.Items[hidx].AsString + ', ' + hvalue
+          else
+            hobj.Add(hname, hvalue);
+        end;
       envelope.Add('status', resp.StatusCode);
       envelope.Add('url', resp.FinalURL);
       envelope.Add('redirected', resp.RedirectCount > 0);

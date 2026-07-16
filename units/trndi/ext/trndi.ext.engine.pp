@@ -1611,6 +1611,102 @@ begin
   FCurrentRegPerms := [];
 end;
 
+const
+  JSIdentChars = ['A'..'Z', 'a'..'z', '0'..'9', '_', '$'];
+
+{** True when a failed eval looks like the bundled quickjspp parser rejecting
+    top-level await (it predates JS_EVAL_FLAG_ASYNC, so await is only legal
+    inside async functions). Checks for a SyntaxError plus the word 'await'
+    anywhere in the source; a false positive is harmless since the wrapped
+    retry just fails with an equivalent error. }
+function IsTopLevelAwaitError(const Script, Err: RawUtf8): boolean;
+var
+  p: integer;
+begin
+  Result := false;
+  if Pos('SyntaxError', Err) = 0 then
+    Exit;
+  p := Pos('await', Script);
+  while p > 0 do
+  begin
+    if ((p = 1) or not (Script[p - 1] in JSIdentChars)) and
+      ((p + 5 > Length(Script)) or not (Script[p + 5] in JSIdentChars)) then
+      Exit(true);
+    p := PosEx('await', Script, p + 1);
+  end;
+end;
+
+{** Collect 'function name(' / 'async function name(' declarations and return
+    JS that copies each onto globalThis. The async-IIFE wrapper turns top-level
+    declarations into locals, but Pascal looks callbacks (clockView,
+    fetchCallback...) up as global properties, so they must be re-exported.
+    Nested functions matched by accident are filtered out at runtime by the
+    typeof guard: at the top of the body they are simply not in scope. }
+function BuildFunctionHoists(const Script: RawUtf8): RawUtf8;
+var
+  lines, seen: TStringList;
+  line, name: string;
+  i, p: integer;
+begin
+  Result := '';
+  lines := TStringList.Create;
+  seen := TStringList.Create;
+  try
+    seen.Sorted := true;
+    seen.Duplicates := dupIgnore;
+    lines.Text := string(Script);
+    for i := 0 to lines.Count - 1 do
+    begin
+      line := TrimLeft(lines[i]);
+      if Copy(line, 1, 6) = 'async ' then
+        line := TrimLeft(Copy(line, 7, MaxInt));
+      if (Copy(line, 1, 8) <> 'function') or (Length(line) < 9) or
+        not (line[9] in [' ', #9, '*']) then
+        Continue;
+      line := TrimLeft(Copy(line, 9, MaxInt));
+      if (line <> '') and (line[1] = '*') then // generator
+        line := TrimLeft(Copy(line, 2, MaxInt));
+      p := 1;
+      while (p <= Length(line)) and (line[p] in JSIdentChars) do
+        Inc(p);
+      name := Copy(line, 1, p - 1);
+      if (name = '') or (name[1] in ['0'..'9']) or
+        (Copy(TrimLeft(Copy(line, p, MaxInt)), 1, 1) <> '(') then
+        Continue; // anonymous or not a declaration
+      if seen.IndexOf(name) >= 0 then
+        Continue;
+      seen.Add(name);
+      Result := Result + RawUtf8('if(typeof ' + name +
+        '==="function")globalThis.' + name + '=' + name + ';');
+    end;
+  finally
+    seen.Free;
+    lines.Free;
+  end;
+end;
+
+{** Wrap a script that uses top-level await in an async IIFE so it parses.
+    The prefix shares the script's first line so error/stack line numbers are
+    unchanged. Function hoists run before the first await so name-based
+    callbacks are visible as soon as the extension loads, and a leading
+    'use strict' directive is re-emitted since the hoists would otherwise
+    push it out of the directive prologue. Rejections that escape the body
+    are logged to the extension console when one is registered. }
+function WrapTopLevelAwait(const Script: RawUtf8): RawUtf8;
+var
+  head: RawUtf8;
+begin
+  head := TrimLeft(Script);
+  if (Copy(head, 1, 12) = '"use strict"') or
+    (Copy(head, 1, 12) = '''use strict''') then
+    head := '"use strict";'
+  else
+    head := '';
+  Result := '(async()=>{' + head + BuildFunctionHoists(Script) + Script +
+    #10 + '})().catch(function(e){if(typeof console!=="undefined"&&console.log)' +
+    'console.log("Unhandled async error: "+e);});';
+end;
+
 {** Read the extension's file and evaluate it in its own context. Mirrors the
     legacy ExecuteFile contract (error string starts with 'Error:'). }
 function TTrndiExtEngine.ExtExecuteFile(Ext: PExtContextInfo): RawUtf8;
@@ -1644,6 +1740,14 @@ begin
   FOutput := '';
   EvalResult := ctx^.Eval(Script, ExtractFileName(Ext^.FileName),
     JS_EVAL_TYPE_GLOBAL, err);
+  // quickjspp has no top-level await; when the parse fails and the script
+  // uses await, retry it wrapped in an async IIFE (see WrapTopLevelAwait)
+  if EvalResult.IsException and IsTopLevelAwaitError(Script, err) then
+  begin
+    ctx^.Free(EvalResult);
+    EvalResult := ctx^.Eval(WrapTopLevelAwait(Script),
+      ExtractFileName(Ext^.FileName), JS_EVAL_TYPE_GLOBAL, err);
+  end;
   if EvalResult.IsException then
   try
     ExtError(uxdAuto, 'Error loading', err);
