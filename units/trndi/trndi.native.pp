@@ -53,6 +53,7 @@ type
   // Re-export base types
 TTrndiNativeBase = trndi.native.base.TTrndiNativeBase;
 TTrndiBool = trndi.native.base.TTrndiBool;
+THTTPResponse = trndi.native.base.THTTPResponse;
 {$ifdef X_LINUXBSD}
 TWSLVersion = trndi.native.base.TWSLVersion;
 TWSLInfo = trndi.native.base.TWSLInfo;

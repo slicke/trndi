@@ -452,18 +452,22 @@ public
 
         @param(funcName  Name of the JS function to expose)
         @param(cbfunc    Pascal callback to run when job executes)
-        @param(params    Exact number of parameters expected) }
+        @param(params    Exact number of parameters expected)
+        @param(threaded  True to run the callback on the worker thread; the
+                         callback must not touch UI or the JS context then) }
   procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction;
-    params: integer = 1);
+    params: integer = 1; threaded: boolean = false);
 
     {** Register a Promise-style async entry point with min/max arity.
 
         @param(funcName  Name of the JS function to expose)
         @param(cbfunc    Pascal callback to run when job executes)
         @param(minParams Minimum number of parameters allowed)
-        @param(maxParams Maximum number of parameters allowed) }
+        @param(maxParams Maximum number of parameters allowed)
+        @param(threaded  True to run the callback on the worker thread; the
+                         callback must not touch UI or the JS context then) }
   procedure AddPromise(const funcName: string; cbfunc: JSCallbackFunction;
-    minParams, maxParams: integer);
+    minParams, maxParams: integer; threaded: boolean = false);
 
     {** Raise an EJSException carrying a message and file name.
 
@@ -531,9 +535,17 @@ public
 
     {** Convenience: register a promise-style function only if @code(grp) is granted. }
   procedure AddPromiseIf(const grp: TExtPermGroup; const funcName: string;
-    cbfunc: JSCallbackFunction; minParams, maxParams: integer); overload;
+    cbfunc: JSCallbackFunction; minParams, maxParams: integer;
+    threaded: boolean = false); overload;
   procedure AddPromiseIf(const grp: TExtPermGroup; const funcName: string;
-    cbfunc: JSCallbackFunction; params: integer = 1); overload;
+    cbfunc: JSCallbackFunction; params: integer = 1;
+    threaded: boolean = false); overload;
+
+    {** Evaluate @code(Script) in the current registration context (the extension
+        ctx during provisioning, otherwise FContext). Used to inject JS-side
+        shims such as fetch(). Returns false if evaluation raised. }
+  function ExecuteInCurrent(const Script: RawUtf8;
+    const Name: string = '<shim>'): boolean;
 
     {** Load the file at Ext.FileName into Ext.Ctx and evaluate it. Returns the
         evaluation result (or 'Error: ...' on failure, matching ExecuteFile). }
@@ -814,9 +826,9 @@ end;
 
 {** Add Promise helper with fixed @code(params) expected (min=max). }
 procedure TTrndiExtEngine.AddPromise(const funcName: string;
-cbfunc: JSCallbackFunction; params: integer = 1);
+cbfunc: JSCallbackFunction; params: integer = 1; threaded: boolean = false);
 begin
-  AddPromise(funcName, cbfunc, params, params);
+  AddPromise(funcName, cbfunc, params, params, threaded);
 end;
 
 {** Register a Promise entry point by exposing an async task wrapper in JS
@@ -825,7 +837,8 @@ end;
     when provisioning an extension, otherwise FContext). The Pascal callback
     record is stored on the shared promises list. }
 procedure TTrndiExtEngine.AddPromise(const funcName: string;
-cbfunc: JSCallbackFunction; minParams, maxParams: integer);
+cbfunc: JSCallbackFunction; minParams, maxParams: integer;
+threaded: boolean = false);
 var
   Data: JSValueConst;
   cb: PJSCallback;
@@ -852,23 +865,25 @@ begin
     cb^.callback := cbfunc;
     cb^.params.min := minParams;
     cb^.params.max := maxParams;
+    cb^.threaded := threaded;
     promises.Add(cb);
   end;
 end;
 
 procedure TTrndiExtEngine.AddPromiseIf(const grp: TExtPermGroup;
 const funcName: string; cbfunc: JSCallbackFunction;
-minParams, maxParams: integer);
+minParams, maxParams: integer; threaded: boolean = false);
 begin
   if CanRegister(grp) then
-    AddPromise(funcName, cbfunc, minParams, maxParams);
+    AddPromise(funcName, cbfunc, minParams, maxParams, threaded);
 end;
 
 procedure TTrndiExtEngine.AddPromiseIf(const grp: TExtPermGroup;
-const funcName: string; cbfunc: JSCallbackFunction; params: integer = 1);
+const funcName: string; cbfunc: JSCallbackFunction; params: integer = 1;
+threaded: boolean = false);
 begin
   if CanRegister(grp) then
-    AddPromise(funcName, cbfunc, params);
+    AddPromise(funcName, cbfunc, params, threaded);
 end;
 
 {******************************************************************************
@@ -1729,6 +1744,28 @@ begin
 
   // Release evaluation result
   FContext^.Free(EvalResult);
+end;
+
+{** Evaluate a script in the current registration context. Unlike Execute this
+    targets the extension ctx being provisioned, so shims land in the right
+    global scope and are gone when that extension's context is freed. }
+function TTrndiExtEngine.ExecuteInCurrent(const Script: RawUtf8;
+const Name: string = '<shim>'): boolean;
+var
+  ctx: JSContext;
+  EvalResult: JSValue;
+  err: RawUtf8;
+begin
+  Result := false;
+  if IsGlobalShutdown then Exit;
+  ctx := CurrentRegistrationContext;
+  if ctx = nil then Exit;
+
+  EvalResult := ctx^.Eval(Script, Name, JS_EVAL_TYPE_GLOBAL, err);
+  Result := not EvalResult.IsException;
+  if not Result then
+    ExtError(uxdAuto, 'Error loading ' + Name, err);
+  ctx^.Free(EvalResult);
 end;
 
 {** Call @code(FuncName) on @code(ctx) with string arguments. Returns the call

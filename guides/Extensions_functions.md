@@ -10,7 +10,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
 > - **`data`**: `getReading`, `getCurrentReading`, `getLimits`, `getStatistics`, `getBasalRate`, `getUnit`, `getLocale`, `getBuild`, `getCurrentAPI`, `getCurrentUser`, `getCurrentNickname`, `predictReadings`
 > - **`ui`**: `alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`
 > - **`timers`**: `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`
-> - **`net`** (declare): `asyncGet`, `asyncPost`, `jsonGet`
+> - **`net`** (declare): `fetch`, `asyncGet`, `asyncPost`, `jsonGet`
 > - **`exec`** (declare): `runCMD`
 > - **`settings`** (declare): `getSetting`, `setSetting`, `setLimits`, `setTimeAndRange`, `setOverrideThresholdMinutes`
 
@@ -49,6 +49,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [clearTimeout](#cleartimeout)
    - [clearInterval](#clearinterval)
  - [Promises (global)](#promises-global)
+   - [fetch](#fetch)
    - [asyncGet](#asyncget)
    - [asyncPost](#asyncpost)
    - [jsonGet](#jsonget)
@@ -601,6 +602,43 @@ setTimeout(stopInterval, 10000); // Stop after 10 seconds maximum
 
 ## Promises (global)
 These are global promises, not prefixed with `Trndi.`:
+
+### fetch
+#### Standard-style HTTP requests
+A subset of the browser `fetch()` API, available when the `net` permission is
+granted. Unlike `asyncGet`/`asyncPost`, the request runs on a background
+thread, so the Trndi window stays responsive during slow requests.
+
+```javascript
+const response = await fetch(url, options?)
+```
+- `url` (string, required) — Full URL.
+- `options.method` (string) — `GET` (default) or `POST`. Other methods reject.
+- `options.headers` (object) — Plain object of request headers.
+- `options.body` (string) — Request body. Stringify JSON yourself. String
+  bodies get `Content-Type: text/plain;charset=UTF-8` unless you set one.
+
+Resolves with a response object:
+- `status` (number), `ok` (true for 2xx), `url` (final URL after redirects),
+  `redirected` (boolean)
+- `headers.get(name)` / `headers.has(name)` / `headers.keys()` — name lookup
+  is case-insensitive
+- `text()` / `json()` — promises for the buffered body
+
+Rejects with a `TypeError` on transport failure (like the browser API,
+non-2xx responses resolve — check `response.ok`). Not supported: streaming,
+`AbortController`, `FormData`, binary bodies.
+
+```javascript
+const res = await fetch("https://api.example.com/status", {
+  headers: { "X-Api-Key": "abc123" }
+});
+if (res.ok) {
+  const data = await res.json();
+  console.log(data.value);
+}
+```
+
 ### asyncGet 
 #### Fetches a URL
 > Note that theres a size limit of the response, see jsonGet for complex JSONs
