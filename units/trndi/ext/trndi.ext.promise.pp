@@ -76,13 +76,24 @@ private
 
 protected
       {** Thread entry point. Invokes the registered callback (via ProcessResult),
-          then calls resolve or reject with the produced JS value. }
+          then calls resolve or reject with the produced JS value. For callbacks
+          registered with threaded=true, the callback itself runs on this worker
+          thread and only FinishPromise is synchronized to the main thread. }
   procedure Execute; override;
 
       {** Run the registered callback, storing success flag and result.
           Executed via Synchronize to ensure safe interaction with GUI/JS context
           if required by the surrounding framework. }
   procedure ProcessResult;
+
+      {** Invoke the native callback and capture status/result. When @code(quiet)
+          is true (worker-thread path) errors are captured into FResult as the
+          rejection value instead of showing UI dialogs. }
+  procedure RunCallback(quiet: boolean);
+
+      {** Resolve or reject the JS promise from FSuccess/FResult and release the
+          QuickJS values and parsed parameters. Must run on the main thread. }
+  procedure FinishPromise;
 public
       {** Create and start an async task bound to a JS Promise.
           @param(Context) QuickJS context
@@ -144,8 +155,6 @@ end;
     - Free parameter data allocated during parsing.
     - Terminate the thread. }
 procedure TJSAsyncTask.Execute;
-var
-  xres: JSValue;
 begin
   // Skip if application is terminating
   if Application.Terminated or IsExtShuttingDown then
@@ -153,8 +162,22 @@ begin
 
   if Assigned(FPromise.callback) then // Run the main function, if it's actually set
   begin
+    if FPromise.threaded then
+    begin
+      // Threaded callback: do the (potentially slow) native work right here on
+      // the worker thread so the UI stays responsive; only the JS resolve/reject
+      // is synchronized to the main thread, since QuickJS is single-threaded.
+      RunCallback(true);
+      if not (Application.Terminated or IsExtShuttingDown) then
+      try
+        Synchronize(@FinishPromise);
+      except
+        FSuccess := false;
+        Exit;
+      end;
+    end
     // Check again before synchronizing, as shutdown might have occurred
-    if not (Application.Terminated or IsExtShuttingDown) then
+    else if not (Application.Terminated or IsExtShuttingDown) then
     try
       Synchronize(@ProcessResult);
     except
@@ -177,11 +200,18 @@ end;
 
 {** Execute the registered native callback and capture status/result.
     On success, @code(FSuccess) is True and @code(FResult) holds the JS value to return.
-    On errors/exceptions, sets @code(FSuccess:=False) and reports via UX helpers. }
+    On errors/exceptions, sets @code(FSuccess:=False) and reports via UX helpers.
+    Runs entirely on the main thread (legacy, non-threaded path). }
 procedure TJSAsyncTask.ProcessResult;
-var
-  xres: JSValue;
-  callRes: JSValueRaw;
+begin
+  RunCallback(false);
+  FinishPromise;
+end;
+
+{** Invoke the native callback. quiet=true means we are on the worker thread:
+    no UI dialogs may be shown, so error text becomes the promise rejection
+    value instead. quiet=false preserves the legacy main-thread behavior. }
+procedure TJSAsyncTask.RunCallback(quiet: boolean);
 begin
   // Avoid doing work if app is shutting down
   if Application.Terminated or IsExtShuttingDown then
@@ -206,12 +236,18 @@ begin
         on E: EInvalidCast do
         begin
           FSuccess := false;
+          if quiet then
+            FResult := StringToValueVal(E.Message)
+          else
           if not (Application.Terminated or IsExtShuttingDown) then
             ExtError(uxdAuto, RS_TYPE_ERROR_MSG, e.message);
         end;
         on E: Exception do
         begin
           FSuccess := false;
+          if quiet then
+            FResult := StringToValueVal(E.Message)
+          else
           if not (Application.Terminated or IsExtShuttingDown) then
             ExtError(uxdAuto, Format(RS_PROM_ERR_CAPT, [func]), e.Message);
         end;
@@ -219,7 +255,15 @@ begin
     end
     else
       FSuccess := false;
+end;
 
+{** Resolve/reject the promise from FSuccess/FResult and free the captured
+    QuickJS values and parsed parameters. Main thread only. }
+procedure TJSAsyncTask.FinishPromise;
+var
+  xres: JSValue;
+  callRes: JSValueRaw;
+begin
   // Final check before making JS calls
   if Application.Terminated or IsExtShuttingDown then
     Exit;

@@ -211,6 +211,10 @@ TJSCallback = record
     end;
   func: string;
   callback: JSCallbackFunction;
+  // True = the callback runs on the TJSAsyncTask worker thread (must not touch
+  // UI or the JS context); only promise resolution is synchronized. False =
+  // legacy behavior, the whole callback is synchronized to the main thread.
+  threaded: boolean;
   class operator =(const a, b: TJSCallback): boolean; overload; inline;
 end;
 

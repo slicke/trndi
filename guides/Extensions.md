@@ -40,7 +40,7 @@ the user the first time the extension is loaded.
 - **`timers`** — schedule callbacks (`setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`)
 
 ## Promptable (must be declared; user approves on first load)
-- **`net`**      — make network requests (`asyncGet`, `asyncPost`, `jsonGet`)
+- **`net`**      — make network requests (`fetch`, `asyncGet`, `asyncPost`, `jsonGet`)
 - **`exec`**     — run external programs (`runCMD`)
 - **`settings`** — read/write Trndi settings and CGM thresholds (`getSetting`, `setSetting`, `setLimits`, `setTimeAndRange`, `setOverrideThresholdMinutes`)
 

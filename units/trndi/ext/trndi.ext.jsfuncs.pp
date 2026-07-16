@@ -57,6 +57,8 @@ type
       out res: JSValueVal): boolean;
     function asyncpost(ctx: pointer; const func: string; const params: JSParameters;
       out res: JSValueVal): boolean;
+    function httpRequest(ctx: pointer; const func: string; const params: JSParameters;
+      out res: JSValueVal): boolean;
     function jsonget(ctx: pointer; const func: string; const params: JSParameters;
       out res: JSValueVal): boolean;
     function bgDump(ctx: pointer; const func: string; const params: JSParameters;
@@ -91,6 +93,57 @@ begin
   tapi := cgm;
 end;
 
+const
+  {** JS-side fetch() shim. Wraps the threaded httpRequest promise (registered
+      below) in a WHATWG-fetch-shaped API: fetch(url, {method, headers, body})
+      resolves to a Response-like object with status/ok/url/headers/text()/json().
+      Header lookup is case-insensitive since servers may send lowercase names
+      (HTTP/2). Bodies are buffered — no streaming, AbortController or binary. }
+FETCH_SHIM: string =
+  '(function () {' + LineEnding +
+  '  if (typeof httpRequest !== "function" || typeof globalThis.fetch === "function")' + LineEnding +
+  '    return;' + LineEnding +
+  '  function makeHeaders(obj) {' + LineEnding +
+  '    var lower = {};' + LineEnding +
+  '    for (var k in obj) lower[k.toLowerCase()] = obj[k];' + LineEnding +
+  '    return {' + LineEnding +
+  '      get: function (n) { var v = lower[String(n).toLowerCase()]; return v === undefined ? null : v; },' + LineEnding +
+  '      has: function (n) { return String(n).toLowerCase() in lower; },' + LineEnding +
+  '      keys: function () { return Object.keys(lower); }' + LineEnding +
+  '    };' + LineEnding +
+  '  }' + LineEnding +
+  '  globalThis.fetch = function (url, init) {' + LineEnding +
+  '    init = init || {};' + LineEnding +
+  '    var method = String(init.method || "GET").toUpperCase();' + LineEnding +
+  '    var body = (init.body === undefined || init.body === null) ? "" : String(init.body);' + LineEnding +
+  '    var hdrs = {}, hasCT = false;' + LineEnding +
+  '    if (init.headers)' + LineEnding +
+  '      for (var k in init.headers) {' + LineEnding +
+  '        hdrs[k] = String(init.headers[k]);' + LineEnding +
+  '        if (k.toLowerCase() === "content-type") hasCT = true;' + LineEnding +
+  '      }' + LineEnding +
+  '    if (body !== "" && !hasCT) hdrs["Content-Type"] = "text/plain;charset=UTF-8";' + LineEnding +
+  '    return httpRequest(method, String(url), JSON.stringify(hdrs), body).then(' + LineEnding +
+  '      function (raw) {' + LineEnding +
+  '        var r = JSON.parse(raw);' + LineEnding +
+  '        return {' + LineEnding +
+  '          status: r.status,' + LineEnding +
+  '          ok: r.status >= 200 && r.status < 300,' + LineEnding +
+  '          url: r.url,' + LineEnding +
+  '          redirected: r.redirected,' + LineEnding +
+  '          headers: makeHeaders(r.headers),' + LineEnding +
+  '          text: function () { return Promise.resolve(r.body); },' + LineEnding +
+  '          json: function () {' + LineEnding +
+  '            try { return Promise.resolve(JSON.parse(r.body)); }' + LineEnding +
+  '            catch (e) { return Promise.reject(e); }' + LineEnding +
+  '          }' + LineEnding +
+  '        };' + LineEnding +
+  '      },' + LineEnding +
+  '      function (err) { throw new TypeError(String(err)); }' + LineEnding +
+  '    );' + LineEnding +
+  '  };' + LineEnding +
+  '})();';
+
 procedure TJSFuncs.RegisterForCurrent;
 begin
   with TTrndiExtEngine.Instance do
@@ -98,10 +151,16 @@ begin
     AddPromiseIf(epNet,      'asyncGet',      JSCallbackFunction(@asyncGet));
     AddPromiseIf(epNet,      'asyncPost',     JSCallbackFunction(@asyncPost), 2, 3);
     AddPromiseIf(epNet,      'jsonGet',       JSCallbackFunction(@jsonGet), 2);
+    // Threaded: the HTTP round-trip runs on the promise worker thread so the
+    // UI never blocks. httpRequest must therefore stay free of UI/JS calls.
+    AddPromiseIf(epNet,      'httpRequest',   JSCallbackFunction(@httpRequest), 4, true);
     AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@runCMD));
     AddPromiseIf(epData,     'querySvc',      JSCallbackFunction(@querySvc));
     AddPromiseIf(epSettings, 'setLimits',     JSCallbackFunction(@setLimits), 2, 5);
     AddPromiseIf(epUI,       'setLevelColor', JSCallbackFunction(@setLimits), 3, 6);
+
+    if CanRegister(epNet) then
+      ExecuteInCurrent(FETCH_SHIM, '<fetch shim>');
   end;
 end;
 
@@ -207,6 +266,101 @@ begin
   end;
   v := StringToValueVal(r);
   res := v;
+end;
+
+// Native backend for the JS fetch() shim. Registered with threaded=true, so it
+// executes on the TJSAsyncTask worker thread: no UI, no JS context, no shared
+// engine state may be touched here. params: (method, url, headersJson, body).
+// Resolves with a JSON envelope {status, url, redirected, headers, body};
+// returns false (= promise rejection) on transport failure or bad arguments.
+function TJSFuncs.httpRequest(ctx: pointer; const func: string;
+  const params: JSParameters; out res: JSValueVal): boolean;
+var
+  method, url, hjson, body: string;
+  hdrs: TStringList;
+  net: TrndiNative;
+  resp: THTTPResponse;
+  envelope, hobj: TJSONObject;
+  jd: TJSONData;
+  i: integer;
+begin
+  Result := false;
+
+  for i := 0 to 3 do
+    if not params[i]^.match(JD_STR) then
+    begin
+      res := StringToValueVal(Format('fetch: argument %d must be a string', [i]));
+      Exit;
+    end;
+
+  method := UpperCase(params[0]^.Data.StrVal);
+  url := params[1]^.Data.StrVal;
+  hjson := params[2]^.Data.StrVal;
+  body := params[3]^.Data.StrVal;
+
+  if (method <> 'GET') and (method <> 'POST') then
+  begin
+    res := StringToValueVal('fetch: only GET and POST are supported');
+    Exit;
+  end;
+
+  hdrs := TStringList.Create;
+  try
+    if (hjson <> '') and (hjson <> '{}') then
+    try
+      jd := GetJSON(hjson);
+      try
+        if jd is TJSONObject then
+          with TJSONObject(jd) do
+            for i := 0 to Count - 1 do
+              hdrs.Add(Names[i] + '=' + Items[i].AsString);
+      finally
+        jd.Free;
+      end;
+    except
+      res := StringToValueVal('fetch: invalid headers');
+      Exit;
+    end;
+
+    net := TrndiNative.Create;
+    try
+      resp := net.requestEx(method = 'POST', url, [], body, nil, true, 10,
+        hdrs, false);
+    finally
+      net.Free;
+    end;
+  finally
+    hdrs.Free;
+  end;
+
+  try
+    if not resp.Success then
+    begin
+      res := StringToValueVal('fetch: ' + resp.ErrorMessage);
+      Exit;
+    end;
+
+    envelope := TJSONObject.Create;
+    try
+      hobj := TJSONObject.Create;
+      envelope.Add('headers', hobj); // envelope owns hobj
+      if Assigned(resp.Headers) then
+        for i := 0 to resp.Headers.Count - 1 do
+          if resp.Headers.Names[i] <> '' then
+            hobj.Add(resp.Headers.Names[i], resp.Headers.ValueFromIndex[i]);
+      envelope.Add('status', resp.StatusCode);
+      envelope.Add('url', resp.FinalURL);
+      envelope.Add('redirected', resp.RedirectCount > 0);
+      envelope.Add('body', resp.Body);
+      res := StringToValueVal(envelope.AsJSON);
+    finally
+      envelope.Free;
+    end;
+    Result := true;
+  finally
+    resp.Headers.Free;
+    resp.Cookies.Free;
+  end;
 end;
 
 function TJSFuncs.jsonget(ctx: pointer; const func: string;
