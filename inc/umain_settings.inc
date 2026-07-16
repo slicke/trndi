@@ -813,7 +813,9 @@ begin
     {$ifdef TrndiExt}
     extensionsPath := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
     ForceDirectoriesUTF8(extensionsPath);
-    fConf.LoadExtensionList(extensionsPath);
+    // Reading + parsing every extension file is deferred to the Extensions
+    // tab's OnShow so it doesn't delay opening the dialog.
+    fConf.DeferExtensionList(extensionsPath);
     fConf.OnReloadExtensions := @ReloadExtensions;
     {$else}
     fConf.tsExt.Enabled := false;

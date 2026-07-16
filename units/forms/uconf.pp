@@ -50,6 +50,8 @@
  * - 2026-07-15: TTS voice enumeration and Razer Chroma device detection are now
  *   deferred to their tabs' OnShow instead of running before the dialog opens,
  *   so the settings window appears faster.
+ * - 2026-07-16: The extension list (reading + parsing every extension script)
+ *   is likewise deferred to the Extensions tab's OnShow.
  *)
 
 unit uconf;
@@ -535,6 +537,7 @@ TfConf = class(TForm)
   procedure tsChromaShow({%H-}Sender: TObject);
   procedure tsCommonShow(Sender: TObject);
   procedure tsDisplayShow(Sender: TObject);
+  procedure tsExtShow({%H-}Sender: TObject);
   procedure tsProxyShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
   procedure closeClick(Sender: TObject);
@@ -542,6 +545,9 @@ private
   FProxyLoading: boolean;
   FTTSVoicesLoaded: boolean;
   FChromaListLoaded: boolean;
+  {** Extensions folder stashed by DeferExtensionList; scanned on the
+      Extensions tab's first OnShow, then cleared. }
+  FExtDeferredPath: string;
   FExtPaths: TStringList;
   FOnReloadExtensions: TNotifyEvent;
   procedure LoadProxySettingsIntoUI;
@@ -562,6 +568,7 @@ public
   procedure PopulateChromaDevices;
   procedure UpdatePredictionStates;
   procedure LoadExtensionList(const ExtensionsPath: string);
+  procedure DeferExtensionList(const ExtensionsPath: string);
   {** True once the TTS voice list has been enumerated; while false the
       cbTTSVoice selection is not meaningful and must not be persisted. }
   property TTSVoicesLoaded: boolean read FTTSVoicesLoaded;
@@ -1014,6 +1021,24 @@ begin
   end;
   lExtCount.Caption := Format(RS_ExtCount, [lbExtensions.Count]);
   {$endif}
+end;
+
+{------------------------------------------------------------------------------
+  Stash the extensions folder so the directory scan + manifest parse of every
+  extension file runs when the Extensions tab is first shown, not while the
+  dialog is opening. The reload button still calls LoadExtensionList directly.
+------------------------------------------------------------------------------}
+procedure TfConf.DeferExtensionList(const ExtensionsPath: string);
+begin
+  FExtDeferredPath := ExtensionsPath;
+end;
+
+procedure TfConf.tsExtShow(Sender: TObject);
+begin
+  if FExtDeferredPath = '' then
+    Exit;
+  LoadExtensionList(FExtDeferredPath);
+  FExtDeferredPath := '';
 end;
 
 procedure TfConf.lbUsersEnter(Sender: TObject);
