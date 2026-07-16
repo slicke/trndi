@@ -4010,6 +4010,7 @@ object fConf: TfConf
       Caption = 'Extensions'
       ClientHeight = 562
       ClientWidth = 637
+      OnShow = tsExtShow
       object lExtCount: TLabel
         Left = 5
         Height = 15
