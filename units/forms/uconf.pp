@@ -47,6 +47,9 @@
  * - 2026-07-13: Backend selection, credential validation, connection testing and
  *   the assisted browser login now go through the shared trndi.api.registry and
  *   trndi.weblogin units instead of per-form dispatch chains.
+ * - 2026-07-15: TTS voice enumeration and Razer Chroma device detection are now
+ *   deferred to their tabs' OnShow instead of running before the dialog opens,
+ *   so the settings window appears faster.
  *)
 
 unit uconf;
@@ -58,7 +61,7 @@ interface
 uses
 Classes, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
-slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, math, trndi.types, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
+slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -528,6 +531,8 @@ TfConf = class(TForm)
   procedure spTHRESHOLDChange({%H-}Sender: TObject);
   procedure tbAdvancedChange({%H-}Sender: TObject);
   procedure ToggleBox1Change(Sender: TObject);
+  procedure tsAccessShow({%H-}Sender: TObject);
+  procedure tsChromaShow({%H-}Sender: TObject);
   procedure tsCommonShow(Sender: TObject);
   procedure tsDisplayShow(Sender: TObject);
   procedure tsProxyShow(Sender: TObject);
@@ -535,6 +540,8 @@ TfConf = class(TForm)
   procedure closeClick(Sender: TObject);
 private
   FProxyLoading: boolean;
+  FTTSVoicesLoaded: boolean;
+  FChromaListLoaded: boolean;
   FExtPaths: TStringList;
   FOnReloadExtensions: TNotifyEvent;
   procedure LoadProxySettingsIntoUI;
@@ -547,8 +554,17 @@ private
   procedure updateWebLoginUI;
 public
   chroma: TRazerChromaBase;
+  {** Saved TTS voice selection, applied by EnsureTTSVoices once the voice
+      list has actually been enumerated (deferred to the Accessibility tab). }
+  pendingTTSVoiceIndex: integer;
+  pendingTTSVoiceName: string;
+  procedure EnsureTTSVoices;
+  procedure PopulateChromaDevices;
   procedure UpdatePredictionStates;
   procedure LoadExtensionList(const ExtensionsPath: string);
+  {** True once the TTS voice list has been enumerated; while false the
+      cbTTSVoice selection is not meaningful and must not be persisted. }
+  property TTSVoicesLoaded: boolean read FTTSVoicesLoaded;
   property OnReloadExtensions: TNotifyEvent read FOnReloadExtensions
     write FOnReloadExtensions;
 end;
@@ -1670,27 +1686,26 @@ begin
   cbTTSVoice.Items.Add('Default');
 
   {$ifdef X_WIN}
-  if tnative.SpeakAvailable then
-  begin
-    try
-      Voice := CreateOleObject('SAPI.SpVoice');
-      Voices := Voice.GetVoices('', '');
-      if not VarIsEmpty(Voices) then
+  // Creating the SpVoice object doubles as the availability check; going
+  // through SpeakAvailable first would create the (slow) COM object twice.
+  try
+    Voice := CreateOleObject('SAPI.SpVoice');
+    Voices := Voice.GetVoices('', '');
+    if not VarIsEmpty(Voices) then
+    begin
+      for i := 0 to Voices.Count - 1 do
       begin
-        for i := 0 to Voices.Count - 1 do
-        begin
-            try
-              voiceName := VarToStr(Voices.Item(i).GetDescription(0));
-              cbTTSVoice.Items.Add(voiceName);
-          except
-            // Skip voices that can't provide a description
-            cbTTSVoice.Items.Add('Voice ' + IntToStr(i + 1));
-          end;
+          try
+            voiceName := VarToStr(Voices.Item(i).GetDescription(0));
+            cbTTSVoice.Items.Add(voiceName);
+        except
+          // Skip voices that can't provide a description
+          cbTTSVoice.Items.Add('Voice ' + IntToStr(i + 1));
         end;
       end;
-    except
-      // SAPI not available or failed
     end;
+  except
+    // SAPI not available or failed
   end;
   {$endif}
 
@@ -1741,6 +1756,80 @@ begin
   cbTTSVoice.Items.Add('Female 2');
   cbTTSVoice.Items.Add('Female 3');
   {$endif}
+end;
+
+{------------------------------------------------------------------------------
+  Enumerate TTS voices on first demand and apply the selection stashed by
+  LoadUserSettings. Enumeration (SAPI COM on Windows, Cocoa on macOS) is slow,
+  so it runs when the Accessibility tab is shown, not when the dialog opens.
+------------------------------------------------------------------------------}
+procedure TfConf.EnsureTTSVoices;
+begin
+  if FTTSVoicesLoaded then
+    Exit;
+  FTTSVoicesLoaded := true;
+
+  PopulateTTSVoices;
+
+  if (pendingTTSVoiceName <> '') and
+    (cbTTSVoice.Items.IndexOf(pendingTTSVoiceName) >= 0) then
+    cbTTSVoice.ItemIndex := cbTTSVoice.Items.IndexOf(pendingTTSVoiceName)
+  else
+  if (pendingTTSVoiceIndex >= 0) and
+    (pendingTTSVoiceIndex < cbTTSVoice.Items.Count) then
+    cbTTSVoice.ItemIndex := pendingTTSVoiceIndex
+  else
+    cbTTSVoice.ItemIndex := 0;
+end;
+
+procedure TfConf.tsAccessShow(Sender: TObject);
+begin
+  EnsureTTSVoices;
+end;
+
+{------------------------------------------------------------------------------
+  Fill the Razer device list on first demand. Initializing the Chroma SDK can
+  block for over a second while it connects to Synapse, so it is deferred to
+  the Chroma tab's OnShow. When the main app already holds an initialized
+  instance (razer.enabled), the caller passes it via the chroma field and it
+  is reused instead of re-initializing.
+------------------------------------------------------------------------------}
+procedure TfConf.PopulateChromaDevices;
+var
+  own: TRazerChromaBase;
+  i: integer;
+begin
+  if FChromaListLoaded then
+    Exit;
+  FChromaListLoaded := true;
+
+  if Assigned(chroma) and chroma.Initialized then
+  begin
+    for i := 0 to chroma.GetDeviceCount - 1 do
+      lbChroma.Items.Add(chroma.GetDevice(i).Name);
+    Exit;
+  end;
+
+  own := TRazerChromaFactory.CreateInstance;
+  try
+    if not own.Initialize then
+      lbChroma.Items.Add('No Razer driver detected')
+    else
+      for i := 0 to own.GetDeviceCount - 1 do
+        lbChroma.Items.Add(own.GetDevice(i).Name);
+  finally
+    own.Free;
+  end;
+end;
+
+procedure TfConf.tsChromaShow(Sender: TObject);
+begin
+  Screen.Cursor := crHourGlass;
+  try
+    PopulateChromaDevices;
+  finally
+    Screen.Cursor := crDefault;
+  end;
 end;
 
 procedure TfConf.bThreasholdLinesHelpClick(Sender: TObject);
@@ -2096,9 +2185,8 @@ begin
   {$endif}
   ;
 
-  // Populate TTS voice list
-  PopulateTTSVoices;
-
+  // TTS voice enumeration (SAPI/Cocoa) is deferred to the Accessibility tab's
+  // OnShow — it is too slow to run every time the dialog opens.
 
   // Initialize parameter labels for current backend selection
   cbSysChange(Self);

@@ -2452,6 +2452,7 @@ object fConf: TfConf
       Caption = 'Accessibility'
       ClientHeight = 562
       ClientWidth = 637
+      OnShow = tsAccessShow
       object Label35: TLabel
         Left = 8
         Height = 15
@@ -3885,6 +3886,7 @@ object fConf: TfConf
       Caption = 'Razer Chroma'
       ClientHeight = 562
       ClientWidth = 637
+      OnShow = tsChromaShow
       object Label29: TLabel
         Left = 5
         Height = 15
