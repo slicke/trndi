@@ -28,6 +28,26 @@ To have your extensions show their name and copyright, add a header at the very 
 ```
 If no /* is present, the plugin will not show any info. If your first row is another comment it might be shown as copyright.
 
+# Async code and top-level await
+Extensions can use `await` directly at the top level of the script — when a
+script fails to parse because of it, Trndi automatically re-evaluates it inside
+an async wrapper:
+
+```javascript
+/* Release check
+@perms net
+*/
+const res = await fetch("https://api.github.com/repos/slicke/trndi/releases/latest");
+console.log("status: " + res.status);
+```
+
+Top-level `function` declarations keep working as Trndi callbacks (like
+`clockView`) in wrapped scripts. Two caveats: callbacks assigned with
+`const`/`let` (e.g. `const clockView = () => ...`) must be written as
+`globalThis.clockView = () => ...` instead, and a rejection from top-level
+`await` is logged to the extension console rather than shown as a dialog —
+wrap risky awaits in `try`/`catch`.
+
 # Permissions
 Each extension now runs in its own isolated JavaScript context with only the
 functions it has permission to use. Permissions are coarse groups; some are
