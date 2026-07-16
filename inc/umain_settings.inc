@@ -223,7 +223,6 @@ procedure LoadUserSettings(f: TfConf);
     po: TrndiPos;
     sizeVal: integer;
     minutesVal: integer;
-    voiceName: string;
   function DefaultChromaAlertAction: string;
     begin
       {$ifdef Windows}
@@ -374,23 +373,10 @@ procedure LoadUserSettings(f: TfConf);
       cbMusicPause.Checked := GetBoolSetting('media.pause');
       cbTTS.Checked := GetBoolSetting('main.announce', false);
       cbHContrast.Checked := GetBoolSetting('main.high_contrast', false);
-      cbTTSVoice.ItemIndex := GetIntSetting('tts.voice', 0);
-      {$ifdef X_MAC}
-      if cbTTSVoice.Items.Count > 1 then
-      begin
-        voiceName := GetSetting('tts.voice.name', '');
-        if voiceName <> '' then
-          cbTTSVoice.ItemIndex := cbTTSVoice.Items.IndexOf(voiceName);
-      end;
-    {$endif}
-      {$ifdef X_PC}
-      if cbTTSVoice.Items.Count > 1 then
-      begin
-        voiceName := GetSetting('tts.voice.name', '');
-        if voiceName <> '' then
-          cbTTSVoice.ItemIndex := cbTTSVoice.Items.IndexOf(voiceName);
-      end;
-    {$endif}
+      // Voice enumeration is deferred to the Accessibility tab's OnShow;
+      // stash the saved selection so EnsureTTSVoices can apply it then.
+      f.pendingTTSVoiceIndex := GetIntSetting('tts.voice', 0);
+      f.pendingTTSVoiceName := GetSetting('tts.voice.name', '');
       seTTSRate.Value := GetIntSetting('tts.rate', 0);
       fsHi.Enabled := cbCust.Checked;
       fsLo.Enabled := cbCust.Checked;
@@ -729,19 +715,18 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('media.pause', cbMusicPause.Checked);
       SetSetting('main.high_contrast', cbHContrast.Checked);
       SetSetting('main.announce', cbTTS.Checked);
-      SetSetting('tts.voice', cbTTSVoice.ItemIndex);
-      {$ifdef X_MAC}
-      if cbTTSVoice.ItemIndex > 0 then
-        SetSetting('tts.voice.name', cbTTSVoice.Text)
-      else
-        DeleteSetting('tts.voice.name');
-    {$endif}
-      {$ifdef X_PC}
-      if cbTTSVoice.ItemIndex > 0 then
-        SetSetting('tts.voice.name', cbTTSVoice.Text)
-      else
-        DeleteSetting('tts.voice.name');
-    {$endif}
+      // The voice list is filled lazily; if the Accessibility tab was never
+      // shown there is no valid selection to persist — keep the old setting.
+      if f.TTSVoicesLoaded then
+      begin
+        SetSetting('tts.voice', cbTTSVoice.ItemIndex);
+        {$if defined(X_MAC) or defined(X_PC)}
+        if cbTTSVoice.ItemIndex > 0 then
+          SetSetting('tts.voice.name', cbTTSVoice.Text)
+        else
+          DeleteSetting('tts.voice.name');
+        {$endif}
+      end;
       SetSetting('tts.rate', seTTSRate.Value);
 
       SetColorSetting('ux.bg_color_ok', cl_ok_bg.ButtonColor);
@@ -773,7 +758,6 @@ procedure SaveUserSettings(f: TfConf);
 
 var
   extensionsPath: string;
-  i: integer;
   distro: string;
   needsRestart: boolean;
   origAPI, origTarget, origCreds: string;
@@ -791,17 +775,12 @@ begin
       ListBackendNames(fConf.cbSys.Items);
     end;
 
+    // Device enumeration is deferred to the Chroma tab's OnShow — initializing
+    // the SDK can block for over a second while connecting to Synapse, which
+    // made opening settings sluggish. Hand over the live instance (if any) so
+    // the tab reuses it instead of re-initializing.
     if assigned(chroma) and chroma.Initialized then
-      for i := 0 to Chroma.GetDeviceCount - 1 do
-        fConf.lbChroma.Items.Add(Chroma.GetDevice(i).Name) else
-    begin
-      fConf.chroma := TRazerChromaFactory.CreateInstance;
-      if not fconf.chroma.Initialize then
-        fConf.lbChroma.Items.Add('No Razer driver detected')
-      else for i := 0 to fConf.Chroma.GetDeviceCount - 1 do
-          fConf.lbChroma.Items.Add(fConf.Chroma.GetDevice(i).Name);
-      fConf.Chroma.Free;
-    end;
+      fConf.chroma := chroma;
 
     LoadUserSettings(fConf);
     LoadLanguageSettings(fConf);

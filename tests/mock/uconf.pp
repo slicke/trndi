@@ -32,6 +32,12 @@ type
     lExtCount: TLabel;
     tsExt: TPanel;
     Chroma: TRazerChromaBase;
+    // Deferred TTS voice selection (see real uconf: EnsureTTSVoices)
+    pendingTTSVoiceIndex: integer;
+    pendingTTSVoiceName: string;
+    // Real form defers voice enumeration to the Accessibility tab; the mock
+    // pretends the list is always loaded so save paths stay exercised.
+    TTSVoicesLoaded: boolean;
 
     eAddr: TEdit;
     ePass: TEdit;
@@ -225,6 +231,9 @@ begin
   lExtCount := TLabel.Create(nil);
   tsExt := TPanel.Create(nil);
   Chroma := nil; // tests or caller may assign via TRazerChromaFactory
+  pendingTTSVoiceIndex := 0;
+  pendingTTSVoiceName := '';
+  TTSVoicesLoaded := true;
 
   // Create additional mocked controls
   eAddr := TEdit.Create(nil);
