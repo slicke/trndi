@@ -378,26 +378,26 @@ is_handled: longbool; opaque: Pointer); cdecl;
 var
   error_msg: RawUtf8;
 begin
-  // Only act on genuinely unhandled rejections
-  if not is_handled then
+  // QuickJS fires this at reject time when no handler is attached yet, and
+  // again with is_handled=true if a handler arrives later (e.g. .catch() on
+  // the next line, or Promise.allSettled/any wrapping an already-rejected
+  // promise). Reporting is therefore deferred: note the rejection now and
+  // let the job pump alert only the ones still unhandled after the queue
+  // drains (FlushPendingRejections).
+  if is_handled then
+  begin
+    TTrndiExtEngine.Instance.NoteRejectionHandled(UInt64(promise));
+    Exit;
+  end;
   try
       // Convert the JS 'reason' value to a string for display/logging
-      // JSValueConstToUtf8 expects JSContext (not PJSContext), so we pass ctx^ 
+      // JSValueConstToUtf8 expects JSContext (not PJSContext), so we pass ctx^
     error_msg := JSValueConstToUtf8(ctx^, reason);
-
-      // Show a helpful alert message. Fall back to a generic message if no text was produced.
-    if error_msg <> '' then
-      TTrndiExtEngine.Instance.alert('Unhandled Promise rejection: ' +
-        string(error_msg))
-    else
-      TTrndiExtEngine.Instance.alert(
-        'Unhandled Promise rejection: [no error message]');
   except
     on E: Exception do
-        // If conversion fails completely, show a generic error
-      TTrndiExtEngine.Instance.alert(
-        'Unhandled Promise rejection: [error retrieving message]');
+      error_msg := '[error retrieving message]';
   end;
+  TTrndiExtEngine.Instance.NoteRejection(UInt64(promise), string(error_msg));
 end;
 
 {**
