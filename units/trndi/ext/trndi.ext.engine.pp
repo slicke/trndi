@@ -130,7 +130,8 @@ TJSTimerInfo = record
   TimerID: integer;           // Unique ID returned to JS
   Timer: TFPTimer;            // The actual timer object
   Handler: TJSTimerHandler;   // Handler object for timer events
-  FunctionName: RawUtf8;      // Name of JS function to call (must be global named function)
+  Callback: JSValueRaw;       // Duplicated JS function value; owned, freed on disposal
+  Args: array of JSValueRaw;  // Duplicated extra args (setTimeout(fn, ms, ...args)); owned
   IsInterval: boolean;        // True for setInterval, False for setTimeout
   Context: JSContext;         // QuickJS context for calling the function
 end;
@@ -611,21 +612,48 @@ implementation
   Modified: January 16, 2026
 ******************************************************************************}
 
+{** Free a retired timer record and the duplicated JS values it owns.
+    Every call site runs while the timer's context is still alive: DrainDeadTimers
+    only fires during normal operation, and Destroy/UnloadExtensions tear timers
+    down before freeing any context. }
+procedure DisposeTimerInfo(info: PJSTimerInfo);
+var
+  i: integer;
+begin
+  if info = nil then
+    Exit;
+  if Assigned(info^.Timer) then
+  begin
+    info^.Timer.Enabled := false;
+    info^.Timer.Free;
+  end;
+  if Assigned(info^.Handler) then
+    info^.Handler.Free;
+  if info^.Context <> nil then
+  begin
+    info^.Context^.FreeInlined(PJSValue(@info^.Callback));
+    for i := 0 to High(info^.Args) do
+      info^.Context^.FreeInlined(PJSValue(@info^.Args[i]));
+  end;
+  Dispose(info);
+end;
+
 procedure TJSTimerHandler.OnTimer(Sender: TObject);
 var
   TimerInfo: PJSTimerInfo;
   Engine: TTrndiExtEngine;
   RetVal: JSValueRaw;
-  idx: integer;
+  idx, nargs: integer;
   Timer: TFPTimer;
-  globalObj, funcVal: JSValueRaw;
+  argp: PJSValueConstArr;
+  err: RawUtf8;
 begin
   if not (Sender is TFPTimer) then
     Exit;
 
   Timer := TFPTimer(Sender);
   TimerInfo := PJSTimerInfo(Timer.Tag);
-  
+
   if TimerInfo = nil then
     Exit;
 
@@ -635,25 +663,29 @@ begin
 
   Inc(Engine.FInTimerCallback);
   try
-    // Look up the named function from global scope
-    globalObj := JS_GetGlobalObject(TimerInfo^.Context);
-    funcVal := JS_GetPropertyStr(TimerInfo^.Context, globalObj, pansichar(TimerInfo^.FunctionName));
+    // Invoke the stored callback value directly (works for anonymous/arrow
+    // functions too), forwarding any extra setTimeout/setInterval arguments.
+    nargs := Length(TimerInfo^.Args);
+    if nargs > 0 then
+      argp := PJSValueConstArr(@TimerInfo^.Args[0])
+    else
+      argp := nil;
     RetVal := JS_UNDEFINED;
-
-    if JS_IsFunction(TimerInfo^.Context, funcVal) then
     try
-      RetVal := JS_Call(TimerInfo^.Context, funcVal, JS_UNDEFINED, 0, nil);
+      RetVal := JS_Call(TimerInfo^.Context, TimerInfo^.Callback,
+        JS_UNDEFINED, nargs, argp);
+      if PJSValue(@RetVal)^.IsException then
+      begin
+        err := '';
+        TimerInfo^.Context^.ErrorMessage(true, err, nil);
+        Engine.SetOutput('Timer callback error: ' + string(err));
+      end;
     except on E: Exception do
         TTrndiExtEngine.Instance.SetOutput('Timer exception: ' + E.Message);
-    end
-    else
-      Engine.SetOutput('Function ' + TimerInfo^.FunctionName + ' not found or not a function');
+    end;
 
-    // Release the references taken above; leaking them every tick made
-    // setInterval grow without bound.
+    // Release the call result; the callback/args stay owned by TimerInfo.
     TimerInfo^.Context^.FreeInlined(PJSValue(@RetVal));
-    TimerInfo^.Context^.FreeInlined(PJSValue(@funcVal));
-    TimerInfo^.Context^.FreeInlined(PJSValue(@globalObj));
 
     // If this is a setTimeout (one-shot), retire it. The JS callback may already
     // have cancelled us via clearTimeout, in which case we're no longer in the map.
@@ -1073,6 +1105,55 @@ end;
     so the same code path drives both the admin-context bootstrap and each
     per-extension provisioning. }
 procedure TTrndiExtEngine.RegisterEngineBaselineForCurrent;
+const
+  {** Pure-JS polyfills for common web globals QuickJS lacks: atob/btoa
+      (WHATWG base64, Latin1 range) and queueMicrotask. Ungated — they touch
+      no native functionality, so every context gets them regardless of
+      granted permissions. }
+  BASE_SHIM: string =
+    '(function () {' + LineEnding +
+    '  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";' + LineEnding +
+    '  if (typeof globalThis.btoa !== "function")' + LineEnding +
+    '    globalThis.btoa = function (input) {' + LineEnding +
+    '      var str = String(input), out = "", i, a, b, c;' + LineEnding +
+    '      for (i = 0; i < str.length; i++)' + LineEnding +
+    '        if (str.charCodeAt(i) > 255)' + LineEnding +
+    '          throw new TypeError("btoa: character out of Latin1 range");' + LineEnding +
+    '      for (i = 0; i < str.length; i += 3) {' + LineEnding +
+    '        a = str.charCodeAt(i); b = str.charCodeAt(i + 1); c = str.charCodeAt(i + 2);' + LineEnding +
+    '        out += chars[a >> 2];' + LineEnding +
+    '        out += chars[((a & 3) << 4) | (isNaN(b) ? 0 : b >> 4)];' + LineEnding +
+    '        out += isNaN(b) ? "=" : chars[((b & 15) << 2) | (isNaN(c) ? 0 : c >> 6)];' + LineEnding +
+    '        out += isNaN(c) ? "=" : chars[c & 63];' + LineEnding +
+    '      }' + LineEnding +
+    '      return out;' + LineEnding +
+    '    };' + LineEnding +
+    '  if (typeof globalThis.atob !== "function")' + LineEnding +
+    '    globalThis.atob = function (input) {' + LineEnding +
+    '      var str = String(input).replace(/[\t\n\f\r ]+/g, "");' + LineEnding +
+    '      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(str))' + LineEnding +
+    '        throw new TypeError("atob: invalid base64");' + LineEnding +
+    '      str = str.replace(/=+$/, "");' + LineEnding +
+    '      if (str.length % 4 === 1)' + LineEnding +
+    '        throw new TypeError("atob: invalid base64");' + LineEnding +
+    '      var out = "", buffer = 0, bits = 0, i;' + LineEnding +
+    '      for (i = 0; i < str.length; i++) {' + LineEnding +
+    '        buffer = (buffer << 6) | chars.indexOf(str[i]);' + LineEnding +
+    '        bits += 6;' + LineEnding +
+    '        if (bits >= 8) {' + LineEnding +
+    '          bits -= 8;' + LineEnding +
+    '          out += String.fromCharCode((buffer >> bits) & 255);' + LineEnding +
+    '        }' + LineEnding +
+    '      }' + LineEnding +
+    '      return out;' + LineEnding +
+    '    };' + LineEnding +
+    '  if (typeof globalThis.queueMicrotask !== "function")' + LineEnding +
+    '    globalThis.queueMicrotask = function (cb) {' + LineEnding +
+    '      if (typeof cb !== "function")' + LineEnding +
+    '        throw new TypeError("queueMicrotask: argument must be a function");' + LineEnding +
+    '      Promise.resolve().then(cb);' + LineEnding +
+    '    };' + LineEnding +
+    '})();';
 var
   ctx: JSContext;
 begin
@@ -1096,6 +1177,9 @@ begin
   // console.log/push/logs object — UI group. RegisterConsoleLog writes into ctx directly.
   if CanRegister(epUI) then
     RegisterConsoleLog(@ctx);
+
+  // Permission-free web polyfills (atob/btoa/queueMicrotask) for every context.
+  ExecuteInCurrent(BASE_SHIM, '<base shim>');
 end;
 
 {** Free context/resources, dispose registered callbacks, stop timer, and clear singleton. }
@@ -1144,17 +1228,7 @@ begin
   try
     while FJSTimers.Count > 0 do
     begin
-      with FJSTimers.Data[0]^ do
-      begin
-        if Assigned(Timer) then
-        begin
-          Timer.Enabled := false;
-          Timer.Free;
-        end;
-        if Assigned(Handler) then
-          Handler.Free;
-      end;
-      Dispose(FJSTimers.Data[0]);
+      DisposeTimerInfo(FJSTimers.Data[0]);
       FJSTimers.Delete(0);
     end;
     FreeAndNil(FJSTimers);
@@ -1460,22 +1534,13 @@ begin
   if IsGlobalShutdown or Application.Terminated then Exit;
 
   // Stop and drop every JS timer (setTimeout/setInterval). All live timers belong
-  // to extension contexts since baseline contexts don't schedule any.
+  // to extension contexts since baseline contexts don't schedule any; their
+  // held JS values must be released before those contexts die below.
   if Assigned(FJSTimers) then
   try
     while FJSTimers.Count > 0 do
     begin
-      with FJSTimers.Data[0]^ do
-      begin
-        if Assigned(Timer) then
-        begin
-          Timer.Enabled := false;
-          Timer.Free;
-        end;
-        if Assigned(Handler) then
-          Handler.Free;
-      end;
-      Dispose(FJSTimers.Data[0]);
+      DisposeTimerInfo(FJSTimers.Data[0]);
       FJSTimers.Delete(0);
     end;
   except
@@ -2520,17 +2585,7 @@ begin
   begin
     info := FDeadTimers[0];
     FDeadTimers.Delete(0);
-    if info <> nil then
-    begin
-      if Assigned(info^.Timer) then
-      begin
-        info^.Timer.Enabled := false;
-        info^.Timer.Free;
-      end;
-      if Assigned(info^.Handler) then
-        info^.Handler.Free;
-      Dispose(info);
-    end;
+    DisposeTimerInfo(info);
   end;
 end;
 

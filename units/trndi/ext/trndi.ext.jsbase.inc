@@ -528,102 +528,35 @@ end;
   Modified: January 16, 2026 - Added setTimeout/setInterval support
 ******************************************************************************}
 
-{** setTimeout(callback, delay) - Execute callback once after delay milliseconds.
-    Returns a timer ID that can be passed to clearTimeout.
+{** Shared implementation for setTimeout/setInterval. Holds a duplicated
+    reference to the callback value itself, so anonymous/arrow functions work
+    just like named ones, and forwards any extra arguments per the standard
+    setTimeout(fn, delay, ...args) signature. The duplicated values are owned
+    by the timer record and released in DisposeTimerInfo.
 
-    @param(ctx)      Current QuickJS context
-    @param(this_val) The 'this' value (unused)
-    @param(argc)     Number of arguments (expects 2: callback, delay)
-    @param(argv)     argv[0] = callback function, argv[1] = delay in ms
-    @returns         Integer timer ID
+    @param(ctx)        Current QuickJS context
+    @param(argc)       Number of arguments (expects at least 1: callback)
+    @param(argv)       argv[0] = callback, argv[1] = delay in ms (optional),
+                       argv[2..] = extra arguments passed to the callback
+    @param(IsInterval) True for setInterval, False for setTimeout
+    @returns           Timer ID as a plain JS number (per the standard; also
+                       required so clearTimeout's JS_ToInt32 can parse it —
+                       BigInt IDs made clearing timers fail)
 }
-function JSSetTimeout(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+function JSSetTimerImpl(ctx: JSContext; argc: integer; argv: PJSValues;
+IsInterval: boolean): JSValueRaw;
 var
   Engine: TTrndiExtEngine;
   TimerInfo: PJSTimerInfo;
   DelayMs: Int32;
   Timer: TFPTimer;
   Handler: TJSTimerHandler;
-  FuncName: PAnsiChar;
+  i: integer;
+  idVal: JSValue;
 begin
   Result := JS_UNDEFINED;
 
-  if (argc < 2) or IsGlobalShutdown then
-    Exit;
-
-  Engine := TTrndiExtEngine.Instance;
-  if Engine = nil then
-    Exit;
-
-  // Verify first argument is a function  
-  if not JS_IsFunction(ctx, argv^[0].Raw) then
-    Exit;
-
-  // Get the function name - it must be a named function, not anonymous
-  FuncName := JS_ToCString(ctx, JS_GetPropertyStr(ctx, argv^[0].Raw, 'name'));
-  if (FuncName = nil) or (FuncName[0] = #0) then
-  begin
-    Engine.SetOutput('setTimeout requires a named function, not an anonymous function');
-    if FuncName <> nil then
-      JS_FreeCString(ctx, FuncName);
-    Exit;
-  end;
-
-  // Get delay in milliseconds
-  if JS_ToInt32(ctx, @DelayMs, argv^[1].Raw) <> 0 then
-    DelayMs := 0;
-  if DelayMs < 0 then
-    DelayMs := 0;
-
-  // Create timer info
-  New(TimerInfo);
-  Inc(Engine.FNextTimerID);
-  TimerInfo^.TimerID := Engine.FNextTimerID;
-  TimerInfo^.FunctionName := RawUtf8(FuncName); // Store the function name
-  JS_FreeCString(ctx, FuncName);
-  TimerInfo^.IsInterval := False;
-  TimerInfo^.Context := ctx;
-
-  // Create timer handler and timer
-  Handler := TJSTimerHandler.Create;
-  Timer := TFPTimer.Create(nil);
-  Timer.Interval := DelayMs;
-  Timer.Tag := PtrInt(TimerInfo); // Store timer info in Tag
-  Timer.OnTimer := @Handler.OnTimer;
-  TimerInfo^.Timer := Timer;
-  TimerInfo^.Handler := Handler; // Keep reference to prevent premature freeing
-  Timer.Enabled := True; // Enable after all setup is complete
-
-  // Store in map
-  Engine.FJSTimers.Add(TimerInfo^.TimerID, TimerInfo);
-
-  // Return timer ID as BigInt
-  Result := JS_NewBigInt64(ctx, TimerInfo^.TimerID);
-end;
-
-{** setInterval(callback, delay) - Execute callback repeatedly every delay milliseconds.
-    Returns a timer ID that can be passed to clearInterval.
-
-    @param(ctx)      Current QuickJS context
-    @param(this_val) The 'this' value (unused)
-    @param(argc)     Number of arguments (expects 2: callback, delay)
-    @param(argv)     argv[0] = callback function, argv[1] = delay in ms
-    @returns         Integer timer ID
-}
-function JSSetInterval(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
-var
-  Engine: TTrndiExtEngine;
-  TimerInfo: PJSTimerInfo;
-  DelayMs: Int32;
-  Timer: TFPTimer;
-  Handler: TJSTimerHandler;
-  FuncName: PAnsiChar;
-begin
-  Result := JS_UNDEFINED;
-
-  if (argc < 2) or IsGlobalShutdown then
+  if (argc < 1) or IsGlobalShutdown then
     Exit;
 
   Engine := TTrndiExtEngine.Instance;
@@ -634,29 +567,28 @@ begin
   if not JS_IsFunction(ctx, argv^[0].Raw) then
     Exit;
 
-  // Get the function name - it must be a named function, not anonymous
-  FuncName := JS_ToCString(ctx, JS_GetPropertyStr(ctx, argv^[0].Raw, 'name'));
-  if (FuncName = nil) or (FuncName[0] = #0) then
+  // Delay is optional per the standard; missing or unparsable means 0 ms
+  DelayMs := 0;
+  if argc > 1 then
   begin
-    Engine.SetOutput('setInterval requires a named function, not an anonymous function');
-    if FuncName <> nil then
-      JS_FreeCString(ctx, FuncName);
-    Exit;
+    if JS_ToInt32(ctx, @DelayMs, argv^[1].Raw) <> 0 then
+      DelayMs := 0;
+    if DelayMs < 0 then
+      DelayMs := 0;
   end;
 
-  // Get delay in milliseconds
-  if JS_ToInt32(ctx, @DelayMs, argv^[1].Raw) <> 0 then
-    DelayMs := 0;
-  if DelayMs < 0 then
-    DelayMs := 0;
-
-  // Create timer info
+  // Create timer info; New initializes the managed Args field
   New(TimerInfo);
   Inc(Engine.FNextTimerID);
   TimerInfo^.TimerID := Engine.FNextTimerID;
-  TimerInfo^.FunctionName := RawUtf8(FuncName); // Store the function name
-  JS_FreeCString(ctx, FuncName);
-  TimerInfo^.IsInterval := True; // This is an interval timer
+  TimerInfo^.Callback := argv^[0].Duplicate.Raw;
+  if argc > 2 then
+  begin
+    SetLength(TimerInfo^.Args, argc - 2);
+    for i := 2 to argc - 1 do
+      TimerInfo^.Args[i - 2] := argv^[i].Duplicate.Raw;
+  end;
+  TimerInfo^.IsInterval := IsInterval;
   TimerInfo^.Context := ctx;
 
   // Create timer handler and timer
@@ -665,15 +597,34 @@ begin
   Timer.Interval := DelayMs;
   Timer.Tag := PtrInt(TimerInfo); // Store timer info in Tag
   Timer.OnTimer := @Handler.OnTimer;
-  Timer.Enabled := True;
   TimerInfo^.Timer := Timer;
   TimerInfo^.Handler := Handler; // Keep reference to prevent premature freeing
 
-  // Store in map
+  // Store in map, then arm
   Engine.FJSTimers.Add(TimerInfo^.TimerID, TimerInfo);
+  Timer.Enabled := True;
 
-  // Return timer ID as BigInt
-  Result := JS_NewBigInt64(ctx, TimerInfo^.TimerID);
+  // Return timer ID as a plain number
+  idVal.From64(TimerInfo^.TimerID);
+  Result := idVal.Raw;
+end;
+
+{** setTimeout(callback, delay, ...args) - Execute callback once after delay
+    milliseconds. Returns a timer ID that can be passed to clearTimeout.
+}
+function JSSetTimeout(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+argv: PJSValues): JSValueRaw; cdecl;
+begin
+  Result := JSSetTimerImpl(ctx, argc, argv, false);
+end;
+
+{** setInterval(callback, delay, ...args) - Execute callback repeatedly every
+    delay milliseconds. Returns a timer ID that can be passed to clearInterval.
+}
+function JSSetInterval(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+argv: PJSValues): JSValueRaw; cdecl;
+begin
+  Result := JSSetTimerImpl(ctx, argc, argv, true);
 end;
 
 {** clearTimeout(timerID) / clearInterval(timerID) - Cancel a timer.
