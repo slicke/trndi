@@ -1004,6 +1004,67 @@ begin
   Result := JS_UNDEFINED;
 end;
 
+{------------------------------------------------------------------------------
+  JSConsoleLevel*
+  console.error/warn/info/debug for web-style scripts. Unlike console.log
+  (which opens a dialog per call), these buffer like console.push — with a
+  level prefix — so a pasted script logging in a loop can't spam modals.
+  The messages surface on the next console.logs().
+-------------------------------------------------------------------------------}
+function JSConsoleLevelImpl(ctx: JSContext; argc: integer;
+argv: PJSValueConstArr; const level: string): JSValueRaw;
+var
+  msg: pchar;
+  i: integer;
+  fullMsg: string;
+begin
+  fullMsg := '';
+  for i := 0 to argc - 1 do
+  begin
+    msg := JS_ToCString(ctx, argv^[i]);
+    try
+      if i > 0 then
+        fullMsg := fullMsg + ' ';
+      fullMsg := fullMsg + string(msg);
+    finally
+      JS_FreeCString(ctx, msg);
+    end;
+  end;
+
+  if fullMsg = '' then
+    fullMsg := RS_LOG_EMPTY_MSG;
+
+  if ConsoleBuffer = nil then
+    ConsoleBuffer := TStringList.Create;
+  ConsoleBuffer.Add('[' + level + '] ' + fullMsg);
+
+  Result := JS_UNDEFINED;
+end;
+
+function JSConsoleError(ctx: JSContext; this_val: JSValueConst;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+begin
+  Result := JSConsoleLevelImpl(ctx, argc, argv, 'error');
+end;
+
+function JSConsoleWarn(ctx: JSContext; this_val: JSValueConst;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+begin
+  Result := JSConsoleLevelImpl(ctx, argc, argv, 'warn');
+end;
+
+function JSConsoleInfo(ctx: JSContext; this_val: JSValueConst;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+begin
+  Result := JSConsoleLevelImpl(ctx, argc, argv, 'info');
+end;
+
+function JSConsoleDebug(ctx: JSContext; this_val: JSValueConst;
+argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+begin
+  Result := JSConsoleLevelImpl(ctx, argc, argv, 'debug');
+end;
+
 function JSConsoleLogs(ctx: JSContext; this_val: JSValueConst;
 argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
 var
@@ -1038,6 +1099,17 @@ begin
   // Create a new log function and attach it to "console.log"
   logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleLog), 'log', 1);
   JS_SetPropertyStr(ctx^, consoleObj, 'log', logFunc);
+
+  // Web-style level methods; these buffer (with a level prefix) rather than
+  // opening a dialog per call like console.log does — see JSConsoleLevelImpl.
+  logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleError), 'error', 1);
+  JS_SetPropertyStr(ctx^, consoleObj, 'error', logFunc);
+  logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleWarn), 'warn', 1);
+  JS_SetPropertyStr(ctx^, consoleObj, 'warn', logFunc);
+  logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleInfo), 'info', 1);
+  JS_SetPropertyStr(ctx^, consoleObj, 'info', logFunc);
+  logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleDebug), 'debug', 1);
+  JS_SetPropertyStr(ctx^, consoleObj, 'debug', logFunc);
 
   // Create console.push function
   pushFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsolePush), 'push', 1);
