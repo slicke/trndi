@@ -13,6 +13,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
 > - **`net`** (declare): `fetch`, `asyncGet`, `asyncPost`, `jsonGet`
 > - **`exec`** (declare): `runCMD`
 > - **`settings`** (declare): `getSetting`, `setSetting`, `setLimits`, `setTimeAndRange`, `setOverrideThresholdMinutes`
+> - **No permission needed**: `atob`, `btoa`, `queueMicrotask`, `URL`, `URLSearchParams`, `TextEncoder`, `TextDecoder`, plus modern JS methods (`replaceAll`, `at`, `findLast`, `Object.hasOwn`, `Promise.allSettled`, `Promise.any`, ...)
 
 ## Contents
 
@@ -25,6 +26,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [console.log](#consolelog)
    - [console.push](#consolepush)
    - [console.logs](#consolelogs)
+   - [console.error / warn / info / debug](#consoleerror--warn--info--debug)
    - [htmlMsg](#htmlmsg)
    - [htmlDlg](#htmldlg)   
    - [htmlYesNo](#htmlyesno)      
@@ -48,6 +50,12 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [setInterval](#setinterval)
    - [clearTimeout](#cleartimeout)
    - [clearInterval](#clearinterval)
+ - [Web standard functions](#web-standard-functions)
+   - [atob / btoa](#atob--btoa)
+   - [queueMicrotask](#queuemicrotask)
+   - [URL / URLSearchParams](#url--urlsearchparams)
+   - [TextEncoder / TextDecoder](#textencoder--textdecoder)
+   - [Modern JavaScript methods](#modern-javascript-methods)
  - [Promises (global)](#promises-global)
    - [fetch](#fetch)
    - [asyncGet](#asyncget)
@@ -98,8 +106,9 @@ _See `console.log`_
 ### console.log
 ```javascript
 console.log(something);
+console.log("reading:", { value: 5.6, trend: "flat" }); // objects are JSON-stringified
 ```
-Prints out data to the user
+Prints out data to the user. Non-string arguments (objects, arrays, errors) are automatically converted to readable JSON instead of `[object Object]` — this applies to all `console.*` functions.
 ### console.push
 ```javascript
 console.push("message 1");
@@ -131,6 +140,20 @@ Displays all buffered messages (accumulated via `console.push()`) in a single po
 **Returns:** none
 
 **Use case:** Avoids multiple popups when logging multiple messages during extension execution.
+
+### console.error / warn / info / debug
+```javascript
+console.error("Something went wrong:", details);
+console.warn("Value looks off");
+console.info("Started");
+console.debug("state =", state);
+```
+Web-style level logging. Unlike `console.log` (which opens a popup per call), these buffer the message with a level prefix — `[error] Something went wrong: ...` — exactly like `console.push()`, so a script that logs in a loop can't spam dialogs. Buffered messages are shown on the next `console.logs()`.
+
+**Parameters:**
+- Message(s), concatenated with spaces (same as `console.push`)
+
+**Returns:** none
 
 ### htmlMsg
 ```javascript
@@ -471,56 +494,53 @@ function updateCallback(reading_system, reading_mgdl, reading_mmol, time) {
 
 ### setTimeout
 #### Schedule a function to run once after a delay
-Executes a function after a specified delay in milliseconds.
+Executes a function after a specified delay in milliseconds. Works like the standard web `setTimeout`.
 
 ```javascript
-// Define a named function (required - anonymous functions are not supported)
-function showAlert() {
-  Trndi.alert("5 seconds have passed!");
-}
+// Anonymous and arrow functions work
+setTimeout(() => Trndi.alert("5 seconds have passed!"), 5000);
 
-// Schedule it to run after 5 seconds
-const timerId = setTimeout(showAlert, 5000);
-
-// Another example
+// Named functions too
 function logMessage() {
   console.log("Timer executed!");
 }
-setTimeout(logMessage, 3000);
+const timerId = setTimeout(logMessage, 3000);
+
+// Extra arguments are passed to the callback
+setTimeout((name, count) => {
+  console.push(`${name}: ${count}`);
+}, 1000, "readings", 12);
 ```
 
 **Parameters:**
-- `callback`: **Named function** to execute (anonymous/arrow functions are not supported)
-- `delay`: Time in milliseconds to wait before execution
+- `callback`: Function to execute (named, anonymous or arrow)
+- `delay`: Time in milliseconds to wait before execution (optional, defaults to 0)
+- `...args`: Any further arguments are passed to the callback when it fires
 
-**Returns:** Timer ID (BigInt) that can be used with `clearTimeout()`
+**Returns:** Timer ID (number) that can be used with `clearTimeout()`
 
 **Notes:**
-- **Important:** Only named functions are supported. Arrow functions and anonymous functions will be rejected
-- Pass the function name without parentheses: `setTimeout(myFunction, 1000)` not `setTimeout(myFunction(), 1000)`
+- Pass the function without parentheses: `setTimeout(myFunction, 1000)` not `setTimeout(myFunction(), 1000)`
 - The timer is automatically cleaned up after the function executes
 - Minimum delay is system-dependent but typically 1ms
 - Timer continues even if the extension is reloaded (cleanup required)
 
 ### setInterval
 #### Schedule a function to run repeatedly at fixed intervals
-Executes a function repeatedly with a fixed delay between each execution.
+Executes a function repeatedly with a fixed delay between each execution. Works like the standard web `setInterval`.
 
 ```javascript
-// Define a named function (required - anonymous functions are not supported)
+// Anonymous and arrow functions work; stopping from inside the callback is fine
 let count = 0;
-function updateCounter() {
+const intervalId = setInterval(() => {
   count++;
-  console.log(`Count: ${count}`);
-  
+  console.push(`Count: ${count}`);
+
   // Stop after 10 iterations
   if (count >= 10) {
     clearInterval(intervalId);
   }
-}
-
-// Start the interval
-const intervalId = setInterval(updateCounter, 1000);
+}, 1000);
 
 // Monitor glucose and alert on trends
 function checkGlucoseTrends() {
@@ -533,14 +553,14 @@ setInterval(checkGlucoseTrends, 60000); // Check every minute
 ```
 
 **Parameters:**
-- `callback`: **Named function** to execute (anonymous/arrow functions are not supported)
+- `callback`: Function to execute (named, anonymous or arrow)
 - `interval`: Time in milliseconds between each execution
+- `...args`: Any further arguments are passed to the callback on each tick
 
-**Returns:** Timer ID (BigInt) that can be used with `clearInterval()`
+**Returns:** Timer ID (number) that can be used with `clearInterval()`
 
 **Notes:**
-- **Important:** Only named functions are supported. Arrow functions and anonymous functions will be rejected
-- Pass the function name without parentheses: `setInterval(myFunction, 1000)` not `setInterval(myFunction(), 1000)`
+- Pass the function without parentheses: `setInterval(myFunction, 1000)` not `setInterval(myFunction(), 1000)`
 - Function executes repeatedly until cleared with `clearInterval()`
 - The interval is the delay between executions, not including function runtime
 - Important: Always clear intervals when no longer needed to avoid memory leaks
@@ -599,6 +619,101 @@ setTimeout(stopInterval, 10000); // Stop after 10 seconds maximum
 - Safe to call with an invalid timer ID (no-op)
 - Important: Always clear intervals to prevent resource leaks
 - Has no effect on timers created with `setTimeout()`
+
+## Web standard functions
+Common web globals, available in every extension without any permission:
+
+### atob / btoa
+```javascript
+const encoded = btoa("user:password");   // "dXNlcjpwYXNzd29yZA=="
+const decoded = atob(encoded);           // "user:password"
+
+// Typical use: HTTP Basic auth
+const res = await fetch(url, {
+  headers: { "Authorization": "Basic " + btoa(user + ":" + pass) }
+});
+```
+Base64 encode (`btoa`) and decode (`atob`) per the WHATWG spec.
+
+**Notes:**
+- `btoa` throws a `TypeError` if the string contains characters above U+00FF (Latin1 range only, like in browsers)
+- `atob` ignores whitespace and throws a `TypeError` on invalid base64
+- For arbitrary Unicode, encode first: `btoa(encodeURIComponent(s))`
+
+### queueMicrotask
+```javascript
+queueMicrotask(() => {
+  console.push("runs after the current script, before any timers");
+});
+```
+Queues a callback on the microtask queue (same timing as `Promise.resolve().then(...)`). Runs after the currently executing code completes, before any `setTimeout` callbacks.
+
+**Parameters:**
+- `callback`: Function to queue (throws `TypeError` if not a function)
+
+**Returns:** none
+
+### URL / URLSearchParams
+```javascript
+// Build a query string without manual encodeURIComponent juggling
+const u = new URL("https://api.example.com/v1/data");
+u.searchParams.set("sessionId", sessionId);
+u.searchParams.set("minutes", "1440");
+const res = await fetch(u.toString());
+
+// Parse an existing URL
+const parsed = new URL("https://user:pw@host.com:8443/path?x=1#frag");
+parsed.hostname;              // "host.com"
+parsed.port;                  // "8443"
+parsed.pathname;              // "/path"
+parsed.searchParams.get("x"); // "1"
+
+// Standalone query-string handling
+const q = new URLSearchParams({ a: "1", b: "x y" });
+q.toString();                 // "a=1&b=x+y"
+new URLSearchParams("?a=1&b=2").get("b"); // "2"
+```
+Standard URL parsing and query-string building.
+
+**URLSearchParams** supports `get`, `getAll`, `set`, `append`, `delete`, `has`, `sort`, `forEach`, `keys`, `values`, `entries`, iteration with `for...of`, and construction from a string, object, array of pairs, or another `URLSearchParams`.
+
+**URL** supports `protocol`, `username`, `password`, `hostname`, `port`, `host`, `origin`, `pathname`, `search`, `searchParams`, `hash`, `href`, `toString()`, and relative resolution against a base: `new URL("../other", "https://x.com/a/b/c")`. Changes made through `searchParams` are reflected in `href`/`search`.
+
+**Notes:**
+- Only hierarchical `scheme://host/...` URLs are supported (no `mailto:`, `data:`)
+- An unparsable URL throws a `TypeError`, like in browsers
+
+### TextEncoder / TextDecoder
+```javascript
+const bytes = new TextEncoder().encode("Håj 😀");  // Uint8Array of UTF-8 bytes
+const text = new TextDecoder().decode(bytes);      // "Håj 😀"
+
+// Base64 of arbitrary Unicode (pairs with btoa's Latin1 limit)
+const b64 = btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+```
+UTF-8 encoding and decoding between strings and byte arrays.
+
+**Notes:**
+- `TextDecoder` supports UTF-8 only; other labels throw a `RangeError`
+- Invalid bytes decode to `U+FFFD` (`�`), or throw a `TypeError` with `new TextDecoder("utf-8", { fatal: true })`
+- `decode()` accepts a `Uint8Array`, `ArrayBuffer`, or plain array of byte values
+
+### Modern JavaScript methods
+The bundled JavaScript engine predates some newer library methods, so Trndi polyfills them — these all work even though the engine core is older:
+
+```javascript
+"a.b.c".replaceAll(".", "-");        // "a-b-c"
+[1, 2, 3].at(-1);                    // 3   (also on strings)
+[1, 2, 3, 4].findLast(v => v < 4);   // 3
+[1, 2, 3, 4].findLastIndex(v => v < 4); // 2
+Object.hasOwn({ x: 1 }, "x");        // true
+Object.fromEntries([["a", 1]]);      // { a: 1 }
+
+await Promise.allSettled([p1, p2]);  // never rejects; [{status, value/reason}, ...]
+await Promise.any([p1, p2]);         // first fulfilled; AggregateError if all reject
+```
+
+No permission is needed; they are added (non-enumerable, standards-shaped) to every extension automatically. If a future engine upgrade provides them natively, the native versions win.
 
 ## Promises (global)
 These are global promises, not prefixed with `Trndi.`:

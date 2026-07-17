@@ -146,6 +146,16 @@ TJSTimerMap = specialize TFPGMap<integer, PJSTimerInfo>;
       here and disposed later by the engine's job pump. }
 TJSTimerInfoList = specialize TFPGList<PJSTimerInfo>;
 
+  {** A promise rejection noted by the QuickJS tracker but not yet reported.
+      QuickJS fires the tracker the moment a promise is rejected with no
+      handler attached, then fires it again (is_handled=true) if a handler
+      arrives later in the same script — so reporting must be deferred until
+      the job queue drains. Key holds the promise's raw value bits. }
+TPendingRejection = record
+  Key: UInt64;
+  Msg: string;
+end;
+
   {** Per-extension JavaScript context (Path B isolation).
       Each .js file gets its own JSContext (sharing the runtime), so the
       function registry exposed to one extension is decoupled from another. }
@@ -209,6 +219,9 @@ private
     {** >0 while a JS timer callback is on the stack; blocks FDeadTimers
         draining so a timer is never freed beneath its own event. }
   FInTimerCallback: integer;
+    {** Rejections seen by PromiseRejectionTracker, reported (or cancelled)
+        on the next job-pump tick. }
+  FPendingRejections: array of TPendingRejection;
 
     {** Loaded per-extension contexts (Path B). Each user .js script lives in its own ctx. }
   FExtContexts: TExtContextList;
@@ -495,6 +508,13 @@ public
 
     {** Timer callback to process pending JS jobs (Promises/microtasks). }
   procedure OnJSTimer(Sender: TObject);
+
+    {** Record a rejection with no handler yet (from PromiseRejectionTracker). }
+  procedure NoteRejection(key: UInt64; const msg: string);
+    {** Cancel a pending rejection report: a handler was attached after all. }
+  procedure NoteRejectionHandled(key: UInt64);
+    {** Alert any rejections still unhandled once the job queue has drained. }
+  procedure FlushPendingRejections;
 
     {** Check whether a global function with @code(FuncName) exists in JS.
 
@@ -1154,6 +1174,344 @@ const
     '      Promise.resolve().then(cb);' + LineEnding +
     '    };' + LineEnding +
     '})();';
+
+  {** ES2019–ES2022 library methods the bundled quickjspp fork predates:
+      String.replaceAll, Object.hasOwn/fromEntries, Array/String at,
+      Array findLast/findLastIndex, Promise.allSettled/any (+ AggregateError).
+      All guarded, added non-enumerable so for..in loops stay clean. Ungated. }
+  ES_SHIM: string =
+    '(function () {' + LineEnding +
+    '  function def(obj, name, fn) {' + LineEnding +
+    '    if (!obj[name])' + LineEnding +
+    '      Object.defineProperty(obj, name, { value: fn, writable: true, configurable: true });' + LineEnding +
+    '  }' + LineEnding +
+    '  function escRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }' + LineEnding +
+    '  def(String.prototype, "replaceAll", function (search, replacement) {' + LineEnding +
+    '    if (search instanceof RegExp) {' + LineEnding +
+    '      if (String(search.flags).indexOf("g") < 0)' + LineEnding +
+    '        throw new TypeError("replaceAll must be called with a global RegExp");' + LineEnding +
+    '      return this.replace(search, replacement);' + LineEnding +
+    '    }' + LineEnding +
+    '    return this.replace(new RegExp(escRe(search), "g"), replacement);' + LineEnding +
+    '  });' + LineEnding +
+    '  def(Object, "hasOwn", function (obj, key) {' + LineEnding +
+    '    return Object.prototype.hasOwnProperty.call(obj, key);' + LineEnding +
+    '  });' + LineEnding +
+    '  def(Object, "fromEntries", function (entries) {' + LineEnding +
+    '    var obj = {}, it = entries[Symbol.iterator](), r;' + LineEnding +
+    '    for (r = it.next(); !r.done; r = it.next()) obj[r.value[0]] = r.value[1];' + LineEnding +
+    '    return obj;' + LineEnding +
+    '  });' + LineEnding +
+    '  function atImpl(i) {' + LineEnding +
+    '    i = Math.trunc(i) || 0;' + LineEnding +
+    '    if (i < 0) i += this.length;' + LineEnding +
+    '    return (i < 0 || i >= this.length) ? undefined : this[i];' + LineEnding +
+    '  }' + LineEnding +
+    '  def(Array.prototype, "at", atImpl);' + LineEnding +
+    '  def(String.prototype, "at", atImpl);' + LineEnding +
+    '  def(Array.prototype, "findLast", function (fn, thisArg) {' + LineEnding +
+    '    for (var i = this.length - 1; i >= 0; i--)' + LineEnding +
+    '      if (fn.call(thisArg, this[i], i, this)) return this[i];' + LineEnding +
+    '    return undefined;' + LineEnding +
+    '  });' + LineEnding +
+    '  def(Array.prototype, "findLastIndex", function (fn, thisArg) {' + LineEnding +
+    '    for (var i = this.length - 1; i >= 0; i--)' + LineEnding +
+    '      if (fn.call(thisArg, this[i], i, this)) return i;' + LineEnding +
+    '    return -1;' + LineEnding +
+    '  });' + LineEnding +
+    '  if (typeof globalThis.AggregateError !== "function")' + LineEnding +
+    '    globalThis.AggregateError = function (errors, message) {' + LineEnding +
+    '      var e = new Error(message === undefined ? "" : String(message));' + LineEnding +
+    '      e.name = "AggregateError";' + LineEnding +
+    '      e.errors = Array.prototype.slice.call(errors);' + LineEnding +
+    '      return e;' + LineEnding +
+    '    };' + LineEnding +
+    '  def(Promise, "allSettled", function (list) {' + LineEnding +
+    '    return Promise.all(Array.prototype.map.call(list, function (p) {' + LineEnding +
+    '      return Promise.resolve(p).then(' + LineEnding +
+    '        function (v) { return { status: "fulfilled", value: v }; },' + LineEnding +
+    '        function (e) { return { status: "rejected", reason: e }; });' + LineEnding +
+    '    }));' + LineEnding +
+    '  });' + LineEnding +
+    '  def(Promise, "any", function (list) {' + LineEnding +
+    '    var arr = Array.prototype.slice.call(list);' + LineEnding +
+    '    if (arr.length === 0)' + LineEnding +
+    '      return Promise.reject(new AggregateError([], "All promises were rejected"));' + LineEnding +
+    '    return new Promise(function (resolve, reject) {' + LineEnding +
+    '      var errs = new Array(arr.length), pending = arr.length;' + LineEnding +
+    '      arr.forEach(function (p, i) {' + LineEnding +
+    '        Promise.resolve(p).then(resolve, function (e) {' + LineEnding +
+    '          errs[i] = e;' + LineEnding +
+    '          pending--;' + LineEnding +
+    '          if (pending === 0) reject(new AggregateError(errs, "All promises were rejected"));' + LineEnding +
+    '        });' + LineEnding +
+    '      });' + LineEnding +
+    '    });' + LineEnding +
+    '  });' + LineEnding +
+    '})();';
+
+  {** URLSearchParams, a basic absolute-URL URL (with searchParams reflection
+      and simple relative resolution against a base; no mailto:/data: schemes),
+      and UTF-8 TextEncoder/TextDecoder. Pure JS, guarded, ungated. }
+  WEB_SHIM: string =
+    '(function () {' + LineEnding +
+    '  function dec(s) { try { return decodeURIComponent(String(s).replace(/\+/g, " ")); } catch (e) { return String(s); } }' + LineEnding +
+    '  function enc(s) { return encodeURIComponent(String(s)).replace(/%20/g, "+"); }' + LineEnding +
+    '  function USP(init) {' + LineEnding +
+    '    this._pairs = [];' + LineEnding +
+    '    var i, k, s, parts, eq;' + LineEnding +
+    '    if (init === undefined || init === null) return;' + LineEnding +
+    '    if (init instanceof USP) {' + LineEnding +
+    '      for (i = 0; i < init._pairs.length; i++)' + LineEnding +
+    '        this._pairs.push([init._pairs[i][0], init._pairs[i][1]]);' + LineEnding +
+    '    } else if (init instanceof Array) {' + LineEnding +
+    '      for (i = 0; i < init.length; i++)' + LineEnding +
+    '        this._pairs.push([String(init[i][0]), String(init[i][1])]);' + LineEnding +
+    '    } else if (typeof init === "object") {' + LineEnding +
+    '      for (k in init) this._pairs.push([k, String(init[k])]);' + LineEnding +
+    '    } else {' + LineEnding +
+    '      s = String(init);' + LineEnding +
+    '      if (s.charAt(0) === "?") s = s.slice(1);' + LineEnding +
+    '      parts = s === "" ? [] : s.split("&");' + LineEnding +
+    '      for (i = 0; i < parts.length; i++) {' + LineEnding +
+    '        if (parts[i] === "") continue;' + LineEnding +
+    '        eq = parts[i].indexOf("=");' + LineEnding +
+    '        if (eq < 0) this._pairs.push([dec(parts[i]), ""]);' + LineEnding +
+    '        else this._pairs.push([dec(parts[i].slice(0, eq)), dec(parts[i].slice(eq + 1))]);' + LineEnding +
+    '      }' + LineEnding +
+    '    }' + LineEnding +
+    '  }' + LineEnding +
+    '  USP.prototype.append = function (n, v) { this._pairs.push([String(n), String(v)]); };' + LineEnding +
+    '  USP.prototype.delete = function (n) {' + LineEnding +
+    '    n = String(n);' + LineEnding +
+    '    this._pairs = this._pairs.filter(function (p) { return p[0] !== n; });' + LineEnding +
+    '  };' + LineEnding +
+    '  USP.prototype.get = function (n) {' + LineEnding +
+    '    n = String(n);' + LineEnding +
+    '    for (var i = 0; i < this._pairs.length; i++)' + LineEnding +
+    '      if (this._pairs[i][0] === n) return this._pairs[i][1];' + LineEnding +
+    '    return null;' + LineEnding +
+    '  };' + LineEnding +
+    '  USP.prototype.getAll = function (n) {' + LineEnding +
+    '    n = String(n);' + LineEnding +
+    '    return this._pairs.filter(function (p) { return p[0] === n; }).map(function (p) { return p[1]; });' + LineEnding +
+    '  };' + LineEnding +
+    '  USP.prototype.has = function (n) { return this.get(n) !== null; };' + LineEnding +
+    '  USP.prototype.set = function (n, v) {' + LineEnding +
+    '    n = String(n); v = String(v);' + LineEnding +
+    '    var i, seen = false, out = [];' + LineEnding +
+    '    for (i = 0; i < this._pairs.length; i++) {' + LineEnding +
+    '      if (this._pairs[i][0] === n) {' + LineEnding +
+    '        if (!seen) { out.push([n, v]); seen = true; }' + LineEnding +
+    '      } else out.push(this._pairs[i]);' + LineEnding +
+    '    }' + LineEnding +
+    '    if (!seen) out.push([n, v]);' + LineEnding +
+    '    this._pairs = out;' + LineEnding +
+    '  };' + LineEnding +
+    '  USP.prototype.sort = function () {' + LineEnding +
+    '    this._pairs.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });' + LineEnding +
+    '  };' + LineEnding +
+    '  USP.prototype.forEach = function (fn, thisArg) {' + LineEnding +
+    '    for (var i = 0; i < this._pairs.length; i++)' + LineEnding +
+    '      fn.call(thisArg, this._pairs[i][1], this._pairs[i][0], this);' + LineEnding +
+    '  };' + LineEnding +
+    '  USP.prototype.keys = function () { return this._pairs.map(function (p) { return p[0]; })[Symbol.iterator](); };' + LineEnding +
+    '  USP.prototype.values = function () { return this._pairs.map(function (p) { return p[1]; })[Symbol.iterator](); };' + LineEnding +
+    '  USP.prototype.entries = function () { return this._pairs.map(function (p) { return [p[0], p[1]]; })[Symbol.iterator](); };' + LineEnding +
+    '  USP.prototype[Symbol.iterator] = USP.prototype.entries;' + LineEnding +
+    '  USP.prototype.toString = function () {' + LineEnding +
+    '    return this._pairs.map(function (p) { return enc(p[0]) + "=" + enc(p[1]); }).join("&");' + LineEnding +
+    '  };' + LineEnding +
+    '  if (typeof globalThis.URLSearchParams !== "function") globalThis.URLSearchParams = USP;' + LineEnding +
+    '  function hostString(p) { return p.hostname + (p.port ? ":" + p.port : ""); }' + LineEnding +
+    '  function normPath(path) {' + LineEnding +
+    '    var parts = path.split("/"), out = [], i;' + LineEnding +
+    '    for (i = 0; i < parts.length; i++) {' + LineEnding +
+    '      if (parts[i] === ".") continue;' + LineEnding +
+    '      if (parts[i] === "..") { if (out.length > 1) out.pop(); continue; }' + LineEnding +
+    '      out.push(parts[i]);' + LineEnding +
+    '    }' + LineEnding +
+    '    return out.join("/") || "/";' + LineEnding +
+    '  }' + LineEnding +
+    '  function parseAbs(s) {' + LineEnding +
+    '    var m = /^([A-Za-z][A-Za-z0-9+.\-]*):\/\/([^\/?#]*)([^?#]*)(\?[^#]*)?(#.*)?$/.exec(s);' + LineEnding +
+    '    if (!m) return null;' + LineEnding +
+    '    var auth = m[2], username = "", password = "", host = auth, at, cred, col, close, pc;' + LineEnding +
+    '    at = auth.lastIndexOf("@");' + LineEnding +
+    '    if (at >= 0) {' + LineEnding +
+    '      cred = auth.slice(0, at);' + LineEnding +
+    '      host = auth.slice(at + 1);' + LineEnding +
+    '      col = cred.indexOf(":");' + LineEnding +
+    '      if (col < 0) username = cred;' + LineEnding +
+    '      else { username = cred.slice(0, col); password = cred.slice(col + 1); }' + LineEnding +
+    '    }' + LineEnding +
+    '    var hostname = host, port = "";' + LineEnding +
+    '    if (host.charAt(0) === "[") {' + LineEnding +
+    '      close = host.indexOf("]");' + LineEnding +
+    '      hostname = host.slice(0, close + 1);' + LineEnding +
+    '      if (host.charAt(close + 1) === ":") port = host.slice(close + 2);' + LineEnding +
+    '    } else {' + LineEnding +
+    '      pc = host.indexOf(":");' + LineEnding +
+    '      if (pc >= 0) { hostname = host.slice(0, pc); port = host.slice(pc + 1); }' + LineEnding +
+    '    }' + LineEnding +
+    '    var protocol = m[1].toLowerCase() + ":";' + LineEnding +
+    '    if ((protocol === "http:" && port === "80") || (protocol === "https:" && port === "443")) port = "";' + LineEnding +
+    '    if (hostname === "") return null;' + LineEnding +
+    '    return {' + LineEnding +
+    '      protocol: protocol, username: username, password: password,' + LineEnding +
+    '      hostname: hostname.toLowerCase(), port: port,' + LineEnding +
+    '      pathname: m[3] === "" ? "/" : m[3],' + LineEnding +
+    '      search: m[4] || "", hash: m[5] || ""' + LineEnding +
+    '    };' + LineEnding +
+    '  }' + LineEnding +
+    '  function URLCtor(url, base) {' + LineEnding +
+    '    url = String(url);' + LineEnding +
+    '    var p = parseAbs(url), b, origin, abs, rest, q, h, hi, qi, dir, self = this;' + LineEnding +
+    '    if (!p) {' + LineEnding +
+    '      if (base === undefined || base === null) throw new TypeError("Invalid URL: " + url);' + LineEnding +
+    '      b = parseAbs(base && base.href !== undefined ? String(base.href) : String(base));' + LineEnding +
+    '      if (!b) throw new TypeError("Invalid base URL: " + String(base));' + LineEnding +
+    '      origin = b.protocol + "//" + hostString(b);' + LineEnding +
+    '      if (url.slice(0, 2) === "//") abs = b.protocol + url;' + LineEnding +
+    '      else if (url.charAt(0) === "/") abs = origin + url;' + LineEnding +
+    '      else if (url.charAt(0) === "?") abs = origin + b.pathname + url;' + LineEnding +
+    '      else if (url.charAt(0) === "#") abs = origin + b.pathname + b.search + url;' + LineEnding +
+    '      else if (url === "") abs = origin + b.pathname + b.search;' + LineEnding +
+    '      else {' + LineEnding +
+    '        rest = url; q = ""; h = "";' + LineEnding +
+    '        hi = rest.indexOf("#");' + LineEnding +
+    '        if (hi >= 0) { h = rest.slice(hi); rest = rest.slice(0, hi); }' + LineEnding +
+    '        qi = rest.indexOf("?");' + LineEnding +
+    '        if (qi >= 0) { q = rest.slice(qi); rest = rest.slice(0, qi); }' + LineEnding +
+    '        dir = b.pathname.slice(0, b.pathname.lastIndexOf("/") + 1);' + LineEnding +
+    '        abs = origin + normPath(dir + rest) + q + h;' + LineEnding +
+    '      }' + LineEnding +
+    '      p = parseAbs(abs);' + LineEnding +
+    '      if (!p) throw new TypeError("Invalid URL: " + url);' + LineEnding +
+    '    }' + LineEnding +
+    '    this.protocol = p.protocol;' + LineEnding +
+    '    this.username = p.username;' + LineEnding +
+    '    this.password = p.password;' + LineEnding +
+    '    this.hostname = p.hostname;' + LineEnding +
+    '    this.port = p.port;' + LineEnding +
+    '    this.pathname = p.pathname;' + LineEnding +
+    '    this.hash = p.hash;' + LineEnding +
+    '    this.searchParams = new globalThis.URLSearchParams(p.search);' + LineEnding +
+    '    Object.defineProperty(this, "search", {' + LineEnding +
+    '      get: function () { var s = self.searchParams.toString(); return s === "" ? "" : "?" + s; },' + LineEnding +
+    '      set: function (v) { self.searchParams = new globalThis.URLSearchParams(String(v)); },' + LineEnding +
+    '      configurable: true' + LineEnding +
+    '    });' + LineEnding +
+    '    Object.defineProperty(this, "host", {' + LineEnding +
+    '      get: function () { return hostString(self); },' + LineEnding +
+    '      configurable: true' + LineEnding +
+    '    });' + LineEnding +
+    '    Object.defineProperty(this, "origin", {' + LineEnding +
+    '      get: function () { return self.protocol + "//" + hostString(self); },' + LineEnding +
+    '      configurable: true' + LineEnding +
+    '    });' + LineEnding +
+    '    Object.defineProperty(this, "href", {' + LineEnding +
+    '      get: function () {' + LineEnding +
+    '        var cred = "";' + LineEnding +
+    '        if (self.username !== "" || self.password !== "")' + LineEnding +
+    '          cred = self.username + (self.password !== "" ? ":" + self.password : "") + "@";' + LineEnding +
+    '        return self.protocol + "//" + cred + hostString(self) + self.pathname + self.search + self.hash;' + LineEnding +
+    '      },' + LineEnding +
+    '      configurable: true' + LineEnding +
+    '    });' + LineEnding +
+    '  }' + LineEnding +
+    '  URLCtor.prototype.toString = function () { return this.href; };' + LineEnding +
+    '  URLCtor.prototype.toJSON = function () { return this.href; };' + LineEnding +
+    '  if (typeof globalThis.URL !== "function") globalThis.URL = URLCtor;' + LineEnding +
+    '  function TE() { this.encoding = "utf-8"; }' + LineEnding +
+    '  TE.prototype.encode = function (input) {' + LineEnding +
+    '    var str = input === undefined ? "" : String(input);' + LineEnding +
+    '    var bytes = [], i, c;' + LineEnding +
+    '    for (i = 0; i < str.length; i++) {' + LineEnding +
+    '      c = str.codePointAt(i);' + LineEnding +
+    '      if (c > 0xFFFF) i++;' + LineEnding +
+    '      if (c >= 0xD800 && c <= 0xDFFF) c = 0xFFFD;' + LineEnding +
+    '      if (c < 0x80) bytes.push(c);' + LineEnding +
+    '      else if (c < 0x800) bytes.push(0xC0 | (c >> 6), 0x80 | (c & 63));' + LineEnding +
+    '      else if (c < 0x10000) bytes.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));' + LineEnding +
+    '      else bytes.push(0xF0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));' + LineEnding +
+    '    }' + LineEnding +
+    '    return new Uint8Array(bytes);' + LineEnding +
+    '  };' + LineEnding +
+    '  if (typeof globalThis.TextEncoder !== "function") globalThis.TextEncoder = TE;' + LineEnding +
+    '  function TD(label, options) {' + LineEnding +
+    '    label = label === undefined ? "utf-8" : String(label).toLowerCase().trim();' + LineEnding +
+    '    if (label !== "utf-8" && label !== "utf8" && label !== "unicode-1-1-utf-8")' + LineEnding +
+    '      throw new RangeError("TextDecoder: only utf-8 is supported");' + LineEnding +
+    '    this.encoding = "utf-8";' + LineEnding +
+    '    this.fatal = !!(options && options.fatal);' + LineEnding +
+    '  }' + LineEnding +
+    '  TD.prototype.decode = function (input) {' + LineEnding +
+    '    if (input === undefined) return "";' + LineEnding +
+    '    var bytes;' + LineEnding +
+    '    if (input instanceof Uint8Array) bytes = input;' + LineEnding +
+    '    else if (input instanceof ArrayBuffer) bytes = new Uint8Array(input);' + LineEnding +
+    '    else if (ArrayBuffer.isView(input)) bytes = new Uint8Array(input.buffer, input.byteOffset, input.byteLength);' + LineEnding +
+    '    else bytes = new Uint8Array(input);' + LineEnding +
+    '    var out = "", i = 0, b, c, n, j, valid;' + LineEnding +
+    '    while (i < bytes.length) {' + LineEnding +
+    '      b = bytes[i];' + LineEnding +
+    '      if (b < 0x80) { c = b; n = 0; }' + LineEnding +
+    '      else if ((b & 0xE0) === 0xC0) { c = b & 31; n = 1; }' + LineEnding +
+    '      else if ((b & 0xF0) === 0xE0) { c = b & 15; n = 2; }' + LineEnding +
+    '      else if ((b & 0xF8) === 0xF0) { c = b & 7; n = 3; }' + LineEnding +
+    '      else {' + LineEnding +
+    '        if (this.fatal) throw new TypeError("TextDecoder: invalid UTF-8");' + LineEnding +
+    '        out += String.fromCharCode(0xFFFD); i++; continue;' + LineEnding +
+    '      }' + LineEnding +
+    '      valid = true;' + LineEnding +
+    '      for (j = 1; j <= n; j++) {' + LineEnding +
+    '        if (i + j >= bytes.length || (bytes[i + j] & 0xC0) !== 0x80) { valid = false; break; }' + LineEnding +
+    '        c = (c << 6) | (bytes[i + j] & 63);' + LineEnding +
+    '      }' + LineEnding +
+    '      if (valid && n === 1 && c < 0x80) valid = false;' + LineEnding +
+    '      if (valid && n === 2 && (c < 0x800 || (c >= 0xD800 && c <= 0xDFFF))) valid = false;' + LineEnding +
+    '      if (valid && n === 3 && (c < 0x10000 || c > 0x10FFFF)) valid = false;' + LineEnding +
+    '      if (!valid) {' + LineEnding +
+    '        if (this.fatal) throw new TypeError("TextDecoder: invalid UTF-8");' + LineEnding +
+    '        out += String.fromCharCode(0xFFFD); i++; continue;' + LineEnding +
+    '      }' + LineEnding +
+    '      out += String.fromCodePoint(c);' + LineEnding +
+    '      i += n + 1;' + LineEnding +
+    '    }' + LineEnding +
+    '    return out;' + LineEnding +
+    '  };' + LineEnding +
+    '  if (typeof globalThis.TextDecoder !== "function") globalThis.TextDecoder = TD;' + LineEnding +
+    '})();';
+
+  {** Wraps console.* so non-string arguments are JSON.stringify''d instead of
+      collapsing to "[object Object]". Runs after RegisterConsoleLog; no-op in
+      contexts without the console object (epUI not granted). }
+  CONSOLE_FMT_SHIM: string =
+    '(function () {' + LineEnding +
+    '  if (typeof console !== "object" || console === null) return;' + LineEnding +
+    '  function fmt(a) {' + LineEnding +
+    '    if (typeof a === "string") return a;' + LineEnding +
+    '    if (a instanceof Error) return (a.name || "Error") + ": " + a.message;' + LineEnding +
+    '    if (typeof a === "object" && a !== null) {' + LineEnding +
+    '      try {' + LineEnding +
+    '        var s = JSON.stringify(a);' + LineEnding +
+    '        if (s !== undefined) return s;' + LineEnding +
+    '      } catch (e) { }' + LineEnding +
+    '    }' + LineEnding +
+    '    return String(a);' + LineEnding +
+    '  }' + LineEnding +
+    '  var names = ["log", "error", "warn", "info", "debug", "push"], i;' + LineEnding +
+    '  for (i = 0; i < names.length; i++)' + LineEnding +
+    '    (function (name, orig) {' + LineEnding +
+    '      if (typeof orig !== "function") return;' + LineEnding +
+    '      console[name] = function () {' + LineEnding +
+    '        var out = [], j;' + LineEnding +
+    '        for (j = 0; j < arguments.length; j++) out.push(fmt(arguments[j]));' + LineEnding +
+    '        return orig.apply(console, out);' + LineEnding +
+    '      };' + LineEnding +
+    '    })(names[i], console[names[i]]);' + LineEnding +
+    '})();';
 var
   ctx: JSContext;
 begin
@@ -1178,8 +1536,13 @@ begin
   if CanRegister(epUI) then
     RegisterConsoleLog(@ctx);
 
-  // Permission-free web polyfills (atob/btoa/queueMicrotask) for every context.
+  // Permission-free polyfills for every context: ES library methods,
+  // atob/btoa/queueMicrotask, URL/URLSearchParams/TextEncoder/TextDecoder,
+  // then the console argument formatter (needs console to exist already).
+  ExecuteInCurrent(ES_SHIM, '<es shim>');
   ExecuteInCurrent(BASE_SHIM, '<base shim>');
+  ExecuteInCurrent(WEB_SHIM, '<web shim>');
+  ExecuteInCurrent(CONSOLE_FMT_SHIM, '<console fmt shim>');
 end;
 
 {** Free context/resources, dispose registered callbacks, stop timer, and clear singleton. }
@@ -2569,6 +2932,56 @@ begin
   while JS_IsJobPending(FRuntime) do
     if JS_ExecutePendingJob(FRuntime, @runCtx) <= 0 then
       Break;
+
+  // Rejections that survived a full job-queue drain are genuinely unhandled.
+  FlushPendingRejections;
+end;
+
+procedure TTrndiExtEngine.NoteRejection(key: UInt64; const msg: string);
+var
+  i: integer;
+begin
+  for i := 0 to High(FPendingRejections) do
+    if FPendingRejections[i].Key = key then
+    begin
+      FPendingRejections[i].Msg := msg;
+      Exit;
+    end;
+  SetLength(FPendingRejections, Length(FPendingRejections) + 1);
+  FPendingRejections[High(FPendingRejections)].Key := key;
+  FPendingRejections[High(FPendingRejections)].Msg := msg;
+end;
+
+procedure TTrndiExtEngine.NoteRejectionHandled(key: UInt64);
+var
+  i, j: integer;
+begin
+  for i := 0 to High(FPendingRejections) do
+    if FPendingRejections[i].Key = key then
+    begin
+      for j := i to High(FPendingRejections) - 1 do
+        FPendingRejections[j] := FPendingRejections[j + 1];
+      SetLength(FPendingRejections, Length(FPendingRejections) - 1);
+      Exit;
+    end;
+end;
+
+{** The list is detached before alerting: the modal alert pumps messages,
+    which re-enters OnJSTimer and would otherwise report entries twice. }
+procedure TTrndiExtEngine.FlushPendingRejections;
+var
+  pending: array of TPendingRejection;
+  i: integer;
+begin
+  if Length(FPendingRejections) = 0 then
+    Exit;
+  pending := FPendingRejections;
+  FPendingRejections := nil;
+  for i := 0 to High(pending) do
+    if pending[i].Msg <> '' then
+      alert('Unhandled Promise rejection: ' + pending[i].Msg)
+    else
+      alert('Unhandled Promise rejection: [no error message]');
 end;
 
 {** Free retired timers parked by TJSTimerHandler.OnTimer / JSClearTimer.
