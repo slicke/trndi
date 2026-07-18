@@ -1376,6 +1376,12 @@ begin
   // CRITICAL: Signal extension shutdown FIRST before stopping timers
   // This prevents new async operations from starting
   try
+    // Let extensions run their unloadCallback while the engine and JS
+    // contexts are still fully alive; once shutdown is signalled below,
+    // no more JS may execute.
+    if (not IsExtShuttingDown) and TTrndiExtEngine.HasInstance then
+      TTrndiExtEngine.Instance.NotifyUnloadAll;
+
     // Signal shutdown to all extension components immediately
     SetExtShuttingDown(true);
     

@@ -118,16 +118,57 @@ begin
   end;
 end;
 
-// Get comprehensive current reading with metadata
-function JSGetCurrentReading(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+// Build the JS object for one reading: {value_system, value_mgdl, value_mmol,
+// delta_mgdl, delta_mmol, direction, timestamp, age_seconds}. Shared by
+// getCurrentReading and getReadings so both return the same shape.
+function BuildReadingObject(ctx: JSContext; const reading: BGReading): JSValueRaw;
 var
-  reading: BGReading;
-  ageSeconds: Int64;
-  trendStr: string;
   obj, propVal: JSValueRaw;
   jsVal: JSValue;
 begin
   jsVal := Default(JSValue);
+
+  // Create new JavaScript object
+  obj := JS_NewObject(ctx);
+
+  // Set properties: value_system
+  jsVal.FromFloat(reading.convert(un));
+  JS_SetPropertyStr(ctx, obj, 'value_system', jsVal.Raw);
+
+  // value_mgdl
+  jsVal.From32(Round(reading.convert(BGUnit.mgdl)));
+  JS_SetPropertyStr(ctx, obj, 'value_mgdl', jsVal.Raw);
+
+  // value_mmol
+  jsVal.FromFloat(reading.convert(BGUnit.mmol));
+  JS_SetPropertyStr(ctx, obj, 'value_mmol', jsVal.Raw);
+
+  // delta_mgdl
+  jsVal.From32(Round(reading.convert(BGUnit.mgdl, BGDelta)));
+  JS_SetPropertyStr(ctx, obj, 'delta_mgdl', jsVal.Raw);
+
+  // delta_mmol
+  jsVal.FromFloat(reading.convert(BGUnit.mmol, BGDelta));
+  JS_SetPropertyStr(ctx, obj, 'delta_mmol', jsVal.Raw);
+
+  // direction
+  propVal := JS_NewString(ctx, pansichar(RawUtf8(reading.trend.Img)));
+  JS_SetPropertyStr(ctx, obj, 'direction', propVal);
+
+  // timestamp
+  jsVal.FromFloat(reading.date);
+  JS_SetPropertyStr(ctx, obj, 'timestamp', jsVal.Raw);
+
+  // age_seconds
+  jsVal.From64(SecondsBetween(Now, reading.date));
+  JS_SetPropertyStr(ctx, obj, 'age_seconds', jsVal.Raw);
+
+  Result := obj;
+end;
+
+// Get comprehensive current reading with metadata
+function JSGetCurrentReading(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+begin
   // Return false if no readings available
   if Length(bgs) < 1 then
   begin
@@ -135,50 +176,46 @@ begin
     Exit;
   end;
 
-  reading := bgs[0];
-  
-  // Calculate age in seconds
-  ageSeconds := SecondsBetween(Now, reading.date);
-  
-  // Get trend direction as string
-  trendStr := reading.trend.Img;
-  
-  // Create new JavaScript object
-  obj := JS_NewObject(ctx);
-  
-  // Set properties: value_system
-  jsVal.FromFloat(reading.convert(un));
-  JS_SetPropertyStr(ctx, obj, 'value_system', jsVal.Raw);
-  
-  // value_mgdl
-  jsVal.From32(Round(reading.convert(BGUnit.mgdl)));
-  JS_SetPropertyStr(ctx, obj, 'value_mgdl', jsVal.Raw);
-  
-  // value_mmol
-  jsVal.FromFloat(reading.convert(BGUnit.mmol));
-  JS_SetPropertyStr(ctx, obj, 'value_mmol', jsVal.Raw);
-  
-  // delta_mgdl
-  jsVal.From32(Round(reading.convert(BGUnit.mgdl, BGDelta)));
-  JS_SetPropertyStr(ctx, obj, 'delta_mgdl', jsVal.Raw);
-  
-  // delta_mmol
-  jsVal.FromFloat(reading.convert(BGUnit.mmol, BGDelta));
-  JS_SetPropertyStr(ctx, obj, 'delta_mmol', jsVal.Raw);
-  
-  // direction
-  propVal := JS_NewString(ctx, pansichar(RawUtf8(trendStr)));
-  JS_SetPropertyStr(ctx, obj, 'direction', propVal);
-  
-  // timestamp
-  jsVal.FromFloat(reading.date);
-  JS_SetPropertyStr(ctx, obj, 'timestamp', jsVal.Raw);
-  
-  // age_seconds
-  jsVal.From64(ageSeconds);
-  JS_SetPropertyStr(ctx, obj, 'age_seconds', jsVal.Raw);
-  
-  Result := obj;
+  Result := BuildReadingObject(ctx, bgs[0]);
+end;
+
+// Get the cached reading history (newest first) as an array of the same
+// objects getCurrentReading returns. Optional argument caps the number of
+// readings; omitted or <= 0 returns everything Trndi holds in memory.
+function JSGetReadings(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  maxCount: integer;
+  countVar: variant;
+  i, added: integer;
+  arr: JSValueRaw;
+begin
+  maxCount := 0; // 0 = no cap
+
+  if argc > 0 then
+  begin
+    ctx^.ToVariant(argv^[0], countVar);
+    if VarType(countVar) = varInteger then
+      maxCount := countVar
+    else
+    begin
+      ExtError(uxdAuto, 'getReadings: count must be an integer');
+      Exit(JS_FALSE);
+    end;
+  end;
+
+  arr := JS_NewArray(ctx);
+  added := 0;
+  for i := Low(bgs) to High(bgs) do
+  begin
+    if bgs[i].empty then
+      Continue;
+    if (maxCount > 0) and (added >= maxCount) then
+      Break;
+    JS_SetPropertyUint32(ctx, arr, added, BuildReadingObject(ctx, bgs[i]));
+    Inc(added);
+  end;
+
+  Result := arr;
 end;
 
 // Get current CGM limits
