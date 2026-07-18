@@ -363,16 +363,6 @@ end;
 
 procedure TfBG.UpdatePredictionLabel;
 var
-  bgr: BGResults;
-  pred1, pred2, pred3: string;
-  lastReadingTime: TDateTime;
-  lastReadingValue: glucose;
-  i, closest5, closest10, closest15, closestTarget: integer;
-  diff5, diff10, diff15, diffTarget, currentDiff: integer;
-  delta: glucose;
-  trend: BGTrend;
-  minutes, targetMinutes: integer;
-  validCount: integer;
   predictionHorizon: integer;
 begin
   if FShuttingDown then
@@ -670,17 +660,6 @@ begin
     if fFloat.pnMultiUser.Visible then
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
     fFloat.FormResize(fFloat);
-    fFloat.lArrow.Caption := lArrow.Caption;
-    fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
-    fFloat.lVal.Visible := true;
-    if fFloat.miFontMain.Checked then
-    begin
-      fFloat.lVal.Font.Color := lVal.Font.Color;
-      fFloat.lArrow.Font.Color := fFloat.lVal.Font.Color;
-    end;
-    fFloat.pnMultiUser.Visible := pnMultiUser.Visible;
-    if fFloat.pnMultiUser.Visible then
-      fFloat.pnMultiUser.Color := pnMultiUser.Color;
 
     // Mirror the rotating trend arrow (uses the angle cached by UpdateTrendArrow).
     fFloat.SetTrendArrow(RotatingArrow, FLastArrowAngle, fFloat.lArrow.Font.Color);
@@ -729,7 +708,6 @@ end;
 procedure TfBG.UpdateUIBasedOnGlucose;
 var
   reading: BGReading;
-  col: TColor;
   txt: string;
   sensorFault: boolean;
 begin
