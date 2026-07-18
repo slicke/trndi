@@ -1512,6 +1512,100 @@ const
     '      };' + LineEnding +
     '    })(names[i], console[names[i]]);' + LineEnding +
     '})();';
+
+  {** performance.now() (native monotonic clock, µs precision), WebCrypto
+      essentials (crypto.getRandomValues/randomUUID over the native AES-PRNG
+      hex source) and structuredClone (deep clone incl. Date/RegExp/Map/Set/
+      typed arrays, preserves cycles and shared buffers; functions/symbols
+      throw TypeError). Guarded so host-provided versions win; the crypto and
+      performance parts no-op if their natives are absent. Ungated. }
+  MISC_SHIM: string =
+    '(function () {' + LineEnding +
+    '  if (typeof globalThis.performance !== "object" || globalThis.performance === null)' + LineEnding +
+    '    globalThis.performance = {};' + LineEnding +
+    '  if (typeof globalThis.performance.now !== "function" && typeof trndiPerfNow === "function") {' + LineEnding +
+    '    globalThis.performance.now = function () { return trndiPerfNow(); };' + LineEnding +
+    '    globalThis.performance.timeOrigin = Date.now() - trndiPerfNow();' + LineEnding +
+    '  }' + LineEnding +
+    '  if (!globalThis.crypto && typeof trndiRandomHex === "function") {' + LineEnding +
+    '    var randBytes = function (n) {' + LineEnding +
+    '      if (n === 0) return new Uint8Array(0);' + LineEnding +
+    '      var hx = trndiRandomHex(n), out = new Uint8Array(n), i;' + LineEnding +
+    '      if (typeof hx !== "string" || hx.length !== n * 2)' + LineEnding +
+    '        throw new Error("crypto: randomness unavailable");' + LineEnding +
+    '      for (i = 0; i < n; i++) out[i] = parseInt(hx.substr(i * 2, 2), 16);' + LineEnding +
+    '      return out;' + LineEnding +
+    '    };' + LineEnding +
+    '    globalThis.crypto = {' + LineEnding +
+    '      getRandomValues: function (arr) {' + LineEnding +
+    '        if (!ArrayBuffer.isView(arr) || arr instanceof Float32Array || arr instanceof Float64Array || arr instanceof DataView)' + LineEnding +
+    '          throw new TypeError("getRandomValues: argument must be an integer typed array");' + LineEnding +
+    '        if (arr.byteLength > 65536)' + LineEnding +
+    '          throw new RangeError("getRandomValues: quota of 65536 bytes exceeded");' + LineEnding +
+    '        new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength).set(randBytes(arr.byteLength));' + LineEnding +
+    '        return arr;' + LineEnding +
+    '      },' + LineEnding +
+    '      randomUUID: function () {' + LineEnding +
+    '        var b = randBytes(16), hx = "", i;' + LineEnding +
+    '        b[6] = (b[6] & 15) | 64;' + LineEnding +
+    '        b[8] = (b[8] & 63) | 128;' + LineEnding +
+    '        for (i = 0; i < 16; i++) {' + LineEnding +
+    '          hx += (b[i] < 16 ? "0" : "") + b[i].toString(16);' + LineEnding +
+    '          if (i === 3 || i === 5 || i === 7 || i === 9) hx += "-";' + LineEnding +
+    '        }' + LineEnding +
+    '        return hx;' + LineEnding +
+    '      }' + LineEnding +
+    '    };' + LineEnding +
+    '  }' + LineEnding +
+    '  if (typeof globalThis.structuredClone !== "function") {' + LineEnding +
+    '    var sc = function (v, seen) {' + LineEnding +
+    '      if (v === null || typeof v !== "object") {' + LineEnding +
+    '        if (typeof v === "function" || typeof v === "symbol")' + LineEnding +
+    '          throw new TypeError("structuredClone: a " + typeof v + " cannot be cloned");' + LineEnding +
+    '        return v;' + LineEnding +
+    '      }' + LineEnding +
+    '      if (seen.has(v)) return seen.get(v);' + LineEnding +
+    '      var out, i, k, buf;' + LineEnding +
+    '      if (v instanceof Date) return new Date(v.getTime());' + LineEnding +
+    '      if (v instanceof RegExp) return new RegExp(v.source, v.flags);' + LineEnding +
+    '      if (v instanceof ArrayBuffer) {' + LineEnding +
+    '        buf = new ArrayBuffer(v.byteLength);' + LineEnding +
+    '        new Uint8Array(buf).set(new Uint8Array(v));' + LineEnding +
+    '        seen.set(v, buf);' + LineEnding +
+    '        return buf;' + LineEnding +
+    '      }' + LineEnding +
+    '      if (v instanceof DataView)' + LineEnding +
+    '        return new DataView(sc(v.buffer, seen), v.byteOffset, v.byteLength);' + LineEnding +
+    '      if (ArrayBuffer.isView(v))' + LineEnding +
+    '        return new v.constructor(sc(v.buffer, seen), v.byteOffset, v.length);' + LineEnding +
+    '      if (v instanceof Map) {' + LineEnding +
+    '        out = new Map(); seen.set(v, out);' + LineEnding +
+    '        v.forEach(function (val, key) { out.set(sc(key, seen), sc(val, seen)); });' + LineEnding +
+    '        return out;' + LineEnding +
+    '      }' + LineEnding +
+    '      if (v instanceof Set) {' + LineEnding +
+    '        out = new Set(); seen.set(v, out);' + LineEnding +
+    '        v.forEach(function (val) { out.add(sc(val, seen)); });' + LineEnding +
+    '        return out;' + LineEnding +
+    '      }' + LineEnding +
+    '      if (v instanceof Error) {' + LineEnding +
+    '        out = new Error(v.message);' + LineEnding +
+    '        out.name = v.name;' + LineEnding +
+    '        return out;' + LineEnding +
+    '      }' + LineEnding +
+    '      if (v instanceof Array) {' + LineEnding +
+    '        out = []; seen.set(v, out);' + LineEnding +
+    '        for (i = 0; i < v.length; i++) out[i] = sc(v[i], seen);' + LineEnding +
+    '        return out;' + LineEnding +
+    '      }' + LineEnding +
+    '      out = {}; seen.set(v, out);' + LineEnding +
+    '      for (k in v)' + LineEnding +
+    '        if (Object.prototype.hasOwnProperty.call(v, k)) out[k] = sc(v[k], seen);' + LineEnding +
+    '      return out;' + LineEnding +
+    '    };' + LineEnding +
+    '    globalThis.structuredClone = function (value) { return sc(value, new Map()); };' + LineEnding +
+    '  }' + LineEnding +
+    '})();';
 var
   ctx: JSContext;
 begin
@@ -1536,12 +1630,19 @@ begin
   if CanRegister(epUI) then
     RegisterConsoleLog(@ctx);
 
+  // Native backends for performance.now() and the crypto shim. Permission-free:
+  // a monotonic clock and random bytes touch nothing user-sensitive.
+  addFunction('trndiPerfNow',   ExtFunction(@JSPerfNow),   0);
+  addFunction('trndiRandomHex', ExtFunction(@JSRandomHex), 1);
+
   // Permission-free polyfills for every context: ES library methods,
   // atob/btoa/queueMicrotask, URL/URLSearchParams/TextEncoder/TextDecoder,
-  // then the console argument formatter (needs console to exist already).
+  // performance/crypto/structuredClone, then the console argument formatter
+  // (needs console to exist already).
   ExecuteInCurrent(ES_SHIM, '<es shim>');
   ExecuteInCurrent(BASE_SHIM, '<base shim>');
   ExecuteInCurrent(WEB_SHIM, '<web shim>');
+  ExecuteInCurrent(MISC_SHIM, '<misc shim>');
   ExecuteInCurrent(CONSOLE_FMT_SHIM, '<console fmt shim>');
 end;
 

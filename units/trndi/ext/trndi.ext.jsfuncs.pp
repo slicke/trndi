@@ -92,13 +92,15 @@ end;
 
 const
   {** JS-side fetch() shim. Wraps the threaded httpRequest promise (registered
-      below) in a WHATWG-fetch-shaped API: fetch(url, {method, headers, body})
-      resolves to a Response-like object with status/ok/url/headers/text()/json().
-      Header lookup is case-insensitive since servers may send lowercase names
-      (HTTP/2). Bodies are buffered — no streaming, AbortController or binary.
-      Also defines asyncGet/asyncPost as thin aliases over httpRequest so the
-      legacy promises keep working (and gain the non-blocking path) without a
-      native backend. }
+      below) in a WHATWG-fetch-shaped API: fetch(url, {method, headers, body,
+      timeout}) resolves to a Response-like object with status/ok/url/headers/
+      text()/json(). The non-standard timeout option (milliseconds) rejects the
+      promise with a TypeError containing 'timeout' when the server does not
+      answer in time. Header lookup is case-insensitive since servers may send
+      lowercase names (HTTP/2). Bodies are buffered — no streaming,
+      AbortController or binary. Also defines asyncGet/asyncPost as thin
+      aliases over httpRequest so the legacy promises keep working (and gain
+      the non-blocking path) without a native backend. }
 FETCH_SHIM: string =
   '(function () {' + LineEnding +
   '  if (typeof httpRequest !== "function" || typeof globalThis.fetch === "function")' + LineEnding +
@@ -116,6 +118,13 @@ FETCH_SHIM: string =
   '    init = init || {};' + LineEnding +
   '    var method = String(init.method || "GET").toUpperCase();' + LineEnding +
   '    var body = (init.body === undefined || init.body === null) ? "" : String(init.body);' + LineEnding +
+  '    var timeout = 0;' + LineEnding +
+  '    if (init.timeout !== undefined) {' + LineEnding +
+  '      timeout = Number(init.timeout);' + LineEnding +
+  '      if (!isFinite(timeout) || timeout < 0)' + LineEnding +
+  '        throw new TypeError("fetch: timeout must be a non-negative number of milliseconds");' + LineEnding +
+  '      timeout = Math.floor(timeout);' + LineEnding +
+  '    }' + LineEnding +
   '    var hdrs = {}, hasCT = false;' + LineEnding +
   '    if (init.headers)' + LineEnding +
   '      for (var k in init.headers) {' + LineEnding +
@@ -123,7 +132,7 @@ FETCH_SHIM: string =
   '        if (k.toLowerCase() === "content-type") hasCT = true;' + LineEnding +
   '      }' + LineEnding +
   '    if (body !== "" && !hasCT) hdrs["Content-Type"] = "text/plain;charset=UTF-8";' + LineEnding +
-  '    return httpRequest(method, String(url), JSON.stringify(hdrs), body).then(' + LineEnding +
+  '    return httpRequest(method, String(url), JSON.stringify(hdrs), body, timeout).then(' + LineEnding +
   '      function (raw) {' + LineEnding +
   '        var r = JSON.parse(raw);' + LineEnding +
   '        return {' + LineEnding +
@@ -167,7 +176,7 @@ begin
     AddPromiseIf(epNet,      'jsonGet',       JSCallbackFunction(@jsonGet), 2);
     // Threaded: the HTTP round-trip runs on the promise worker thread so the
     // UI never blocks. httpRequest must therefore stay free of UI/JS calls.
-    AddPromiseIf(epNet,      'httpRequest',   JSCallbackFunction(@httpRequest), 4, true);
+    AddPromiseIf(epNet,      'httpRequest',   JSCallbackFunction(@httpRequest), 4, 5, true);
     AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@runCMD));
     AddPromiseIf(epData,     'querySvc',      JSCallbackFunction(@querySvc));
     AddPromiseIf(epSettings, 'setLimits',     JSCallbackFunction(@setLimits), 2, 5);
@@ -200,9 +209,11 @@ end;
 
 // Native backend for the JS fetch() shim. Registered with threaded=true, so it
 // executes on the TJSAsyncTask worker thread: no UI, no JS context, no shared
-// engine state may be touched here. params: (method, url, headersJson, body).
-// Resolves with a JSON envelope {status, url, redirected, headers, body};
-// returns false (= promise rejection) on transport failure or bad arguments.
+// engine state may be touched here. params: (method, url, headersJson, body
+// [, timeoutMs]) — timeoutMs 0/absent means no explicit timeout (the
+// transport's own limits still apply). Resolves with a JSON envelope
+// {status, url, redirected, headers, body}; returns false (= promise
+// rejection) on transport failure, timeout or bad arguments.
 function TJSFuncs.httpRequest(ctx: pointer; const func: string;
   const params: JSParameters; out res: JSValueVal): boolean;
 var
@@ -213,6 +224,8 @@ var
   envelope, hobj: TJSONObject;
   jd: TJSONData;
   i, p, hidx: integer;
+  timeoutMs: Int64;
+  timedOut: boolean;
 begin
   Result := false;
 
@@ -222,6 +235,21 @@ begin
       res := StringToValueVal(Format('fetch: argument %d must be a string', [i]));
       Exit;
     end;
+
+  timeoutMs := 0;
+  if params.Count > 4 then
+  begin
+    if not (params[4]^.match(JD_INT) or params[4]^.match(JD_F64)) then
+    begin
+      res := StringToValueVal('fetch: timeout must be a number');
+      Exit;
+    end;
+    timeoutMs := round(params[4]^.floatify);
+    if timeoutMs < 0 then
+      timeoutMs := 0;
+    if timeoutMs > 86400000 then // cap at 24h; RequestExWait takes a cardinal
+      timeoutMs := 86400000;
+  end;
 
   method := UpperCase(params[0]^.Data.StrVal);
   url := params[1]^.Data.StrVal;
@@ -254,10 +282,21 @@ begin
 
     net := TrndiNative.Create;
     try
-      resp := net.requestEx(method = 'POST', url, [], body, nil, true, 10,
-        hdrs, false);
+      if timeoutMs > 0 then
+        // Short abandon-grace so the promise rejects close to the requested
+        // timeout instead of timeout+5s.
+        resp := net.RequestExWait(method = 'POST', url, [], body, nil, true, 10,
+          hdrs, false, cardinal(timeoutMs), 250)
+      else
+        resp := net.requestEx(method = 'POST', url, [], body, nil, true, 10,
+          hdrs, false);
     finally
-      net.Free;
+      // On timeout RequestExWait may have abandoned a worker thread that is
+      // still inside net.requestEx; freeing net under it would be a
+      // use-after-free, so the instance is deliberately leaked in that case.
+      timedOut := (not resp.Success) and (resp.ErrorMessage = 'timeout');
+      if not timedOut then
+        net.Free;
     end;
   finally
     hdrs.Free;

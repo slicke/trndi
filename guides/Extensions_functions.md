@@ -13,7 +13,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
 > - **`net`** (declare): `fetch`, `asyncGet`, `asyncPost`, `jsonGet`
 > - **`exec`** (declare): `runCMD`
 > - **`settings`** (declare): `getSetting`, `setSetting`, `setLimits`, `setTimeAndRange`, `setOverrideThresholdMinutes`
-> - **No permission needed**: `atob`, `btoa`, `queueMicrotask`, `URL`, `URLSearchParams`, `TextEncoder`, `TextDecoder`, plus modern JS methods (`replaceAll`, `at`, `findLast`, `Object.hasOwn`, `Promise.allSettled`, `Promise.any`, ...)
+> - **No permission needed**: `atob`, `btoa`, `queueMicrotask`, `URL`, `URLSearchParams`, `TextEncoder`, `TextDecoder`, `performance.now`, `crypto.randomUUID`, `crypto.getRandomValues`, `structuredClone`, plus modern JS methods (`replaceAll`, `at`, `findLast`, `Object.hasOwn`, `Promise.allSettled`, `Promise.any`, ...)
 
 ## Contents
 
@@ -55,6 +55,9 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [queueMicrotask](#queuemicrotask)
    - [URL / URLSearchParams](#url--urlsearchparams)
    - [TextEncoder / TextDecoder](#textencoder--textdecoder)
+   - [performance.now](#performancenow)
+   - [crypto](#crypto)
+   - [structuredClone](#structuredclone)
    - [Modern JavaScript methods](#modern-javascript-methods)
  - [Promises (global)](#promises-global)
    - [fetch](#fetch)
@@ -698,6 +701,43 @@ UTF-8 encoding and decoding between strings and byte arrays.
 - Invalid bytes decode to `U+FFFD` (`�`), or throw a `TypeError` with `new TextDecoder("utf-8", { fatal: true })`
 - `decode()` accepts a `Uint8Array`, `ArrayBuffer`, or plain array of byte values
 
+### performance.now
+```javascript
+const t0 = performance.now();
+heavyWork();
+console.log("took " + (performance.now() - t0).toFixed(2) + " ms");
+```
+High-resolution monotonic timestamp in milliseconds (microsecond precision). Unlike `Date.now()`, it never jumps backwards when the system clock changes, so it is the right tool for measuring durations. `performance.timeOrigin + performance.now()` approximates `Date.now()`.
+
+### crypto
+```javascript
+crypto.randomUUID();               // "7d8ad821-19f5-4d54-9c9e-8a24ad76dd9c"
+
+const nonce = new Uint8Array(16);
+crypto.getRandomValues(nonce);     // fills the array in place, returns it
+```
+Cryptographically secure randomness from the operating system's entropy source — use this instead of `Math.random()` for request IDs, nonces or tokens.
+
+**Notes:**
+- `randomUUID()` returns an RFC 4122 version-4 UUID string
+- `getRandomValues` accepts integer typed arrays only (`Uint8Array`, `Int32Array`, ...); `Float32Array`, `Float64Array` and `DataView` throw a `TypeError`
+- Requests over 65536 bytes throw a `RangeError` (the WebCrypto quota)
+
+### structuredClone
+```javascript
+const copy = structuredClone({
+  readings: [1, 2, { v: 3 }],
+  when: new Date(),
+  tags: new Set(["a", "b"])
+});
+copy.readings[2].v = 99;   // original untouched
+```
+Deep-clones a value: plain objects, arrays, `Date`, `RegExp`, `Map`, `Set`, `ArrayBuffer`, typed arrays and `DataView`. Cycles are preserved (`o.self = o` clones correctly), as are views sharing one buffer.
+
+**Notes:**
+- Functions and symbols throw a `TypeError`, like in browsers
+- Class instances come back as plain objects (own enumerable properties only)
+
 ### Modern JavaScript methods
 The bundled JavaScript engine predates some newer library methods, so Trndi polyfills them — these all work even though the engine core is older:
 
@@ -732,6 +772,10 @@ const response = await fetch(url, options?)
 - `options.headers` (object) — Plain object of request headers.
 - `options.body` (string) — Request body. Stringify JSON yourself. String
   bodies get `Content-Type: text/plain;charset=UTF-8` unless you set one.
+- `options.timeout` (number) — Milliseconds to wait before giving up. When it
+  elapses, the promise rejects with a `TypeError` whose message contains
+  `timeout`. Non-standard (browsers use `AbortController`); off by default,
+  though the transport's own limits (typically ~30 s) still apply.
 
 Resolves with a response object:
 - `status` (number), `ok` (true for 2xx), `url` (final URL after redirects),
@@ -740,13 +784,14 @@ Resolves with a response object:
   is case-insensitive
 - `text()` / `json()` — promises for the buffered body
 
-Rejects with a `TypeError` on transport failure (like the browser API,
-non-2xx responses resolve — check `response.ok`). Not supported: streaming,
-`AbortController`, `FormData`, binary bodies.
+Rejects with a `TypeError` on transport failure or timeout (like the browser
+API, non-2xx responses resolve — check `response.ok`). Not supported:
+streaming, `AbortController` (use `timeout`), `FormData`, binary bodies.
 
 ```javascript
 const res = await fetch("https://api.example.com/status", {
-  headers: { "X-Api-Key": "abc123" }
+  headers: { "X-Api-Key": "abc123" },
+  timeout: 5000                       // give up after 5 seconds
 });
 if (res.ok) {
   const data = await res.json();
