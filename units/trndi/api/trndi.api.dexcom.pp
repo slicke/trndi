@@ -367,6 +367,7 @@ function Dexcom.Connect: boolean;
 var
   LBody, LTimeResponse, LTimeString, LAccountID: string;
   LServerDateTime: TDateTime;
+  LTimeMs: int64;
   LUseEmailAuth: boolean;
   resp: string;
 begin
@@ -465,16 +466,23 @@ begin
     // Example: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
     LTimeString := ExtractDelimited(5, LTimeResponse, ['>', '<']);
     if LTimeString <> '' then
+    try
       // Parse the ISO-like timestamp (truncate to 19 chars to ignore fractions/timezone)
       LServerDateTime := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(LTimeString, 1, 19));
+    except
+      // Malformed payload (e.g. an error page); take the parse-error path below
+      LTimeString := '';
+    end;
   end
   else
   begin
     // Example: {"ServerTime":"/Date(1610464324000)/"} or similar payload
     LTimeString := ExtractDelimited(2, LTimeResponse, ['(', ')']);
-    if LTimeString <> '' then
-      // LTimeString in ms; JSToDateTime expects milliseconds when correct=false path used
-      LServerDateTime := JSToDateTime(StrToInt64(LTimeString), false);
+    // LTimeString in ms; JSToDateTime expects milliseconds when correct=false path used
+    if TryStrToInt64(LTimeString, LTimeMs) then
+      LServerDateTime := JSToDateTime(LTimeMs, false)
+    else
+      LTimeString := '';
   end;
 
   // If we failed to parse any time value, abort with error

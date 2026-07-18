@@ -685,7 +685,7 @@ begin
         if EvaluateRelease(JsonObj) then
         begin
           Result := true;
-          Exit;
+          break; // fall through so JsonData is freed below
         end;
       end;
     end
@@ -821,7 +821,7 @@ begin
         JsonObj := TJSONObject(JsonArray[i]);
         Result := EvaluateRelease(JsonObj);
         if Result <> '' then
-          Exit;
+          break; // fall through so JsonData is freed below
       end;
     end;
 
