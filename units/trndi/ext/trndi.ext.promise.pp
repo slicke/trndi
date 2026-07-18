@@ -106,6 +106,10 @@ end;
 procedure SetExtShuttingDown(const Value: boolean);
 function IsExtShuttingDown: boolean;
 
+{** Number of TJSAsyncTask threads created but not yet finished. Shutdown and
+    reload paths wait until this drops to zero instead of a fixed delay. }
+function ActiveAsyncTaskCount: integer;
+
 const
   {** Index of the Promise resolve function in @code(JSDoubleVal). }
 JprResolve = 0;
@@ -121,6 +125,7 @@ uses Forms;
 
 var
 gExtShuttingDown: boolean = false;
+gActiveAsyncTasks: longint = 0;
 
 procedure SetExtShuttingDown(const Value: boolean);
 begin
@@ -130,6 +135,11 @@ end;
 function IsExtShuttingDown: boolean;
 begin
   Result := gExtShuttingDown;
+end;
+
+function ActiveAsyncTaskCount: integer;
+begin
+  Result := gActiveAsyncTasks;
 end;
 
 {** Construct and launch an asynchronous task bound to a JS Promise.
@@ -144,6 +154,9 @@ begin
   if cbfunc <> nil then
     funcs := cbfunc^;
   FreeOnTerminate := true;
+  // Count from creation (on the main thread) so shutdown waiters never observe
+  // a started-but-not-yet-counted task; Execute decrements when done.
+  InterLockedIncrement(gActiveAsyncTasks);
   inherited Create(false);
   // This will start the thread
 end;
@@ -156,46 +169,50 @@ end;
     - Terminate the thread. }
 procedure TJSAsyncTask.Execute;
 begin
-  // Skip if application is terminating
-  if Application.Terminated or IsExtShuttingDown then
-    Exit;
+  try
+    // Skip if application is terminating
+    if Application.Terminated or IsExtShuttingDown then
+      Exit;
 
-  if Assigned(FPromise.callback) then // Run the main function, if it's actually set
-  begin
-    if FPromise.threaded then
+    if Assigned(FPromise.callback) then // Run the main function, if it's actually set
     begin
-      // Threaded callback: do the (potentially slow) native work right here on
-      // the worker thread so the UI stays responsive; only the JS resolve/reject
-      // is synchronized to the main thread, since QuickJS is single-threaded.
-      RunCallback(true);
-      if not (Application.Terminated or IsExtShuttingDown) then
+      if FPromise.threaded then
+      begin
+        // Threaded callback: do the (potentially slow) native work right here on
+        // the worker thread so the UI stays responsive; only the JS resolve/reject
+        // is synchronized to the main thread, since QuickJS is single-threaded.
+        RunCallback(true);
+        if not (Application.Terminated or IsExtShuttingDown) then
+        try
+          Synchronize(@FinishPromise);
+        except
+          FSuccess := false;
+          Exit;
+        end;
+      end
+      // Check again before synchronizing, as shutdown might have occurred
+      else if not (Application.Terminated or IsExtShuttingDown) then
       try
-        Synchronize(@FinishPromise);
+        Synchronize(@ProcessResult);
       except
+          // If synchronize fails (e.g., main thread shutting down), just exit
         FSuccess := false;
         Exit;
-      end;
+      end// Additional safety check: Ensure the main thread is still processing messages
+      ;
     end
-    // Check again before synchronizing, as shutdown might have occurred
-    else if not (Application.Terminated or IsExtShuttingDown) then
-    try
-      Synchronize(@ProcessResult);
-    except
-        // If synchronize fails (e.g., main thread shutting down), just exit
+    else
+    begin
+      // Complain that it wasn't set
+      if not (Application.Terminated or IsExtShuttingDown) then
+        ExtError(uxdAuto, 'Error: Missing Function');
       FSuccess := false;
       Exit;
-    end// Additional safety check: Ensure the main thread is still processing messages
-    ;
-  end
-  else
-  begin
-    // Complain that it wasn't set
-    if not (Application.Terminated or IsExtShuttingDown) then
-      ExtError(uxdAuto, 'Error: Missing Function');
-    FSuccess := false;
-    Exit;
+    end;
+    self.Terminate;
+  finally
+    InterLockedDecrement(gActiveAsyncTasks);
   end;
-  self.Terminate;
 end;
 
 {** Execute the registered native callback and capture status/result.

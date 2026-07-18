@@ -1048,8 +1048,6 @@ end;
 
 {** Create QuickJS runtime/context, expose 'Trndi', set up promises and timer, register base functions. }
 constructor TTrndiExtEngine.Create;
-var
-  proto: JSValueRaw;
 begin
   inherited Create;
 
@@ -1080,9 +1078,6 @@ begin
   JS_NewClassID(@TrndiClassId);
   if JS_NewClass(FRuntime, TrndiClassID, @TrndiClass) < 0 then
     raise Exception.Create('Failed to create JS class');
-
-  // Acquire prototype (unused in this snippet but kept for completeness)
-  Proto := JS_GetClassProto(FContext, TrndiClassID);
 
   // Note: Do NOT call JS_SetOpaque on a class id. JS_SetOpaque expects a JSValue
   // instance, not a class id. Keeping only the context opaque above is correct.
@@ -1729,18 +1724,15 @@ begin
   // Signal extension shutdown to background tasks
   SetExtShuttingDown(true);
 
-  // Give background threads time to notice shutdown and complete
-  // This is critical to avoid access violations from promise threads
+  // Give background promise threads time to notice shutdown and complete.
+  // ProcessMessages keeps Synchronize() calls draining; exits as soon as the
+  // last TJSAsyncTask is gone, with a 2s cap as a safety net.
   timeoutCounter := 0;
-  while (timeoutCounter < 400) do  // max 2000ms wait (increased from 1000ms)
+  while (ActiveAsyncTaskCount > 0) and (timeoutCounter < 400) do
   begin
     Application.ProcessMessages;
     Sleep(5);
     Inc(timeoutCounter);
-
-    // Early exit if no more threads are likely running
-    if timeoutCounter > 100 then  // After 500ms, reduce processing frequency
-      Sleep(10);  // Sleep longer to give threads more time to exit
   end;
 
   // Unregister host promise rejection tracker to avoid callbacks during teardown
@@ -2094,8 +2086,10 @@ begin
   // Signal in-flight promise threads to bail before we free their target ctxs.
   SetExtShuttingDown(true);
   try
+    // Wait for in-flight promise threads to finish (up to ~1s); exits
+    // immediately when none are running, so reloads stay snappy.
     timeoutCounter := 0;
-    while timeoutCounter < 200 do  // up to ~1s
+    while (ActiveAsyncTaskCount > 0) and (timeoutCounter < 200) do
     begin
       Application.ProcessMessages;
       Sleep(5);
@@ -2619,6 +2613,68 @@ begin
   Result := CallIntArgsInContext(FContext, FuncName, Args);
 end;
 
+{** Marshal one Pascal open-array-of-const element into a JS value bound to
+    @code(ctx). Numbers/booleans become plain JS values; every string flavour
+    becomes a JS string (JS_NewString copies the bytes, so the temporaries can
+    go out of scope). Unsupported kinds map to the '{unsupported}' string. }
+function VarRecToJS(ctx: JSContext; const v: TVarRec): JSValueRaw;
+var
+  tmpv: JSValue;
+  s: RawUtf8;
+begin
+  case v.VType of
+  vtInteger:
+  begin
+    tmpv.From32(v.VInteger);
+    Result := tmpv.Raw;
+  end;
+  vtInt64:
+  begin
+    tmpv.From64(v.VInt64^);
+    Result := tmpv.Raw;
+  end;
+  vtExtended:
+  begin
+    tmpv.FromFloat(v.VExtended^);
+    Result := tmpv.Raw;
+  end;
+  vtBoolean:
+  begin
+    tmpv.From(v.VBoolean);
+    Result := tmpv.Raw;
+  end;
+  vtChar:
+  begin
+    s := RawUtf8(v.VChar);
+    Result := JS_NewString(ctx, pchar(s));
+  end;
+  vtPChar:
+    Result := JS_NewString(ctx, v.VPChar);
+  vtAnsiString:
+  begin
+    s := RawUtf8(ansistring(v.VAnsiString));
+    Result := JS_NewString(ctx, pchar(s));
+  end;
+  vtUnicodeString:
+  begin
+    s := RawUtf8(unicodestring(v.VUnicodeString));
+    Result := JS_NewString(ctx, pchar(s));
+  end;
+  vtWideString:
+  begin
+    s := RawUtf8(widestring(v.VWideString));
+    Result := JS_NewString(ctx, pchar(s));
+  end;
+  vtString:
+  begin
+    s := RawUtf8(shortstring(v.VString^));
+    Result := JS_NewString(ctx, pchar(s));
+  end;
+  else
+    Result := JS_NewString(ctx, '{unsupported}');
+  end;
+end;
+
 {** Marshal an array-of-const into JSValueRaw values bound to @code(ctx) and call
     @code(FuncName). Returns the stringified result or '' on absence/error. }
 function CallVarRecArgsInContext(ctx: JSContext; const FuncName: RawUtf8;
@@ -2628,9 +2684,6 @@ var
   ArgArray: array of JSValueRaw;
   i: integer;
   StrResult: pansichar;
-  tmpStrs: array of RawUtf8;
-  s: RawUtf8;
-  tmpv: JSValue;
 begin
   Result := '';
   if ctx = nil then Exit;
@@ -2643,62 +2696,8 @@ begin
     if not JS_IsFunction(ctx, FuncObj) then Exit;
 
     SetLength(ArgArray, Length(Args));
-    SetLength(tmpStrs, Length(Args));
     for i := 0 to High(Args) do
-      case Args[i].VType of
-      vtInteger:
-      begin
-        tmpv.From32(Args[i].VInteger);
-        ArgArray[i] := tmpv.Raw;
-      end;
-      vtInt64:
-      begin
-        tmpv.from64(Args[i].VInt64^);
-        ArgArray[i] := tmpv.Raw;
-      end;
-      vtExtended:
-      begin
-        tmpv.FromFloat(Args[i].VExtended^);
-        ArgArray[i] := tmpv.Raw;
-      end;
-      vtBoolean:
-      begin
-        tmpv.From(Args[i].VBoolean);
-        ArgArray[i] := tmpv.Raw;
-      end;
-      vtChar:
-      begin
-        s := RawUtf8(Args[i].VChar);
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-      end;
-      vtPChar:
-        ArgArray[i] := JS_NewString(ctx, Args[i].VPChar);
-      vtAnsiString:
-      begin
-        s := RawUtf8(ansistring(Args[i].VAnsiString));
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-      end;
-      vtUnicodeString, vtWideString:
-      begin
-        s := RawUtf8(unicodestring(Args[i].VUnicodeString));
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-      end;
-      vtString:
-      begin
-        s := RawUtf8(shortstring(Args[i].VString^));
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-      end;
-      else
-      begin
-        s := RawUtf8('{unsupported}');
-        tmpStrs[i] := s;
-        ArgArray[i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-      end;
-      end;
+      ArgArray[i] := VarRecToJS(ctx, Args[i]);
 
     RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
     if JS_IsError(ctx, RetVal) then
@@ -2752,115 +2751,26 @@ function TTrndiExtEngine.CreateJSArray(const Values: array of const): JSValueRaw
 var
   arr: JSValueRaw;
   i: integer;
-  tmp: JSValue;
-  s: RawUtf8;
 begin
   Result := JS_UNDEFINED;
-  tmp.Raw := JS_UNDEFINED;
   if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
     Exit;
   arr := JS_NewArray(FContext);
+  // JS_SetPropertyUint32 steals the element reference, so no per-item free.
   for i := 0 to High(Values) do
-    case Values[i].VType of
-    vtInteger:
-    begin
-      tmp.From32(Values[i].VInteger);
-      JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
-    end;
-    vtInt64:
-    begin
-      tmp.From64(Values[i].VInt64^);
-      JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
-    end;
-    vtExtended:
-    begin
-      tmp.FromFloat(Values[i].VExtended^);
-      JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
-    end;
-    vtBoolean:
-    begin
-      tmp.From(Values[i].VBoolean);
-      JS_SetPropertyUint32(FContext, arr, i, tmp.Raw);
-    end;
-    vtChar:
-    begin
-      s := RawUtf8(Values[i].VChar);
-      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
-    end;
-    vtPChar:
-      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, Values[i].VPChar));
-    vtAnsiString:
-    begin
-      s := RawUtf8(ansistring(Values[i].VAnsiString));
-      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
-    end;
-    vtUnicodeString, vtWideString:
-    begin
-      s := RawUtf8(unicodestring(Values[i].VUnicodeString));
-      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
-    end;
-    vtString:
-    begin
-      s := RawUtf8(shortstring(Values[i].VString^));
-      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
-    end;
-    else
-    begin
-      s := RawUtf8('{unsupported}');
-      JS_SetPropertyUint32(FContext, arr, i, JS_NewString(FContext, pchar(s)));
-    end;
-    end;
+    JS_SetPropertyUint32(FContext, arr, i, VarRecToJS(FContext, Values[i]));
   Result := arr;
 end;
 
-{** Call function passing a single JS array argument. }
+{** Call function passing a single JS array argument. InternalCall owns and
+    frees the one-shot array (freeRaw=true). }
 function TTrndiExtEngine.CallFunctionWithArrayArg(const FuncName: RawUtf8;
 const Values: array of const): RawUtf8;
-var
-  arr: JSValueRaw;
-  GlobalObj, FuncObj, RetVal: JSValueRaw;
-  StrResult: pansichar;
-  ctx: JSContext;
-  i: integer;
 begin
   Result := '';
   if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
     Exit;
-  if not FunctionExists(string(FuncName)) then
-    Exit;
-
-  // Mirror FunctionExists' lookup: prefer the per-extension context (Path B)
-  // that actually hosts the function; fall back to FContext for the legacy path.
-  ctx := nil;
-  if Assigned(FExtContexts) and (FExtContexts.Count > 0) then
-    for i := 0 to FExtContexts.Count - 1 do
-      if (FExtContexts[i] <> nil) and
-        ContextHasFunction(FExtContexts[i]^.Ctx, string(FuncName)) then
-      begin
-        ctx := FExtContexts[i]^.Ctx;
-        Break;
-      end;
-  if ctx = nil then
-    ctx := FContext;
-  if ctx = nil then Exit;
-
-  arr := CreateJSArray(Values);
-  GlobalObj := JS_GetGlobalObject(ctx);
-  FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
-  if not JS_IsFunction(ctx, FuncObj) then
-    Exit('');
-  RetVal := JS_Call(ctx, FuncObj, GlobalObj, 1, @arr);
-  if JS_IsError(ctx, RetVal) then
-  begin
-    js_std_dump_error(ctx);
-    Exit('');
-  end;
-  StrResult := JS_ToCString(ctx, RetVal);
-  if StrResult <> nil then
-  begin
-    Result := StrResult;
-    JS_FreeCString(ctx, StrResult);
-  end;
+  Result := InternalCall(FuncName, [CreateJSArray(Values)], [], true, false);
 end;
 
 // JS value factories
@@ -2939,10 +2849,7 @@ freeRaw, freeRest: boolean): RawUtf8;
 var
   GlobalObj, FuncObj, RetVal: JSValueRaw;
   ArgArray: array of JSValueRaw;
-  tmpStrs: array of RawUtf8;
-  tmpv: JSValue;
   i, base: integer;
-  s: RawUtf8;
   StrResult: pansichar;
   ctx: JSContext;
 begin
@@ -2972,13 +2879,11 @@ begin
   Result := '';
   if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
     Exit;
-  if not FunctionExists(string(FuncName)) then
-    Exit;
 
-  // Mirror FunctionExists' lookup: prefer the per-extension context (Path B)
-  // that actually hosts the function; fall back to FContext for the legacy path.
-  // FExtContexts share FRuntime with FContext, so JSValueRaw values constructed
-  // via MakeJS* on FContext remain valid in any ctx on the same runtime.
+  // Prefer the per-extension context (Path B) that actually hosts the function;
+  // fall back to FContext for the legacy path. FExtContexts share FRuntime with
+  // FContext, so JSValueRaw values constructed via MakeJS* on FContext remain
+  // valid in any ctx on the same runtime.
   ctx := nil;
   if Assigned(FExtContexts) and (FExtContexts.Count > 0) then
     for i := 0 to FExtContexts.Count - 1 do
@@ -2994,96 +2899,46 @@ begin
 
   GlobalObj := JS_GetGlobalObject(ctx);
   FuncObj := JS_GetPropertyStr(ctx, GlobalObj, pchar(FuncName));
-  if not JS_IsFunction(ctx, FuncObj) then
-  begin
-    ctx^.FreeInlined(PJSValue(@GlobalObj));
-    ctx^.FreeInlined(PJSValue(@FuncObj));
-    Exit('');
-  end;
-
+  RetVal := JS_UNDEFINED;
   SetLength(ArgArray, Length(RawPrefix) + Length(Rest));
   for i := 0 to High(RawPrefix) do
     ArgArray[i] := RawPrefix[i];
   base := Length(RawPrefix);
-  SetLength(tmpStrs, Length(Rest));
-  for i := 0 to High(Rest) do
-    case Rest[i].VType of
-    vtInteger:
-    begin
-      tmpv.From32(Rest[i].VInteger);
-      ArgArray[base + i] := tmpv.Raw;
-    end;
-    vtInt64:
-    begin
-      tmpv.From64(Rest[i].VInt64^);
-      ArgArray[base + i] := tmpv.Raw;
-    end;
-    vtExtended:
-    begin
-      tmpv.FromFloat(Rest[i].VExtended^);
-      ArgArray[base + i] := tmpv.Raw;
-    end;
-    vtBoolean:
-    begin
-      tmpv.From(Rest[i].VBoolean);
-      ArgArray[base + i] := tmpv.Raw;
-    end;
-    vtChar:
-    begin
-      s := RawUtf8(Rest[i].VChar);
-      tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    vtPChar:
-      ArgArray[base + i] := JS_NewString(ctx, Rest[i].VPChar);
-    vtAnsiString:
-    begin
-      s := RawUtf8(ansistring(Rest[i].VAnsiString));
-      tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    vtUnicodeString, vtWideString:
-    begin
-      s := RawUtf8(unicodestring(Rest[i].VUnicodeString));
-      tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    vtString:
-    begin
-      s := RawUtf8(shortstring(Rest[i].VString^));
-      tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    else
-    begin
-      s := RawUtf8('{unsupported}');
-      tmpStrs[i] := s;
-      ArgArray[base + i] := JS_NewString(ctx, pchar(tmpStrs[i]));
-    end;
-    end;
+  try
+    for i := 0 to High(Rest) do
+      ArgArray[base + i] := VarRecToJS(ctx, Rest[i]);
 
-  if Length(ArgArray) = 0 then
-    RetVal := JS_Call(ctx, FuncObj, GlobalObj, 0, nil)
-  else
-    RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-  if JS_IsError(ctx, RetVal) then
-  begin
-    js_std_dump_error(ctx);
-    Exit('');
+    if JS_IsFunction(ctx, FuncObj) then
+    begin
+      if Length(ArgArray) = 0 then
+        RetVal := JS_Call(ctx, FuncObj, GlobalObj, 0, nil)
+      else
+        RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+      if JS_IsError(ctx, RetVal) then
+        js_std_dump_error(ctx)
+      else
+      begin
+        StrResult := JS_ToCString(ctx, RetVal);
+        if StrResult <> nil then
+        begin
+          Result := StrResult;
+          JS_FreeCString(ctx, StrResult);
+        end;
+      end;
+    end;
+  finally
+    // Honour the caller's ownership flags on every path (including errors,
+    // which previously leaked both the call temporaries and the arguments).
+    if freeRest then
+      for i := base to High(ArgArray) do
+        ctx^.FreeInlined(PJSValue(@ArgArray[i]));
+    if freeRaw then
+      for i := 0 to base - 1 do
+        ctx^.FreeInlined(PJSValue(@ArgArray[i]));
+    ctx^.FreeInlined(PJSValue(@RetVal));
+    ctx^.FreeInlined(PJSValue(@FuncObj));
+    ctx^.FreeInlined(PJSValue(@GlobalObj));
   end;
-  StrResult := JS_ToCString(ctx, RetVal);
-  if StrResult <> nil then
-  begin
-    Result := StrResult;
-    JS_FreeCString(ctx, StrResult);
-  end;
-
-  if freeRest then
-    for i := base to High(ArgArray) do
-      ctx^.FreeInlined(PJSValue(@ArgArray[i]));
-  if freeRaw then
-    for i := 0 to base - 1 do
-      ctx^.FreeInlined(PJSValue(@ArgArray[i]));
 end;
 
 {******************************************************************************
