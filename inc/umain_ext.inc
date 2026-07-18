@@ -213,6 +213,7 @@ begin
     addClassFunctionIf(epData, 'getCurrentAPI',       ExtFunction(@JSGetAPI),         -1);
     addClassFunctionIf(epData, 'getReading',          ExtFunction(@JSGetReading),     -1);
     addClassFunctionIf(epData, 'getCurrentReading',   ExtFunction(@JSGetCurrentReading), 0);
+    addClassFunctionIf(epData, 'getReadings',         ExtFunction(@JSGetReadings),    -1);
     addClassFunctionIf(epData, 'getLimits',           ExtFunction(@JSGetLimits),      0);
     addClassFunctionIf(epData, 'getStatistics',       ExtFunction(@JSGetStatistics),  -1);
     addClassFunctionIf(epData, 'getBasalRate',        ExtFunction(@JSGetBasalRate),   0);

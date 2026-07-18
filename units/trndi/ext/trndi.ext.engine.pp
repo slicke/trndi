@@ -306,6 +306,9 @@ public
 
     {** Get the singleton instance of the engine (creates on first use). }
   class function Instance: TTrndiExtEngine;
+    {** True when the singleton already exists. Unlike @code(Instance) this
+        never lazily creates the engine, so it is safe on shutdown paths. }
+  class function HasInstance: boolean;
     {** Release the singleton instance (frees resources). }
   class procedure ReleaseInstance;
 
@@ -582,6 +585,14 @@ public
         runtime stays alive so a fresh @code(LoadExtensions) can repopulate
         without recreating the engine singleton. }
   procedure UnloadExtensions;
+
+    {** Invoke the optional global @code(unloadCallback()) in every loaded
+        extension context so scripts can flush state before teardown. Runs
+        while contexts are still fully alive: at the top of
+        @code(UnloadExtensions) (Reload path) and from the app close path in
+        @code(TfBG.FormClose) before extension shutdown is signalled. A
+        throwing callback is swallowed so it cannot block other extensions. }
+  procedure NotifyUnloadAll;
 
     {** Register the engine-internal baseline (alert/confirm/prompt/select/log,
         setTimeout/setInterval/clear*, console.*) into the current registration
@@ -1677,6 +1688,14 @@ begin
   end;
 
   // Normal shutdown path - only execute when application is NOT terminating
+  // Give extensions their unloadCallback while contexts are still intact.
+  // (The FormClose quit path takes the ultra-early exit above and has already
+  // notified before signalling shutdown.)
+  try
+    NotifyUnloadAll;
+  except
+  end;
+
   // Stop the job-pumping timer ASAP to avoid re-entrancy during teardown
   try
     if Assigned(eventTimer) then
@@ -1990,12 +2009,68 @@ begin
   Result := FExtContexts[idx];
 end;
 
+procedure TTrndiExtEngine.NotifyUnloadAll;
+var
+  i: integer;
+  info: PExtContextInfo;
+  ctx: JSContext;
+  globalObj, funcObj, retVal: JSValueRaw;
+  oldMask: TFPUExceptionMask;
+begin
+  if not Assigned(FExtContexts) then
+    Exit;
+
+  // The quit path runs UX dialogs before we get here, and those can leave the
+  // FPU exception mask with traps unmasked; QuickJS float ops then die with
+  // STATUS_FLOAT_INVALID_OPERATION. Mask FP traps for the JS calls (same
+  // pattern as umain_async.inc) and restore afterwards.
+  oldMask := GetExceptionMask;
+  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide,
+    exOverflow, exUnderflow, exPrecision]);
+  try
+  for i := 0 to FExtContexts.Count - 1 do
+  begin
+    info := FExtContexts[i];
+    if (info = nil) or (info^.Ctx = nil) then
+      Continue;
+    ctx := info^.Ctx;
+    if not ContextHasFunction(ctx, 'unloadCallback') then
+      Continue;
+
+    globalObj := JS_GetGlobalObject(ctx);
+    funcObj := JS_GetPropertyStr(ctx, globalObj, 'unloadCallback');
+    retVal := JS_UNDEFINED;
+    try
+      try
+        if JS_IsFunction(ctx, funcObj) then
+        begin
+          retVal := JS_Call(ctx, funcObj, globalObj, 0, nil);
+          if JS_IsError(ctx, retVal) then
+            js_std_dump_error(ctx);
+        end;
+      except
+        // One extension's failing unload hook must not block the others.
+      end;
+    finally
+      ctx^.FreeInlined(PJSValue(@retVal));
+      ctx^.FreeInlined(PJSValue(@funcObj));
+      ctx^.FreeInlined(PJSValue(@globalObj));
+    end;
+  end;
+  finally
+    SetExceptionMask(oldMask);
+  end;
+end;
+
 procedure TTrndiExtEngine.UnloadExtensions;
 var
   i, timeoutCounter: integer;
   tmpCtx: JSContext;
 begin
   if IsGlobalShutdown or Application.Terminated then Exit;
+
+  // Let extensions flush state while their contexts (and timers) still exist.
+  NotifyUnloadAll;
 
   // Stop and drop every JS timer (setTimeout/setInterval). All live timers belong
   // to extension contexts since baseline contexts don't schedule any; their
@@ -3156,6 +3231,11 @@ begin
   if FInstance = nil then
     FInstance := TTrndiExtEngine.Create;
   Result := FInstance;
+end;
+
+class function TTrndiExtEngine.HasInstance: boolean;
+begin
+  Result := FInstance <> nil;
 end;
 
 {** Release the singleton engine instance. }

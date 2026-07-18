@@ -7,7 +7,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
 > user. See [Extensions.md](Extensions.md#permissions) for the full mapping.
 >
 > Group quick-reference for the functions on this page:
-> - **`data`**: `getReading`, `getCurrentReading`, `getLimits`, `getStatistics`, `getBasalRate`, `getUnit`, `getLocale`, `getBuild`, `getCurrentAPI`, `getCurrentUser`, `getCurrentNickname`, `predictReadings`
+> - **`data`**: `getReading`, `getCurrentReading`, `getReadings`, `getLimits`, `getStatistics`, `getBasalRate`, `getUnit`, `getLocale`, `getBuild`, `getCurrentAPI`, `getCurrentUser`, `getCurrentNickname`, `predictReadings`
 > - **`ui`**: `alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`
 > - **`timers`**: `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`
 > - **`net`** (declare): `fetch`, `asyncGet`, `asyncPost`, `jsonGet`
@@ -36,6 +36,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [getUnit](#getunit)
    - [getLocale](#getlocale)
    - [getCurrentReading](#getcurrentreading)
+   - [getReadings](#getreadings)
    - [getLimits](#getlimits)
    - [getStatistics](#getstatistics)
    - [setLevelColor](#setlevelcolor)
@@ -72,6 +73,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [dotClicked](#dotclicked)
    - [uxClick](#uxclick)
    - [clockView](#clockview)
+   - [unloadCallback](#unloadcallback)
  - [User info](#user-info)
    - [getCurrentUser](#getcurrentuser)
    - [getCurrentNickname](#getcurrentnickname)
@@ -251,6 +253,32 @@ function updateCallback() {
       Trndi.alert("Rapid drop detected!");
     }
   }
+}
+```
+
+### getReadings
+#### Get the cached reading history
+Returns the readings Trndi currently holds in memory, newest first. Each entry
+has the same shape as [getCurrentReading](#getcurrentreading).
+
+```javascript
+const readings = Trndi.getReadings();     // everything in memory
+const lastSix = Trndi.getReadings(6);     // at most 6 readings (~30 min)
+```
+
+**Parameters:**
+- `count` (optional integer): maximum number of readings to return. Omitted or `<= 0` returns all cached readings.
+
+**Returns:** Array of reading objects (may be empty). See [getCurrentReading](#getcurrentreading) for the object properties.
+
+**Example:**
+```javascript
+// Average delta over the last three readings
+const recent = Trndi.getReadings(3);
+if (recent.length === 3) {
+  const avgDelta = recent.reduce((s, r) => s + r.delta_mmol, 0) / recent.length;
+  if (avgDelta < -0.5)
+    Trndi.alert("Glucose is falling steadily!");
 }
 ```
 
@@ -902,6 +930,20 @@ function clockView(glucose, time){
   const user = Trndi.getCurrentUser(); // Returns the username, if running multiple accounts
   if (user) return user;
   return "Hello"; // Shows Hello instead of the clock every 20 seconds
+}
+```
+
+### unloadCallback
+#### Called before your extension is unloaded
+```unloadCallback()```
+
+Runs when extensions are reloaded (Settings → Extensions → Reload) and when
+Trndi quits, while your context is still fully alive — use it to flush state,
+e.g. persisting a value with `setSetting`. Keep it fast and synchronous:
+timers and promises will not get a chance to fire afterwards.
+```javascript
+function unloadCallback(){
+  Trndi.setSetting("extval.mycounter", String(counter)); // needs `settings` permission
 }
 ```
 
