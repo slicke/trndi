@@ -671,3 +671,57 @@ begin
     Engine.FDeadTimers.Add(TimerInfo);
   end;
 end;
+
+var
+  // Time origin for performance.now(), captured on first call. All JS runs on
+  // the main thread, so the lazy init needs no locking.
+PerfOriginUs: Int64 = 0;
+
+{** Native backend for performance.now(): monotonic milliseconds since the
+    first call, with microsecond precision (QueryPerformanceCounter on Windows,
+    CLOCK_MONOTONIC on POSIX via mORMot).
+
+    @param(ctx)      Current QuickJS context
+    @param(this_val) The 'this' value (unused)
+    @param(argc)     Number of arguments (none expected)
+    @param(argv)     Unused
+    @returns         JS number (float ms)
+}
+function JSPerfNow(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+argv: PJSValues): JSValueRaw; cdecl;
+var
+  us: Int64;
+  v: JSValue;
+begin
+  QueryPerformanceMicroSeconds(us);
+  if PerfOriginUs = 0 then
+    PerfOriginUs := us;
+  v.FromFloat((us - PerfOriginUs) / 1000.0);
+  Result := v.Raw;
+end;
+
+{** Native backend for the crypto shim: return @code(argv[0]) cryptographically
+    secure random bytes as a lowercase hex string (mORMot's AES-PRNG, seeded
+    from OS entropy). Returns @code(JS_UNDEFINED) when the count is missing or
+    outside 1..65536 (the WebCrypto getRandomValues quota).
+
+    @param(ctx)      Current QuickJS context
+    @param(this_val) The 'this' value (unused)
+    @param(argc)     Number of arguments (expects 1)
+    @param(argv)     argv[0] = number of bytes
+    @returns         JS string of 2×count hex digits, or @code(JS_UNDEFINED)
+}
+function JSRandomHex(ctx: JSContext; this_val: JSValueRaw; argc: integer;
+argv: PJSValues): JSValueRaw; cdecl;
+var
+  n: Int32;
+  hex: RawUtf8;
+begin
+  Result := JS_UNDEFINED;
+  if (argc < 1) or (JS_ToInt32(ctx, @n, argv^[0].Raw) <> 0) then
+    Exit;
+  if (n < 1) or (n > 65536) then
+    Exit;
+  hex := TAesPrng.Main.FillRandomHex(n);
+  Result := JS_NewString(ctx, pansichar(hex));
+end;

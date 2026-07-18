@@ -167,12 +167,16 @@ class var touchOverride: TTrndiBool;
   {** Run the platform `requestEx` implementation on a background thread and
       wait for the result with a timeout. This preserves synchronous caller
       semantics without busy polling. Returns a THTTPResponse; on timeout the
-      returned record has `Success = false` and `ErrorMessage = 'timeout'.` }
+      returned record has `Success = false` and `ErrorMessage = 'timeout'.`
+      After a timeout the worker gets `GraceMs` more to finish before being
+      abandoned (detached, self-freeing); that wait adds to the caller's
+      worst-case latency, so latency-sensitive callers pass a small value. }
   function RequestExWait(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     cookieJar: TStringList = nil; followRedirects: boolean = true;
     maxRedirects: integer = 10; customHeaders: TStringList = nil;
-    prefix: boolean = true; TimeoutMs: cardinal = 5000): THTTPResponse;
+    prefix: boolean = true; TimeoutMs: cardinal = 5000;
+    GraceMs: cardinal = 5000): THTTPResponse;
 
     // Settings API
     {** Store a non-user-scoped key (global). }
@@ -654,7 +658,8 @@ function TTrndiNativeBase.RequestExWait(const post: boolean; const endpoint: str
 const params: array of string; const jsondata: string = '';
 cookieJar: TStringList = nil; followRedirects: boolean = true;
 maxRedirects: integer = 10; customHeaders: TStringList = nil;
-prefix: boolean = true; TimeoutMs: cardinal = 5000): THTTPResponse;
+prefix: boolean = true; TimeoutMs: cardinal = 5000;
+GraceMs: cardinal = 5000): THTTPResponse;
 var
   worker: TRequestExWaitThread;
   completed: boolean;
@@ -721,7 +726,7 @@ begin
     Result.ErrorMessage := 'timeout';
     try
       worker.Terminate;
-      completed := worker.FDone.WaitFor(5000) = wrSignaled;
+      completed := worker.FDone.WaitFor(GraceMs) = wrSignaled;
       if completed then
       begin
         worker.WaitFor;
