@@ -1115,7 +1115,7 @@ begin
     Exit;
   end;
 
-  // Return the oldest element (Low index) as the last reading
+  // bgs is sorted newest-first, so the lowest index is the most recent reading
   Result := bgs[Low(bgs)];
 end;
 
@@ -1124,15 +1124,12 @@ var
   i: integer;
 begin
   result := lastReading;
-  try
-    for i := Low(bgs) to High(bgs) do
-      if not bgs[i].empty then
-      begin
-        result := bgs[i];
-        Exit;
-      end;
-  finally
-  end;
+  for i := Low(bgs) to High(bgs) do
+    if not bgs[i].empty then
+    begin
+      result := bgs[i];
+      Exit;
+    end;
 end;
 
 procedure TfBG.FormDestroy({%H-}Sender: TObject);

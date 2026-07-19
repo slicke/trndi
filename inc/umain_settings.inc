@@ -263,8 +263,7 @@ procedure LoadUserSettings(f: TfConf);
       end;
       spTHRESHOLD.Value := native.GetIntSetting('system.fresh_threshold',
         DATA_FRESHNESS_THRESHOLD_MINUTES);
-      spDeltaMax.Value := native.GetIntSetting('ux.delta_max',
-        DATA_FRESHNESS_THRESHOLD_MINUTES);
+      spDeltaMax.Value := native.GetIntSetting('ux.delta_max', DELTA_MAX);
 
       if api = nil then
       begin
