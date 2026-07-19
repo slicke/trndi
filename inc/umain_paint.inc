@@ -218,7 +218,6 @@ var
   tintColor: TColor;
   opacityTmp: byte;
   isFullCover: boolean;
-  alphaRatio: double;
   radius: integer;
   glyphSize, glyphX, glyphY: integer;
   chevronCX, chevronCY, chevronS: integer;
@@ -241,11 +240,9 @@ begin
     FillRect(0, 0, P.Width, P.Height);
 
     {$ifndef X_WIN}
-    alphaRatio := opacityTmp / 255.0;
-    panelFillColor := BlendColors(tintColor, fBG.Color, alphaRatio);
+    panelFillColor := BlendColors(tintColor, fBG.Color, opacityTmp / 255.0);
     {$else}
     panelFillColor := tintColor;
-    alphaRatio := 1.0;
     {$endif}
 
     // For wsSoon, pulse the tint between base orange and a brighter shade on a

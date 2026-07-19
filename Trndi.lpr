@@ -69,8 +69,10 @@ buildinfo, razer.chroma.factory
 function SetCurrentProcessExplicitAppUserModelID(AppID: PWideChar): HResult; stdcall; external 'shell32.dll' name 'SetCurrentProcessExplicitAppUserModelID';
 const
   TRNDI_APPID = '2DC38820-32FA-4243-9788-9BCF396588FD';
+{$IFDEF DEBUG}
 var
   hrAppID: HResult;
+{$ENDIF}
 {$ENDIF}
 
 begin
@@ -84,9 +86,11 @@ RequireDerivedFormResource:=true;
   Application.Scaled:=True;
 Application.{%H-}MainFormOnTaskbar:=true;
 {$IFDEF WINDOWS}
-  hrAppID := SetCurrentProcessExplicitAppUserModelID(PWideChar(WideString(TRNDI_APPID)));
 {$ifdef DEBUG}
+  hrAppID := SetCurrentProcessExplicitAppUserModelID(PWideChar(WideString(TRNDI_APPID)));
   TrndiDLog(PChar(Format('[Trndi] SetAppUserModelID(%s) -> 0x%x', [TRNDI_APPID, hrAppID])));
+{$else}
+  SetCurrentProcessExplicitAppUserModelID(PWideChar(WideString(TRNDI_APPID)));
 {$endif}
   // Opt the process into Windows' dark popup-menu / scrollbar theme BEFORE any
   // window (including Application.Handle) is created, so the AllowDarkModeForApp

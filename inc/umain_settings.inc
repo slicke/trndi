@@ -207,15 +207,11 @@ end;
 procedure TfBG.miSettingsClick(Sender: TObject);
 var
   fConf: TfConf;
-  lastUsers: integer;
-  minutesStr: string;
-  minutesVal: integer;
 
 procedure LoadUserSettings(f: TfConf);
   var
     remoteType: string;
     userNames: TStringArray;
-    hasUsers: boolean;
     posName: string;
     i: integer;
     usersStr: string;
@@ -758,7 +754,9 @@ procedure SaveUserSettings(f: TfConf);
 
 var
   extensionsPath: string;
+  {$if defined(X_PC)}
   distro: string;
+  {$endif}
   needsRestart: boolean;
   origAPI, origTarget, origCreds: string;
 begin
@@ -787,8 +785,6 @@ begin
     SetupUIElements(fConf);
     SetupExtensions(fConf);
     SetupTouchAndNotifications(fConf);
-
-    lastUsers := fConf.lbUsers.Count;
 
     {$if defined(X_PC)}
     fConf.lOS.Caption := GetLinuxDistro(distro) + ' ' + distro;
