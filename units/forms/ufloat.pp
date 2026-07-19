@@ -490,6 +490,7 @@ procedure TfFloat.miNormalClick(Sender: TMenuItem);
 var
   h: integer;
 begin
+  h := Height;
   miBig.Checked := false;
   miNormal.Checked := false;
   miSmall.Checked := false;
@@ -554,7 +555,7 @@ end;
 
 procedure TfFloat.tClockTimer(Sender: TObject);
 begin
-  lTime.Caption := FormatDateTime(ShortTimeFormat, Now);
+  lTime.Caption := FormatDateTime(DefaultFormatSettings.ShortTimeFormat, Now);
   if lTime.Visible = false then
     (Sender as TTimer).Enabled := false;
 end;
