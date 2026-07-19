@@ -53,7 +53,7 @@ Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log, utrendarrow,
-Trndi.native.base, trndi.shared, buildinfo, fpjson, jsonparser,
+Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, trndi.ext.perm,
@@ -993,24 +993,25 @@ FWarnMessage: string = '';        // raw warning text; rebuilt by fixWarningPane
 
 username: string = '';
 lastup: tdatetime;
-  // Colors (b)lood(g)lucose (c)olor XX — defaults from TrndiThemeModern.
+  // Colors (b)lood(g)lucose (c)olor XX — assigned from TrndiThemeClassic in the
+  // initialization section below, so new profiles and uconf's color reset agree.
   // Users with stored 'ux.bg_color_*' settings keep their own values.
   // In range
-bg_color_ok: TColor = $0060AE27;     // Emerald    #27AE60
-bg_color_ok_txt: TColor = $000F2204; // Dark green #0F2204 (5.9:1 on emerald; was light green #E8FBE8 at 2.7:1)
+bg_color_ok: TColor;
+bg_color_ok_txt: TColor;
   // Hi
-bg_color_hi: TColor = $00227EE6;     // Pumpkin    #E67E22
-bg_color_hi_txt: TColor = $00001B2D; // Very dark brown
+bg_color_hi: TColor;
+bg_color_hi_txt: TColor;
   // Low
-bg_color_lo: TColor = $002B39C0;     // Pomegranate #C0392B
-bg_color_lo_txt: TColor = $00EEEBFF; // Very light pink
+bg_color_lo: TColor;
+bg_color_lo_txt: TColor;
 
   // Personal hi (approaching upper limit)
-bg_rel_color_hi: TColor = $00129CF3;     // Sunflower   #F39C12
-bg_rel_color_hi_txt: TColor = $00001B2D; // Very dark brown
+bg_rel_color_hi: TColor;
+bg_rel_color_hi_txt: TColor;
   // Personal low (approaching lower limit)
-bg_rel_color_lo: TColor = $00AD448E;     // Amethyst    #8E44AD
-bg_rel_color_lo_txt: TColor = $00F5E5F3; // Light lavender
+bg_rel_color_lo: TColor;
+bg_rel_color_lo_txt: TColor;
   // When the TIR is bad
 bad_tir: integer = 5;
   // WHen the TIR is good
@@ -1953,7 +1954,23 @@ end;
 {$I ../../tests/inc/umain_implementation.inc}
 {$endif}
 
+var
+  DefaultBGTheme: TTrndiTheme;
+
 initialization
+  // Default BG colors for profiles with no stored 'ux.bg_color_*' settings.
+  // Same palette as uconf's color reset — keep them sourced from trndi.theme.
+  DefaultBGTheme := TrndiThemeClassic;
+  bg_color_ok := DefaultBGTheme.ColorOk;
+  bg_color_ok_txt := DefaultBGTheme.ColorOkText;
+  bg_color_hi := DefaultBGTheme.ColorHigh;
+  bg_color_hi_txt := DefaultBGTheme.ColorHighText;
+  bg_color_lo := DefaultBGTheme.ColorLow;
+  bg_color_lo_txt := DefaultBGTheme.ColorLowText;
+  bg_rel_color_hi := DefaultBGTheme.ColorRangeHigh;
+  bg_rel_color_hi_txt := DefaultBGTheme.ColorRangeHighText;
+  bg_rel_color_lo := DefaultBGTheme.ColorRangeLow;
+  bg_rel_color_lo_txt := DefaultBGTheme.ColorRangeLowText;
 
 finalization
   FreeAndNil(DotImageCache); // rendered-dot cache from inc/umain_dots.inc
