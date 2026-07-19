@@ -27,8 +27,9 @@ The prediction engine uses recent CGM readings to calculate trends and project f
 1. **Analyzes recent readings** - Uses your latest CGM data points
 2. **Rejects outliers** - Robustly down-weights spurious readings (sensor spikes, compression lows) so a single bad point cannot dominate the forecast
 3. **Calculates trends** - Determines the rate of change (mg/dL per minute)
-4. **Projects forward** - Estimates glucose values at future time points
-5. **Generates multiple predictions** - Creates forecasts for approximately 5, 10, and 15 minutes ahead
+4. **Estimates curvature** - A gentle quadratic term bends the forecast slightly when glucose is speeding up or slowing down
+5. **Projects forward** - Estimates glucose values at future time points
+6. **Generates multiple predictions** - Creates forecasts for approximately 5, 10, and 15 minutes ahead
 
 Each run also produces a **confidence score** (0–1) describing how cleanly the recent data fit the trend model — low values mean the data was noisy or contained outliers, and the forecast should be trusted even less than usual.
 

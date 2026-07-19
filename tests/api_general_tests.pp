@@ -34,6 +34,8 @@ published
   procedure TestPredictReadingsOutlierSpikeIgnored;
   procedure TestPredictReadingsSpikeInNewestReading;
   procedure TestPredictionConfidenceCleanVsNoisy;
+  procedure TestPredictReadingsSpikeDoesNotBendCurvature;
+  procedure TestPredictReadingsCurvatureDetected;
   procedure TestDebugLowSoonDriverTriggersSeventhPredictionLow;
 end;
 
@@ -621,6 +623,81 @@ end;
       AssertFalse(api.predictReadings(3, preds));
       AssertEquals('failed prediction resets confidence to zero', 0.0,
         api.predictionConfidence, 0.0001);
+    finally api.Free; end;
+  end;
+
+  // The acceleration term is fitted with the same robust weights as the
+  // slope, so a rejected spike must not bend the curvature either: spiky
+  // linear data should predict (nearly) the same values as clean linear data.
+  procedure TAPIGeneralTester.TestPredictReadingsSpikeDoesNotBendCurvature;
+  var
+    api: TFakeAPI;
+    cleanPreds, spikyPreds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // Clean linear window: 100..135, +5 mg/dL per 5 minutes
+      SetLength(readings, 8);
+      baseTime := Now - EncodeTime(0, 35, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        readings[i].update(100 + i * 5, BGPrimary, mgdl);
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+      AssertTrue(api.predictReadings(3, cleanPreds));
+
+      // Same window with a +45 spike in the middle. The half-window slope
+      // comparison this replaced saw different early/late rates here and
+      // bent every forecast by up to ~3 mg/dL at 15 minutes.
+      readings[4].update(120 + 45, BGPrimary, mgdl);
+      api.SetReadings(readings);
+      AssertTrue(api.predictReadings(3, spikyPreds));
+
+      for i := 0 to 2 do
+        AssertTrue('prediction ' + IntToStr(i) + ' unbent by spike (clean ' +
+          FloatToStr(cleanPreds[i].convert(mgdl)) + ' vs spiky ' +
+          FloatToStr(spikyPreds[i].convert(mgdl)) + ')',
+          Abs(cleanPreds[i].convert(mgdl) - spikyPreds[i].convert(mgdl)) <= 3);
+    finally api.Free; end;
+  end;
+
+  // Genuinely accelerating data should produce predictions whose step sizes
+  // grow — the quadratic term must detect real curvature, not just reject it.
+  procedure TAPIGeneralTester.TestPredictReadingsCurvatureDetected;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+    t, delta1, delta2: double;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // Quadratic rise: y = 100 + 0.5·t + 0.01·t² (accel 0.02 mg/dL/min²,
+      // inside the ±0.03 cap), sampled every 5 minutes for an hour.
+      SetLength(readings, 12);
+      baseTime := Now - EncodeTime(0, 55, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        t := i * 5;
+        readings[i].Init(mgdl);
+        readings[i].update(100 + 0.5 * t + 0.01 * t * t, BGPrimary, mgdl);
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+
+      AssertTrue('accelerating data still predicts', api.predictReadings(3, preds));
+      AssertEquals(3, Length(preds));
+
+      delta1 := preds[1].convert(mgdl) - preds[0].convert(mgdl);
+      delta2 := preds[2].convert(mgdl) - preds[1].convert(mgdl);
+      AssertTrue('prediction steps grow with real acceleration (' +
+        FloatToStr(delta1) + ' then ' + FloatToStr(delta2) + ')',
+        delta2 > delta1 + 0.2);
     finally api.Free; end;
   end;
 
