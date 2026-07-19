@@ -301,6 +301,7 @@ msgid "Go to Quick Settings"
 msgstr ""
 
 #: tfconf.bexportsettings.caption
+msgctxt "tfconf.bexportsettings.caption"
 msgid "Export Settings"
 msgstr ""
 
@@ -330,6 +331,7 @@ msgid "Time font..."
 msgstr ""
 
 #: tfconf.bimportsettings.caption
+msgctxt "tfconf.bimportsettings.caption"
 msgid "Import Settings"
 msgstr ""
 
@@ -2727,6 +2729,19 @@ msgctxt "uconf.rs_err_password"
 msgid "You must enter a password"
 msgstr ""
 
+#: uconf.rs_export_empty
+msgid "No settings to export."
+msgstr ""
+
+#: uconf.rs_export_ok
+msgid "Settings exported successfully."
+msgstr ""
+
+#: uconf.rs_export_title
+msgctxt "uconf.rs_export_title"
+msgid "Export Settings"
+msgstr ""
+
 #: uconf.rs_extcount
 #, object-pascal-format
 msgid "Extensions count: %d"
@@ -2766,6 +2781,24 @@ msgstr ""
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
+msgstr ""
+
+#: uconf.rs_import_empty
+msgid "The selected file is empty."
+msgstr ""
+
+#: uconf.rs_import_fail
+#, object-pascal-format
+msgid "Error importing settings: %s"
+msgstr ""
+
+#: uconf.rs_import_ok
+msgid "Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!"
+msgstr ""
+
+#: uconf.rs_import_title
+msgctxt "uconf.rs_import_title"
+msgid "Import Settings"
 msgstr ""
 
 #: uconf.rs_min_minutes
@@ -2935,6 +2968,10 @@ msgstr ""
 
 #: uconf.rs_select_font_time
 msgid "Select a font for the time"
+msgstr ""
+
+#: uconf.rs_settings_filter
+msgid "Settings files (*.trndi)|*.trndi|All files (*.*)|*.*"
 msgstr ""
 
 #: uconf.rs_shortmode_full

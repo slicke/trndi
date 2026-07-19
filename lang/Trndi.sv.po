@@ -315,6 +315,7 @@ msgid "Go to Quick Settings"
 msgstr "Gå till Snabbinställningar"
 
 #: tfconf.bexportsettings.caption
+msgctxt "tfconf.bexportsettings.caption"
 msgid "Export Settings"
 msgstr "Spara inställningar"
 
@@ -344,6 +345,7 @@ msgid "Time font..."
 msgstr "Tidstypsnit..."
 
 #: tfconf.bimportsettings.caption
+msgctxt "tfconf.bimportsettings.caption"
 msgid "Import Settings"
 msgstr "Ladda inställningar"
 
@@ -2869,6 +2871,20 @@ msgctxt "uconf.rs_err_password"
 msgid "You must enter a password"
 msgstr "Du måste ange ett lösenord"
 
+#: uconf.rs_export_empty
+msgid "No settings to export."
+msgstr ""
+
+#: uconf.rs_export_ok
+msgid "Settings exported successfully."
+msgstr ""
+
+#: uconf.rs_export_title
+#, fuzzy
+msgctxt "uconf.rs_export_title"
+msgid "Export Settings"
+msgstr "Spara inställningar"
+
 #: uconf.rs_extcount
 #, object-pascal-format
 msgid "Extensions count: %d"
@@ -2909,6 +2925,25 @@ msgstr "Detta kommer visa alla förutspåelsepilar, som standard visar Trndi bar
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Visar om Trndi upptäckt en pekskärm"
+
+#: uconf.rs_import_empty
+msgid "The selected file is empty."
+msgstr ""
+
+#: uconf.rs_import_fail
+#, object-pascal-format
+msgid "Error importing settings: %s"
+msgstr ""
+
+#: uconf.rs_import_ok
+msgid "Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!"
+msgstr ""
+
+#: uconf.rs_import_title
+#, fuzzy
+msgctxt "uconf.rs_import_title"
+msgid "Import Settings"
+msgstr "Ladda inställningar"
 
 #: uconf.rs_min_minutes
 #, object-pascal-format
@@ -3087,6 +3122,10 @@ msgstr "Välj ett typsnitt för avläsningen"
 #: uconf.rs_select_font_time
 msgid "Select a font for the time"
 msgstr "Välj ett typsnitt för tiden"
+
+#: uconf.rs_settings_filter
+msgid "Settings files (*.trndi)|*.trndi|All files (*.*)|*.*"
+msgstr ""
 
 #: uconf.rs_shortmode_full
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
@@ -3514,3 +3553,4 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
+

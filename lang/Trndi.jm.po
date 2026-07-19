@@ -317,6 +317,7 @@ msgid "Go to Quick Settings"
 msgstr "Gô till Snabbinstellningar"
 
 #: tfconf.bexportsettings.caption
+msgctxt "tfconf.bexportsettings.caption"
 msgid "Export Settings"
 msgstr "Exportera instellningar"
 
@@ -347,6 +348,7 @@ msgid "Time font..."
 msgstr "Tidstypsnitt..."
 
 #: tfconf.bimportsettings.caption
+msgctxt "tfconf.bimportsettings.caption"
 msgid "Import Settings"
 msgstr "Importera instellningar"
 
@@ -2942,6 +2944,20 @@ msgctxt "uconf.rs_err_password"
 msgid "You must enter a password"
 msgstr "Du meste ange ett lôsen"
 
+#: uconf.rs_export_empty
+msgid "No settings to export."
+msgstr ""
+
+#: uconf.rs_export_ok
+msgid "Settings exported successfully."
+msgstr ""
+
+#: uconf.rs_export_title
+#, fuzzy
+msgctxt "uconf.rs_export_title"
+msgid "Export Settings"
+msgstr "Exportera instellningar"
+
 #: uconf.rs_extcount
 #, object-pascal-format, fuzzy, badformat
 msgid "Extensions count: %d"
@@ -2982,6 +2998,25 @@ msgstr "Detta kommer visa alla forutspoelsepilar, som standard visar Trndi bara 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Visar om Trndi uppteckt en pekskerm"
+
+#: uconf.rs_import_empty
+msgid "The selected file is empty."
+msgstr ""
+
+#: uconf.rs_import_fail
+#, object-pascal-format
+msgid "Error importing settings: %s"
+msgstr ""
+
+#: uconf.rs_import_ok
+msgid "Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!"
+msgstr ""
+
+#: uconf.rs_import_title
+#, fuzzy
+msgctxt "uconf.rs_import_title"
+msgid "Import Settings"
+msgstr "Importera instellningar"
 
 #: uconf.rs_min_minutes
 #, object-pascal-format, fuzzy, badformat
@@ -3170,6 +3205,10 @@ msgstr "Velj ett typsnitt fôr avlesningen"
 #: uconf.rs_select_font_time
 msgid "Select a font for the time"
 msgstr "Velj ett typsnitt fôr tiden"
+
+#: uconf.rs_settings_filter
+msgid "Settings files (*.trndi)|*.trndi|All files (*.*)|*.*"
+msgstr ""
 
 #: uconf.rs_shortmode_full
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"

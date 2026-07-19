@@ -312,6 +312,7 @@ msgid "Go to Quick Settings"
 msgstr "Gå til hurtiginnstillinger"
 
 #: tfconf.bexportsettings.caption
+msgctxt "tfconf.bexportsettings.caption"
 msgid "Export Settings"
 msgstr "Eksporter innstillinger"
 
@@ -341,6 +342,7 @@ msgid "Time font..."
 msgstr "Tidsskrift..."
 
 #: tfconf.bimportsettings.caption
+msgctxt "tfconf.bimportsettings.caption"
 msgid "Import Settings"
 msgstr "Importer innstillinger"
 
@@ -2725,6 +2727,20 @@ msgctxt "uconf.rs_err_password"
 msgid "You must enter a password"
 msgstr "Du må angi et passord"
 
+#: uconf.rs_export_empty
+msgid "No settings to export."
+msgstr ""
+
+#: uconf.rs_export_ok
+msgid "Settings exported successfully."
+msgstr ""
+
+#: uconf.rs_export_title
+#, fuzzy
+msgctxt "uconf.rs_export_title"
+msgid "Export Settings"
+msgstr "Eksporter innstillinger"
+
 #: uconf.rs_extcount
 #, object-pascal-format
 msgid "Extensions count: %d"
@@ -2765,6 +2781,25 @@ msgstr "Dette viser alle prediksjonspilar; som standard viser Trndi bare opp, ne
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Viser om Trndi oppdaget en berøringsskjerm"
+
+#: uconf.rs_import_empty
+msgid "The selected file is empty."
+msgstr ""
+
+#: uconf.rs_import_fail
+#, object-pascal-format
+msgid "Error importing settings: %s"
+msgstr ""
+
+#: uconf.rs_import_ok
+msgid "Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!"
+msgstr ""
+
+#: uconf.rs_import_title
+#, fuzzy
+msgctxt "uconf.rs_import_title"
+msgid "Import Settings"
+msgstr "Importer innstillinger"
 
 #: uconf.rs_min_minutes
 #, object-pascal-format
@@ -2934,6 +2969,10 @@ msgstr "Velg en skrifttype for avlesningen"
 #: uconf.rs_select_font_time
 msgid "Select a font for the time"
 msgstr "Velg en skrifttype for tiden"
+
+#: uconf.rs_settings_filter
+msgid "Settings files (*.trndi)|*.trndi|All files (*.*)|*.*"
+msgstr ""
 
 #: uconf.rs_shortmode_full
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"

@@ -445,7 +445,13 @@ begin
   else
   begin
     miRangeLo.Caption := RS_RANGE_LO_UNSUPPORTED;
-    UseRangeColor := false;
+    // cgmRangeLo is still the disabled sentinel before the first fetch has
+    // connected and pulled thresholds — the boot-time resize tick lands here
+    // and must not clobber the user's ux.range_color preference. Only force
+    // the feature off once the backend has actually delivered data and the
+    // sentinel means "unsupported" rather than "not loaded yet".
+    if api.active then
+      UseRangeColor := false;
   end;
 end;
 
