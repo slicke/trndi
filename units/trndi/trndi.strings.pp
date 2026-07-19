@@ -157,6 +157,7 @@ RS_HISTORY_ITEM = '» Selected Reading: %s'+sLineBreak+'Δ Difference: %s'+sLine
 
 RS_PREDICTIONS_UNAVAILABLE = 'Predictions unavailable';
 RS_PREDICTIONS_STABLE = 'No change predicted →';
+RS_PREDICTION_CONFIDENCE = 'Prediction confidence: %.0f%%'+sLineBreak+sLineBreak+'This score shows how cleanly the recent readings fit the trend model. Low values mean the data was noisy or contained outliers, so the forecast is less reliable than usual.';
 
 RS_CUSTOM_DOTS = 'Custom Size [%.2f]';
 // Config box
