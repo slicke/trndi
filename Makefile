@@ -53,9 +53,11 @@ CPU_FLAG ?=
 IGNORE_MORMOT ?= 0
 
 # Defaults for fetching mORMot2 and static artifacts (override as needed)
+# Keep MORMOT2_COMMIT/MORMOT2_STATIC_URL in sync with .github/workflows/build.yml
+# so local builds use the same mORMot2 revision as CI.
 MORMOT2_REPO ?= https://github.com/synopse/mORMot2.git
-MORMOT2_BRANCH ?= 2.3.stable
-MORMOT2_STATIC_URL ?= https://synopse.info/files/mormot2static.7z
+MORMOT2_COMMIT ?= b72f260b880557d2f9ebc15905d820e7a3a9bf01
+MORMOT2_STATIC_URL ?= https://github.com/synopse/mORMot2/releases/download/2.4-stable/mormot2static.7z
 
 # Optional binary stripping (primarily for Linux release builds).
 # Lazarus/FPC build-modes sometimes embed debug info; stripping makes binaries much smaller.
@@ -138,7 +140,8 @@ help:
 	@echo "  BUILD_MODE (default: $(BUILD_MODE))"
 	@echo "  IGNORE_MORMOT (default: $(IGNORE_MORMOT)) Skip mORMot2 presence check when set to 1 (use 'make IGNORE_MORMOT=1')"
 	@echo "  MORMOT2_REPO (default: $(MORMOT2_REPO))"
-	@echo "  MORMOT2_STATIC_URL (default: $(MORMOT2_STATIC_URL))"}{
+	@echo "  MORMOT2_COMMIT (default: $(MORMOT2_COMMIT))"
+	@echo "  MORMOT2_STATIC_URL (default: $(MORMOT2_STATIC_URL))"
 
 check-mormot2:
 	@echo "Checking mORMot2 presence and QuickJS static artifacts..."
@@ -171,11 +174,14 @@ check-mormot2:
 	fi
 
 fetch-mormot2:
-	@echo "Fetching mORMot2 into externals/mORMot2 (branch $(MORMOT2_BRANCH))"
+	@echo "Fetching mORMot2 into externals/mORMot2 (commit $(MORMOT2_COMMIT))"
 	@set -e; \
 	mkdir -p externals; \
 	if [ -d externals/mORMot2 ]; then echo "externals/mORMot2 already exists; remove it to re-clone"; exit 1; fi; \
-	git clone --depth 1 --branch $(MORMOT2_BRANCH) $(MORMOT2_REPO) externals/mORMot2; \
+	git -c init.defaultBranch=main init externals/mORMot2; \
+	git -C externals/mORMot2 remote add origin $(MORMOT2_REPO); \
+	git -C externals/mORMot2 fetch --depth 1 origin $(MORMOT2_COMMIT); \
+	git -C externals/mORMot2 checkout FETCH_HEAD; \
 	# Try to fetch and extract static archive if possible
 	if command -v 7z >/dev/null 2>&1; then \
 	  if command -v curl >/dev/null 2>&1; then curl -L -o mormot2static.7z $(MORMOT2_STATIC_URL); \
@@ -197,7 +203,7 @@ endif
 	  if [ "$(IGNORE_MORMOT)" != "1" ]; then \
 	    if [ ! -d "$$HOME/.lazarus/onlinepackagemanager/packages/mORMot2" ] && [ ! -d "externals/mORMot2" ] && [ ! -d "static" ]; then \
 	      echo "Error: mORMot2 is referenced by $(LPI) but not found in expected locations."; \
-	      echo "Install via Lazarus Online Package Manager, or run 'git clone --depth 1 --branch 2.3.stable https://github.com/synopse/mORMot2.git externals/mORMot2'"; \
+	      echo "Install via Lazarus Online Package Manager (not recommended on Windows), or run 'make fetch-mormot2' (pins the same mORMot2 commit as CI)"; \
 	      echo "Or run 'make noext' to build without mORMot2, or re-run with 'make IGNORE_MORMOT=1' to skip this check."; \
 	      exit 1; \
 	    fi; \
