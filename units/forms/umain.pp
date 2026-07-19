@@ -1782,14 +1782,10 @@ end;
 procedure TfBG.DoFullScreen;
 var
   IsCurrentlyFullscreen: boolean;
-  SavedBounds: TRect;
 begin
   {$ifdef DARWIN}
   ToggleFullscreenMac;
   {$endif}
-  // Store the current form bounds before making any changes
-  SavedBounds := BoundsRect;
-
   // Determine if form is currently in fullscreen mode
   // This needs to check multiple conditions as WindowState alone isn't reliable
   IsCurrentlyFullscreen := (BorderStyle = bsNone) and

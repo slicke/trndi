@@ -824,6 +824,9 @@ function doArray(arr: JSParameters; depth: integer): JSValue;
   end;
 
 begin
+  // Start from `undefined` so every path returns a fully defined value
+  Result := JSValue(JS_UNDEFINED);
+
   // If array, convert each element
   if val.Data.match = JD_ARRAY then
   begin

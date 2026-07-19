@@ -2251,7 +2251,8 @@ begin
   // Initialize parameter labels for current backend selection
   cbSysChange(Self);
 
-  bcommon.Caption := WChar(2699) + ' ' + bCommon.Caption;
+  // Encode the gear glyph explicitly so the concat stays UTF-8 throughout
+  bcommon.Caption := UTF8Encode(WideString(WChar(2699))) + ' ' + bCommon.Caption;
 
   {$IFNDEF TRNDIEXT}
   lExtName.Caption := RS_NO_EXTENSIONS;
