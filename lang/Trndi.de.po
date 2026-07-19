@@ -312,6 +312,7 @@ msgid "Go to Quick Settings"
 msgstr "Zu Schnelleinstellungen"
 
 #: tfconf.bexportsettings.caption
+msgctxt "tfconf.bexportsettings.caption"
 msgid "Export Settings"
 msgstr "Einstellungen exportieren"
 
@@ -341,6 +342,7 @@ msgid "Time font..."
 msgstr "Uhrzeitschrift..."
 
 #: tfconf.bimportsettings.caption
+msgctxt "tfconf.bimportsettings.caption"
 msgid "Import Settings"
 msgstr "Einstellungen importieren"
 
@@ -2725,6 +2727,20 @@ msgctxt "uconf.rs_err_password"
 msgid "You must enter a password"
 msgstr "Sie müssen ein Passwort eingeben"
 
+#: uconf.rs_export_empty
+msgid "No settings to export."
+msgstr ""
+
+#: uconf.rs_export_ok
+msgid "Settings exported successfully."
+msgstr ""
+
+#: uconf.rs_export_title
+#, fuzzy
+msgctxt "uconf.rs_export_title"
+msgid "Export Settings"
+msgstr "Einstellungen exportieren"
+
 #: uconf.rs_extcount
 #, object-pascal-format
 msgid "Extensions count: %d"
@@ -2765,6 +2781,25 @@ msgstr "Dies zeigt alle Prognosepfeile an; standardmäßig zeigt Trndi nur aufw�
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Zeigt, ob Trndi einen Touchscreen erkannt hat"
+
+#: uconf.rs_import_empty
+msgid "The selected file is empty."
+msgstr ""
+
+#: uconf.rs_import_fail
+#, object-pascal-format
+msgid "Error importing settings: %s"
+msgstr ""
+
+#: uconf.rs_import_ok
+msgid "Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!"
+msgstr ""
+
+#: uconf.rs_import_title
+#, fuzzy
+msgctxt "uconf.rs_import_title"
+msgid "Import Settings"
+msgstr "Einstellungen importieren"
 
 #: uconf.rs_min_minutes
 #, object-pascal-format
@@ -2934,6 +2969,10 @@ msgstr "Schriftart für den Messwert auswählen"
 #: uconf.rs_select_font_time
 msgid "Select a font for the time"
 msgstr "Schriftart für die Zeit auswählen"
+
+#: uconf.rs_settings_filter
+msgid "Settings files (*.trndi)|*.trndi|All files (*.*)|*.*"
+msgstr ""
 
 #: uconf.rs_shortmode_full
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
