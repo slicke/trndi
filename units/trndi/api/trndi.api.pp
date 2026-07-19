@@ -305,6 +305,9 @@ const
         - Applies time-weighted linear regression on time vs. BG value
         - Robustly refits, down-weighting outlier readings (sensor spikes,
           compression lows) so a single bad point cannot dominate the forecast
+        - Estimates curvature via a weighted quadratic fit over the same
+          robust weights, gently bending the forecast when the trend is
+          accelerating or decelerating
         - Extrapolates forward to predict future values
         - Each prediction is spaced by the average interval between historical readings
 
@@ -839,7 +842,7 @@ function TrndiAPI.predictReadings(numPredictions: integer;
 out predictions: BGResults): boolean;
 var
   historicalReadings: BGResults;
-  n, i, j, m, midIdx, gapCutIdx, minutesPerReport, robustPass: integer;
+  n, i, j, m, gapCutIdx, minutesPerReport, robustPass: integer;
   sumW, sumWX, sumWY, sumWXX, sumWXY: double;
   slope, intercept, weight, alpha: double;
   timeValues: array of double;
@@ -853,7 +856,8 @@ var
   predictedTime: TDateTime;
   predictedValue, prevValue: double;
   trendDelta: single;
-  earlyRate, lateRate, accel, tFromLast: double;
+  accel, tFromLast: double;
+  s0, s1, s2, s3, s4, sy, sxy, sx2y, det, xc: double;
 
   // Sorts the first count entries in place (insertion sort; n ≤ 12 here,
   // pair count ≤ 66) and returns their median.
@@ -1069,22 +1073,38 @@ begin
       predictionQuality := 0;
   end;
 
-  // Second-derivative acceleration: compare the slope of the first vs second half
-  // of the data window. A positive value means the rate of change is speeding up;
-  // negative means it is decelerating. Capped to ±0.03 mg/dL/min² so the quadratic
-  // correction stays subtle — CGM noise makes aggressive acceleration estimates
-  // unreliable, so we treat this as a gentle curve hint rather than a hard model.
-  midIdx := n div 2;
-  if (timeValues[midIdx] - timeValues[0]) > 0 then
-    earlyRate := (bgValues[midIdx] - bgValues[0]) / (timeValues[midIdx] - timeValues[0])
-  else
-    earlyRate := slope;
-  if (timeValues[n-1] - timeValues[midIdx]) > 0 then
-    lateRate := (bgValues[n-1] - bgValues[midIdx]) / (timeValues[n-1] - timeValues[midIdx])
-  else
-    lateRate := slope;
-  if timeValues[n-1] > timeValues[0] then
-    accel := (lateRate - earlyRate) / (timeValues[n-1] - timeValues[0]) * 2
+  // Second-derivative acceleration from a weighted quadratic fit
+  // y = c0 + c1·x + c2·x², accel = 2·c2. Uses the same robust weights the
+  // linear fit settled on, so a rejected outlier cannot bend the curvature
+  // estimate, and for perfectly linear data c2 is exactly zero. Times are
+  // centered on the last reading for numerical conditioning (the curvature
+  // coefficient is shift-invariant). Capped to ±0.03 mg/dL/min² so the
+  // quadratic correction stays subtle — CGM noise makes aggressive
+  // acceleration estimates unreliable, so we treat this as a gentle curve
+  // hint rather than a hard model.
+  s0 := 0; s1 := 0; s2 := 0; s3 := 0; s4 := 0;
+  sy := 0; sxy := 0; sx2y := 0;
+  for i := 0 to n - 1 do
+  begin
+    xc     := timeValues[i] - timeValues[n-1];
+    weight := weights[i];
+    s0   := s0   + weight;
+    s1   := s1   + weight * xc;
+    s2   := s2   + weight * xc * xc;
+    s3   := s3   + weight * xc * xc * xc;
+    s4   := s4   + weight * xc * xc * xc * xc;
+    sy   := sy   + weight * bgValues[i];
+    sxy  := sxy  + weight * xc * bgValues[i];
+    sx2y := sx2y + weight * xc * xc * bgValues[i];
+  end;
+  det := s0 * (s2 * s4 - s3 * s3) - s1 * (s1 * s4 - s3 * s2) +
+    s2 * (s1 * s3 - s2 * s2);
+  // Fewer than three distinct time points leaves the quadratic
+  // underdetermined — fall back to no curvature (relative threshold: the
+  // determinant scales like s0·s2·s4).
+  if Abs(det) > 1e-9 * (Abs(s0 * s2 * s4) + 1) then
+    accel := 2 * (s0 * (s2 * sx2y - s3 * sxy) - s1 * (s1 * sx2y - s2 * sxy) +
+      sy * (s1 * s3 - s2 * s2)) / det
   else
     accel := 0;
   if accel >  0.03 then accel :=  0.03;
