@@ -1808,6 +1808,11 @@ begin
       Combo.Color := RGBToColor(53, 53, 53);
       Combo.Font.Color := RGBToColor(245, 245, 245);
     end;
+    {$else}
+    {$ifdef X_MAC}
+    Combo.Color := MacInputBackgroundColor(Combo.Color);
+    Combo.Font.Color := MacInputTextColor(Combo.Font.Color);
+    {$endif}
     {$endif}
     if (size = uxdBig) then
       Combo.Font.Size := 20;
@@ -1884,6 +1889,12 @@ begin
       Grid.FixedColor := RGBToColor(35, 35, 35);
       Grid.Font.Color := RGBToColor(245, 245, 245);
     end;
+    {$else}
+    {$ifdef X_MAC}
+    Grid.Color := MacInputBackgroundColor(Grid.Color);
+    Grid.FixedColor := MacDialogBackgroundColor(Grid.FixedColor);
+    Grid.Font.Color := MacInputTextColor(Grid.Font.Color);
+    {$endif}
     {$endif}
     Grid.ColCount := 2;
     Grid.RowCount := Length(Keys) + 1;
@@ -1973,6 +1984,11 @@ begin
       FontCombo.Color := RGBToColor(53, 53, 53);
       FontCombo.Font.Color := RGBToColor(245, 245, 245);
     end;
+    {$else}
+    {$ifdef X_MAC}
+    FontCombo.Color := MacInputBackgroundColor(FontCombo.Color);
+    FontCombo.Font.Color := MacInputTextColor(FontCombo.Font.Color);
+    {$endif}
     {$endif}
     
     // Populate with system fonts
@@ -1999,10 +2015,7 @@ begin
     PreviewLabel.AutoSize := false;
     PreviewLabel.Alignment := taCenter;
     PreviewLabel.Font.Assign(SelectedFont);
-    if TrndiNative.isDarkMode then
-      PreviewLabel.Font.Color := clWhite
-    else
-      PreviewLabel.Font.Color := clBlack;
+    PreviewLabel.Font.Color := getBaseColor;
 
     case size of
     uxdBig:
@@ -2107,6 +2120,11 @@ begin
       DatePicker.Color := RGBToColor(53, 53, 53);
       DatePicker.Font.Color := RGBToColor(245, 245, 245);
     end;
+    {$else}
+    {$ifdef X_MAC}
+    DatePicker.Color := MacInputBackgroundColor(DatePicker.Color);
+    DatePicker.Font.Color := MacInputTextColor(DatePicker.Font.Color);
+    {$endif}
     {$endif}
     if (size = uxdBig) then
     begin
