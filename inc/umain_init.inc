@@ -374,6 +374,9 @@ begin
     if pnMultiUser.Color <> clBlack then // Act if the panel is not transparent (black)
     begin
       pnMultiUser.Visible := native.GetRootSetting('users.colorbox', 'true') = 'true';
+      userColorBar := pnMultiUser.Visible;
+      // setColorMode hides pnMultiUser again when the title bar takes the
+      // user's colour — the bar would be redundant next to a coloured title.
       customTitlebar := setColorMode; // Set the custom title bar value depending if the panel is showing
     end;
   end

@@ -656,7 +656,7 @@ begin
       fFloat.lVal.font.color := lval.font.color;
       fFloat.larrow.font.color := fFloat.lVal.font.color;
     end;
-    fFloat.pnMultiUser.Visible := pnMultiUser.Visible;
+    fFloat.pnMultiUser.Visible := userColorBar;
     if fFloat.pnMultiUser.Visible then
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
     fFloat.FormResize(fFloat);
@@ -1691,7 +1691,13 @@ begin
   if customTitleBar and (pnMultiUser.Color <> clBlack) then
     if native.SetTitleColor(handle, pnMultiUser.Color,
       IfThen(IsLightColor(pnMultiUser.Color), clBlack, clWhite)) then
+    begin
+      // The title bar now carries the user's colour, so the left-hand colour
+      // bar is redundant on the main form. The float window keeps its bar
+      // (mirrored from userColorBar) — it is borderless and has no title.
+      pnMultiUser.Visible := false;
       Exit(true);
+    end;
 
   if native.isDarkMode then
     native.setDarkMode
