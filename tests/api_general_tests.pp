@@ -31,6 +31,9 @@ published
   procedure TestPredictReadingsIrregularIntervals;
   procedure TestPredictReadingsInvalidTimeDistribution;
   procedure TestPredictReadingsOutputOrdering;
+  procedure TestPredictReadingsOutlierSpikeIgnored;
+  procedure TestPredictReadingsSpikeInNewestReading;
+  procedure TestPredictionConfidenceCleanVsNoisy;
   procedure TestDebugLowSoonDriverTriggersSeventhPredictionLow;
 end;
 
@@ -491,6 +494,133 @@ end;
       AssertTrue(api.predictReadings(5, preds));
       for i := 0 to High(preds)-1 do
         AssertTrue('predictions are chronological', preds[i].date <= preds[i+1].date);
+    finally api.Free; end;
+  end;
+
+  // A single spurious spike in the middle of an otherwise linear window must
+  // not drag the forecast: the robust refit should down-weight it and the
+  // predictions should stay close to the clean linear continuation.
+  procedure TAPIGeneralTester.TestPredictReadingsOutlierSpikeIgnored;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // Eight readings 5 minutes apart rising 5 mg/dL per step (100..135),
+      // except index 6 which spikes +45 above the trend line.
+      SetLength(readings, 8);
+      baseTime := Now - EncodeTime(0, 35, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        if i = 6 then
+          readings[i].update(130 + 45, BGPrimary, mgdl)
+        else
+          readings[i].update(100 + i * 5, BGPrimary, mgdl);
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+
+      AssertTrue('predictReadings succeeds with spiky data', api.predictReadings(3, preds));
+      AssertEquals(3, Length(preds));
+
+      // Clean continuation would be 140, 145, 150. Allow a modest tolerance;
+      // without robust rejection the spike (weighted heavily as a recent
+      // point) pushes the first prediction far above this band.
+      AssertTrue('first prediction near clean trend, got ' +
+        FloatToStr(preds[0].convert(mgdl)),
+        Abs(preds[0].convert(mgdl) - 140) <= 8);
+      AssertTrue('third prediction near clean trend, got ' +
+        FloatToStr(preds[2].convert(mgdl)),
+        Abs(preds[2].convert(mgdl) - 150) <= 12);
+    finally api.Free; end;
+  end;
+
+  // A spike as the very newest reading is the worst case: it carries the
+  // highest exponential weight AND used to anchor the rate-of-change clamp.
+  // The robust fit should reject it and predictions should continue the
+  // underlying trend rather than the spike.
+  procedure TAPIGeneralTester.TestPredictReadingsSpikeInNewestReading;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // Seven clean readings 100..130 (+5 per 5 min), then a +40 spike as the
+      // eighth/newest reading (175 instead of 135).
+      SetLength(readings, 8);
+      baseTime := Now - EncodeTime(0, 35, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        if i = 7 then
+          readings[i].update(135 + 40, BGPrimary, mgdl)
+        else
+          readings[i].update(100 + i * 5, BGPrimary, mgdl);
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+
+      AssertTrue('predictReadings succeeds with newest-point spike',
+        api.predictReadings(2, preds));
+      AssertEquals(2, Length(preds));
+
+      // Clean continuation would be 140; following the spike would put the
+      // first prediction well above 165. Assert we stay near the trend.
+      AssertTrue('first prediction ignores newest-point spike, got ' +
+        FloatToStr(preds[0].convert(mgdl)),
+        preds[0].convert(mgdl) < 155);
+    finally api.Free; end;
+  end;
+
+  // predictionConfidence should be high for clean linear data, lower when the
+  // window contains an outlier, and reset to zero when prediction fails.
+  procedure TAPIGeneralTester.TestPredictionConfidenceCleanVsNoisy;
+  var
+    api: TFakeAPI;
+    preds, readings: BGResults;
+    i: integer;
+    baseTime: TDateTime;
+    cleanConf, noisyConf: double;
+  begin
+    api := TFakeAPI.Create;
+    try
+      // Clean linear window
+      SetLength(readings, 8);
+      baseTime := Now - EncodeTime(0, 35, 0, 0);
+      for i := 0 to High(readings) do
+      begin
+        readings[i].Init(mgdl);
+        readings[i].update(100 + i * 5, BGPrimary, mgdl);
+        readings[i].date := baseTime + EncodeTime(0, i * 5, 0, 0);
+      end;
+      api.SetReadings(readings);
+      AssertTrue(api.predictReadings(3, preds));
+      cleanConf := api.predictionConfidence;
+      AssertTrue('clean linear data yields high confidence, got ' +
+        FloatToStr(cleanConf), cleanConf > 0.9);
+
+      // Same window with a spike at index 6
+      readings[6].update(130 + 45, BGPrimary, mgdl);
+      api.SetReadings(readings);
+      AssertTrue(api.predictReadings(3, preds));
+      noisyConf := api.predictionConfidence;
+      AssertTrue('spiky data yields lower confidence than clean (' +
+        FloatToStr(noisyConf) + ' vs ' + FloatToStr(cleanConf) + ')',
+        noisyConf < cleanConf);
+
+      // Failure resets confidence
+      SetLength(readings, 0);
+      api.SetReadings(readings);
+      AssertFalse(api.predictReadings(3, preds));
+      AssertEquals('failed prediction resets confidence to zero', 0.0,
+        api.predictionConfidence, 0.0001);
     finally api.Free; end;
   end;
 
