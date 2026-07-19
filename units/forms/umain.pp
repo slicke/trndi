@@ -931,6 +931,10 @@ function CFStringCreateWithUTF8String(const utf8Str: pansichar): CFStringRef; ex
 
 var
 customTitlebar: boolean = true;
+// User's colour-bar preference (users.colorbox + non-black user.color). The
+// borderless float window shows its bar from this, since the main form's
+// pnMultiUser is hidden when the title bar carries the user's colour.
+userColorBar: boolean = false;
 clockInterval: integer = CLOCK_INTERVAL_MS;
 clockDisplay: integer = 5000;
 fSplash: TfSplash;

@@ -459,7 +459,7 @@ begin
     end;
     fFloat.lArrow.Caption := lArrow.Caption;
     fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
-    if pnMultiUser.Visible then
+    if userColorBar then
     begin
       fFloat.pnMultiUser.Visible := true;
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
@@ -473,7 +473,7 @@ begin
       fFloat.lVal.Font.Color := lVal.Font.Color;
       fFloat.lArrow.Font.Color := fFloat.lVal.Font.Color;
     end;
-    fFloat.pnMultiUser.Visible := pnMultiUser.Visible;
+    fFloat.pnMultiUser.Visible := userColorBar;
     if fFloat.pnMultiUser.Visible then
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
   end;
