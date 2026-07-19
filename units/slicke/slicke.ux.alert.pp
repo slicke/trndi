@@ -1829,7 +1829,7 @@ begin
     Combo := TComboBox.Create(Dialog);
     Combo.Parent := Dialog;
     for i := 0 to High(Choices) do
-      Combo.Items.Add(Choices[i]);
+      Combo.Items.Add(UTF8Encode(Choices[i]));
     Combo.ReadOnly := true;
     Combo.Style := csDropDownList;
     Combo.Left := DescLabel.Left;

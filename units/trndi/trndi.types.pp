@@ -272,7 +272,7 @@ end;
   @param(u Requested unit )
   @param(which which result to return, eg the reading or the delta )
   @returns( the value )
-  @raises( none )
+  @raises( EArgumentException on an out-of-range BGValType )
 }
 function BGReading.convert(u: BGUnit; which: BGValType = BGPrimary): double;
 begin
@@ -281,6 +281,9 @@ begin
     Result := curr * BG_CONVERTIONS[u][valu];
   BGDelta:
     Result := change * BG_CONVERTIONS[u][valu];
+  else
+    // Only reachable via an unsafe cast; fail loudly rather than return garbage
+    raise EArgumentException.Create('BGReading.convert: invalid BGValType');
   end;
 end;
 

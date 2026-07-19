@@ -2807,7 +2807,7 @@ var
               if WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, nil, rawHeaderBuf, dwSize, index) then
               begin
                 rawHeaderStr := WideString(rawHeaderBuf);
-                outHeaders.Text := rawHeaderStr;
+                outHeaders.Text := UTF8Encode(rawHeaderStr);
               end;
             finally
               FreeMem(rawHeaderBuf);
@@ -2827,7 +2827,7 @@ var
             GetMem(locBuf, locSize);
             try
               if WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_LOCATION, nil, locBuf, locSize, index) then
-                outLocation := WideString(locBuf);
+                outLocation := UTF8Encode(WideString(locBuf));
             finally
               FreeMem(locBuf);
             end;
