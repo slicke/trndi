@@ -386,7 +386,7 @@ end;
 
 procedure TfBG.CheckAndAcceptLicense;
 const
-  license = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#10#13 + #10 +
+  license = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#10 + #10 +
     'This app is NOT a medical device.'#10 +
     '• Do NOT make medical decisions based on this data'#10 +
     '• Data may be WRONG, delayed, or unavailable'#10 +

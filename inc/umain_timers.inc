@@ -729,6 +729,7 @@ begin
 
     ALabel.Font.Size := OptimalSize;
     bmp.Canvas.Font.Size := OptimalSize;
+    TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
     TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
     while ((TextWidth > MaxWidth) or (TextHeight > MaxHeight)) and (ALabel.Font.Size > 1) do
     begin

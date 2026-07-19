@@ -869,7 +869,7 @@ begin
     if native.TryGetSetting('media.url_perfect', url) then
       actOnMediaController(mcaURL, url);
 
-    if native.TryGetSetting('url_remote.url_high', url) then
+    if native.TryGetSetting('url_remote.url_perfect', url) then
       native.getURL(url, url);
   end;
 

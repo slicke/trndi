@@ -85,7 +85,7 @@ begin
 
       // Set socket to non-blocking mode
       NonBlocking := 1;
-      if ioctlsocket(XSocket, -2147195266, @NonBlocking) <> 0 then
+      if ioctlsocket(XSocket, longint(FIONBIO), @NonBlocking) <> 0 then
         Exit;
 
       // Attempt connect (will return WSAEWOULDBLOCK)
