@@ -1374,7 +1374,7 @@ begin
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
   // The ringed DOT_FRESH marker is optional (ux.dot_fresh); when disabled the
   // newest dot stays a plain DOT_GRAPH even while the reading is fresh.
-  FLatestIsFresh := isFresh and native.GetBoolSetting('ux.dot_fresh', true);
+  FLatestIsFresh := isFresh and native.GetBoolSetting('ux.dot_fresh', false);
 
   if (Length(TrendDots) > ACTIVE_DOTS) and Assigned(TrendDots[ACTIVE_DOTS]) then
   begin
