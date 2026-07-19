@@ -106,9 +106,9 @@ The CI workflow automatically signs packages during the build process:
 1. **Checks for GPG key:** If `GPG_PRIVATE_KEY` secret exists, it proceeds with signing
 2. **Imports the key:** Loads your private key into GPG in the CI environment
 3. **Extracts key ID:** Automatically determines the GPG key ID from the imported key
-4. **Configures RPM:** Sets up `~/.rpmmacros` with the key ID and GPG settings for RPM signing
+4. **Configures RPM:** Sets up `~/.rpmmacros` with the OpenPGP sign id and extra GPG flags for RPM signing
 5. **Signs DEB:** Creates a detached GPG signature (`.deb.asc` file) for the Debian package using `gpg --detach-sign`
-6. **Signs RPM:** Uses `rpm --addsign` (with passphrase piped in) to sign the RPM package (signature embedded)
+6. **Signs RPM:** Uses `rpm --addsign` with RPM's stock OpenPGP signing command and extra GPG flags to sign the RPM package (signature embedded)
 7. **Includes public key:** Copies `doc/trndi-signing-key.asc` to artifacts if it exists
 8. **Continues normally:** If no GPG key is configured, packages are built unsigned (no errors)
 
@@ -145,7 +145,7 @@ Successful verification means the packages haven't been tampered with and came f
 - Check that you copied the entire private key including `-----BEGIN PGP PRIVATE KEY BLOCK-----` and `-----END PGP PRIVATE KEY BLOCK-----`
 
 ### "gpg: signing failed: Inappropriate ioctl for device"
-- The workflow uses `--batch` mode and pipes the passphrase to avoid this issue
+- The workflow uses RPM's stock OpenPGP sign command plus `--batch` and loopback pinentry flags to avoid this issue
 
 ### RPM signing fails
 - Ensure `GPG_PASSPHRASE` is set correctly
