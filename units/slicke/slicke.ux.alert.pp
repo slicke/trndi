@@ -32,7 +32,7 @@
   - @link(UXMessage) for simple, one-button informational messages.
   - @link(UXDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
   - @link(ExtMsg), @link(ExtLog), @link(ExtError), @link(ExtSucc), @link(ExtSuccEx) for rich dialogs with dumps/logs.
-  - @link(ExtInput), @link(ExtNumericInput), @link(ExtIntInput), @link(ExtList), @link(ExtTable) for data entry.
+  - @link(ExtInput), @link(ExtPasswordInput), @link(ExtNumericInput), @link(ExtIntInput), @link(ExtList), @link(ExtTable) for data entry.
   - @link(ExtDatePicker) for date selection with optional min/max constraints.
 
   Platform support:
@@ -582,9 +582,27 @@ const icon: UXImage = uxmtCog): integer; overload;
     @param ADefault Initial text value.
     @param ModalResult Out parameter holding the modal result after closing.
     @param icon Emoji icon (default gear).
+    @param AMasked If @true, the input is masked like a password field.
     @returns The entered string when @code(ModalResult = mrOK); otherwise the previous/default content.
   }
 function ExtInput(const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc, ADefault: string;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog;
+const AMasked: boolean = false): string;
+
+  {**
+    Convenience wrapper over @link(ExtInput) for masked (password/secret) input.
+    @param dialogsize Layout preset.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param ADefault Initial text value.
+    @param ModalResult Out parameter holding the modal result after closing.
+    @param icon Emoji icon (default gear).
+    @returns The entered string when @code(ModalResult = mrOK); otherwise the previous/default content.
+  }
+function ExtPasswordInput(const dialogsize: TUXDialogSize;
 const ACaption, ATitle, ADesc, ADefault: string;
 var ModalResult: TModalResult;
 const icon: UXImage = uxmtCog): string;
@@ -1671,7 +1689,8 @@ function ExtInput(
 const dialogsize: TUXDialogSize;
 const ACaption, ATitle, ADesc, ADefault: string;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: UXImage = uxmtCog;
+const AMasked: boolean = false
 ): string;
 const
   Padding = 16;
@@ -1711,6 +1730,8 @@ begin
     Edit.Width := DescLabel.Width;
     Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig), Padding * 2, Padding);
     Edit.Text := ADefault;
+    if AMasked then
+      Edit.EchoMode := emPassword;
     {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
     begin
@@ -1737,6 +1758,17 @@ begin
   finally
     Dialog.Free;
   end;
+end;
+
+{** See interface docs for behavior and parameters. }
+function ExtPasswordInput(
+const dialogsize: TUXDialogSize;
+const ACaption, ATitle, ADesc, ADefault: string;
+var ModalResult: TModalResult;
+const icon: UXImage = uxmtCog
+): string;
+begin
+  Result := ExtInput(dialogsize, ACaption, ATitle, ADesc, ADefault, ModalResult, icon, true);
 end;
 
 function ExtList(const dialogsize: TUXDialogSize;
@@ -3078,7 +3110,13 @@ procedure ClickButton(idx: integer);
 begin
   if (ssCtrl in Shift) and (Key = Ord('C')) then
   begin
+    // A focused edit control owns Ctrl+C for its own selection; only copy the
+    // dialog text when no text-editing control has focus.
+    if (ActiveControl is TCustomEdit) or (ActiveControl is TCustomComboBox) or
+      (ActiveControl is TCustomFloatSpinEditEx) then
+      Exit;
     Clipboard.AsText := getContent;
+    Key := 0;
     Exit;
   end;
 
