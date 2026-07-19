@@ -94,6 +94,10 @@ protected
     /// that showing individual predictions would be misleading noise.
   predictionStable: boolean;
 
+    /// 0..1 score set by predictReadings: how cleanly the recent readings fit
+    /// the regression after outlier rejection. Exposed as predictionConfidence.
+  predictionQuality: double;
+
     /// Collection of BG threshold values.
   core: CGMCore;
 
@@ -298,9 +302,15 @@ const
 
         Algorithm:
         - Fetches recent readings (last 30-60 minutes)
-        - Applies linear regression on time vs. BG value
+        - Applies time-weighted linear regression on time vs. BG value
+        - Robustly refits, down-weighting outlier readings (sensor spikes,
+          compression lows) so a single bad point cannot dominate the forecast
         - Extrapolates forward to predict future values
         - Each prediction is spaced by the average interval between historical readings
+
+        Sets @code(predictionConfidence) to a 0..1 score describing how cleanly
+        the recent data fit the model — callers can use it to de-emphasize or
+        hide forecasts built on noisy data.
 
         @param(numPredictions Number of future readings to predict; clamped to 1–20)
         @param(predictions    Out parameter receiving array of predicted readings)
@@ -461,6 +471,13 @@ published
     /// trend — the UI can substitute a "no change" label instead of showing
     /// numerically identical predictions.
   property stablePrediction: boolean read predictionStable;
+
+    /// Confidence (0..1) in the most recent predictReadings result, derived
+    /// from the robust fit's residual error and the share of reading weight
+    /// rejected as outliers. Near 1 means the recent data follows a clean
+    /// trend; low values mean the data is too noisy for the forecast to be
+    /// trusted. Zero when no prediction has been made (or the last one failed).
+  property predictionConfidence: double read predictionQuality;
 
     {** Convenience status flag determined via @code(checkActive). }
   property active: boolean read checkActive;
@@ -822,21 +839,50 @@ function TrndiAPI.predictReadings(numPredictions: integer;
 out predictions: BGResults): boolean;
 var
   historicalReadings: BGResults;
-  n, i, midIdx, gapCutIdx, minutesPerReport: integer;
+  n, i, j, m, midIdx, gapCutIdx, minutesPerReport, robustPass: integer;
   sumW, sumWX, sumWY, sumWXX, sumWXY: double;
   slope, intercept, weight, alpha: double;
   timeValues: array of double;
   bgValues: array of double;
   weights: array of double;
+  residuals, sortedRes, candWeights, pairSlopes: array of double;
+  medRes, scaleMAD, cutoff, resid: double;
+  sumW0, sumWr2, rmse, keptRatio: double;
   avgInterval, minutesDiff: double;
   lastTime: TDateTime;
   predictedTime: TDateTime;
   predictedValue, prevValue: double;
   trendDelta: single;
   earlyRate, lateRate, accel, tFromLast: double;
+
+  // Sorts the first count entries in place (insertion sort; n ≤ 12 here,
+  // pair count ≤ 66) and returns their median.
+  function medianOf(var values: array of double; count: integer): double;
+  var
+    a, b: integer;
+    v: double;
+  begin
+    for a := 1 to count - 1 do
+    begin
+      v := values[a];
+      b := a - 1;
+      while (b >= 0) and (values[b] > v) do
+      begin
+        values[b + 1] := values[b];
+        Dec(b);
+      end;
+      values[b + 1] := v;
+    end;
+    if (count mod 2) = 1 then
+      Result := values[count div 2]
+    else
+      Result := (values[count div 2 - 1] + values[count div 2]) / 2;
+  end;
+
 begin
   Result := false;
   predictionStable := false;
+  predictionQuality := 0;
   lastErr := '';
   SetLength(predictions, 0);
 
@@ -921,6 +967,108 @@ begin
   slope     := (sumW * sumWXY - sumWX * sumWY) / (sumW * sumWXX - sumWX * sumWX);
   intercept := (sumWY - slope * sumWX) / sumW;
 
+  // Robust refit: a single spurious reading — compression low, sensor jitter —
+  // would otherwise dominate the fit, because the exponential time weighting
+  // hands the newest points the largest weights. Start from a Theil–Sen fit
+  // (median of all pairwise slopes): unlike the least-squares fit above, it
+  // tolerates outliers even in the newest reading, where high weight plus high
+  // leverage make least squares chase the spike and hide it from residual-based
+  // rejection. Two reweighting passes then measure residuals against the current
+  // fit, estimate the noise scale robustly (median absolute residual),
+  // down-weight points whose residual is large relative to that scale, and
+  // refit with the exponential recency weights. Clean data is untouched: with
+  // residuals below the noise floor the biweight factors stay ≈1 and the fit
+  // matches plain weighted least squares.
+  sumW0 := sumW;
+  SetLength(residuals, n);
+  SetLength(sortedRes, n);
+  SetLength(candWeights, n);
+  SetLength(pairSlopes, (n * (n - 1)) div 2);
+  m := 0;
+  for i := 0 to n - 2 do
+    for j := i + 1 to n - 1 do
+      if timeValues[j] > timeValues[i] then
+      begin
+        pairSlopes[m] := (bgValues[j] - bgValues[i]) / (timeValues[j] - timeValues[i]);
+        Inc(m);
+      end;
+  if m > 0 then
+  begin
+    slope := medianOf(pairSlopes, m);
+    for i := 0 to n - 1 do
+      sortedRes[i] := bgValues[i] - slope * timeValues[i];
+    intercept := medianOf(sortedRes, n);
+  end;
+
+  for robustPass := 1 to 2 do
+  begin
+    for i := 0 to n - 1 do
+    begin
+      residuals[i] := Abs(bgValues[i] - (slope * timeValues[i] + intercept));
+      sortedRes[i] := residuals[i];
+    end;
+    medRes := medianOf(sortedRes, n);
+
+    // 1.4826 × MAD estimates the Gaussian noise sigma. Floor at 2.5 mg/dL so
+    // ordinary CGM quantization noise never triggers rejection on clean data.
+    scaleMAD := 1.4826 * medRes;
+    if scaleMAD < 2.5 then
+      scaleMAD := 2.5;
+    cutoff := 4.685 * scaleMAD;
+
+    sumW   := 0;
+    sumWX  := 0;
+    sumWY  := 0;
+    sumWXX := 0;
+    sumWXY := 0;
+    for i := 0 to n - 1 do
+    begin
+      // Rebuild from the base exponential weight each pass (true IRLS) rather
+      // than compounding biweight factors across passes.
+      if residuals[i] >= cutoff then
+        weight := 0
+      else
+        weight := Exp(alpha * timeValues[i]) * Sqr(1 - Sqr(residuals[i] / cutoff));
+      candWeights[i] := weight;
+      sumW   := sumW   + weight;
+      sumWX  := sumWX  + weight * timeValues[i];
+      sumWY  := sumWY  + weight * bgValues[i];
+      sumWXX := sumWXX + weight * timeValues[i] * timeValues[i];
+      sumWXY := sumWXY + weight * timeValues[i] * bgValues[i];
+    end;
+
+    // Rejection left fewer than two distinct points — keep the previous fit
+    if Abs(sumW * sumWXX - sumWX * sumWX) < 1e-6 then
+      Break;
+
+    for i := 0 to n - 1 do
+      weights[i] := candWeights[i];
+    slope     := (sumW * sumWXY - sumWX * sumWY) / (sumW * sumWXX - sumWX * sumWX);
+    intercept := (sumWY - slope * sumWX) / sumW;
+  end;
+
+  // Confidence: how well the trusted data fits a line (weighted RMSE mapped
+  // onto 0..1, hitting 0 at 15 mg/dL of residual noise), degraded further by
+  // the share of exponential weight the robust pass had to throw away.
+  sumWr2 := 0;
+  sumW   := 0;
+  for i := 0 to n - 1 do
+  begin
+    resid  := bgValues[i] - (slope * timeValues[i] + intercept);
+    sumWr2 := sumWr2 + weights[i] * resid * resid;
+    sumW   := sumW + weights[i];
+  end;
+  if (sumW > 0) and (sumW0 > 0) then
+  begin
+    rmse := Sqrt(sumWr2 / sumW);
+    keptRatio := sumW / sumW0;
+    if keptRatio > 1 then
+      keptRatio := 1;
+    predictionQuality := (1 - rmse / 15.0) * keptRatio;
+    if predictionQuality < 0 then
+      predictionQuality := 0;
+  end;
+
   // Second-derivative acceleration: compare the slope of the first vs second half
   // of the data window. A positive value means the rate of change is speeding up;
   // negative means it is decelerating. Capped to ±0.03 mg/dL/min² so the quadratic
@@ -956,7 +1104,12 @@ begin
 
   SetLength(predictions, numPredictions);
   lastTime  := historicalReadings[n-1].date;
-  prevValue := historicalReadings[n-1].convert(BGUnit.mgdl);
+
+  // Anchor the rate-of-change clamp on the fitted value at the last reading's
+  // time rather than the raw reading: if the newest point is a spike the
+  // robust fit rejected, clamping against it would drag every prediction
+  // toward the spike anyway.
+  prevValue := slope * timeValues[n-1] + intercept;
 
   for i := 0 to numPredictions - 1 do
   begin
