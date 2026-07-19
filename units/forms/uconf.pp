@@ -150,6 +150,7 @@ TfConf = class(TForm)
   cbMoveDIffRight: TCheckBox;
   cbNoBorders: TCheckBox;
   cbOnTop: TCheckBox;
+  cbPredictDots: TCheckBox;
   cbProgress: TCheckBox;
   cbRangeColor: TCheckBox;
   cbShowSensorExpiry: TCheckBox;
@@ -164,7 +165,6 @@ TfConf = class(TForm)
   cbMusicPause: TCheckBox;
   cbNotice: TCheckBox;
   cbPredictions: TCheckBox;
-  cbPredictDots: TCheckBox;
   cbRotatingArrow: TCheckBox;
   cbPredictShort: TCheckBox;
   cbPredictShortFullArrows: TCheckBox;
