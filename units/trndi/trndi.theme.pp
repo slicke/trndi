@@ -62,10 +62,11 @@ type
     ColorRangeLowText:  TColor;
   end;
 
-{** Modern flat-design palette — default for new installations. }
+{** Modern flat-design palette — preserved as an alternative. }
 function TrndiThemeModern: TTrndiTheme;
 
-{** Original Trndi palette — preserved for reference and reset flows. }
+{** Original Trndi palette — the default for new profiles (umain) and
+    uconf's color reset. Keep both flows on this function. }
 function TrndiThemeClassic: TTrndiTheme;
 
 implementation

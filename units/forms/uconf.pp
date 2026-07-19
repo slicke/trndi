@@ -68,7 +68,7 @@ interface
 uses
 Classes, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
-slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
+slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, trndi.theme, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -1979,36 +1979,25 @@ begin
 end;
 
 procedure TfConf.btResetClick(Sender: TObject);
-const
-  bg_color_ok: TColor = $0000DC84;
-  bg_color_ok_txt: TColor = $00F2FFF2;
-  // Hi
-  bg_color_hi: TColor = $0007DAFF;
-  bg_color_hi_txt: TColor = $000052FB;
-  // Low
-  bg_color_lo: TColor = $00FFBE0B;
-  bg_color_lo_txt: TColor = $00FFFEE9;
-
-  // Personal hi
-  bg_rel_color_lo: TColor = $00A859EE;
-  bg_rel_color_lo_txt: TColor = $002D074E;
-  // Personal low
-  bg_rel_color_hi: TColor = $0072C9DE;
-  bg_rel_color_hi_txt: TColor = $001C6577;
+var
+  theme: TTrndiTheme;
 begin
-  cl_ok_bg.ButtonColor := bg_color_ok;
-  cl_hi_bg.ButtonColor := bg_color_hi;
-  cl_lo_bg.ButtonColor := bg_color_lo;
+  // Same palette as the first-run defaults in umain — both come from trndi.theme.
+  theme := TrndiThemeClassic;
 
-  cl_ok_txt.ButtonColor := bg_color_ok_txt;
-  cl_hi_txt.ButtonColor := bg_color_hi_txt;
-  cl_lo_txt.ButtonColor := bg_color_lo_txt;
+  cl_ok_bg.ButtonColor := theme.ColorOk;
+  cl_hi_bg.ButtonColor := theme.ColorHigh;
+  cl_lo_bg.ButtonColor := theme.ColorLow;
 
-  cl_hi_bg_cust.ButtonColor := bg_rel_color_hi;
-  cl_lo_bg_cust.ButtonColor := bg_rel_color_lo;
+  cl_ok_txt.ButtonColor := theme.ColorOkText;
+  cl_hi_txt.ButtonColor := theme.ColorHighText;
+  cl_lo_txt.ButtonColor := theme.ColorLowText;
 
-  cl_hi_txt_cust.ButtonColor := bg_rel_color_hi_txt;
-  cl_lo_txt_cust.ButtonColor := bg_rel_color_lo_txt;
+  cl_hi_bg_cust.ButtonColor := theme.ColorRangeHigh;
+  cl_lo_bg_cust.ButtonColor := theme.ColorRangeLow;
+
+  cl_hi_txt_cust.ButtonColor := theme.ColorRangeHighText;
+  cl_lo_txt_cust.ButtonColor := theme.ColorRangeLowText;
 end;
 
 procedure TfConf.btUserSaveClick(Sender: TObject);
