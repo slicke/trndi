@@ -279,6 +279,7 @@ begin
   // Store cached predictions and let the form render them
   PredictionCache := FPreds;
   PredictionLastReadingTime := FOwner.lastReading.date;
+  PredictionConfidence := FConfidence;
   FOwner.RenderPredictionCache(FPreds);
 end;
 
@@ -297,6 +298,14 @@ begin
   end;
 
   FSuccess := ok;
+
+  // Snapshot the confidence now: api.predictionConfidence reflects the last
+  // predictReadings call on the shared api object, which extensions may also
+  // invoke before ApplyResult runs on the main thread.
+  if ok then
+    FConfidence := api.predictionConfidence
+  else
+    FConfidence := 0;
 
   // If prediction failed, keep existing cache by not overwriting it
   if not ok then

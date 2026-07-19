@@ -33,6 +33,8 @@ The prediction engine uses recent CGM readings to calculate trends and project f
 
 Each run also produces a **confidence score** (0–1) describing how cleanly the recent data fit the trend model — low values mean the data was noisy or contained outliers, and the forecast should be trusted even less than usual.
 
+In dot mode, a low-confidence forecast draws its prediction dots as a **?** instead of the usual × marker. Clicking any prediction dot shows the exact confidence percentage.
+
 ### Trend Classification
 
 Predictions are classified into trend categories based on the rate of change (delta) in mg/dL over the prediction interval:
@@ -115,6 +117,9 @@ const predictions = Trndi.predictReadings(5);
 
 // Each prediction contains:
 // [value_in_current_unit, mgdl, mmol, timestamp]
+
+// Confidence (0..1) of the most recent prediction run
+const confidence = Trndi.predictionConfidence();
 ```
 
 See [Extensions API](API.md) for more details.

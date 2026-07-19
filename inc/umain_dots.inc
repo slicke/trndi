@@ -371,6 +371,23 @@ begin
     dotColor := L.Font.Color;
     if S = DOT_PREDICT then
     begin
+      // When the engine reports low confidence in its forecast, draw a ?
+      // instead of the × so the uncertainty is visible at a glance. Clicking
+      // the dot shows the exact confidence percentage.
+      if PredictionConfidence < PREDICTION_UNCERTAIN_BELOW then
+      begin
+        with L.Canvas do
+        begin
+          Brush.Style := bsClear;
+          Font.Assign(L.Font);
+          Font.Color := dotColor;
+          Font.Style := [fsBold];
+          Font.Height := Max(8, Round(d * 0.9));
+          TextOut((d - TextWidth('?')) div 2, (d - TextHeight('?')) div 2, '?');
+        end;
+        Exit;
+      end;
+
       // Compact × (multiplication-sign) shape: shorter, thinner strokes inset
       // from the slot edges, centred in the same square the history dot would
       // occupy. Drawn rather than typeset so we don't depend on a font that
@@ -751,6 +768,7 @@ begin
       Visible := false;
       Caption := DOT_PREDICT;
       PopupMenu := pmSettings;
+      OnClick := @PredictionDotClick;
     end;
     initDot(PredictionDots[i], PREDICTION_DOT_COUNT, i + 1);
   end;
@@ -927,4 +945,10 @@ begin
 
   if isDot then
     tResize.OnTimer(self);
+end;
+
+// Show how much the prediction engine trusts the forecast behind the dots.
+procedure TfBG.PredictionDotClick(Sender: TObject);
+begin
+  ShowMessage(Format(RS_PREDICTION_CONFIDENCE, [PredictionConfidence * 100]));
 end;

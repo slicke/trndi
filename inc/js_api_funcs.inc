@@ -673,6 +673,17 @@ begin
   end;
 end;
 
+// Confidence (0..1) of the most recent predictReadings run: how cleanly the
+// recent readings fit the trend model after outlier rejection.
+function JSPredictionConfidence(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+var
+  res: JSValue;
+begin
+  res := Default(JSValue);
+  res.FromFloat(api.predictionConfidence);
+  Result := res.raw;
+end;
+
 // Get current basal rate from the backend
 function JSGetBasalRate(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
 var

@@ -209,6 +209,7 @@ begin
     addClassFunctionIf(epData, 'getCurrentUser',      ExtFunction(@JSActiveUser),     0);
     addClassFunctionIf(epData, 'getCurrentNickname',  ExtFunction(@JSActiveUserNick), 0);
     addClassFunctionIf(epData, 'predictReadings',     ExtFunction(@JSPredictReadings),-1);
+    addClassFunctionIf(epData, 'predictionConfidence', ExtFunction(@JSPredictionConfidence), 0);
     addClassFunctionIf(epData, 'getBuild',            ExtFunction(@JSGetBuild),       -1);
     addClassFunctionIf(epData, 'getCurrentAPI',       ExtFunction(@JSGetAPI),         -1);
     addClassFunctionIf(epData, 'getReading',          ExtFunction(@JSGetReading),     -1);

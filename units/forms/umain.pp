@@ -125,6 +125,7 @@ private
   FPredictionLastReadingTime: TDateTime;
   FSuccess: boolean;
   FPreds: BGResults;
+  FConfidence: double;
   procedure ApplyResult;
 protected
   procedure Execute; override;
@@ -450,6 +451,7 @@ TfBG = class(TForm)
   procedure CheckForUpdatesMenuClick({%H-}Sender: TObject);
   {$endif}
   procedure onTrendClick({%H-}Sender: TObject);
+  procedure PredictionDotClick({%H-}Sender: TObject);
   procedure pnOffReadingPaint({%H-}Sender: TObject);
   procedure pmSettingsMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
     var AWidth, AHeight: integer);
@@ -963,6 +965,7 @@ RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the ac
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings
 PredictionLastReadingTime: TDateTime; // Time of the reading used for predictions
+PredictionConfidence: double = 0; // Confidence (0..1) of the cached predictions
   // Show threshold lines (if false, only filled areas are drawn)
 semiTouchMode: boolean = false; // Disables some touch elements while on touch
 {$ifdef darwin}
@@ -1064,6 +1067,8 @@ const
 MIN_REFRESH_INTERVAL_MS = 120000; // 2 minutes
 REFRESH_RESYNC_BUFFER_MS = 15000; // Additional buffer to allow backend sync
 DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
+// Below this confidence the prediction dots draw a ? instead of the × marker
+PREDICTION_UNCERTAIN_BELOW = 0.3;
 
 // Standalone helpers referenced by multiple include files below.
 function CaptionStartsWithDigit(const S: string): boolean;
