@@ -869,7 +869,7 @@ end;
   getReadings
   -----------
   Fetch SGV entries via v3 entries.json. Supports either the v3 object shape
-  {status, result: [...]} or a direct array for robustness.
+  (status + result array) or a direct array for robustness.
  ------------------------------------------------------------------------------}
 function NightScout3.getReadings(minNum, maxNum: integer; extras: string;
 out res: string; noCache: boolean): BGResults;

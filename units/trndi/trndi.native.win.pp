@@ -3013,7 +3013,8 @@ procedure TTrndiNativeWindows.attention(topic, message: string);
   function PSQuote(const S: unicodestring): unicodestring;
   begin
     // PowerShell single-quoted literal; escape embedded single quotes
-    Result := '''' + StringReplace(S, '''', '''''', [rfReplaceAll]) + '''';
+    // (UnicodeStringReplace: plain StringReplace would round-trip via ansi)
+    Result := '''' + UnicodeStringReplace(S, '''', '''''', [rfReplaceAll]) + '''';
   end;
 
   function GetExePathW: unicodestring;
@@ -3037,6 +3038,27 @@ procedure TTrndiNativeWindows.attention(topic, message: string);
       SetString(Result, pwidechar(@Buf[0]), Len);
   end;
 
+  // Base name of a path without its extension, kept in UTF-16 throughout so a
+  // non-ASCII install path is not mangled by the ansi file-name routines.
+  function BaseNameNoExtW(const Path: unicodestring): unicodestring;
+  var
+    i: integer;
+  begin
+    Result := Path;
+    for i := Length(Result) downto 1 do
+      if (Result[i] = '\') or (Result[i] = '/') then
+      begin
+        Result := Copy(Result, i + 1, Length(Result));
+        break;
+      end;
+    for i := Length(Result) downto 1 do
+      if Result[i] = '.' then
+      begin
+        SetLength(Result, i - 1);
+        break;
+      end;
+  end;
+
 var
   AppPath, TempDir, TempPng, LogPath: unicodestring;
   Script, CommandLine: unicodestring;
@@ -3052,7 +3074,7 @@ begin
   TempDir := GetEnvVarW('TEMP');
   if (TempDir <> '') and (TempDir[Length(TempDir)] <> '\') then
     TempDir := TempDir + '\';
-  TempPng := TempDir + ExtractFileName(ChangeFileExt(AppPath, '')) + '-toast-logo.png';
+  TempPng := TempDir + BaseNameNoExtW(AppPath) + '-toast-logo.png';
   LogPath := TempDir + 'trndi-toast-error.log';
 
   Script :=

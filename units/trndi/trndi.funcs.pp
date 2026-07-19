@@ -176,11 +176,8 @@ begin
   result := Format('%s :: %s :: %s', [arr[1], arr[2], arr[3]]);
 end;
 function debugParams(arr: TStringArray): string;
-var
-s: string;
 begin
-  for s in arr do
-    result := result.join(' :: ', s);
+  result := string.Join(' :: ', arr);
 end;
 
 function debugParams(arr: TStringList): string;
