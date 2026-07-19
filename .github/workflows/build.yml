@@ -321,10 +321,14 @@ jobs:
               fi
               
               # Configure RPM macros for signing (create file, not directory)
-              echo "%_gpg_name ${GPG_KEY_ID}" > ~/.rpmmacros
+              # Keep the stock OpenPGP signing command so rpm expands its own
+              # file placeholders; only add the key and the extra GPG flags we
+              # need for non-interactive CI signing.
+              echo "%_openpgp_sign gpg" > ~/.rpmmacros
+              echo "%_openpgp_sign_id ${GPG_KEY_ID}" >> ~/.rpmmacros
               echo "%__gpg /usr/bin/gpg" >> ~/.rpmmacros
               echo "%_gpg_digest_algo sha256" >> ~/.rpmmacros
-              echo "%__gpg_sign_cmd %{__gpg} --batch --pinentry-mode loopback --passphrase '${{ secrets.GPG_PASSPHRASE }}' --no-verbose --no-armor --no-secmem-warning -u %{_gpg_name} -sbo %{__signature_filename} %{__plaintext_filename}" >> ~/.rpmmacros
+              echo "%_gpg_sign_cmd_extra_args --batch --pinentry-mode loopback --passphrase '${{ secrets.GPG_PASSPHRASE }}'" >> ~/.rpmmacros
               
               # Configure GPG for batch mode with passphrase
               mkdir -p ~/.gnupg
