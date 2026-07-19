@@ -449,6 +449,10 @@ msgctxt "tfconf.cbcustrange.caption"
 msgid "Use custom values"
 msgstr "Eigene Werte verwenden"
 
+#: tfconf.cbdotfresh.caption
+msgid "Highlight the newest dot while the reading is fresh"
+msgstr ""
+
 #: tfconf.cbflash.caption
 msgid "Badge Flashing"
 msgstr "Badge-Blinken"
@@ -1002,6 +1006,10 @@ msgstr "Bei niedrig:"
 #: tfconf.lconfigpredict.caption
 msgid "Glucose Predictions Settings"
 msgstr "Glucoseprognosen-Einstellungen"
+
+#: tfconf.ldiff.caption
+msgid "+0,0"
+msgstr ""
 
 #: tfconf.lext.caption
 msgid "Plugin Folder"
@@ -2002,6 +2010,14 @@ msgstr "Keine Änderung vorhergesagt →"
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Prognosen nicht verfügbar"
+
+#: trndi.strings.rs_prediction_confidence
+#, object-pascal-format
+msgid ""
+"Prediction confidence: %.0f%%\n"
+"\n"
+"This score shows how cleanly the recent readings fit the trend model. Low values mean the data was noisy or contained outliers, so the forecast is less reliable than usual."
+msgstr ""
 
 #: trndi.strings.rs_predict_amount_caption
 msgid "Force predictions"

@@ -453,6 +453,10 @@ msgctxt "tfconf.cbcustrange.caption"
 msgid "Use custom values"
 msgstr "Använd egna värden"
 
+#: tfconf.cbdotfresh.caption
+msgid "Highlight the newest dot while the reading is fresh"
+msgstr "Markera den nyaste punkten när avläsningen är färsk"
+
 #: tfconf.cbflash.caption
 msgid "Badge Flashing"
 msgstr "Brickflashning"
@@ -1005,6 +1009,10 @@ msgstr "Vid lågt:"
 #: tfconf.lconfigpredict.caption
 msgid "Glucose Predictions Settings"
 msgstr "Inställningar för glukosförutspåelse"
+
+#: tfconf.ldiff.caption
+msgid "+0,0"
+msgstr "+ 0,0"
 
 #: tfconf.lext.caption
 msgctxt "tfconf.lext.caption"
@@ -2111,6 +2119,17 @@ msgstr "Ingen förändring förutspås →"
 msgid "Predictions unavailable"
 msgstr "Förutspåelser otillgängliga"
 
+#: trndi.strings.rs_prediction_confidence
+#, object-pascal-format
+msgid ""
+"Prediction confidence: %.0f%%\n"
+"\n"
+"This score shows how cleanly the recent readings fit the trend model. Low values mean the data was noisy or contained outliers, so the forecast is less reliable than usual."
+msgstr ""
+"Konfidensgrad: %.0f%%\n"
+"\n"
+"Den här poängen visar hur väl dina senaste mätvärden följer den underliggande trendmodellen. En låg poäng innebär mycket brus eller avvikande värden, vilket gör den framtida prognosen mindre tillförlitlig än vanligt."
+
 #: trndi.strings.rs_predict_amount_caption
 msgid "Force predictions"
 msgstr "Tvinga förutspåelser"
@@ -2873,17 +2892,16 @@ msgstr "Du måste ange ett lösenord"
 
 #: uconf.rs_export_empty
 msgid "No settings to export."
-msgstr ""
+msgstr "Inga inställningar att exportera."
 
 #: uconf.rs_export_ok
 msgid "Settings exported successfully."
-msgstr ""
+msgstr "Inställningarna importerades framgångsrikt."
 
 #: uconf.rs_export_title
-#, fuzzy
 msgctxt "uconf.rs_export_title"
 msgid "Export Settings"
-msgstr "Spara inställningar"
+msgstr "Exportera inställningar"
 
 #: uconf.rs_extcount
 #, object-pascal-format
@@ -2900,7 +2918,7 @@ msgstr "Tillåtet: "
 
 #: uconf.rs_ext_not_approved
 msgid " (not yet approved)"
-msgstr "(ej tillåtet ännu)"
+msgstr " (ej tillåtet ännu)"
 
 #: uconf.rs_ext_reload_done
 msgid "Extensions were reloaded."
@@ -2928,22 +2946,21 @@ msgstr "Visar om Trndi upptäckt en pekskärm"
 
 #: uconf.rs_import_empty
 msgid "The selected file is empty."
-msgstr ""
+msgstr "Den valda filen är tom."
 
 #: uconf.rs_import_fail
 #, object-pascal-format
 msgid "Error importing settings: %s"
-msgstr ""
+msgstr "Fel vid import av inställningar: %s"
 
 #: uconf.rs_import_ok
 msgid "Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!"
-msgstr ""
+msgstr "Inställningarna importerades framgångsrikt. Du måste starta om Trndi för att de ska ta effekt. Spara INTE när du stänger inställningsfönstret!"
 
 #: uconf.rs_import_title
-#, fuzzy
 msgctxt "uconf.rs_import_title"
 msgid "Import Settings"
-msgstr "Ladda inställningar"
+msgstr "Importera inställningar"
 
 #: uconf.rs_min_minutes
 #, object-pascal-format
@@ -3125,7 +3142,7 @@ msgstr "Välj ett typsnitt för tiden"
 
 #: uconf.rs_settings_filter
 msgid "Settings files (*.trndi)|*.trndi|All files (*.*)|*.*"
-msgstr ""
+msgstr "Inställningsfiler (*.trndi)|*.trndi|Alla filer (*.*)|*.*"
 
 #: uconf.rs_shortmode_full
 msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
@@ -3553,4 +3570,3 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
-
