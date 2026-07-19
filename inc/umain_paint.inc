@@ -653,10 +653,14 @@ begin
   elapsedMs := MilliSecondsBetween(Now, lastReading.date);
   if elapsedMs < 0 then
     elapsedMs := 0;
+  // BG_REFRESH is a constant, so the guard folds away — kept as a
+  // divide-by-zero safety net should the interval ever become configurable
+  {$PUSH}{$WARN 6018 OFF}
   if BG_REFRESH > 0 then
     frac := Min(1.0, elapsedMs / BG_REFRESH)
   else
     frac := 1.0;
+  {$POP}
   overdueMs := BG_REFRESH + 60000;
   isOverdue := elapsedMs > overdueMs;
 

@@ -2077,10 +2077,14 @@ begin
         rn := GetProductVersionMajorMinor('12.x');
       ShowMessage(Format(RS_UPTODATE_PR, [rn]));
     end
+    // CI/BUILD_NUMBER are compile-time constants stamped by CI, so one branch
+    // is always "unreachable" in any given build — both are needed
+    {$PUSH}{$WARN 6018 OFF}
     else if CI and (BUILD_NUMBER <> 'dev') then
       ShowMessage(RS_UPTODATE)
     else
       ShowMessage(Format(RS_UPTODATE_DEV, [GetProductVersionMajorMinor('12.x')]));
+    {$POP}
   end;
 end;
 
@@ -2198,12 +2202,15 @@ var
 begin
   // Base app version + build date + widgetset + target CPU
   lVersion.Caption := GetProductVersionMajorMinor('12.x');
-  // If CI embedded a real build number, append it
+  // If CI embedded a real build number, append it. CI/BUILD_NUMBER are
+  // compile-time constants, so one branch is always "unreachable" per build.
+  {$PUSH}{$WARN 6018 OFF}
   if CI and (BUILD_NUMBER <> 'dev') then
     lVersion.Caption := lVersion.Caption + '.' + BUILD_NUMBER
   else
     lVersion.Caption := Format('%s-dev (%s)', [lVersion.Caption,
       StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll])]);
+  {$POP}
   lversion.left := lversion.left - 20;
 
   pcMain.ActivePage := tsGeneral;

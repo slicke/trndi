@@ -643,6 +643,9 @@ begin
     end
     else if FShowUpToDate then
     begin
+      // BUILD_NUMBER is a compile-time constant stamped by CI, so one branch
+      // is always "unreachable" in any given build — both are needed
+      {$PUSH}{$WARN 6018 OFF}
       if IsPRBuild then
         ShowMessage(Format(RS_UPTODATE_PR, [FLatestRelease]))
       else if BUILD_NUMBER = 'dev' then
@@ -654,6 +657,7 @@ begin
           'Note: Dev builds are always considered "newer" than releases')
       else
         ShowMessage(RS_UPTODATE);
+      {$POP}
     end;
   finally
     FOwner.FUpdateCheckInFlight := false;
