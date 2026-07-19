@@ -1448,7 +1448,7 @@ var
   size: TUXDialogSize;
 begin
   size := GetUXDialogSize(dialogsize);
-  Result := 0;
+  Result := ADefault;
   ModalResult := mrCancel;
   bgcol := getBackground;
 
@@ -1684,7 +1684,7 @@ var
   bgcol: TColor;
   size: TUXDialogSize;
 begin
-  Result := '';
+  Result := ADefault;
   ModalResult := mrCancel;
   size := GetUXDialogSize(dialogsize);
   bgcol := getBackground;
@@ -2269,6 +2269,10 @@ function DecorateLinks(const Src, LinkColorHtml: string): string;
     end;
   end;
 begin
+  // An empty set would leave OkButton unassigned when the dialog height is
+  // computed below; fall back to a lone OK button.
+  if buttons = [] then
+    buttons := [mbOK];
   bgcol := getBackground;
   size := GetUXDialogSize(dialogsize);
 
@@ -2438,6 +2442,10 @@ var
   sysfont, htmlstr: string;
   hpd: TIpHttpDataProvider;
 begin
+  // An empty set would leave OkButton unassigned when the button panel height
+  // is computed below; fall back to a lone OK button.
+  if buttons = [] then
+    buttons := [mbOK];
   bgcol := getBackground;
   size := GetUXDialogSize(dialogsize);
 
@@ -3550,11 +3558,22 @@ var
   res: string;
   ms: TStringStream;
 begin
-  picture := TPicture.Create;
-  TrndiNative.getURL(url, res);
+  // A nil Picture tells TIpHtmlPanel to render the image as missing; never
+  // let a fetch/decode failure escape into the HTML layout code.
+  Picture := nil;
+  if not TrndiNative.getURL(url, res) then
+    Exit;
   ms := TStringStream.Create(res);
-  picture.LoadFromStream(ms);
-  ms.Free;
+  try
+    Picture := TPicture.Create;
+    try
+      Picture.LoadFromStream(ms);
+    except
+      FreeAndNil(Picture);
+    end;
+  finally
+    ms.Free;
+  end;
 end;
 
 
