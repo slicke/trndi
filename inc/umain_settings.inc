@@ -312,7 +312,7 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
       cbPredictDots.Checked := GetBoolSetting('predictions.dots');
       cbRotatingArrow.Checked := GetBoolSetting('display.rotating_arrow');
-      cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', true);
+      cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', false);
       // Trend arrow in the taskbar icon (Windows) / dock badge (macOS)
       {$if defined(X_WIN) or defined(X_MAC)}
       cbBadgeTrend.Checked := GetBoolSetting('badge.trend', false);

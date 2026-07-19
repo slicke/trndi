@@ -54,6 +54,9 @@
  *   is likewise deferred to the Extensions tab's OnShow.
  * - 2026-07-16: The extension info panel now shows the granted permission
  *   groups (or pending/changed status) next to what the script requests.
+ * - 2026-07-19: Settings export/import strings made translatable, overwrite
+ *   prompt on export, empty-file guard on import; multi-user name validation
+ *   no longer accepts [\]^_` characters; removed unused CodepointHex.
  *)
 
 unit uconf;
@@ -589,6 +592,15 @@ RS_MUST_PERSIST_HELP = 'An alert will only trigger if the condition has been tru
 RS_CLEAR_MARGIN_HELP = 'Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again.';
 RS_EMPTY_PROXY = 'Proxy host is empty.';
 
+RS_EXPORT_TITLE = 'Export Settings';
+RS_IMPORT_TITLE = 'Import Settings';
+RS_SETTINGS_FILTER = 'Settings files (*.trndi)|*.trndi|All files (*.*)|*.*';
+RS_EXPORT_EMPTY = 'No settings to export.';
+RS_EXPORT_OK = 'Settings exported successfully.';
+RS_IMPORT_EMPTY = 'The selected file is empty.';
+RS_IMPORT_OK = 'Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!';
+RS_IMPORT_FAIL = 'Error importing settings: %s';
+
 RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
 
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
@@ -853,14 +865,6 @@ begin
     Result := Copy(AText, L + 1, R - L - 1)
   else
     Result := '';
-end;
-
-
-function CodepointHex(const s: unicodestring): string;
-begin
-  if s = '' then
-    Exit('');
-  Result := IntToHex(Ord(s[1]), 4);
 end;
 
 
@@ -1397,7 +1401,7 @@ begin
       Exit;
     end;
     for c in s do
-      if not (c in ['0'..'9', 'A'..'z', ' ']) then
+      if not (c in ['0'..'9', 'A'..'Z', 'a'..'z', ' ']) then
       begin
         ShowMessage(RS_ENTER_NAME);
         Exit;
@@ -1903,19 +1907,20 @@ begin
   settingsData := tnative.ExportSettings;
   if settingsData = '' then
   begin
-    ShowMessage('No settings to export.');
+    ShowMessage(RS_EXPORT_EMPTY);
     Exit;
   end;
-  
+
   encodedData := EncodeStringBase64(settingsData);
-  
+
   dlg := TSaveDialog.Create(nil);
   try
-    dlg.Title := 'Export Settings';
-    dlg.Filter := 'Settings files (*.trndi)|*.trndi|All files (*.*)|*.*';
+    dlg.Title := RS_EXPORT_TITLE;
+    dlg.Filter := RS_SETTINGS_FILTER;
     dlg.DefaultExt := 'trndi';
     dlg.FileName := 'trndi_settings.trndi';
-    
+    dlg.Options := dlg.Options + [ofOverwritePrompt];
+
     if dlg.Execute then
     begin
       with TFileStream.Create(dlg.FileName, fmCreate) do
@@ -1924,7 +1929,7 @@ begin
       finally
         Free;
       end;
-      ShowMessage('Settings exported successfully.');
+      ShowMessage(RS_EXPORT_OK);
     end;
   finally
     dlg.Free;
@@ -1938,27 +1943,34 @@ var
 begin
   dlg := TOpenDialog.Create(nil);
   try
-    dlg.Title := 'Import Settings';
-    dlg.Filter := 'Settings files (*.trndi)|*.trndi|All files (*.*)|*.*';
+    dlg.Title := RS_IMPORT_TITLE;
+    dlg.Filter := RS_SETTINGS_FILTER;
     dlg.DefaultExt := 'trndi';
-    
+
     if dlg.Execute then
     begin
       with TFileStream.Create(dlg.FileName, fmOpenRead) do
       try
         SetLength(encodedData, Size);
-        ReadBuffer(encodedData[1], Size);
+        if Size > 0 then
+          ReadBuffer(encodedData[1], Size);
       finally
         Free;
       end;
-      
+
+      if Trim(encodedData) = '' then
+      begin
+        ShowMessage(RS_IMPORT_EMPTY);
+        Exit;
+      end;
+
       try
         settingsData := DecodeStringBase64(encodedData);
         tnative.ImportSettings(settingsData);
-        ShowMessage('Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!');
+        ShowMessage(RS_IMPORT_OK);
       except
         on E: Exception do
-          ShowMessage('Error importing settings: ' + E.Message);
+          ShowMessage(Format(RS_IMPORT_FAIL, [E.Message]));
       end;
     end;
   finally
