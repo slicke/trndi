@@ -134,7 +134,8 @@ gpg --import trndi-signing-key.asc
 gpg --verify trndi_*.deb.asc trndi_*.deb
 
 # For RPM
-rpm --checksig trndi-*.rpm
+mkdir -p "$RUNNER_TEMP/rpmdb"
+rpm --dbpath "$RUNNER_TEMP/rpmdb" --checksig trndi-*.rpm
 ```
 
 Successful verification means the packages haven't been tampered with and came from you.
@@ -150,6 +151,9 @@ Successful verification means the packages haven't been tampered with and came f
 ### RPM signing fails
 - Ensure `GPG_PASSPHRASE` is set correctly
 - Check that the GPG key has signing capability (not just encryption)
+
+### RPM verification fails with `/var/lib/rpm/.rpm.lock`
+- Use a local `--dbpath` when importing the public key and verifying signatures in CI, because hosted Linux runners may not have a writable system RPM database
 
 ### Can't find the signing key or package files in GitHub releases
 - Click **"Show all X assets"** at the bottom of the release notes to expand and see all files
