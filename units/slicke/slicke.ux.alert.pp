@@ -1282,8 +1282,8 @@ end;
   @param ATitle Title text.
   @param ADesc Description text.
   @param IconBox Pre-created TImage for the icon (parent/size set here).
-  @param TitleLabel Out title label instance.
-  @param DescLabel Out description label instance.
+  @param TitleLabel Pre-created title label (parent/layout set here).
+  @param DescLabel Pre-created description label (parent/layout set here).
   @param MinWidthNormal Minimum width in normal mode.
   @param MinWidthBig Minimum width in big mode.
   @param IconSize Base icon size (doubled in big mode).
@@ -1296,7 +1296,7 @@ const icon: UXImage;
 const bgcol: TColor;
 const ATitle, ADesc: string;
 IconBox: TImage;
-out TitleLabel, DescLabel: TLabel;
+TitleLabel, DescLabel: TLabel;
 MinWidthNormal: integer = 650;
 MinWidthBig: integer = 800;
 IconSize: integer = 48;
