@@ -863,7 +863,16 @@ begin
     // 2. Tell the accept loop to stop and wait for it. After WaitFor the
     //    listener will no longer spawn new client workers.
     FThread.Terminate;
+    {$IFDEF HAIKU}
+    // TThread.WaitFor pthread_joins a thread that FPC 3.2.2's cthreads has
+    // already pthread_detach()ed in its exit path; Haiku frees the pthread
+    // struct on detached exit, so the join GPFs. Poll Finished instead
+    // (see SafeThreadJoin in trndi.native.base).
+    while not FThread.Finished do
+      Sleep(1);
+    {$ELSE}
     FThread.WaitFor;
+    {$ENDIF}
 
     // 3. Wait for any in-flight client workers to finish before we let the
     //    parent free us -- the workers hold method pointers into the owner

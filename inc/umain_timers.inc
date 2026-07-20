@@ -350,7 +350,7 @@ begin
         tPing.Enabled := true;
         Exit;
       end;
-      FConnectivityThread.WaitFor;
+      SafeThreadJoin(FConnectivityThread);
       FreeAndNil(FConnectivityThread);
     end;
     FConnectivityThread := TConnectivityCheckThread.Create(Self, true)
@@ -364,7 +364,7 @@ begin
         tPing.Enabled := true;
         Exit;
       end;
-      FPingThread.WaitFor;
+      SafeThreadJoin(FPingThread);
       FreeAndNil(FPingThread);
     end;
     FPingThread := TConnectivityCheckThread.Create(Self, false);
