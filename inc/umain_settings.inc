@@ -795,6 +795,9 @@ begin
     {$elseif defined(LCLGTK3)}
     fConf.lWidgetset.Caption := 'GTK3';
     {$endif}
+    {$elseif defined(X_HAIKU)}
+    fConf.lOS.Caption := 'Haiku';
+    fConf.lWidgetset.Caption := 'Haiku';
     {$elseif defined(X_MAC)}
     fConf.lOS.Caption := 'macOS';
     fConf.lWidgetset.Caption := 'Native Apple Coca';

@@ -41,52 +41,48 @@
   {$modeswitch objectivec2}
   {$endif}
 
+  // Platform dispatch. Order matters: Haiku is matched explicitly BEFORE the
+  // generic UNIX test, so it never falls into the X_PC (Linux/BSD) bucket and
+  // so the classification is robust regardless of whether a given FPC version
+  // defines UNIX for the Haiku target.
   {$IF DEFINED(WINDOWS)}
-  {$DEFINE X_WIN}// Windows
-  {$IFDEF CPU32}{$DEFINE X_WIN32}{$ENDIF}
-  {$IFDEF CPU64}{$DEFINE X_WIN64}{$ENDIF}
-  {$IFDEF CPUARM}{$DEFINE X_WINARM}{$ENDIF}
-  {$ELSEIF DEFINED(UNIX)}
-  {$DEFINE X_POSIX} // All Unix
-  {$IFDEF DARWIN}
-    {$DEFINE X_MAC}
-// macOS
+    {$DEFINE X_WIN}// Windows
+    {$IFDEF CPU32}{$DEFINE X_WIN32}{$ENDIF}
+    {$IFDEF CPU64}{$DEFINE X_WIN64}{$ENDIF}
+    {$IFDEF CPUARM}{$DEFINE X_WINARM}{$ENDIF} // Not tested on ARM!
+  {$ELSEIF DEFINED(DARWIN)}
+    {$DEFINE X_POSIX} // All Unix
+    {$DEFINE X_MAC} // macOS
     {$IFDEF CPU32}{$DEFINE X_MAC32}{$ENDIF}
     {$IFDEF CPU64}{$DEFINE X_MAC64}{$ENDIF}
-// Not tested on ARM!
     {$IFDEF CPUX86_64}{$DEFINE X_MACX64}{$ENDIF}
     {$IFDEF CPUARM}{$DEFINE X_MACAPPLE}{$ENDIF}
-  {$ELSE}
-    {$DEFINE X_PC}
-// Linux and BSD
+  {$ELSEIF DEFINED(HAIKU)}
+    {$DEFINE X_POSIX} // All Unix
+    {$DEFINE X_HAIKU} 
+    // NOTE: Haiku is POSIX-like but deliberately NOT X_PC (which is Linux/BSD only)
+  {$ELSEIF DEFINED(UNIX)}
+    {$DEFINE X_POSIX} // All Unix
+    {$DEFINE X_PC} // Linux and BSD
     {$IFDEF CPU32}{$DEFINE X_PC32}{$ENDIF}
     {$IFDEF CPU64}{$DEFINE X_PC64}{$ENDIF}
-
     {$IFDEF CPU386}{$DEFINE X_PCX32}{$ENDIF}
     {$IFDEF CPUX86_64}{$DEFINE X_PCX64}{$ENDIF}
     {$IFDEF CPUARM}{$DEFINE X_PCARM}{$ENDIF}
     {$IFDEF CPUPOWERPC32}{$DEFINE X_PCPPC32}{$ENDIF}
     {$IFDEF CPUPOWERPC64}{$DEFINE X_PCPPC64}{$ENDIF}
-  {$ENDIF}
   {$ELSE}
-  {$Error Missing platoform suppport}
+    {$Error Missing platform support}
   {$ENDIF}
 
   {$IFDEF LINUX}
-{$DEFINE X_LINUX}
+    {$DEFINE X_LINUX}
   {$ENDIF}
 
   {$IF DEFINED(FreeBSD) or DEFINED(OpenBSD) or DEFINED(NetBSD)}
-   {$DEFINE X_BSD}
+    {$DEFINE X_BSD}
   {$ENDIF}
 
   {$IF DEFINED(X_BSD) OR DEFINED(X_LINUX)}
-  {$DEFINE X_LINUXBSD}
-  {$ENDIF}
-
-  {$IFDEF HAIKU}
-    {$DEFINE X_HAIKU}
-    {$DEFINE X_LINUXHAIKU}
-    {$DEFINE X_BSDHAIKU}
-    {$DEFINE X_LINUXBSDHAIKU}
+    {$DEFINE X_LINUXBSD}
   {$ENDIF}
