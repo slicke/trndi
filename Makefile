@@ -357,7 +357,6 @@ noext:
 	 cp $(LPI) $(LPI).noext-$$STAMP.lpi; \
 	 perl -0777 -pe 's/\s*<Item>\s*<PackageName Value="mormot2"\/?>(\s*)<\/Item>\s*//s' $(LPI).noext-$$STAMP.lpi > $(LPI).noext-$$STAMP.lpi.tmp; \
 	 mv $(LPI).noext-$$STAMP.lpi.tmp $(LPI).noext-$$STAMP.lpi; \
-	 cp Trndi.res $(LPI).noext-$$STAMP.res; \
 	 cp Trndi.ico $(LPI).noext-$$STAMP.ico; \
 	 cp Trndi.png $(LPI).noext-$$STAMP.png; \
 	 echo "Using temporary project: $(LPI).noext-$$STAMP.lpi"; \
