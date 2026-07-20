@@ -106,7 +106,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names build-ignore ignore fetch-mormot2 check-mormot2 assets check-assets
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names build-ignore ignore fetch-mormot2 install-mormot2 check-mormot2 assets check-assets
 
 all: release
 
@@ -127,6 +127,7 @@ help:
 	@echo "  show-mode  Show resolved build-mode and lazbuild flags"
 	@echo "  noext      Build without mORMot2 (temporary project; works even if mORMot2 is not installed) - use noext-release/noext-debug to override mode"
 	@echo "  fetch-mormot2  Clone mORMot2 into externals/mORMot2 and attempt to extract QuickJS static files into ./static (requires git and 7z)"
+	@echo "  install-mormot2  Compile externals/mORMot2's Lazarus package so lazbuild can resolve the mormot2 dependency (run after fetch-mormot2)"
 	@echo "  check-mormot2  Verify mORMot2 presence and QuickJS static artifacts; exits non-zero on failure"
 	@echo "  assets     Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
 	@echo "  check-assets  Fail if a committed .lrs is out of sync with its sources (CI guard)"
@@ -148,11 +149,18 @@ check-mormot2:
 	@set -e; \
 	if grep -q "<PackageName Value=\"mormot2\"" $(LPI) >/dev/null 2>&1; then \
 	  if [ "$(IGNORE_MORMOT)" != "1" ]; then \
-	    if [ ! -d "$${HOME}/.lazarus/onlinepackagemanager/packages/mORMot2" ] && [ ! -d "externals/mORMot2" ] && [ ! -d "static" ]; then \
-	      echo "Error: mORMot2 not found in expected locations (~/.lazarus/... or externals/mORMot2 or ./static)"; exit 1; \
+	    # Package links registered with Lazarus (what lazbuild consults to resolve "mormot2") \
+	    REG_LPKS=$$(sed -n 's/.*<Filename Value="\([^"]*mormot2\.lpk\)".*/\1/p' "$${HOME}/.lazarus/packagefiles.xml" 2>/dev/null || true); \
+	    REG_FOUND=0; STATIC_DIRS="$${HOME}/.lazarus/onlinepackagemanager/packages/mORMot2/static externals/mORMot2/static static"; \
+	    for lpk in $$REG_LPKS; do \
+	      if [ -f "$$lpk" ]; then REG_FOUND=1; STATIC_DIRS="$$STATIC_DIRS $$(dirname "$$(dirname "$$(dirname "$$lpk")")")/static"; fi; \
+	    done; \
+	    if [ "$$REG_FOUND" -eq 1 ]; then echo "mormot2.lpk is registered in ~/.lazarus/packagefiles.xml"; fi; \
+	    if [ "$$REG_FOUND" -eq 0 ] && [ ! -d "$${HOME}/.lazarus/onlinepackagemanager/packages/mORMot2" ] && [ ! -d "externals/mORMot2" ] && [ ! -d "static" ]; then \
+	      echo "Error: mORMot2 not found (no mormot2.lpk registered in ~/.lazarus/packagefiles.xml, no externals/mORMot2 or ./static)"; exit 1; \
 	    fi; \
 	    FOUND_STATIC=0; \
-	    for _d in "$${HOME}/.lazarus/onlinepackagemanager/packages/mORMot2/static" "externals/mORMot2/static" "static"; do \
+	    for _d in $$STATIC_DIRS; do \
 	      if [ -d "$$_d" ]; then \
 	        if ls "$$_d"/*quickjs*.a >/dev/null 2>&1 || ls "$$_d"/*libquickjs*.a >/dev/null 2>&1 || ls "$$_d"/*quickjs*.so >/dev/null 2>&1 || ls "$$_d"/*libquickjs*.so >/dev/null 2>&1 || ls "$$_d"/*quickjs*.o >/dev/null 2>&1 || ls "$$_d"/*quickjs*.obj >/dev/null 2>&1; then \
 	          FOUND_STATIC=1; break; fi; \
@@ -163,7 +171,7 @@ check-mormot2:
 	        done; \
 	      fi; \
 	    done; \
-	    if find "$${HOME}/.lazarus/onlinepackagemanager/packages/mORMot2/static" externals/mORMot2/static static -type f \( -name "*quickjs*.a" -o -name "libquickjs*.a" -o -name "*quickjs*.so" -o -name "libquickjs*.so" -o -name "*quickjs*.o" -o -name "*quickjs*.obj" \) -print -quit | grep -q . 2>/dev/null; then FOUND_STATIC=1; fi; \
+	    if find $$STATIC_DIRS -type f \( -name "*quickjs*.a" -o -name "libquickjs*.a" -o -name "*quickjs*.so" -o -name "libquickjs*.so" -o -name "*quickjs*.o" -o -name "*quickjs*.obj" \) -print -quit 2>/dev/null | grep -q .; then FOUND_STATIC=1; fi; \
 	    if [ "$$FOUND_STATIC" -eq 0 ]; then echo "Error: QuickJS static artifacts were not found."; echo "Run 'make fetch-mormot2' to clone mORMot2 and optionally extract the static archive into ./static."; exit 1; fi; \
 	    echo "mORMot2 and QuickJS static artifacts found."; \
 	  else \
@@ -190,7 +198,19 @@ fetch-mormot2:
 	  else echo "Could not download mormot2static.7z automatically; download $(MORMOT2_STATIC_URL) and extract into ./static"; fi; \
 	else \
 	  echo "7z not found; install p7zip-full (or 7z) to enable automatic extraction, or download $(MORMOT2_STATIC_URL) manually into ./static"; \
+	fi; \
+	echo "Done. Run 'make install-mormot2' to compile the package so lazbuild can find it."
+
+# Compile mORMot2's Lazarus package (same as CI). lazbuild registers a compiled
+# .lpk in the user's package links, which is what lets 'lazbuild Trndi.lpi'
+# resolve the bare "mormot2" dependency. Linking the Extensions build also
+# needs the QuickJS static libraries (fetched by fetch-mormot2 into ./static).
+install-mormot2:
+	@if [ ! -f externals/mORMot2/packages/lazarus/mormot2.lpk ]; then \
+	  echo "externals/mORMot2/packages/lazarus/mormot2.lpk not found; run 'make fetch-mormot2' first"; exit 1; \
 	fi
+	@echo "Compiling mORMot2 package (registers it with Lazarus/lazbuild)"
+	@$(LAZBUILD) externals/mORMot2/packages/lazarus/mormot2.lpk
 
 check:
 ifeq ($(OS),Windows_NT)
@@ -201,15 +221,21 @@ else
 endif
 	if grep -q "<PackageName Value=\"mormot2\"" $(LPI) >/dev/null 2>&1; then \
 	  if [ "$(IGNORE_MORMOT)" != "1" ]; then \
-	    if [ ! -d "$$HOME/.lazarus/onlinepackagemanager/packages/mORMot2" ] && [ ! -d "externals/mORMot2" ] && [ ! -d "static" ]; then \
-	      echo "Error: mORMot2 is referenced by $(LPI) but not found in expected locations."; \
-	      echo "Install via Lazarus Online Package Manager (not recommended on Windows), or run 'make fetch-mormot2' (pins the same mORMot2 commit as CI)"; \
+	    # Package links registered with Lazarus (what lazbuild consults to resolve "mormot2") \
+	    REG_LPKS=$$(sed -n 's/.*<Filename Value="\([^"]*mormot2\.lpk\)".*/\1/p' "$$HOME/.lazarus/packagefiles.xml" 2>/dev/null || true); \
+	    REG_FOUND=0; STATIC_DIRS="$$HOME/.lazarus/onlinepackagemanager/packages/mORMot2/static externals/mORMot2/static static"; \
+	    for lpk in $$REG_LPKS; do \
+	      if [ -f "$$lpk" ]; then REG_FOUND=1; STATIC_DIRS="$$STATIC_DIRS $$(dirname "$$(dirname "$$(dirname "$$lpk")")")/static"; fi; \
+	    done; \
+	    if [ "$$REG_FOUND" -eq 0 ] && [ ! -d "$$HOME/.lazarus/onlinepackagemanager/packages/mORMot2" ] && [ ! -d "externals/mORMot2" ] && [ ! -d "static" ]; then \
+	      echo "Error: mORMot2 is referenced by $(LPI) but not found (no mormot2.lpk registered in ~/.lazarus/packagefiles.xml, no externals/mORMot2 or ./static)."; \
+	      echo "Install via Lazarus Online Package Manager (not recommended on Windows), or run 'make fetch-mormot2' followed by 'make install-mormot2' (pins the same mORMot2 commit as CI)"; \
 	      echo "Or run 'make noext' to build without mORMot2, or re-run with 'make IGNORE_MORMOT=1' to skip this check."; \
 	      exit 1; \
 	    fi; \
 	    # Also ensure QuickJS static binaries are present (search common static folders) \
 	    FOUND_STATIC=0; \
-	    for _d in "$$HOME/.lazarus/onlinepackagemanager/packages/mORMot2/static" "externals/mORMot2/static" "static"; do \
+	    for _d in $$STATIC_DIRS; do \
 	      if [ -d "$$_d" ]; then \
 	        if ls "$$_d"/*quickjs*.a >/dev/null 2>&1 || ls "$$_d"/*libquickjs*.a >/dev/null 2>&1 || ls "$$_d"/*quickjs*.so >/dev/null 2>&1 || ls "$$_d"/*libquickjs*.so >/dev/null 2>&1 || ls "$$_d"/*quickjs*.o >/dev/null 2>&1 || ls "$$_d"/*quickjs*.obj >/dev/null 2>&1; then \
 	          FOUND_STATIC=1; break; \
@@ -225,7 +251,7 @@ endif
 	      fi; \
 	    done; \
 	    # fallback: scan common static dirs for QuickJS artefacts (portable) \
-	    if find "$$HOME/.lazarus/onlinepackagemanager/packages/mORMot2/static" externals/mORMot2/static static -type f \( -name "*quickjs*.a" -o -name "libquickjs*.a" -o -name "*quickjs*.so" -o -name "libquickjs*.so" -o -name "*quickjs*.o" -o -name "*quickjs*.obj" \) -print -quit | grep -q . 2>/dev/null; then FOUND_STATIC=1; fi; \
+	    if find $$STATIC_DIRS -type f \( -name "*quickjs*.a" -o -name "libquickjs*.a" -o -name "*quickjs*.so" -o -name "libquickjs*.so" -o -name "*quickjs*.o" -o -name "*quickjs*.obj" \) -print -quit 2>/dev/null | grep -q .; then FOUND_STATIC=1; fi; \
 	    if [ "$$FOUND_STATIC" -eq 0 ]; then \
 	      echo "Error: QuickJS static binaries (e.g. libquickjs.*) were not found in mORMot2 static directories."; \
 	      echo "You can fetch them from https://synopse.info/files/mormot2static.7z or use the CI helper to extract them into './static'."; \
