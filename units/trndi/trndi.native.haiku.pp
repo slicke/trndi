@@ -56,7 +56,7 @@ end;
 implementation
 
 uses
-Process, netdb, openssl;
+Process, netdb, openssl, ctypes, unixtype, baseunix, unixutil;
 
 const
   {** Haiku's network stack (DHCP or the Network preflet) maintains the
@@ -65,6 +65,44 @@ const
       lookup with "hostname resolution failed" even though ping (which uses
       libnetwork's own resolver) works fine. }
   HaikuResolvConf = '/boot/system/settings/network/resolv.conf';
+
+{$PACKRECORDS C}
+type
+  // Haiku's struct tm (headers/posix/time.h): all-int fields, with the
+  // BSD-style tm_gmtoff (seconds east of UTC) and tm_zone appended.
+  THaikuTm = record
+    tm_sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year,
+    tm_wday, tm_yday, tm_isdst, tm_gmtoff: cint;
+    tm_zone: pchar;
+  end;
+  PHaikuTm = ^THaikuTm;
+
+procedure tzset; cdecl; external 'root';
+function localtime_r(timer: ptime_t; var tm: THaikuTm): PHaikuTm; cdecl;
+  external 'root';
+
+{------------------------------------------------------------------------------
+  SyncTimezoneFromLibroot
+  -----------------------
+  FPC's unix RTL learns the timezone only from TZ, /etc/timezone,
+  /etc/localtime or /usr/lib/zoneinfo/localtime — none of which exist on
+  Haiku, where the zone is kept by the kernel (set via the Time preflet).
+  Tzseconds then stays 0, so Now, GetLocalTimeOffset and every
+  UnixToDateTime(..., false) yield UTC and readings display hours off.
+  libroot's own localtime knows the real zone; copy its offset into the
+  RTL. Like the RTL's own init, this captures the offset once at startup,
+  so a DST transition while running is only picked up on restart.
+ ------------------------------------------------------------------------------}
+procedure SyncTimezoneFromLibroot;
+var
+  t: time_t;
+  tm: THaikuTm;
+begin
+  tzset;
+  t := fptime;
+  if localtime_r(@t, tm) <> nil then
+    Tzseconds := tm.tm_gmtoff;
+end;
 
 {------------------------------------------------------------------------------
   FindNotifyCmd
@@ -288,6 +326,11 @@ initialization
   // absent, keep whatever /etc/resolv.conf provided (manual setups).
   if FileExists(HaikuResolvConf) then
     GetDNSServers(HaikuResolvConf);
+
+  // Same disease as resolv.conf above, but for the clock: give the RTL the
+  // timezone offset it could not find on disk, so reading timestamps show
+  // local time instead of UTC.
+  SyncTimezoneFromLibroot;
 
   // Trndi starts several network threads at once (glucose, connectivity,
   // ping, prediction, update check) and FPC 3.2.2's InitSSLInterface has no
