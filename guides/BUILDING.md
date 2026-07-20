@@ -3,7 +3,7 @@
 ### mORMot2
 Trndi depends on mORMot2 for the JavaScript engine, it does not use anything else from the library at this time. It can be installed via the __Online Package Manager__ in Lazarus, or [GitHub](https://github.com/synopse/mORMot2).
 
-You can use the Makefile helpers to manage mORMot2 resources locally:
+You can use the Makefile helpers to manage mORMot2 resources locally (on Windows, `make.ps1` provides the same `fetch-mormot2`, `install-mormot2` and `check-mormot2` targets):
 
 - `make fetch-mormot2` — clones mORMot2 into `externals/mORMot2` (shallow clone of branch `2.3.stable` by default) and attempts to download and extract the recommended static archive (`mormot2static.7z`) into `./static` (requires `git` and `7z`; `curl` or `wget` for download).
 - `make install-mormot2` — compiles `externals/mORMot2/packages/lazarus/mormot2.lpk` with lazbuild, which registers the package so a later `lazbuild Trndi.lpi` (or plain `make`) can resolve the `mormot2` dependency. Run it once after `fetch-mormot2`.
