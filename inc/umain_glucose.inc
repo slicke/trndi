@@ -398,7 +398,7 @@ begin
   begin
     if not FPredictionThread.Finished then
       Exit;
-    FPredictionThread.WaitFor;
+    SafeThreadJoin(FPredictionThread);
     FreeAndNil(FPredictionThread);
   end;
   predictionHorizon := native.GetIntSetting('predictions.future_limit', DEFAULT_PREDICTION_FUTURE_LIMIT);
@@ -1075,7 +1075,7 @@ begin
   // mirrors the pattern used by FPredictionThread.
   if Assigned(FGlucoseFetchThread) and FGlucoseFetchThread.Finished then
   begin
-    FGlucoseFetchThread.WaitFor;
+    SafeThreadJoin(FGlucoseFetchThread);
     FreeAndNil(FGlucoseFetchThread);
   end;
 
@@ -1128,7 +1128,7 @@ begin
 
   if Assigned(FHistoryFetchThread) and FHistoryFetchThread.Finished then
   begin
-    FHistoryFetchThread.WaitFor;
+    SafeThreadJoin(FHistoryFetchThread);
     FreeAndNil(FHistoryFetchThread);
   end;
 
@@ -1788,7 +1788,7 @@ begin
   // thread here.
   if Assigned(FUpdateCheckThread) and FUpdateCheckThread.Finished then
   begin
-    FUpdateCheckThread.WaitFor;
+    SafeThreadJoin(FUpdateCheckThread);
     FreeAndNil(FUpdateCheckThread);
   end;
   if Assigned(FUpdateCheckThread) and (not FUpdateCheckThread.Finished) then

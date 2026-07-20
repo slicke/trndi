@@ -444,7 +444,34 @@ DEFAULT_MIN_FONT_SIZE = 8;
 
   // (implementation continued)
 
+{** Join a finished (or finishing) worker thread safely across platforms.
+
+    On Haiku this must NOT use TThread.WaitFor: FPC 3.2.2's cthreads calls
+    pthread_detach(pthread_self()) in CEndThread as every thread exits, and
+    Haiku's libroot frees the pthread struct once a detached thread has
+    exited — a subsequent pthread_join (which WaitFor does) then reads freed
+    memory and GPFs inside wait_for_thread_etc. glibc tolerates the same
+    join-after-detach, which is why this never crashed on Linux. Instead we
+    poll TThread.Finished, which the thread epilogue sets after DoTerminate;
+    past that point the thread no longer touches the object, and Free is
+    safe (cthreads' CCloseThread is a no-op). When called on the main thread
+    we pump CheckSynchronize so a worker blocked in Synchronize can drain. }
+procedure SafeThreadJoin(T: TThread);
+
 implementation
+
+procedure SafeThreadJoin(T: TThread);
+begin
+{$IFDEF HAIKU}
+  while not T.Finished do
+    if GetCurrentThreadID = MainThreadID then
+      CheckSynchronize(1)
+    else
+      Sleep(1);
+{$ELSE}
+  T.WaitFor;
+{$ENDIF}
+end;
 
 type
 TRequestExWaitThread = class(TThread)
@@ -710,7 +737,7 @@ begin
           cookieJar.Add(Result.Cookies[i]);
       end;
     end;
-    worker.WaitFor;
+    SafeThreadJoin(worker);
     worker.Free;
   end
   else
@@ -729,7 +756,7 @@ begin
       completed := worker.FDone.WaitFor(GraceMs) = wrSignaled;
       if completed then
       begin
-        worker.WaitFor;
+        SafeThreadJoin(worker);
         worker.Free;
       end;
       if not completed then

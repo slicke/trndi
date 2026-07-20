@@ -36,7 +36,7 @@ unit trndi.native;
 interface
 
 uses
-trndi.native.base
+Classes, trndi.native.base
 {$IFDEF TEST}, trndi.native.mock
 {$ENDIF}
 {$IFNDEF TEST}
@@ -94,6 +94,10 @@ function nobuttonsVM: boolean;
 // Convenience: expose a helper returning the TTS software name used by the
 // current platform (e.g., 'spd-say', 'SAPI', 'say').
 function GetSpeakSoftwareName: string;
+
+// Re-export: join a finished worker thread without TThread.WaitFor's
+// join-after-detach crash on Haiku (see trndi.native.base.SafeThreadJoin).
+procedure SafeThreadJoin(T: TThread);
 implementation
 
 function GetWindowManagerName: string;
@@ -109,6 +113,11 @@ end;
 function GetSpeakSoftwareName: string;
 begin
   Result := TrndiNative.SpeakSoftwareName;
+end;
+
+procedure SafeThreadJoin(T: TThread);
+begin
+  trndi.native.base.SafeThreadJoin(T);
 end;
 
 end.

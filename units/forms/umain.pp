@@ -1493,7 +1493,7 @@ begin
     end;
     if FUpdateCheckThread.Finished then
     begin
-      FUpdateCheckThread.WaitFor;
+      SafeThreadJoin(FUpdateCheckThread);
       FreeAndNil(FUpdateCheckThread);
     end
     else
@@ -1510,7 +1510,7 @@ begin
     FConnectivityThread.Terminate;
     while not FConnectivityThread.Finished do
       Application.ProcessMessages;
-    FConnectivityThread.WaitFor;
+    SafeThreadJoin(FConnectivityThread);
     FreeAndNil(FConnectivityThread);
   end;
 
@@ -1519,7 +1519,7 @@ begin
     FPingThread.Terminate;
     while not FPingThread.Finished do
       Application.ProcessMessages;
-    FPingThread.WaitFor;
+    SafeThreadJoin(FPingThread);
     FreeAndNil(FPingThread);
   end;
 
@@ -1528,7 +1528,7 @@ begin
     FPredictionThread.Terminate;
     while not FPredictionThread.Finished do
       Application.ProcessMessages;
-    FPredictionThread.WaitFor;
+    SafeThreadJoin(FPredictionThread);
     FreeAndNil(FPredictionThread);
   end;
 
@@ -1550,7 +1550,7 @@ begin
     end;
     if FGlucoseFetchThread.Finished then
     begin
-      FGlucoseFetchThread.WaitFor;
+      SafeThreadJoin(FGlucoseFetchThread);
       FreeAndNil(FGlucoseFetchThread);
     end
     else
@@ -1577,7 +1577,7 @@ begin
     end;
     if FHistoryFetchThread.Finished then
     begin
-      FHistoryFetchThread.WaitFor;
+      SafeThreadJoin(FHistoryFetchThread);
       FreeAndNil(FHistoryFetchThread);
     end
     else

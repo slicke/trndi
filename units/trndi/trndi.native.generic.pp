@@ -1022,8 +1022,10 @@ begin
   else
     address := endpoint;
 
-  // GET: append query string. POST without JSON: use params as form body.
-  if (not post) and (jsondata = '') and (Length(params) > 0) then
+  // Append params as query string for GET and POST alike, matching the
+  // Windows/Linux implementations — Dexcom Share expects POST parameters in
+  // the URL and rejects them as a form body (415 Unsupported Media Type).
+  if (jsondata = '') and (Length(params) > 0) then
   begin
     address := address + '?' + params[0];
     for i := 1 to High(params) do
@@ -1032,6 +1034,7 @@ begin
 
   HTTP := TFPHTTPClient.Create(nil);
   try
+    HTTP.IOTimeout := HTTP_IO_TIMEOUT;
     if useragent <> '' then
       HTTP.AddHeader('User-Agent', useragent);
 
@@ -1056,19 +1059,8 @@ begin
           HTTP.AddHeader('Accept', 'application/json');
           body := jsondata;
         end
-        else if Length(params) > 0 then
-        begin
-          HTTP.AddHeader('Content-Type', 'application/x-www-form-urlencoded');
-          body := '';
-          for i := 0 to High(params) do
-          begin
-            if i > 0 then
-              body := body + '&';
-            body := body + params[i];
-          end;
-        end
         else
-          body := '';
+          body := ''; // params already in the query string; empty POST body
         if body <> '' then
         begin
           bodyStream := TStringStream.Create(body);
