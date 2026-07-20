@@ -46,3 +46,7 @@ VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=alefrag
 
 * Debugging: https://marketplace.visualstudio.com/items?itemName=CNOC.fpdebug
 * Debugging with GDB: https://marketplace.visualstudio.com/items?itemName=coolchyni.beyond-debug
+
+### Ubuntu notice
+If your Ubuntu installation complains about -lgcc, consider making a symlink:
+```sudo ln -s /usr/lib/gcc/x86_64-linux-gnu/11/libgcc.a /usr/lib/libgcc.a```
