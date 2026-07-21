@@ -41,15 +41,17 @@
 
 
 ### Screenshots
+#### Windows 11
 ![Windows](doc/img/img_win.png)
-![Windows](doc/img/img_win_range.png)
-<br>Windows 11
 
+#### Fedora Linux (KDE)
 ![Linux](doc/img/img_lin.png)
-![Linux](doc/img/img_lin_range.png)
-<br>Fedora Linux
 
-![Linux](doc/img/img_rpi.png)
+#### macOS
+![macOS](doc/img/img_macos.png)
+
+#### Physical Display
+![Linux](doc/img/img_rpi.jpg)
 <br>RaspberryPi (with touch screen) - see [Guide for RPi display](guides/Display.md)
 
 ### Introduction
