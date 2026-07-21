@@ -66,7 +66,7 @@ begin
 
   if argc < 1 then
   begin
-    ExtError(uxdAuto, 'getReading requires a boolean argument (true = mmol/L)');
+    ExtError(sdsAuto, 'getReading requires a boolean argument (true = mmol/L)');
     Exit;
   end;
 
@@ -74,7 +74,7 @@ begin
 
   if not (VarType(mmolval) = varBoolean) then
   begin
-    ExtError(uxdAuto, 'Unit type must be boolean');
+    ExtError(sdsAuto, 'Unit type must be boolean');
     Result := JS_FALSE;
     Exit;
   end;
@@ -198,7 +198,7 @@ begin
       maxCount := countVar
     else
     begin
-      ExtError(uxdAuto, 'getReadings: count must be an integer');
+      ExtError(sdsAuto, 'getReadings: count must be an integer');
       Exit(JS_FALSE);
     end;
   end;
@@ -448,7 +448,7 @@ begin
   Result := JS_UNDEFINED;
   if argc < 2 then
   begin
-    ExtError(uxdAuto, 'setSetting requires a key and a value');
+    ExtError(sdsAuto, 'setSetting requires a key and a value');
     Exit;
   end;
   key := ctx^.ToUtf8(argv^[0]);
@@ -460,7 +460,7 @@ begin
 
   if sect <> 'extval' then
   begin
-    if ExtMsg(uxdNormal, 'System setting change', '<b>ALERT</b><br>An extension is requesting permission to edit this settings value:'+sHTMLLineBreak+
+    if SlickeMsg(sdsNormal, 'System setting change', '<b>ALERT</b><br>An extension is requesting permission to edit this settings value:'+sHTMLLineBreak+
       '<i>'+key+'</i>'+sHTMLLineBreak+sHTMLLineBreak+'New value: ' + val + sHTMLLineBreak + 'Current Value: ' + curr + sHTMLLineBreak + sHTMLLineBreak +
       'Allow this change?',[mbYes, mbNo],uxmtWarning) = mrYes then
       native.SetSetting(key, val);
@@ -541,7 +541,7 @@ begin
     ctx^^.ToVariant(argv^[0], numPredictions);
     if not (VarType(numPredictions) = varInteger) then
     begin
-      ExtError(uxdAuto, 'Number of predictions must be an integer');
+      ExtError(sdsAuto, 'Number of predictions must be an integer');
       Result := JS_FALSE;
       Exit;
     end;

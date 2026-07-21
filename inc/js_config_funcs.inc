@@ -47,7 +47,7 @@ begin
 
   if varType(a0) <> varInteger then
   begin
-    ExtError(uxdAuto, '(DATA_FRESHNESS_THRESHOLD_MINUTES) Mins must be integer');
+    ExtError(sdsAuto, '(DATA_FRESHNESS_THRESHOLD_MINUTES) Mins must be integer');
     exit;
   end;
 
@@ -67,7 +67,7 @@ begin
 
   if (varType(a0) <> varInteger) or (varType(a1) <> varInteger) then
   begin
-    ExtError(uxdAuto, '(ClockInterval) secs must be integer');
+    ExtError(sdsAuto, '(ClockInterval) secs must be integer');
     exit;
   end;
 
@@ -92,7 +92,7 @@ begin
 
   if (VarType(vmins) <> varInteger) or (VarType(vcount) <> varInteger) then
   begin
-    ExtError(uxdAuto, 'Mins and Count must be integers');
+    ExtError(sdsAuto, 'Mins and Count must be integers');
     Result := JS_FALSE;
     Exit;
   end;

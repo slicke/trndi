@@ -83,7 +83,7 @@ type
       function config: string;
   end;
 
-  TrndiExtList = record
+  TrndiSlickeList = record
     items: array of TrndiExt;
     function Add(fn: string; slug: string; prio: smallint): boolean;
     function Delete(id: integer): boolean;
@@ -92,7 +92,7 @@ type
 
 implementation
 
-function TrndiExtList.Add(fn: string; slug: string; prio: smallint): boolean;
+function TrndiSlickeList.Add(fn: string; slug: string; prio: smallint): boolean;
 begin
   result := false;
   insert([TrndiExt.Create(fn, slug, 0)], items, 0);
@@ -103,13 +103,13 @@ begin
     Delete(0);
 end;
 
-function TrndiExtList.Delete(id: integer): boolean;
+function TrndiSlickeList.Delete(id: integer): boolean;
 begin
   items[id].Destroy;
   System.Delete(items, id, 1);
 end;
 
-function TrndiExtList.IndexOf(slug: string): integer;
+function TrndiSlickeList.IndexOf(slug: string): integer;
 
 var 
   i: integer;
@@ -205,7 +205,7 @@ begin
 end;
 
 
-(*function TrndiExtList.AddExt(const fn, id: string): boolean;
+(*function TrndiSlickeList.AddExt(const fn, id: string): boolean;
 begin
   result := false;
   insert([LibItem.init(id, LoadLibrary(fn), 0)], loaded, 0);

@@ -461,7 +461,7 @@ begin
     cmd := 'npm install && node carelink-login.mjs';
   end;
 
-  if ExtMsgYesNo(T.HelpTitle, Format(T.HelpBody, [helperDir, cmd]), uxmtInformation, 20) then
+  if SlickeMsgYesNo(T.HelpTitle, Format(T.HelpBody, [helperDir, cmd]), uxmtInformation, 20) then
   begin
     if DirectoryExists(helperDir) then
       OpenDocument(helperDir)
@@ -504,7 +504,7 @@ begin
   end;
 
   // Heads-up before we open a browser and (on first run) install dependencies.
-  if not ExtMsgYesNo(T.RunTitle, T.RunPrompt, uxmtInformation, 20) then
+  if not SlickeMsgYesNo(T.RunTitle, T.RunPrompt, uxmtInformation, 20) then
     Exit;
 
   progress := TButtonProgressAdapter.Create;
@@ -527,12 +527,12 @@ begin
     // Reveal what we captured so the user can eyeball it before testing.
     APassEdit.EchoMode := emNormal;
     APassEdit.PasswordChar := #0;
-    UXMessage(T.RunTitle, T.CapturedOK, uxmtOK, ASender);
+    SlickeMessage(T.RunTitle, T.CapturedOK, uxmtOK, ASender);
     Exit;
   end;
 
   // Automatic path unavailable/failed — explain, then offer the manual route.
-  ExtError(uxdAuto, T.FailTitle, ErrText(res), uxmtWarning);
+  ExtError(sdsAuto, T.FailTitle, ErrText(res), uxmtWarning);
   ShowManualWebLoginHelp(ACls, T);
 end;
 

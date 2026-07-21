@@ -348,7 +348,7 @@ begin
       end;
     end;
     SlickeDialogsInTaskbar := true;
-    i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, // Show a prompt to choose user
+    i := SlickeList(sdsAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, // Show a prompt to choose user
       RS_MULTIUSER_BOX, userList, true);
     SlickeDialogsInTaskbar := false;
 
@@ -414,9 +414,9 @@ begin
     i := 0;
     while i <> mrYes do
     begin
-      i := ExtMsg(uxdAuto, 'License', 'You must accept the full terms conditions',
+      i := SlickeMsg(sdsAuto, 'License', 'You must accept the full terms conditions',
         'Do you agree to the terms and full license?', license,
-        uxclWhite, uxclRed, [mbYes, mbCancel, mbUxRead], uxmtCustom, uxscLarge);
+        uxclWhite, uxclRed, [mbYes, mbCancel, mbSlickeRead], uxmtCustom, uxscLarge);
       if i = mrYes then
         native.SetSetting('license.250608', true)
       else
@@ -491,12 +491,12 @@ begin
   fBG.Font.Name := fontName;
 
   {$ifndef LCLQt6}
-  case ExtText(uxdAuto, 'This version may not work as intended!',
+  case SlickePrompt(sdsAuto, 'This version may not work as intended!',
       'This release of Trndi was compiled for a non-supported platform ("widgetset")'#10#10+
       'Performance might be bad, graphics might not work correctly and features might not work as intended!'#10+
       'Please download the official release (Qt6) from github.com/slicke/trndi'#10#10+
       'Continue Anyway?',
-      [MbYes, mbNo, mbUXRead],uxmtWarning) of
+      [MbYes, mbNo, mbSlickeRead],uxmtWarning) of
   mrNo:
     Application.Terminate;
   mrYes:
@@ -518,7 +518,7 @@ var
 begin
   old := TrndiNative.touchOverride;
   TrndiNative.touchOverride := TTrndiBool.tbTrue;
-  UXMessage(uxdOnForm,'Test Message','This is a debug test',uxmtInformation,self);
+  SlickeMessage(sdsOnForm,'Test Message','This is a debug test',uxmtInformation,self);
   TrndiNative.touchOverride := old;
 end;
 
@@ -574,7 +574,7 @@ begin
   // Initialize native interface
   native := TrndiNative.Create;
 
-  if (ssMeta in GetKeyShiftState) and ExtMsgYesNo(uxdNormal,'Run Trndi in English?', 'Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.') then
+  if (ssMeta in GetKeyShiftState) and SlickeMsgYesNo(sdsNormal,'Run Trndi in English?', 'Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.') then
   else
     SetLang;
 
@@ -616,7 +616,7 @@ begin
   {$endif}
 
   if ssShift in GetKeyShiftState then
-    if ExtMsgYesNo('Override big screen?', 'Shift Pressed! Force Trndi to treat your system as ' + IfThen(native.DetectTouchScreen(fil), 'Small screen (non-touch)', 'Big screen (touch)')+'?', uxmtWarning) then
+    if SlickeMsgYesNo('Override big screen?', 'Shift Pressed! Force Trndi to treat your system as ' + IfThen(native.DetectTouchScreen(fil), 'Small screen (non-touch)', 'Big screen (touch)')+'?', uxmtWarning) then
       if native.DetectTouchScreen(fil) then
         native.touchOverride := tbFalse
       else

@@ -1247,7 +1247,7 @@ begin
       end;
     except
       on E: Exception do
-        ExtHTML(uxdAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
+        SlickeHTMLMsg(sdsAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
           [mbOK], uxmtError, 12.5);
     end;
   finally
@@ -1332,7 +1332,7 @@ begin
       on E: Exception do
       begin
         CloseFile(csvFile);
-        ExtHTML(uxdAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
+        SlickeHTMLMsg(sdsAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
           [mbOK], uxmtError, 12.5);
       end;
     end;
@@ -1358,7 +1358,7 @@ begin
   else
     noise := RS_RH_UNKNOWN;
 
-  ExtHTML(uxdAuto, RS_RH_READING, '<font size="4"><u></u>'+TimeToStr(Reading.date) +
+  SlickeHTMLMsg(sdsAuto, RS_RH_READING, '<font size="4"><u></u>'+TimeToStr(Reading.date) +
     '</font><font size="3">' + sHTMLLineBreak+
     StringReplace(Format(RS_HISTORY_ITEM,
     [Reading.format(FUnit, BG_MSG_SHORT, BGPrimary),

@@ -205,7 +205,7 @@ begin
     begin
       // Complain that it wasn't set
       if not (Application.Terminated or IsExtShuttingDown) then
-        ExtError(uxdAuto, 'Error: Missing Function');
+        ExtError(sdsAuto, 'Error: Missing Function');
       FSuccess := false;
       Exit;
     end;
@@ -257,7 +257,7 @@ begin
             FResult := StringToValueVal(E.Message)
           else
           if not (Application.Terminated or IsExtShuttingDown) then
-            ExtError(uxdAuto, RS_TYPE_ERROR_MSG, e.message);
+            ExtError(sdsAuto, RS_TYPE_ERROR_MSG, e.message);
         end;
         on E: Exception do
         begin
@@ -266,7 +266,7 @@ begin
             FResult := StringToValueVal(E.Message)
           else
           if not (Application.Terminated or IsExtShuttingDown) then
-            ExtError(uxdAuto, Format(RS_PROM_ERR_CAPT, [func]), e.Message);
+            ExtError(sdsAuto, Format(RS_PROM_ERR_CAPT, [func]), e.Message);
         end;
       end;
     end

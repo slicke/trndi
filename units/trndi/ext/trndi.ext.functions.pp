@@ -967,7 +967,7 @@ begin
   // Log via external logging function
   if fullMsg = '' then
     fullMsg := RS_LOG_EMPTY_MSG;
-  ExtLog(uxdAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
+  ExtLog(sdsAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
 
   // Return undefined
   Result := JS_UNDEFINED;
@@ -1077,7 +1077,7 @@ begin
   if (ConsoleBuffer <> nil) and (ConsoleBuffer.Count > 0) then
   begin
     fullMsg := ConsoleBuffer.Text;
-    ExtLog(uxdAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
+    ExtLog(sdsAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
     ConsoleBuffer.Clear;
   end
   else

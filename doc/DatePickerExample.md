@@ -6,19 +6,19 @@ The `ExtDatePicker` function provides a date picker dialog with optional min/max
 
 ```pascal
 function ExtDatePicker(
-  const dialogsize: TUXDialogSize;
+  const dialogsize: TSlickeDialogSize;
   const ACaption, ATitle, ADesc: string;
   ADefault: TDateTime;
   AMinDate: TDateTime;
   AMaxDate: TDateTime;
   var ModalResult: TModalResult;
-  const icon: UXImage = uxmtCog
+  const icon: SlickeUXImage = uxmtCog
 ): TDateTime;
 ```
 
 ## Parameters
 
-- **dialogsize**: Layout preset (`uxdNormal`, `uxdBig`, `uxdAuto`, etc.)
+- **dialogsize**: Layout preset (`sdsNormal`, `uxdBig`, `sdsAuto`, etc.)
 - **ACaption**: Window caption
 - **ATitle**: Title text displayed in the dialog
 - **ADesc**: Description text
@@ -42,7 +42,7 @@ var
   modalRes: TModalResult;
 begin
   selectedDate := ExtDatePicker(
-    uxdNormal,
+    sdsNormal,
     'Select Date',
     'Choose a date',
     'Please select a date from the calendar',
@@ -70,7 +70,7 @@ begin
   maxDate := Now + 30;
   
   selectedDate := ExtDatePicker(
-    uxdNormal,
+    sdsNormal,
     'Schedule Appointment',
     'Select Appointment Date',
     'Choose a date within the next 30 days',
@@ -113,7 +113,7 @@ end;
 ## Features
 
 - **Dark Mode Support**: Automatically adapts to Windows dark mode
-- **Touch-Friendly**: Use `uxdBig` or `uxdAuto` for touch screen layouts
+- **Touch-Friendly**: Use `uxdBig` or `sdsAuto` for touch screen layouts
 - **Min/Max Date Constraints**: Optional minimum and maximum date limits
 - **Keyboard Navigation**: Supports Enter to confirm, Escape to cancel
 - **Cross-Platform**: Works on Windows, Linux, and other platforms supported by Lazarus
@@ -123,4 +123,4 @@ end;
 - Pass `0` for `AMinDate` or `AMaxDate` to disable those constraints
 - The function uses the `TDateEdit` component from Lazarus (`EditBtn` unit)
 - Date format follows the system locale settings
-- The dialog size can be adjusted using different `TUXDialogSize` values
+- The dialog size can be adjusted using different `TSlickeDialogSize` values

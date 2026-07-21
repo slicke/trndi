@@ -830,7 +830,7 @@ begin
     begin
       if IsProblematicWM then
         fBG.Hide;
-      if ExtText(uxdAuto, RS_SETTINGS_SAVE,RS_SETTINGS_SAVE_DESC,[mbYes, mbNo]) <> mrYes then
+      if SlickePrompt(sdsAuto, RS_SETTINGS_SAVE,RS_SETTINGS_SAVE_DESC,[mbYes, mbNo]) <> mrYes then
       begin
         fBG.Show;
         Exit;
@@ -877,7 +877,7 @@ begin
     versionInfo + sHTMLLineBreak +
     'https://github.com/slicke/trndi';
 
-  ExtHTML(uxdAuto, 'About Trndi', html, [mbOK], uxmtInformation, 25);
+  SlickeHTMLMsg(sdsAuto, 'About Trndi', html, [mbOK], uxmtInformation, 25);
 end;
 
 procedure TfBG.CheckForUpdatesMenuClick(Sender: TObject);

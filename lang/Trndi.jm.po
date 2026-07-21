@@ -39,7 +39,7 @@ msgstr "Velj"
 msgid "Abort"
 msgstr "Avsluta"
 
-#: slicke.ux.alert.smbuxagree
+#: slicke.ux.alert.smbSlickeAgree
 msgid "Agree"
 msgstr "Accepterar"
 
@@ -57,8 +57,8 @@ msgctxt "slicke.ux.alert.smbuxclose"
 msgid "Close"
 msgstr "Steng"
 
-#: slicke.ux.alert.smbuxdefault
-msgctxt "slicke.ux.alert.smbuxdefault"
+#: slicke.ux.alert.smbSlickeDefault
+msgctxt "slicke.ux.alert.smbSlickeDefault"
 msgid "Default"
 msgstr "Standard"
 
@@ -71,7 +71,7 @@ msgstr "Hjelp"
 msgid "Ignore"
 msgstr "Ignorera"
 
-#: slicke.ux.alert.smbuxminimize
+#: slicke.ux.alert.smbSlickeMinimize
 msgid "Minimize"
 msgstr "Minimera"
 
@@ -88,11 +88,11 @@ msgctxt "slicke.ux.alert.smbuxok"
 msgid "OK"
 msgstr "ok"
 
-#: slicke.ux.alert.smbuxopenfile
+#: slicke.ux.alert.smbSlickeOpenFile
 msgid "Open File"
 msgstr "ôppna fil"
 
-#: slicke.ux.alert.smbuxread
+#: slicke.ux.alert.smbSlickeRead
 msgid "Read..."
 msgstr "Les..."
 
@@ -100,7 +100,7 @@ msgstr "Les..."
 msgid "Retry"
 msgstr "Fôrsôk igen"
 
-#: slicke.ux.alert.smbuxsnooze
+#: slicke.ux.alert.smbSlickeSnooze
 msgid "Snooze"
 msgstr "Snooza"
 

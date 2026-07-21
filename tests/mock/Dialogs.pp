@@ -21,7 +21,7 @@ const
   mbNo = 7;
   mbAll = 14;
   mbClose = 15;
-  mbUXMinimize = 16;
+  mbSlickeMinimize = 16;
 
   // Modal result constants (mr*) returned by dialogs
   mrNone = 0;
