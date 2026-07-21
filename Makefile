@@ -59,6 +59,11 @@ MORMOT2_REPO ?= https://github.com/synopse/mORMot2.git
 MORMOT2_COMMIT ?= b72f260b880557d2f9ebc15905d820e7a3a9bf01
 MORMOT2_STATIC_URL ?= https://github.com/synopse/mORMot2/releases/download/2.4-stable/mormot2static.7z
 
+# By default 'make fetch-mormot2' fails upfront if 7z/curl/wget are missing, before
+# cloning anything. Set FAIL_7ZIP=1 to bypass that check: the clone proceeds and the
+# static archive step is skipped with a warning instead of aborting the target.
+FAIL_7ZIP ?= 0
+
 # Optional binary stripping (primarily for Linux release builds).
 # Lazarus/FPC build-modes sometimes embed debug info; stripping makes binaries much smaller.
 STRIP ?= strip
@@ -143,6 +148,7 @@ help:
 	@echo "  MORMOT2_REPO (default: $(MORMOT2_REPO))"
 	@echo "  MORMOT2_COMMIT (default: $(MORMOT2_COMMIT))"
 	@echo "  MORMOT2_STATIC_URL (default: $(MORMOT2_STATIC_URL))"
+	@echo "  FAIL_7ZIP (default: $(FAIL_7ZIP)) Bypass fetch-mormot2's upfront 7z/curl/wget check when set to 1 (use 'make FAIL_7ZIP=1 fetch-mormot2')"
 
 check-mormot2:
 	@echo "Checking mORMot2 presence and QuickJS static artifacts..."
@@ -182,6 +188,19 @@ check-mormot2:
 	fi
 
 fetch-mormot2:
+	@set -e; \
+	MISSING=""; \
+	if ! command -v 7z >/dev/null 2>&1; then MISSING="$$MISSING 7z"; fi; \
+	if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then MISSING="$$MISSING curl/wget"; fi; \
+	if [ -n "$$MISSING" ]; then \
+	  echo "Warning:$$MISSING not found; the QuickJS static archive cannot be downloaded/extracted into ./static."; \
+	  echo "  Install 7z with one of: 'sudo apt install p7zip-full' (Ubuntu <= 22.04), 'sudo apt install 7zip' (Ubuntu >= 23.10, since p7zip was dropped), 'sudo dnf install p7zip p7zip-plugins' (Fedora/RHEL), 'brew install p7zip' (macOS)."; \
+	  if [ "$(FAIL_7ZIP)" != "1" ]; then \
+	    echo "Aborting before cloning (set FAIL_7ZIP=1 to bypass this check and clone anyway; the static step will then be skipped with a warning)."; \
+	    exit 1; \
+	  fi; \
+	  echo "FAIL_7ZIP=1 set; continuing without the static archive step."; \
+	fi
 	@echo "Fetching mORMot2 into externals/mORMot2 (commit $(MORMOT2_COMMIT))"
 	@set -e; \
 	mkdir -p externals; \
@@ -190,14 +209,13 @@ fetch-mormot2:
 	git -C externals/mORMot2 remote add origin $(MORMOT2_REPO); \
 	git -C externals/mORMot2 fetch --depth 1 origin $(MORMOT2_COMMIT); \
 	git -C externals/mORMot2 checkout FETCH_HEAD; \
-	# Try to fetch and extract static archive if possible
-	if command -v 7z >/dev/null 2>&1; then \
+	if command -v 7z >/dev/null 2>&1 && { command -v curl >/dev/null 2>&1 || command -v wget >/dev/null 2>&1; }; then \
 	  if command -v curl >/dev/null 2>&1; then curl -L -o mormot2static.7z $(MORMOT2_STATIC_URL); \
-	  elif command -v wget >/dev/null 2>&1; then wget -O mormot2static.7z $(MORMOT2_STATIC_URL); fi; \
+	  else wget -O mormot2static.7z $(MORMOT2_STATIC_URL); fi; \
 	  if [ -f mormot2static.7z ]; then mkdir -p static; 7z x mormot2static.7z -ostatic; rm -f mormot2static.7z; echo "Extracted static/"; \
 	  else echo "Could not download mormot2static.7z automatically; download $(MORMOT2_STATIC_URL) and extract into ./static"; fi; \
 	else \
-	  echo "7z not found; install p7zip-full (or 7z) to enable automatic extraction, or download $(MORMOT2_STATIC_URL) manually into ./static"; \
+	  echo "Skipping static archive step (7z and/or curl/wget missing); download $(MORMOT2_STATIC_URL) and extract into ./static manually."; \
 	fi; \
 	echo "Done. Run 'make install-mormot2' to compile the package so lazbuild can find it."
 
