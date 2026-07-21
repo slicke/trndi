@@ -134,7 +134,7 @@ begin
   try
     if argc <= 0 then
     begin
-      dialogResult := UXDialog(sdsAuto, RS_EXT_MSG, '', '', [mbYes, mbNo], mtConfirmation);
+      dialogResult := SlickeDialog(sdsAuto, RS_EXT_MSG, '', '', [mbYes, mbNo], mtConfirmation);
     end
     else
     begin
@@ -148,7 +148,7 @@ begin
         Move(PAnsiChar(ctx^.ToUtf8(argv^[i]))^, p^, Length(ctx^.ToUtf8(argv^[i])));
         Inc(p, Length(ctx^.ToUtf8(argv^[i])));
       end;
-      dialogResult := UXDialog(sdsAuto, RS_EXT_MSG, '', output, [mbYes, mbNo], mtConfirmation);
+      dialogResult := SlickeDialog(sdsAuto, RS_EXT_MSG, '', output, [mbYes, mbNo], mtConfirmation);
     end;
     
     if dialogResult = mrYes then

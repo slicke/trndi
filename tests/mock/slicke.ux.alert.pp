@@ -95,9 +95,9 @@ const icon: SlickeUXImage = uxmtCog): TDateTime;
 function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
 function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
 
-function UXDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns): TModalResult; overload;
-function UXDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
-function UXDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns): TModalResult; overload;
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 
 implementation
 
@@ -217,17 +217,17 @@ begin
   Result := ExtFontPicker(dialogsize, caption, title, msg, '', AFont, sampleText, mr);
 end;
 
-function UXDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns): TModalResult; overload;
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns): TModalResult; overload;
 begin
   Result := mrOk;
 end;
 
-function UXDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 begin
   Result := mrOk;
 end;
 
-function UXDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 begin
   Result := mrOk;
 end;

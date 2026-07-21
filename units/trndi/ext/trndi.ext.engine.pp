@@ -835,7 +835,7 @@ begin
   end;
   end;
 
-  Result := UXDialog(sdsAuto, header, title, msg, btns, dialogType);
+  Result := SlickeDialog(sdsAuto, header, title, msg, btns, dialogType);
 end;
 
 {** Raise JS exception with filename context. }

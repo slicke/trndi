@@ -1285,7 +1285,7 @@ end;
 
 procedure TfConf.bDeltaMaxHelpClick({%H-}Sender: TObject);
 begin
-  if UXDialog(sdsAuto,'Delta', RS_DELTA_MAX,[mbOK, mbSlickeRead]) <> mrOK then
+  if SlickeDialog(sdsAuto,'Delta', RS_DELTA_MAX,[mbOK, mbSlickeRead]) <> mrOK then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md');
 end;
 
@@ -2065,7 +2065,7 @@ begin
       s := Format(RS_NEWVER_PR, [rn])
     else
       s := Format(RS_NEWVER, [rn]);
-    if UXDialog(sdsAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
+    if SlickeDialog(sdsAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
       OpenURL(r);
   end
   else begin
