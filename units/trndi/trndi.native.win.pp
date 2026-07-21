@@ -3388,6 +3388,9 @@ const
   DWMWA_CAPTION_BTN_BOUNDS = 5;      // DWMWA_CAPTION_BUTTON_BOUNDS
   BADGE_GAP                = 8;      // px between the pill and the caption buttons
   WM_DPICHANGED_MSG        = $02E0;
+  WM_ENTERSIZEMOVE_MSG     = $0231;
+  WM_EXITSIZEMOVE_MSG      = $0232;
+  CLEARTYPE_QUAL           = 5;      // CLEARTYPE_QUALITY (absent from FPC's Windows unit)
 
 var
   gBadgeHWnd: HWND = 0;
@@ -3487,10 +3490,18 @@ procedure PaintBadge;
 const
   PAD_X = 12;
 var
-  bmp, measure: Graphics.TBitmap;
+  faceName: WideString;
+  wnick: UnicodeString;
+  hf, oldFont: HGDIOBJ;
+  brush, pen, oldBrush, oldPen: HGDIOBJ;
+  bi: BITMAPINFO;
+  dib: HBITMAP;
+  oldDib: HGDIOBJ;
+  bits: Pointer;
+  memDC, screenDC: HDC;
+  txtSz: TSize;
   txtW, txtH, w, h, radius, capH, fontH, yy, xx: integer;
   rightX, capTop, capBottom: integer;
-  screenDC: HDC;
   blend: BLENDFUNCTION;
   ptSrc: TPoint;
   sz: TSize;
@@ -3507,78 +3518,111 @@ begin
   h := Max(14, capH - 4);
   fontH := Max(9, h - 6);
 
-  measure := Graphics.TBitmap.Create;
+  faceName := 'Segoe UI';
+  wnick := UTF8Decode(gBadgeNick);
+
+  // Paint into a raw 32-bit top-down DIB section we own outright, NOT an LCL
+  // TBitmap. UpdateLayeredWindow needs a clean per-pixel premultiplied surface;
+  // mixing LCL Canvas draws with raw ScanLine alpha and then blitting from
+  // Canvas.Handle desynced the surface, so the pill body kept alpha=0 and got
+  // additively blended over the caption — the washed near-white pill with only
+  // the text/border coloured. One DIB drives the GDI draw, the alpha pass, and
+  // the blit, so no desync is possible.
+  memDC := CreateCompatibleDC(0);
+  if memDC = 0 then
+    Exit;
   try
-    measure.SetSize(1, 1);
-    measure.Canvas.Font.Name := 'Segoe UI';
-    measure.Canvas.Font.Height := -fontH;
-    measure.Canvas.Font.Style := [fsBold];
-    txtW := measure.Canvas.TextWidth(gBadgeNick);
-    txtH := measure.Canvas.TextHeight(gBadgeNick);
-  finally
-    measure.Free;
-  end;
-
-  w := txtW + PAD_X * 2;
-  radius := h div 2;
-  gBadgeW := w;
-  gBadgeH := h;
-
-  bmp := Graphics.TBitmap.Create;
-  try
-    bmp.PixelFormat := pf32bit;
-    bmp.SetSize(w, h);
-    // Start fully transparent (premultiplied-alpha safe: all zero).
-    for yy := 0 to h - 1 do
-      FillDWord(PByte(bmp.ScanLine[yy])^, w, 0);
-
-    // Pill body (GDI leaves the alpha byte untouched).
-    bmp.Canvas.Pen.Style := psSolid;
-    bmp.Canvas.Pen.Color := gBadgeBg;
-    bmp.Canvas.Brush.Style := bsSolid;
-    bmp.Canvas.Brush.Color := gBadgeBg;
-    bmp.Canvas.RoundRect(0, 0, w, h, radius * 2, radius * 2);
-
-    // Name, centred.
-    bmp.Canvas.Font.Name := 'Segoe UI';
-    bmp.Canvas.Font.Height := -fontH;
-    bmp.Canvas.Font.Style := [fsBold];
-    bmp.Canvas.Font.Color := gBadgeText;
-    bmp.Canvas.Brush.Style := bsClear;
-    bmp.Canvas.TextOut((w - txtW) div 2, (h - txtH) div 2, gBadgeNick);
-
-    // Make every pixel inside the rounded shape opaque; corners stay clear.
-    GdiFlush;
-    for yy := 0 to h - 1 do
-    begin
-      pRow := PByte(bmp.ScanLine[yy]);
-      for xx := 0 to w - 1 do
-        if BadgePixelInside(xx, yy, w, h, radius) then
-          (pRow + xx * 4 + 3)^ := 255;
-    end;
-
-    // Blit to the layered window (keeps current position; size follows psize).
-    // Source directly from the bitmap's own canvas DC — the pf32bit DIB is
-    // already selected there; selecting bmp.Handle into a second DC would fail
-    // (a bitmap cannot be selected into two DCs) and paint nothing.
-    GdiFlush;
-    screenDC := GetDC(0);
+    hf := CreateFontW(-fontH, 0, 0, 0, FW_BOLD, 0, 0, 0, DEFAULT_CHARSET,
+      OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUAL,
+      DEFAULT_PITCH or FF_DONTCARE, PWideChar(faceName));
+    oldFont := SelectObject(memDC, hf);
     try
-      blend.BlendOp := AC_SRC_OVER;
-      blend.BlendFlags := 0;
-      blend.SourceConstantAlpha := 255;
-      blend.AlphaFormat := AC_SRC_ALPHA;
-      sz.cx := w;
-      sz.cy := h;
-      ptSrc.x := 0;
-      ptSrc.y := 0;
-      UpdateLayeredWindow(gBadgeHWnd, screenDC, nil, @sz, bmp.Canvas.Handle,
-        @ptSrc, 0, @blend, ULW_ALPHA);
+      txtSz.cx := 0;
+      txtSz.cy := 0;
+      GetTextExtentPoint32W(memDC, PWideChar(wnick), Length(wnick), txtSz);
+      txtW := txtSz.cx;
+      txtH := txtSz.cy;
+
+      w := txtW + PAD_X * 2;
+      radius := h div 2;
+      gBadgeW := w;
+      gBadgeH := h;
+
+      FillChar(bi, SizeOf(bi), 0);
+      bi.bmiHeader.biSize := SizeOf(BITMAPINFOHEADER);
+      bi.bmiHeader.biWidth := w;
+      bi.bmiHeader.biHeight := -h;        // negative => top-down rows
+      bi.bmiHeader.biPlanes := 1;
+      bi.bmiHeader.biBitCount := 32;
+      bi.bmiHeader.biCompression := BI_RGB;
+      bits := nil;
+      dib := CreateDIBSection(memDC, bi, DIB_RGB_COLORS, bits, 0, 0);
+      if (dib = 0) or (bits = nil) then
+        Exit;
+      oldDib := SelectObject(memDC, dib);
+      try
+        // Fully transparent to start (CreateDIBSection already zeroes, explicit
+        // for clarity).
+        FillChar(bits^, w * h * 4, 0);
+
+        // Pill body.
+        brush := CreateSolidBrush(DWORD(ColorToRGB(gBadgeBg)));
+        pen := CreatePen(PS_SOLID, 1, DWORD(ColorToRGB(gBadgeBg)));
+        oldBrush := SelectObject(memDC, brush);
+        oldPen := SelectObject(memDC, pen);
+        RoundRect(memDC, 0, 0, w, h, radius * 2, radius * 2);
+        SelectObject(memDC, oldBrush);
+        SelectObject(memDC, oldPen);
+        DeleteObject(brush);
+        DeleteObject(pen);
+
+        // Name, centred.
+        SetBkMode(memDC, TRANSPARENT);
+        SetTextColor(memDC, DWORD(ColorToRGB(gBadgeText)));
+        TextOutW(memDC, (w - txtW) div 2, (h - txtH) div 2,
+          PWideChar(wnick), Length(wnick));
+
+        GdiFlush;
+
+        // Force alpha=255 for every pixel inside the rounded shape (with A=255
+        // the straight RGB already equals its premultiplied value); clear the
+        // four rounded corners to fully transparent (RGB+A=0, no additive halo).
+        for yy := 0 to h - 1 do
+        begin
+          pRow := PByte(bits) + yy * w * 4;
+          for xx := 0 to w - 1 do
+            if BadgePixelInside(xx, yy, w, h, radius) then
+              (pRow + xx * 4 + 3)^ := 255
+            else
+              PDWord(pRow + xx * 4)^ := 0;
+        end;
+
+        // Blit the DIB to the layered window (position kept; size follows psize).
+        screenDC := GetDC(0);
+        try
+          blend.BlendOp := AC_SRC_OVER;
+          blend.BlendFlags := 0;
+          blend.SourceConstantAlpha := 255;
+          blend.AlphaFormat := AC_SRC_ALPHA;
+          sz.cx := w;
+          sz.cy := h;
+          ptSrc.x := 0;
+          ptSrc.y := 0;
+          UpdateLayeredWindow(gBadgeHWnd, screenDC, nil, @sz, memDC,
+            @ptSrc, 0, @blend, ULW_ALPHA);
+        finally
+          ReleaseDC(0, screenDC);
+        end;
+      finally
+        SelectObject(memDC, oldDib);
+        DeleteObject(dib);
+      end;
     finally
-      ReleaseDC(0, screenDC);
+      SelectObject(memDC, oldFont);
+      DeleteObject(hf);
     end;
   finally
-    bmp.Free;
+    DeleteDC(memDC);
   end;
 end;
 
@@ -3631,7 +3675,23 @@ begin
   Result := CallWindowProc(Windows.WNDPROC(gBadgeOwnerOldProc), hWnd, uMsg,
     wParam, lParam);
   case uMsg of
+    // The pill is a separate owned popup, so it cannot be glued to the caption
+    // during an interactive move/resize — it would trail a frame behind and
+    // leave a lagging outline outside the window. Hide it for the duration of
+    // the modal move/resize loop and snap it back into place on release.
+    WM_ENTERSIZEMOVE_MSG:
+      if gBadgeHWnd <> 0 then
+        ShowWindow(gBadgeHWnd, SW_HIDE);
+    WM_EXITSIZEMOVE_MSG:
+      if gBadgeHWnd <> 0 then
+      begin
+        RepositionBadge;
+        ShowWindow(gBadgeHWnd, SW_SHOWNOACTIVATE);
+      end;
     WM_WINDOWPOSCHANGED:
+      // Reposition for non-drag moves (Aero snap, maximise, programmatic). While
+      // an interactive drag is in progress the pill is hidden, so this just moves
+      // an invisible window and reshows nothing.
       if gBadgeHWnd <> 0 then
         RepositionBadge;
     WM_DPICHANGED_MSG:
