@@ -25,7 +25,7 @@ This file applies to the Trndi repository root and its subdirectories.
 - When behavior changes, update the relevant user-facing docs too, such as README.md, MANUAL.md, or guides/.
 - Avoid editing generated outputs or build artifacts unless you are intentionally regenerating them.
 - Follow the repo documentation standard in CONTRIBUTING.md: use PasDoc comments for public APIs in interfaces and banner-style comments in implementations.
-- All files must include the standard Trndi header (GPLv3 license and Medical Disclaimer). When creating or modifying a file without a header, ensure the following is present at the top:
+- All files must include the standard Trndi header (GPLv3 license and Medical Disclaimer), **except the `slicke.*` units** — see the carve-out below. When creating or modifying a file without a header, ensure the following is present at the top:
   ```pascal
   (*
    * Trndi
@@ -63,6 +63,16 @@ This file applies to the Trndi repository root and its subdirectories.
    *   license terms.
    *
    * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+   *)
+  ```
+- **Exception — `slicke.*` units are Apache-2.0.** The reusable `slicke` toolkit (`units/slicke/**` and its `tests/mock/slicke.*` stubs) is licensed Apache License 2.0, not GPLv3, so it can be reused outside Trndi (Apache-2.0 is one-way compatible into Trndi's GPLv3). These units use a compact header instead of the block above — do **not** add the GPLv3 header or Medical Disclaimer to them:
+  ```pascal
+  (*
+   * <unit>.pas
+   * <one-line description>
+   * Copyright (c) Björn Lindh
+   * GitHub: https://github.com/slicke/trndi
+   * License: Apache License 2.0
    *)
   ```
 

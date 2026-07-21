@@ -1,3 +1,10 @@
+(*
+ * slicke.ux.native.pas
+ * Headless test stub of slicke.ux.native.
+ * Copyright (c) Björn Lindh
+ * GitHub: https://github.com/slicke/trndi
+ * License: Apache License 2.0
+ *)
 unit slicke.ux.native;
 
 {$mode ObjFPC}{$H+}

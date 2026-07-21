@@ -1,3 +1,10 @@
+(*
+ * slicke.ux.alert.pas
+ * Headless test stub of slicke.ux.alert.
+ * Copyright (c) Björn Lindh
+ * GitHub: https://github.com/slicke/trndi
+ * License: Apache License 2.0
+ *)
 unit slicke.ux.alert;
 
 {$mode ObjFPC}{$H+}

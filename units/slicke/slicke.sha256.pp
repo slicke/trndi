@@ -1,10 +1,10 @@
-(***************************************************************************
- * Minimal SHA-256 implementation for Trndi (PKCE code challenge support)
- *
- * SPDX-License-Identifier: LGPL-3.0-only
- *
- * NOTE: This implementation is intentionally small and self-contained.
- ***************************************************************************)
+(*
+ * slicke.sha256.pas
+ * Minimal SHA-256 implementation (PKCE code-challenge support).
+ * Copyright (c) Björn Lindh
+ * GitHub: https://github.com/slicke/trndi
+ * License: Apache License 2.0
+ *)
 unit slicke.sha256;
 
 {$mode ObjFPC}{$H+}

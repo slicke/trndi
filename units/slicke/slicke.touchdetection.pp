@@ -1,3 +1,10 @@
+(*
+ * slicke.touchdetection.pas
+ * Cross-platform touch-screen detection (Windows/Linux/BSD).
+ * Copyright (c) Björn Lindh
+ * GitHub: https://github.com/slicke/trndi
+ * License: Apache License 2.0
+ *)
 unit slicke.touchdetection;
 
 {$I ../../inc/native.inc}
