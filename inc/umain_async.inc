@@ -637,7 +637,7 @@ begin
         newVersionMessage := Format(RS_NEWVER_PR, [FReleaseName])
       else
         newVersionMessage := Format(RS_NEWVER, [FReleaseName]);
-      case UXDialog(sdsAuto, RS_NEWVER_CAPTION, newVersionMessage,
+      case SlickeDialog(sdsAuto, RS_NEWVER_CAPTION, newVersionMessage,
         [mbYes, mbNo, mbIgnore], mtInformation) of
       mrYes:
         OpenURL(FDownloadURL);

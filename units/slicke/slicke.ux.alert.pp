@@ -18,7 +18,7 @@
 
   The public API centers around:
   - @link(SlickeMessage) for simple, one-button informational messages.
-  - @link(UXDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
+  - @link(SlickeDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
   - @link(SlickeMsg), @link(ExtLog), @link(ExtError), @link(ExtSucc), @link(ExtSuccEx) for rich dialogs with dumps/logs.
   - @link(SlickeInput), @link(ExtPasswordInput), @link(ExtNumericInput), @link(ExtIntInput), @link(SlickeList), @link(ExtTable) for data entry.
   - @link(ExtDatePicker) for date selection with optional min/max constraints.
@@ -249,11 +249,11 @@ end;
   {**
     Size preset for dialog layout.
     @value sdsNormal Standard dialog layout.
-    @value uxdBig Larger layout suitable for touch/TV screens.
+    @value sdsBig Larger layout suitable for touch/TV screens.
     @value sdsAuto Auto-detect (big if touch screen available).
     @value sdsOnForm Render message inline on an existing form (used by @link(SlickeMessage)).
   }
-TSlickeDialogSize = (sdsNormal = 0, uxdBig = 1, sdsAuto = 3, sdsOnForm = 4, uxdMedium = 5);
+TSlickeDialogSize = (sdsNormal = 0, sdsBig = 1, sdsAuto = 3, sdsOnForm = 4, sdsMedium = 5);
 
   {**
     Available dialog buttons for UX helpers.
@@ -296,7 +296,7 @@ procedure SlickeMessage(const title, message: string; const icon: SlickeUXImage 
     @param icon Emoji icon; defaults to @code(uxmtOK).
     @returns Lazarus modal result corresponding to the button clicked.
   }
-function UXDialog(const dialogsize: TSlickeDialogSize;
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 buttons: TSlickeMsgDlgBtns;
 const icon: SlickeUXImage = uxmtOK): TModalResult; overload;
@@ -310,7 +310,7 @@ const icon: SlickeUXImage = uxmtOK): TModalResult; overload;
     @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
     @returns Lazarus modal result corresponding to the button clicked.
   }
-function UXDialog(const dialogsize: TSlickeDialogSize;
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 buttons: TSlickeMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult; overload;
@@ -325,7 +325,7 @@ const mtype: TMsgDlgType): TModalResult; overload;
     @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
     @returns Lazarus modal result corresponding to the button clicked.
   }
-function UXDialog(const dialogsize: TSlickeDialogSize;
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const header, title, message: string;
 buttons: TSlickeMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult; overload;
@@ -702,7 +702,7 @@ var
 langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
   smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
   smbSlickeOpenFile, smbSlickeMinimize, smbSlickeAgree, smbSlickeRead, smbSlickeDefault, smbSlickeSnooze);
-  {** When @true, dialogs created by this unit (@link(UXDialog), @link(SlickeList),
+  {** When @true, dialogs created by this unit (@link(SlickeDialog), @link(SlickeList),
       @link(SlickeInput), etc.) get their own taskbar button. Defaults to @false,
       which keeps them off the taskbar as transient windows of the initiator.
       Set this before opening a dialog. }
@@ -844,12 +844,12 @@ function GeTSlickeDialogSize(dialogsize: TSlickeDialogSize): TSlickeDialogSize;
 begin
   case dialogsize of
   sdsNormal,
-  uxdBig,
-  uxdMedium:
+  sdsBig,
+  sdsMedium:
     result := dialogsize;
   sdsAuto:
     if TrndiNative.HasTouchScreen then
-      result := uxdBig
+      result := sdsBig
     else
       result := sdsNormal;
   else
@@ -986,7 +986,7 @@ var
   RightContentLeft, AvailableWidth: integer;
 begin
   // Minimum width for big mode
-  if (dialogsize = uxdBig) and (AOwner.ClientWidth < MinDialogWidth) then
+  if (dialogsize = sdsBig) and (AOwner.ClientWidth < MinDialogWidth) then
     AOwner.ClientWidth := MinDialogWidth;
 
   RightContentLeft := IconBox.Left + IconBox.Width + Padding;
@@ -1001,9 +1001,9 @@ begin
   TitleLabel.Left := RightContentLeft;
   TitleLabel.Width := AvailableWidth;
   case DialogSize of
-  uxdBig:
+  sdsBig:
     TitleLabel.Font.Size := 24;
-  uxdMedium:
+  sdsMedium:
     TitleLabel.Font.Size := 20;
   end;
   TitleLabel.Top := Padding;
@@ -1020,9 +1020,9 @@ begin
   DescLabel.Left := TitleLabel.Left;
   DescLabel.Width := AvailableWidth;
   case DialogSize of
-  uxdBig:
+  sdsBig:
     DescLabel.Font.Size := 24;
-  uxdMedium:
+  sdsMedium:
     DescLabel.Font.Size := 20;
   end;
   DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
@@ -1319,13 +1319,13 @@ var
 begin
   // --- Ensure minimum dialog width ---
   Dialog.ClientWidth := MinWidthNormal;
-  if (size = uxdBig) and (Dialog.ClientWidth < MinWidthBig) then
+  if (size = sdsBig) and (Dialog.ClientWidth < MinWidthBig) then
     Dialog.ClientWidth := MinWidthBig;
   Dialog.Color := bgcol;
 
   // --- Icon size scaling ---
   currentIconSize := IconSize;
-  if (size = uxdBig) then
+  if (size = sdsBig) then
     currentIconSize := IconSize * 2;
 
   // --- Create & position the icon ---
@@ -1354,9 +1354,9 @@ begin
   TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
   availableWidth := Dialog.ClientWidth - TitleLabel.Left - Padding;
   TitleLabel.Width := availableWidth;
-  if (size = uxdBig) then
+  if (size = sdsBig) then
     TitleLabel.Font.Size := 26;
-  if (size = uxdMedium) then
+  if (size = sdsMedium) then
     TitleLabel.Font.Size := 22;
   TitleLabel.Top := IconBox.Top; // aligns with icon top
   TitleLabel.Caption := ATitle;
@@ -1371,9 +1371,9 @@ begin
   DescLabel.Left := TitleLabel.Left;
   DescLabel.Width := availableWidth;
   case size of
-  uxdBig:
+  sdsBig:
     DescLabel.Font.Size := 24;
-  uxdMedium:
+  sdsMedium:
     DescLabel.Font.Size := 20;
   end;
   DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
@@ -1400,7 +1400,7 @@ begin
   Btn.Caption := ACaption;
   Btn.ModalResult := AModalResult;
   Btn.Width := 80;
-  if size = uxdBig then
+  if size = sdsBig then
   begin
     Btn.Width := Btn.Width * 2;
     Btn.Height := Btn.Height * 2;
@@ -1417,7 +1417,7 @@ procedure CenterButtons(Dialog: TDialogForm; Btn1, Btn2: TWinControl;
 var
   total: integer;
 begin
-  Btn1.Top := AboveBottom + ifthen(size = uxdBig, Padding * 3, Padding * 2);
+  Btn1.Top := AboveBottom + ifthen(size = sdsBig, Padding * 3, Padding * 2);
   Btn2.Top := Btn1.Top;
   total := Btn1.Width + Padding + Btn2.Width;
   Btn1.Left := (Dialog.ClientWidth - total) div 2;
@@ -1483,7 +1483,7 @@ begin
     Edit.Parent := Dialog;
     Edit.Left := DescLabel.Left;
     Edit.Width := DescLabel.Width;
-    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
+    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(size = sdsBig, Padding * 2, Padding);
     Edit.Value := ADefault;
     if AMin <> FLOAT_NONE then
       Edit.minvalue := AMin;
@@ -1508,7 +1508,7 @@ begin
     end
     else
       Edit.DecimalPlaces := 0;
-    if (size = uxdBig) then
+    if (size = sdsBig) then
       Edit.Font.Size := 20;
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk,     false);
@@ -1525,7 +1525,7 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function UXDialog(const dialogsize: TSlickeDialogSize;
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 buttons: TSlickeMsgDlgBtns;
 const icon: SlickeUXImage = uxmtOK): TModalResult;
@@ -1535,16 +1535,16 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function UXDialog(const dialogsize: TSlickeDialogSize;
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 buttons: TSlickeMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult;
 begin
-  Result := UXDialog(dialogsize, sMsgTitle, title, message, buttons, mtype);
+  Result := SlickeDialog(dialogsize, sMsgTitle, title, message, buttons, mtype);
 end;
 
 {** See interface docs for behavior and parameters. }
-function UXDialog(const dialogsize: TSlickeDialogSize;
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const header, title, message: string;
 buttons: TSlickeMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult;
@@ -1598,7 +1598,7 @@ begin
   if (dialogsize = sdsOnForm) and ((sender <> nil) and (sender.FindComponent(onFormName) = nil)) then
   begin
 
-    if (sender <> nil) and (sender.Showing) and (GeTSlickeDialogSize(sdsAuto) = uxdBig) then
+    if (sender <> nil) and (sender.Showing) and (GeTSlickeDialogSize(sdsAuto) = sdsBig) then
     begin
       // On e.g. touch screens display a full screen message
       tp := TPanel.Create(sender); // Create a panel to cover the screen
@@ -1721,7 +1721,7 @@ begin
     Edit.Parent := Dialog;
     Edit.Left := DescLabel.Left;
     Edit.Width := DescLabel.Width;
-    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig), Padding * 2, Padding);
+    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig), Padding * 2, Padding);
     Edit.Text := ADefault;
     if AMasked then
       Edit.EchoMode := emPassword;
@@ -1737,7 +1737,7 @@ begin
     Edit.Font.Color := MacInputTextColor(Edit.Font.Color);
     {$endif}
     {$endif}
-    if (size = uxdBig) then
+    if (size = sdsBig) then
       Edit.Font.Size := 20;
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
@@ -1839,9 +1839,9 @@ begin
     Combo.Font.Color := MacInputTextColor(Combo.Font.Color);
     {$endif}
     {$endif}
-    if (size = uxdBig) then
+    if (size = sdsBig) then
       Combo.Font.Size := 20;
-    Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
+    Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
     Combo.ItemIndex := 0;
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect, mrOk);
@@ -1905,7 +1905,7 @@ begin
     Grid.Left := DescLabel.Left;
     Grid.Width := DescLabel.Width;
     Grid.Top := DescLabel.Top + DescLabel.Height + Padding;
-    Grid.Height := ifthen((size = uxdBig) , GridHeight + 80, GridHeight);
+    Grid.Height := ifthen((size = sdsBig) , GridHeight + 80, GridHeight);
     Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing];
     {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
@@ -1934,7 +1934,7 @@ begin
       Grid.Cells[1, i + 1] := Values[i];
     end;
 
-    if (size = uxdBig) then
+    if (size = sdsBig) then
       Grid.Font.Size := 14;
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
@@ -2000,7 +2000,7 @@ begin
     FontCombo.Parent := Dialog;
     FontCombo.Left := DescLabel.Left;
     FontCombo.Width := DescLabel.Width;
-    FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
+    FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
     FontCombo.Style := csDropDownList;
     FontCombo.Sorted := true;
     {$ifdef X_WIN}
@@ -2027,7 +2027,7 @@ begin
     if FontCombo.Items.Count > 0 then
       FontCombo.ItemIndex := 0;
     
-    if (size = uxdBig) then
+    if (size = sdsBig) then
       FontCombo.Font.Size := 16;
 
     // --- Preview Label ---
@@ -2035,7 +2035,7 @@ begin
     PreviewLabel.Parent := Dialog;
     PreviewLabel.Left := DescLabel.Left;
     PreviewLabel.Width := DescLabel.Width;
-    PreviewLabel.Top := FontCombo.Top + FontCombo.Height + ifthen((size = uxdBig) , Padding * 2, Padding);
+    PreviewLabel.Top := FontCombo.Top + FontCombo.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
     PreviewLabel.Caption := AFontSample;
     PreviewLabel.AutoSize := false;
     PreviewLabel.Alignment := taCenter;
@@ -2043,12 +2043,12 @@ begin
     PreviewLabel.Font.Color := getBaseColor;
 
     case size of
-    uxdBig:
+    sdsBig:
     begin
       PreviewLabel.Height := 80;
       PreviewLabel.Font.Size := 24;
     end;
-    uxdMedium:
+    sdsMedium:
     begin
       PreviewLabel.Height := 65;
       PreviewLabel.Font.Size := 20;
@@ -2130,7 +2130,7 @@ begin
     DatePicker.Parent := Dialog;
     DatePicker.Left := DescLabel.Left;
     DatePicker.Width := DescLabel.Width;
-    DatePicker.Top := DescLabel.Top + DescLabel.Height + ifthen(size = uxdBig, Padding * 2, Padding);
+    DatePicker.Top := DescLabel.Top + DescLabel.Height + ifthen(size = sdsBig, Padding * 2, Padding);
     DatePicker.Date := ADefault;
     
     // Set min/max dates if specified (non-zero values)
@@ -2151,7 +2151,7 @@ begin
     DatePicker.Font.Color := MacInputTextColor(DatePicker.Font.Color);
     {$endif}
     {$endif}
-    if (size = uxdBig) then
+    if (size = sdsBig) then
     begin
       DatePicker.Font.Size := 20;
       DatePicker.Height := DatePicker.Height * 2;
@@ -2330,7 +2330,7 @@ begin
     Dialog.KeyPreview := true;
     Dialog.OnKeyDown := @Dialog.FormKeyDown;
 
-    ProposedWidth := ifthen((size = uxdBig) , 650, 500);
+    ProposedWidth := ifthen((size = sdsBig) , 650, 500);
     if ProposedWidth > 900 then
       ProposedWidth := 900;
     Dialog.ClientWidth := floor(ProposedWidth * hpadding);
@@ -2344,7 +2344,7 @@ begin
     // Drop the icon below the blended macOS title bar.
     IconBox.Top := IconBox.Top + padding;
     {$endif}
-    IconBox.Width := ifthen((size = uxdBig) , 80, 48);
+    IconBox.Width := ifthen((size = sdsBig) , 80, 48);
     IconBox.Height := IconBox.Width;
     {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
     {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
@@ -2374,8 +2374,8 @@ begin
     HtmlViewer.Top := 0;
     HtmlViewer.Width := HtmlPanel.Width;
     HtmlViewer.FixedTypeface := 'Courier New';
-    HtmlViewer.DefaultTypeFace := ifthen((size = uxdBig) , 'Segoe UI', 'Tahoma');
-    HtmlViewer.DefaultFontSize := ifthen((size = uxdBig) , 16, 12);
+    HtmlViewer.DefaultTypeFace := ifthen((size = sdsBig) , 'Segoe UI', 'Tahoma');
+    HtmlViewer.DefaultFontSize := ifthen((size = sdsBig) , 16, 12);
     HtmlViewer.FlagErrors := false;
     HtmlViewer.Color := bgcol;
     HtmlViewer.AllowTextSelect := false;  // Prevent text selection like TLabel
@@ -2406,7 +2406,7 @@ begin
     for mr in buttons do
       Inc(btnCount);
 
-    ButtonActualWidth := ifthen((size = uxdBig) , btnWidth * 2, btnWidth);
+    ButtonActualWidth := ifthen((size = sdsBig) , btnWidth * 2, btnWidth);
     totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
 
@@ -2423,8 +2423,8 @@ begin
       OkButton.Caption := langs[mr];
       dialog.addButton(okbutton.caption);
       OkButton.Width := ButtonActualWidth;
-      OkButton.Height := ifthen((size = uxdBig) , 50, 25);
-      if (size = uxdBig) then
+      OkButton.Height := ifthen((size = sdsBig) , 50, 25);
+      if (size = sdsBig) then
         OkButton.Font.Size := 12;
       OkButton.Left := posX;
       OkButton.Top := HtmlPanel.Top + HtmlPanel.Height + padding;
@@ -2534,9 +2534,9 @@ begin
     IconBox.BorderSpacing.Left := padding;
     {$endif}
     case size of
-    uxdBig:
+    sdsBig:
       IconBox.Width := 100;
-    uxdMedium:
+    sdsMedium:
       IconBox.Width :=75;
     else
       IconBox.Width := 50;
@@ -2573,7 +2573,7 @@ begin
 
     ProposedWidth := IconBox.Width + TextPixelWidth + (padding * 6) + 20;
 
-    if (size = uxdBig) then
+    if (size = sdsBig) then
     begin
       if ProposedWidth < 650 then
         ProposedWidth := 650;
@@ -2596,9 +2596,9 @@ begin
     TempFont := TFont.Create;
     try
       case size of
-      uxdBig:
+      sdsBig:
         TempFont.Size := 24;
-      uxdMedium:
+      sdsMedium:
         TempFont.Size := 20;
       end;
       TempFont.Style := [];
@@ -2610,7 +2610,7 @@ begin
 
     MsgScroll := nil;  // may stay nil when NeededHeight fits without scrolling
 
-    if (size = uxdBig) then
+    if (size = sdsBig) then
     begin
       // BIG-MODE: send desc first
       if NeededHeight > (MaxDialogHeight div 2) then
@@ -2682,7 +2682,7 @@ begin
         TitleLabel.Parent := TextPanel;
         TitleLabel.WordWrap := true;
         TitleLabel.AutoSize := false;
-        if size = uxdMedium then
+        if size = sdsMedium then
           TitleLabel.Font.Size := 20;
         TitleLabel.Font.Style := [fsBold];
         TitleLabel.Caption := title;
@@ -2747,7 +2747,7 @@ begin
     // In non-big mode the labels use absolute positioning (no Align), which
     // macOS Cocoa AutoSize ignores — TopPanel collapses to the icon height and
     // the text is clipped.  Measure the content bottom and pin the height.
-    if size <> uxdBig then
+    if size <> sdsBig then
     begin
       TopPanel.AutoSize := false;
       if Assigned(MsgScroll) then
@@ -2760,7 +2760,7 @@ begin
     LogPanel := TPanel.Create(Dialog);
     LogPanel.Parent := Dialog;
     LogPanel.Align := alBottom;
-    LogPanel.Height := round(ifthen((size = uxdBig) , 100, 50) * scale);
+    LogPanel.Height := round(ifthen((size = sdsBig) , 100, 50) * scale);
     LogPanel.Color := dumpbg;
     LogPanel.BevelOuter := bvNone;
     LogPanel.Visible := logmsg <> '';
@@ -2861,9 +2861,9 @@ begin
     ButtonPanel.Color := bgcol;
 
     case size of
-    uxdBig:
+    sdsBig:
       ButtonActualWidth := btnWidth*2;
-    uxdMedium:
+    sdsMedium:
       ButtonActualWidth := ceil(btnWidth*1.5);
     else
       ButtonActualWidth := btnWidth;
@@ -2897,8 +2897,8 @@ begin
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := '⛶';  // Maximize symbol
 // No dialog add here
-      OkButton.Width := ifthen((size = uxdBig), 50, 30);
-      OkButton.Height := ifthen((size = uxdBig), 50, 25);
+      OkButton.Width := ifthen((size = sdsBig), 50, 30);
+      OkButton.Height := ifthen((size = sdsBig), 50, 25);
       OkButton.Left := padding;
       OkButton.Top := padding;
       OkButton.OnClick := @Dialog.ExpandLogDialog;
@@ -2930,9 +2930,9 @@ begin
       OkButton.ModalResult := UXButtonToModalResult(mr);
       OkButton.Width := ButtonActualWidth;
       case size of
-      uxdBig:
+      sdsBig:
         OkButton.Height := OkButton.Height * 2;
-      uxdMedium:
+      sdsMedium:
         OkButton.Height := ceil(OkButton.Height * 1.5);
       end;
       OkButton.Top := padding;
@@ -3264,7 +3264,7 @@ begin
   {$ifdef X_MAC}
   // Make the title bar blend into the dialog: transparent titlebar + full-size
   // content view so there's no visible divider between bar and content. Hide
-  // the traffic-light buttons too — UXDialog answers come from the on-screen
+  // the traffic-light buttons too — SlickeDialog answers come from the on-screen
   // buttons, so the red X would be an ambiguous second exit path.
   if HandleAllocated then
   try

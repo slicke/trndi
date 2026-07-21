@@ -18,7 +18,7 @@ function ExtDatePicker(
 
 ## Parameters
 
-- **dialogsize**: Layout preset (`sdsNormal`, `uxdBig`, `sdsAuto`, etc.)
+- **dialogsize**: Layout preset (`sdsNormal`, `sdsBig`, `sdsAuto`, etc.)
 - **ACaption**: Window caption
 - **ATitle**: Title text displayed in the dialog
 - **ADesc**: Description text
@@ -95,7 +95,7 @@ var
 begin
   // Only allow dates in the past
   selectedDate := ExtDatePicker(
-    uxdBig,                    // Use big layout for touch screens
+    sdsBig,                    // Use big layout for touch screens
     'Birth Date',
     'Enter Your Birth Date',
     'Select your date of birth',
@@ -113,7 +113,7 @@ end;
 ## Features
 
 - **Dark Mode Support**: Automatically adapts to Windows dark mode
-- **Touch-Friendly**: Use `uxdBig` or `sdsAuto` for touch screen layouts
+- **Touch-Friendly**: Use `sdsBig` or `sdsAuto` for touch screen layouts
 - **Min/Max Date Constraints**: Optional minimum and maximum date limits
 - **Keyboard Navigation**: Supports Enter to confirm, Escape to cancel
 - **Cross-Platform**: Works on Windows, Linux, and other platforms supported by Lazarus

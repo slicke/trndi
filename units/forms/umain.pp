@@ -1231,7 +1231,7 @@ begin
   's', 'S':
     speakReading;
   'R', 'r':
-    if slicke.UX.alert.UXDialog(sdsAuto, RS_REFRESH_PROMPT, RS_FORCE_REFRESH,
+    if slicke.UX.alert.SlickeDialog(sdsAuto, RS_REFRESH_PROMPT, RS_FORCE_REFRESH,
       [mbYes, mbNo]) = mrYes then
       miForce.Click;
   'I', 'i':
@@ -1310,7 +1310,7 @@ begin
   if not firstboot then
     if self.Showing then
     begin
-      mr := UXDialog(sdsAuto, RS_QUIT_MINIMIZE_TITLE, RS_QUIT_MINIMIZE,
+      mr := SlickeDialog(sdsAuto, RS_QUIT_MINIMIZE_TITLE, RS_QUIT_MINIMIZE,
         [mbClose, mbSlickeMinimize, mbCancel]);
       case mr of
       mrClose:
@@ -1339,7 +1339,7 @@ begin
   if not firstboot then
     if self.Showing then
     begin
-      mr := UXDialog(sdsAuto, RS_QUIT_MINIMIZE_TITLE, RS_QUIT_MINIMIZE_WIN,
+      mr := SlickeDialog(sdsAuto, RS_QUIT_MINIMIZE_TITLE, RS_QUIT_MINIMIZE_WIN,
         [mbClose, mbSlickeMinimize, mbCancel]);
       if mr = mrCancel then
       begin
@@ -1359,7 +1359,7 @@ begin
   CloseAction := caFree;
   {$else}
   if not firstboot then
-    if UXDialog(sdsAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
+    if SlickeDialog(sdsAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
     begin
       FShuttingDown := false;
       CloseAction := caNone;

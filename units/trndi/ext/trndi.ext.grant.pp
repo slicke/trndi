@@ -123,7 +123,7 @@ begin
     sLineBreak +
     'Allow this extension to load with the requested permissions?';
 
-  res := UXDialog(sdsAuto, headLine, title, prompt, [mbYes, mbNo],
+  res := SlickeDialog(sdsAuto, headLine, title, prompt, [mbYes, mbNo],
     mtConfirmation);
 
   if res = mrYes then
