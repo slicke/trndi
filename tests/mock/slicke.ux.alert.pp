@@ -99,6 +99,11 @@ function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message:
 function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 function SlickeDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 
+var
+  // When @true the real unit gives dialogs their own taskbar button; headless
+  // stub keeps the flag so callers (umain_init.inc) compile unchanged.
+  SlickeDialogsInTaskbar: boolean = false;
+
 implementation
 
 procedure SlickeMessage(const dialogsize: TSlickeDialogSize; const title, message: string; const icon: SlickeUXImage = 0; sender: TForm = nil);
