@@ -702,6 +702,11 @@ var
 langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
   smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
   smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault, smbuxSnooze);
+  {** When @true, dialogs created by this unit (@link(UXDialog), @link(ExtList),
+      @link(ExtInput), etc.) get their own taskbar button. Defaults to @false,
+      which keeps them off the taskbar as transient windows of the initiator.
+      Set this before opening a dialog. }
+  SlickeDialogsInTaskbar: boolean = false;
 
 implementation
 {$ifdef X_WIN}
@@ -3218,6 +3223,12 @@ var
   CocoaWin: NSWindow;
 {$endif}
 begin
+  // Decide taskbar presence before the handle exists so it is honoured in
+  // CreateParams on every widgetset. Opt-in via SlickeDialogsInTaskbar.
+  if SlickeDialogsInTaskbar then
+    ShowInTaskBar := stAlways
+  else
+    ShowInTaskBar := stDefault;
   inherited CreateWnd;
   hasHTML := false;
   KeyPreview := true;
@@ -3277,6 +3288,12 @@ const
 var
   Value: integer;
 begin
+  // Decide taskbar presence before the handle exists so CreateParams applies
+  // the correct WS_EX_APPWINDOW state. Opt-in via SlickeDialogsInTaskbar.
+  if SlickeDialogsInTaskbar then
+    ShowInTaskBar := stAlways
+  else
+    ShowInTaskBar := stDefault;
   inherited CreateWnd;
   hasHTML := false;
   if HandleAllocated then

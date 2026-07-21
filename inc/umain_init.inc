@@ -347,8 +347,10 @@ begin
         sortHelper.Free;
       end;
     end;
+    SlickeDialogsInTaskbar := true;
     i := ExtList(uxdAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, // Show a prompt to choose user
       RS_MULTIUSER_BOX, userList, true);
+    SlickeDialogsInTaskbar := false;
 
     if i > -1 then
     begin // We chose a user
