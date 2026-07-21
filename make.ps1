@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|assets|fetch-mormot2|install-mormot2|check-mormot2|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|assets|fetch-mormot2|install-mormot2|check-mormot2|bootstrap|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -335,6 +335,24 @@ switch ($firstArg) {
         Write-Host "mORMot2 and QuickJS static artifacts found." -ForegroundColor Green
         exit 0
     }
+    "bootstrap" {
+        # Opt-in one-shot setup: fetch + install mORMot2 if it isn't already
+        # cloned, then verify. Does not run as part of the default build — that
+        # still fails fast with instructions, since fetching is a network
+        # operation and 'fetch-mormot2' refuses to touch an existing checkout.
+        $lpk = 'externals\mORMot2\packages\lazarus\mormot2.lpk'
+        if (-not (Test-Path $lpk)) {
+            Write-Host "Bootstrapping mORMot2 dependency..." -ForegroundColor Cyan
+            & $PSCommandPath 'fetch-mormot2'
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        } else {
+            Write-Host "externals\mORMot2 already present; skipping fetch (remove it to re-fetch)" -ForegroundColor Cyan
+        }
+        & $PSCommandPath 'install-mormot2'
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & $PSCommandPath 'check-mormot2'
+        exit $LASTEXITCODE
+    }
     "help" {
         Write-Host "Trndi make.ps1" -ForegroundColor Cyan
         Write-Host "  ./make.ps1 [target] (no target -> release)" -ForegroundColor Cyan
@@ -350,6 +368,7 @@ switch ($firstArg) {
         Write-Host "  fetch-mormot2    Clone the pinned mORMot2 commit into externals\mORMot2 and extract QuickJS statics into externals\mORMot2\static"
         Write-Host "  install-mormot2  Compile the fetched mormot2.lpk so lazbuild can resolve the mormot2 dependency"
         Write-Host "  check-mormot2    Verify mORMot2 (registered .lpk, OPM, externals or .\static) and QuickJS statics"
+        Write-Host "  bootstrap        Fetch and install mORMot2 if not already present, then verify (fetch-mormot2 + install-mormot2 + check-mormot2)"
         Write-Host "  clean            Remove build artifacts (*.o, *.ppu, executables, ...); use -n or --dry-run to preview"
         Write-Host "  help             Show this help"
         Write-Host "Notes:" -ForegroundColor Cyan

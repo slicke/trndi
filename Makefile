@@ -111,7 +111,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names build-ignore ignore fetch-mormot2 install-mormot2 check-mormot2 assets check-assets
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names build-ignore ignore fetch-mormot2 install-mormot2 check-mormot2 bootstrap assets check-assets
 
 all: release
 
@@ -134,6 +134,7 @@ help:
 	@echo "  fetch-mormot2  Clone mORMot2 into externals/mORMot2 and extract QuickJS static files into externals/mORMot2/static (requires git and 7z)"
 	@echo "  install-mormot2  Compile externals/mORMot2's Lazarus package so lazbuild can resolve the mormot2 dependency (run after fetch-mormot2)"
 	@echo "  check-mormot2  Verify mORMot2 presence and QuickJS static artifacts; exits non-zero on failure"
+	@echo "  bootstrap  Fetch and install mORMot2 if not already present, then verify (fetch-mormot2 + install-mormot2 + check-mormot2)"
 	@echo "  assets     Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
 	@echo "  check-assets  Fail if a committed .lrs is out of sync with its sources (CI guard)"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
@@ -229,6 +230,20 @@ install-mormot2:
 	fi
 	@echo "Compiling mORMot2 package (registers it with Lazarus/lazbuild)"
 	@$(LAZBUILD) externals/mORMot2/packages/lazarus/mormot2.lpk
+
+# Opt-in one-shot setup: fetch + install mORMot2 if it isn't already cloned, then
+# verify. Does not run as part of 'all'/'build' — those still fail fast with
+# instructions, since fetching is a network operation and 'fetch-mormot2' refuses
+# to touch an existing externals/mORMot2 checkout.
+bootstrap:
+	@echo "Bootstrapping mORMot2 dependency..."
+	@if [ ! -f externals/mORMot2/packages/lazarus/mormot2.lpk ]; then \
+	  $(MAKE) fetch-mormot2; \
+	else \
+	  echo "externals/mORMot2 already present; skipping fetch (remove it to re-fetch)"; \
+	fi
+	@$(MAKE) install-mormot2
+	@$(MAKE) check-mormot2
 
 check:
 ifeq ($(OS),Windows_NT)
