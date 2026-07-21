@@ -357,8 +357,11 @@ begin
       native.SetRootSetting('users.active', username);
       userNick := native.GetSettingEx('user.nick', username); // Load the user's nickname
 
-      fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
       multinick := userNick; // Set the multi user nickname
+      // On platforms with a native title-bar badge (Windows) the name rides in
+      // that badge — shown from FormShow — so skip the caption-text prefix.
+      if not native.SupportsUserBadge then
+        fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
     end
     else
     begin // Standard user
@@ -366,7 +369,9 @@ begin
       native.SetRootSetting('users.active', username);
       userNick := native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT); // Get the standard user's nick
       multinick := userNick; // Set the multi user nickname
-      fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
+      // See above: the badge platforms carry the name in the title-bar badge.
+      if not native.SupportsUserBadge then
+        fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
     end;
 
     multi := true; // Enable multi user support

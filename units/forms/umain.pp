@@ -895,6 +895,11 @@ private
   procedure InitializeUIComponents;
   procedure InitializeSplashScreen;
   procedure LoadUserProfile;
+  {** (Re)create the native multi-user title-bar badge (Windows) from the
+      current nickname and user colour. No-op where badges are unsupported. }
+  procedure RefreshUserBadge;
+  {** Click handler for the title-bar badge — opens Settings. }
+  procedure UserBadgeClicked;
   procedure CheckAndAcceptLicense;
   function InitializeAPI: boolean;
   {** Check GitHub releases for newer versions of Trndi and optionally notify
@@ -1759,6 +1764,11 @@ begin
   // form's window handle is allocated (Windows path subclasses its WndProc).
   if Assigned(native) then
     native.RegisterWakeCallback(@OnSystemWake);
+
+  // Show the multi-user name as a native title-bar badge (Windows). Done here
+  // so the handle is allocated and the badge's owner-subclass chains on top of
+  // the wake hook registered just above.
+  RefreshUserBadge;
 end;
 {$ifdef DARWIN}
 procedure TfBG.ToggleFullscreenMac;

@@ -409,6 +409,18 @@ class var touchOverride: TTrndiBool;
     const ReadingTime: TDateTime; FreshMinutes: integer); virtual;
     {** Set native window titlebar colors if supported. }
   class function SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean; virtual;
+    {** True when the platform renders the active multi-user name as a native
+        title-bar badge in place of the "[name] Trndi" caption prefix.
+        Base: @false. }
+  class function SupportsUserBadge: boolean; virtual;
+    {** Show a clickable title-bar badge carrying @param(nick), painted in
+        @param(bg)/@param(textColor). @param(onClick) fires on the main thread
+        when the badge is clicked. @returns(@true when the badge was shown.)
+        Base: no-op returning @false. }
+  function ShowUserBadge(const nick: string; bg, textColor: TColor;
+    const onClick: TTrndiWakeCallback): boolean; virtual;
+    {** Remove any active user badge. Base: no-op. }
+  procedure HideUserBadge; virtual;
     {** Play an audio file using native facilities (safe file check included).
         Default base implementation is a no-op; platform units override to spawn
         the appropriate player (mplay32/aplay/afplay). }
@@ -1696,6 +1708,22 @@ end;
 class function TTrndiNativeBase.SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean;
 begin
   Result := false;
+end;
+
+class function TTrndiNativeBase.SupportsUserBadge: boolean;
+begin
+  Result := false;
+end;
+
+function TTrndiNativeBase.ShowUserBadge(const nick: string; bg, textColor: TColor;
+const onClick: TTrndiWakeCallback): boolean;
+begin
+  Result := false;
+end;
+
+procedure TTrndiNativeBase.HideUserBadge;
+begin
+  // No title-bar badge support on the base class.
 end;
 
 initialization
