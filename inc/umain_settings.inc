@@ -200,6 +200,10 @@ begin
   if Assigned(fFloat) then
     UpdateFloatingWindow;
 
+  // Repaint the title-bar user badge so a toggled dark/light theme updates the
+  // fallback chip colour (no-op when unsupported or not in multi-user mode).
+  RefreshUserBadge;
+
   Self.Invalidate;
 end;
 

@@ -79,6 +79,13 @@ public
     {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
         @returns(True if both attributes are set successfully) }
   class function SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean; override;
+    {** @true — the multi-user name is shown as a layered title-bar badge. }
+  class function SupportsUserBadge: boolean; override;
+    {** Create/refresh a clickable layered badge on the title bar. See base. }
+  function ShowUserBadge(const nick: string; bg, textColor: TColor;
+    const onClick: TTrndiWakeCallback): boolean; override;
+    {** Destroy the layered title-bar badge if present. }
+  procedure HideUserBadge; override;
     {** Draw a badge with @param(Value) on the application icon.
         @param(BadgeColor Color of the badge circle/rounded rect)
         @param(badge_size_ratio Badge diameter relative to icon size)
@@ -658,6 +665,10 @@ end;
 
 {$ifdef Windows}
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
+function DwmGetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
+function UpdateLayeredWindow(hWnd: HWND; hdcDst: HDC; pptDst: Pointer;
+  psize: Pointer; hdcSrc: HDC; pptSrc: Pointer; crKey: DWORD;
+  pblend: Pointer; dwFlags: DWORD): BOOL; stdcall; external 'user32.dll';
 {$endif}
 
 { DWM attribute constants used for caption and text colors, and dark mode }
@@ -3361,6 +3372,342 @@ begin
   inherited UnregisterWakeCallback;
 end;
 
+{==============================================================================
+  Multi-user title-bar badge
+  --------------------------
+  Renders the active user's nickname as a small clickable "pill" overlaid on
+  the top-right of the native title bar, replacing the "[name] Trndi" caption
+  prefix used on other platforms. The pill is a layered (per-pixel alpha) popup
+  window owned by the main form; the owner's WndProc is subclassed so the pill
+  tracks move/resize/maximize and DPI changes. A click opens Settings via the
+  supplied callback. Painting reuses the pf32bit-DIB + manual-alpha technique
+  from SetBadge, pushed to the window with UpdateLayeredWindow.
+ ==============================================================================}
+const
+  BADGE_CLASS_NAME         = 'TrndiUserBadgeWnd';
+  DWMWA_CAPTION_BTN_BOUNDS = 5;      // DWMWA_CAPTION_BUTTON_BOUNDS
+  BADGE_GAP                = 8;      // px between the pill and the caption buttons
+  WM_DPICHANGED_MSG        = $02E0;
+
+var
+  gBadgeHWnd: HWND = 0;
+  gBadgeOwner: HWND = 0;
+  gBadgeOwnerOldProc: PtrInt = 0;
+  gBadgeClassReg: boolean = false;
+  gBadgeBridge: TWakeBridge = nil;
+  gBadgeW: integer = 0;
+  gBadgeH: integer = 0;
+  gBadgeNick: string = '';
+  gBadgeBg: TColor = clBlack;
+  gBadgeText: TColor = clWhite;
+
+// True when device pixel (px,py) lies inside a w×h rounded rectangle with the
+// given corner radius. Mirrors the corner test used by SetBadge.FixBadgeAlpha.
+function BadgePixelInside(px, py, w, h, r: integer): boolean;
+begin
+  Result := true;
+  if (px < r) and (py < r) then
+    Result := Sqr(px - r) + Sqr(py - r) <= Sqr(r)
+  else if (px >= w - r) and (py < r) then
+    Result := Sqr(px - (w - r - 1)) + Sqr(py - r) <= Sqr(r)
+  else if (px < r) and (py >= h - r) then
+    Result := Sqr(px - r) + Sqr(py - (h - r - 1)) <= Sqr(r)
+  else if (px >= w - r) and (py >= h - r) then
+    Result := Sqr(px - (w - r - 1)) + Sqr(py - (h - r - 1)) <= Sqr(r);
+end;
+
+procedure DestroyBadgeWindow;
+begin
+  if gBadgeHWnd <> 0 then
+  begin
+    DestroyWindow(gBadgeHWnd);
+    gBadgeHWnd := 0;
+  end;
+end;
+
+// Screen-space caption geometry of the owner: rightX = left edge of the
+// caption buttons, [capTop..capBottom] = the caption's vertical extent. Uses
+// the DWM caption-button bounds when available (works for normal and tool
+// windows), else a style-aware system-metrics fallback. The main form is a
+// bsSizeToolWin (tool window) — small caption, single close button.
+function BadgeCaptionGeom(out rightX, capTop, capBottom: integer): boolean;
+var
+  wr, btn: TRect;
+  exStyle: PtrInt;
+  capH: integer;
+begin
+  Result := false;
+  if (gBadgeOwner = 0) or (not GetWindowRect(gBadgeOwner, wr)) then
+    Exit;
+  if HrSucceeded(DwmGetWindowAttribute(gBadgeOwner, DWMWA_CAPTION_BTN_BOUNDS,
+    @btn, SizeOf(btn))) and (btn.Right > btn.Left) and (btn.Bottom > btn.Top) then
+  begin
+    // btn is window-relative; convert to screen coordinates.
+    rightX    := wr.Left + btn.Left;
+    capTop    := wr.Top + btn.Top;
+    capBottom := wr.Top + btn.Bottom;
+  end
+  else
+  begin
+    exStyle := GetWindowLongPtr(gBadgeOwner, GWL_EXSTYLE);
+    if (exStyle and WS_EX_TOOLWINDOW) <> 0 then
+    begin
+      capH   := GetSystemMetrics(SM_CYSMCAPTION);
+      rightX := wr.Right - GetSystemMetrics(SM_CXSIZE) - GetSystemMetrics(SM_CXFRAME);
+    end
+    else
+    begin
+      capH   := GetSystemMetrics(SM_CYCAPTION);
+      rightX := wr.Right - GetSystemMetrics(SM_CXSIZE) * 3 - GetSystemMetrics(SM_CXFRAME);
+    end;
+    capTop    := wr.Top + GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER);
+    capBottom := capTop + capH;
+  end;
+  Result := true;
+end;
+
+// Move the pill just left of the caption buttons, vertically centred.
+procedure RepositionBadge;
+var
+  rightX, capTop, capBottom, x, y: integer;
+begin
+  if (gBadgeHWnd = 0) or (gBadgeOwner = 0) then
+    Exit;
+  if not BadgeCaptionGeom(rightX, capTop, capBottom) then
+    Exit;
+  x := rightX - gBadgeW - BADGE_GAP;
+  y := capTop + ((capBottom - capTop) - gBadgeH) div 2;
+  SetWindowPos(gBadgeHWnd, 0, x, y, 0, 0,
+    SWP_NOSIZE or SWP_NOZORDER or SWP_NOACTIVATE);
+end;
+
+// Paint the pill into a 32-bit DIB and push it to the layered window. Sizes
+// gBadgeW/gBadgeH from the current caption height and the nick text width.
+procedure PaintBadge;
+const
+  PAD_X = 12;
+var
+  bmp, measure: Graphics.TBitmap;
+  txtW, txtH, w, h, radius, capH, fontH, yy, xx: integer;
+  rightX, capTop, capBottom: integer;
+  screenDC: HDC;
+  blend: BLENDFUNCTION;
+  ptSrc: TPoint;
+  sz: TSize;
+  pRow: PByte;
+begin
+  if gBadgeHWnd = 0 then
+    Exit;
+
+  // Pill height derives from the caption height (small for the tool window).
+  if BadgeCaptionGeom(rightX, capTop, capBottom) then
+    capH := capBottom - capTop
+  else
+    capH := GetSystemMetrics(SM_CYSMCAPTION);
+  h := Max(14, capH - 4);
+  fontH := Max(9, h - 6);
+
+  measure := Graphics.TBitmap.Create;
+  try
+    measure.SetSize(1, 1);
+    measure.Canvas.Font.Name := 'Segoe UI';
+    measure.Canvas.Font.Height := -fontH;
+    measure.Canvas.Font.Style := [fsBold];
+    txtW := measure.Canvas.TextWidth(gBadgeNick);
+    txtH := measure.Canvas.TextHeight(gBadgeNick);
+  finally
+    measure.Free;
+  end;
+
+  w := txtW + PAD_X * 2;
+  radius := h div 2;
+  gBadgeW := w;
+  gBadgeH := h;
+
+  bmp := Graphics.TBitmap.Create;
+  try
+    bmp.PixelFormat := pf32bit;
+    bmp.SetSize(w, h);
+    // Start fully transparent (premultiplied-alpha safe: all zero).
+    for yy := 0 to h - 1 do
+      FillDWord(PByte(bmp.ScanLine[yy])^, w, 0);
+
+    // Pill body (GDI leaves the alpha byte untouched).
+    bmp.Canvas.Pen.Style := psSolid;
+    bmp.Canvas.Pen.Color := gBadgeBg;
+    bmp.Canvas.Brush.Style := bsSolid;
+    bmp.Canvas.Brush.Color := gBadgeBg;
+    bmp.Canvas.RoundRect(0, 0, w, h, radius * 2, radius * 2);
+
+    // Name, centred.
+    bmp.Canvas.Font.Name := 'Segoe UI';
+    bmp.Canvas.Font.Height := -fontH;
+    bmp.Canvas.Font.Style := [fsBold];
+    bmp.Canvas.Font.Color := gBadgeText;
+    bmp.Canvas.Brush.Style := bsClear;
+    bmp.Canvas.TextOut((w - txtW) div 2, (h - txtH) div 2, gBadgeNick);
+
+    // Make every pixel inside the rounded shape opaque; corners stay clear.
+    GdiFlush;
+    for yy := 0 to h - 1 do
+    begin
+      pRow := PByte(bmp.ScanLine[yy]);
+      for xx := 0 to w - 1 do
+        if BadgePixelInside(xx, yy, w, h, radius) then
+          (pRow + xx * 4 + 3)^ := 255;
+    end;
+
+    // Blit to the layered window (keeps current position; size follows psize).
+    // Source directly from the bitmap's own canvas DC — the pf32bit DIB is
+    // already selected there; selecting bmp.Handle into a second DC would fail
+    // (a bitmap cannot be selected into two DCs) and paint nothing.
+    GdiFlush;
+    screenDC := GetDC(0);
+    try
+      blend.BlendOp := AC_SRC_OVER;
+      blend.BlendFlags := 0;
+      blend.SourceConstantAlpha := 255;
+      blend.AlphaFormat := AC_SRC_ALPHA;
+      sz.cx := w;
+      sz.cy := h;
+      ptSrc.x := 0;
+      ptSrc.y := 0;
+      UpdateLayeredWindow(gBadgeHWnd, screenDC, nil, @sz, bmp.Canvas.Handle,
+        @ptSrc, 0, @blend, ULW_ALPHA);
+    finally
+      ReleaseDC(0, screenDC);
+    end;
+  finally
+    bmp.Free;
+  end;
+end;
+
+// WndProc of the pill window: handle clicks and the hand cursor.
+function BadgeWndProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM;
+  lParam: LPARAM): LRESULT; stdcall;
+begin
+  case uMsg of
+    WM_LBUTTONUP:
+    begin
+      if Assigned(gBadgeBridge) and Assigned(gBadgeBridge.Callback)
+        and (not gBadgeBridge.Pending) then
+      begin
+        gBadgeBridge.Pending := true;
+        Application.QueueAsyncCall(@gBadgeBridge.Fire, 0);
+      end;
+      Exit(0);
+    end;
+    WM_SETCURSOR:
+    begin
+      Windows.SetCursor(Windows.LoadCursor(0, IDC_HAND));
+      Exit(1);
+    end;
+    WM_NCHITTEST:
+      Exit(HTCLIENT);
+  end;
+  Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
+end;
+
+procedure EnsureBadgeClass;
+var
+  wc: WNDCLASS;
+begin
+  if gBadgeClassReg then
+    Exit;
+  FillChar(wc, SizeOf(wc), 0);
+  wc.lpfnWndProc := WNDPROC(@BadgeWndProc);
+  wc.hInstance := GetModuleHandle(nil);
+  wc.hCursor := LoadCursor(0, IDC_HAND);
+  wc.lpszClassName := BADGE_CLASS_NAME;
+  RegisterClass(wc);
+  gBadgeClassReg := true;
+end;
+
+// Subclass of the owner form: reposition the pill on move/resize, repaint on
+// DPI change, and tear the pill down with the window.
+function BadgeOwnerWndProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM;
+  lParam: LPARAM): LRESULT; stdcall;
+begin
+  Result := CallWindowProc(Windows.WNDPROC(gBadgeOwnerOldProc), hWnd, uMsg,
+    wParam, lParam);
+  case uMsg of
+    WM_WINDOWPOSCHANGED:
+      if gBadgeHWnd <> 0 then
+        RepositionBadge;
+    WM_DPICHANGED_MSG:
+      if gBadgeHWnd <> 0 then
+      begin
+        PaintBadge;
+        RepositionBadge;
+      end;
+    WM_NCDESTROY:
+    begin
+      if (gBadgeOwner <> 0) and (gBadgeOwnerOldProc <> 0) then
+        SetWindowLongPtr(gBadgeOwner, GWL_WNDPROC, gBadgeOwnerOldProc);
+      DestroyBadgeWindow;
+      gBadgeOwner := 0;
+      gBadgeOwnerOldProc := 0;
+    end;
+  end;
+end;
+
+class function TTrndiNativeWindows.SupportsUserBadge: boolean;
+begin
+  Result := true;
+end;
+
+function TTrndiNativeWindows.ShowUserBadge(const nick: string;
+bg, textColor: TColor; const onClick: TTrndiWakeCallback): boolean;
+var
+  owner: HWND;
+begin
+  Result := false;
+  if (nick = '') or (Application = nil) or (Application.MainForm = nil)
+    or (not Application.MainForm.HandleAllocated) then
+    Exit;
+  owner := Application.MainForm.Handle;
+
+  gBadgeNick := nick;
+  gBadgeBg := bg;
+  gBadgeText := textColor;
+
+  EnsureBadgeClass;
+  gBadgeOwner := owner;
+
+  if gBadgeHWnd = 0 then
+  begin
+    gBadgeHWnd := CreateWindowEx(
+      WS_EX_LAYERED or WS_EX_NOACTIVATE or WS_EX_TOOLWINDOW,
+      BADGE_CLASS_NAME, nil, WS_POPUP,
+      0, 0, 16, 16, owner, 0, GetModuleHandle(nil), nil);
+    if gBadgeHWnd = 0 then
+      Exit;
+  end;
+
+  if gBadgeBridge = nil then
+    gBadgeBridge := TWakeBridge.Create;
+  gBadgeBridge.Callback := onClick;
+  gBadgeBridge.Pending := false;
+
+  PaintBadge;
+
+  // Subclass the owner once so the pill follows the window.
+  if gBadgeOwnerOldProc = 0 then
+    gBadgeOwnerOldProc := SetWindowLongPtr(owner, GWL_WNDPROC,
+      PtrInt(@BadgeOwnerWndProc));
+
+  RepositionBadge;
+  ShowWindow(gBadgeHWnd, SW_SHOWNOACTIVATE);
+  Result := true;
+end;
+
+procedure TTrndiNativeWindows.HideUserBadge;
+begin
+  // Destroy the pill but keep the (harmless) owner subclass; it is removed on
+  // the owner's WM_NCDESTROY. Leaving it avoids WndProc-chain corruption.
+  DestroyBadgeWindow;
+end;
+
 finalization
   try
     // Ensure the background speech worker is cleanly stopped on shutdown so
@@ -3373,7 +3720,12 @@ finalization
     UnhookWakeWindow;
   except
   end;
+  try
+    DestroyBadgeWindow;
+  except
+  end;
   FreeAndNil(gWakeBridge);
+  FreeAndNil(gBadgeBridge);
   FreeAndNil(gOriginalAppIcon);
   if gLastBadgeIcon <> 0 then
   begin

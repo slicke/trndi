@@ -1715,6 +1715,38 @@ begin
     IfThen(IsLightColor(fBG.color), clBlack, clWhite));
 end;
 
+procedure TfBG.UserBadgeClicked;
+begin
+  miSettingsClick(Self);
+end;
+
+procedure TfBG.RefreshUserBadge;
+{$ifdef X_WIN}
+var
+  bg, txt: TColor;
+{$endif}
+begin
+{$ifdef X_WIN}
+  if not (multi and native.SupportsUserBadge) then
+    Exit;
+
+  // The pill wears the user's colour when set; otherwise a subtle theme-aware
+  // chip so the name stays legible on the default caption.
+  if pnMultiUser.Color <> clBlack then
+    bg := pnMultiUser.Color
+  else if native.isDarkMode then
+    bg := RGBToColor(64, 64, 68)
+  else
+    bg := RGBToColor(228, 228, 231);
+  txt := IfThen(IsLightColor(bg), clBlack, clWhite);
+
+  if not native.ShowUserBadge(multinick, bg, txt, @UserBadgeClicked) then
+    // Badge could not be created — fall back to the caption-text prefix once.
+    if Pos('[', Caption) = 0 then
+      Caption := Format(RS_USER_CAPTION, [multinick, Caption]);
+{$endif}
+end;
+
 function TfBG.CalculateReadingsHash(const Readings: array of BGReading): cardinal;
 var
   i: integer;
