@@ -1670,11 +1670,23 @@ begin
 end;
 
 function TfBG.setColorMode(bg: tColor; const nocolor: boolean = false): boolean;
+var
+  hasBadge: boolean;
 begin
   if not nocolor then
     fBG.Color := bg;
 
-  if not multi
+  // On badge platforms (Windows) the active user's identity is shown by the
+  // title-bar badge, so multi-user mode is normalised to the single-user rule:
+  // the title bar follows the "colour with glucose colour" preference instead
+  // of being forced to the user colour. The main-form colour bar is redundant
+  // next to the badge, so hide it (the borderless float window keeps its bar,
+  // mirrored from userColorBar).
+  hasBadge := multi and native.SupportsUserBadge;
+  if hasBadge then
+    pnMultiUser.Visible := false;
+
+  if (not multi or hasBadge)
     and titlecolor
     and UseRangeColor then
   begin
@@ -1688,13 +1700,14 @@ begin
       IfThen(IsLightColor(pnOffRange.Color), clBlack, clWhite)) then
       Exit(true);
 
-  if customTitleBar and (pnMultiUser.Color <> clBlack) then
+  // Without a badge, tint the title bar with the user's colour (and drop the
+  // now-redundant left colour bar). With a badge the colour is on the badge,
+  // so the title bar is left to the glucose/off-range rules above.
+  if (not hasBadge)
+    and customTitleBar and (pnMultiUser.Color <> clBlack) then
     if native.SetTitleColor(handle, pnMultiUser.Color,
       IfThen(IsLightColor(pnMultiUser.Color), clBlack, clWhite)) then
     begin
-      // The title bar now carries the user's colour, so the left-hand colour
-      // bar is redundant on the main form. The float window keeps its bar
-      // (mirrored from userColorBar) — it is borderless and has no title.
       pnMultiUser.Visible := false;
       Exit(true);
     end;
@@ -1738,6 +1751,9 @@ begin
     bg := RGBToColor(64, 64, 68)
   else
     bg := RGBToColor(228, 228, 231);
+  // A small pill needs maximum legibility, so the text is straight black/white
+  // contrast (same rule as the title-bar text). A same-hue tint washes out on
+  // light account colours such as yellow.
   txt := IfThen(IsLightColor(bg), clBlack, clWhite);
 
   if not native.ShowUserBadge(multinick, bg, txt, @UserBadgeClicked) then
