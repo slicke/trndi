@@ -45,7 +45,7 @@
 ![Windows](doc/img/img_win.png)
 
 #### Fedora Linux (KDE)
-![Linux](doc/img/img_lin.png)
+![Linux](doc/img/img_lin_range.png)
 
 #### macOS
 ![macOS](doc/img/img_macos.png)
