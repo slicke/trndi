@@ -1,3 +1,10 @@
+(*
+ * slicke.wintools.d2d.pas
+ * Direct2D/DirectWrite interop (stub).
+ * Copyright (c) Björn Lindh
+ * GitHub: https://github.com/slicke/trndi
+ * License: Apache License 2.0
+ *)
 unit slicke.wintools.d2d;
 
 interface

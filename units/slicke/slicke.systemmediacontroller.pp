@@ -1,13 +1,10 @@
-{==============================================================================
-  Unit: SystemMediaController
-
-  Cross-platform system media controller with Deezer support
-  Uses array approach for player management
-
-  License: LGPLv3+
-
-  By: Björn Lindh and Claude AI
-==============================================================================}
+(*
+ * slicke.systemmediacontroller.pas
+ * Cross-platform system media controller (array-based player management).
+ * Copyright (c) Björn Lindh
+ * GitHub: https://github.com/slicke/trndi
+ * License: Apache License 2.0
+ *)
 
 unit slicke.systemmediacontroller;
 
