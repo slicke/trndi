@@ -91,6 +91,8 @@ You need to start Trndi multiple times, each instance lets you choose a user. Ju
 # Usage
 ⚠️ Right-click on the reading on the screen to access the menu, this is how you control Trndi.
 
+You can see the [Common settings guide](/guides/COMMON.md) for information how to configure Trndi with the most common settings.
+
 # Accessibility
 Trndi includes built‑in accessibility features to make readings easier to see and hear:
 
