@@ -248,10 +248,16 @@ switch ($firstArg) {
     }
     "fetch-mormot2" {
         # Mirrors the Makefile's fetch-mormot2: clone the pinned mORMot2 commit
-        # into externals\mORMot2 and extract the QuickJS static archive into .\static.
+        # into externals\mORMot2 and extract the QuickJS static archive into
+        # externals\mORMot2\static\<arch> — that's the path mormot2.lpk's own
+        # LibraryPath/ObjectPath (relative to $(PkgDir)) actually searches once
+        # install-mormot2 registers the package; a top-level .\static is not on
+        # that search path (CI's build.yml only gets away with one because it
+        # additionally copies the objects straight into the project directory).
         $repo      = 'https://github.com/synopse/mORMot2.git'
         $commit    = 'b72f260b880557d2f9ebc15905d820e7a3a9bf01'
         $staticUrl = 'https://github.com/synopse/mORMot2/releases/download/2.4-stable/mormot2static.7z'
+        $staticDir = 'externals\mORMot2\static'
         if (Test-Path 'externals\mORMot2') { Write-Error "externals\mORMot2 already exists; remove it to re-clone"; exit 1 }
         New-Item -ItemType Directory -Force -Path 'externals' | Out-Null
         Write-Host "Fetching mORMot2 into externals\mORMot2 (commit $commit)" -ForegroundColor Cyan
@@ -267,16 +273,16 @@ switch ($firstArg) {
             Write-Host "Downloading $staticUrl" -ForegroundColor Cyan
             Invoke-WebRequest -Uri $staticUrl -OutFile $archive
         } catch {
-            Write-Host "Could not download mormot2static.7z automatically; download $staticUrl and extract into .\static" -ForegroundColor Yellow
+            Write-Host "Could not download mormot2static.7z automatically; download $staticUrl and extract into $staticDir" -ForegroundColor Yellow
             $archive = $null
         }
         if ($archive -and (Test-Path $archive)) {
-            New-Item -ItemType Directory -Force -Path 'static' | Out-Null
+            New-Item -ItemType Directory -Force -Path $staticDir | Out-Null
             $sevenZip = Get-Command 7z -ErrorAction SilentlyContinue
-            if ($sevenZip) { & $sevenZip.Source x $archive '-ostatic' '-y' }
-            else { tar -xf $archive -C static }  # Windows tar (bsdtar) can read 7z archives
-            if ($LASTEXITCODE -ne 0) { Write-Host "Extraction failed; extract the archive into .\static manually" -ForegroundColor Yellow }
-            else { Write-Host "Extracted static\" -ForegroundColor Green; Remove-Item $archive -Force -ErrorAction SilentlyContinue }
+            if ($sevenZip) { & $sevenZip.Source x $archive "-o$staticDir" '-y' }
+            else { tar -xf $archive -C $staticDir }  # Windows tar (bsdtar) can read 7z archives
+            if ($LASTEXITCODE -ne 0) { Write-Host "Extraction failed; extract the archive into $staticDir manually" -ForegroundColor Yellow }
+            else { Write-Host "Extracted $staticDir\" -ForegroundColor Green; Remove-Item $archive -Force -ErrorAction SilentlyContinue }
         }
         Write-Host "Done. Run './make.ps1 install-mormot2' to compile the package so lazbuild can find it." -ForegroundColor Cyan
         exit 0
@@ -341,7 +347,7 @@ switch ($firstArg) {
         Write-Host "                   set TRNDI_NO_TESTSERVER=1 to skip integration tests)"
         Write-Host "  list-modules     Show Pascal 'unit' modules found under units/ as a tree"
         Write-Host "  assets           Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
-        Write-Host "  fetch-mormot2    Clone the pinned mORMot2 commit into externals\mORMot2 and extract QuickJS statics into .\static"
+        Write-Host "  fetch-mormot2    Clone the pinned mORMot2 commit into externals\mORMot2 and extract QuickJS statics into externals\mORMot2\static"
         Write-Host "  install-mormot2  Compile the fetched mormot2.lpk so lazbuild can resolve the mormot2 dependency"
         Write-Host "  check-mormot2    Verify mORMot2 (registered .lpk, OPM, externals or .\static) and QuickJS statics"
         Write-Host "  clean            Remove build artifacts (*.o, *.ppu, executables, ...); use -n or --dry-run to preview"

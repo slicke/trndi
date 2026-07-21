@@ -131,7 +131,7 @@ help:
 	@echo "  check-module-names Check for mismatches between filenames and 'unit' declarations (uses scripts/check-module-names.pl)"
 	@echo "  show-mode  Show resolved build-mode and lazbuild flags"
 	@echo "  noext      Build without mORMot2 (temporary project; works even if mORMot2 is not installed) - use noext-release/noext-debug to override mode"
-	@echo "  fetch-mormot2  Clone mORMot2 into externals/mORMot2 and attempt to extract QuickJS static files into ./static (requires git and 7z)"
+	@echo "  fetch-mormot2  Clone mORMot2 into externals/mORMot2 and extract QuickJS static files into externals/mORMot2/static (requires git and 7z)"
 	@echo "  install-mormot2  Compile externals/mORMot2's Lazarus package so lazbuild can resolve the mormot2 dependency (run after fetch-mormot2)"
 	@echo "  check-mormot2  Verify mORMot2 presence and QuickJS static artifacts; exits non-zero on failure"
 	@echo "  assets     Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
@@ -193,7 +193,7 @@ fetch-mormot2:
 	if ! command -v 7z >/dev/null 2>&1; then MISSING="$$MISSING 7z"; fi; \
 	if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then MISSING="$$MISSING curl/wget"; fi; \
 	if [ -n "$$MISSING" ]; then \
-	  echo "Warning:$$MISSING not found; the QuickJS static archive cannot be downloaded/extracted into ./static."; \
+	  echo "Warning:$$MISSING not found; the QuickJS static archive cannot be downloaded/extracted into externals/mORMot2/static."; \
 	  echo "  Install 7z with one of: 'sudo apt install p7zip-full' (Ubuntu <= 22.04), 'sudo apt install 7zip' (Ubuntu >= 23.10, since p7zip was dropped), 'sudo dnf install p7zip p7zip-plugins' (Fedora/RHEL), 'brew install p7zip' (macOS)."; \
 	  if [ "$(FAIL_7ZIP)" != "1" ]; then \
 	    echo "Aborting before cloning (set FAIL_7ZIP=1 to bypass this check and clone anyway; the static step will then be skipped with a warning)."; \
@@ -212,10 +212,10 @@ fetch-mormot2:
 	if command -v 7z >/dev/null 2>&1 && { command -v curl >/dev/null 2>&1 || command -v wget >/dev/null 2>&1; }; then \
 	  if command -v curl >/dev/null 2>&1; then curl -L -o mormot2static.7z $(MORMOT2_STATIC_URL); \
 	  else wget -O mormot2static.7z $(MORMOT2_STATIC_URL); fi; \
-	  if [ -f mormot2static.7z ]; then mkdir -p static; 7z x mormot2static.7z -ostatic; rm -f mormot2static.7z; echo "Extracted static/"; \
-	  else echo "Could not download mormot2static.7z automatically; download $(MORMOT2_STATIC_URL) and extract into ./static"; fi; \
+	  if [ -f mormot2static.7z ]; then mkdir -p externals/mORMot2/static; 7z x mormot2static.7z -oexternals/mORMot2/static -y; rm -f mormot2static.7z; echo "Extracted externals/mORMot2/static/"; \
+	  else echo "Could not download mormot2static.7z automatically; download $(MORMOT2_STATIC_URL) and extract into externals/mORMot2/static"; fi; \
 	else \
-	  echo "Skipping static archive step (7z and/or curl/wget missing); download $(MORMOT2_STATIC_URL) and extract into ./static manually."; \
+	  echo "Skipping static archive step (7z and/or curl/wget missing); download $(MORMOT2_STATIC_URL) and extract into externals/mORMot2/static manually."; \
 	fi; \
 	echo "Done. Run 'make install-mormot2' to compile the package so lazbuild can find it."
 
