@@ -92,18 +92,18 @@ var
 begin
   Result := JS_UNDEFINED;
   if argc <> 5 then
-    ExtError(uxdAuto, '[htmlMsg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 5');
+    ExtError(sdsAuto, '[htmlMsg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 5');
 
   ctx^^.ToVariant(argv^[4], vbs);
 
   if not varType(vbs) = varSingle then
   begin
-    ExtError(uxdAuto, 'Box Size must be a float or integer');
+    ExtError(sdsAuto, 'Box Size must be a float or integer');
     exit;
   end;
 
  // Title, Desc, html, size
-  ExtMessage(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), ctx^^.ToUtf8(argv^[2]), ctx^^.ToUtf8(argv^[3]), true,
+  ExtMessage(sdsAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), ctx^^.ToUtf8(argv^[2]), ctx^^.ToUtf8(argv^[3]), true,
     $00AA6004, $00FDD8AA,  [mbOK], uxmtOK, vbs);
 end;
 
@@ -114,18 +114,18 @@ var
 begin
   Result := JS_UNDEFINED;
   if argc <> 3 then
-    ExtError(uxdAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
+    ExtError(sdsAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
 
   ctx^^.ToVariant(argv^[2], vbs);
 
   if not varType(vbs) = varSingle then
   begin
-    ExtError(uxdAuto, 'Box Size must be a float or integer');
+    ExtError(sdsAuto, 'Box Size must be a float or integer');
     exit;
   end;
 
  // Title, Desc, html, size
-  ExtMsg(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbOK], uxmtOk, vbs);
+  SlickeMsg(sdsAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbOK], uxmtOk, vbs);
 end;
 
 function JSHTMLYesNo(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
@@ -134,18 +134,18 @@ var
 begin
   Result := JS_FALSE;
   if argc <> 3 then
-    ExtError(uxdAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
+    ExtError(sdsAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
 
   ctx^^.ToVariant(argv^[2], vbs);
 
   if not varType(vbs) = varSingle then
   begin
-    ExtError(uxdAuto, 'Box Size must be a float or integer');
+    ExtError(sdsAuto, 'Box Size must be a float or integer');
     exit;
   end;
 
  // Title, Desc, html, size
-  if ExtMsg(uxdAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbYes, mbNo], uxmtOk, vbs) = mrYes then
+  if SlickeMsg(sdsAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbYes, mbNo], uxmtOk, vbs) = mrYes then
     Result := JS_TRUE
   else
     Result := JS_FALSE;
@@ -198,7 +198,7 @@ begin
 
   if not varType(vbw) = varDecimal then
   begin
-    ExtError(uxdAuto, 'Badge size must be percentage: 0.1-1.0');
+    ExtError(sdsAuto, 'Badge size must be percentage: 0.1-1.0');
     exit;
   end;
   badge_width := vbw;
@@ -208,7 +208,7 @@ begin
     ctx^^.ToVariant(argv^[1], vbf);
     if not VarType(vbf) = varInteger then
     begin
-      ExtError(uxdAuto, 'Badge font size must be an integer!');
+      ExtError(sdsAuto, 'Badge font size must be an integer!');
       Result := JS_FALSE;
       exit;
     end;
@@ -232,7 +232,7 @@ begin
 
   if not varType(vds) = varInteger then
   begin
-    ExtError(uxdAuto, 'Dot size must be an integer');
+    ExtError(sdsAuto, 'Dot size must be an integer');
     Result := JS_FALSE;
     exit;
   end;
@@ -255,7 +255,7 @@ begin
 
   if not varType(vda) = varSingle then
   begin
-    ExtError(uxdAuto, 'Dot size must be a floating number');
+    ExtError(sdsAuto, 'Dot size must be a floating number');
     Result := JS_FALSE;
     exit;
   end;

@@ -88,7 +88,7 @@ var
   mr: TModalResult;
   da: single;
 begin
-  da := (ExtNumericInput(uxdAuto, RS_SERVICE_DOT_ADJUST, RS_SERVICE_DOT_ADJUST_ADD,
+  da := (ExtNumericInput(sdsAuto, RS_SERVICE_DOT_ADJUST, RS_SERVICE_DOT_ADJUST_ADD,
     RS_SERVICE_DOT_ADJUST_DESC, DOT_ADJUST *
     100, FLOAT_NONE, FLOAT_NONE, false, mr) / 100);
 
@@ -96,7 +96,7 @@ begin
   begin
     DOT_ADJUST := da;
 
-    if ExtMsg(uxdAuto, RS_UX_CHANGES_SAVE, RS_UX_CHANGES_REMEMBER, RS_CHANGES_APPLY,
+    if SlickeMsg(sdsAuto, RS_UX_CHANGES_SAVE, RS_UX_CHANGES_REMEMBER, RS_CHANGES_APPLY,
       FormatFloat('0.00', da), uxclWhite, uxclRed, [mbYes, mbNo]) = mrYes then
       native.SetFloatSetting('ux.dot_adjust', da);
   end;
@@ -107,7 +107,7 @@ var
   mr: TModalResult;
   newCount: integer;
 begin
-  newCount := ExtIntInput(uxdAuto, RS_SERVICE_DOT_COUNT, RS_SERVICE_DOT_COUNT_TITLE,
+  newCount := ExtIntInput(sdsAuto, RS_SERVICE_DOT_COUNT, RS_SERVICE_DOT_COUNT_TITLE,
     Format(RS_SERVICE_DOT_COUNT_DESC, [MAX_DOT_COUNT]), ACTIVE_DOTS, mr);
 
   if mr <> mrOk then
@@ -213,7 +213,7 @@ var
   msg: string;
   mr: TModalResult;
 begin
-  i := ExtIntInput(uxdAuto, RS_PREDICT_AMOUNT_CAPTION, RS_PREDICT_AMOUNT_TITLE, RS_PREDICT_AMOUNT_DESC, 3, mr);
+  i := ExtIntInput(sdsAuto, RS_PREDICT_AMOUNT_CAPTION, RS_PREDICT_AMOUNT_TITLE, RS_PREDICT_AMOUNT_DESC, 3, mr);
   if (mr <> mrOK) or (i < 1) then
     i := 3;
   if i > 20 then
@@ -262,7 +262,7 @@ begin
   end;
 
   selectedDate := ExtDatePicker(
-    uxdAuto,
+    sdsAuto,
     RS_DATE_PICKER_CAPTION,
     RS_DATE_PICKER_TITLE,
     description,
@@ -349,7 +349,7 @@ begin
 
   displayMsg += sHTMLLineBreak + Format(RS_UX_API, [api.systemName]);
 
-  ExtHTML(uxdAuto, RS_UX_TRANSMITTER_INFO, displayMsg, [mbOK], uxmtInformation, 10);
+  SlickeHTMLMsg(sdsAuto, RS_UX_TRANSMITTER_INFO, displayMsg, [mbOK], uxmtInformation, 10);
 end;
 
 procedure TfBG.lArrowClick(Sender: TObject);
@@ -405,7 +405,7 @@ begin
       msg := Format(RS_TIR_H, ['<b>'+hours.toString+'</b>', '<b>'+mins.toString+'</b>']);
   end;
 
-  ExtHTML(uxdAuto, 'Trndi', msg+'<br><br><i>'+row2+'<br>'+row3+'</i>');
+  SlickeHTMLMsg(sdsAuto, 'Trndi', msg+'<br><br><i>'+row2+'<br>'+row3+'</i>');
 end;
 
 procedure TfBG.lValClick(Sender: TObject);
@@ -518,7 +518,7 @@ begin
     waitTime := API_CACHE_SECONDS - secondsSinceLastCall;
     msg := Format(RS_FORCE_REFRESH_CACHED, [secondsSinceLastCall, waitTime]);
 
-    Result := slicke.UX.alert.ExtMsg(uxdAuto, RS_REFRESH_PROMPT, msg,
+    Result := slicke.UX.alert.SlickeMsg(sdsAuto, RS_REFRESH_PROMPT, msg,
       RS_FORCE_REFRESH_DETAIL, '', uxclWhite, uxclRed, [mbRetry, mbCancel],
       uxmtInformation);
 

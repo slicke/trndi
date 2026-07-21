@@ -47,7 +47,7 @@ procedure TfBG.APIReceiver(const msg: string; etype: TrndiAPIMsg);
 begin
   case etype of
   TrndiAPIMsg.alert:
-    UXMessage('API Alert', msg, uxmtWarning);
+    SlickeMessage('API Alert', msg, uxmtWarning);
   TrndiAPIMsg.notice:
   begin
     // User-relevant but non-urgent (e.g. CareLink picking the first of several
@@ -220,17 +220,17 @@ end;
 procedure ShowMessage(const str: string);
 begin
   if semiTouchMode then
-    UXMessage(sSuccTitle, str, uxmtInformation, fBG)
+    SlickeMessage(sSuccTitle, str, uxmtInformation, fBG)
   else
-    UXMessage(uxdOnForm, sSuccTitle, str, uxmtInformation, fBG);
+    SlickeMessage(sdsOnForm, sSuccTitle, str, uxmtInformation, fBG);
 end;
 
 procedure ShowMessage(const title, str: string);
 begin
   if semiTouchMode then
-    UXMessage(title, str, uxmtInformation, fBG)
+    SlickeMessage(title, str, uxmtInformation, fBG)
   else
-    UXMessage(uxdOnForm, title, str, uxmtInformation, fBG);
+    SlickeMessage(sdsOnForm, title, str, uxmtInformation, fBG);
 end;
 
 // Helper function to get validated position setting

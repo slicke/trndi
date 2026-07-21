@@ -406,11 +406,11 @@ begin
     if Assigned(FOwner.miDebugBackend) and FOwner.miDebugBackend.Checked and FOwner.Showing then
     begin
       if FDiag.IsEmpty then
-        slicke.ux.alert.ExtLog(uxdAuto,
+        slicke.ux.alert.ExtLog(sdsAuto,
           IfThen(FForce, 'Debug Info (Forced)', 'Debug Info'),
           '[empty!]', FDiag)
       else
-        slicke.ux.alert.ExtLog(uxdAuto,
+        slicke.ux.alert.ExtLog(sdsAuto,
           IfThen(FForce, 'Debug Info (Forced)', 'Debug Info'),
           '', FDiag, uxmtCustom, 10);
     end;
@@ -637,7 +637,7 @@ begin
         newVersionMessage := Format(RS_NEWVER_PR, [FReleaseName])
       else
         newVersionMessage := Format(RS_NEWVER, [FReleaseName]);
-      case UXDialog(uxdAuto, RS_NEWVER_CAPTION, newVersionMessage,
+      case UXDialog(sdsAuto, RS_NEWVER_CAPTION, newVersionMessage,
         [mbYes, mbNo, mbIgnore], mtInformation) of
       mrYes:
         OpenURL(FDownloadURL);

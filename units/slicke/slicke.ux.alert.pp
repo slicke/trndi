@@ -17,10 +17,10 @@
   draws emoji icons using Direct2D/DirectWrite on Windows or text rendering elsewhere.
 
   The public API centers around:
-  - @link(UXMessage) for simple, one-button informational messages.
+  - @link(SlickeMessage) for simple, one-button informational messages.
   - @link(UXDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
-  - @link(ExtMsg), @link(ExtLog), @link(ExtError), @link(ExtSucc), @link(ExtSuccEx) for rich dialogs with dumps/logs.
-  - @link(ExtInput), @link(ExtPasswordInput), @link(ExtNumericInput), @link(ExtIntInput), @link(ExtList), @link(ExtTable) for data entry.
+  - @link(SlickeMsg), @link(ExtLog), @link(ExtError), @link(ExtSucc), @link(ExtSuccEx) for rich dialogs with dumps/logs.
+  - @link(SlickeInput), @link(ExtPasswordInput), @link(ExtNumericInput), @link(ExtIntInput), @link(SlickeList), @link(ExtTable) for data entry.
   - @link(ExtDatePicker) for date selection with optional min/max constraints.
 
   Platform support:
@@ -75,13 +75,13 @@ smbUXNoToAll    = 'No To All';
 smbUXYesToAll   = 'Yes To All';
 smbUXHelp       = 'Help';
 smbUXClose      = 'Close';
-smbUXOpenFile   = 'Open File';
-smbUxMinimize   = 'Minimize';
+smbSlickeOpenFile   = 'Open File';
+smbSlickeMinimize   = 'Minimize';
 smbSelect       = 'Select';
-smbUxAgree      = 'Agree';
-smbUxRead       = 'Read...';
-smbUXDefault    = 'Default';
-smbUxSnooze     = 'Snooze';
+smbSlickeAgree      = 'Agree';
+smbSlickeRead       = 'Read...';
+smbSlickeDefault    = 'Default';
+smbSlickeSnooze     = 'Snooze';
 
 sKey   = 'Key';
 sValue = 'Value';
@@ -155,7 +155,7 @@ mbUXClose     = mbClose;
 sHTMLLineBreak = '<br>';
 type
   {** Emoji glyph used for icons. Typically a single WChar codepoint. }
-UXImage = WChar;
+SlickeUXImage = WChar;
 
   {**
     Modal dialog form used internally by UX helpers.
@@ -196,11 +196,11 @@ public
   procedure ButtonDrawItem(Sender: TObject;
     ACanvas: TCanvas; ARect: TRect; State: TButtonState);
   {$endif}
-    {** OnClick handler used by inline full-screen message overlays created via @link(UXMessage). }
-  procedure UXMessageOnClick(sender: TObject);
+    {** OnClick handler used by inline full-screen message overlays created via @link(SlickeMessage). }
+  procedure SlickeMessageOnClick(sender: TObject);
     {** OnMouseDown companion — fires on first touch contact so the overlay
         closes even when the Qt release point drifts outside the button rect. }
-  procedure UXMessageOnMouseDown(sender: TObject; Button: TMouseButton;
+  procedure SlickeMessageOnMouseDown(sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: Integer);
 public
     {** Helper fields for font picker dialog. }
@@ -248,76 +248,76 @@ end;
 
   {**
     Size preset for dialog layout.
-    @value uxdNormal Standard dialog layout.
+    @value sdsNormal Standard dialog layout.
     @value uxdBig Larger layout suitable for touch/TV screens.
-    @value uxdAuto Auto-detect (big if touch screen available).
-    @value uxdOnForm Render message inline on an existing form (used by @link(UXMessage)).
+    @value sdsAuto Auto-detect (big if touch screen available).
+    @value sdsOnForm Render message inline on an existing form (used by @link(SlickeMessage)).
   }
-TUXDialogSize = (uxdNormal = 0, uxdBig = 1, uxdAuto = 3, uxdOnForm = 4, uxdMedium = 5);
+TSlickeDialogSize = (sdsNormal = 0, uxdBig = 1, sdsAuto = 3, sdsOnForm = 4, uxdMedium = 5);
 
   {**
     Available dialog buttons for UX helpers.
     @remarks Includes standard Lazarus modal buttons and a few custom labels (e.g. OpenFile, Minimize, Agree, Read, Default).
   }
-TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead, mbUXDefault, mbUXSnooze);
+TSlickeMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
+  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze);
 
-  {** A set of @link(TUXMsgDlgBtn) to specify multiple buttons. }
-TUXMsgDlgBtns = set of TUXMsgDlgBtn;
+  {** A set of @link(TSlickeMsgDlgBtn) to specify multiple buttons. }
+TSlickeMsgDlgBtns = set of TSlickeMsgDlgBtn;
 
-  {** Mapping of @link(TUXMsgDlgBtn) to localized captions. }
-ButtonLangs = array[TUXMsgDlgBtn] of string;
+  {** Mapping of @link(TSlickeMsgDlgBtn) to localized captions. }
+ButtonLangs = array[TSlickeMsgDlgBtn] of string;
 
   {**
-    Show a simple message dialog, optionally inline on a form in @code(uxdOnForm) mode.
-    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    Show a simple message dialog, optionally inline on a form in @code(sdsOnForm) mode.
+    @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
     @param title Dialog title text (top label).
     @param message Main message body.
     @param icon Emoji icon; defaults to @code(uxmtOK).
-    @param sender Optional form used when @code(dialogsize = uxdOnForm) to render a full-screen overlay.
+    @param sender Optional form used when @code(dialogsize = sdsOnForm) to render a full-screen overlay.
   }
-procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
+procedure SlickeMessage(const dialogsize: TSlickeDialogSize; const title, message: string; const icon: SlickeUXImage = uxmtOK; sender: TForm = nil);
 
 {**
-  Show a simple message dialog, optionally inline on a form in @code(uxdOnForm) mode.
+  Show a simple message dialog, optionally inline on a form in @code(sdsOnForm) mode.
   @param title Dialog title text (top label).
   @param message Main message body.
   @param icon Emoji icon; defaults to @code(uxmtOK).
-  @param sender Optional form used when @code(dialogsize = uxdOnForm) to render a full-screen overlay.
+  @param sender Optional form used when @code(dialogsize = sdsOnForm) to render a full-screen overlay.
 }
-procedure UXMessage(const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
+procedure SlickeMessage(const title, message: string; const icon: SlickeUXImage = uxmtOK; sender: TForm = nil);
 
   {**
     Generic dialog with custom button set and emoji icon.
-    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
     @param title Title text displayed above @code(message).
     @param message Description/body text.
     @param buttons Button set to display.
     @param icon Emoji icon; defaults to @code(uxmtOK).
     @returns Lazarus modal result corresponding to the button clicked.
   }
-function UXDialog(const dialogsize: TUXDialogSize;
+function UXDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
-buttons: TUXMsgDlgBtns;
-const icon: UXImage = uxmtOK): TModalResult; overload;
+buttons: TSlickeMsgDlgBtns;
+const icon: SlickeUXImage = uxmtOK): TModalResult; overload;
 
   {**
     Generic dialog with custom button set and Lazarus message type mapped to a default icon.
-    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
     @param title Title text displayed above @code(message).
     @param message Description/body text.
     @param buttons Button set to display.
     @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
     @returns Lazarus modal result corresponding to the button clicked.
   }
-function UXDialog(const dialogsize: TUXDialogSize;
+function UXDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
-buttons: TUXMsgDlgBtns;
+buttons: TSlickeMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult; overload;
 
   {**
     Generic dialog with custom header line (caption), title and message and TMsgDlgType mapping.
-    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
     @param header Window caption (top title bar).
     @param title Title text (bold, in content).
     @param message Description/body text.
@@ -325,14 +325,14 @@ const mtype: TMsgDlgType): TModalResult; overload;
     @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
     @returns Lazarus modal result corresponding to the button clicked.
   }
-function UXDialog(const dialogsize: TUXDialogSize;
+function UXDialog(const dialogsize: TSlickeDialogSize;
 const header, title, message: string;
-buttons: TUXMsgDlgBtns;
+buttons: TSlickeMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult; overload;
 
 {**
   Simplified Extended message dialog for displaying yes/no dialogs
-  @param dialogsize Layout preset; @seealso(TUXDialogSize)
+  @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
   @param caption Window caption.
   @param title Title text.
   @param desc Description of dialog.
@@ -340,10 +340,10 @@ const mtype: TMsgDlgType): TModalResult; overload;
   @param scale Size for the actual dialog
   @returns Lazarus modal result corresponding to the button clicked.
 }
-function ExtMsgYesNo(
-const dialogsize: TUXDialogSize;
+function SlickeMsgYesNo(
+const dialogsize: TSlickeDialogSize;
 const caption, desc: string;
-const micon: UXImage = uxmtConfirmation;
+const micon: SlickeUXImage = uxmtConfirmation;
 const scale: single = 1): boolean;
 
 {**
@@ -355,9 +355,9 @@ const scale: single = 1): boolean;
   @param scale The size of the actual dialog
   @returns Lazarus modal result corresponding to the button clicked.
 }
-function ExtMsgYesNo(
+function SlickeMsgYesNo(
 const caption, desc: string;
-const micon: UXImage = uxmtConfirmation;
+const micon: SlickeUXImage = uxmtConfirmation;
 const scale: single = 1): boolean;
 
 {**
@@ -373,17 +373,17 @@ const scale: single = 1): boolean;
   @param scale Optional log panel vertical scale multiplier (for big outputs).
   @returns Lazarus modal result corresponding to the button clicked.
 }
-function ExtMsg(
+function SlickeMsg(
 const caption, title, desc, logmsg: string;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TUXMsgDlgBtns = [mbAbort];
-const icon: UXImage = uxmtCog;
+buttons: TSlickeMsgDlgBtns = [mbAbort];
+const icon: SlickeUXImage = uxmtCog;
 scale: single = 1): TModalResult;
 
   {**
     Extended message dialog supporting an optional log/dump panel with custom colors.
-    @param dialogsize Layout preset; @seealso(TUXDialogSize)
+    @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
     @param caption Window caption.
     @param title Title text.
     @param desc Description/body text (supports wrapping and scrolling in big mode).
@@ -395,12 +395,12 @@ scale: single = 1): TModalResult;
     @param scale Optional log panel vertical scale multiplier (for big outputs).
     @returns Lazarus modal result corresponding to the button clicked.
   }
-function ExtMsg(const dialogsize: TUXDialogSize;
+function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TUXMsgDlgBtns = [mbAbort];
-const icon: UXImage = uxmtCog;
+buttons: TSlickeMsgDlgBtns = [mbAbort];
+const icon: SlickeUXImage = uxmtCog;
 scale: single = 1): TModalResult;
 
   {**
@@ -414,28 +414,28 @@ scale: single = 1): TModalResult;
     @returns Modal result based on user button selection.
     @remarks This variant displays only HTML content without title/description sections.
   }
-function ExtMsg(const dialogsize: TUXDialogSize;
+function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
-buttons: TUXMsgDlgBtns = [mbAbort];
-const icon: UXImage = uxmtCog;
+buttons: TSlickeMsgDlgBtns = [mbAbort];
+const icon: SlickeUXImage = uxmtCog;
 scale: single = 1; hpadding: single = 1): TModalResult; overload;
 
   {**
-    Alias for @lnk(ExtMsg) with HTML data
+    Alias for @lnk(SlickeMsg) with HTML data
   }
-function ExtHTML(const dialogsize: TUXDialogSize;
+function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
-buttons: TUXMsgDlgBtns = [mbOK];
-const icon: UXImage = uxmtInformation;
+buttons: TSlickeMsgDlgBtns = [mbOK];
+const icon: SlickeUXImage = uxmtInformation;
 scale: single = 1): TModalResult;
 
   {**
-    Helper for @lnk(ExtMsg) with text data
+    Helper for @lnk(SlickeMsg) with text data
   }
-function ExtText(const dialogsize: TUXDialogSize;
+function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
-buttons: TUXMsgDlgBtns = [mbOK];
-const icon: UXImage = uxmtInformation;
+buttons: TSlickeMsgDlgBtns = [mbOK];
+const icon: SlickeUXImage = uxmtInformation;
 scale: single = 1): TModalResult;
 
   {**
@@ -454,17 +454,17 @@ scale: single = 1): TModalResult;
     @returns Modal result based on user button selection.
     @remarks HTML rendering is supported cross-platform via TIpHtmlPanel from IpHtml unit. Use standard HTML tags like &lt;b&gt;, &lt;i&gt;, &lt;font color="red"&gt;, etc.
   }
-function ExtMessage(const dialogsize: TUXDialogSize;
+function ExtMessage(const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 isHTML: boolean;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TUXMsgDlgBtns = [mbAbort];
-const icon: UXImage = uxmtCog;
+buttons: TSlickeMsgDlgBtns = [mbAbort];
+const icon: SlickeUXImage = uxmtCog;
 scale: single = 1): TModalResult;
 
   {**
-    Convenience wrapper for @link(ExtMsg) that shows a message and a log/dump with an OK button.
+    Convenience wrapper for @link(SlickeMsg) that shows a message and a log/dump with an OK button.
     @param dialogsize Layout preset.
     @param caption Window caption.
     @param msg Title text.
@@ -473,9 +473,9 @@ scale: single = 1): TModalResult;
     @param scale Log panel vertical scale multiplier.
     @returns @code(mrOK) if confirmed, otherwise the modal result selected by the user.
   }
-function ExtLog(const dialogsize: TUXDialogSize;
+function ExtLog(const dialogsize: TSlickeDialogSize;
 const caption, msg, log: string;
-const icon: UXImage = uxmtCog;
+const icon: SlickeUXImage = uxmtCog;
 scale: integer = 1): TModalResult;
 
   {**
@@ -486,9 +486,9 @@ scale: integer = 1): TModalResult;
     @param icon Emoji icon (default gear).
     @returns Modal result (default is [mbAbort]).
   }
-function ExtError(const dialogsize: TUXDialogSize;
+function ExtError(const dialogsize: TSlickeDialogSize;
 const msg, error: string;
-const icon: UXImage = uxmtCog): TModalResult; overload;
+const icon: SlickeUXImage = uxmtCog): TModalResult; overload;
 
   {**
     Show an error dialog with standard captions and the given error in the log panel.
@@ -497,9 +497,9 @@ const icon: UXImage = uxmtCog): TModalResult; overload;
     @param icon Emoji icon (default gear).
     @returns Modal result (default is [mbAbort]).
   }
-function ExtError(const dialogsize: TUXDialogSize;
+function ExtError(const dialogsize: TSlickeDialogSize;
 const error: string;
-const icon: UXImage = uxmtCog): TModalResult; overload;
+const icon: SlickeUXImage = uxmtCog): TModalResult; overload;
 
   {**
     Show a success/information dialog with a dump panel.
@@ -512,11 +512,11 @@ const icon: UXImage = uxmtCog): TModalResult; overload;
     @param icon Emoji icon (default @code(uxmtOK)).
     @returns Modal result (OK by default).
   }
-function ExtSucc(const dialogsize: TUXDialogSize;
+function ExtSucc(const dialogsize: TSlickeDialogSize;
 const msg, desc, output: string;
 dumpbg: TColor = uxclLightGreen;
 dumptext: TColor = uxclDarkGreen;
-const icon: UXImage = uxmtOK): TModalResult;
+const icon: SlickeUXImage = uxmtOK): TModalResult;
 
   {**
     Variant of @link(ExtSucc) that accepts a custom button set.
@@ -531,12 +531,12 @@ const icon: UXImage = uxmtOK): TModalResult;
     @param scale The size of the text box (multiplyer)
     @returns Modal result.
   }
-function ExtSuccEx(const dialogsize: TUXDialogSize;
+function ExtSuccEx(const dialogsize: TSlickeDialogSize;
 const msg, desc, output: string;
-btns: TUXMsgDlgBtns;
+btns: TSlickeMsgDlgBtns;
 dumpbg: TColor = uxclLightGreen;
 dumptext: TColor = uxclDarkGreen;
-const icon: UXImage = uxmtOK;
+const icon: SlickeUXImage = uxmtOK;
 const scale: integer = 1): TModalResult;
 
   {**
@@ -550,17 +550,17 @@ const scale: integer = 1): TModalResult;
     @param icon Emoji icon (default gear).
     @returns Selected index (0-based) on OK, or -1 on cancel.
   }
-function ExtList(const dialogsize: TUXDialogSize;
+function SlickeList(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Choices: array of unicodestring;
 const Default: boolean = false;
-const icon: UXImage = uxmtCog): integer; overload;
+const icon: SlickeUXImage = uxmtCog): integer; overload;
 
-function ExtList(const dialogsize: TUXDialogSize;
+function SlickeList(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Choices: array of string;
 const Default: boolean = false;
-const icon: UXImage = uxmtCog): integer; overload;
+const icon: SlickeUXImage = uxmtCog): integer; overload;
   {**
     Show a single-line string input dialog.
     @param dialogsize Layout preset.
@@ -573,14 +573,14 @@ const icon: UXImage = uxmtCog): integer; overload;
     @param AMasked If @true, the input is masked like a password field.
     @returns The entered string when @code(ModalResult = mrOK); otherwise the previous/default content.
   }
-function ExtInput(const dialogsize: TUXDialogSize;
+function SlickeInput(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc, ADefault: string;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog;
+const icon: SlickeUXImage = uxmtCog;
 const AMasked: boolean = false): string;
 
   {**
-    Convenience wrapper over @link(ExtInput) for masked (password/secret) input.
+    Convenience wrapper over @link(SlickeInput) for masked (password/secret) input.
     @param dialogsize Layout preset.
     @param ACaption Window caption.
     @param ATitle Title text.
@@ -590,10 +590,10 @@ const AMasked: boolean = false): string;
     @param icon Emoji icon (default gear).
     @returns The entered string when @code(ModalResult = mrOK); otherwise the previous/default content.
   }
-function ExtPasswordInput(const dialogsize: TUXDialogSize;
+function ExtPasswordInput(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc, ADefault: string;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog): string;
+const icon: SlickeUXImage = uxmtCog): string;
 
   {**
     Show a numeric input dialog using @code(TFloatSpinEditEx).
@@ -609,13 +609,13 @@ const icon: UXImage = uxmtCog): string;
     @param icon Emoji icon (default gear).
     @returns Entered numeric value if OK; otherwise returns @code(ADefault).
   }
-function ExtNumericInput(const dialogsize: TUXDialogSize;
+function ExtNumericInput(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
 AMin, AMax: double;
 float: boolean;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog): double;
+const icon: SlickeUXImage = uxmtCog): double;
 
   {**
     Convenience wrapper over @link(ExtNumericInput) for integer-only input.
@@ -629,11 +629,11 @@ const icon: UXImage = uxmtCog): double;
     @returns Entered integer value if OK; otherwise returns @code(ADefault).
   }
 function ExtIntInput(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: integer;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): integer;
 
   {**
@@ -649,10 +649,10 @@ const icon: UXImage = uxmtCog
     @param value Column 1 header (defaults to localized @code(sValue)).
     @returns Selected row index on OK; -1 if canceled.
   }
-function ExtTable(const dialogsize: TUXDialogSize;
+function ExtTable(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Keys, Values: array of string;
-const icon: UXImage = uxmtCog;
+const icon: SlickeUXImage = uxmtCog;
 const key: string = '';
 const value: string = ''): integer;
 
@@ -669,12 +669,12 @@ const value: string = ''): integer;
     @returns The selected TFont object if OK; otherwise returns @code(ADefaultFont).
     @remarks The returned font is a new instance; caller is responsible for freeing it.
   }
-function ExtFontPicker(const dialogsize: TUXDialogSize;
+function ExtFontPicker(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefaultFont: TFont;
 const AFontSample: string;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog): TFont;
+const icon: SlickeUXImage = uxmtCog): TFont;
 
   {**
     Show a date picker dialog using @code(TDateEdit).
@@ -689,21 +689,21 @@ const icon: UXImage = uxmtCog): TFont;
     @param icon Emoji icon (default gear).
     @returns Selected date if OK; otherwise returns @code(ADefault).
   }
-function ExtDatePicker(const dialogsize: TUXDialogSize;
+function ExtDatePicker(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: TDateTime;
 AMinDate: TDateTime;
 AMaxDate: TDateTime;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog): TDateTime;
+const icon: SlickeUXImage = uxmtCog): TDateTime;
 
 var
-  {** Localized captions for each @link(TUXMsgDlgBtn). Initialized from resource strings. }
+  {** Localized captions for each @link(TSlickeMsgDlgBtn). Initialized from resource strings. }
 langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
   smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
-  smbUXOpenFile, smbUxMinimize, smbUxAgree, smbUxRead, smbUxDefault, smbuxSnooze);
-  {** When @true, dialogs created by this unit (@link(UXDialog), @link(ExtList),
-      @link(ExtInput), etc.) get their own taskbar button. Defaults to @false,
+  smbSlickeOpenFile, smbSlickeMinimize, smbSlickeAgree, smbSlickeRead, smbSlickeDefault, smbSlickeSnooze);
+  {** When @true, dialogs created by this unit (@link(UXDialog), @link(SlickeList),
+      @link(SlickeInput), etc.) get their own taskbar button. Defaults to @false,
       which keeps them off the taskbar as transient windows of the initiator.
       Set this before opening a dialog. }
   SlickeDialogsInTaskbar: boolean = false;
@@ -838,22 +838,22 @@ end;
   Determine whether dialogs should use the large layout.
   @param dialogsize Requested size mode.
   @returns @true if big layout should be used; @false otherwise.
-  @remarks When @code(dialogsize = uxdAuto), it checks @code(TrndiNative.HasTouchScreen).
+  @remarks When @code(dialogsize = sdsAuto), it checks @code(TrndiNative.HasTouchScreen).
 }
-function GetUXDialogSize(dialogsize: TUXDialogSize): TUXDialogSize;
+function GeTSlickeDialogSize(dialogsize: TSlickeDialogSize): TSlickeDialogSize;
 begin
   case dialogsize of
-  uxdNormal,
+  sdsNormal,
   uxdBig,
   uxdMedium:
     result := dialogsize;
-  uxdAuto:
+  sdsAuto:
     if TrndiNative.HasTouchScreen then
       result := uxdBig
     else
-      result := uxdNormal;
+      result := sdsNormal;
   else
-    result := GetUXDialogSize(uxdAuto);
+    result := GeTSlickeDialogSize(sdsAuto);
   end;
 end;
 
@@ -974,7 +974,7 @@ end;
 }
 procedure CreateTitleAndDescription(
 AOwner: TForm;
-const DialogSize: TUXDialogSize;
+const DialogSize: TSlickeDialogSize;
 const ATitle, ADesc: string;
 IconBox: TImage;
 out TitleLabel, DescLabel: TLabel
@@ -1108,10 +1108,10 @@ end;
   @param Btn UX button.
   @returns Corresponding @code(TModalResult).
 }
-function UXButtonToModalResult(Btn: TUXMsgDlgBtn): TModalResult;
+function UXButtonToModalResult(Btn: TSlickeMsgDlgBtn): TModalResult;
 begin
   case Btn of
-  mbUXAgree,
+  mbSlickeAgree,
   mbYes:
     Result := mrYes;
   mbNo:
@@ -1302,8 +1302,8 @@ end;
 }
 procedure SetupDialogTitleDesc(
 Dialog: TForm;
-const size: TUXDialogSize;
-const icon: UXImage;
+const size: TSlickeDialogSize;
+const icon: SlickeUXImage;
 const bgcol: TColor;
 const ATitle, ADesc: string;
 IconBox: TImage;
@@ -1384,7 +1384,7 @@ end;
 
 { Create a platform-appropriate dialog button (TDarkButton on Windows, TButton elsewhere),
   apply big-mode scaling, and optionally register it in the dialog's button list. }
-function MakeDialogButton(Dialog: TDialogForm; const size: TUXDialogSize;
+function MakeDialogButton(Dialog: TDialogForm; const size: TSlickeDialogSize;
   const ACaption: string; AModalResult: TModalResult;
   AddToButtons: boolean = true): TWinControl;
 var
@@ -1413,7 +1413,7 @@ end;
 
 { Position two buttons centered below a control and set the dialog's client height. }
 procedure CenterButtons(Dialog: TDialogForm; Btn1, Btn2: TWinControl;
-  AboveBottom: integer; const size: TUXDialogSize; Padding: integer);
+  AboveBottom: integer; const size: TSlickeDialogSize; Padding: integer);
 var
   total: integer;
 begin
@@ -1427,11 +1427,11 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtIntInput(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: integer;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): integer;
 begin
   result := round(ExtNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, FLOAT_NONE, FLOAT_NONE, false, ModalResult, icon));
@@ -1439,13 +1439,13 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtNumericInput(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
 AMin, AMax: double;
 float: boolean;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): double;
 const
   Padding = 16;
@@ -1456,9 +1456,9 @@ var
   Edit: TFloatSpinEditEx;
   OkButton, CancelButton: TWinControl;
   bgcol: TColor;
-  size: TUXDialogSize;
+  size: TSlickeDialogSize;
 begin
-  size := GetUXDialogSize(dialogsize);
+  size := GeTSlickeDialogSize(dialogsize);
   Result := ADefault;
   ModalResult := mrCancel;
   bgcol := getBackground;
@@ -1525,31 +1525,31 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function UXDialog(const dialogsize: TUXDialogSize;
+function UXDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
-buttons: TUXMsgDlgBtns;
-const icon: UXImage = uxmtOK): TModalResult;
+buttons: TSlickeMsgDlgBtns;
+const icon: SlickeUXImage = uxmtOK): TModalResult;
 begin
-  Result := ExtMsg(dialogsize, sMsgTitle, title, message, '',
+  Result := SlickeMsg(dialogsize, sMsgTitle, title, message, '',
     uxclBlue, uxclLightBlue, buttons, WChar(icon));
 end;
 
 {** See interface docs for behavior and parameters. }
-function UXDialog(const dialogsize: TUXDialogSize;
+function UXDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
-buttons: TUXMsgDlgBtns;
+buttons: TSlickeMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult;
 begin
   Result := UXDialog(dialogsize, sMsgTitle, title, message, buttons, mtype);
 end;
 
 {** See interface docs for behavior and parameters. }
-function UXDialog(const dialogsize: TUXDialogSize;
+function UXDialog(const dialogsize: TSlickeDialogSize;
 const header, title, message: string;
-buttons: TUXMsgDlgBtns;
+buttons: TSlickeMsgDlgBtns;
 const mtype: TMsgDlgType): TModalResult;
 var
-  icon: UXImage;
+  icon: SlickeUXImage;
 begin
   case mtype of
   mtWarning:
@@ -1566,22 +1566,22 @@ begin
     icon := uxmtCog;
   end;
 
-  Result := ExtMsg(dialogsize, header, title, message, '',
+  Result := SlickeMsg(dialogsize, header, title, message, '',
     uxclBlue, uxclLightBlue, buttons, icon);
 end;
 
 
-procedure UXMessage(const title, message: string; const icon: uximage = uxmtOK; sender: TForm = nil);
+procedure SlickeMessage(const title, message: string; const icon: SlickeUXImage = uxmtOK; sender: TForm = nil);
 begin
-  UXMessage(uxdAuto, title, message, icon, sender);
+  SlickeMessage(sdsAuto, title, message, icon, sender);
 end;
 
 {**
-  See interface docs. Renders inline panel when @code(dialogsize = uxdOnForm) and a sender is available.
+  See interface docs. Renders inline panel when @code(dialogsize = sdsOnForm) and a sender is available.
 }
-procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string;
+procedure SlickeMessage(const dialogsize: TSlickeDialogSize; const title, message: string;
 const
-icon: UXImage = uxmtOK;
+icon: SlickeUXImage = uxmtOK;
 sender: TForm = nil);
 const
   onFormName: string = 'uxd_on_form';
@@ -1595,10 +1595,10 @@ var
   {$endif}
   df: TDialogForm;
 begin
-  if (dialogsize = uxdOnForm) and ((sender <> nil) and (sender.FindComponent(onFormName) = nil)) then
+  if (dialogsize = sdsOnForm) and ((sender <> nil) and (sender.FindComponent(onFormName) = nil)) then
   begin
 
-    if (sender <> nil) and (sender.Showing) and (GetUXDialogSize(uxdAuto) = uxdBig) then
+    if (sender <> nil) and (sender.Showing) and (GeTSlickeDialogSize(sdsAuto) = uxdBig) then
     begin
       // On e.g. touch screens display a full screen message
       tp := TPanel.Create(sender); // Create a panel to cover the screen
@@ -1665,24 +1665,24 @@ begin
 
       // df is owned by sender (the main form) — never freed from inside tb's event
       df := TDialogForm.CreateNew(sender);
-      tb.OnClick := @df.UXMessageOnClick;
-      tb.OnMouseDown := @df.UXMessageOnMouseDown;
+      tb.OnClick := @df.SlickeMessageOnClick;
+      tb.OnMouseDown := @df.SlickeMessageOnMouseDown;
     end
     else
-      ExtMsg(uxdAuto, sMsgTitle, title, message, '',
+      SlickeMsg(sdsAuto, sMsgTitle, title, message, '',
         uxclBlue, uxclLightBlue, [mbOK], WChar(icon))
   end
   else
-    ExtMsg(dialogsize, sMsgTitle, title, message, '',
+    SlickeMsg(dialogsize, sMsgTitle, title, message, '',
       uxclBlue, uxclLightBlue, [mbOK], WChar(icon))
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtInput(
-const dialogsize: TUXDialogSize;
+function SlickeInput(
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc, ADefault: string;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog;
+const icon: SlickeUXImage = uxmtCog;
 const AMasked: boolean = false
 ): string;
 const
@@ -1694,11 +1694,11 @@ var
   Edit: TEdit;
   OkButton, CancelButton: TWinControl;
   bgcol: TColor;
-  size: TUXDialogSize;
+  size: TSlickeDialogSize;
 begin
   Result := ADefault;
   ModalResult := mrCancel;
-  size := GetUXDialogSize(dialogsize);
+  size := GeTSlickeDialogSize(dialogsize);
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -1755,20 +1755,20 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtPasswordInput(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc, ADefault: string;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): string;
 begin
-  Result := ExtInput(dialogsize, ACaption, ATitle, ADesc, ADefault, ModalResult, icon, true);
+  Result := SlickeInput(dialogsize, ACaption, ATitle, ADesc, ADefault, ModalResult, icon, true);
 end;
 
-function ExtList(const dialogsize: TUXDialogSize;
+function SlickeList(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Choices: array of string;
 const Default: boolean = false;
-const icon: UXImage = uxmtCog): integer; overload;
+const icon: SlickeUXImage = uxmtCog): integer; overload;
 var
   UChoices: array of unicodestring;
   i: integer;
@@ -1777,16 +1777,16 @@ begin
   for i := 0 to High(Choices) do
     UChoices[i] := unicodestring(Choices[i]);
 
-  Result := ExtList(dialogsize, ACaption, ATitle, ADesc, UChoices, Default, icon);
+  Result := SlickeList(dialogsize, ACaption, ATitle, ADesc, UChoices, Default, icon);
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtList(
-const dialogsize: TUXDialogSize;
+function SlickeList(
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Choices: array of unicodestring;
 const Default: boolean = false;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): integer;
 const
   Padding = 16;
@@ -1798,10 +1798,10 @@ var
   OkButton, CancelButton: TWinControl;
   bgcol: TColor;
   i: integer;
-  size: TUXDialogSize;
+  size: TSlickeDialogSize;
 begin
   Result := -1;
-  size := GetUXDialogSize(dialogsize);
+  size := GeTSlickeDialogSize(dialogsize);
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -1846,7 +1846,7 @@ begin
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect, mrOk);
     CancelButton := MakeDialogButton(Dialog, size,
-      ifthen(Default, smbUXDefault, smbUXCancel), mrCancel);
+      ifthen(Default, smbSlickeDefault, smbUXCancel), mrCancel);
     CenterButtons(Dialog, OkButton, CancelButton, Combo.Top + Combo.Height, size, Padding);
     Dialog.ActiveControl := Combo;
 
@@ -1861,10 +1861,10 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtTable(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Keys, Values: array of string;
-const icon: UXImage = uxmtCog;
+const icon: SlickeUXImage = uxmtCog;
 const key: string = '';
 const value: string = ''
 ): integer;
@@ -1879,10 +1879,10 @@ var
   BgCol: TColor;
   OkButton, CancelButton: TWinControl;
   i: integer;
-  size: TUXDialogSize;
+  size: TSlickeDialogSize;
 begin
   Result := -1;
-  size := GetUXDialogSize(dialogsize);
+  size := GeTSlickeDialogSize(dialogsize);
   BgCol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -1950,12 +1950,12 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtFontPicker(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefaultFont: TFont;
 const AFontSample: string;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): TFont;
 const
   Padding = 16;
@@ -1967,7 +1967,7 @@ var
   FontCombo: TComboBox;
   OkButton, CancelButton: TWinControl;
   bgcol: TColor;
-  size: TUXDialogSize;
+  size: TSlickeDialogSize;
   SelectedFont: TFont;
   i, initialIndex: integer;
 
@@ -1975,7 +1975,7 @@ begin
   Result := TFont.Create;
   Result.Assign(ADefaultFont);
   ModalResult := mrCancel;
-  size := GetUXDialogSize(dialogsize);
+  size := GeTSlickeDialogSize(dialogsize);
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -2086,13 +2086,13 @@ begin
 end;
 
 function ExtDatePicker(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: TDateTime;
 AMinDate: TDateTime;
 AMaxDate: TDateTime;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): TDateTime;
 const
   Padding = 16;
@@ -2103,9 +2103,9 @@ var
   DatePicker: TDateEdit;
   OkButton, CancelButton: TWinControl;
   bgcol: TColor;
-  size: TUXDialogSize;
+  size: TSlickeDialogSize;
 begin
-  size := GetUXDialogSize(dialogsize);
+  size := GeTSlickeDialogSize(dialogsize);
   Result := ADefault;
   ModalResult := mrCancel;
   bgcol := getBackground;
@@ -2173,52 +2173,52 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtLog(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const caption, msg, log: string;
-const icon: UXImage = uxmtCog;
+const icon: SlickeUXImage = uxmtCog;
 scale: integer = 1
 ): TModalResult;
 begin
-  Result := ExtMsg(dialogsize, sMsgTitle, caption, msg, log,
+  Result := SlickeMsg(dialogsize, sMsgTitle, caption, msg, log,
     IfThen(TrndiNative.isDarkMode, uxclGray, uxclBlue), uxclLightBlue, [mbOK], icon, scale);
 end;
 
-function ExtMsgYesNo(
+function SlickeMsgYesNo(
 const caption, desc: string;
-const micon: UXImage = uxmtConfirmation;
+const micon: SlickeUXImage = uxmtConfirmation;
 const scale: single = 1): boolean;
 begin
-  result :=ExtMsgYesNo(uxdAuto, caption, desc, micon, scale);
+  result :=SlickeMsgYesNo(sdsAuto, caption, desc, micon, scale);
 end;
 
-function ExtMsgYesNo(
-const dialogsize: TUXDialogSize;
+function SlickeMsgYesNo(
+const dialogsize: TSlickeDialogSize;
 const caption, desc: string;
-const micon: UXImage = uxmtConfirmation;
+const micon: SlickeUXImage = uxmtConfirmation;
 const scale: single = 1): boolean;
 begin
-  result := ExtMsg(dialogsize,caption, desc, [mbYes, mbNo], micon, scale) = mrYes;
+  result := SlickeMsg(dialogsize,caption, desc, [mbYes, mbNo], micon, scale) = mrYes;
 end;
 
-function ExtMsg(
+function SlickeMsg(
 const caption, title, desc, logmsg: string;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TUXMsgDlgBtns = [mbAbort];
-const icon: UXImage = uxmtCog;
+buttons: TSlickeMsgDlgBtns = [mbAbort];
+const icon: SlickeUXImage = uxmtCog;
 scale: single = 1): TModalResult;
 begin
-  result := ExtMsg(uxdAuto, caption, title, desc, logmsg, dumpbg, dumptext, buttons, icon, scale);
+  result := SlickeMsg(sdsAuto, caption, title, desc, logmsg, dumpbg, dumptext, buttons, icon, scale);
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtMsg(
-const dialogsize: TUXDialogSize;
+function SlickeMsg(
+const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TUXMsgDlgBtns = [mbAbort];
-const icon: UXImage = uxmtCog;
+buttons: TSlickeMsgDlgBtns = [mbAbort];
+const icon: SlickeUXImage = uxmtCog;
 scale: single = 1
 ): TModalResult;
 begin
@@ -2228,33 +2228,33 @@ begin
 end;
 
 
-function ExtText(const dialogsize: TUXDialogSize;
+function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
-buttons: TUXMsgDlgBtns = [mbOK];
-const icon: UXImage = uxmtInformation;
+buttons: TSlickeMsgDlgBtns = [mbOK];
+const icon: SlickeUXImage = uxmtInformation;
 scale: single = 1): TModalResult;
 begin
-  result := ExtMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons,icon, scale);
+  result := SlickeMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons,icon, scale);
 end;
 
-{** Alias for ExtMsg. }
-function ExtHTML(
-const dialogsize: TUXDialogSize;
+{** Alias for SlickeMsg. }
+function SlickeHTMLMsg(
+const dialogsize: TSlickeDialogSize;
 const caption, html: string;
-buttons: TUXMsgDlgBtns = [mbOK];
-const icon: UXImage = uxmtInformation;
+buttons: TSlickeMsgDlgBtns = [mbOK];
+const icon: SlickeUXImage = uxmtInformation;
 scale: single = 1
 ): TModalResult;
 begin
-  result := ExtMsg(dialogsize,caption,html,buttons,icon,scale);
+  result := SlickeMsg(dialogsize,caption,html,buttons,icon,scale);
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtMsg(
-const dialogsize: TUXDialogSize;
+function SlickeMsg(
+const dialogsize: TSlickeDialogSize;
 const caption, html: string;
-buttons: TUXMsgDlgBtns = [mbAbort];
-const icon: UXImage = uxmtCog;
+buttons: TSlickeMsgDlgBtns = [mbAbort];
+const icon: SlickeUXImage = uxmtCog;
 scale: single = 1;
 hpadding: single = 1
 ): TModalResult;
@@ -2271,10 +2271,10 @@ var
   {$else}
   OkButton: TButton;
   {$endif}
-  mr: TUXMsgDlgBtn;
+  mr: TSlickeMsgDlgBtn;
   ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: integer;
   bgcol: TColor;
-  size: TUXDialogSize;
+  size: TSlickeDialogSize;
   sysfont, htmlstr: string;
   contentHeight, maxHeight, finalHeight: integer;
   hpd: TIpHttpDataProvider;
@@ -2317,7 +2317,7 @@ begin
   if buttons = [] then
     buttons := [mbOK];
   bgcol := getBackground;
-  size := GetUXDialogSize(dialogsize);
+  size := GeTSlickeDialogSize(dialogsize);
 
   Dialog := TDialogForm.CreateNew(nil);
   try
@@ -2447,13 +2447,13 @@ end;
 
 {** See interface docs for behavior and parameters. }
 function ExtMessage(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 isHTML: boolean;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TUXMsgDlgBtns = [mbAbort];
-const icon: UXImage = uxmtCog;
+buttons: TSlickeMsgDlgBtns = [mbAbort];
+const icon: SlickeUXImage = uxmtCog;
 scale: single = 1
 ): TModalResult;
 const
@@ -2474,13 +2474,13 @@ var
   {$else}
   OkButton: TButton;
   {$endif}
-  mr: TUXMsgDlgBtn;
+  mr: TSlickeMsgDlgBtn;
   ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
   TitlePixelWidth, DescPixelWidth, TextPixelWidth,
   posX, ProposedWidth, btnCount, totalBtnWidth: integer;
   bgcol: TColor;
   TempFont: TFont;
-  size: TUXDialogSize;
+  size: TSlickeDialogSize;
   MemoWrapper: TPanel;
   sysfont, htmlstr: string;
   hpd: TIpHttpDataProvider;
@@ -2490,7 +2490,7 @@ begin
   if buttons = [] then
     buttons := [mbOK];
   bgcol := getBackground;
-  size := GetUXDialogSize(dialogsize);
+  size := GeTSlickeDialogSize(dialogsize);
 
   Dialog := TDialogForm.CreateNew(nil);
   try
@@ -2953,11 +2953,11 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtError(const dialogsize: TUXDialogSize;
+function ExtError(const dialogsize: TSlickeDialogSize;
 const msg, error: string;
-const icon: UXImage = uxmtCog): TModalResult;
+const icon: SlickeUXImage = uxmtCog): TModalResult;
 begin
-  Result := ExtMsg(dialogsize,
+  Result := SlickeMsg(dialogsize,
     sExtErr,  // caption
     sErr,     // title
     msg,      // description
@@ -2969,11 +2969,11 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtError(const dialogsize: TUXDialogSize;
+function ExtError(const dialogsize: TSlickeDialogSize;
 const error: string;
-const icon: UXImage = uxmtCog): TModalResult;
+const icon: SlickeUXImage = uxmtCog): TModalResult;
 begin
-  Result := ExtMsg(dialogsize,
+  Result := SlickeMsg(dialogsize,
     sExtErr,   // caption
     sExtTitle, // title
     sErr,      // description
@@ -2985,13 +2985,13 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtSucc(const dialogsize: TUXDialogSize;
+function ExtSucc(const dialogsize: TSlickeDialogSize;
 const msg, desc, output: string;
 dumpbg: TColor = uxclLightGreen;
 dumptext: TColor = uxclDarkGreen;
-const icon: UXImage = uxmtOK): TModalResult;
+const icon: SlickeUXImage = uxmtOK): TModalResult;
 begin
-  Result := ExtMsg(dialogsize,
+  Result := SlickeMsg(dialogsize,
     sSuccTitle, // caption
     msg,        // title
     desc,       // description
@@ -3003,15 +3003,15 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtSuccEx(const dialogsize: TUXDialogSize;
+function ExtSuccEx(const dialogsize: TSlickeDialogSize;
 const msg, desc, output: string;
-btns: TUXMsgDlgBtns;
+btns: TSlickeMsgDlgBtns;
 dumpbg: TColor = uxclLightGreen;
 dumptext: TColor = uxclDarkGreen;
-const icon: UXImage = uxmtOK;
+const icon: SlickeUXImage = uxmtOK;
 const scale: integer = 1): TModalResult;
 begin
-  Result := ExtMsg(dialogsize,
+  Result := SlickeMsg(dialogsize,
     sSuccTitle,
     msg,
     desc,
@@ -3533,20 +3533,20 @@ begin
 end;
 {$endif}
 
-procedure TDialogForm.UXMessageOnMouseDown(sender: TObject; Button: TMouseButton;
+procedure TDialogForm.SlickeMessageOnMouseDown(sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   if Button = mbLeft then
-    UXMessageOnClick(sender);
+    SlickeMessageOnClick(sender);
 end;
 
-{** Close handler for full-screen overlay messages created by @link(UXMessage). }
-procedure TDialogForm.UXMessageOnClick(sender: TObject);
+{** Close handler for full-screen overlay messages created by @link(SlickeMessage). }
+procedure TDialogForm.SlickeMessageOnClick(sender: TObject);
 var
   P: TPanel;
 begin
   P := (sender as TButton).parent as TPanel;
-  // Clear the name so the next UXMessage call can create a new overlay.
+  // Clear the name so the next SlickeMessage call can create a new overlay.
   // Do NOT free here — in Qt, destroying a QWidget from inside its own
   // clicked() signal causes the signal dispatch to access freed memory;
   // the panel is owned by the parent form and freed when the form closes.
@@ -3609,7 +3609,7 @@ end;
 
 procedure TDialogForm.HTMLHotClick(Sender: TObject);
 begin
-  if ExtText(uxdAuto, sURLTitle, sURL,[mbYes, mbNo]) = mrYes then
+  if SlickePrompt(sdsAuto, sURLTitle, sURL,[mbYes, mbNo]) = mrYes then
     OpenURL((sender as TIpHtmlPanel).HotURL);
 end;
 

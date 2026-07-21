@@ -170,7 +170,7 @@ TExtContextInfo = record
   Granted: TExtPermSet;      // baseline + user-approved promptable perms
 end;
 
-TExtContextList = specialize TFPGList<PExtContextInfo>;
+TExtContSlickeList = specialize TFPGList<PExtContextInfo>;
 
   {** Embedded JavaScript engine wrapper using QuickJS via mORMot bindings.
 
@@ -224,7 +224,7 @@ private
   FPendingRejections: array of TPendingRejection;
 
     {** Loaded per-extension contexts (Path B). Each user .js script lives in its own ctx. }
-  FExtContexts: TExtContextList;
+  FExtContexts: TExtContSlickeList;
     {** Active "target" context for registration helpers (addFunction/addClassFunction/AddPromise).
         nil means write to FContext (legacy/admin path). Set by BeginRegistration. }
   FCurrentRegCtx: JSContext;
@@ -797,7 +797,7 @@ end;
 function TTrndiExtEngine.uxResponse(const dialogType: TMsgDlgType;
 const msg: string; const titleadd: string): integer;
 var
-  btns: TUXMsgDlgBtns;
+  btns: TSlickeMsgDlgBtns;
   header, title: string;
 begin
   title := titleadd;
@@ -835,7 +835,7 @@ begin
   end;
   end;
 
-  Result := UXDialog(uxdAuto, header, title, msg, btns, dialogType);
+  Result := UXDialog(sdsAuto, header, title, msg, btns, dialogType);
 end;
 
 {** Raise JS exception with filename context. }
@@ -1118,7 +1118,7 @@ begin
 
   // Per-extension contexts (Path B). FCurrentRegCtx=nil routes legacy
   // bootstrap registrations to FContext (admin/template context).
-  FExtContexts := TExtContextList.Create;
+  FExtContexts := TExtContSlickeList.Create;
   FCurrentRegCtx := nil;
   FCurrentRegPerms := [];
 
@@ -1853,7 +1853,7 @@ begin
         {$IFDEF DEBUG}
         // Only log in debug mode to avoid user-facing errors
         try
-          ExtError(uxdAuto, 'QuickJS Runtime Cleanup', 'Non-critical cleanup error: ' + E.Message);
+          ExtError(sdsAuto, 'QuickJS Runtime Cleanup', 'Non-critical cleanup error: ' + E.Message);
         except
           // If even error reporting fails, just ignore completely
         end;
@@ -1918,7 +1918,7 @@ begin
   if ctx = nil then Exit;
   if not ctx^.GetValue('Trndi', this) then
   begin
-    ExtError(uxdAuto, 'Cannot locate the Trndi class while initializing extensions');
+    ExtError(sdsAuto, 'Cannot locate the Trndi class while initializing extensions');
     Exit;
   end;
 
@@ -2348,14 +2348,14 @@ begin
   end;
   if EvalResult.IsException then
   try
-    ExtError(uxdAuto, 'Error loading', err);
+    ExtError(sdsAuto, 'Error loading', err);
     ResultStr := JS_ToCString(ctx, JS_GetException(ctx));
     Result := 'Error: ' + ResultStr + err;
     JS_FreeCString(ctx, ResultStr);
-    ExtError(uxdAuto, analyze(ctx, @evalresult));
+    ExtError(sdsAuto, analyze(ctx, @evalresult));
   except
     on E: Exception do
-      ExtError(uxdAuto, 'An extension''s code resulted in an error: ' + e.message);
+      ExtError(sdsAuto, 'An extension''s code resulted in an error: ' + e.message);
   end
   else
   begin
@@ -2425,16 +2425,16 @@ begin
   if EvalResult.IsException then
   try
     // Present error and capture exception string
-    ExtError(uxdAuto, 'Error loading', err);
+    ExtError(sdsAuto, 'Error loading', err);
     ResultStr := JS_ToCString(FContext, JS_GetException(FContext));
     Result := 'Error: ' + ResultStr + err;
     JS_FreeCString(FContext, ResultStr);
 
     // Optional detailed analysis hook
-    ExtError(uxdAuto, analyze(FContext, @evalresult));
+    ExtError(sdsAuto, analyze(FContext, @evalresult));
   except
     on E: Exception do
-      ExtError(uxdAuto, 'An extension''s code resulted in an error: ' + e.message);
+      ExtError(sdsAuto, 'An extension''s code resulted in an error: ' + e.message);
   end
   else
   begin
@@ -2466,7 +2466,7 @@ begin
   EvalResult := ctx^.Eval(Script, Name, JS_EVAL_TYPE_GLOBAL, err);
   Result := not EvalResult.IsException;
   if not Result then
-    ExtError(uxdAuto, 'Error loading ' + Name, err);
+    ExtError(sdsAuto, 'Error loading ' + Name, err);
   ctx^.Free(EvalResult);
 end;
 

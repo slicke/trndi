@@ -847,12 +847,12 @@ implementation
 
 procedure ShowMessage(const str: string);
 begin
-  UXMessage(sSuccTitle, str, uxmtInformation);
+  SlickeMessage(sSuccTitle, str, uxmtInformation);
 end;
 
 procedure ShowHTMLMessage(const html: string);
 begin
-  ExtHTML(uxdAuto,'',html);
+  SlickeHTMLMsg(sdsAuto,'',html);
 end;
 
 function ExtractLangCode(const AText: string): string;
@@ -907,7 +907,7 @@ const
     'Built in <b>Object Pascal</b>, using the <b>Lazarus</b> component library (LCL) and <b>FreePascal</b>.' + sHTMLLineBreak + sHTMLLineBreak +
     'Follow Trndi on Discord and Github! Contributions of code and translations are very welcome!';
 begin
-  ExtHTML(uxdAuto, 'Trndi', txt,[mbOK],uxmtInformation,25);
+  SlickeHTMLMsg(sdsAuto, 'Trndi', txt,[mbOK],uxmtInformation,25);
 end;
 
 procedure TfConf.lbExtensionsSelectionChange(Sender: TObject; User: boolean);
@@ -1285,7 +1285,7 @@ end;
 
 procedure TfConf.bDeltaMaxHelpClick({%H-}Sender: TObject);
 begin
-  if UXDialog(uxdAuto,'Delta', RS_DELTA_MAX,[mbOK, mbUxRead]) <> mrOK then
+  if UXDialog(sdsAuto,'Delta', RS_DELTA_MAX,[mbOK, mbSlickeRead]) <> mrOK then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md');
 end;
 
@@ -1392,7 +1392,7 @@ var
   c: char;
   mr: TModalResult;
 begin
-  s := ExtInput(uxdAuto, RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME, '', mr);
+  s := SlickeInput(sdsAuto, RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME, '', mr);
   if mr = mrOk then
   begin
     if Trim(s) = '' then
@@ -1461,7 +1461,7 @@ begin
   extensionsPath := eExt.Text;
   if extensionsPath <> '' then
     LoadExtensionList(extensionsPath);
-  UXMessage(RS_EXT_RELOAD_TITLE, RS_EXT_RELOAD_DONE, uxmtInformation);
+  SlickeMessage(RS_EXT_RELOAD_TITLE, RS_EXT_RELOAD_DONE, uxmtInformation);
   {$endif}
 end;
 
@@ -1563,7 +1563,7 @@ begin
   if s <> '' then
   begin
     s := s + sHTMLLineBreak + sHTMLLineBreak + x + sHTMLLineBreak + RS_DRIVER_CONTRIBUTOR + c;
-    ExtMsg(uxdAuto, 'API', s, [mbClose],uxmtInformation,20, 1.2);
+    SlickeMsg(sdsAuto, 'API', s, [mbClose],uxmtInformation,20, 1.2);
   end;
 
 end;
@@ -1586,13 +1586,13 @@ begin
 
   if url <> '' then
   begin
-    if ExtMsg(uxdAuto, RS_NOTIFICATIONS, RS_NOTIFY_TITLE,
-      Format(RS_NOTIFY_TXT, [ns]), '', uxclWhite, uxclRed, [mbOK, mbUXRead],
+    if SlickeMsg(sdsAuto, RS_NOTIFICATIONS, RS_NOTIFY_TITLE,
+      Format(RS_NOTIFY_TXT, [ns]), '', uxclWhite, uxclRed, [mbOK, mbSlickeRead],
       uxmtCustom, 0) <> mrOk then
       OpenURL(url);
   end
   else
-    UXMessage(RS_NOTIFICATIONS, RS_NOTIFY_SYSTEM);
+    SlickeMessage(RS_NOTIFICATIONS, RS_NOTIFY_SYSTEM);
 
 end;
 
@@ -2065,7 +2065,7 @@ begin
       s := Format(RS_NEWVER_PR, [rn])
     else
       s := Format(RS_NEWVER, [rn]);
-    if UXDialog(uxdAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
+    if UXDialog(sdsAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
       OpenURL(r);
   end
   else begin
@@ -2092,7 +2092,7 @@ end;
 procedure TfConf.bWebAPIClick(Sender: TObject);
 begin
 
-  if ExtHTML(uxdAuto,'WebAPI', RS_WEBAPI, [mbOK, mbUxRead], uxmtOK) <> mrOk then
+  if SlickeHTMLMsg(sdsAuto,'WebAPI', RS_WEBAPI, [mbOK, mbSlickeRead], uxmtOK) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/WebAPI.md');
 end;
 
@@ -2128,7 +2128,7 @@ var
 begin
   {$ifdef X_LINUXBSD}
   s := GetWindowManagerName;
-  ExtHTML(uxdAuto, RS_POS_TITLE, IfThen(s = '', RS_POS_UNKNOWN, Format(RS_POS, [s])));
+  SlickeHTMLMsg(sdsAuto, RS_POS_TITLE, IfThen(s = '', RS_POS_UNKNOWN, Format(RS_POS, [s])));
   {$endif}
 end;
 
@@ -2361,7 +2361,7 @@ const
     '- This app may contain bugs or errors that could display incorrect data' + sHTMLLineBreak + sHTMLLineBreak +
     '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>';
 begin
-  if ExtMsg(uxdAuto, 'License', txt, [mbOK, mbUxRead], uxmtOK, uxscHuge) <> mrOk then
+  if SlickeMsg(sdsAuto, 'License', txt, [mbOK, mbSlickeRead], uxmtOK, uxscHuge) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 
@@ -2391,7 +2391,7 @@ begin
   else
     title := RS_SELECT_FONT_DESC;
   end;
-  f := slicke.ux.alert.ExtFontPicker(uxdAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
+  f := slicke.ux.alert.ExtFontPicker(sdsAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
   if mr = mrOK then
     (Sender as TLabel).Font := f;
 end;
@@ -2625,7 +2625,7 @@ begin
 
   if hostV = '' then
   begin
-    UXMessage('Proxy', RS_EMPTY_PROXY, uxmtInformation);
+    SlickeMessage('Proxy', RS_EMPTY_PROXY, uxmtInformation);
     Exit;
   end;
 
@@ -2638,7 +2638,7 @@ begin
     ShowMessage(RS_TEST_SUCCESS)
   else
   if okHttp and (not okHttps) then
-    UXMessage('Proxy',
+    SlickeMessage('Proxy',
       'HTTP via proxy works, but HTTPS via proxy failed. Trndi uses HTTPS endpoints, so this proxy configuration will not work for normal operation.' +
       LineEnding + LineEnding + respHttps,
       uxmtWarning)

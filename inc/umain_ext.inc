@@ -299,7 +299,7 @@ begin
   // Safe mode: holding Ctrl during startup skips all extension loading.
   if ssCtrl in GetKeyShiftState then
   begin
-    ExtHTML(uxdAuto, RS_SAFEMODE, RS_SAFEMODE_DESC, [mbOK], uxmtInformation, uxscLarge);
+    SlickeHTMLMsg(sdsAuto, RS_SAFEMODE, RS_SAFEMODE_DESC, [mbOK], uxmtInformation, uxscLarge);
     exts.Free;
     Exit;
   end;
@@ -374,7 +374,7 @@ begin
       stmp := TTrndiExtEngine.Instance.ExtExecuteFile(extInfo);
       if Pos('Error:', stmp) = 1 then
         {$ifdef debug}
-        ExtMessage(uxdAuto, 'Extension Activation Failed!',
+        ExtMessage(sdsAuto, 'Extension Activation Failed!',
           'The ' + ExtractFileNameOnly(extFile) + ' extension was loaded with an error',
           'Output below',
           'Return: ' + stmp + sLineBreak + sLineBreak + 'Log: ' +

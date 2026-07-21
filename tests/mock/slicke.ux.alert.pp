@@ -14,16 +14,16 @@ interface
 uses Classes, SysUtils, Forms, Graphics;
 
 type
-  TUXDialogSize = (uxdAuto, uxdOnForm, uxdNormal, uxdInline);
-  UXImage = LongInt;
+  TSlickeDialogSize = (sdsAuto, sdsOnForm, sdsNormal, sdsInline);
+  SlickeUXImage = LongInt;
 
-  TUXMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-    mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbUXOpenFile, mbUXMinimize, mbUXAgree, mbUXRead, mbUXDefault, mbUXSnooze);
-  TUXMsgDlgBtns = set of TUXMsgDlgBtn;
+  TSlickeMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
+    mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze);
+  TSlickeMsgDlgBtns = set of TSlickeMsgDlgBtn;
 
   TModalResult = Integer;
 
-procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: UXImage = 0; sender: TForm = nil);
+procedure SlickeMessage(const dialogsize: TSlickeDialogSize; const title, message: string; const icon: SlickeUXImage = 0; sender: TForm = nil);
 const
   sHTMLLineBreak = '<br>';
   uxmtInformation = 0;
@@ -50,101 +50,101 @@ const
   uxscHuge = 20;
   uxscEnormous = 30;
 
-procedure UXMessage(const title, message: string; const icon: UXImage = 0; sender: TForm = nil);
+procedure SlickeMessage(const title, message: string; const icon: SlickeUXImage = 0; sender: TForm = nil);
 
-function ExtHTML(const dialogsize: TUXDialogSize; const caption, html: string; buttons: TUXMsgDlgBtns = [mbOK]; const icon: UXImage = uxmtInformation; scale: Extended = 1): TModalResult;
+function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize; const caption, html: string; buttons: TSlickeMsgDlgBtns = [mbOK]; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
 
-function ExtMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: UXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
-function ExtMsg(const dialogsize: TUXDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TUXMsgDlgBtns = [mbAbort]; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
-function ExtMsg(const dialogsize: TUXDialogSize; const title, message: string; buttons: TUXMsgDlgBtns; const mtype: Integer; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
-function ExtMsgYesNo(const caption, desc: string; const micon: UXImage = uxmtInformation): boolean; overload;
-function ExtMsgYesNo(const dialogsize: TUXDialogSize; const caption, desc: string; const micon: UXImage = uxmtInformation): boolean; overload;
+function SlickeMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = [mbAbort]; const icon: SlickeUXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = [mbAbort]; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
+function SlickeMsgYesNo(const caption, desc: string; const micon: SlickeUXImage = uxmtInformation): boolean; overload;
+function SlickeMsgYesNo(const dialogsize: TSlickeDialogSize; const caption, desc: string; const micon: SlickeUXImage = uxmtInformation): boolean; overload;
 
-function ExtText(const dialogsize: TUXDialogSize; const caption, text: string; buttons: TUXMsgDlgBtns = [mbOK]; const icon: UXImage = uxmtInformation; scale: Extended = 1): TModalResult;
-function ExtInput(const dialogsize: TUXDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
-function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false): LongInt; overload;
-function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
+function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: string; buttons: TSlickeMsgDlgBtns = [mbOK]; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
+function SlickeInput(const dialogsize: TSlickeDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
+function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false): LongInt; overload;
+function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
 
 // Numeric and date inputs (headless stubs)
 function ExtIntInput(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: integer;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): integer;
 
 function ExtNumericInput(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
 AMin, AMax: double;
 float: boolean;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): double;
 
-function ExtDatePicker(const dialogsize: TUXDialogSize;
+function ExtDatePicker(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: TDateTime;
 AMinDate: TDateTime;
 AMaxDate: TDateTime;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog): TDateTime;
+const icon: SlickeUXImage = uxmtCog): TDateTime;
 
-function ExtFontPicker(const dialogsize: TUXDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
-function ExtFontPicker(const dialogsize: TUXDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
+function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
+function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
 
-function UXDialog(const dialogsize: TUXDialogSize; const title, message: string; buttons: TUXMsgDlgBtns): TModalResult; overload;
-function UXDialog(const dialogsize: TUXDialogSize; const title, message: string; buttons: TUXMsgDlgBtns; const mtype: Integer): TModalResult; overload;
-function UXDialog(const dialogsize: TUXDialogSize; const header, title, message: string; buttons: TUXMsgDlgBtns; const mtype: Integer): TModalResult; overload;
+function UXDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns): TModalResult; overload;
+function UXDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
+function UXDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 
 implementation
 
-procedure UXMessage(const dialogsize: TUXDialogSize; const title, message: string; const icon: UXImage = 0; sender: TForm = nil);
+procedure SlickeMessage(const dialogsize: TSlickeDialogSize; const title, message: string; const icon: SlickeUXImage = 0; sender: TForm = nil);
 begin
   // No-op for headless tests
 end;
 
-procedure UXMessage(const title, message: string; const icon: UXImage = 0; sender: TForm = nil);
+procedure SlickeMessage(const title, message: string; const icon: SlickeUXImage = 0; sender: TForm = nil);
 begin
   // No-op for headless tests
 end;
-function ExtHTML(const dialogsize: TUXDialogSize; const caption, html: string; buttons: TUXMsgDlgBtns = [mbOK]; const icon: UXImage = uxmtInformation; scale: Extended = 1): TModalResult;
+function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize; const caption, html: string; buttons: TSlickeMsgDlgBtns = [mbOK]; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;
 
-function ExtMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TUXMsgDlgBtns = [mbAbort]; const icon: UXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult;
+function SlickeMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = [mbAbort]; const icon: SlickeUXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;
 
-function ExtMsg(const dialogsize: TUXDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TUXMsgDlgBtns = [mbAbort]; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult;
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = [mbAbort]; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;
 
-function ExtMsg(const dialogsize: TUXDialogSize; const title, message: string; buttons: TUXMsgDlgBtns; const mtype: Integer; extra: LongInt = 0; scale: Extended = 1): TModalResult;
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer; extra: LongInt = 0; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;
-function ExtMsgYesNo(const caption, desc: string; const micon: UXImage = uxmtInformation): boolean;
+function SlickeMsgYesNo(const caption, desc: string; const micon: SlickeUXImage = uxmtInformation): boolean;
 begin
   Result := True;
 end;
 
-function ExtMsgYesNo(const dialogsize: TUXDialogSize; const caption, desc: string; const micon: UXImage = uxmtInformation): boolean;
+function SlickeMsgYesNo(const dialogsize: TSlickeDialogSize; const caption, desc: string; const micon: SlickeUXImage = uxmtInformation): boolean;
 begin
   Result := True;
 end;
 
-function ExtText(const dialogsize: TUXDialogSize; const caption, text: string; buttons: TUXMsgDlgBtns = [mbOK]; const icon: UXImage = uxmtInformation; scale: Extended = 1): TModalResult;
+function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: string; buttons: TSlickeMsgDlgBtns = [mbOK]; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;
 
-function ExtInput(const dialogsize: TUXDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
+function SlickeInput(const dialogsize: TSlickeDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
 begin
   mr := mrOk;
   Result := def;
@@ -152,11 +152,11 @@ end;
 
 // Headless numeric/date input stubs
 function ExtIntInput(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: integer;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): integer;
 begin
   // call numeric input with no min/max limits
@@ -164,13 +164,13 @@ begin
 end;
 
 function ExtNumericInput(
-const dialogsize: TUXDialogSize;
+const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
 AMin, AMax: double;
 float: boolean;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog
 ): double;
 begin
   // ignore limits for headless tests and just return default
@@ -178,30 +178,30 @@ begin
   Result := ADefault;
 end;
 
-function ExtDatePicker(const dialogsize: TUXDialogSize;
+function ExtDatePicker(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: TDateTime;
 AMinDate: TDateTime;
 AMaxDate: TDateTime;
 var ModalResult: TModalResult;
-const icon: UXImage = uxmtCog): TDateTime;
+const icon: SlickeUXImage = uxmtCog): TDateTime;
 begin
   ModalResult := mrOk;
   Result := ADefault;
 end;
 
-function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false): LongInt; overload;
+function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false): LongInt; overload;
 begin
   Result := 0;
 end;
 
-function ExtList(const dialogsize: TUXDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
+function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
 begin
   Result := 0;
 end;
 
 
-function ExtFontPicker(const dialogsize: TUXDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont;
+function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont;
 begin
   // Return a copy of the provided font for headless tests
   Result := TFont.Create;
@@ -211,23 +211,23 @@ begin
   mr := mrOk;
 end;
 
-function ExtFontPicker(const dialogsize: TUXDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont;
+function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont;
 begin
   // Provide fallback overload used by some callers
   Result := ExtFontPicker(dialogsize, caption, title, msg, '', AFont, sampleText, mr);
 end;
 
-function UXDialog(const dialogsize: TUXDialogSize; const title, message: string; buttons: TUXMsgDlgBtns): TModalResult; overload;
+function UXDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns): TModalResult; overload;
 begin
   Result := mrOk;
 end;
 
-function UXDialog(const dialogsize: TUXDialogSize; const title, message: string; buttons: TUXMsgDlgBtns; const mtype: Integer): TModalResult; overload;
+function UXDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 begin
   Result := mrOk;
 end;
 
-function UXDialog(const dialogsize: TUXDialogSize; const header, title, message: string; buttons: TUXMsgDlgBtns; const mtype: Integer): TModalResult; overload;
+function UXDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 begin
   Result := mrOk;
 end;

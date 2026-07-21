@@ -134,7 +134,7 @@ begin
   try
     if argc <= 0 then
     begin
-      dialogResult := UXDialog(uxdAuto, RS_EXT_MSG, '', '', [mbYes, mbNo], mtConfirmation);
+      dialogResult := UXDialog(sdsAuto, RS_EXT_MSG, '', '', [mbYes, mbNo], mtConfirmation);
     end
     else
     begin
@@ -148,7 +148,7 @@ begin
         Move(PAnsiChar(ctx^.ToUtf8(argv^[i]))^, p^, Length(ctx^.ToUtf8(argv^[i])));
         Inc(p, Length(ctx^.ToUtf8(argv^[i])));
       end;
-      dialogResult := UXDialog(uxdAuto, RS_EXT_MSG, '', output, [mbYes, mbNo], mtConfirmation);
+      dialogResult := UXDialog(sdsAuto, RS_EXT_MSG, '', output, [mbYes, mbNo], mtConfirmation);
     end;
     
     if dialogResult = mrYes then
@@ -158,7 +158,7 @@ begin
   except
     on E: Exception do
     begin
-      ExtError(uxdAuto, 'Error in confirm dialog: ' + E.Message);
+      ExtError(sdsAuto, 'Error in confirm dialog: ' + E.Message);
       Result := JS_FALSE;
     end;
   end;
@@ -187,14 +187,14 @@ var
 begin
   if argc < 3 then
   begin
-    ExtError(uxdAuto, 'prompt requires caption, description and default value');
+    ExtError(sdsAuto, 'prompt requires caption, description and default value');
     Result := JS_UNDEFINED;
     Exit;
   end;
   Caption := ctx^.ToUtf8(argv^[0]);
   desc := ctx^.ToUtf8(argv^[1]);
   def := ctx^.ToUtf8(argv^[2]);
-  response := ExtInput(uxdAuto, RS_EXT_MSG, Caption, desc, def, x);
+  response := SlickeInput(sdsAuto, RS_EXT_MSG, Caption, desc, def, x);
   if x = mrCancel then
     response := '';
   Result := JS_NewString(ctx, pansichar(Response));
@@ -224,7 +224,7 @@ var
 begin
   if argc < 3 then
   begin
-    ExtError(uxdAuto, 'select requires caption, description and at least one option');
+    ExtError(sdsAuto, 'select requires caption, description and at least one option');
     Result := JS_NewBigInt64(ctx, -1);
     Exit;
   end;
@@ -233,7 +233,7 @@ begin
     vals.Add(ctx^.ToUtf8(argv^[i]));
   Caption := ctx^.ToUtf8(argv^[0]);
   desc := ctx^.ToUtf8(argv^[1]);
-  response := ExtList(uxdAuto, RS_EXT_MSG, Caption, desc, vals.ToStringArray(2, argc - 1));
+  response := SlickeList(sdsAuto, RS_EXT_MSG, Caption, desc, vals.ToStringArray(2, argc - 1));
   // Ignore the first params
   //  res := vals.strings[response+2];
   vals.Free;
@@ -472,7 +472,7 @@ begin
     on E: Exception do
     begin
       // If creation fails, log and bail out. Consider throwing a JS exception instead.
-      ExtError(uxdAuto, 'Init failed');
+      ExtError(sdsAuto, 'Init failed');
       cb^.params.values.Data.Free;
       cb^.params.values.Data := nil;
       Exit; // returns an undefined/empty JSValueRaw; caller in JS sees undefined
@@ -490,7 +490,7 @@ begin
     else
       arityMsg := Format('[%s] Needs %d - %d parameters, but we got %d',
         [func, cb^.params.min, cb^.params.max, params]);
-    ExtError(uxdAuto, arityMsg);
+    ExtError(sdsAuto, arityMsg);
 
     errVal := JS_NewString(ctx, pansichar(RawUtf8(arityMsg)));
     callRes := JS_Call(ctx, funcs[JprReject], JS_UNDEFINED, 1, @errVal);
