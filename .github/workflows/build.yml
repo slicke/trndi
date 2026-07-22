@@ -78,6 +78,10 @@ jobs:
       matrix:
         include:
           # -------- Linux AMD64 --------
+          # Both Linux entries run the same build/package/sign/AppImage step;
+          # everything that differs per architecture is either derived from
+          # `arch` inside that step (package arch names, QuickJS prebuilt dir)
+          # or is the toolchain download, which is genuinely per-arch.
           - name: linux-amd64
             upload_name: linux-amd64-build
             os_target: linux
@@ -88,12 +92,6 @@ jobs:
             fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-laz_3.2.2-210709_amd64.deb/download"
             fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-src_3.2.2-210709_amd64.deb/download"
             laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/lazarus-project_4.8.0-0_amd64.deb/download"
-            qt6_arch_folder: "x86_64-linux"
-            deb_arch: amd64
-            rpm_arch: x86_64
-            cpu_flag: ""
-            build_mode: "Extensions (Release)"
-            project_file: "Trndi.lpr"
 
           # -------- Linux ARM64 --------
           - name: linux-arm64
@@ -105,12 +103,6 @@ jobs:
             fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.8/fpc-laz_3.2.3-240813_arm64.deb/download"
             fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.8/fpc-src_3.2.3-240813_arm64.deb/download"
             laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20arm64%20DEB/Lazarus%204.8/lazarus-project_4.8.0-0_arm64.deb/download"
-            qt6_arch_folder: "aarch64-linux"
-            deb_arch: arm64
-            rpm_arch: aarch64
-            cpu_flag: "--cpu=aarch64"
-            build_mode: "No Ext (Release)"
-            project_file: "Trndi.lpi"
 
           # -------- macOS ARM64 --------
           - name: macos-arm64
@@ -191,26 +183,29 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Per-architecture names. Both runners are native (no cross-compiling),
+          # so these follow directly from the matrix arch and everything below is
+          # architecture-agnostic.
+          case "${{ matrix.arch }}" in
+            amd64) DEB_ARCH=amd64; RPM_ARCH=x86_64;  APPIMAGE_ARCH=x86_64 ;;
+            arm64) DEB_ARCH=arm64; RPM_ARCH=aarch64; APPIMAGE_ARCH=aarch64 ;;
+            *) echo "Unsupported arch: ${{ matrix.arch }}" >&2; exit 1 ;;
+          esac
+          # Matches FPC's $(TargetCPU)-$(TargetOS), which is what the .lpi
+          # library search path expands to.
+          QJS_DIR="externals/quickjs/prebuilt/$(uname -m)-linux"
+
           # -lqjs resolves through the unversioned libqjs.so symlink, which is
           # not tracked in git (see externals/quickjs/README.md), so recreate it
-          # before linking. Absent on arm64, which builds without extensions.
-          QJS_DIR="externals/quickjs/prebuilt/${{ matrix.qt6_arch_folder }}"
-          if [ -d "$QJS_DIR" ]; then
-            real=$(cd "$QJS_DIR" && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* | head -1)
-            (cd "$QJS_DIR" && ln -sf "$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so)
-          fi
+          # before linking. The Makefile derives QJS_DIR the same way we do.
+          make qjs-links
 
           # Build Trndi
-          lazbuild --widgetset=qt6 --build-mode="${{ matrix.build_mode }}" ${{ matrix.cpu_flag }} ${{ matrix.project_file }}
+          lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpi
 
           # Run tests on pull requests (test runner embeds its own Pascal test server)
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            # On arm64 we don't build extensions in CI — run the no-extensions test target there
-            if [ "${{ matrix.arch }}" = "arm64" ]; then
-              make noext-test
-            else
-              make test
-            fi
+            make test
           fi
 
           # Package portable ZIP (no PNG icon inside)
@@ -299,8 +294,8 @@ jobs:
             [ -f dist/linux/after-install.sh ] && FPM_SCRIPTS+=(--after-install dist/linux/after-install.sh)
             [ -f dist/linux/after-remove.sh ] && FPM_SCRIPTS+=(--after-remove dist/linux/after-remove.sh)
 
-            fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.deb_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
-            fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture ${{ matrix.rpm_arch }} --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
+            fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture "${DEB_ARCH}" --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
+            fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture "${RPM_ARCH}" --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
             
             # Sign packages if GPG key is available (never on PRs — secrets may
             # be absent on fork PRs and PR artifacts are unpublished anyway)
@@ -344,7 +339,7 @@ jobs:
               gpgconf --launch gpg-agent
               
               # Sign DEB package manually (ar-sig format)
-              DEB_FILE=$(ls trndi_*${{ matrix.deb_arch }}.deb)
+              DEB_FILE=$(ls trndi_*"${DEB_ARCH}".deb)
               echo "Signing DEB: ${DEB_FILE}"
               
               # Create detached signature for the DEB
@@ -352,7 +347,7 @@ jobs:
               echo "DEB signature created: ${DEB_FILE}.asc"
               
               # Sign RPM package
-              RPM_FILE=$(ls trndi-*.${{ matrix.rpm_arch }}.rpm)
+              RPM_FILE=$(ls trndi-*."${RPM_ARCH}".rpm)
               echo "Signing RPM: ${RPM_FILE}"
               rpm --addsign "${RPM_FILE}"
               
@@ -372,10 +367,10 @@ jobs:
               echo "No GPG key configured, skipping package signing"
             fi
             
-            mv trndi_*${{ matrix.deb_arch }}.deb artifacts/
-            mv trndi-*.${{ matrix.rpm_arch }}.rpm artifacts/
+            mv trndi_*"${DEB_ARCH}".deb artifacts/
+            mv trndi-*."${RPM_ARCH}".rpm artifacts/
             # Move signature files if they exist
-            [ -f trndi_*${{ matrix.deb_arch }}.deb.asc ] && mv trndi_*${{ matrix.deb_arch }}.deb.asc artifacts/ || true
+            [ -f trndi_*"${DEB_ARCH}".deb.asc ] && mv trndi_*"${DEB_ARCH}".deb.asc artifacts/ || true
             
             # Include public signing key if available (for users to verify signatures)
             if [ -f "doc/trndi-signing-key.asc" ]; then
@@ -393,14 +388,9 @@ jobs:
             # Set version for AppImage
             export VERSION="${PKG_VERSION}"
             
-            # Build AppImage (script handles architecture detection)
-            if [ "${{ matrix.arch }}" = "amd64" ]; then
-              dist/linux/build-appimage.sh x86_64
-              mv Trndi-x86_64.AppImage artifacts/
-            else
-              dist/linux/build-appimage.sh aarch64
-              mv Trndi-aarch64.AppImage artifacts/
-            fi
+            # Build AppImage (script stages the QuickJS libraries itself)
+            dist/linux/build-appimage.sh "${APPIMAGE_ARCH}"
+            mv "Trndi-${APPIMAGE_ARCH}.AppImage" artifacts/
             
             echo "✓ AppImage build complete"
           fi
@@ -467,13 +457,19 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
-          # Build Trndi
-          lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
+          # Build Trndi. The prebuilt quickjs-ng engine and its ABI shim ship
+          # unversioned (libqjs.dylib / libtqshim.dylib), so -lqjs links straight
+          # against them — no symlink fixup is needed here, unlike on Linux.
+          lazbuild --build-mode="Extensions (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
           # Package zip & dmg (also on PRs, so packaging changes can be tested;
           # the publish job is gated on push-to-main, so PR artifacts only end up
           # attached to the workflow run, not a release).
           mkdir -p artifacts
           cp Trndi artifacts/
+          # The binary resolves both dylibs through an @loader_path runpath, so
+          # they must travel beside it in the portable ZIP. (dist/macos.sh does
+          # the same for the .app bundle below.)
+          cp externals/quickjs/prebuilt/aarch64-darwin/*.dylib artifacts/
           [ -d "lang" ] && cp -r lang artifacts/
           [ -f "dist/macos_README.txt" ] && cp dist/macos_README.txt artifacts/README.txt
           # The CareLink login helper is compiled into the binary and written to
@@ -699,7 +695,7 @@ jobs:
 
             # Linux arm64
             echo "### Linux (arm64 / aarch64)"
-            echo "Linux computers running on arm64 processors, including Raspberry Pi"
+            echo "Linux computers running on arm64 processors, including Raspberry Pi (Extensions supported)"
             shopt -s nullglob globstar
             
             # DEB packages
@@ -743,7 +739,7 @@ jobs:
 
             # macOS Apple Silicon
             echo "### macOS (Apple Silicon)"
-            echo "macOS computers with Apple processors"
+            echo "macOS computers with Apple processors (Extensions supported)"
             shopt -s nullglob
             files=(./release-files/macos-arm64-build/*.zip)
             if [ ${#files[@]} -eq 0 ]; then
