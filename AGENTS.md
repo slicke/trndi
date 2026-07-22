@@ -8,7 +8,7 @@ This file applies to the Trndi repository root and its subdirectories.
 - On Linux and macOS, use `make` targets for build and test workflows.
 - On Windows, use `make.ps1` for the same workflows when available.
 - When a task needs a build or test command, prefer the smallest relevant target such as `make`, `make debug`, `make test`, or `make test-noserver`.
-- Use `make noext` when you need a build path that avoids mORMot2.
+- Use `make noext` when you need a build path that avoids the QuickJS engine.
 - Check `make help` before inventing a new command or target.
 
 ## Branching & Pull Requests

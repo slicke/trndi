@@ -13,7 +13,7 @@
 # Makefile, then hands off to a shell inside the checkout):
 #   docker run -it --rm trndi-dev
 #
-# Persist the checkout (and the fetched mORMot2/static deps) across runs with
+# Persist the checkout across runs with
 # a named volume, so repeat runs only need to fetch changed sources:
 #   docker run -it --rm -v trndi-checkout:/root/trndi trndi-dev
 
