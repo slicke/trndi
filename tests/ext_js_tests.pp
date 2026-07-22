@@ -83,6 +83,7 @@ type
     procedure TestBigIntToInt64;
     procedure TestBigIntToVariant;
     procedure TestGetValueReferenceIsOwned;
+    procedure TestModuleLoaderReturnsModuleDef;
     procedure TestPromiseJobsRun;
   end;
 
@@ -539,6 +540,73 @@ begin
     '(if this fails the test can no longer detect a leak)', OutlivesGC(false));
   AssertFalse('a freed GetValue result should not keep the function alive',
     OutlivesGC(true));
+end;
+
+var
+  { Source the test module loader below hands to the compiler, and the name it
+    answers to. Set by TestModuleLoaderReturnsModuleDef before the import runs. }
+  TestModuleName: string;
+  TestModuleSource: RawUtf8;
+  TestModuleTag: system.int64;
+
+{ A module loader shaped the way QuickJS expects: it compiles the source and
+  returns the JSModuleDef, never the source text. }
+function TestModuleLoader(ctx: JSContext; module_name: pansichar;
+opaque: pointer): pointer; cdecl;
+var
+  compiled: JSValue;
+begin
+  Result := nil;
+  if string(module_name) <> TestModuleName then
+    Exit;
+  compiled := JS_Eval(ctx, TestModuleSource, RawUtf8(TestModuleName),
+    JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+  TestModuleTag := compiled.tag;
+  if JS_IsException(compiled) then
+    Exit;
+  Result := JS_VALUE_GET_PTR(compiled);
+  JS_FreeValue(ctx, compiled);
+end;
+
+procedure TQuickJSBindingTests.TestModuleLoaderReturnsModuleDef;
+var
+  v: JSValue;
+  jobCtx: JSContext;
+  pumped: integer;
+begin
+  // QuickJS uses the loader's return value as a JSModuleDef*. Returning the
+  // module source text instead type-checks (both are pointers) and then
+  // segfaults on the first import, so pin the compile-to-JSModuleDef contract.
+  TestModuleName := 'trndi-test-module.js';
+  TestModuleSource := 'export const answer = 42;';
+  TestModuleTag := 0;
+  JS_SetModuleLoaderFunc(FRuntime, nil, @TestModuleLoader, nil);
+
+  v := JS_Eval(FContext,
+    'import { answer } from "trndi-test-module.js"; globalThis.imported = answer;',
+    'test.js', JS_EVAL_TYPE_MODULE);
+  try
+    AssertFalse('importing should not raise', JS_IsException(v));
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+
+  AssertEquals('a compiled module must carry JS_TAG_MODULE - anything else means '
+    + 'the loader is handing back the wrong kind of pointer',
+    JS_TAG_MODULE, TestModuleTag);
+
+  // Module evaluation completes through the job queue.
+  jobCtx := FContext;
+  pumped := 0;
+  while JS_IsJobPending(FRuntime) and (pumped < 100) do
+  begin
+    if JS_ExecutePendingJob(FRuntime, @jobCtx) <= 0 then
+      Break;
+    Inc(pumped);
+  end;
+
+  AssertEquals('the imported binding should be visible', '42',
+    EvalToString('String(globalThis.imported)'));
 end;
 
 procedure TQuickJSBindingTests.TestPromiseJobsRun;
