@@ -7,6 +7,11 @@
 # that extension-enabled builds need no C toolchain (rebuild them with
 # externals/quickjs/build.sh). See externals/quickjs/README.md.
 !externals/quickjs/prebuilt/**
+# The unversioned SONAME symlinks the linker needs for -lqjs are recreated by
+# the build (they cannot be tracked: git checkouts onto NTFS flatten them to
+# empty files).
+externals/quickjs/prebuilt/*/libqjs.so
+externals/quickjs/prebuilt/*/libqjs.so.[0-9]
 *.lrs
 # ...except committed resource bundles under assets/, which are compiled in via
 # {$I} and must be in the repo (regenerated with `make assets` / `make.ps1
