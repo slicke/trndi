@@ -89,6 +89,21 @@ else
   endif
 endif
 
+# Prebuilt QuickJS engine + ABI shim for this host. The directory name matches
+# FPC's $(TargetCPU)-$(TargetOS), which is what the .lpi library path expands to
+# (note that macOS reports arm64 where FPC says aarch64). QJS_LIBS is the glob
+# used to copy the libraries next to a binary that has to load them.
+ifeq ($(OS),Windows_NT)
+  QJS_DIR := externals/quickjs/prebuilt/x86_64-win64
+  QJS_LIBS := *.dll
+else ifeq ($(UNAME_S),Darwin)
+  QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed s/arm64/aarch64/)-darwin
+  QJS_LIBS := *.dylib
+else
+  QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m)-linux
+  QJS_LIBS := *.so*
+endif
+
 LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG)
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
@@ -138,11 +153,11 @@ endif
 qjs-links:
 	@# -lqjs resolves through the unversioned libqjs.so symlink, which is not in
 	@# git (checkouts onto NTFS flatten symlinks into empty files), so recreate it
-	@# in the library search directory before lazbuild links.
-	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
-	real=$$(cd "$$qjsdir" 2>/dev/null && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
+	@# in the library search directory before lazbuild links. macOS needs nothing
+	@# here: build.sh ships a single unversioned libqjs.dylib for that reason.
+	@real=$$(cd "$(QJS_DIR)" 2>/dev/null && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
 	if [ -n "$$real" ]; then \
-	  ( cd "$$qjsdir" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
+	  ( cd "$(QJS_DIR)" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
 	fi
 
 build: qjs-links
@@ -166,16 +181,18 @@ build: qjs-links
 	@# which must sit beside the executable. Symlinks are not tracked in git, so
 	@# recreate them here. Skipped for No Ext builds, which never load them.
 	@if [ "$(BUILD_MODE_NAME)" != "No Ext" ]; then \
-	  qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
-	  if [ -d "$$qjsdir" ]; then \
-	    cp -P $$qjsdir/*.so* "$(OUTDIR)/" 2>/dev/null || true; \
-	    real=$$(cd "$(OUTDIR)" && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
-	    if [ -n "$$real" ]; then \
-	      ( cd "$(OUTDIR)" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
-	    fi; \
-	    echo "Copied QuickJS libraries to $(OUTDIR)"; \
+	  if [ -d "$(QJS_DIR)" ]; then \
+	    for dest in "$(OUTDIR)" "$(OUTDIR)"/*.app/Contents/MacOS; do \
+	      [ -d "$$dest" ] || continue; \
+	      cp -P $(QJS_DIR)/$(QJS_LIBS) "$$dest/" 2>/dev/null || true; \
+	      real=$$(cd "$$dest" && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
+	      if [ -n "$$real" ]; then \
+	        ( cd "$$dest" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
+	      fi; \
+	      echo "Copied QuickJS libraries to $$dest"; \
+	    done; \
 	  else \
-	    echo "Warning: $$qjsdir missing; extensions will fail to start. Build it with externals/quickjs/build.sh"; \
+	    echo "Warning: $(QJS_DIR) missing; extensions will fail to start. Build it with externals/quickjs/build.sh"; \
 	  fi; \
 	fi
 	@# Strip embedded debug info for smaller Release binaries (Linux default; override STRIP_RELEASE=0)
@@ -200,9 +217,8 @@ test: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
-	@# carries an $ORIGIN runpath, so put them beside it.
-	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
-	[ -d "$$qjsdir" ] && cp -P $$qjsdir/*.so* tests/ || true
+	@# carries a runpath relative to itself, so put them beside it.
+	@[ -d "$(QJS_DIR)" ] && cp -P $(QJS_DIR)/$(QJS_LIBS) tests/ || true
 	@echo "Running console tests (embedded Pascal test server)"
 	@./tests/TrndiTestConsole
 
@@ -210,9 +226,8 @@ noext-test: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
-	@# carries an $ORIGIN runpath, so put them beside it.
-	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
-	[ -d "$$qjsdir" ] && cp -P $$qjsdir/*.so* tests/ || true
+	@# carries a runpath relative to itself, so put them beside it.
+	@[ -d "$(QJS_DIR)" ] && cp -P $(QJS_DIR)/$(QJS_LIBS) tests/ || true
 	@echo "Running console tests (embedded Pascal test server)"
 	@./tests/TrndiTestConsole
 
@@ -220,9 +235,8 @@ test-noserver: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
-	@# carries an $ORIGIN runpath, so put them beside it.
-	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
-	[ -d "$$qjsdir" ] && cp -P $$qjsdir/*.so* tests/ || true
+	@# carries a runpath relative to itself, so put them beside it.
+	@[ -d "$(QJS_DIR)" ] && cp -P $(QJS_DIR)/$(QJS_LIBS) tests/ || true
 	@echo "Running tests without embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@TRNDI_NO_TESTSERVER=1 ./tests/TrndiTestConsole
 
@@ -230,9 +244,8 @@ noext-test-noserver: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
-	@# carries an $ORIGIN runpath, so put them beside it.
-	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
-	[ -d "$$qjsdir" ] && cp -P $$qjsdir/*.so* tests/ || true
+	@# carries a runpath relative to itself, so put them beside it.
+	@[ -d "$(QJS_DIR)" ] && cp -P $(QJS_DIR)/$(QJS_LIBS) tests/ || true
 	@echo "Running tests without embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@TRNDI_NO_TESTSERVER=1 ./tests/TrndiTestConsole
 

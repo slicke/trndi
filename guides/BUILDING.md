@@ -8,9 +8,16 @@ Trndi embeds __QuickJS__ (the [quickjs-ng](https://github.com/quickjs-ng/quickjs
 `make` / `.\make.ps1` handle this for you. Two details matter if you build by hand:
 
 - On Linux the linker resolves `-lqjs` through an unversioned `libqjs.so` symlink. Symlinks are not tracked in git (a checkout onto NTFS flattens them into empty files), so `make` recreates them before calling lazbuild — run `make qjs-links` if you invoke `lazbuild` directly.
-- The binaries must sit beside `Trndi`/`Trndi.exe` at runtime. Linux builds carry an `$ORIGIN` runpath; Windows resolves DLLs from the executable's directory.
+- The binaries must sit beside `Trndi`/`Trndi.exe` at runtime. Linux builds carry an `$ORIGIN` runpath and macOS an `@loader_path` one; Windows resolves DLLs from the executable's directory. In a macOS `.app` the relevant directory is `Contents/MacOS`, which is where `dist/macos.sh` puts them.
 
-Prebuilt libraries currently ship for `x86_64-linux` and `x86_64-win64`. On any other target, build them with `externals/quickjs/build.sh` (needs a C toolchain and CMake) or use a "No Ext" build mode. See [externals/quickjs/README.md](/externals/quickjs/README.md) for how the shim works and why it exists.
+Prebuilt libraries currently ship for `x86_64-linux` and `x86_64-win64`. On any other target, build them with `externals/quickjs/build.sh` (needs a C toolchain and CMake) or use a "No Ext" build mode.
+
+macOS is the common case here — its libraries cannot be cross-built from Linux, so they are not committed. Build them once on the Mac and the Extensions modes work from then on:
+
+```sh
+externals/quickjs/build.sh mac    # -> externals/quickjs/prebuilt/aarch64-darwin/
+gmake                             # or gmake test
+``` See [externals/quickjs/README.md](/externals/quickjs/README.md) for how the shim works and why it exists.
 
 ### Qt6
 You need __libqt6pas__, and its development packages. These are normally available with your distro. See the _Linux section in [README.md](/README.md)_ on how to install libqt6pas.

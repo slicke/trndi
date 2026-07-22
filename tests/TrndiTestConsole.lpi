@@ -101,10 +101,12 @@
     </Other>
     <!-- ext_js_tests links the QuickJS engine and its ABI shim, so it is only
          compiled on the targets we ship prebuilt libraries for; elsewhere the
-         runner leaves it out entirely. On Linux the binary needs a runpath
-         because the libraries are copied next to it, not installed.
-         See externals/quickjs/README.md. -->
-    <Conditionals Value="if (TargetCPU='x86_64') and ((TargetOS='linux') or (TargetOS='win64')) then CustomOptions += ' -dHAVE_QUICKJS';
-if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
+         runner leaves it out entirely. macOS has no committed libraries, so
+         building the tests there needs externals/quickjs/build.sh mac first.
+         Linux and macOS both need a runpath because the libraries are copied
+         next to the binary, not installed. See externals/quickjs/README.md. -->
+    <Conditionals Value="if ((TargetCPU='x86_64') and ((TargetOS='linux') or (TargetOS='win64'))) or (TargetOS='darwin') then CustomOptions += ' -dHAVE_QUICKJS';
+if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';
+if TargetOS='darwin' then CustomOptions += ' -k-rpath -k@loader_path';"/>
   </CompilerOptions>
 </CONFIG>
