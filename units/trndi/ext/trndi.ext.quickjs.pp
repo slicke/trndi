@@ -437,6 +437,14 @@ function JS_Call(ctx: JSContext; const func, this_obj: JSValue; argc: integer;
   argv: PJSValues): JSValue;
 {** Retrieve and clear the pending exception. }
 function JS_GetException(ctx: JSContext): JSValue;
+{** Raise @code(msg) as a JavaScript @code(Error) on @code(ctx) and return the
+    exception marker, ready to be handed back to the interpreter.
+
+    Use this to report failure from a native: returning the marker without a
+    pending exception makes the throw surface in JS as @code(null). The message
+    is embedded in a thrown literal, so quotes, backslashes and newlines in it
+    are escaped here rather than by the caller. }
+function JS_ThrowError(ctx: JSContext; const msg: RawUtf8): JSValue;
 {** The global object; caller owns the reference. }
 function JS_GetGlobalObject(ctx: JSContext): JSValue;
 
@@ -652,7 +660,27 @@ begin
     Exit;
   if not Assigned(Natives[magic].Func) then
     Exit;
-  Natives[magic].Func(res, ctx, this_val, argc, argv, magic);
+  // This runs inside a C frame owned by the interpreter, which knows nothing of
+  // Pascal exceptions: letting one unwind through it skips quickjs's own cleanup
+  // and leaves the runtime in an undefined state. Natives reach LCL dialogs, the
+  // network layer and the extension registry, so any of them can raise. Turn it
+  // into a JS throw instead - JavaScript can then catch it, and the engine's
+  // JS_IsException paths report it like any other failure.
+  try
+    Natives[magic].Func(res, ctx, this_val, argc, argv, magic);
+  except
+    on E: Exception do
+    begin
+      // The native may have written an owned value before raising.
+      JS_FreeValue(ctx, res^);
+      res^ := JS_ThrowError(ctx, RawUtf8(E.ClassName + ': ' + E.Message));
+    end;
+    else
+    begin
+      JS_FreeValue(ctx, res^);
+      res^ := JS_ThrowError(ctx, 'native function raised a non-Exception object');
+    end;
+  end;
 end;
 
 procedure EnsureDispatch;
@@ -790,6 +818,24 @@ end;
 function JS_GetException(ctx: JSContext): JSValue;
 begin
   tq_get_exception(@Result, ctx);
+end;
+
+function JS_ThrowError(ctx: JSContext; const msg: RawUtf8): JSValue;
+var
+  quoted: RawUtf8;
+begin
+  Result := JS_EXCEPTION;
+  if ctx = nil then
+    Exit;
+  // The shim exposes no JS_Throw, so the error is raised by evaluating a throw
+  // statement: the eval leaves it pending on the context exactly as a native
+  // throw would, and hands back the marker we return.
+  quoted := StringReplace(msg, '\', '\\', [rfReplaceAll]);
+  quoted := StringReplace(quoted, '"', '\"', [rfReplaceAll]);
+  quoted := StringReplace(quoted, #13, ' ', [rfReplaceAll]);
+  quoted := StringReplace(quoted, #10, ' ', [rfReplaceAll]);
+  JS_FreeValue(ctx, JS_Eval(ctx, 'throw new Error("' + quoted + '")',
+    '<native>', JS_EVAL_TYPE_GLOBAL));
 end;
 
 function JS_GetGlobalObject(ctx: JSContext): JSValue;
