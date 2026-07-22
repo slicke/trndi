@@ -407,28 +407,47 @@ procedure PromiseRejectionTracker(ctx: JSContext; promise, reason: PJSValue;
 is_handled: integer; opaque: Pointer); cdecl;
 var
   error_msg: RawUtf8;
+  eng: TTrndiExtEngine;
 begin
-  // QuickJS fires this at reject time when no handler is attached yet, and
-  // again with is_handled=true if a handler arrives later (e.g. .catch() on
-  // the next line, or Promise.allSettled/any wrapping an already-rejected
-  // promise). Reporting is therefore deferred: note the rejection now and
-  // let the job pump alert only the ones still unhandled after the queue
-  // drains (FlushPendingRejections).
-  if is_handled <> 0 then
-  begin
-    // Identity used to be a straight cast of the NaN-boxed value; JSValue is a
-    // struct now, so key on the payload pointer instead (see JSValueId).
-    TTrndiExtEngine.Instance.NoteRejectionHandled(JSValueId(promise^));
+  // The runtime calls this from inside a C frame, so nothing may unwind out of
+  // it - and Instance returns nil once shutdown has been signalled, which is
+  // exactly when a rejected promise can still be dropped by the runtime's own
+  // teardown. Bail out rather than report; there is nowhere left to report to.
+  if not TTrndiExtEngine.HasInstance then
     Exit;
-  end;
+  eng := TTrndiExtEngine.Instance;
+  if eng = nil then
+    Exit;
+
   try
+    // QuickJS fires this at reject time when no handler is attached yet, and
+    // again with is_handled=true if a handler arrives later (e.g. .catch() on
+    // the next line, or Promise.allSettled/any wrapping an already-rejected
+    // promise). Reporting is therefore deferred: note the rejection now and
+    // let the job pump alert only the ones still unhandled after the queue
+    // drains (FlushPendingRejections).
+    if is_handled <> 0 then
+    begin
+      // Identity used to be a straight cast of the NaN-boxed value; JSValue is a
+      // struct now, so key on the payload pointer instead (see JSValueId).
+      eng.NoteRejectionHandled(JSValueId(promise^));
+      Exit;
+    end;
+
+    try
       // Convert the JS 'reason' value to a string for display/logging
-    error_msg := JSValueConstToUtf8(ctx, reason^);
+      error_msg := JSValueConstToUtf8(ctx, reason^);
+    except
+      on E: Exception do
+        error_msg := '[error retrieving message]';
+    end;
+    eng.NoteRejection(JSValueId(promise^), string(error_msg));
   except
+    // Swallowing is the only option here: the tracker returns void, so there is
+    // no way to hand the failure back to JavaScript.
     on E: Exception do
-      error_msg := '[error retrieving message]';
+      ;
   end;
-  TTrndiExtEngine.Instance.NoteRejection(JSValueId(promise^), string(error_msg));
 end;
 
 {**

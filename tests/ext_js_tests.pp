@@ -80,6 +80,7 @@ type
     procedure TestThrowFromCallIsExceptionNotError;
     procedure TestNativeFunctionIsCalled;
     procedure TestNativeFunctionReceivesArguments;
+    procedure TestPascalExceptionBecomesJSThrow;
     procedure TestPropertyRoundTrip;
     procedure TestUtf8RoundTrip;
     procedure TestBigIntToInt64;
@@ -109,6 +110,17 @@ procedure NativePing(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 begin
   Inc(LastNativeCallCount);
   res^ := JS_NewInt32(ctx, 42);
+end;
+
+{ Raises the way a real native can: the engine's natives reach LCL dialogs, the
+  network layer and the extension registry, any of which can throw. }
+procedure NativeRaises(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+  argc: integer; argv: PJSValues; magic: integer);
+begin
+  // Write an owned value first, so the dispatcher's cleanup path is exercised
+  // too - a native that raises halfway through must not leak what it produced.
+  res^ := JS_NewString(ctx, 'partial result');
+  raise Exception.Create('pascal side blew up');
 end;
 
 procedure NativeSum(res: PJSValue; ctx: JSContext; this_val: PJSValue;
@@ -418,6 +430,53 @@ begin
     JS_FreeValue(FContext, v);
   end;
   AssertEquals('string argument reached Pascal', 'x', LastNativeArgText);
+end;
+
+procedure TQuickJSBindingTests.TestPascalExceptionBecomesJSThrow;
+var
+  global, fn, v: JSValue;
+  msg: string;
+begin
+  // A Pascal exception must never unwind through the interpreter's C frame: it
+  // would skip quickjs's own cleanup and leave the runtime undefined. The
+  // dispatcher converts it to a JS throw instead, which JavaScript can catch.
+  global := JS_GetGlobalObject(FContext);
+  try
+    fn := JS_NewFunction(FContext, 'blowup', 0,
+      RegisterNative('blowup', @NativeRaises));
+    JS_SetPropertyStr(FContext, global, 'blowup', fn);
+  finally
+    JS_FreeValue(FContext, global);
+  end;
+
+  // Caught on the JS side: the interpreter has to still be in a usable state
+  // for the catch block to run at all.
+  v := JS_Eval(FContext,
+    'var caught = ""; try { blowup(); } catch (e) { caught = String(e); } caught',
+    'test.js', JS_EVAL_TYPE_GLOBAL);
+  try
+    AssertFalse('the throw should have been catchable in JS',
+      JS_IsException(v));
+    msg := string(JS_ToUtf8(FContext, v));
+    AssertTrue('the Pascal message should reach JS (got: ' + msg + ')',
+      Pos('pascal side blew up', msg) > 0);
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+
+  // Uncaught, it propagates as a normal pending exception.
+  v := JS_Eval(FContext, 'blowup()', 'test.js', JS_EVAL_TYPE_GLOBAL);
+  try
+    AssertTrue('an uncaught native throw yields the exception marker',
+      JS_IsException(v));
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+  JS_FreeValue(FContext, JS_GetException(FContext));
+
+  // And the context still works afterwards.
+  AssertEquals('the context survives a native throw', '3',
+    EvalToString('1 + 2'));
 end;
 
 { ---------------------------------------------------------------------------
