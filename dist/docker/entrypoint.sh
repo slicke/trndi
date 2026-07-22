@@ -1,8 +1,7 @@
 #!/bin/bash
 # Clones (or updates) Trndi's develop branch, builds it the way CI's matching
 # Linux job does (via the repo's own Makefile, which mirrors that job - see
-# guides/BUILDING.md and Makefile's MORMOT2_COMMIT/MORMOT2_STATIC_URL), then
-# hands off to the container's command (a shell by default).
+# guides/BUILDING.md), then hands off to the container's command (a shell by default).
 set -uo pipefail
 
 : "${TRNDI_REPO:=https://github.com/slicke/trndi.git}"
@@ -36,12 +35,10 @@ fi
 cd "$TRNDI_DIR" || exec "$@"
 
 # Mirror CI's per-architecture choice (.github/workflows/build.yml): amd64 builds
-# Extensions (needs mORMot2/QuickJS via `make bootstrap`), arm64 builds No Ext
-# (CI skips mORMot2 there too) - so on arm64 we skip bootstrap entirely.
+# Extensions, arm64 builds No Ext - the prebuilt QuickJS libraries in
+# externals/quickjs/prebuilt only cover x86_64 so far.
 case "$(uname -m)" in
   x86_64|amd64)
-    echo "==> Fetching mORMot2 (make bootstrap: skips the fetch if externals/mORMot2 already exists)"
-    make bootstrap
     echo "==> Building Trndi (make release: Extensions (Release), Qt6 widgetset)"
     build_target=release
     ;;

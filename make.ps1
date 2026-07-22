@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|assets|fetch-mormot2|install-mormot2|check-mormot2|bootstrap|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|assets|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -264,129 +264,18 @@ switch ($firstArg) {
         Write-Host "Normalized $out to LF" -ForegroundColor Cyan
         exit 0
     }
-    "fetch-mormot2" {
-        # Mirrors the Makefile's fetch-mormot2: clone the pinned mORMot2 commit
-        # into externals\mORMot2 and extract the QuickJS static archive into
-        # externals\mORMot2\static\<arch> — that's the path mormot2.lpk's own
-        # LibraryPath/ObjectPath (relative to $(PkgDir)) actually searches once
-        # install-mormot2 registers the package; a top-level .\static is not on
-        # that search path (CI's build.yml only gets away with one because it
-        # additionally copies the objects straight into the project directory).
-        $repo      = 'https://github.com/synopse/mORMot2.git'
-        $commit    = 'b72f260b880557d2f9ebc15905d820e7a3a9bf01'
-        $staticUrl = 'https://github.com/synopse/mORMot2/releases/download/2.4-stable/mormot2static.7z'
-        $staticDir = 'externals\mORMot2\static'
-        if (Test-Path 'externals\mORMot2') { Write-Error "externals\mORMot2 already exists; remove it to re-clone"; exit 1 }
-        New-Item -ItemType Directory -Force -Path 'externals' | Out-Null
-        Write-Host "Fetching mORMot2 into externals\mORMot2 (commit $commit)" -ForegroundColor Cyan
-        git -c init.defaultBranch=main init externals/mORMot2
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        git -C externals/mORMot2 remote add origin $repo
-        git -C externals/mORMot2 fetch --depth 1 origin $commit
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        git -C externals/mORMot2 checkout FETCH_HEAD
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        $archive = Join-Path $env:TEMP 'mormot2static.7z'
-        try {
-            Write-Host "Downloading $staticUrl" -ForegroundColor Cyan
-            Invoke-WebRequest -Uri $staticUrl -OutFile $archive
-        } catch {
-            Write-Host "Could not download mormot2static.7z automatically; download $staticUrl and extract into $staticDir" -ForegroundColor Yellow
-            $archive = $null
-        }
-        if ($archive -and (Test-Path $archive)) {
-            New-Item -ItemType Directory -Force -Path $staticDir | Out-Null
-            $sevenZip = Get-Command 7z -ErrorAction SilentlyContinue
-            if ($sevenZip) { & $sevenZip.Source x $archive "-o$staticDir" '-y' }
-            else { tar -xf $archive -C $staticDir }  # Windows tar (bsdtar) can read 7z archives
-            if ($LASTEXITCODE -ne 0) { Write-Host "Extraction failed; extract the archive into $staticDir manually" -ForegroundColor Yellow }
-            else { Write-Host "Extracted $staticDir\" -ForegroundColor Green; Remove-Item $archive -Force -ErrorAction SilentlyContinue }
-        }
-        Write-Host "Done. Run './make.ps1 install-mormot2' to compile the package so lazbuild can find it." -ForegroundColor Cyan
-        exit 0
-    }
-    "install-mormot2" {
-        # Compile mORMot2's Lazarus package (same as CI). lazbuild registers a
-        # compiled .lpk in the user's package links, which is what lets a later
-        # 'lazbuild Trndi.lpi' resolve the bare "mormot2" dependency.
-        if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
-        $lpk = 'externals\mORMot2\packages\lazarus\mormot2.lpk'
-        if (-not (Test-Path $lpk)) { Write-Error "$lpk not found; run './make.ps1 fetch-mormot2' first"; exit 1 }
-        Write-Host "Compiling mORMot2 package (registers it with Lazarus/lazbuild)" -ForegroundColor Cyan
-        & $laz $lpk
-        exit $LASTEXITCODE
-    }
-    "check-mormot2" {
-        Write-Host "Checking mORMot2 presence and QuickJS static artifacts..." -ForegroundColor Cyan
-        $lazCfg = Join-Path $env:LOCALAPPDATA 'lazarus'
-        $pkgXml = Join-Path $lazCfg 'packagefiles.xml'
-        $opmDir = Join-Path $lazCfg 'onlinepackagemanager\packages\mORMot2'
-        $staticDirs = @((Join-Path $opmDir 'static'), 'externals\mORMot2\static', 'static')
-        # Package links registered with Lazarus (what lazbuild consults to resolve "mormot2")
-        $regFound = $false
-        if (Test-Path $pkgXml) {
-            $lpks = Select-String -Path $pkgXml -Pattern '<Filename Value="([^"]*mormot2\.lpk)"' |
-                ForEach-Object { $_.Matches[0].Groups[1].Value }
-            foreach ($lpk in $lpks) {
-                if (Test-Path $lpk) {
-                    $regFound = $true
-                    $root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $lpk))
-                    $staticDirs += (Join-Path $root 'static')
-                }
-            }
-        }
-        if ($regFound) { Write-Host "mormot2.lpk is registered in $pkgXml" }
-        if (-not $regFound -and -not (Test-Path $opmDir) -and -not (Test-Path 'externals\mORMot2') -and -not (Test-Path 'static')) {
-            Write-Error "mORMot2 not found (no mormot2.lpk registered in $pkgXml, no externals\mORMot2 or .\static). Run './make.ps1 fetch-mormot2' followed by './make.ps1 install-mormot2'."
-            exit 1
-        }
-        $found = $false
-        foreach ($d in $staticDirs) {
-            if ((Test-Path $d) -and (Get-ChildItem -Path $d -Recurse -File -Include '*quickjs*.a','*quickjs*.o','*quickjs*.obj','*quickjs*.so' -ErrorAction SilentlyContinue | Select-Object -First 1)) {
-                $found = $true; break
-            }
-        }
-        if (-not $found) {
-            Write-Error "QuickJS static artifacts were not found. Run './make.ps1 fetch-mormot2' to fetch them into .\static."
-            exit 1
-        }
-        Write-Host "mORMot2 and QuickJS static artifacts found." -ForegroundColor Green
-        exit 0
-    }
-    "bootstrap" {
-        # Opt-in one-shot setup: fetch + install mORMot2 if it isn't already
-        # cloned, then verify. Does not run as part of the default build — that
-        # still fails fast with instructions, since fetching is a network
-        # operation and 'fetch-mormot2' refuses to touch an existing checkout.
-        $lpk = 'externals\mORMot2\packages\lazarus\mormot2.lpk'
-        if (-not (Test-Path $lpk)) {
-            Write-Host "Bootstrapping mORMot2 dependency..." -ForegroundColor Cyan
-            & $PSCommandPath 'fetch-mormot2'
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        } else {
-            Write-Host "externals\mORMot2 already present; skipping fetch (remove it to re-fetch)" -ForegroundColor Cyan
-        }
-        & $PSCommandPath 'install-mormot2'
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-        & $PSCommandPath 'check-mormot2'
-        exit $LASTEXITCODE
-    }
     "help" {
         Write-Host "Trndi make.ps1" -ForegroundColor Cyan
         Write-Host "  ./make.ps1 [target] (no target -> release)" -ForegroundColor Cyan
         Write-Host "Targets:" -ForegroundColor Cyan
         Write-Host "  release          Build release ('Extensions (Release)' mode; default)"
         Write-Host "  debug            Build debug ('Extensions (Debug)' mode)"
-        Write-Host "  noext            Build without extensions ('No Ext (Release)' mode; no mORMot2/QuickJS dependency)"
+        Write-Host "  noext            Build without extensions ('No Ext (Release)' mode; no QuickJS dependency)"
         Write-Host "  noext-debug      Build without extensions, debug ('No Ext (Debug)' mode)"
         Write-Host "  test             Build tests/TrndiTestConsole.lpi and run it (spawns an in-process test server;"
         Write-Host "                   set TRNDI_NO_TESTSERVER=1 to skip integration tests)"
         Write-Host "  list-modules     Show Pascal 'unit' modules found under units/ as a tree"
         Write-Host "  assets           Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
-        Write-Host "  fetch-mormot2    Clone the pinned mORMot2 commit into externals\mORMot2 and extract QuickJS statics into externals\mORMot2\static"
-        Write-Host "  install-mormot2  Compile the fetched mormot2.lpk so lazbuild can resolve the mormot2 dependency"
-        Write-Host "  check-mormot2    Verify mORMot2 (registered .lpk, OPM, externals or .\static) and QuickJS statics"
-        Write-Host "  bootstrap        Fetch and install mORMot2 if not already present, then verify (fetch-mormot2 + install-mormot2 + check-mormot2)"
         Write-Host "  clean            Remove build artifacts (*.o, *.ppu, executables, ...); use -n or --dry-run to preview"
         Write-Host "  help             Show this help"
         Write-Host "Notes:" -ForegroundColor Cyan
