@@ -1007,39 +1007,78 @@ end;
   Module loader
 ******************************************************************************}
 
-{** Module loader for QuickJS: reads module source from disk.
+{** Module loader for QuickJS: compiles a module from disk.
 
-    @returns(Allocated C-string with module source, or nil on error) }
+    QuickJS uses the return value as a @code(JSModuleDef*), so the source has to
+    be compiled here rather than handed back as text.
+
+    @returns(JSModuleDef pointer, or nil with an exception pending on @code(ctx)) }
 function TrndiModuleLoader(ctx: JSContext; module_name: pansichar;
-opaque: pointer): pansichar; cdecl;
+opaque: pointer): pointer; cdecl;
 var
   FileName: string;
   Script: RawUtf8;
   FileStream: TFileStream;
   StringStream: TStringStream;
+  Compiled: JSValue;
+
+  { Leave a readable error pending on the context: returning nil without one
+    surfaces in JS as a bare null rather than as a diagnosable failure. }
+  procedure Fail(const reason: string);
+  var
+    quoted: string;
+    thrown: JSValue;
+  begin
+    quoted := StringReplace(reason, '\', '\\', [rfReplaceAll]);
+    quoted := StringReplace(quoted, '"', '\"', [rfReplaceAll]);
+    quoted := StringReplace(quoted, #13, ' ', [rfReplaceAll]);
+    quoted := StringReplace(quoted, #10, ' ', [rfReplaceAll]);
+    thrown := JS_Eval(ctx, RawUtf8('throw new ReferenceError("' + quoted + '")'),
+      '<module-loader>', JS_EVAL_TYPE_GLOBAL);
+    JS_FreeValue(ctx, thrown);
+  end;
+
 begin
+  Result := nil;
   // Map module_name to a file path; improve mapping as appropriate
   FileName := string(module_name);
 
   if not FileExists(FileName) then
   begin
-    Result := nil; // signal load error to QuickJS
+    Fail('module not found: ' + FileName);
     Exit;
   end;
 
-  // Load file contents into Script as UTF-8
-  FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
-  StringStream := TStringStream.Create;
+  // Load file contents into Script as UTF-8. This runs inside a C frame, so a
+  // Pascal exception must not be allowed to unwind out of it.
   try
-    StringStream.CopyFrom(FileStream, FileStream.Size);
-    Script := StringStream.DataString;
-  finally
-    StringStream.Free;
-    FileStream.Free;
+    FileStream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+    StringStream := TStringStream.Create;
+    try
+      StringStream.CopyFrom(FileStream, FileStream.Size);
+      Script := StringStream.DataString;
+    finally
+      StringStream.Free;
+      FileStream.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      Fail('cannot read module ' + FileName + ': ' + E.Message);
+      Exit;
+    end;
   end;
 
-  // Return C-allocated buffer (QuickJS expects module source ownership)
-  Result := StrNew(pansichar(Script));
+  // Compile only: the result is a JS_TAG_MODULE value wrapping the JSModuleDef.
+  Compiled := JS_Eval(ctx, Script, RawUtf8(FileName),
+    JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+  if JS_IsException(Compiled) then
+    Exit;                       // the compiler already set the exception
+
+  // The runtime's module list owns the definition, so the value we hold here is
+  // ours to drop - the JSModuleDef it points at outlives it.
+  Result := JS_VALUE_GET_PTR(Compiled);
+  JS_FreeValue(ctx, Compiled);
 end;
 
 {******************************************************************************
@@ -1079,7 +1118,8 @@ begin
     raise Exception.Create('Failed to create JS context');
 
   // Enable module loading via our loader
-  JS_SetModuleLoaderFunc(FRuntime, nil, PJSModuleLoaderFunc(@TrndiModuleLoader), nil);
+  // No cast: it was the cast that let a source-text loader pass as a JSModuleDef one.
+  JS_SetModuleLoaderFunc(FRuntime, nil, @TrndiModuleLoader, nil);
 
   // Allow callbacks to find this engine from JS context
   JS_SetContextOpaque(FContext, Self);
