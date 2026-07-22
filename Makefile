@@ -196,27 +196,43 @@ release: build
 debug: BUILD_MODE := Debug
 debug: build
 
-test: check
+test: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
+	@# carries an $ORIGIN runpath, so put them beside it.
+	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
+	[ -d "$$qjsdir" ] && cp -P $$qjsdir/*.so* tests/ || true
 	@echo "Running console tests (embedded Pascal test server)"
 	@./tests/TrndiTestConsole
 
-noext-test:
+noext-test: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
+	@# carries an $ORIGIN runpath, so put them beside it.
+	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
+	[ -d "$$qjsdir" ] && cp -P $$qjsdir/*.so* tests/ || true
 	@echo "Running console tests (embedded Pascal test server)"
 	@./tests/TrndiTestConsole
 
-test-noserver: check
+test-noserver: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
+	@# carries an $ORIGIN runpath, so put them beside it.
+	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
+	[ -d "$$qjsdir" ] && cp -P $$qjsdir/*.so* tests/ || true
 	@echo "Running tests without embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@TRNDI_NO_TESTSERVER=1 ./tests/TrndiTestConsole
 
-noext-test-noserver:
+noext-test-noserver: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
+	@# carries an $ORIGIN runpath, so put them beside it.
+	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
+	[ -d "$$qjsdir" ] && cp -P $$qjsdir/*.so* tests/ || true
 	@echo "Running tests without embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@TRNDI_NO_TESTSERVER=1 ./tests/TrndiTestConsole
 

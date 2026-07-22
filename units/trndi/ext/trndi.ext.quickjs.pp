@@ -385,7 +385,10 @@ function JS_NewClass(rt: JSRuntime; classID: JSClassID; def: PJSClassDef): integ
 { NOTE: quickjs-ng returns C99 bool (one byte) here, hence ByteBool. Binding
   these as LongBool would read three bytes of adjacent garbage. }
 function JS_IsJobPending(rt: JSRuntime): ByteBool; cdecl; external QJSLIB;
-function JS_ExecutePendingJob(rt: JSRuntime; pctx: pointer): integer; cdecl; external QJSLIB;
+{ pctx must point at a real JSContext variable: quickjs-ng writes the context
+  that ran the job through it unconditionally, so passing nil crashes. }
+function JS_ExecutePendingJob(rt: JSRuntime; pctx: PJSContext): integer; cdecl;
+  external QJSLIB;
 
 { ------------------------------------------------------------------ }
 { Shim imports. Every JSValue crosses by pointer - see unit header.   }
