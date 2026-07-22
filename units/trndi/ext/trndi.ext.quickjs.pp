@@ -286,8 +286,10 @@ type
     {** Integer payload widened to 64 bits.
 
         Note a heap-allocated BigInt cannot be read without a context, so this
-        returns 0 for that case; use @code(JS_ToInt64) when the value may be a
-        full BigInt rather than a short one. }
+        returns 0 for that case - which is every BigInt outside the inline
+        range, not just the huge ones. Use @code(JSContextHelper.ToInt64) when
+        the value may be a BigInt at all. (Not @code(JS_ToInt64): QuickJS
+        refuses every BigInt there with a TypeError.) }
     function int64: system.int64;
     {** Floating point payload, with integer tags promoted to double. }
     function F64: double;
@@ -335,10 +337,23 @@ type
     {** Fetch a global by name. Caller owns @code(v) when this returns True. }
     function GetValue(const name: RawUtf8; out v: JSValue): boolean;
 
+    {** Read a value as a 64-bit integer, BigInt included.
+
+        The @code(JSValue.int64) accessor cannot see a heap-allocated BigInt
+        (it has no context) and quietly yields 0; QuickJS's own JS_ToInt64
+        throws a TypeError on any BigInt. This goes through the decimal string
+        form for BigInt, which is exact across the whole Int64 range and
+        raises nothing on the JS side.
+
+        @returns(False when the value is not numeric, or is a BigInt too wide
+                 for Int64; @code(i) is 0 in that case.) }
+    function ToInt64(const v: JSValue; out i: system.int64): boolean;
+
     {** Convert a value to a Variant, mapping JS types to their closest
         Variant equivalents. Numbers become Double, strings become String,
         null becomes Null and undefined becomes Unassigned; anything else is
-        stringified. }
+        stringified. BigInt becomes Int64, or its decimal string when it does
+        not fit. }
     procedure ToVariant(const v: JSValue; out res: Variant);
 
     {** Evaluate a script, reporting any exception text through @code(err).
@@ -1246,9 +1261,51 @@ begin
   end;
 end;
 
+function JSContextHelper.ToInt64(const v: JSValue; out i: system.int64): boolean;
+const
+  // Int64 bounds as doubles; the low one is exact, the high one is the first
+  // double ABOVE High(Int64), so the test on it has to be strict.
+  Int64Min = -9223372036854775808.0;
+  Int64Max = 9223372036854775808.0;
+begin
+  i := 0;
+  case v.tag of
+    JS_TAG_INT, JS_TAG_BOOL:
+    begin
+      i := v.u.int32_;
+      Result := true;
+    end;
+    JS_TAG_FLOAT64:
+    begin
+      // NaN and the infinities are rejected on the bit pattern rather than by
+      // comparison: FPC leaves the invalid-operation trap unmasked, so an
+      // ordered compare (>=, <) against a NaN raises EInvalidOp instead of
+      // returning False. Exponent all-ones means NaN or Infinity.
+      Result := (PInt64(@v.u.float64_)^ and $7FF0000000000000) <>
+        $7FF0000000000000;
+      if Result then
+      begin
+        Result := (v.u.float64_ >= Int64Min) and (v.u.float64_ < Int64Max);
+        if Result then
+          i := Trunc(v.u.float64_);
+      end;
+    end;
+    JS_TAG_SHORT_BIG_INT, JS_TAG_BIG_INT, JS_TAG_STRING:
+      // A heap BigInt is unreadable from the value alone, and JS_ToInt64
+      // rejects every BigInt with a TypeError, so take the decimal string:
+      // exact over the full Int64 range and it raises nothing in the engine.
+      // Short BigInts go the same way rather than trusting the inline payload
+      // width, which is a quickjs-ng build-time choice.
+      Result := TryStrToInt64(string(JS_ToUtf8(@Self, v)), i);
+  else
+    Result := false;
+  end;
+end;
+
 procedure JSContextHelper.ToVariant(const v: JSValue; out res: Variant);
 var
   ctx: JSContext;
+  i: system.int64;
 begin
   ctx := @Self;
   case v.tag of
@@ -1258,8 +1315,13 @@ begin
       res := v.Bool;
     JS_TAG_FLOAT64:
       res := v.u.float64_;
-    JS_TAG_SHORT_BIG_INT:
-      res := system.int64(v.u.int32_);
+    JS_TAG_SHORT_BIG_INT, JS_TAG_BIG_INT:
+      if ToInt64(v, i) then
+        res := i
+      else
+        // Wider than Int64 (2n**100n and friends): the exact decimal text is
+        // the only lossless form a Variant can carry.
+        res := string(JS_ToUtf8(ctx, v));
     JS_TAG_NULL:
       res := Null;
     JS_TAG_UNDEFINED, JS_TAG_UNINITIALIZED:

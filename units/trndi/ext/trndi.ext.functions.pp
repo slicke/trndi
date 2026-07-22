@@ -682,8 +682,16 @@ begin
   else
   if val.IsBigInt then
   begin
-    Result.Data.match := JD_INT;
-    Result.Data.BigInt := val.int64;
+    // JD_BINT, not JD_INT: the readers of JD_INT take Int32Val, which this
+    // path never fills. val.int64 cannot see a heap BigInt either, so the
+    // context-aware conversion does the reading.
+    Result.Data.match := JD_BINT;
+    if not ctx^.ToInt64(val, Result.Data.BigInt) then
+    begin
+      // Beyond Int64; keep the exact digits rather than an invented number.
+      Result.Data.match := JD_STR;
+      Result.Data.StrVal := JSValueToString(ctx, val);
+    end;
   end
   else
   if val.IsInt32 then
