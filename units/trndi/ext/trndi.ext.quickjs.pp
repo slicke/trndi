@@ -80,8 +80,7 @@ const
   {** ABI shim library. }
   TQLIB = 'tqshim.dll';
   {$ELSEIF DEFINED(DARWIN)}
-  {** Engine library. Named the way ld expects it (-lqjs -> libqjs.dylib);
-      spelling out the file name makes FPC emit a link directive ld ignores. }
+  {** Engine library. Named the way ld expects it: -lqjs -> libqjs.dylib. }
   QJSLIB = 'qjs';
   {** ABI shim library. }
   TQLIB = 'tqshim';
@@ -92,6 +91,14 @@ const
 
   {** ABI revision of the shim this unit was written against. }
   TQ_EXPECTED_ABI = 1;
+
+// FPC does not turn 'external <name>' into a linker directive on Darwin, so ld
+// never sees the dylibs and every JS_/tq_ symbol comes out undefined. Request
+// them explicitly; the -L that finds them is the build mode's library path.
+{$IF DEFINED(DARWIN)}
+{$LINKLIB qjs}
+{$LINKLIB tqshim}
+{$ENDIF}
 
 type
   {** Opaque QuickJS runtime record. Only ever used through @code(JSRuntime). }
