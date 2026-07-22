@@ -80,8 +80,11 @@ const
   {** ABI shim library. }
   TQLIB = 'tqshim.dll';
   {$ELSEIF DEFINED(DARWIN)}
-  QJSLIB = 'libqjs.dylib';
-  TQLIB = 'libtqshim.dylib';
+  {** Engine library. Named the way ld expects it (-lqjs -> libqjs.dylib);
+      spelling out the file name makes FPC emit a link directive ld ignores. }
+  QJSLIB = 'qjs';
+  {** ABI shim library. }
+  TQLIB = 'tqshim';
   {$ELSE}
   QJSLIB = 'qjs';
   TQLIB = 'tqshim';
