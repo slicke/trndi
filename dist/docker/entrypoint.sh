@@ -27,11 +27,23 @@ fi
 
 cd "$TRNDI_DIR" || exec "$@"
 
-echo "==> Fetching mORMot2 (make bootstrap: skips the fetch if externals/mORMot2 already exists)"
-make bootstrap
+# Mirror CI's per-architecture choice (.github/workflows/build.yml): amd64 builds
+# Extensions (needs mORMot2/QuickJS via `make bootstrap`), arm64 builds No Ext
+# (CI skips mORMot2 there too) - so on arm64 we skip bootstrap entirely.
+case "$(uname -m)" in
+  x86_64|amd64)
+    echo "==> Fetching mORMot2 (make bootstrap: skips the fetch if externals/mORMot2 already exists)"
+    make bootstrap
+    echo "==> Building Trndi (make release: Extensions (Release), Qt6 widgetset)"
+    build_target=release
+    ;;
+  *)
+    echo "==> Non-amd64 host: building without extensions, matching CI's linux-arm64 job"
+    build_target=noext-release
+    ;;
+esac
 
-echo "==> Building Trndi (make release: Extensions (Release), Qt6 widgetset on Linux)"
-if make release; then
+if make "$build_target"; then
   echo "==> Build succeeded. Binary: $TRNDI_DIR/build/Trndi"
 else
   echo "==> Build failed - dropping into a shell in $TRNDI_DIR for debugging." >&2
