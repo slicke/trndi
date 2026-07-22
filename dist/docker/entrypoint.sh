@@ -9,6 +9,11 @@ set -uo pipefail
 : "${TRNDI_BRANCH:=develop}"
 : "${TRNDI_DIR:=/root/trndi}"
 
+# The container's WORKDIR is $TRNDI_DIR, so the shell may already be sitting
+# inside it. Step out first - rm -rf'ing (or replacing) the current working
+# directory out from under the shell breaks getcwd() for every command after.
+cd /
+
 if [ -d "$TRNDI_DIR/.git" ]; then
   echo "==> Updating existing checkout at $TRNDI_DIR ($TRNDI_BRANCH)"
   git -C "$TRNDI_DIR" fetch origin "$TRNDI_BRANCH" \
