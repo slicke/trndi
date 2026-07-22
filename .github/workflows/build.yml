@@ -219,7 +219,9 @@ jobs:
           [ -d "lang" ] && cp -r lang artifacts/
           # The binary carries an $ORIGIN runpath, so the QuickJS engine and its
           # ABI shim must travel beside it in every package layout below.
-          [ -d "$QJS_DIR" ] && cp -P "$QJS_DIR"/*.so* artifacts/
+          # stage-qjs.sh installs the real library under its SONAME and skips the
+          # symlinks, which archivers would otherwise expand into extra copies.
+          sh dist/linux/stage-qjs.sh "$QJS_DIR" artifacts
           # The CareLink login helper is compiled into the binary and written to
           # the user's writable settings folder on demand — nothing to bundle.
           7z a -tzip Trndi-linux-${{ matrix.arch }}.zip ./artifacts/* >/dev/null
@@ -238,7 +240,7 @@ jobs:
             mkdir -p "$PKG_DIR/usr/local/trndi"
             cp Trndi "$PKG_DIR/usr/local/trndi/"
             [ -d "lang" ] && cp -r lang "$PKG_DIR/usr/local/trndi/"
-            [ -d "$QJS_DIR" ] && cp -P "$QJS_DIR"/*.so* "$PKG_DIR/usr/local/trndi/"
+            sh dist/linux/stage-qjs.sh "$QJS_DIR" "$PKG_DIR/usr/local/trndi"
 
             # The CareLink login helper is compiled into the binary and written
             # to the user's writable settings folder on demand — nothing to
