@@ -623,6 +623,17 @@ function IsGlobalShutdown: boolean;
     Used by the per-extension broadcast paths in @code(inc/umain_ext.inc). }
 function ContextHasFunction(ctx: JSContext; const FuncName: string): boolean;
 
+{** Take the pending exception off @code(ctx) and route its text (plus stack,
+    when the thrown value carries one) to the engine output.
+
+    Call this whenever @code(JS_Call) hands back the exception marker: the
+    exception stays pending on the context until something retrieves it, and
+    the next call into that same context would then fail with an error it never
+    raised. Safe on shutdown paths, where no engine instance is left to report
+    to - the exception is consumed either way.
+    Used by the per-extension broadcast paths in @code(inc/umain_ext.inc). }
+procedure DumpJSError(ctx: JSContext);
+
 var
   {** Class ID used for the 'Trndi' class in QuickJS context. }
 TrndiClassID: JSClassID;
@@ -1090,11 +1101,21 @@ end;
 procedure DumpJSError(ctx: JSContext);
 var
   msg: RawUtf8;
+  eng: TTrndiExtEngine;
 begin
   if ctx = nil then
     Exit;
-  if ctx^.DumpError(msg) and (msg <> '') then
-    TTrndiExtEngine.Instance.SetOutput(string(msg));
+  // DumpError is what actually takes the exception off the context, so it has
+  // to run even when there is nowhere left to report to.
+  if (not ctx^.DumpError(msg)) or (msg = '') then
+    Exit;
+  // HasInstance never creates an engine, and Instance still returns nil once
+  // shutdown has been signalled - which is exactly when the unload hooks run.
+  eng := nil;
+  if TTrndiExtEngine.HasInstance then
+    eng := TTrndiExtEngine.Instance;
+  if eng <> nil then
+    eng.SetOutput(string(msg));
 end;
 
 {** Create QuickJS runtime/context, expose 'Trndi', set up promises and timer, register base functions. }
@@ -2107,7 +2128,10 @@ begin
         if JS_IsFunction(ctx, funcObj) then
         begin
           retVal := JS_Call(ctx, funcObj, globalObj, 0, nil);
-          if JS_IsError(retVal) then
+          // JS_IsException, not JS_IsError: a throwing unload hook returns the
+          // exception marker, and it must not be left pending on a context the
+          // teardown below is about to free.
+          if JS_IsException(retVal) then
             DumpJSError(ctx);
         end;
       except
@@ -2563,7 +2587,9 @@ begin
       ArgArray[i] := JS_NewString(ctx, pchar(Args[i]));
 
     RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-    if JS_IsError(RetVal) then
+    // JS_IsException, not JS_IsError: a throw returns the exception marker
+    // rather than an Error object, and DumpJSError has to clear it.
+    if JS_IsException(RetVal) then
     begin
       DumpJSError(ctx);
       Exit;
@@ -2635,7 +2661,9 @@ begin
       ArgArray[i] := JS_NewBigInt64(ctx, Args[i]);
 
     RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-    if JS_IsError(RetVal) then
+    // JS_IsException, not JS_IsError: a throw returns the exception marker
+    // rather than an Error object, and DumpJSError has to clear it.
+    if JS_IsException(RetVal) then
     begin
       DumpJSError(ctx);
       Exit;
@@ -2768,7 +2796,9 @@ begin
       ArgArray[i] := VarRecToJS(ctx, Args[i]);
 
     RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-    if JS_IsError(RetVal) then
+    // JS_IsException, not JS_IsError: a throw returns the exception marker
+    // rather than an Error object, and DumpJSError has to clear it.
+    if JS_IsException(RetVal) then
     begin
       DumpJSError(ctx);
       Exit;
@@ -2997,7 +3027,9 @@ begin
         RetVal := JS_Call(ctx, FuncObj, GlobalObj, 0, nil)
       else
         RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-      if JS_IsError(RetVal) then
+      // JS_IsException, not JS_IsError: a throw returns the exception marker
+      // rather than an Error object, and DumpJSError has to clear it.
+      if JS_IsException(RetVal) then
         DumpJSError(ctx)
       else
       begin

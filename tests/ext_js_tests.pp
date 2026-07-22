@@ -77,6 +77,7 @@ type
     procedure TestValuePredicates;
     procedure TestExceptionIsReported;
     procedure TestEvalConsumesExceptionOnce;
+    procedure TestThrowFromCallIsExceptionNotError;
     procedure TestNativeFunctionIsCalled;
     procedure TestNativeFunctionReceivesArguments;
     procedure TestPropertyRoundTrip;
@@ -318,6 +319,51 @@ begin
       + again + ')', Pos('boom', again) > 0);
   finally
     JS_FreeValue(FContext, second);
+  end;
+end;
+
+procedure TQuickJSBindingTests.TestThrowFromCallIsExceptionNotError;
+var
+  global, fn, ret, err: JSValue;
+  msg: string;
+begin
+  // The distinction every JS_Call site in the engine depends on: a callback
+  // that throws hands back the exception marker, NOT an Error object. The
+  // broadcast paths used to test this with JS_IsError, which is false here, so
+  // the error was dropped silently.
+  JS_FreeValue(FContext, JS_Eval(FContext,
+    'function boom(){ throw new Error("from JS"); }', 'test.js',
+    JS_EVAL_TYPE_GLOBAL));
+
+  global := JS_GetGlobalObject(FContext);
+  try
+    fn := JS_GetPropertyStr(FContext, global, 'boom');
+    try
+      AssertTrue('boom should be callable', JS_IsFunction(FContext, fn));
+      ret := JS_Call(FContext, fn, global, 0, nil);
+      try
+        AssertTrue('a throw yields the exception marker', JS_IsException(ret));
+        AssertFalse('the marker is not an Error object', JS_IsError(ret));
+      finally
+        JS_FreeValue(FContext, ret);
+      end;
+    finally
+      JS_FreeValue(FContext, fn);
+    end;
+  finally
+    JS_FreeValue(FContext, global);
+  end;
+
+  // And the throw is still pending afterwards: the caller has to take it off
+  // the context (DumpJSError does, in the engine) or the next call made there
+  // fails with an error it never raised.
+  err := JS_GetException(FContext);
+  try
+    msg := string(JS_ToUtf8(FContext, err));
+    AssertTrue('the throw must still be pending (got: ' + msg + ')',
+      Pos('from JS', msg) > 0);
+  finally
+    JS_FreeValue(FContext, err);
   end;
 end;
 
