@@ -250,11 +250,11 @@ function analyze(ctx: JSContext; EvalResult: PJSValue; loop: boolean = false): s
 // `res` and are reached via the shim's trampoline, so none of them returns a
 // JSValue struct across the C boundary. See trndi.ext.quickjs.
 procedure JSConsoleLog(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 procedure JSConsolePush(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 procedure JSConsoleLogs(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 procedure RegisterConsoleLog(ctx: PJSContext);
 function JSValueValToValue(ctx: JSContext; val: JSValueVal): JSValue;
 function JSValueValArrayToArray(ctx: JSContext;
@@ -950,7 +950,7 @@ begin
 end;
 
 procedure JSConsoleLog(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 var
   msg: pchar;
   i: integer;
@@ -980,7 +980,7 @@ begin
 end;
 
 procedure JSConsolePush(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 var
   msg: pchar;
   i: integer;
@@ -1051,31 +1051,31 @@ begin
 end;
 
 procedure JSConsoleError(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 begin
   res^ := JSConsoleLevelImpl(ctx, argc, argv, 'error');
 end;
 
 procedure JSConsoleWarn(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 begin
   res^ := JSConsoleLevelImpl(ctx, argc, argv, 'warn');
 end;
 
 procedure JSConsoleInfo(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 begin
   res^ := JSConsoleLevelImpl(ctx, argc, argv, 'info');
 end;
 
 procedure JSConsoleDebug(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 begin
   res^ := JSConsoleLevelImpl(ctx, argc, argv, 'debug');
 end;
 
 procedure JSConsoleLogs(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-argc: integer; argv: PJSValues);
+argc: integer; argv: PJSValues; magic: integer);
 var
   fullMsg: string;
 begin

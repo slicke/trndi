@@ -47,7 +47,7 @@ interface
 uses
 Classes, SysUtils, Controls, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
 fpjson, jsonparser, dateutils, buildinfo, trndi.log
-{$ifdef TrndiExt},trndi.ext.engine, mormot.lib.quickjs, mormot.core.base{$endif}
+{$ifdef TrndiExt},trndi.ext.engine, trndi.ext.quickjs{$endif}
 {$ifdef DARWIN}, CocoaAll, nsutils.nshelpers{$endif}
 {$ifdef DEBUG}, slicke.ux.alert{$endif};
 

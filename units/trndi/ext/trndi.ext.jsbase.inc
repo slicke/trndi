@@ -46,11 +46,11 @@
     @param(argv)     Pointer to argument array (unused)
     @returns         A new JS object with class @code(TrndiClassID)
 }
-function TrndiConstructor(ctx: JSContext; this_val: JSValueRaw;
-argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure TrndiConstructor(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 begin
   // Create a new object of the Trndi class
-  Result := JS_NewObjectClass(ctx, TrndiClassID);
+  res^ := JS_NewObjectClass(ctx, TrndiClassID);
 end;
 
 {** Log function exposed to JavaScript.
@@ -66,10 +66,6 @@ end;
 }
 function JSDoLog(ctx: JSContext; this_val: JSValueRaw; argc: integer;
 argv: PJSValues): JSValueRaw; cdecl;
-var
-  i: integer;
-  buffer: TSynTempBuffer;
-  res: RawUtf8;
 begin
   TTrndiExtEngine.Instance.SetOutput(@ctx, argv, argc - 1);
   Result := JS_UNDEFINED;
@@ -298,6 +294,50 @@ begin
   Result := JS_UNDEFINED;
 end;
 
+{ Replacements for mORMot's StringFromFile / FileFromString, which went away
+  with the rest of the mORMot dependency. Both swallow IO errors and report
+  through their result, matching the behaviour the callers below expect. }
+
+function ExtReadFile(const FileName: string): RawUtf8;
+var
+  fs: TFileStream;
+begin
+  Result := '';
+  if not FileExists(FileName) then
+    Exit;
+  try
+    fs := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
+    try
+      SetLength(Result, fs.Size);
+      if fs.Size > 0 then
+        fs.ReadBuffer(Result[1], fs.Size);
+    finally
+      fs.Free;
+    end;
+  except
+    Result := '';
+  end;
+end;
+
+function ExtWriteFile(const Content: RawUtf8; const FileName: string): boolean;
+var
+  fs: TFileStream;
+begin
+  Result := false;
+  try
+    fs := TFileStream.Create(FileName, fmCreate);
+    try
+      if Length(Content) > 0 then
+        fs.WriteBuffer(Content[1], Length(Content));
+      Result := true;
+    finally
+      fs.Free;
+    end;
+  except
+    Result := false;
+  end;
+end;
+
 // const data = readFile('test.txt');
 
 {** Read a whole file and return its contents as a JS string.
@@ -318,7 +358,7 @@ begin
   if argc > 0 then
   begin
     FileName := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
-    FileContent := StringFromFile(UTF8ToString(FileName));
+    FileContent := ExtReadFile(UTF8ToString(FileName));
     Result := JS_NewString(ctx^, pansichar(FileContent));
   end
   else
@@ -349,10 +389,9 @@ begin
   begin
     FileName := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
     FileContent := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 1);
-    if FileFromString(FileContent, UTF8ToString(FileName)) then
-      Result := JS_ToBool(ctx^, JS_TRUE)
-    else
-      Result := JS_ToBool(ctx^, JS_FALSE);
+    // Was JS_ToBool, which yields an int rather than a JS value; the result is
+    // handed straight back to JavaScript, so build a real boolean value.
+    Result := JS_NewBool(ctx^, ExtWriteFile(FileContent, UTF8ToString(FileName)));
   end
   else
     Result := JS_UNDEFINED;
@@ -373,8 +412,8 @@ end;
     @param(is_handled)  True if the rejection was (or became) handled; False if unhandled
     @param(opaque)      User data pointer passed when the tracker was registered
 }
-procedure PromiseRejectionTracker(ctx: PJSContext; promise, reason: JSValueConst;
-is_handled: longbool; opaque: Pointer); cdecl;
+procedure PromiseRejectionTracker(ctx: JSContext; promise, reason: PJSValue;
+is_handled: integer; opaque: Pointer); cdecl;
 var
   error_msg: RawUtf8;
 begin
@@ -384,20 +423,21 @@ begin
   // promise). Reporting is therefore deferred: note the rejection now and
   // let the job pump alert only the ones still unhandled after the queue
   // drains (FlushPendingRejections).
-  if is_handled then
+  if is_handled <> 0 then
   begin
-    TTrndiExtEngine.Instance.NoteRejectionHandled(UInt64(promise));
+    // Identity used to be a straight cast of the NaN-boxed value; JSValue is a
+    // struct now, so key on the payload pointer instead (see JSValueId).
+    TTrndiExtEngine.Instance.NoteRejectionHandled(JSValueId(promise^));
     Exit;
   end;
   try
       // Convert the JS 'reason' value to a string for display/logging
-      // JSValueConstToUtf8 expects JSContext (not PJSContext), so we pass ctx^
-    error_msg := JSValueConstToUtf8(ctx^, reason);
+    error_msg := JSValueConstToUtf8(ctx, reason^);
   except
     on E: Exception do
       error_msg := '[error retrieving message]';
   end;
-  TTrndiExtEngine.Instance.NoteRejection(UInt64(promise), string(error_msg));
+  TTrndiExtEngine.Instance.NoteRejection(JSValueId(promise^), string(error_msg));
 end;
 
 {**
@@ -430,11 +470,10 @@ end;
     - If arity validation fails, we currently just log an error and continue; you might prefer
       to reject the Promise immediately in that case.
 }
-function AsyncTask(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConst; magic: integer;
-func_data: PJSValueRaw): JSValueRaw; cdecl;
+procedure AsyncTask(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
-  func: string;        // Name of the registered Pascal callback (bound via func_data)
+  func: string;        // Name of the registered Pascal callback (from magic)
   cb: PJSCallback;     // Pointer to the callback metadata (includes arity and handler)
   params: integer;     // Number of parsed/validated parameters
   funcs: JSDoubleVal;  // Promise resolve/reject function pair captured by QuickJS
@@ -442,9 +481,11 @@ var
   arityMsg: string;    // Error text when the argument count is out of range
   errVal, callRes: JSValueRaw; // Temporaries for the immediate-reject path
 begin
-  // 1) Retrieve the bound Pascal callback name from func_data.
-  //    This was set when registering the JS function (e.g., in AddPromise).
-  func := JSValueConstToUtf8(ctx, func_data^);
+  res^ := JS_UNDEFINED;
+  // 1) Recover which promise entry point was called. Every one of them shares
+  //    this procedure and is distinguished by its registration magic, which
+  //    replaces the bound func_data string the previous binding carried.
+  func := string(NativeName(magic));
   if func = '' then
     raise Exception.Create('Missing function to run!');
 
@@ -501,11 +542,12 @@ begin
 
     cb^.params.values.Data.Free;
     cb^.params.values.Data := nil;
-    Exit(promise);
+    res^ := promise;
+    Exit;
   end;
 
   // Optional: handle error promises explicitly (currently no-op).
-  if JS_IsError(ctx, promise) then
+  if JS_IsError(promise) then
   // Consider: js_std_dump_error(ctx); or returning a rejected promise.
 // Currently left as a no-op to preserve original behavior.
   ;
@@ -520,7 +562,7 @@ begin
   cb^.params.values.Data := nil;
 
   // 7) Return the Promise object to JavaScript immediately.
-  Result := promise;
+  res^ := promise;
 end;
 
 {******************************************************************************
@@ -581,12 +623,13 @@ begin
   New(TimerInfo);
   Inc(Engine.FNextTimerID);
   TimerInfo^.TimerID := Engine.FNextTimerID;
-  TimerInfo^.Callback := argv^[0].Duplicate.Raw;
+  // quickjs-ng has no context-free duplicate, so take the reference explicitly.
+  TimerInfo^.Callback := JS_DupValue(ctx, argv^[0]);
   if argc > 2 then
   begin
     SetLength(TimerInfo^.Args, argc - 2);
     for i := 2 to argc - 1 do
-      TimerInfo^.Args[i - 2] := argv^[i].Duplicate.Raw;
+      TimerInfo^.Args[i - 2] := JS_DupValue(ctx, argv^[i]);
   end;
   TimerInfo^.IsInterval := IsInterval;
   TimerInfo^.Context := ctx;
@@ -693,7 +736,7 @@ var
   us: Int64;
   v: JSValue;
 begin
-  QueryPerformanceMicroSeconds(us);
+  us := TrndiNative.MonotonicMicroseconds;
   if PerfOriginUs = 0 then
     PerfOriginUs := us;
   v.FromFloat((us - PerfOriginUs) / 1000.0);
@@ -701,9 +744,11 @@ begin
 end;
 
 {** Native backend for the crypto shim: return @code(argv[0]) cryptographically
-    secure random bytes as a lowercase hex string (mORMot's AES-PRNG, seeded
-    from OS entropy). Returns @code(JS_UNDEFINED) when the count is missing or
-    outside 1..65536 (the WebCrypto getRandomValues quota).
+    secure random bytes as a lowercase hex string, taken from the platform
+    entropy source via @code(TrndiNative.GetRandomBytes). Returns
+    @code(JS_UNDEFINED) when the count is missing, outside 1..65536 (the
+    WebCrypto getRandomValues quota), or when the platform has no secure
+    source - never a weaker substitute.
 
     @param(ctx)      Current QuickJS context
     @param(this_val) The 'this' value (unused)
@@ -713,8 +758,11 @@ end;
 }
 function JSRandomHex(ctx: JSContext; this_val: JSValueRaw; argc: integer;
 argv: PJSValues): JSValueRaw; cdecl;
+const
+  HEXCHARS: array[0..15] of ansichar = '0123456789abcdef';
 var
-  n: Int32;
+  n, i: Int32;
+  raw: array of byte;
   hex: RawUtf8;
 begin
   Result := JS_UNDEFINED;
@@ -722,6 +770,19 @@ begin
     Exit;
   if (n < 1) or (n > 65536) then
     Exit;
-  hex := TAesPrng.Main.FillRandomHex(n);
+
+  SetLength(raw, n);
+  // Bail out rather than degrade: callers treat this as secure randomness.
+  if not TrndiNative.GetRandomBytes(@raw[0], n) then
+    Exit;
+
+  SetLength(hex, n * 2);
+  for i := 0 to n - 1 do
+  begin
+    hex[i * 2 + 1] := HEXCHARS[raw[i] shr 4];
+    hex[i * 2 + 2] := HEXCHARS[raw[i] and $0F];
+  end;
+  FillChar(raw[0], n, 0);
+
   Result := JS_NewString(ctx, pansichar(hex));
 end;
