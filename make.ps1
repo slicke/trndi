@@ -47,14 +47,15 @@ $laz = Find-Lazbuild
 # Windows resolves them from the executable's own directory, so place them next
 # to Trndi.exe after an extensions-enabled build. See externals/quickjs/README.md.
 function Copy-QuickJSLibs {
+    param([string]$Destination = $PSScriptRoot)
     $src = Join-Path $PSScriptRoot 'externals\quickjs\prebuilt\x86_64-win64'
     if (-not (Test-Path $src)) {
         Write-Warning "QuickJS libraries not found at $src - extensions will fail to start. Rebuild them with externals/quickjs/build.sh."
         return
     }
     foreach ($dll in (Get-ChildItem (Join-Path $src '*.dll'))) {
-        Copy-Item $dll.FullName $PSScriptRoot -Force
-        Write-Host "  copied $($dll.Name)" -ForegroundColor DarkGray
+        Copy-Item $dll.FullName $Destination -Force
+        Write-Host "  copied $($dll.Name) -> $Destination" -ForegroundColor DarkGray
     }
 }
 
@@ -103,6 +104,10 @@ switch ($firstArg) {
         Write-Host "Building console tests (tests/TrndiTestConsole.lpi)" -ForegroundColor Cyan
         & $laz -B 'tests/TrndiTestConsole.lpi' @extraArgs
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+        # ext_js_tests links the QuickJS engine and its ABI shim, which Windows
+        # resolves from the test binary's own directory.
+        Copy-QuickJSLibs (Join-Path $PSScriptRoot 'tests')
 
         # The test runner starts an in-process Pascal test server via
         # tests/testserver/test_server_helper.pp. Set TRNDI_TEST_SERVER_URL to

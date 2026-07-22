@@ -25,7 +25,10 @@ uses
   carelink_time_tests,
   api_nightscout_tests,
   api_nightscout3_tests,
-  system_media_controller_tests;
+  system_media_controller_tests
+  // Only where externals/quickjs ships a prebuilt engine (see the project's
+  // Conditionals); other targets have nothing to link against.
+  {$IFDEF HAVE_QUICKJS}, ext_js_tests{$ENDIF};
 
 var
   LResult: TTestResult;
