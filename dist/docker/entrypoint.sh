@@ -1,13 +1,21 @@
 #!/bin/bash
-# Clones (or updates) Trndi's develop branch, builds it the same way CI's
-# linux-amd64 job does (via the repo's own Makefile, which mirrors that job —
-# see guides/BUILDING.md and Makefile's MORMOT2_COMMIT/MORMOT2_STATIC_URL),
-# then hands off to the container's command (a shell by default).
+# Clones (or updates) Trndi's develop branch, builds it the way CI's matching
+# Linux job does (via the repo's own Makefile, which mirrors that job - see
+# guides/BUILDING.md and Makefile's MORMOT2_COMMIT/MORMOT2_STATIC_URL), then
+# hands off to the container's command (a shell by default).
 set -uo pipefail
 
 : "${TRNDI_REPO:=https://github.com/slicke/trndi.git}"
 : "${TRNDI_BRANCH:=develop}"
 : "${TRNDI_DIR:=/root/trndi}"
+
+echo "==> Trndi dev container: $(uname -m), lazbuild: $(command -v lazbuild || echo 'NOT FOUND')"
+if ! command -v lazbuild >/dev/null 2>&1; then
+  echo "==> lazbuild is missing from this image - it was built before the" >&2
+  echo "    architecture fix, or from a cached layer. Rebuild with:" >&2
+  echo "      docker build --no-cache -t trndi-dev -f dist/docker/Dockerfile ." >&2
+  exec "$@"
+fi
 
 # The container's WORKDIR is $TRNDI_DIR, so the shell may already be sitting
 # inside it. Step out first - rm -rf'ing (or replacing) the current working
