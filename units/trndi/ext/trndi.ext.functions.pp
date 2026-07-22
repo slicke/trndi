@@ -34,7 +34,7 @@ interface
 }
 
 uses
-Classes, SysUtils, mormot.lib.quickjs, mormot.core.base, strutils, fgl,
+Classes, SysUtils, trndi.ext.quickjs, strutils, fgl,
 Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 
 var
@@ -56,16 +56,21 @@ PJSValList = ^TJSValList;
   {** Enum of supported value kinds, extending QuickJS tags with extras like
       @code(JD_ARRAY), @code(JD_UNSET), etc. }
 JDValue = (
-  JD_UNINITIALIZED = JS_TAG_UNINITIALIZED, // 0
-  JD_INT = JS_TAG_INT,           // 1
-  JD_BOOL = JS_TAG_BOOL,          // 2
-  JD_NULL = JS_TAG_NULL,          // 3
-  JD_F64 = JS_TAG_FLOAT64,       // 7
-  JD_OBJ = JS_TAG_OBJECT,        // 8
-  JD_STR = JS_TAG_STRING,        // 11
-  JD_BFLOAT = JS_TAG_BIG_FLOAT,     // 13
-  JD_BINT = JS_TAG_BIG_INT,       // 14
-  JD_BDECIMAL = JS_TAG_BIG_DECIMAL,   // 15
+  // These used to be aliased to the QuickJS JS_TAG_* values. quickjs-ng gives
+  // reference-counted tags negative values (JS_TAG_OBJECT = -1, JS_TAG_STRING
+  // = -7), which Pascal enums cannot express, and it dropped the BigFloat and
+  // BigDecimal tags altogether. Nothing converts a tag into a JDValue - every
+  // assignment is symbolic - so the enum now carries its own numbering.
+  JD_UNINITIALIZED = 0,
+  JD_INT = 1,
+  JD_BOOL = 2,
+  JD_NULL = 3,
+  JD_F64 = 7,
+  JD_OBJ = 8,
+  JD_STR = 11,
+  JD_BFLOAT = 13,       // unreachable under quickjs-ng; kept for compatibility
+  JD_BINT = 14,
+  JD_BDECIMAL = 15,     // unreachable under quickjs-ng; kept for compatibility
   JD_ARRAY = 150,
   JD_UNSET = 151,
   JD_NAN = 152,
@@ -229,8 +234,10 @@ function JSValueToString(ctx: JSContext; Value: JSValue): string;
 function JSValueConstToUtf8(ctx: JSContext; Value: JSValueConst): RawUtf8;
 function JSFunctionParams(ctx: JSContext; argc: integer;
 argv: PJSValueConstArr): TStringList;
-function JSParseValue(ctx: JSContext; val: JSValue): JSValueVal; overload;
-function JSParseValue(ctx: JSContext; val: JSValueRaw): JSValueVal; overload;
+// Previously overloaded on JSValue and JSValueRaw, which mORMot's NaN-boxed
+// binding kept as distinct types. Under quickjs-ng they are the same 16-byte
+// record, so a single declaration covers both call styles.
+function JSParseValue(ctx: JSContext; val: JSValue): JSValueVal;
 function JSParseParameters(ctx: JSContext; argc: integer;
 argv: PJSValueConstArr): JSParameters; overload;
 function JSParseParameters(ctx: JSContext; argc: integer;
@@ -239,12 +246,15 @@ function JSDumpObject(ctx: JSContext; obj: JSValueConst; var dump: string): bool
 function JSTryToString(ctx: JSContext; Data: JSValue; out str: string): boolean;
 function JSStringifyValue(val: JSValueVal): string;
 function analyze(ctx: JSContext; EvalResult: PJSValue; loop: boolean = false): string;
-function JSConsoleLog(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
-function JSConsolePush(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
-function JSConsoleLogs(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+// Natives are plain Pascal procedures now: they write their result through
+// `res` and are reached via the shim's trampoline, so none of them returns a
+// JSValue struct across the C boundary. See trndi.ext.quickjs.
+procedure JSConsoleLog(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
+procedure JSConsolePush(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
+procedure JSConsoleLogs(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
 procedure RegisterConsoleLog(ctx: PJSContext);
 function JSValueValToValue(ctx: JSContext; val: JSValueVal): JSValue;
 function JSValueValArrayToArray(ctx: JSContext;
@@ -617,12 +627,6 @@ begin
     end;
 end;
 
-function JSParseValue(ctx: JSContext; val: JSValueRaw): JSValueVal;
-begin
-  // Overload: parse from JSValueRaw by converting to JSValue
-  Result := JSParseValue(ctx, JSValue(val));
-end;
-
 function JSParseValue(ctx: JSContext; val: JSValue): JSValueVal;
 var
   arrVal: JSValueRaw;
@@ -630,7 +634,8 @@ var
   pVal: PJSValueVal;
 begin
   // If val is an object or recognized as an array
-  if val.IsObject or (JS_IsArray(ctx, val.Raw) = JS_TRUE) then
+  // quickjs-ng's JS_IsArray takes no context and returns a plain boolean.
+  if val.IsObject or JS_IsArray(val) then
   begin
     arrVal := JS_GetPropertyStr(ctx, val.Raw, 'length');
     if (not val.IsUndefined) and (JS_ToInt32(ctx, @len, arrVal) = 0) then
@@ -851,11 +856,12 @@ begin
   JD_BOOL:
     Result.From(val.Data.BoolVal);
   JD_OBJ:
-      // If ObjectVal is already a JSValue object pointer
-    Result := JSValue(val.Data.ObjectVal);
+      // ObjectVal holds a bare object pointer; rebuild a value around it.
+      // This borrows the reference, exactly as the previous integer cast did.
+    Result := JSValueFromPtr(JS_TAG_OBJECT, val.Data.ObjectVal);
   else
       // For non-supported types, return `undefined`
-    Result := JSValue(JS_UNDEFINED);
+    Result := JS_UNDEFINED;
   end;
 end;
 
@@ -943,8 +949,8 @@ begin
   // Freed memory / cleanup omitted depending on actual QuickJS usage patterns
 end;
 
-function JSConsoleLog(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+procedure JSConsoleLog(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
 var
   msg: pchar;
   i: integer;
@@ -970,11 +976,11 @@ begin
   ExtLog(sdsAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
 
   // Return undefined
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
 end;
 
-function JSConsolePush(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+procedure JSConsolePush(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
 var
   msg: pchar;
   i: integer;
@@ -1004,7 +1010,7 @@ begin
   ConsoleBuffer.Add(fullMsg);
 
   // Return undefined
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
 end;
 
 {------------------------------------------------------------------------------
@@ -1044,32 +1050,32 @@ begin
   Result := JS_UNDEFINED;
 end;
 
-function JSConsoleError(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+procedure JSConsoleError(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
 begin
-  Result := JSConsoleLevelImpl(ctx, argc, argv, 'error');
+  res^ := JSConsoleLevelImpl(ctx, argc, argv, 'error');
 end;
 
-function JSConsoleWarn(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+procedure JSConsoleWarn(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
 begin
-  Result := JSConsoleLevelImpl(ctx, argc, argv, 'warn');
+  res^ := JSConsoleLevelImpl(ctx, argc, argv, 'warn');
 end;
 
-function JSConsoleInfo(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+procedure JSConsoleInfo(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
 begin
-  Result := JSConsoleLevelImpl(ctx, argc, argv, 'info');
+  res^ := JSConsoleLevelImpl(ctx, argc, argv, 'info');
 end;
 
-function JSConsoleDebug(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+procedure JSConsoleDebug(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
 begin
-  Result := JSConsoleLevelImpl(ctx, argc, argv, 'debug');
+  res^ := JSConsoleLevelImpl(ctx, argc, argv, 'debug');
 end;
 
-function JSConsoleLogs(ctx: JSContext; this_val: JSValueConst;
-argc: integer; argv: PJSValueConstArr): JSValueRaw; cdecl;
+procedure JSConsoleLogs(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues);
 var
   fullMsg: string;
 begin
@@ -1084,47 +1090,54 @@ begin
     ShowMessage(RS_LOG_NO_BUFFERED);
 
   // Return undefined
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
+end;
+
+{ Attach one native to the console object. Registration hands the callback to
+  the binding's native table; the returned index travels to QuickJS as the
+  function's `magic`, which the trampoline uses to route calls back here. }
+procedure AddConsoleFunc(ctx: JSContext; const consoleObj: JSValue;
+const name: RawUtf8; argCount: integer; fn: TJSNativeFunc);
+var
+  f: JSValue;
+begin
+  f := JS_NewFunction(ctx, name, argCount, RegisterNative('console.' + name, fn));
+  JS_SetPropertyStr(ctx, consoleObj, name, f);
 end;
 
 procedure RegisterConsoleLog(ctx: PJSContext);
 var
-  consoleObj, logFunc, pushFunc, logsFunc: JSValueRaw;
+  glob, consoleObj: JSValue;
 begin
   // Create or retrieve the "console" object in the global scope
-  consoleObj := JS_GetPropertyStr(ctx^, JS_GetGlobalObject(ctx^), 'console');
-  if consoleObj = JS_UNDEFINED then
-  begin
-    consoleObj := JS_NewObject(ctx^);
-    JS_SetPropertyStr(ctx^, JS_GetGlobalObject(ctx^), 'console', consoleObj);
+  glob := JS_GetGlobalObject(ctx^);
+  try
+    consoleObj := JS_GetPropertyStr(ctx^, glob, 'console');
+    if consoleObj.IsUndefined then
+    begin
+      consoleObj := JS_NewObject(ctx^);
+      // SetPropertyStr consumes the value, so duplicate the reference we keep.
+      JS_SetPropertyStr(ctx^, glob, 'console', JS_DupValue(ctx^, consoleObj));
+    end;
+  finally
+    JS_FreeValue(ctx^, glob);
   end;
 
-  // Create a new log function and attach it to "console.log"
-  logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleLog), 'log', 1);
-  JS_SetPropertyStr(ctx^, consoleObj, 'log', logFunc);
+  try
+    AddConsoleFunc(ctx^, consoleObj, 'log', 1, @JSConsoleLog);
 
-  // Web-style level methods; these buffer (with a level prefix) rather than
-  // opening a dialog per call like console.log does — see JSConsoleLevelImpl.
-  logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleError), 'error', 1);
-  JS_SetPropertyStr(ctx^, consoleObj, 'error', logFunc);
-  logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleWarn), 'warn', 1);
-  JS_SetPropertyStr(ctx^, consoleObj, 'warn', logFunc);
-  logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleInfo), 'info', 1);
-  JS_SetPropertyStr(ctx^, consoleObj, 'info', logFunc);
-  logFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleDebug), 'debug', 1);
-  JS_SetPropertyStr(ctx^, consoleObj, 'debug', logFunc);
+    // Web-style level methods; these buffer (with a level prefix) rather than
+    // opening a dialog per call like console.log does — see JSConsoleLevelImpl.
+    AddConsoleFunc(ctx^, consoleObj, 'error', 1, @JSConsoleError);
+    AddConsoleFunc(ctx^, consoleObj, 'warn', 1, @JSConsoleWarn);
+    AddConsoleFunc(ctx^, consoleObj, 'info', 1, @JSConsoleInfo);
+    AddConsoleFunc(ctx^, consoleObj, 'debug', 1, @JSConsoleDebug);
 
-  // Create console.push function
-  pushFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsolePush), 'push', 1);
-  JS_SetPropertyStr(ctx^, consoleObj, 'push', pushFunc);
-
-  // Create console.logs function
-  logsFunc := JS_NewCFunction(ctx^, PJSCFunction(@JSConsoleLogs), 'logs', 0);
-  JS_SetPropertyStr(ctx^, consoleObj, 'logs', logsFunc);
-
-  // Optionally free consoleObj if the QuickJS binding requires it
-  // (Commented out as usage may vary depending on the QuickJS binding)
-  // JS_Free(ctx^, consoleObj);
+    AddConsoleFunc(ctx^, consoleObj, 'push', 1, @JSConsolePush);
+    AddConsoleFunc(ctx^, consoleObj, 'logs', 0, @JSConsoleLogs);
+  finally
+    JS_FreeValue(ctx^, consoleObj);
+  end;
 end;
 
 function JSValueParamCheck(const params: PJSParameters;

@@ -138,13 +138,21 @@ type
   TJSValueArray = array[0..(MaxInt div SizeOf(JSValue)) - 1] of JSValue;
   {** Pointer to a callback argument array. }
   PJSValues = ^TJSValueArray;
+  {** Retained under its mORMot-era name; same thing as @code(PJSValues). }
+  PJSValueConstArr = ^TJSValueArray;
 
   {** Pointer to a context handle, as used by the engine's callback signatures. }
   PJSContext = ^JSContext;
 
-  {** The resolve/reject pair filled in by @code(JS_NewPromiseCapability).
-      Index with @code(JprResolve) and @code(JprReject). }
-  JSDoubleVal = array[0..1] of JSValue;
+  {** One entry from @code(JS_GetOwnPropertyNames). }
+  JSPropertyEnum = record
+    is_enumerable: ByteBool;
+    atom: JSAtom;
+  end;
+  {** Pointer to a run of property entries; POINTERMATH allows @code(p[i]). }
+  {$POINTERMATH ON}
+  PJSPropertyEnum = ^JSPropertyEnum;
+  {$POINTERMATH OFF}
 
 const
   { Value tags. }
@@ -182,10 +190,6 @@ const
   JS_GPN_ENUM_ONLY = 1 shl 4;
   JS_GPN_SET_ENUM = 1 shl 5;
 
-  { Indices into JSDoubleVal, matching QuickJS's resolving_funcs order. }
-  JprResolve = 0;
-  JprReject = 1;
-
   { Property attribute flags. }
   JS_PROP_CONFIGURABLE = 1 shl 0;
   JS_PROP_WRITABLE = 1 shl 1;
@@ -216,6 +220,61 @@ type
       @param(argv)     Argument array, valid for the duration of the call) }
   TJSNativeFunc = procedure(res: PJSValue; ctx: JSContext; this_val: PJSValue;
     argc: integer; argv: PJSValues);
+
+  {** Value helper mirroring the one mORMot exposed on @code(JSValue), so that
+      the engine's @code(val.IsObject) / @code(val.F64) style code keeps working.
+
+      Two members behave differently under quickjs-ng and are kept only so the
+      engine compiles: @code(IsBigFloat) and @code(IsBigDecimal) always return
+      False, because ng dropped those tags entirely. }
+  JSValueHelper = record helper for JSValue
+    {** Identity accessor; mORMot distinguished a raw value from a wrapped one. }
+    function Raw: JSValue;
+    {** Payload pointer, valid only for reference-counted tags. }
+    function Ptr: pointer;
+    {** The value's tag. }
+    function NormTag: integer;
+
+    function IsUndefined: boolean;
+    function IsNull: boolean;
+    function IsUninitialized: boolean;
+    function IsObject: boolean;
+    function IsString: boolean;
+    function IsInt32: boolean;
+    function IsFloat: boolean;
+    function IsBigInt: boolean;
+    {** Always False: quickjs-ng has no BigFloat tag. }
+    function IsBigFloat: boolean;
+    {** Always False: quickjs-ng has no BigDecimal tag. }
+    function IsBigDecimal: boolean;
+    function IsNan: boolean;
+
+    {** Boolean payload; only meaningful when the tag is @code(JS_TAG_BOOL). }
+    function Bool: boolean;
+    {** 32-bit integer payload. }
+    function int32: longint;
+    {** Integer payload widened to 64 bits.
+
+        Note a heap-allocated BigInt cannot be read without a context, so this
+        returns 0 for that case; use @code(JS_ToInt64) when the value may be a
+        full BigInt rather than a short one. }
+    function int64: system.int64;
+    {** Floating point payload, with integer tags promoted to double. }
+    function F64: double;
+
+    { Mutating setters for immediate values. These need no context because
+      integers, floats and booleans are stored inline rather than allocated. }
+
+    {** Set to a 32-bit integer. }
+    procedure From32(v: longint);
+    {** Set to a 64-bit integer, falling back to a double when it does not
+        fit in 32 bits. }
+    procedure From64(v: system.int64);
+    {** Set to a double. }
+    procedure FromFloat(d: double);
+    {** Set to a boolean. }
+    procedure From(b: boolean);
+  end;
 
   {** Context helper providing the value conversions the engine code relies on.
       Preserves the @code(ctx^.Method) call shape used with mORMot. }
@@ -318,8 +377,6 @@ function JS_DupValue(ctx: JSContext; const v: JSValue): JSValue;
 function JS_ToCString(ctx: JSContext; const v: JSValue): pansichar;
 {** Convert to UTF-8 and release the intermediate C string. }
 function JS_ToUtf8(ctx: JSContext; const v: JSValue): RawUtf8;
-{** Convert a value to UTF-8. Retained under its mORMot-era name. }
-function JSValueConstToUtf8(ctx: JSContext; const v: JSValue): RawUtf8;
 {** Stable identity for a heap-allocated value, for use as a dictionary key.
 
     Under mORMot's NaN-boxed fork a @code(JSValue) could simply be cast to
@@ -328,8 +385,24 @@ function JSValueConstToUtf8(ctx: JSContext; const v: JSValue): RawUtf8;
     objects and promises. }
 function JSValueId(const v: JSValue): UInt64;
 function JS_ToBool(ctx: JSContext; const v: JSValue): integer;
-function JS_ToInt32(ctx: JSContext; out res: longint; const v: JSValue): integer;
-function JS_ToFloat64(ctx: JSContext; out res: double; const v: JSValue): integer;
+function JS_ToInt32(ctx: JSContext; out res: longint; const v: JSValue): integer; overload;
+function JS_ToFloat64(ctx: JSContext; out res: double; const v: JSValue): integer; overload;
+{** Pointer-style overloads, matching how the engine already calls these. }
+function JS_ToInt32(ctx: JSContext; pres: PLongint; const v: JSValue): integer; overload;
+function JS_ToFloat64(ctx: JSContext; pres: PDouble; const v: JSValue): integer; overload;
+
+{** Enumerate an object's own property names. Free @code(ptab) with
+    @code(js_free) and each atom with @code(JS_FreeAtom). }
+function JS_GetOwnPropertyNames(ctx: JSContext; ptab: PPointer; plen: PCardinal;
+  const obj: JSValue; flags: integer): integer;
+
+{** Rebuild a value from a tag and a payload pointer.
+
+    The engine stores bare object pointers in its own value wrappers and casts
+    them back later; under mORMot's NaN boxing that was a plain integer cast.
+    No reference is taken, so the result is only valid while the original value
+    is still alive. }
+function JSValueFromPtr(tag: system.int64; p: pointer): JSValue;
 function JS_AtomToCString(ctx: JSContext; a: JSAtom): pansichar;
 
 function JS_VALUE_GET_TAG(const v: JSValue): integer; inline;
@@ -406,6 +479,8 @@ function tq_set_property_str(ctx: JSContext; obj: PJSValue; prop: pansichar;
 function tq_set_property_uint32(ctx: JSContext; obj: PJSValue; idx: cardinal;
   val: PJSValue): integer; cdecl; external TQLIB;
 function tq_set_opaque(obj: PJSValue; opaque: pointer): integer; cdecl; external TQLIB;
+function tq_get_own_property_names(ctx: JSContext; ptab: PPointer; plen: PCardinal;
+  obj: PJSValue; flags: integer): integer; cdecl; external TQLIB;
 
 function tq_to_cstring(ctx: JSContext; v: PJSValue): pansichar; cdecl; external TQLIB;
 function tq_atom_to_cstring(ctx: JSContext; a: JSAtom): pansichar; cdecl; external TQLIB;
@@ -672,11 +747,6 @@ begin
   end;
 end;
 
-function JSValueConstToUtf8(ctx: JSContext; const v: JSValue): RawUtf8;
-begin
-  Result := JS_ToUtf8(ctx, v);
-end;
-
 function JSValueId(const v: JSValue): UInt64;
 begin
   // Reference-counted tags are negative and carry a pointer payload; anything
@@ -700,6 +770,28 @@ end;
 function JS_ToFloat64(ctx: JSContext; out res: double; const v: JSValue): integer;
 begin
   Result := tq_to_float64(ctx, @res, @v);
+end;
+
+function JS_ToInt32(ctx: JSContext; pres: PLongint; const v: JSValue): integer;
+begin
+  Result := tq_to_int32(ctx, pres, @v);
+end;
+
+function JS_ToFloat64(ctx: JSContext; pres: PDouble; const v: JSValue): integer;
+begin
+  Result := tq_to_float64(ctx, pres, @v);
+end;
+
+function JS_GetOwnPropertyNames(ctx: JSContext; ptab: PPointer; plen: PCardinal;
+  const obj: JSValue; flags: integer): integer;
+begin
+  Result := tq_get_own_property_names(ctx, ptab, plen, @obj, flags);
+end;
+
+function JSValueFromPtr(tag: system.int64; p: pointer): JSValue;
+begin
+  Result.u.ptr := p;
+  Result.tag := tag;
 end;
 
 function JS_AtomToCString(ctx: JSContext; a: JSAtom): pansichar;
@@ -787,6 +879,162 @@ function JS_NewFunctionData(ctx: JSContext; argCount, magic, dataLen: integer;
 begin
   EnsureDispatch;
   tq_new_function_data(@Result, ctx, argCount, magic, dataLen, data);
+end;
+
+{ ================================================================== }
+{ Value helper                                                        }
+{ ================================================================== }
+
+function JSValueHelper.Raw: JSValue;
+begin
+  Result := Self;
+end;
+
+function JSValueHelper.Ptr: pointer;
+begin
+  if Self.tag < 0 then
+    Result := Self.u.ptr
+  else
+    Result := nil;
+end;
+
+function JSValueHelper.NormTag: integer;
+begin
+  Result := Self.tag;
+end;
+
+function JSValueHelper.IsUndefined: boolean;
+begin
+  Result := Self.tag = JS_TAG_UNDEFINED;
+end;
+
+function JSValueHelper.IsNull: boolean;
+begin
+  Result := Self.tag = JS_TAG_NULL;
+end;
+
+function JSValueHelper.IsUninitialized: boolean;
+begin
+  Result := Self.tag = JS_TAG_UNINITIALIZED;
+end;
+
+function JSValueHelper.IsObject: boolean;
+begin
+  Result := Self.tag = JS_TAG_OBJECT;
+end;
+
+function JSValueHelper.IsString: boolean;
+begin
+  Result := (Self.tag = JS_TAG_STRING) or (Self.tag = JS_TAG_STRING_ROPE);
+end;
+
+function JSValueHelper.IsInt32: boolean;
+begin
+  Result := Self.tag = JS_TAG_INT;
+end;
+
+function JSValueHelper.IsFloat: boolean;
+begin
+  Result := Self.tag = JS_TAG_FLOAT64;
+end;
+
+function JSValueHelper.IsBigInt: boolean;
+begin
+  Result := (Self.tag = JS_TAG_BIG_INT) or (Self.tag = JS_TAG_SHORT_BIG_INT);
+end;
+
+function JSValueHelper.IsBigFloat: boolean;
+begin
+  // quickjs-ng removed the BigFloat tag; retained so the engine still compiles.
+  Result := False;
+end;
+
+function JSValueHelper.IsBigDecimal: boolean;
+begin
+  // quickjs-ng removed the BigDecimal tag; retained so the engine still compiles.
+  Result := False;
+end;
+
+function JSValueHelper.IsNan: boolean;
+begin
+  Result := (Self.tag = JS_TAG_FLOAT64) and (Self.u.float64_ <> Self.u.float64_);
+end;
+
+function JSValueHelper.Bool: boolean;
+begin
+  Result := (Self.tag = JS_TAG_BOOL) and (Self.u.int32_ <> 0);
+end;
+
+function JSValueHelper.int32: longint;
+begin
+  case Self.tag of
+    JS_TAG_INT, JS_TAG_BOOL, JS_TAG_SHORT_BIG_INT:
+      Result := Self.u.int32_;
+    JS_TAG_FLOAT64:
+      Result := Trunc(Self.u.float64_);
+  else
+    Result := 0;
+  end;
+end;
+
+function JSValueHelper.int64: system.int64;
+begin
+  case Self.tag of
+    JS_TAG_INT, JS_TAG_BOOL, JS_TAG_SHORT_BIG_INT:
+      Result := Self.u.int32_;
+    JS_TAG_FLOAT64:
+      Result := Trunc(Self.u.float64_);
+  else
+    // A heap BigInt needs a context to read; callers wanting that must use
+    // JS_ToInt64 rather than this accessor.
+    Result := 0;
+  end;
+end;
+
+function JSValueHelper.F64: double;
+begin
+  case Self.tag of
+    JS_TAG_FLOAT64:
+      Result := Self.u.float64_;
+    JS_TAG_INT, JS_TAG_BOOL, JS_TAG_SHORT_BIG_INT:
+      Result := Self.u.int32_;
+  else
+    Result := 0;
+  end;
+end;
+
+procedure JSValueHelper.From32(v: longint);
+begin
+  Self.u.int32_ := v;
+  Self.tag := JS_TAG_INT;
+end;
+
+procedure JSValueHelper.From64(v: system.int64);
+begin
+  if (v >= Low(longint)) and (v <= High(longint)) then
+  begin
+    Self.u.int32_ := longint(v);
+    Self.tag := JS_TAG_INT;
+  end
+  else
+  begin
+    // Too wide for an inline int; a real BigInt would need a context, so fall
+    // back to a double as the engine's numeric paths already expect.
+    Self.u.float64_ := v;
+    Self.tag := JS_TAG_FLOAT64;
+  end;
+end;
+
+procedure JSValueHelper.FromFloat(d: double);
+begin
+  Self.u.float64_ := d;
+  Self.tag := JS_TAG_FLOAT64;
+end;
+
+procedure JSValueHelper.From(b: boolean);
+begin
+  Self.u.int32_ := ord(b);
+  Self.tag := JS_TAG_BOOL;
 end;
 
 { ================================================================== }

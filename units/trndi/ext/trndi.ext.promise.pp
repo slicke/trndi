@@ -44,7 +44,7 @@ unit trndi.ext.promise;
 interface
 
 uses
-Classes, SysUtils, mORMot.lib.quickjs, mormot.core.base, Dialogs,
+Classes, SysUtils, trndi.ext.quickjs, Dialogs,
 trndi.ext.functions, slicke.ux.alert, fgl, trndi.strings, trndi.native;
 
 type
