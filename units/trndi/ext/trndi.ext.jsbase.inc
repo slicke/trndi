@@ -609,6 +609,12 @@ begin
     if DelayMs < 0 then
       DelayMs := 0;
   end;
+  // TFPCustomTimer treats Interval = 0 as "inactive" (see IsActive in fptimer),
+  // so a literal 0 ms would arm a timer that never fires - and setTimeout(fn, 0)
+  // is the single most common form there is. 0 means "as soon as possible", so
+  // round it up to the shortest interval the timer can actually run at.
+  if DelayMs < 1 then
+    DelayMs := 1;
 
   // Create timer info; New initializes the managed Args field
   New(TimerInfo);

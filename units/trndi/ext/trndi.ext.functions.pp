@@ -245,7 +245,6 @@ argv: PJSValueConst): JSParameters; overload;
 function JSDumpObject(ctx: JSContext; obj: JSValueConst; var dump: string): boolean;
 function JSTryToString(ctx: JSContext; Data: JSValue; out str: string): boolean;
 function JSStringifyValue(val: JSValueVal): string;
-function analyze(ctx: JSContext; EvalResult: PJSValue; loop: boolean = false): string;
 // Natives are plain Pascal procedures now: they write their result through
 // `res` and are reached via the shim's trampoline, so none of them returns a
 // JSValue struct across the C boundary. See trndi.ext.quickjs.
@@ -919,43 +918,11 @@ begin
     Result := false;
 end;
 
-function analyze(ctx: JSContext; EvalResult: PJSValue; loop: boolean = false): string;
-var
-  messageVal, stackVal: JSValue;
-  messageStr, stackStr: pchar;
-  err: string;
-begin
-  // Retrieve the exception object and its 'message'
-  messageVal := JSValue(JS_GetPropertyStr(ctx, JS_GetException(ctx), pchar('message')));
-  if messageVal.IsString then
-    messageStr := JS_ToCString(ctx, messageVal.raw)
-  else
-    messageStr := pchar(RS_UNKNOWN_ERR);
-
-  // Retrieve the 'stack' from the exception object if available
-  stackVal := JSValue(JS_GetPropertyStr(ctx, JS_GetException(ctx), 'stack'));
-  if stackVal.IsString then
-    stackStr := JS_ToCString(ctx, stackVal.Raw)
-  else
-  if not loop then
-  begin
-    // Attempt to fix if first pass fails
-    Result := RS_STACK_FAILED + analyze(ctx, @stackVal, true);
-    Exit;
-  end
-  else
-    stackStr := pchar(RS_NO_TRACE);
-
-  try
-    // Format the error message
-    Result := Format(RS_STACK_ERR_MSG, [messageStr, stackStr, err]);
-  except
-    // Fallback on internal error
-    Result := 'Internal error';
-  end;
-
-  // Freed memory / cleanup omitted depending on actual QuickJS usage patterns
-end;
+{ analyze() lived here: it called JS_GetException twice on a context whose
+  exception had already been consumed, so it read properties off
+  [uninitialized] - leaving a fresh TypeError pending and reporting that
+  TypeError's stack as the script's. JSContextHelper.ErrorMessage/DumpError do
+  the job correctly, and Eval already routes through them. }
 
 procedure JSConsoleLog(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
