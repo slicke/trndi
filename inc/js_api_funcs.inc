@@ -38,31 +38,25 @@
 // JavaScript API Bridge Functions - Expose app data to extensions
 
 // Get the currently used backend
-function JSGetAPI(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
-var
-  res: JSValue;
+procedure JSGetAPI(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 begin
-  res := ctx^.From(api.systemName);
-  result := res.raw;
+  res^ := ctx^.From(api.systemName);
 end;
 
 // Get current reading
-function JSGetBuild(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
-var
-  res: JSValue;
+procedure JSGetBuild(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 begin
-  res := ctx^.From(BUILD_NUMBER);
-  result := res.raw;
+  res^ := ctx^.From(BUILD_NUMBER);
 end;
 
 // Get Trndi build
-function JSGetReading(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSGetReading(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   mmol: boolean;
-  res: JSValue;
+  v: JSValue;
   mmolval: variant;
 begin
-  Result := JS_FALSE;
+  res^ := JS_FALSE;
 
   if argc < 1 then
   begin
@@ -75,47 +69,36 @@ begin
   if not (VarType(mmolval) = varBoolean) then
   begin
     ExtError(sdsAuto, 'Unit type must be boolean');
-    Result := JS_FALSE;
     Exit;
   end;
 
   mmol := mmolval;
 
   // Return the cached current reading if available
-  if Length(bgs) > 0 then
-  begin
-    if mmol then
-      res.FromFloat(bgs[0].convert(BGUnit.mmol))
-    else
-      res.From32(round(bgs[0].convert(BGUnit.mgdl)));
-  end
-  else
-  begin
-    result := JS_FALSE;
+  if Length(bgs) < 1 then
     Exit;
-  end;
 
-  result := res.raw;
+  if mmol then
+    v.FromFloat(bgs[0].convert(BGUnit.mmol))
+  else
+    v.From32(round(bgs[0].convert(BGUnit.mgdl)));
+
+  res^ := v.raw;
 end;
 
 // Returns a settings value
-function JSGetSetting(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSGetSetting(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   key, val: string;
-  res: JSValue;
 begin
+  res^ := JS_FALSE;
   if argc < 1 then
-    Exit(JS_FALSE);
+    Exit;
 
   key := ctx^.ToUtf8(argv^[0]);
 
-  if not native.TryGetSetting(key, val) then
-    result := JS_FALSE
-  else
-  begin
-    res := ctx^.From(val);
-    result := res.raw;
-  end;
+  if native.TryGetSetting(key, val) then
+    res^ := ctx^.From(val);
 end;
 
 // Build the JS object for one reading: {value_system, value_mgdl, value_mmol,
@@ -167,22 +150,22 @@ begin
 end;
 
 // Get comprehensive current reading with metadata
-function JSGetCurrentReading(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSGetCurrentReading(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 begin
   // Return false if no readings available
   if Length(bgs) < 1 then
   begin
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
     Exit;
   end;
 
-  Result := BuildReadingObject(ctx, bgs[0]);
+  res^ := BuildReadingObject(ctx, bgs[0]);
 end;
 
 // Get the cached reading history (newest first) as an array of the same
 // objects getCurrentReading returns. Optional argument caps the number of
 // readings; omitted or <= 0 returns everything Trndi holds in memory.
-function JSGetReadings(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSGetReadings(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   maxCount: integer;
   countVar: variant;
@@ -199,7 +182,8 @@ begin
     else
     begin
       ExtError(sdsAuto, 'getReadings: count must be an integer');
-      Exit(JS_FALSE);
+      res^ := JS_FALSE;
+      Exit;
     end;
   end;
 
@@ -215,11 +199,11 @@ begin
     Inc(added);
   end;
 
-  Result := arr;
+  res^ := arr;
 end;
 
 // Get current CGM limits
-function JSGetLimits(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSGetLimits(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   lowMmol, highMmol, lowRangeMmol, highRangeMmol: double;
   obj: JSValueRaw;
@@ -259,12 +243,12 @@ begin
   
   jsVal.FromFloat(highRangeMmol);
   JS_SetPropertyStr(ctx, obj, 'high_range_mmol', jsVal.Raw);
-  
-  Result := obj;
+
+  res^ := obj;
 end;
 
 // Get statistics from recent readings
-function JSGetStatistics(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSGetStatistics(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   minutes: integer;
   minutesVar: variant;
@@ -306,10 +290,10 @@ begin
     JS_SetPropertyStr(ctx, obj, 'timeBelow', jsVal.Raw);
     jsVal.From32(0);
     JS_SetPropertyStr(ctx, obj, 'readingCount', jsVal.Raw);
-    Result := obj;
+    res^ := obj;
     Exit;
   end;
-  
+
   // Calculate cutoff time
   cutoffTime := IncMinute(Now, -minutes);
   
@@ -334,10 +318,10 @@ begin
     JS_SetPropertyStr(ctx, obj, 'timeBelow', jsVal.Raw);
     jsVal.From32(0);
     JS_SetPropertyStr(ctx, obj, 'readingCount', jsVal.Raw);
-    Result := obj;
+    res^ := obj;
     Exit;
   end;
-  
+
   // Allocate array for values
   SetLength(values, count);
   
@@ -436,16 +420,16 @@ begin
   
   jsVal.From32(count);
   JS_SetPropertyStr(ctx, obj, 'readingCount', jsVal.Raw);
-  
-  Result := obj;
+
+  res^ := obj;
 end;
 
 // Returns a settings value
-function JSSetSetting(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSSetSetting(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   sect, key, val, curr: string;
 begin
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
   if argc < 2 then
   begin
     ExtError(sdsAuto, 'setSetting requires a key and a value');
@@ -470,63 +454,55 @@ begin
 end;
 
 // Return the active username
-function JSActiveUser(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSActiveUser(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   curr: rawbytestring;
-  res: JSValue;
 begin
   if username <> '' then
   begin
     curr := username;
-    res := ctx^.From(curr);
-    result := res.raw;
+    res^ := ctx^.From(curr);
   end
   else
     // Return a JS boolean false when no user has been loaded
-    result := JS_FALSE;
+    res^ := JS_FALSE;
 end;
 
 // Return the active user nickname (multi-user mode)
-function JSActiveUserNick(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSActiveUserNick(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   curr: rawbytestring;
-  res: JSValue;
 begin
   if fBG.multi then
   begin
     curr := fBG.multinick;
-    res := ctx^.From(curr);
-    result := res.raw;
+    res^ := ctx^.From(curr);
   end
   else
-    result := JS_FALSE// Return a real JS boolean false when not in multi-user mode
-  ;
+    // Return a real JS boolean false when not in multi-user mode
+    res^ := JS_FALSE;
 end;
 
 // Handle the active bg unit
-function JSUnit(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSUnit(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   curr: rawbytestring;
-  res: JSValue;
 begin
   curr := UTF8Encode(BG_UNIT_NAMES[un]);
-  res := ctx^.From(curr);
-  result := res.raw;
+  res^ := ctx^.From(curr);
 end;
 
 // Handle the active language
-function JSLocale(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSLocale(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   curr: rawbytestring;
-  res: JSValue;
 begin
   curr := applocale;
-  res := ctx^.From(curr);
-  result := res.raw;
+  res^ := ctx^.From(curr);
 end;
 
 // Predict future blood glucose readings
-function JSPredictReadings(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSPredictReadings(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   numPredictions: variant;
   predictions: BGResults;
@@ -535,14 +511,14 @@ var
 begin
   // Default to predicting 3 readings if no parameter provided
   numPredictions := 3;
-  
+
   if argc > 0 then
   begin
-    ctx^^.ToVariant(argv^[0], numPredictions);
+    ctx^.ToVariant(argv^[0], numPredictions);
     if not (VarType(numPredictions) = varInteger) then
     begin
       ExtError(sdsAuto, 'Number of predictions must be an integer');
-      Result := JS_FALSE;
+      res^ := JS_FALSE;
       Exit;
     end;
   end;
@@ -553,7 +529,7 @@ begin
   if not success then
   begin
     // Return empty array if prediction failed
-    Result := TTrndiExtEngine.Instance.CreateJSArray([]);
+    res^ := TTrndiExtEngine.Instance.CreateJSArray([]);
     Exit;
   end;
   
@@ -561,9 +537,9 @@ begin
   // Each prediction is: [value_in_current_unit, mgdl, mmol, timestamp]
   case Length(predictions) of
   0:
-    Result := TTrndiExtEngine.Instance.CreateJSArray([]);
+    res^ := TTrndiExtEngine.Instance.CreateJSArray([]);
   1:
-    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
+    res^ := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),
@@ -572,7 +548,7 @@ begin
       ])
       ]);
   2:
-    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
+    res^ := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),
@@ -587,7 +563,7 @@ begin
       ])
       ]);
   3:
-    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
+    res^ := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),
@@ -608,7 +584,7 @@ begin
       ])
       ]);
   4:
-    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
+    res^ := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),
@@ -635,7 +611,7 @@ begin
       ])
       ]);
   5:
-    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
+    res^ := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),
@@ -669,38 +645,38 @@ begin
       ]);
   else
     // For more than 5 predictions, return simpler format: just the values in current unit
-    Result := TTrndiExtEngine.Instance.CreateJSArray([]);
+    res^ := TTrndiExtEngine.Instance.CreateJSArray([]);
   end;
 end;
 
 // Confidence (0..1) of the most recent predictReadings run: how cleanly the
 // recent readings fit the trend model after outlier rejection.
-function JSPredictionConfidence(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSPredictionConfidence(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
-  res: JSValue;
+  v: JSValue;
 begin
-  res := Default(JSValue);
-  res.FromFloat(api.predictionConfidence);
-  Result := res.raw;
+  v := Default(JSValue);
+  v.FromFloat(api.predictionConfidence);
+  res^ := v.raw;
 end;
 
 // Get current basal rate from the backend
-function JSGetBasalRate(ctx: JSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw; cdecl;
+procedure JSGetBasalRate(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
-  res: JSValue;
+  v: JSValue;
   basalRate: single;
 begin
   // Get basal rate from API (returns 0 if unavailable or not supported)
   basalRate := api.getBasalRate;
-  
+
   // Return false if basal rate is 0 (unavailable)
   if basalRate = 0 then
   begin
-    result := JS_FALSE;
+    res^ := JS_FALSE;
     Exit;
   end;
-  
+
   // Return the basal rate value
-  res.FromFloat(basalRate);
-  result := res.raw;
+  v.FromFloat(basalRate);
+  res^ := v.raw;
 end;

@@ -38,23 +38,29 @@
 // JavaScript System Functions - System operations like sound/TTS
 
 // Play a sound file
-function JSPlay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSPlay(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   filename: string;
 begin
-  Result := JS_UNDEFINED;
-  filename := ctx^^.ToUtf8(argv^[0]);
+  res^ := JS_UNDEFINED;
+  if argc < 1 then
+    Exit;
+  filename := ctx^.ToUtf8(argv^[0]);
   TrndiNative.PlaySound(filename);
 end;
 
 // TTS (Text-to-Speech)
-function JSSay(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSSay(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   text: string;
   tn: trndinative;
 begin
-  Result := JS_UNDEFINED;
-  text := ctx^^.ToUtf8(argv^[0]);
+  res^ := JS_UNDEFINED;
+  if argc < 1 then
+    Exit;
+  text := ctx^.ToUtf8(argv^[0]);
   tn := TrndiNative.create;
   tn.Speak(text);
   tn.free;

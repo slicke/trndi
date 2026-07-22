@@ -204,43 +204,43 @@ begin
   with TTrndiExtEngine.Instance do
   begin
     // Data-read group (baseline; no prompt). Identity/locale + readings + stats.
-    addClassFunctionIf(epData, 'getLocale',           ExtFunction(@JSLocale),         0);
-    addClassFunctionIf(epData, 'getUnit',             ExtFunction(@JSUnit),           0);
-    addClassFunctionIf(epData, 'getCurrentUser',      ExtFunction(@JSActiveUser),     0);
-    addClassFunctionIf(epData, 'getCurrentNickname',  ExtFunction(@JSActiveUserNick), 0);
-    addClassFunctionIf(epData, 'predictReadings',     ExtFunction(@JSPredictReadings),-1);
-    addClassFunctionIf(epData, 'predictionConfidence', ExtFunction(@JSPredictionConfidence), 0);
-    addClassFunctionIf(epData, 'getBuild',            ExtFunction(@JSGetBuild),       -1);
-    addClassFunctionIf(epData, 'getCurrentAPI',       ExtFunction(@JSGetAPI),         -1);
-    addClassFunctionIf(epData, 'getReading',          ExtFunction(@JSGetReading),     -1);
-    addClassFunctionIf(epData, 'getCurrentReading',   ExtFunction(@JSGetCurrentReading), 0);
-    addClassFunctionIf(epData, 'getReadings',         ExtFunction(@JSGetReadings),    -1);
-    addClassFunctionIf(epData, 'getLimits',           ExtFunction(@JSGetLimits),      0);
-    addClassFunctionIf(epData, 'getStatistics',       ExtFunction(@JSGetStatistics),  -1);
-    addClassFunctionIf(epData, 'getBasalRate',        ExtFunction(@JSGetBasalRate),   0);
+    addClassFunctionIf(epData, 'getLocale',           @JSLocale,         0);
+    addClassFunctionIf(epData, 'getUnit',             @JSUnit,           0);
+    addClassFunctionIf(epData, 'getCurrentUser',      @JSActiveUser,     0);
+    addClassFunctionIf(epData, 'getCurrentNickname',  @JSActiveUserNick, 0);
+    addClassFunctionIf(epData, 'predictReadings',     @JSPredictReadings,-1);
+    addClassFunctionIf(epData, 'predictionConfidence', @JSPredictionConfidence, 0);
+    addClassFunctionIf(epData, 'getBuild',            @JSGetBuild,       -1);
+    addClassFunctionIf(epData, 'getCurrentAPI',       @JSGetAPI,         -1);
+    addClassFunctionIf(epData, 'getReading',          @JSGetReading,     -1);
+    addClassFunctionIf(epData, 'getCurrentReading',   @JSGetCurrentReading, 0);
+    addClassFunctionIf(epData, 'getReadings',         @JSGetReadings,    -1);
+    addClassFunctionIf(epData, 'getLimits',           @JSGetLimits,      0);
+    addClassFunctionIf(epData, 'getStatistics',       @JSGetStatistics,  -1);
+    addClassFunctionIf(epData, 'getBasalRate',        @JSGetBasalRate,   0);
 
     // UI group (baseline; no prompt). Visual + audio + notifications.
-    addClassFunctionIf(epUI, 'uxProp',           ExtFunction(@JSUX),               3);
-    addClassFunctionIf(epUI, 'setBadgeSize',     ExtFunction(@JSBADGE),           -1);
-    addClassFunctionIf(epUI, 'setDotSize',       ExtFunction(@JSDotSize),         -1);
-    addClassFunctionIf(epUI, 'setDotAdjust',     ExtFunction(@JSDotAdjust),       -1);
-    addClassFunctionIf(epUI, 'setLevelColor',    ExtFunction(@JSLevelColor),      -1);
-    addClassFunctionIf(epUI, 'playSound',        ExtFunction(@JSPlay),             1);
-    addClassFunctionIf(epUI, 'sayText',          ExtFunction(@JSSay),              1);
-    addClassFunctionIf(epUI, 'htmlMsg',          ExtFunction(@JSHTMLMsg),         -1);
-    addClassFunctionIf(epUI, 'htmlDlg',          ExtFunction(@JSHTMLDlg),         -1);
-    addClassFunctionIf(epUI, 'htmlYesNo',        ExtFunction(@JSHTMLYesNo),       -1);
-    addClassFunctionIf(epUI, 'setClockInterval', ExtFunction(@JSvar_ClockInterval),1);
-    addClassFunctionIf(epUI, 'attention',        ExtFunction(@JSAttention),        1);
+    addClassFunctionIf(epUI, 'uxProp',           @JSUX,               3);
+    addClassFunctionIf(epUI, 'setBadgeSize',     @JSBADGE,           -1);
+    addClassFunctionIf(epUI, 'setDotSize',       @JSDotSize,         -1);
+    addClassFunctionIf(epUI, 'setDotAdjust',     @JSDotAdjust,       -1);
+    addClassFunctionIf(epUI, 'setLevelColor',    @JSLevelColor,      -1);
+    addClassFunctionIf(epUI, 'playSound',        @JSPlay,             1);
+    addClassFunctionIf(epUI, 'sayText',          @JSSay,              1);
+    addClassFunctionIf(epUI, 'htmlMsg',          @JSHTMLMsg,         -1);
+    addClassFunctionIf(epUI, 'htmlDlg',          @JSHTMLDlg,         -1);
+    addClassFunctionIf(epUI, 'htmlYesNo',        @JSHTMLYesNo,       -1);
+    addClassFunctionIf(epUI, 'setClockInterval', @JSvar_ClockInterval,1);
+    addClassFunctionIf(epUI, 'attention',        @JSAttention,        1);
 
     // Settings group (promptable). Both reads and writes go through here because
     // settings keys (incl. extval.*) carry user-private data.
     addClassFunctionIf(epSettings, 'setTimeAndRange',
-      ExtFunction(@JSTimeRange), 2);
+      @JSTimeRange, 2);
     addClassFunctionIf(epSettings, 'setOverrideThresholdMinutes',
-      ExtFunction(@JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES), 1);
-    addClassFunctionIf(epSettings, 'getSetting', ExtFunction(@JSGetSetting), -1);
-    addClassFunctionIf(epSettings, 'setSetting', ExtFunction(@JSSetSetting), -1);
+      @JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES, 1);
+    addClassFunctionIf(epSettings, 'getSetting', @JSGetSetting, -1);
+    addClassFunctionIf(epSettings, 'setSetting', @JSSetSetting, -1);
 
     // Promise-style helpers (net/exec/settings/data, individually gated).
     if Assigned(jsFuncs) then

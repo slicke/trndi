@@ -64,11 +64,11 @@ end;
     @param(argv)     Array of argument values to stringify
     @returns         @code(JS_UNDEFINED)
 }
-function JSDoLog(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSDoLog(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 begin
-  TTrndiExtEngine.Instance.SetOutput(@ctx, argv, argc - 1);
-  Result := JS_UNDEFINED;
+  TTrndiExtEngine.Instance.SetOutput(ctx, argv, argc - 1);
+  res^ := JS_UNDEFINED;
 end;
 
 {** Show an informational alert dialog with concatenated text.
@@ -80,18 +80,18 @@ end;
     @param(argv)     Values to stringify and concatenate
     @returns         @code(JS_UNDEFINED)
 }
-function JSDoAlert(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSDoAlert(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   i: integer;
   output: rawutf8;
   totalLen: integer;
   p: PAnsiChar;
 begin
+  res^ := JS_UNDEFINED;
   if argc <= 0 then
   begin
     TTrndiExtEngine.Instance.alert('');
-    Result := JS_UNDEFINED;
     Exit;
   end;
   totalLen := 0;
@@ -105,7 +105,6 @@ begin
     Inc(p, Length(ctx^.ToUtf8(argv^[i])));
   end;
   TTrndiExtEngine.Instance.alert(Output);
-  Result := JS_UNDEFINED;
 end;
 
 {** Confirmation dialog that returns a boolean to JavaScript.
@@ -118,8 +117,8 @@ end;
     @param(argv)     Values to stringify and concatenate
     @returns         @code(JS_TRUE) on Yes; @code(JS_FALSE) on No
 }
-function JSDoYesNo(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSDoYesNo(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   i: integer;
   output: rawutf8;
@@ -148,14 +147,14 @@ begin
     end;
     
     if dialogResult = mrYes then
-      Result := JS_TRUE
+      res^ := JS_TRUE
     else
-      Result := JS_FALSE;
+      res^ := JS_FALSE;
   except
     on E: Exception do
     begin
       ExtError(sdsAuto, 'Error in confirm dialog: ' + E.Message);
-      Result := JS_FALSE;
+      res^ := JS_FALSE;
     end;
   end;
 end;
@@ -173,18 +172,18 @@ end;
     @param(argv)     caption, description, default value
     @returns         JS string of user input (or empty on cancel)
 }
-function JSInput(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSInput(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   i: integer;
   Caption, desc, def: rawutf8;
   response: string;
   x: tmodalresult;
 begin
+  res^ := JS_UNDEFINED;
   if argc < 3 then
   begin
     ExtError(sdsAuto, 'prompt requires caption, description and default value');
-    Result := JS_UNDEFINED;
     Exit;
   end;
   Caption := ctx^.ToUtf8(argv^[0]);
@@ -193,7 +192,7 @@ begin
   response := SlickeInput(sdsAuto, RS_EXT_MSG, Caption, desc, def, x);
   if x = mrCancel then
     response := '';
-  Result := JS_NewString(ctx, pansichar(Response));
+  res^ := JS_NewString(ctx, pansichar(Response));
 end;
 
 {** Combo-box selection dialog returning the selected index (BigInt).
@@ -209,19 +208,18 @@ end;
     @param(argv)     caption, description, followed by options
     @returns         BigInt index of selected option
 }
-function JSCombo(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSCombo(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   i: integer;
   Caption, desc: rawutf8;
   response: int64;
   vals: TStringList;
-  res: rawutf8;
 begin
   if argc < 3 then
   begin
     ExtError(sdsAuto, 'select requires caption, description and at least one option');
-    Result := JS_NewBigInt64(ctx, -1);
+    res^ := JS_NewBigInt64(ctx, -1);
     Exit;
   end;
   vals := TStringList.Create;
@@ -233,8 +231,7 @@ begin
   // Ignore the first params
   //  res := vals.strings[response+2];
   vals.Free;
-  Result := JS_NewBigInt64(ctx, response);
-  //    Result := JS_NewString(ctx, pansichar(res));
+  res^ := JS_NewBigInt64(ctx, response);
 end;
 
 {** Fetch a URL and return the response body as a JS string.
@@ -247,21 +244,20 @@ end;
     @param(argv)     argv[0] = URL string
     @returns         JS string with the HTTP response body or @code(JS_UNDEFINED)
 }
-function JSFetch(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSFetch(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
-  URL, res: string;
+  URL, body: string;
   response: RawUtf8;
 begin
+  res^ := JS_UNDEFINED;
   if argc > 0 then
   begin
     url := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0);
-    TrndiNative.getURL(url, res);
-    response := res;
-    Result := JS_NewString(ctx, pansichar(Response));
-  end
-  else
-    Result := JS_UNDEFINED;
+    TrndiNative.getURL(url, body);
+    response := body;
+    res^ := JS_NewString(ctx, pansichar(Response));
+  end;
 end;
 
 // provide try/catch
@@ -281,17 +277,14 @@ end;
     @param(argv)     argv[0] = error message string
     @returns         @code(JS_UNDEFINED)
 }
-function JSHandleError(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSHandleError(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   err: string;
 begin
   if argc > 0 then
-    err := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0)
-  //    ;                                     ctx^^.ErrorDump(true, nil)IsException
-  //  TTrndiExtEngine.Instance.excepion(err,);
-  ;
-  Result := JS_UNDEFINED;
+    err := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0);
+  res^ := JS_UNDEFINED;
 end;
 
 { Replacements for mORMot's StringFromFile / FileFromString, which went away
@@ -350,19 +343,18 @@ end;
     @param(argv)     argv[0] = file path string
     @returns         JS string with file contents or @code(JS_UNDEFINED)
 }
-function JSReadFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSReadFile(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   FileName, FileContent: RawUtf8;
 begin
+  res^ := JS_UNDEFINED;
   if argc > 0 then
   begin
-    FileName := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
+    FileName := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0);
     FileContent := ExtReadFile(UTF8ToString(FileName));
-    Result := JS_NewString(ctx^, pansichar(FileContent));
-  end
-  else
-    Result := JS_UNDEFINED;
+    res^ := JS_NewString(ctx, pansichar(FileContent));
+  end;
 end;
 
 // writeFile('test.txt', 'Hello from JavaScript!');
@@ -380,21 +372,20 @@ end;
     @param(argv)     argv[0]=file name, argv[1]=content
     @returns         JS boolean indicating write success
 }
-function JSWriteFile(ctx: PJSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSWriteFile(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   FileName, FileContent: RawUtf8;
 begin
+  res^ := JS_UNDEFINED;
   if argc > 1 then
   begin
-    FileName := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 0);
-    FileContent := TTrndiExtEngine.Instance.ParseArgv(ctx, argv, 1);
+    FileName := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 0);
+    FileContent := TTrndiExtEngine.Instance.ParseArgv(@ctx, argv, 1);
     // Was JS_ToBool, which yields an int rather than a JS value; the result is
     // handed straight back to JavaScript, so build a real boolean value.
-    Result := JS_NewBool(ctx^, ExtWriteFile(FileContent, UTF8ToString(FileName)));
-  end
-  else
-    Result := JS_UNDEFINED;
+    res^ := JS_NewBool(ctx, ExtWriteFile(FileContent, UTF8ToString(FileName)));
+  end;
 end;
 
 {**
@@ -655,19 +646,19 @@ end;
 {** setTimeout(callback, delay, ...args) - Execute callback once after delay
     milliseconds. Returns a timer ID that can be passed to clearTimeout.
 }
-function JSSetTimeout(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSSetTimeout(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 begin
-  Result := JSSetTimerImpl(ctx, argc, argv, false);
+  res^ := JSSetTimerImpl(ctx, argc, argv, false);
 end;
 
 {** setInterval(callback, delay, ...args) - Execute callback repeatedly every
     delay milliseconds. Returns a timer ID that can be passed to clearInterval.
 }
-function JSSetInterval(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSSetInterval(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 begin
-  Result := JSSetTimerImpl(ctx, argc, argv, true);
+  res^ := JSSetTimerImpl(ctx, argc, argv, true);
 end;
 
 {** clearTimeout(timerID) / clearInterval(timerID) - Cancel a timer.
@@ -679,15 +670,15 @@ end;
     @param(argv)     argv[0] = timer ID to cancel
     @returns         JS_UNDEFINED
 }
-function JSClearTimer(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSClearTimer(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   Engine: TTrndiExtEngine;
   TimerID: Int32;
   idx: Integer;
   TimerInfo: PJSTimerInfo;
 begin
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
 
   if (argc < 1) or IsGlobalShutdown then
     Exit;
@@ -730,8 +721,8 @@ PerfOriginUs: Int64 = 0;
     @param(argv)     Unused
     @returns         JS number (float ms)
 }
-function JSPerfNow(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSPerfNow(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   us: Int64;
   v: JSValue;
@@ -740,7 +731,7 @@ begin
   if PerfOriginUs = 0 then
     PerfOriginUs := us;
   v.FromFloat((us - PerfOriginUs) / 1000.0);
-  Result := v.Raw;
+  res^ := v.Raw;
 end;
 
 {** Native backend for the crypto shim: return @code(argv[0]) cryptographically
@@ -756,8 +747,8 @@ end;
     @param(argv)     argv[0] = number of bytes
     @returns         JS string of 2×count hex digits, or @code(JS_UNDEFINED)
 }
-function JSRandomHex(ctx: JSContext; this_val: JSValueRaw; argc: integer;
-argv: PJSValues): JSValueRaw; cdecl;
+procedure JSRandomHex(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 const
   HEXCHARS: array[0..15] of ansichar = '0123456789abcdef';
 var
@@ -765,7 +756,7 @@ var
   raw: array of byte;
   hex: RawUtf8;
 begin
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
   if (argc < 1) or (JS_ToInt32(ctx, @n, argv^[0].Raw) <> 0) then
     Exit;
   if (n < 1) or (n > 65536) then
@@ -784,5 +775,5 @@ begin
   end;
   FillChar(raw[0], n, 0);
 
-  Result := JS_NewString(ctx, pansichar(hex));
+  res^ := JS_NewString(ctx, pansichar(hex));
 end;
