@@ -24,7 +24,8 @@ endif
 LPI ?= Trndi.lpi
 TEST_LPI ?= tests/TrndiTest.lpi
 OUTDIR ?= build
-WIDGETSET ?= qt6
+# WIDGETSET is defaulted per-OS below (and finally to qt6); it must not be
+# assigned here, or the per-OS '?=' defaults would all become no-ops.
 
 # Compiled-in resource bundles (.lrs) and the tool that (re)generates them.
 # The .lrs files are committed and compiled via {$I ...}, so a build never needs
@@ -88,6 +89,9 @@ else
     endif
   endif
 endif
+
+# Fallback for hosts not handled above (and for the Windows branches).
+WIDGETSET ?= qt6
 
 # Prebuilt QuickJS engine + ABI shim for this host. The directory name matches
 # FPC's $(TargetCPU)-$(TargetOS), which is what the .lpi library path expands to
