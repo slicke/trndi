@@ -3,6 +3,10 @@
 *.dll
 *.so
 *.dylib
+# ...except the prebuilt QuickJS engine and ABI shim, which are committed so
+# that extension-enabled builds need no C toolchain (rebuild them with
+# externals/quickjs/build.sh). See externals/quickjs/README.md.
+!externals/quickjs/prebuilt/**
 *.lrs
 # ...except committed resource bundles under assets/, which are compiled in via
 # {$I} and must be in the repo (regenerated with `make assets` / `make.ps1
