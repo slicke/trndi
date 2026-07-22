@@ -162,7 +162,13 @@ begin
       try
         if not JS_IsFunction(ctx, funcObj) then Continue;
         retVal := JS_Call(ctx, funcObj, globalObj, Length(args), @args[0]);
-        if not JS_IsError(retVal) then
+        // JS_IsException, not JS_IsError: a throw returns the exception marker
+        // rather than an Error object. This used to fall into the branch below,
+        // stringify the marker to nothing and leave the exception pending on a
+        // context this same function calls again on the next reading.
+        if JS_IsException(retVal) then
+          DumpJSError(ctx)
+        else
         begin
           cstr := JS_ToCString(ctx, retVal);
           if cstr <> nil then
