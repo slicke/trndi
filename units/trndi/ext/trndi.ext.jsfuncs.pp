@@ -177,7 +177,10 @@ begin
     // Threaded: the HTTP round-trip runs on the promise worker thread so the
     // UI never blocks. httpRequest must therefore stay free of UI/JS calls.
     AddPromiseIf(epNet,      'httpRequest',   JSCallbackFunction(@httpRequest), 4, 5, true);
-    AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@runCMD));
+    // command + optional (argString, delimiter): arity 1..4. Registering it as
+    // min=max=1 (the old default) let only the one-arg form through, which the
+    // body then mishandled by indexing the missing params[1]/params[2].
+    AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@runCMD), 1, 4);
     AddPromiseIf(epData,     'querySvc',      JSCallbackFunction(@querySvc));
     AddPromiseIf(epSettings, 'setLimits',     JSCallbackFunction(@setLimits), 2, 5);
     AddPromiseIf(epUI,       'setLevelColor', JSCallbackFunction(@setLimits), 3, 6);
@@ -471,7 +474,10 @@ begin
   Result := false;
 end;
 
-// Query the backend via JS
+// Run an external program via JS: runCMD(cmd [, argString [, delimiter]]).
+//   1 arg  -> run cmd with no arguments
+//   2 args -> run cmd with argString as a single argument
+//   3+     -> run cmd with argString split into arguments on delimiter
 function TJSFuncs.runCMD(ctx: pointer; const func: string;
   const params: JSParameters; out res: JSValueVal): boolean;
 begin
@@ -482,11 +488,18 @@ begin
     Exit(False);
   end;
 
-  if params.Count = 2 then
-    res.Data.Int32Val := ExecuteProcess(params[0]^.stringify, [])
-  else
+  // Guard every branch by the actual argument count: the previous logic ran the
+  // split path whenever Count <> 2, dereferencing params[1]/params[2] even for a
+  // lone-command call (the only arity the old registration allowed) — an
+  // out-of-range access.
+  if params.Count >= 3 then
     res.Data.Int32Val := ExecuteProcess(params[0]^.stringify,
-      params[1]^.stringify.Split(params[2]^.stringify));
+      params[1]^.stringify.Split(params[2]^.stringify))
+  else if params.Count = 2 then
+    res.Data.Int32Val := ExecuteProcess(params[0]^.stringify,
+      [params[1]^.stringify])
+  else
+    res.Data.Int32Val := ExecuteProcess(params[0]^.stringify, []);
 
   Result := True;
 end;
