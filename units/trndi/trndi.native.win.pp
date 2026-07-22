@@ -70,6 +70,10 @@ public
     {** Toggles immersive dark mode for @param(win).
         Requires Windows 10 1809+ (build >= 17763).
         @returns(True if the DWM call succeeds) }
+  {** Secure random bytes via RtlGenRandom (advapi32 SystemFunction036). }
+  class function GetRandomBytes(Buf: PByte; Count: integer): boolean; override;
+  {** Microsecond monotonic clock via QueryPerformanceCounter. }
+  class function MonotonicMicroseconds: int64; override;
   class function SetDarkMode(win: HWND; Enable: boolean = true): boolean;
     {** Opt the entire process into Windows' dark popup-menu / scrollbar / tooltip
         theme via the undocumented uxtheme.dll ordinal 135 (SetPreferredAppMode).
@@ -2826,6 +2830,43 @@ end;
   Read SM_DIGITIZER and check NID_INTEGRATED_TOUCH + NID_READY for "has touch",
   NID_MULTI_INPUT for multi-touch capability.
  ------------------------------------------------------------------------------}
+{------------------------------------------------------------------------------
+  GetRandomBytes
+  ---------------------------
+  RtlGenRandom, exported from advapi32 under its ordinal name
+  SystemFunction036. Preferred over the CryptoAPI/CNG entry points because it
+  needs no provider handle and has been present since Windows XP.
+ ------------------------------------------------------------------------------}
+function RtlGenRandom(RandomBuffer: pointer; RandomBufferLength: ULONG): ByteBool;
+  stdcall; external 'advapi32.dll' name 'SystemFunction036';
+
+class function TTrndiNativeWindows.GetRandomBytes(Buf: PByte; Count: integer): boolean;
+begin
+  if (Buf = nil) or (Count <= 0) then
+    Exit(false);
+  try
+    Result := RtlGenRandom(Buf, ULONG(Count));
+  except
+    Result := false;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  MonotonicMicroseconds
+  ---------------------------
+  QueryPerformanceCounter. The counter is scaled in two parts so the
+  multiplication cannot overflow on a long-running system.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeWindows.MonotonicMicroseconds: int64;
+var
+  freq, cnt: int64;
+begin
+  if QueryPerformanceFrequency(freq) and (freq > 0) and QueryPerformanceCounter(cnt) then
+    Result := (cnt div freq) * 1000000 + ((cnt mod freq) * 1000000) div freq
+  else
+    Result := inherited MonotonicMicroseconds;
+end;
+
 class function TTrndiNativeWindows.DetectTouchScreen(out multi: boolean): boolean;
 const
   NID_INTEGRATED_TOUCH = $00000001;
