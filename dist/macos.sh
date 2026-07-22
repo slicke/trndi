@@ -14,7 +14,7 @@ cp ../Trndi macos/Trndi.app/Contents/MacOS/Trndi
 
 # Extension builds link quickjs-ng and its ABI shim, which the binary resolves
 # through an @loader_path runpath — so they belong beside it. Absent for
-# "No Ext" builds, which is what the release workflow produces.
+# "No Ext" builds, which simply never load them.
 QJS_ARCH="$(uname -m)"
 if [ "${QJS_ARCH}" = "arm64" ]; then QJS_ARCH=aarch64; fi
 QJS_DIR="../externals/quickjs/prebuilt/${QJS_ARCH}-darwin"
