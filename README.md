@@ -47,7 +47,7 @@
 #### Fedora Linux (KDE)
 ![Linux](doc/img/img_lin_range.png)
 
-#### macOS
+#### macOS Tahoe
 ![macOS](doc/img/img_macos.png)
 
 #### Physical Display
@@ -115,12 +115,16 @@ Download `Trndi-windows-x64.zip` from the [latest release](https://github.com/sl
 ### Advanced: Via NuGet/Chocolatey (GitHub Packages)
 You can install Trndi via NuGet from GitHub Packages (or Chocolatey), see the [guide](doc/NUGET.md).
 
+_See the [specific Windows guide](/doc/Windows.md) for more specifics._
+
 ## Linux
 Download the appropriate package for your distribution from the [latest release](https://github.com/slicke/trndi/releases):
 - **Debian/Ubuntu**: `trndi_VERSION_amd64.deb` or `trndi_VERSION_arm64.deb` — **Recommended** for best desktop integration
 - **Fedora/RHEL**: `trndi-VERSION.x86_64.rpm` or `trndi-VERSION.aarch64.rpm` — **Recommended** for best desktop integration
 - **AppImage** (Universal): `Trndi-x86_64.AppImage` or `Trndi-aarch64.AppImage` — **Recommended** for Arch, openSUSE, and other distributions
 - **Portable**: `Trndi-linux-amd64.zip` or `Trndi-linux-arm64.zip`
+
+_See the [specific Linux guide](/doc/Linux.md) for more specifics._
 
 ### Package Recommendations
 
@@ -187,6 +191,8 @@ Download `Trndi-macos-silicon.dmg` from the [latest release](https://github.com/
 ```bash
 xattr -c /path/to/Trndi.app
 ```
+
+_See the [specific macOS guide](/doc/macOS.md) for more specifics._
 
 ## Haiku
 Trndi can be built for Haiku OS using Lazarus.
