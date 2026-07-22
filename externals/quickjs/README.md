@@ -108,6 +108,13 @@ The Linux build produces `libqjs.so.0.15.1` with `SONAME libqjs.so.0`, plus
 symlinks do not survive a copy onto a Windows filesystem. `build.sh` recreates
 them, and so does the Makefile's install step.
 
+The symlinks are a *build-tree* convenience only: `libqjs.so` exists so `-lqjs`
+resolves at link time, and `libqjs.so.0` is the `SONAME` the loader asks for.
+Linux packages never carry them — `dist/linux/stage-qjs.sh` installs the real
+file under its `SONAME` instead, because 7-Zip 21.07+, fpm and mksquashfs all
+dereference symlinks by default and would otherwise put three identical copies
+of the library into the ZIP, DEB, RPM and AppImage.
+
 macOS sidesteps this: `build.sh mac` flattens the versioned dylib into a single
 unversioned `libqjs.dylib` and rewrites its install name to match, so nothing
 here depends on a symlink. Versioning would buy nothing — FPC links the library

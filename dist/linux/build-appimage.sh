@@ -28,12 +28,11 @@ chmod +x "${APP_DIR}/usr/bin/Trndi"
 
 # The extension engine links quickjs-ng and its ABI shim as shared libraries.
 # The binary carries an $ORIGIN runpath, so they belong next to it in usr/bin.
-# Absent for No Ext builds, which never load them.
+# Absent for No Ext builds, which never load them. stage-qjs.sh installs the
+# real library under its SONAME and skips the symlinks, which mksquashfs would
+# otherwise expand into extra copies inside the AppImage.
 QJS_DIR="externals/quickjs/prebuilt/$(uname -m)-linux"
-if [ -d "${QJS_DIR}" ]; then
-  echo "Copying QuickJS libraries..."
-  cp -Pv "${QJS_DIR}"/*.so* "${APP_DIR}/usr/bin/"
-fi
+sh "$(dirname "$0")/stage-qjs.sh" "${QJS_DIR}" "${APP_DIR}/usr/bin"
 
 # Copy language files if they exist
 if [ -d "lang" ]; then
