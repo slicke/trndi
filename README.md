@@ -87,6 +87,7 @@ Need to see more than one person? Trndi supports [parallel users](guides/Multius
 Setup the users in the _settings_. Don't forget to click _Save_ when editing users!
 
 You need to start Trndi multiple times, each instance lets you choose a user. Just open the app multiple times and select a different account. Users can have different sources and run JavaScript plugins independently.
+> NOTE: On macOS, to start multiple instances of Trndi you need to run ```open -n -a "Trndi"```, in a Terminal. the _-n_ parameter allows for multiple instances.
 
 # Usage
 ⚠️ Right-click on the reading on the screen to access the menu, this is how you control Trndi.

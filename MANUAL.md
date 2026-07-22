@@ -166,7 +166,7 @@ If you need to monitor multiple people (like family members), you can:
 1. Set up multiple accounts in Settings → Accounts
 2. Start Trndi multiple times - each window picks a different person
 3. Each person can have different settings and data sources
-
+> NOTE: On macOS, to start multiple instances of Trndi you need to run ```open -n -a "Trndi"```, in a Terminal. the _-n_ parameter allows for multiple instances.
 ---
 
 ## Troubleshooting Common Questions
