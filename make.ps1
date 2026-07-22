@@ -43,12 +43,28 @@ function Find-Lazbuild {
 }
 $laz = Find-Lazbuild
 
+# The extension engine links quickjs-ng and its ABI shim as shared libraries.
+# Windows resolves them from the executable's own directory, so place them next
+# to Trndi.exe after an extensions-enabled build. See externals/quickjs/README.md.
+function Copy-QuickJSLibs {
+    $src = Join-Path $PSScriptRoot 'externals\quickjs\prebuilt\x86_64-win64'
+    if (-not (Test-Path $src)) {
+        Write-Warning "QuickJS libraries not found at $src - extensions will fail to start. Rebuild them with externals/quickjs/build.sh."
+        return
+    }
+    foreach ($dll in (Get-ChildItem (Join-Path $src '*.dll'))) {
+        Copy-Item $dll.FullName $PSScriptRoot -Force
+        Write-Host "  copied $($dll.Name)" -ForegroundColor DarkGray
+    }
+}
+
 switch ($firstArg) {
     "" {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs }
         exit $LASTEXITCODE
     }
     "release" {
@@ -56,6 +72,7 @@ switch ($firstArg) {
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs }
         exit $LASTEXITCODE
     }
     "debug" {
@@ -63,6 +80,7 @@ switch ($firstArg) {
         $mode = 'Extensions (Debug)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs }
         exit $LASTEXITCODE
     }
     "noext" {

@@ -44,21 +44,9 @@ interface
 
 uses
 SysUtils,
-mormot.core.base,
-mormot.core.os,
-mormot.core.Text,
-mormot.core.buffers,
-mormot.core.unicode,
-mormot.core.datetime,
-mormot.core.rtti,
-mormot.crypt.core,
-mormot.core.Data,
-mormot.core.variants,
-mormot.core.json,
-mormot.core.log,
-mormot.core.perf,
-mormot.core.test,
-mormot.lib.quickjs,
+// StrUtils supplies PosEx, which used to arrive via mormot.core.text
+StrUtils,
+trndi.ext.quickjs,
 Dialogs,
 Classes,
 trndi.native,
@@ -81,8 +69,10 @@ type
   {** Callback signature invoked when JavaScript code emits output via this engine. }
 TOutputCallback = procedure(const Msg: RawUtf8) of object;
 
-  {** Alias to the JS function type used by QuickJS bindings. }
-ExtFunction = JSFunction;
+  {** Alias to the native-callback type used by the QuickJS binding.
+      These are plain Pascal procedures reached through the shim trampoline;
+      see @code(TJSNativeFunc) in trndi.ext.quickjs. }
+ExtFunction = TJSNativeFunc;
 
   {** Placeholder alias for argv-like arrays. @fixme Consider removing if unused. }
 ExtArgv = array of ExtFunction;
@@ -330,7 +320,7 @@ public
         @param(id    Function name in global scope)
         @param(func  Native function pointer)
         @param(argc  Declared arity; 0 means variable/unspecified) }
-  procedure addFunction(const id: string; const func: JSFunction;
+  procedure addFunction(const id: string; const func: ExtFunction;
     const argc: integer = 0);
 
     {** Register a function as a method of the 'Trndi' JS class.
@@ -338,7 +328,7 @@ public
         @param(id    Method name)
         @param(func  Native function pointer)
         @param(argc  Declared arity; use -1 for variadic) }
-  procedure addClassFunction(const id: string; const func: JSFunction;
+  procedure addClassFunction(const id: string; const func: ExtFunction;
     const argc: integer = 0);
     // (Removed prior experimental overload infrastructure)
 
@@ -370,6 +360,12 @@ public
     Supported element kinds mirror the mixed CallFunction overload.
     Returns JS_UNDEFINED if context invalid or on allocation failure. }
   function CreateJSArray(const Values: array of const): JSValueRaw;
+    {** Build a JS array from values that are already JS values, such as nested
+        arrays. Needed because a JSValue is a record now and so cannot appear
+        in an "array of const"; under the previous binding it was an integer.
+        Deliberately not an overload of @code(CreateJSArray): an array
+        constructor always binds to the "array of const" version. }
+  function CreateJSArrayOf(const Values: array of JSValue): JSValueRaw;
   {** Convenience: call a JS function passing a single array argument built
     from Values. Equivalent JS: func([v0,v1,...]) }
   function CallFunctionWithArrayArg(const FuncName: RawUtf8;
@@ -551,11 +547,11 @@ public
     {** Convenience: register a Trndi class method only if @code(grp) is granted
         in the current registration. }
   procedure addClassFunctionIf(const grp: TExtPermGroup; const id: string;
-    const func: JSFunction; const argc: integer = 0);
+    const func: ExtFunction; const argc: integer = 0);
 
     {** Convenience: register a global JS function only if @code(grp) is granted. }
   procedure addFunctionIf(const grp: TExtPermGroup; const id: string;
-    const func: JSFunction; const argc: integer = 0);
+    const func: ExtFunction; const argc: integer = 0);
 
     {** Convenience: register a promise-style function only if @code(grp) is granted. }
   procedure AddPromiseIf(const grp: TExtPermGroup; const funcName: string;
@@ -903,21 +899,25 @@ procedure TTrndiExtEngine.AddPromise(const funcName: string;
 cbfunc: JSCallbackFunction; minParams, maxParams: integer;
 threaded: boolean = false);
 var
-  Data: JSValueConst;
   cb: PJSCallback;
   ctx: JSContext;
+  glob: JSValue;
 begin
   ctx := CurrentRegistrationContext;
   if ctx = nil then Exit;
 
-  // Expose an async task function in global scope that will route to our callback
-  Data := JS_NewString(ctx, pansichar(funcname));
-  JS_SetPropertyStr(
-    ctx,
-    JS_GetGlobalObject(ctx),
-    pchar(funcname),
-    JS_NewCFunctionData(ctx, PJSCFunctionData(@AsyncTask), 1, 0, 1, @Data)
-    );
+  // Expose an async task function in global scope that routes to our callback.
+  // Every promise entry point shares the one AsyncTask procedure and is told
+  // apart by its magic, which also carries the name - so the bound func_data
+  // string the old binding needed is no longer necessary.
+  glob := JS_GetGlobalObject(ctx);
+  try
+    JS_SetPropertyStr(ctx, glob, RawUtf8(funcname),
+      JS_NewFunction(ctx, RawUtf8(funcname), 1,
+      RegisterNative(RawUtf8(funcname), @AsyncTask)));
+  finally
+    JS_FreeValue(ctx, glob);
+  end;
 
   // Track the Pascal callback and expected parameter range. Only add once —
   // promises is keyed by name and re-registration is idempotent.
@@ -1046,8 +1046,22 @@ end;
   Construction / destruction
 ******************************************************************************}
 
+{ Replacement for quickjs-libc's js_std_dump_error, which Trndi no longer links:
+  the engine routes diagnostics through its own output rather than stderr. }
+procedure DumpJSError(ctx: JSContext);
+var
+  msg: RawUtf8;
+begin
+  if ctx = nil then
+    Exit;
+  if ctx^.DumpError(msg) and (msg <> '') then
+    TTrndiExtEngine.Instance.SetOutput(string(msg));
+end;
+
 {** Create QuickJS runtime/context, expose 'Trndi', set up promises and timer, register base functions. }
 constructor TTrndiExtEngine.Create;
+var
+  glob: JSValue;
 begin
   inherited Create;
 
@@ -1074,8 +1088,9 @@ begin
   TrndiClass := Default(JSClassDef);
   TrndiClass.class_name := 'Trndi';
 
-  // Create class ID and register class on runtime
-  JS_NewClassID(@TrndiClassId);
+  // Create class ID and register class on runtime.
+  // quickjs-ng takes the runtime as the first argument here.
+  JS_NewClassID(FRuntime, @TrndiClassId);
   if JS_NewClass(FRuntime, TrndiClassID, @TrndiClass) < 0 then
     raise Exception.Create('Failed to create JS class');
 
@@ -1083,20 +1098,20 @@ begin
   // instance, not a class id. Keeping only the context opaque above is correct.
 
   // Expose 'Trndi' constructor in global scope
-  JS_SetPropertyStr(
-    FContext,
-    JS_GetGlobalObject(FContext),
-    'Trndi',
-    JS_NewCFunction2(FContext, PJSCFunction(@TrndiConstructor), 'Trndi', 0,
-    JS_CFUNC_constructor, 0)
-    );
+  glob := JS_GetGlobalObject(FContext);
+  try
+    JS_SetPropertyStr(FContext, glob, 'Trndi',
+      JS_NewConstructor(FContext, 'Trndi', 0,
+      RegisterNative('Trndi', @TrndiConstructor)));
+  finally
+    JS_FreeValue(FContext, glob);
+  end;
 
   // Add essential intrinsics
   JS_AddIntrinsicPromise(FContext);
   JS_AddIntrinsicRegExp(FContext);
   JS_AddIntrinsicDate(FContext);
-  JS_SetHostPromiseRejectionTracker(FRuntime,
-    PJSHostPromiseRejectionTracker(@PromiseRejectionTracker), nil);
+  JS_SetHostPromiseRejectionTracker(FRuntime, @PromiseRejectionTracker, nil);
 
   // Initialize timer to pump pending JS jobs (Promises/microtasks)
   eventTimer := TFPTimer.Create(nil);
@@ -1897,7 +1912,7 @@ begin
 end;
 
 {** Add a global JS function. Writes into the current registration context. }
-procedure TTrndiExtEngine.addFunction(const id: string; const func: JSFunction;
+procedure TTrndiExtEngine.addFunction(const id: string; const func: ExtFunction;
 const argc: integer = 0);
 var
   ctx: JSContext;
@@ -1909,7 +1924,7 @@ end;
 
 {** Add a JS method under the 'Trndi' class in the current registration context. }
 procedure TTrndiExtEngine.addClassFunction(const id: string;
-const func: JSFunction; const argc: integer = 0);
+const func: ExtFunction; const argc: integer = 0);
 var
   this: JSValue;
   ctx: JSContext;
@@ -1927,14 +1942,14 @@ end;
 
 {** Gated variant: only register if the permission group is granted. }
 procedure TTrndiExtEngine.addClassFunctionIf(const grp: TExtPermGroup;
-const id: string; const func: JSFunction; const argc: integer = 0);
+const id: string; const func: ExtFunction; const argc: integer = 0);
 begin
   if CanRegister(grp) then
     addClassFunction(id, func, argc);
 end;
 
 procedure TTrndiExtEngine.addFunctionIf(const grp: TExtPermGroup;
-const id: string; const func: JSFunction; const argc: integer = 0);
+const id: string; const func: ExtFunction; const argc: integer = 0);
 begin
   if CanRegister(grp) then
     addFunction(id, func, argc);
@@ -2037,8 +2052,8 @@ begin
         if JS_IsFunction(ctx, funcObj) then
         begin
           retVal := JS_Call(ctx, funcObj, globalObj, 0, nil);
-          if JS_IsError(ctx, retVal) then
-            js_std_dump_error(ctx);
+          if JS_IsError(retVal) then
+            DumpJSError(ctx);
         end;
       except
         // One extension's failing unload hook must not block the others.
@@ -2139,6 +2154,7 @@ DisplayName, Author: string; Granted: TExtPermSet): PExtContextInfo;
 var
   ctx: JSContext;
   Info: PExtContextInfo;
+  globalObj: JSValue;
 begin
   Result := nil;
   if FRuntime = nil then Exit;
@@ -2156,13 +2172,14 @@ begin
 
   // Expose 'Trndi' constructor in this context's global scope so addClassFunction
   // calls during provisioning can attach methods to Trndi.*
-  JS_SetPropertyStr(
-    ctx,
-    JS_GetGlobalObject(ctx),
-    'Trndi',
-    JS_NewCFunction2(ctx, PJSCFunction(@TrndiConstructor), 'Trndi', 0,
-      JS_CFUNC_constructor, 0)
-  );
+  globalObj := JS_GetGlobalObject(ctx);
+  try
+    JS_SetPropertyStr(ctx, globalObj, 'Trndi',
+      JS_NewConstructor(ctx, 'Trndi', 0,
+      RegisterNative('Trndi', @TrndiConstructor)));
+  finally
+    JS_FreeValue(ctx, globalObj);
+  end;
 
   New(Info);
   Info^.Ctx := ctx;
@@ -2495,9 +2512,9 @@ begin
       ArgArray[i] := JS_NewString(ctx, pchar(Args[i]));
 
     RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-    if JS_IsError(ctx, RetVal) then
+    if JS_IsError(RetVal) then
     begin
-      js_std_dump_error(ctx);
+      DumpJSError(ctx);
       Exit;
     end;
 
@@ -2567,9 +2584,9 @@ begin
       ArgArray[i] := JS_NewBigInt64(ctx, Args[i]);
 
     RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-    if JS_IsError(ctx, RetVal) then
+    if JS_IsError(RetVal) then
     begin
-      js_std_dump_error(ctx);
+      DumpJSError(ctx);
       Exit;
     end;
 
@@ -2700,9 +2717,9 @@ begin
       ArgArray[i] := VarRecToJS(ctx, Args[i]);
 
     RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-    if JS_IsError(ctx, RetVal) then
+    if JS_IsError(RetVal) then
     begin
-      js_std_dump_error(ctx);
+      DumpJSError(ctx);
       Exit;
     end;
     StrResult := JS_ToCString(ctx, RetVal);
@@ -2762,6 +2779,21 @@ begin
   Result := arr;
 end;
 
+function TTrndiExtEngine.CreateJSArrayOf(const Values: array of JSValue): JSValueRaw;
+var
+  arr: JSValueRaw;
+  i: integer;
+begin
+  Result := JS_UNDEFINED;
+  if IsExtShuttingDown or (FContext = nil) or (FRuntime = nil) then
+    Exit;
+  arr := JS_NewArray(FContext);
+  // As above, the property setter takes ownership of each element.
+  for i := 0 to High(Values) do
+    JS_SetPropertyUint32(FContext, arr, i, Values[i]);
+  Result := arr;
+end;
+
 {** Call function passing a single JS array argument. InternalCall owns and
     frees the one-shot array (freeRaw=true). }
 function TTrndiExtEngine.CallFunctionWithArrayArg(const FuncName: RawUtf8;
@@ -2794,7 +2826,7 @@ var
 begin
   if (FContext = nil) then
     exit(JS_UNDEFINED);
-  tmp.Raw := JS_UNDEFINED;
+  tmp := JS_UNDEFINED;
   tmp.FromFloat(V);
   Result := tmp.Raw;
 end;
@@ -2805,7 +2837,7 @@ var
 begin
   if (FContext = nil) then
     exit(JS_UNDEFINED);
-  tmp.Raw := JS_UNDEFINED;
+  tmp := JS_UNDEFINED;
   tmp.From(V);
   Result := tmp.Raw;
 end;
@@ -2914,8 +2946,8 @@ begin
         RetVal := JS_Call(ctx, FuncObj, GlobalObj, 0, nil)
       else
         RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
-      if JS_IsError(ctx, RetVal) then
-        js_std_dump_error(ctx)
+      if JS_IsError(RetVal) then
+        DumpJSError(ctx)
       else
       begin
         StrResult := JS_ToCString(ctx, RetVal);

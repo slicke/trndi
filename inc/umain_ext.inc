@@ -162,7 +162,7 @@ begin
       try
         if not JS_IsFunction(ctx, funcObj) then Continue;
         retVal := JS_Call(ctx, funcObj, globalObj, Length(args), @args[0]);
-        if not JS_IsError(ctx, retVal) then
+        if not JS_IsError(retVal) then
         begin
           cstr := JS_ToCString(ctx, retVal);
           if cstr <> nil then
