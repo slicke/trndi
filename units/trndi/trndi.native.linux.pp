@@ -161,6 +161,9 @@ public
     {** Detect a touchscreen by scanning /proc/bus/input/devices for entries
         whose handlers point at accessible /dev/input/eventX nodes. }
   class function DetectTouchScreen(out multi: boolean): boolean; override;
+    {** Microsecond monotonic clock via clock_gettime(CLOCK_MONOTONIC).
+        Random bytes come from the base implementation's /dev/urandom. }
+  class function MonotonicMicroseconds: int64; override;
     {** Play an audio file via aplay. }
   class procedure PlaySound(const FileName: string); override;
     {** Detect Windows Subsystem for Linux: checks /proc/version, kernel osrelease,
@@ -2699,6 +2702,34 @@ end;
   and confirm by trying to open the referenced /dev/input/eventX node. Sets
   @code(multi) when the block exposes ABS_MT_* events.
  ------------------------------------------------------------------------------}
+{------------------------------------------------------------------------------
+  MonotonicMicroseconds
+  ---------------------------
+  clock_gettime(CLOCK_MONOTONIC) straight from libc. Unaffected by wall-clock
+  adjustments, unlike gettimeofday. Falls back to the inherited tick count if
+  the call fails.
+ ------------------------------------------------------------------------------}
+type
+  TTrndiTimespec = record
+    tv_sec: clong;
+    tv_nsec: clong;
+  end;
+
+function trndi_clock_gettime(clk_id: cint; tp: pointer): cint;
+  cdecl; external 'c' name 'clock_gettime';
+
+class function TTrndiNativeLinux.MonotonicMicroseconds: int64;
+const
+  CLOCK_MONOTONIC_LINUX = 1;
+var
+  ts: TTrndiTimespec;
+begin
+  if trndi_clock_gettime(CLOCK_MONOTONIC_LINUX, @ts) = 0 then
+    Result := int64(ts.tv_sec) * 1000000 + (int64(ts.tv_nsec) div 1000)
+  else
+    Result := inherited MonotonicMicroseconds;
+end;
+
 class function TTrndiNativeLinux.DetectTouchScreen(out multi: boolean): boolean;
 var
   SL, Block: TStringList;

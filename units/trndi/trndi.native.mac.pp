@@ -39,7 +39,7 @@ interface
 uses
   Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
   nsutils.nshelpers, nsutils.cocoahelpers, IniFiles, dialogs, StrUtils, Forms,
-  trndi.native.base;
+  ctypes, trndi.native.base;
 
 type
   {!
@@ -99,6 +99,9 @@ type
       const contentType: string; out res: string): boolean; override;
     {** True if AppleInterfaceStyle indicates dark mode. }
     class function isDarkMode: boolean; override;
+    {** Microsecond monotonic clock via clock_gettime(CLOCK_MONOTONIC).
+        Random bytes come from the base implementation's /dev/urandom. }
+    class function MonotonicMicroseconds: int64; override;
     {** NSUserNotificationCenter is available on macOS. }
     class function isNotificationSystemAvailable: boolean; override;
     {** Identify the notification backend on macOS ('NSUserNotification'). }
@@ -811,6 +814,34 @@ end;
   ----------
   Detect macOS dark appearance via AppleInterfaceStyle preference.
  ------------------------------------------------------------------------------}
+{------------------------------------------------------------------------------
+  MonotonicMicroseconds
+  ---------------------------
+  clock_gettime(CLOCK_MONOTONIC) from libSystem, available since macOS 10.12.
+  Note the constant differs from Linux: CLOCK_MONOTONIC is 6 on Darwin, not 1.
+  Falls back to the inherited tick count if the call fails.
+ ------------------------------------------------------------------------------}
+type
+  TTrndiTimespec = record
+    tv_sec: clong;
+    tv_nsec: clong;
+  end;
+
+function trndi_clock_gettime(clk_id: cint; tp: pointer): cint;
+  cdecl; external 'c' name 'clock_gettime';
+
+class function TTrndiNativeMac.MonotonicMicroseconds: int64;
+const
+  CLOCK_MONOTONIC_DARWIN = 6;
+var
+  ts: TTrndiTimespec;
+begin
+  if trndi_clock_gettime(CLOCK_MONOTONIC_DARWIN, @ts) = 0 then
+    Result := int64(ts.tv_sec) * 1000000 + (int64(ts.tv_nsec) div 1000)
+  else
+    Result := inherited MonotonicMicroseconds;
+end;
+
 class function TTrndiNativeMac.isDarkMode: boolean;
 begin
   Result := Pos('DARK', UpperCase(GetPrefString('AppleInterfaceStyle'))) > 0;

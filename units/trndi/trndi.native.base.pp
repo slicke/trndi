@@ -307,6 +307,27 @@ class var touchOverride: TTrndiBool;
     {** Detect if the device has a touchscreen and whether it's multi-touch. }
   class function HasTouchScreen(out multi: boolean): boolean;
   class function HasTouchScreen: boolean;
+
+    {** Fill a buffer with cryptographically secure random bytes.
+
+        The base implementation reads /dev/urandom, which serves every POSIX
+        target; Windows overrides with RtlGenRandom. Never falls back to a
+        predictable generator: callers use this for security-sensitive values
+        (the extension layer's WebCrypto getRandomValues shim), so silently
+        weak randomness would be worse than none. Always check the result.
+
+        @param(Buf)   Destination buffer, at least @code(Count) bytes.
+        @param(Count) Number of bytes to write.
+        @returns(True only when @code(Count) secure bytes were written.) }
+  class function GetRandomBytes(Buf: PByte; Count: integer): boolean; virtual;
+
+    {** Monotonic clock in microseconds, for elapsed-time measurement.
+
+        The value has no meaning in absolute terms; only differences do. It
+        never goes backwards across wall-clock changes. Platforms override
+        with a real high-resolution counter; the base implementation falls
+        back to the millisecond tick count scaled to microseconds. }
+  class function MonotonicMicroseconds: int64; virtual;
     {** Simple HTTP GET helper; platform units implement. }
   class function getURL(const url: string; out res: string): boolean; virtual; abstract;
     {** Simple HTTP POST helper; platform units implement.
@@ -1103,6 +1124,55 @@ class function TTrndiNativeBase.DetectTouchScreen(out multi: boolean): boolean;
 begin
   multi := false;
   Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  GetRandomBytes (default)
+  ----------------------------
+  Reads /dev/urandom, which covers every POSIX target Trndi builds for - Linux,
+  BSD, macOS and Haiku - so those platforms need no override. This is a guarded
+  file read rather than platform-conditional code: on Windows the device simply
+  does not exist and the Windows unit overrides with RtlGenRandom anyway.
+
+  Never substitutes a predictable generator on failure. Callers use this as a
+  security primitive, so reporting "no entropy" is the only safe answer.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.GetRandomBytes(Buf: PByte; Count: integer): boolean;
+const
+  URANDOM = '/dev/urandom';
+var
+  fs: TFileStream;
+begin
+  Result := false;
+  if (Buf = nil) or (Count <= 0) then
+    Exit;
+  if not FileExists(URANDOM) then
+    Exit;
+  try
+    fs := TFileStream.Create(URANDOM, fmOpenRead or fmShareDenyNone);
+    try
+      // ReadBuffer raises if it cannot supply every requested byte, so a short
+      // read can never be mistaken for success.
+      fs.ReadBuffer(Buf^, Count);
+      Result := true;
+    finally
+      fs.Free;
+    end;
+  except
+    Result := false;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  MonotonicMicroseconds (default)
+  ----------------------------
+  Millisecond tick count scaled to microseconds. Platform units override with a
+  genuine high-resolution counter; this keeps the units consistent so callers
+  never have to know which they got.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.MonotonicMicroseconds: int64;
+begin
+  Result := int64(GetTickCount64) * 1000;
 end;
 
 {------------------------------------------------------------------------------
