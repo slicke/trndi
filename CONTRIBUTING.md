@@ -153,15 +153,13 @@ function getReadings(minNum, maxNum: integer; extras: string; out res: string): 
 - `make build` — generic build
 - `make test` — build and run tests (starts an embedded Pascal test server)
 - `make test-noserver` — tests without the embedded test server (`TRNDI_NO_TESTSERVER=1`)
-- `make noext` — build without mORMot2
-- `make fetch-mormot2` — fetch mORMot2 and QuickJS
-- `make install-mormot2` — compile the fetched mORMot2 package so lazbuild can use it
+- `make noext` — build without JavaScript extension support
 - `make clean` — remove build artifacts
 - `make dist` — create tarball
 - `make run` — build and run
 - `make install` — install binary (needs `sudo`)
 
-**Variables:** `LAZBUILD`, `WIDGETSET`, `BUILD_MODE`, `IGNORE_MORMOT`
+**Variables:** `LAZBUILD`, `WIDGETSET`, `BUILD_MODE`
 
 See the Makefile or README for more details.
 

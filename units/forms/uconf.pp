@@ -898,7 +898,7 @@ const
     'macOS native code libraries by <i>Phil Hess</i>.'#10 + sHTMLLineBreak +
     'Windows DirectX headers by <i>CMC Development Team</i>.'#10 + sHTMLLineBreak + sHTMLLineBreak +
     'Extensions use the JavaScript engine <i>QuickJS</i> by <i>Fabrice Bellard</i> and <i>Charlie Gordo</i>.'#10 + sHTMLLineBreak +
-    'Integration of said engine is made possible with mORMot2 by Synopse Informatique - <i>Arnaud Bouchez</i>.' + sHTMLLineBreak + sHTMLLineBreak +
+    'The engine is built from the <i>quickjs-ng</i> fork, maintained by <i>Ben Noordhuis</i>, <i>Saúl Ibarra Corretgé</i> and contributors.' + sHTMLLineBreak + sHTMLLineBreak +
 
     'Haiku specific: OpenSSL' + sHTMLLineBreak +
     'Linux/BSD specific: Qt6 and libCurl (usually with OpenSSL)' + sHTMLLineBreak + sHTMLLineBreak +

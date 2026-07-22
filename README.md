@@ -212,7 +212,7 @@ git clone https://github.com/slicke/trndi.git
 cd trndi
 
 # Use the included Makefile rather than calling lazbuild directly for simplicity.
-# Add noext to remove extensions (mORMot2 dependency issues)
+# Add noext to build without JavaScript extension support
 make noext
 ```
 
@@ -241,7 +241,7 @@ git clone https://github.com/slicke/trndi.git
 cd trndi
 # Use the included Makefile rather than calling lazbuild directly
 make
-# Or build without extensions (no mORMot2 dependency)
+# Or build without JavaScript extension support
 make noext
 ```
 
@@ -301,7 +301,7 @@ make
 ```
 
 Build release without extensions support:
-> This removes dependency on mORMot2
+> This builds without the QuickJS engine
 ```bash
 make noext
 
@@ -347,9 +347,8 @@ There is a convenience `Makefile` that wraps `lazbuild` with common targets:
 - `make build` (honors `WIDGETSET` and `BUILD_MODE`)
 - `make test`
 - `make list-modes` — list available build modes in `Trndi.lpi`
-- `make noext` — build without mORMot2 using a temporary project copy (useful if you don't have the mORMot2 package installed locally)
+- `make noext` — build without JavaScript extension support (no QuickJS libraries needed)
 - `make noext-release` / `make noext-debug` — same as `noext` but force build mode
-- `make IGNORE_MORMOT=1` or `make build-ignore` — force build even if mORMot2 is not found (skip presence check)
 - `make clean`
 - `make.ps1` (Windows PowerShell helper) — run `./make.ps1 help` for shortcuts (`release`, `debug`, `noext`)
 
@@ -360,7 +359,7 @@ Defaults by platform:
 Examples:
 ```bash
 make            # on Linux -> Qt6 (Release) (artifacts placed in the 'build/' directory)
-make noext      # on Linux -> Qt6 (Release) using temporary project copy
+make noext      # on Linux -> Qt6 (Release), no JavaScript extension support
 make BUILD_MODE=Debug    # chooses Qt6 (Debug) on Linux, Extensions (Debug) on macOS/Windows
 make list-modes # show exact LPI targets if you want to pick one explicitly
 ```

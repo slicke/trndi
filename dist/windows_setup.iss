@@ -74,6 +74,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "..\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\lang\*"; DestDir: "{app}\lang"; Flags: ignoreversion recursesubdirs createallsubdirs
+; The JavaScript extension engine (quickjs-ng) and its ABI shim, which Windows
+; resolves from the executable's own directory. See externals/quickjs/README.md.
+Source: "..\externals\quickjs\prebuilt\x86_64-win64\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: The CareLink login helper is no longer shipped as loose files — it is
 ; compiled into Trndi.exe and written to the user's writable settings folder on
 ; demand (see assets/carelink_assets.lrs).

@@ -11,7 +11,7 @@ Windows (this machine — `lazbuild` is not on PATH; the scripts find it at `C:\
 ```powershell
 .\make.ps1              # release build (Extensions (Release) mode)
 .\make.ps1 debug        # debug build
-.\make.ps1 noext        # build without extensions (no mORMot2/QuickJS dependency)
+.\make.ps1 noext        # build without extensions (no QuickJS dependency)
 .\make.ps1 test         # build tests/TrndiTestConsole.lpi and run it
 .\make.ps1 clean        # remove build artifacts (-n for dry run)
 .\make.ps1 list-modules # tree of all units
@@ -29,14 +29,14 @@ Linux/BSD/Haiku use `make` with the same target names (`make`, `make debug`, `ma
 
 ## Architecture
 
-Build modes (in `Trndi.lpi`): "Extensions" modes define `TrndiExt` and require the mORMot2 package (QuickJS engine); "No Ext" modes strip JS extension support. Extension-related code is gated with `{$IFDEF TrndiExt}`. Linux defaults to Qt6 widgetset modes; Windows/macOS use native widgetsets.
+Build modes (in `Trndi.lpi`): "Extensions" modes define `TrndiExt` and link the prebuilt QuickJS libraries in `externals/quickjs/prebuilt/`; "No Ext" modes strip JS extension support. Extension-related code is gated with `{$IFDEF TrndiExt}`. Linux defaults to Qt6 widgetset modes; Windows/macOS use native widgetsets.
 
 ### Layering
 
 - **`units/forms/`** — LCL forms. `umain.pp` is the main window; it is deliberately thin and pulls its implementation from **`inc/umain_*.inc`** include files (`umain_glucose.inc`, `umain_alerts.inc`, `umain_paint.inc`, `umain_settings.inc`, `umain_async.inc`, …). New umain code goes in the matching `.inc`, not into `umain.pp` itself. `uconf` is settings, `ufloat` the floating window, `uwizard` first-run setup.
 - **`units/trndi/api/`** — backend drivers. All subclass `TrndiAPI` (`trndi.api.pp`) and are registered in `trndi.api.registry.pp`. Contract (see `guides/API.md` and CONTRIBUTING.md): `constructor create(user, pass, extra)` sets `ua` and `baseUrl`; `connect: boolean` populates thresholds and `timeDiff`; `getReadings(...): BGResults` returns readings; errors go to `lastErr` with a `false` return. The many `trndi.api.debug_*.pp` units are synthetic backends simulating sensor conditions (missing readings, expiry, etc.) used for manual and automated testing.
 - **`units/trndi/trndi.native.*`** — platform abstraction. `trndi.native.base.pp` declares the interface; `trndi.native.win/linux/mac/bsd/haiku.pp` implement it; `trndi.native.pp` selects the platform class. **Never add platform `{$IFDEF}` blocks to `trndi.native.base`** — put platform code in the platform unit. HTTP requests go through `native.request`.
-- **`units/trndi/ext/`** — JavaScript extension engine (QuickJS via mORMot2). `trndi.ext.engine.pp` is the interpreter host; JS-callable functions live in `inc/js_*_funcs.inc`; `trndi.ext.grant/perm` handle the permission system.
+- **`units/trndi/ext/`** — JavaScript extension engine (quickjs-ng via the in-tree binding `trndi.ext.quickjs.pp` and the C ABI shim in `externals/quickjs/`). `trndi.ext.engine.pp` is the interpreter host; JS-callable functions live in `inc/js_*_funcs.inc`; `trndi.ext.grant/perm` handle the permission system.
 - **`units/slicke/`** — reusable UI/system helpers (custom alert dialogs in `slicke.ux.alert.pp`, media controller, touch detection).
 - **`units/misc/`** — platform utility bundles (winutils, linutils, nsutils, libpascurl, Razer Chroma).
 - **`lang/`** — `.po` translations (6 languages; `Trndi.jm.po` is Jämtlandic, not Jamaican).

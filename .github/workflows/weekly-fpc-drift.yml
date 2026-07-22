@@ -76,7 +76,7 @@ jobs:
 
           echo >> "$REPORT"
           echo "Pinned version hints (static excerpts from .github/workflows/build.yml; not execution logs):" >> "$REPORT"
-          grep -rnE 'Lazarus%20[0-9]+\.[0-9]+|v[0-9]+\.[0-9]+\.[0-9]+|2\.3\.stable|fpc-laz_|qt6pas|mormot2static' .github/workflows/ .github/actions/ >> "$REPORT" || true
+          grep -rnE 'Lazarus%20[0-9]+\.[0-9]+|v[0-9]+\.[0-9]+\.[0-9]+|2\.3\.stable|fpc-laz_|qt6pas' .github/workflows/ .github/actions/ >> "$REPORT" || true
 
           cat "$REPORT"
           if [[ "$FAIL" -ne 0 ]]; then

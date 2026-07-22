@@ -32,8 +32,6 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  MORMOT2_COMMIT: b72f260b880557d2f9ebc15905d820e7a3a9bf01
-  MORMOT2_STATIC_URL: https://github.com/synopse/mORMot2/releases/download/2.4-stable/mormot2static.7z
 
 jobs:
   # ===================== DETERMINE VERSION =====================
@@ -193,18 +191,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Fetch static mORMot2 libs
-          mkdir -p ./static
-          curl -fsSL -o mormot2static.7z "${{ env.MORMOT2_STATIC_URL }}"
-          7z x mormot2static.7z -o./static -y >/dev/null
-          git -c init.defaultBranch=main init externals/mORMot2
-          git -C externals/mORMot2 remote add origin https://github.com/synopse/mORMot2.git
-          git -C externals/mORMot2 fetch --depth 1 origin ${{ env.MORMOT2_COMMIT }}
-          git -C externals/mORMot2 checkout FETCH_HEAD
-          cp -r ./static/${{ matrix.qt6_arch_folder }}/* .
+          # -lqjs resolves through the unversioned libqjs.so symlink, which is
+          # not tracked in git (see externals/quickjs/README.md), so recreate it
+          # before linking. Absent on arm64, which builds without extensions.
+          QJS_DIR="externals/quickjs/prebuilt/${{ matrix.qt6_arch_folder }}"
+          if [ -d "$QJS_DIR" ]; then
+            real=$(cd "$QJS_DIR" && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* | head -1)
+            (cd "$QJS_DIR" && ln -sf "$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so)
+          fi
 
           # Build Trndi
-          lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --widgetset=qt6 --build-mode="${{ matrix.build_mode }}" ${{ matrix.cpu_flag }} ${{ matrix.project_file }}
 
           # Run tests on pull requests (test runner embeds its own Pascal test server)
@@ -221,6 +217,9 @@ jobs:
           mkdir -p artifacts
           cp Trndi artifacts/
           [ -d "lang" ] && cp -r lang artifacts/
+          # The binary carries an $ORIGIN runpath, so the QuickJS engine and its
+          # ABI shim must travel beside it in every package layout below.
+          [ -d "$QJS_DIR" ] && cp -P "$QJS_DIR"/*.so* artifacts/
           # The CareLink login helper is compiled into the binary and written to
           # the user's writable settings folder on demand — nothing to bundle.
           7z a -tzip Trndi-linux-${{ matrix.arch }}.zip ./artifacts/* >/dev/null
@@ -239,6 +238,7 @@ jobs:
             mkdir -p "$PKG_DIR/usr/local/trndi"
             cp Trndi "$PKG_DIR/usr/local/trndi/"
             [ -d "lang" ] && cp -r lang "$PKG_DIR/usr/local/trndi/"
+            [ -d "$QJS_DIR" ] && cp -P "$QJS_DIR"/*.so* "$PKG_DIR/usr/local/trndi/"
 
             # The CareLink login helper is compiled into the binary and written
             # to the user's writable settings folder on demand — nothing to
@@ -425,15 +425,6 @@ jobs:
           export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
           sudo port -v selfupdate
           sudo port -N install fpc lazarus p7zip create-dmg
-          # Prepare static libs + sources
-          curl -fsSL -o mormot2static.7z "${{ env.MORMOT2_STATIC_URL }}"
-          mkdir -p ./static
-          7z x mormot2static.7z -o./static -y >/dev/null
-          git -c init.defaultBranch=main init externals/mORMot2
-          git -C externals/mORMot2 remote add origin https://github.com/synopse/mORMot2.git
-          git -C externals/mORMot2 fetch --depth 1 origin ${{ env.MORMOT2_COMMIT }}
-          git -C externals/mORMot2 checkout FETCH_HEAD
-          cp -r ./static/aarch64-darwin/* .
 
       - name: Write buildinfo (macOS)
         if: matrix.os_target == 'macos'
@@ -475,7 +466,6 @@ jobs:
           set -euo pipefail
           export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
           # Build Trndi
-          lazbuild externals/mORMot2/packages/lazarus/mormot2.lpk
           lazbuild --build-mode="No Ext (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
           # Package zip & dmg (also on PRs, so packaging changes can be tested;
           # the publish job is gated on push-to-main, so PR artifacts only end up
@@ -516,19 +506,13 @@ jobs:
           # Download Lazarus installer via curl
           curl -L --fail -o lazarus-4.8.exe "https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.8/lazarus-4.8-fpc-3.2.2-win64.exe/download"
           Start-Process '.\lazarus-4.8.exe' -ArgumentList '/VERYSILENT','/SP-','/NORESTART','/DIR=C:\Lazarus' -Wait
-          # Prepare static libs & sources
-          New-Item -ItemType Directory -Path .\static -Force | Out-Null
-          curl -L --fail -o mormot2static.7z "${{ env.MORMOT2_STATIC_URL }}"
-          & 'C:\Program Files\7-Zip\7z.exe' x '.\mormot2static.7z' -o'.\static' -y | Out-Null
-          git -c init.defaultBranch=main init externals/mORMot2
-          git -C externals/mORMot2 remote add origin https://github.com/synopse/mORMot2.git
-          git -C externals/mORMot2 fetch --depth 1 origin ${{ env.MORMOT2_COMMIT }}
-          git -C externals/mORMot2 checkout FETCH_HEAD
-          xcopy .\static\x86_64-win64\*.* . /Y /E /I | Out-Null
           # buildinfo.pp is generated by the write-buildinfo step above
           # Build Trndi.exe
-          & 'C:\Lazarus\lazbuild.exe' 'externals\mORMot2\packages\lazarus\mormot2.lpk'
           & 'C:\Lazarus\lazbuild.exe' --lazarusdir='C:\Lazarus' --build-mode='Extensions (Release)' 'Trndi.lpi'
+          # The extension engine links quickjs-ng and its ABI shim as DLLs, which
+          # Windows resolves from the executable's own directory. Place them next
+          # to Trndi.exe so the tests below and the packages built from here work.
+          Copy-Item '.\externals\quickjs\prebuilt\x86_64-win64\*.dll' -Destination '.' -Force
           # Run tests on pull requests via the same entry point developers use
           # locally (test runner embeds its own Pascal test server). No extra
           # args: make.ps1 forwards them to both lazbuild and the test exe.
@@ -539,6 +523,7 @@ jobs:
           # Package ZIP
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
+          Copy-Item '.\externals\quickjs\prebuilt\x86_64-win64\*.dll' -Destination '.\artifacts\'
           if (Test-Path '.\lang') { Copy-Item '.\lang' -Destination '.\artifacts\lang' -Recurse }
           # The CareLink login helper is compiled into Trndi.exe and written to
           # the user's writable settings folder on demand — nothing to bundle.

@@ -162,7 +162,7 @@ end;
 
 TExtContSlickeList = specialize TFPGList<PExtContextInfo>;
 
-  {** Embedded JavaScript engine wrapper using QuickJS via mORMot bindings.
+  {** Embedded JavaScript engine wrapper using QuickJS via @link(trndi.ext.quickjs).
 
       Responsibilities:
       - Create and own a JS runtime/context
