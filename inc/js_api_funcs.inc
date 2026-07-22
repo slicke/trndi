@@ -563,7 +563,7 @@ begin
   0:
     Result := TTrndiExtEngine.Instance.CreateJSArray([]);
   1:
-    Result := TTrndiExtEngine.Instance.CreateJSArray([
+    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),
@@ -572,7 +572,7 @@ begin
       ])
       ]);
   2:
-    Result := TTrndiExtEngine.Instance.CreateJSArray([
+    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),
@@ -587,7 +587,7 @@ begin
       ])
       ]);
   3:
-    Result := TTrndiExtEngine.Instance.CreateJSArray([
+    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),
@@ -608,7 +608,7 @@ begin
       ])
       ]);
   4:
-    Result := TTrndiExtEngine.Instance.CreateJSArray([
+    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),
@@ -635,7 +635,7 @@ begin
       ])
       ]);
   5:
-    Result := TTrndiExtEngine.Instance.CreateJSArray([
+    Result := TTrndiExtEngine.Instance.CreateJSArrayOf([
       TTrndiExtEngine.Instance.CreateJSArray([
       predictions[0].convert(un),
       Round(predictions[0].convert(BGUnit.mgdl)),

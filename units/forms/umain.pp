@@ -57,7 +57,7 @@ Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, trndi.ext.perm,
-trndi.ext.grant, mormot.core.base, mormot.lib.quickjs,
+trndi.ext.grant, trndi.ext.quickjs,
 {$endif}
 {$ifdef Darwin}
 CocoaAll, MacOSAll,

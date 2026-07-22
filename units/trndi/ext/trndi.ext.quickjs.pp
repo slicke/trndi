@@ -66,11 +66,12 @@ unit trndi.ext.quickjs;
 interface
 
 uses
-  SysUtils;
+  SysUtils, Variants;
 
 type
   {** UTF-8 string type. Compatible with mORMot's @code(RawUtf8). }
   RawUtf8 = UTF8String;
+  PRawUtf8 = ^RawUtf8;
 
 const
   {$IF DEFINED(WINDOWS)}
@@ -154,6 +155,20 @@ type
   PJSPropertyEnum = ^JSPropertyEnum;
   {$POINTERMATH OFF}
 
+  {** Definition of a custom JS class, as passed to @code(JS_NewClass).
+
+      Only @code(class_name) is used by Trndi; the callback slots are declared
+      so the record's size and layout match the C struct, and must be left nil
+      unless a matching C-callable function is supplied. }
+  JSClassDef = record
+    class_name: pansichar;  // pure ASCII only
+    finalizer: pointer;
+    gc_mark: pointer;
+    call: pointer;
+    exotic: pointer;
+  end;
+  PJSClassDef = ^JSClassDef;
+
 const
   { Value tags. }
   JS_TAG_FIRST = -9;
@@ -217,9 +232,13 @@ type
       @param(ctx)      Calling context)
       @param(this_val) The JavaScript @code(this))
       @param(argc)     Argument count)
-      @param(argv)     Argument array, valid for the duration of the call) }
+      @param(argv)     Argument array, valid for the duration of the call)
+      @param(magic)    This callback's registration index. Several JS functions
+                       may share one Pascal procedure and tell themselves apart
+                       by magic; @code(NativeName) maps it back to the
+                       registered name.) }
   TJSNativeFunc = procedure(res: PJSValue; ctx: JSContext; this_val: PJSValue;
-    argc: integer; argv: PJSValues);
+    argc: integer; argv: PJSValues; magic: integer);
 
   {** Value helper mirroring the one mORMot exposed on @code(JSValue), so that
       the engine's @code(val.IsObject) / @code(val.F64) style code keeps working.
@@ -238,6 +257,7 @@ type
     function IsUndefined: boolean;
     function IsNull: boolean;
     function IsUninitialized: boolean;
+    function IsException: boolean;
     function IsObject: boolean;
     function IsString: boolean;
     function IsInt32: boolean;
@@ -294,6 +314,46 @@ type
     {** Release a value referenced by pointer.
         Kept for source compatibility with the previous mORMot binding. }
     procedure FreeInlined(v: PJSValue);
+
+    {** Attach a native function to the global object. }
+    procedure SetFunction(const path: array of const; name: pansichar;
+      func: TJSNativeFunc; argc: integer); overload;
+    {** Attach a native function as a method on @code(obj). }
+    procedure SetFunction(const obj: JSValue; name: pansichar;
+      func: TJSNativeFunc; argc: integer); overload;
+
+    {** Fetch a global by name. Caller owns @code(v) when this returns True. }
+    function GetValue(const name: RawUtf8; out v: JSValue): boolean;
+
+    {** Convert a value to a Variant, mapping JS types to their closest
+        Variant equivalents. Numbers become Double, strings become String,
+        null becomes Null and undefined becomes Unassigned; anything else is
+        stringified. }
+    procedure ToVariant(const v: JSValue; out res: Variant);
+
+    {** Evaluate a script, reporting any exception text through @code(err).
+        The returned value is owned by the caller even when it is an
+        exception marker. }
+    function Eval(const script, filename: RawUtf8; flags: integer;
+      out err: RawUtf8): JSValue;
+
+    {** Write the pending exception, with stack when available, into
+        @code(msg). Replaces quickjs-libc's js_std_dump_error, which is not
+        linked - Trndi routes engine diagnostics through its own output. }
+    function DumpError(out msg: RawUtf8): boolean;
+
+    {** Retrieve the pending exception as text.
+
+        Always consumes the exception - quickjs-ng offers no way to peek at it
+        without taking it - so @code(aClear) is accepted for source
+        compatibility but the exception is cleared either way.
+
+        @param(aClear)   Ignored; see above.)
+        @param(aMessage) Receives the exception text, '' when none pending.)
+        @param(aStack)   Optional; receives the JS stack trace when present.)
+        @returns(True when an exception was pending.) }
+    function ErrorMessage(aClear: boolean; out aMessage: RawUtf8;
+      aStack: PRawUtf8 = nil): boolean;
   end;
 
 { ------------------------------------------------------------------ }
@@ -317,7 +377,10 @@ procedure JS_FreeCString(ctx: JSContext; s: pansichar); cdecl; external QJSLIB;
 procedure JS_FreeAtom(ctx: JSContext; a: JSAtom); cdecl; external QJSLIB;
 procedure js_free(ctx: JSContext; p: pointer); cdecl; external QJSLIB;
 
+{ NOTE: quickjs-ng added the JSRuntime parameter; Bellard's took only pid. }
 function JS_NewClassID(rt: JSRuntime; pid: PCardinal): JSClassID; cdecl; external QJSLIB;
+function JS_NewClass(rt: JSRuntime; classID: JSClassID; def: PJSClassDef): integer;
+  cdecl; external QJSLIB;
 
 { NOTE: quickjs-ng returns C99 bool (one byte) here, hence ByteBool. Binding
   these as LongBool would read three bytes of adjacent garbage. }
@@ -396,6 +459,27 @@ function JS_ToFloat64(ctx: JSContext; pres: PDouble; const v: JSValue): integer;
 function JS_GetOwnPropertyNames(ctx: JSContext; ptab: PPointer; plen: PCardinal;
   const obj: JSValue; flags: integer): integer;
 
+type
+  {** Module name normalizer. Returns a js_malloc'd string, or nil. }
+  PJSModuleNormalizeFunc = function(ctx: JSContext; base_name, name: pansichar;
+    opaque: pointer): pansichar; cdecl;
+  {** Module loader. Returns an opaque JSModuleDef pointer, or nil.
+      Neither callback passes a JSValue, so both bind directly. }
+  PJSModuleLoaderFunc = function(ctx: JSContext; module_name: pansichar;
+    opaque: pointer): pointer; cdecl;
+
+  {** Unhandled-promise-rejection hook. The values arrive by pointer. }
+  TJSRejectionTracker = procedure(ctx: JSContext; promise, reason: PJSValue;
+    is_handled: integer; opaque: pointer); cdecl;
+
+{** Install the module normalizer and loader. }
+procedure JS_SetModuleLoaderFunc(rt: JSRuntime; normalize: PJSModuleNormalizeFunc;
+  loader: PJSModuleLoaderFunc; opaque: pointer); cdecl; external QJSLIB;
+
+{** Install the unhandled-rejection tracker. Pass nil to remove it. }
+procedure JS_SetHostPromiseRejectionTracker(rt: JSRuntime; fn: TJSRejectionTracker;
+  opaque: pointer);
+
 {** Rebuild a value from a tag and a payload pointer.
 
     The engine stores bare object pointers in its own value wrappers and casts
@@ -430,6 +514,8 @@ function JS_NewPromiseCapability(ctx: JSContext; resolvingFuncs: PJSValues): JSV
 function RegisterNative(const name: RawUtf8; fn: TJSNativeFunc): integer;
 {** Look up a previously registered magic index, or -1. }
 function FindNative(const name: RawUtf8): integer;
+{** The name a magic index was registered under, or '' if out of range. }
+function NativeName(magic: integer): RawUtf8;
 {** Drop all registrations. Intended for engine teardown and tests. }
 procedure ClearNatives;
 
@@ -510,6 +596,8 @@ type
     func_data: PJSValue; func_data_len: integer); cdecl;
 
 procedure tq_set_dispatch(fn: TDispatchFn); cdecl; external TQLIB;
+procedure tq_set_rejection_tracker(rt: JSRuntime; fn: TJSRejectionTracker;
+  opaque: pointer); cdecl; external TQLIB;
 
 { ================================================================== }
 { Native registry                                                     }
@@ -536,7 +624,7 @@ begin
     Exit;
   if not Assigned(Natives[magic].Func) then
     Exit;
-  Natives[magic].Func(res, ctx, this_val, argc, argv);
+  Natives[magic].Func(res, ctx, this_val, argc, argv, magic);
 end;
 
 procedure EnsureDispatch;
@@ -550,12 +638,12 @@ end;
 function RegisterNative(const name: RawUtf8; fn: TJSNativeFunc): integer;
 begin
   EnsureDispatch;
+  // Reuse a slot only when the same procedure is being re-registered under the
+  // same name; the engine registers some names in more than one scope, and
+  // silently rebinding an existing magic would redirect the earlier function.
   Result := FindNative(name);
-  if Result >= 0 then
-  begin
-    Natives[Result].Func := fn;
+  if (Result >= 0) and (Natives[Result].Func = fn) then
     Exit;
-  end;
   Result := Length(Natives);
   SetLength(Natives, Result + 1);
   Natives[Result].Name := name;
@@ -570,6 +658,13 @@ begin
     if Natives[i].Name = name then
       Exit(i);
   Result := -1;
+end;
+
+function NativeName(magic: integer): RawUtf8;
+begin
+  if (magic < 0) or (magic > High(Natives)) then
+    Exit('');
+  Result := Natives[magic].Name;
 end;
 
 procedure ClearNatives;
@@ -794,6 +889,14 @@ begin
   Result.tag := tag;
 end;
 
+procedure JS_SetHostPromiseRejectionTracker(rt: JSRuntime; fn: TJSRejectionTracker;
+  opaque: pointer);
+begin
+  // Routed through the shim: quickjs passes the promise and reason by value,
+  // which the shim converts to pointers before calling back into Pascal.
+  tq_set_rejection_tracker(rt, fn, opaque);
+end;
+
 function JS_AtomToCString(ctx: JSContext; a: JSAtom): pansichar;
 begin
   Result := tq_atom_to_cstring(ctx, a);
@@ -916,6 +1019,11 @@ end;
 function JSValueHelper.IsUninitialized: boolean;
 begin
   Result := Self.tag = JS_TAG_UNINITIALIZED;
+end;
+
+function JSValueHelper.IsException: boolean;
+begin
+  Result := Self.tag = JS_TAG_EXCEPTION;
 end;
 
 function JSValueHelper.IsObject: boolean;
@@ -1075,6 +1183,132 @@ procedure JSContextHelper.FreeInlined(v: PJSValue);
 begin
   if v <> nil then
     JS_FreeValue(@Self, v^);
+end;
+
+procedure JSContextHelper.SetFunction(const path: array of const; name: pansichar;
+  func: TJSNativeFunc; argc: integer);
+var
+  ctx: JSContext;
+  glob: JSValue;
+begin
+  // An empty path means the global object, which is the only form Trndi uses.
+  ctx := @Self;
+  glob := JS_GetGlobalObject(ctx);
+  try
+    SetFunction(glob, name, func, argc);
+  finally
+    JS_FreeValue(ctx, glob);
+  end;
+end;
+
+procedure JSContextHelper.SetFunction(const obj: JSValue; name: pansichar;
+  func: TJSNativeFunc; argc: integer);
+var
+  ctx: JSContext;
+  nm: RawUtf8;
+begin
+  ctx := @Self;
+  nm := name;
+  JS_SetPropertyStr(ctx, obj, nm,
+    JS_NewFunction(ctx, nm, argc, RegisterNative(nm, func)));
+end;
+
+function JSContextHelper.GetValue(const name: RawUtf8; out v: JSValue): boolean;
+var
+  ctx: JSContext;
+  glob: JSValue;
+begin
+  ctx := @Self;
+  glob := JS_GetGlobalObject(ctx);
+  try
+    v := JS_GetPropertyStr(ctx, glob, name);
+  finally
+    JS_FreeValue(ctx, glob);
+  end;
+  Result := not v.IsUndefined and not v.IsException;
+  if not Result then
+  begin
+    JS_FreeValue(ctx, v);
+    v := JS_UNDEFINED;
+  end;
+end;
+
+procedure JSContextHelper.ToVariant(const v: JSValue; out res: Variant);
+var
+  ctx: JSContext;
+begin
+  ctx := @Self;
+  case v.tag of
+    JS_TAG_INT:
+      res := v.u.int32_;
+    JS_TAG_BOOL:
+      res := v.Bool;
+    JS_TAG_FLOAT64:
+      res := v.u.float64_;
+    JS_TAG_SHORT_BIG_INT:
+      res := system.int64(v.u.int32_);
+    JS_TAG_NULL:
+      res := Null;
+    JS_TAG_UNDEFINED, JS_TAG_UNINITIALIZED:
+      res := Unassigned;
+  else
+    // Strings, objects and anything else fall back to their string form.
+    res := string(JS_ToUtf8(ctx, v));
+  end;
+end;
+
+function JSContextHelper.Eval(const script, filename: RawUtf8; flags: integer;
+  out err: RawUtf8): JSValue;
+var
+  ctx: JSContext;
+begin
+  ctx := @Self;
+  err := '';
+  Result := JS_Eval(ctx, script, filename, flags);
+  if Result.IsException then
+    ErrorMessage(true, err);
+end;
+
+function JSContextHelper.DumpError(out msg: RawUtf8): boolean;
+var
+  stack: RawUtf8;
+begin
+  Result := ErrorMessage(true, msg, @stack);
+  if Result and (stack <> '') then
+    msg := msg + LineEnding + stack;
+end;
+
+function JSContextHelper.ErrorMessage(aClear: boolean; out aMessage: RawUtf8;
+  aStack: PRawUtf8): boolean;
+var
+  ctx: JSContext;
+  exc, st: JSValue;
+begin
+  aMessage := '';
+  if aStack <> nil then
+    aStack^ := '';
+  ctx := @Self;
+
+  exc := JS_GetException(ctx);
+  try
+    Result := not exc.IsNull and not exc.IsUndefined;
+    if not Result then
+      Exit;
+    aMessage := JS_ToUtf8(ctx, exc);
+    // Errors carry a .stack property; plain thrown values do not.
+    if (aStack <> nil) and exc.IsObject then
+    begin
+      st := JS_GetPropertyStr(ctx, exc, 'stack');
+      try
+        if not st.IsUndefined then
+          aStack^ := JS_ToUtf8(ctx, st);
+      finally
+        JS_FreeValue(ctx, st);
+      end;
+    end;
+  finally
+    JS_FreeValue(ctx, exc);
+  end;
 end;
 
 end.
