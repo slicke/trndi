@@ -139,6 +139,13 @@ type
   {** Pointer to a callback argument array. }
   PJSValues = ^TJSValueArray;
 
+  {** Pointer to a context handle, as used by the engine's callback signatures. }
+  PJSContext = ^JSContext;
+
+  {** The resolve/reject pair filled in by @code(JS_NewPromiseCapability).
+      Index with @code(JprResolve) and @code(JprReject). }
+  JSDoubleVal = array[0..1] of JSValue;
+
 const
   { Value tags. }
   JS_TAG_FIRST = -9;
@@ -174,6 +181,10 @@ const
   JS_GPN_PRIVATE_MASK = 1 shl 2;
   JS_GPN_ENUM_ONLY = 1 shl 4;
   JS_GPN_SET_ENUM = 1 shl 5;
+
+  { Indices into JSDoubleVal, matching QuickJS's resolving_funcs order. }
+  JprResolve = 0;
+  JprReject = 1;
 
   { Property attribute flags. }
   JS_PROP_CONFIGURABLE = 1 shl 0;
@@ -221,6 +232,9 @@ type
     function FromBool(b: boolean): JSValue;
     {** Release a value owned by this context. }
     procedure Free(const v: JSValue);
+    {** Release a value referenced by pointer.
+        Kept for source compatibility with the previous mORMot binding. }
+    procedure FreeInlined(v: PJSValue);
   end;
 
 { ------------------------------------------------------------------ }
@@ -279,7 +293,9 @@ function JS_GetGlobalObject(ctx: JSContext): JSValue;
 function JS_NewObject(ctx: JSContext): JSValue;
 function JS_NewArray(ctx: JSContext): JSValue;
 function JS_NewObjectClass(ctx: JSContext; classID: JSClassID): JSValue;
-function JS_NewString(ctx: JSContext; const s: RawUtf8): JSValue;
+function JS_NewString(ctx: JSContext; const s: RawUtf8): JSValue; overload;
+{** Overload for call sites that already hold a null-terminated buffer. }
+function JS_NewString(ctx: JSContext; s: pansichar): JSValue; overload;
 function JS_NewInt32(ctx: JSContext; v: longint): JSValue;
 function JS_NewInt64(ctx: JSContext; v: int64): JSValue;
 function JS_NewFloat64(ctx: JSContext; v: double): JSValue;
@@ -302,6 +318,15 @@ function JS_DupValue(ctx: JSContext; const v: JSValue): JSValue;
 function JS_ToCString(ctx: JSContext; const v: JSValue): pansichar;
 {** Convert to UTF-8 and release the intermediate C string. }
 function JS_ToUtf8(ctx: JSContext; const v: JSValue): RawUtf8;
+{** Convert a value to UTF-8. Retained under its mORMot-era name. }
+function JSValueConstToUtf8(ctx: JSContext; const v: JSValue): RawUtf8;
+{** Stable identity for a heap-allocated value, for use as a dictionary key.
+
+    Under mORMot's NaN-boxed fork a @code(JSValue) could simply be cast to
+    @code(UInt64). It is a struct here, so identity comes from the payload
+    pointer instead. Only meaningful for reference-counted tags such as
+    objects and promises. }
+function JSValueId(const v: JSValue): UInt64;
 function JS_ToBool(ctx: JSContext; const v: JSValue): integer;
 function JS_ToInt32(ctx: JSContext; out res: longint; const v: JSValue): integer;
 function JS_ToFloat64(ctx: JSContext; out res: double; const v: JSValue): integer;
@@ -516,6 +541,14 @@ begin
   tq_new_string_len(@Result, ctx, pansichar(s), Length(s));
 end;
 
+function JS_NewString(ctx: JSContext; s: pansichar): JSValue;
+begin
+  if s = nil then
+    tq_new_string_len(@Result, ctx, nil, 0)
+  else
+    tq_new_string_len(@Result, ctx, s, StrLen(s));
+end;
+
 function JS_NewInt32(ctx: JSContext; v: longint): JSValue;
 begin
   tq_new_int32(@Result, ctx, v);
@@ -637,6 +670,21 @@ begin
   finally
     JS_FreeCString(ctx, p);
   end;
+end;
+
+function JSValueConstToUtf8(ctx: JSContext; const v: JSValue): RawUtf8;
+begin
+  Result := JS_ToUtf8(ctx, v);
+end;
+
+function JSValueId(const v: JSValue): UInt64;
+begin
+  // Reference-counted tags are negative and carry a pointer payload; anything
+  // else has no stable heap identity, so report 0 rather than a stack address.
+  if v.tag < 0 then
+    Result := UInt64(PtrUInt(v.u.ptr))
+  else
+    Result := 0;
 end;
 
 function JS_ToBool(ctx: JSContext; const v: JSValue): integer;
@@ -773,6 +821,12 @@ end;
 procedure JSContextHelper.Free(const v: JSValue);
 begin
   JS_FreeValue(@Self, v);
+end;
+
+procedure JSContextHelper.FreeInlined(v: PJSValue);
+begin
+  if v <> nil then
+    JS_FreeValue(@Self, v^);
 end;
 
 end.
