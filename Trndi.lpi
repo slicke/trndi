@@ -135,6 +135,7 @@
 -dTrndiExt
 -dDEBUG"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <Item Name="Extensions (Release)">
@@ -174,6 +175,7 @@
             <CustomOptions Value="-B
 -dTrndiExt"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <Item Name="No Ext (Debug)">
@@ -211,6 +213,7 @@
             <CustomOptions Value="-B
 -dDEBUG"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <Item Name="GTK3">
@@ -251,6 +254,7 @@
           <Other>
             <CustomOptions Value="-B"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <Item Name="Custtom">
@@ -287,6 +291,7 @@
             <CustomOptions Value="-B
 -dDEBUG"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <Item Name="GTK2">
@@ -327,6 +332,7 @@
           <Other>
             <CustomOptions Value="-B"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <Item Name="Qt6 (Debug)">
@@ -366,6 +372,7 @@
             <CustomOptions Value="-B
 -dDEBUG"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <Item Name="Qt6 (Release; No Extensions)">
@@ -402,6 +409,7 @@
           <Other>
             <CustomOptions Value="-B"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <Item Name="FPC Native (Debug)">
@@ -440,6 +448,7 @@
           <Other>
             <CustomOptions Value="-B"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <Item Name="Qt6 (Release: Extensions)">
@@ -480,6 +489,7 @@
             <CustomOptions Value="-B
 -dTrndiExt"/>
           </Other>
+          <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
         </CompilerOptions>
       </Item>
       <SharedMatrixOptions Count="4">
@@ -722,5 +732,6 @@
     <Other>
       <CustomOptions Value="-B"/>
     </Other>
+    <Conditionals Value="if TargetOS='linux' then CustomOptions += ' -k-rpath=$ORIGIN';"/>
   </CompilerOptions>
 </CONFIG>
