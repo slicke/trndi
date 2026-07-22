@@ -903,7 +903,7 @@ const
     'Haiku specific: OpenSSL' + sHTMLLineBreak +
     'Linux/BSD specific: Qt6 and libCurl (usually with OpenSSL)' + sHTMLLineBreak + sHTMLLineBreak +
 
-    'While Trndi has been built ground-up, it has been inspired by the Python library <i>pydexcom</i> and Tandem tool <i>tconnectsync</i>, aswell as the <i>NightScout</i> project.' + sHTMLLineBreak + sHTMLLineBreak +
+    'While Trndi has been built ground-up, it''s "Dexcom New" driver has been inspired by the Python library <i>pydexcom</i> and the Tandem driver by <i>tconnectsync</i>, aswell as the <i>NightScout</i> project for Nightscout-related drivers.' + sHTMLLineBreak + sHTMLLineBreak +
     'Built in <b>Object Pascal</b>, using the <b>Lazarus</b> component library (LCL) and <b>FreePascal</b>.' + sHTMLLineBreak + sHTMLLineBreak +
     'Follow Trndi on Discord and Github! Contributions of code and translations are very welcome!';
 begin
