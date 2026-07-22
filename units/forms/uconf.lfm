@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 590
     Top = 11
     Width = 645
-    ActivePage = tsPredictions
+    ActivePage = tsColors
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 8
+    TabIndex = 2
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -1471,8 +1471,8 @@ object fConf: TfConf
           Left = 144
           Height = 19
           Top = 13
-          Width = 296
-          Caption = 'Color the title bar with glucose color (Windows only)'
+          Width = 339
+          Caption = 'Color the title bar with glucose color (Windows/macOS only)'
           TabOrder = 1
         end
       end
