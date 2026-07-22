@@ -51,3 +51,10 @@ VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=alefrag
 ### Ubuntu notice
 If your Ubuntu installation complains about -lgcc, consider making a symlink:
 ```sudo ln -s /usr/lib/gcc/x86_64-linux-gnu/11/libgcc.a /usr/lib/libgcc.a```
+
+### Docker
+`dist/docker/Dockerfile` builds a Linux dev container that mirrors CI's linux-amd64 job (Lazarus/FPC + Qt6 from `.github/actions/setup-lazarus`). On `docker run` its entrypoint clones (or updates) the `develop` branch, builds it via `make bootstrap && make release`, then drops you into a shell in the checkout:
+```
+docker build -t trndi-dev -f dist/docker/Dockerfile .
+docker run -it --rm trndi-dev
+```
