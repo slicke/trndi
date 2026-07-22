@@ -517,17 +517,21 @@ begin
 
   // 4) Create a Promise and capture its resolving functions.
   //    funcs[0] will be the resolve function, funcs[1] the reject function.
-  try
-    promise := JS_NewPromiseCapability(ctx, @funcs[0]);
-  except
-    on E: Exception do
-    begin
-      // If creation fails, log and bail out. Consider throwing a JS exception instead.
-      ExtError(sdsAuto, 'Init failed');
-      cb^.params.values.Data.Free;
-      cb^.params.values.Data := nil;
-      Exit; // returns an undefined/empty JSValueRaw; caller in JS sees undefined
-    end;
+  //    Failure is reported the C way - the exception marker plus a pending
+  //    exception on the context - so it has to be tested for, not caught. The
+  //    resolving functions are left untouched on failure, so there is nothing
+  //    to release but the parsed parameters.
+  promise := JS_NewPromiseCapability(ctx, @funcs[0]);
+  if promise.IsException then
+  begin
+    ExtError(sdsAuto, 'Init failed');
+    cb^.params.values.Data.Free;
+    cb^.params.values.Data := nil;
+    // Hand the marker back rather than undefined: the exception is already
+    // pending on the context, and swallowing it here would leave it to surface
+    // at some unrelated point later.
+    res^ := JS_EXCEPTION;
+    Exit;
   end;
 
   // 5) Validate arity against min/max constraints (unless min=-1 which means “free-form”).
@@ -555,12 +559,6 @@ begin
     res^ := promise;
     Exit;
   end;
-
-  // Optional: handle error promises explicitly (currently no-op).
-  if JS_IsError(promise) then
-  // Consider: js_std_dump_error(ctx); or returning a rejected promise.
-// Currently left as a no-op to preserve original behavior.
-  ;
 
   // 6) Kick off the asynchronous work.
   //    The task is responsible for:
