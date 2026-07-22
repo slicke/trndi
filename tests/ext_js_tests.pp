@@ -55,7 +55,7 @@ unit ext_js_tests;
 interface
 
 uses
-  fpcunit, testregistry, SysUtils, trndi.ext.quickjs;
+  fpcunit, testregistry, SysUtils, Variants, trndi.ext.quickjs;
 
 type
   TQuickJSBindingTests = class(TTestCase)
@@ -80,6 +80,8 @@ type
     procedure TestNativeFunctionReceivesArguments;
     procedure TestPropertyRoundTrip;
     procedure TestUtf8RoundTrip;
+    procedure TestBigIntToInt64;
+    procedure TestBigIntToVariant;
     procedure TestPromiseJobsRun;
   end;
 
@@ -407,6 +409,96 @@ begin
     AssertTrue('from JS (got ' + IntToStr(Length(got)) + ' bytes)', got = FromJS);
   finally
     JS_FreeValue(FContext, back);
+  end;
+end;
+
+{ A BigInt outside the inline payload range is heap-allocated, and the payload
+  of a heap value says nothing about its magnitude - JSValue.int64 reads 0 for
+  it. QuickJS's own JS_ToInt64 is no help either: it applies ToNumber, which
+  throws a TypeError for every BigInt. Hence ctx^.ToInt64. }
+procedure TQuickJSBindingTests.TestBigIntToInt64;
+
+  procedure Expect(const src: RawUtf8; wanted: int64);
+  var
+    v: JSValue;
+    got: int64;
+  begin
+    v := JS_Eval(FContext, src, 'test.js', JS_EVAL_TYPE_GLOBAL);
+    try
+      AssertTrue(string(src) + ' converts', FContext^.ToInt64(v, got));
+      AssertEquals(string(src), wanted, got);
+    finally
+      JS_FreeValue(FContext, v);
+    end;
+  end;
+
+  procedure ExpectRejected(const src: RawUtf8);
+  var
+    v: JSValue;
+    got: int64;
+  begin
+    v := JS_Eval(FContext, src, 'test.js', JS_EVAL_TYPE_GLOBAL);
+    try
+      AssertFalse(string(src) + ' is rejected', FContext^.ToInt64(v, got));
+      AssertEquals(string(src) + ' leaves 0', 0, got);
+    finally
+      JS_FreeValue(FContext, v);
+    end;
+  end;
+
+begin
+  // Small enough to live inline...
+  Expect('42n', 42);
+  Expect('-1n', -1);
+  // ...and past that, where the value is heap-allocated.
+  Expect('2n ** 40n', 1099511627776);
+  Expect('-1234567890123n', -1234567890123);
+  Expect('9223372036854775807n', High(int64));
+  Expect('-9223372036854775808n', Low(int64));
+
+  // Ordinary values still work through the same entry point.
+  Expect('123', 123);
+  Expect('true', 1);
+  Expect('2.75', 2);
+  Expect('"77"', 77);
+
+  // Too wide, or not a number at all.
+  ExpectRejected('2n ** 100n');
+  ExpectRejected('1e300');
+  ExpectRejected('({})');
+  ExpectRejected('undefined');
+  // NaN must not raise: FPC leaves the invalid-operation trap unmasked, so an
+  // ordered compare against it would throw EInvalidOp rather than return False.
+  ExpectRejected('NaN');
+
+  // None of the above may leave an exception pending on the context.
+  AssertEquals('context still usable', '2', EvalToString('1 + 1'));
+end;
+
+procedure TQuickJSBindingTests.TestBigIntToVariant;
+var
+  v: JSValue;
+  got: variant;
+begin
+  // A BigInt has to arrive as a number, not as its string form - natives test
+  // VarType before using the value.
+  v := JS_Eval(FContext, '2n ** 40n', 'test.js', JS_EVAL_TYPE_GLOBAL);
+  try
+    FContext^.ToVariant(v, got);
+    AssertEquals('heap BigInt is an Int64 variant', varInt64, VarType(got));
+    AssertEquals('heap BigInt value', 1099511627776, int64(got));
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+
+  // Beyond Int64 the exact digits are the only thing a Variant can carry.
+  v := JS_Eval(FContext, '2n ** 100n', 'test.js', JS_EVAL_TYPE_GLOBAL);
+  try
+    FContext^.ToVariant(v, got);
+    AssertEquals('too-wide BigInt keeps its digits',
+      '1267650600228229401496703205376', string(got));
+  finally
+    JS_FreeValue(FContext, v);
   end;
 end;
 
