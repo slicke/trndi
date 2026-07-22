@@ -295,7 +295,18 @@ endif
 	    echo "Warning: IGNORE_MORMOT=1 set; skipping mORMot2 presence and static binary checks"; \
 	  fi; \
 	fi
-build:
+.PHONY: qjs-links
+qjs-links:
+	@# -lqjs resolves through the unversioned libqjs.so symlink, which is not in
+	@# git (checkouts onto NTFS flatten symlinks into empty files), so recreate it
+	@# in the library search directory before lazbuild links.
+	@qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
+	real=$$(cd "$$qjsdir" 2>/dev/null && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
+	if [ -n "$$real" ]; then \
+	  ( cd "$$qjsdir" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
+	fi
+
+build: qjs-links
 	mkdir -p $(OUTDIR)
 	@echo "Building $(LPI) (mode=$(BUILD_MODE_NAME), widgetset=$(WIDGETSET)) -> $(OUTDIR)"
 	@# Note: avoid passing -B <outdir> to lazbuild — some lazbuild versions misinterpret it as a package name.
@@ -312,6 +323,22 @@ build:
 	fi; \
 	# Copy translations into build dir for packaging/runtime
 	if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/. "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi
+	@# The extension engine links quickjs-ng and its ABI shim as shared libraries,
+	@# which must sit beside the executable. Symlinks are not tracked in git, so
+	@# recreate them here. Skipped for No Ext builds, which never load them.
+	@if [ "$(BUILD_MODE_NAME)" != "No Ext" ]; then \
+	  qjsdir="externals/quickjs/prebuilt/$$(uname -m)-linux"; \
+	  if [ -d "$$qjsdir" ]; then \
+	    cp -P $$qjsdir/*.so* "$(OUTDIR)/" 2>/dev/null || true; \
+	    real=$$(cd "$(OUTDIR)" && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
+	    if [ -n "$$real" ]; then \
+	      ( cd "$(OUTDIR)" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
+	    fi; \
+	    echo "Copied QuickJS libraries to $(OUTDIR)"; \
+	  else \
+	    echo "Warning: $$qjsdir missing; extensions will fail to start. Build it with externals/quickjs/build.sh"; \
+	  fi; \
+	fi
 	@# Strip embedded debug info for smaller Release binaries (Linux default; override STRIP_RELEASE=0)
 	@if [ "$(BUILD_MODE)" = "Release" ] && [ "$(STRIP_RELEASE)" = "1" ]; then \
 	  if [ -f "$(OUTDIR)/Trndi" ]; then \
