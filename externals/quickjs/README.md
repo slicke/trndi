@@ -39,21 +39,35 @@ boxing packs the pointer into the low 32 bits and is 32-bit-only.
 
 ## Rebuilding
 
-`build.sh` builds both libraries. It needs `cmake`, `ninja`, a host `gcc`, and —
-for the Windows cross-build — mingw-w64.
+`build.sh` builds both libraries. It needs `cmake`, a C compiler, and — for the
+Windows cross-build — mingw-w64. `ninja` is used when present.
 
 ```sh
 # Fedora
 sudo dnf install -y cmake ninja-build gcc mingw64-gcc mingw64-winpthreads-static
 # Debian/Ubuntu
 sudo apt install -y cmake ninja-build gcc gcc-mingw-w64-x86-64
+# macOS (the compiler comes from the Xcode command line tools)
+brew install cmake ninja
 
-./build.sh            # host .so + win64 .dll
-./build.sh linux      # host only
-./build.sh win        # win64 only
+./build.sh            # everything this host can produce
+./build.sh linux      # host .so
+./build.sh mac        # host .dylib
+./build.sh win        # win64 .dll (mingw cross)
 ```
 
-Output lands in `prebuilt/<arch>/`.
+Output lands in `prebuilt/<cpu>-<os>/`, named the way FPC names targets — so
+Apple Silicon is `aarch64-darwin`, not `arm64-darwin`.
+
+Two macOS knobs, both optional:
+
+```sh
+TRNDI_QJS_MACOS_MIN=11.0 ./build.sh mac                 # raise the minimum OS
+TRNDI_QJS_MAC_ARCHS='arm64;x86_64' ./build.sh mac       # universal libraries
+```
+
+A universal build still lands in the host's directory; copy it to the other
+target's directory as well if you want both to link against it.
 
 ## Platform coverage
 
@@ -61,11 +75,31 @@ Output lands in `prebuilt/<arch>/`.
 |---|---|
 | `x86_64-linux` | `build.sh linux`, or cross from any host |
 | `x86_64-win64` | `build.sh win` (mingw cross), or natively with mingw |
+| `aarch64-darwin`, `x86_64-darwin` | `build.sh mac`, on a Mac |
 | `aarch64-linux` | build natively on the target (e.g. a Raspberry Pi) |
-| macOS, Windows ARM64 | build natively on the platform |
+| Windows ARM64 | build natively on the platform |
+
+Only `x86_64-linux` and `x86_64-win64` are committed so far, because those are
+the two a Linux host can produce. The macOS libraries have to be built on a Mac;
+until a set is committed, macOS can only build Trndi's "No Ext" modes. Anything
+`build.sh` produces is safe to commit — that is the point of `prebuilt/`.
 
 There is no cross-glibc in Fedora's repos, so arm64 Linux is built natively
 rather than cross-compiled.
+
+## How the libraries are found at runtime
+
+They ship *beside* the executable rather than being installed system-wide, so
+each platform needs the loader pointed at the executable's own directory:
+
+| platform | mechanism |
+|---|---|
+| Windows | automatic — the executable's directory is searched first |
+| Linux | `-k-rpath=$ORIGIN`, set per build mode in `Trndi.lpi` |
+| macOS | `-k-rpath -k@loader_path`, same place |
+
+In a macOS `.app`, that directory is `Contents/MacOS`, which is where
+`dist/macos.sh` puts them.
 
 ## A note on `libqjs.so` symlinks
 
@@ -73,3 +107,8 @@ The Linux build produces `libqjs.so.0.15.1` with `SONAME libqjs.so.0`, plus
 `libqjs.so` and `libqjs.so.0` symlinks. Only the real file is stored here —
 symlinks do not survive a copy onto a Windows filesystem. `build.sh` recreates
 them, and so does the Makefile's install step.
+
+macOS sidesteps this: `build.sh mac` flattens the versioned dylib into a single
+unversioned `libqjs.dylib` and rewrites its install name to match, so nothing
+here depends on a symlink. Versioning would buy nothing — FPC links the library
+by name and the copy beside the executable is the only one it ever loads.

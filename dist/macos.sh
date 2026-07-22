@@ -12,6 +12,16 @@ cp -r ../Trndi.app macos/.
 rm -rf macos/Trndi.app/Contents/MacOS/Trndi
 cp ../Trndi macos/Trndi.app/Contents/MacOS/Trndi
 
+# Extension builds link quickjs-ng and its ABI shim, which the binary resolves
+# through an @loader_path runpath — so they belong beside it. Absent for
+# "No Ext" builds, which is what the release workflow produces.
+QJS_ARCH="$(uname -m)"
+if [ "${QJS_ARCH}" = "arm64" ]; then QJS_ARCH=aarch64; fi
+QJS_DIR="../externals/quickjs/prebuilt/${QJS_ARCH}-darwin"
+if [ -d "${QJS_DIR}" ]; then
+  cp "${QJS_DIR}"/*.dylib macos/Trndi.app/Contents/MacOS/
+fi
+
 # Setup languages
 # Trndi currently looks for translations in "appdir/lang".
 # In a .app bundle, appdir resolves to Contents/MacOS, so keep lang/ there.
