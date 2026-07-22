@@ -38,12 +38,15 @@
 // JavaScript Configuration Functions - Modify app settings and behavior
 
 // Set data freshness threshold in minutes
-function JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSvar_DATA_FRESHNESS_THRESHOLD_MINUTES(res: PJSValue; ctx: JSContext;
+this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   a0: variant;
 begin
-  Result := JS_UNDEFINED;
-  ctx^^.ToVariant(argv^[0], a0);
+  res^ := JS_UNDEFINED;
+  if argc < 1 then
+    Exit;
+  ctx^.ToVariant(argv^[0], a0);
 
   if varType(a0) <> varInteger then
   begin
@@ -57,13 +60,16 @@ begin
 end;
 
 // Set clock interval and display settings
-function JSvar_CLockInterval(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSvar_CLockInterval(res: PJSValue; ctx: JSContext;
+this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   a0, a1: variant;
 begin
-  Result := JS_UNDEFINED;
-  ctx^^.ToVariant(argv^[0], a0);
-  ctx^^.ToVariant(argv^[1], a1);
+  res^ := JS_UNDEFINED;
+  if argc < 2 then
+    Exit;
+  ctx^.ToVariant(argv^[0], a0);
+  ctx^.ToVariant(argv^[1], a1);
 
   if (varType(a0) <> varInteger) or (varType(a1) <> varInteger) then
   begin
@@ -76,24 +82,25 @@ begin
 end;
 
 // Sets the max time to fetch in minutes, and the range to X readings
-function JSTimeRange(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSTimeRange(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   vmins, vcount: variant;
 begin
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
   if argc <> 2 then
   begin
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
     Exit;
   end;
 
-  ctx^^.ToVariant(argv^[0], vmins);
-  ctx^^.ToVariant(argv^[1], vcount);
+  ctx^.ToVariant(argv^[0], vmins);
+  ctx^.ToVariant(argv^[1], vcount);
 
   if (VarType(vmins) <> varInteger) or (VarType(vcount) <> varInteger) then
   begin
     ExtError(sdsAuto, 'Mins and Count must be integers');
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
     Exit;
   end;
 

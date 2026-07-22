@@ -38,15 +38,15 @@
 // JavaScript UX Functions - Modify UI appearance and display
 
 // UX modifications from JS ("uxProp()")
-function JSUX(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
-cdecl;
-var 
+procedure JSUX(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
+var
   comp, what, val: string;
 begin
   // Parse the parameters
-  comp := ctx^^.ToUtf8(argv^[0]);
-  what :=  ctx^^.ToUtf8(argv^[1]);
-  val :=  ctx^^.ToUtf8(argv^[2]);
+  comp := ctx^.ToUtf8(argv^[0]);
+  what :=  ctx^.ToUtf8(argv^[1]);
+  val :=  ctx^.ToUtf8(argv^[2]);
 
   if fBG.FindSubComponent(comp) <> nil then // Look for the control
     with fBG.FindSubComponent(comp) as TGraphicControl do
@@ -70,31 +70,33 @@ begin
 // Component
   ;
 
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
   TTrndiExtEngine.Instance.CallFunction('uxCallback', [comp, val]);
 end;
 
 //Post a notification
-function JSAttention(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSAttention(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   s: string;
 begin
-  Result := JS_UNDEFINED;
-  s := ctx^^.ToUtf8(argv^[0]);
+  res^ := JS_UNDEFINED;
+  s := ctx^.ToUtf8(argv^[0]);
 
   native.attention('Trndi - Extension Message', s);
 end;
 
 // Display an HTML message dialog
-function JSHTMLMsg(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSHTMLMsg(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   vbs: variant; //Variant box size
 begin
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
   if argc <> 5 then
     ExtError(sdsAuto, '[htmlMsg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 5');
 
-  ctx^^.ToVariant(argv^[4], vbs);
+  ctx^.ToVariant(argv^[4], vbs);
 
   if not varType(vbs) = varSingle then
   begin
@@ -103,20 +105,21 @@ begin
   end;
 
  // Title, Desc, html, size
-  ExtMessage(sdsAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), ctx^^.ToUtf8(argv^[2]), ctx^^.ToUtf8(argv^[3]), true,
+  ExtMessage(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), ctx^.ToUtf8(argv^[2]), ctx^.ToUtf8(argv^[3]), true,
     $00AA6004, $00FDD8AA,  [mbOK], uxmtOK, vbs);
 end;
 
 // Display an HTML message dialog
-function JSHTMLDlg(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSHTMLDlg(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   vbs: variant; //Variant box size
 begin
-  Result := JS_UNDEFINED;
+  res^ := JS_UNDEFINED;
   if argc <> 3 then
     ExtError(sdsAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
 
-  ctx^^.ToVariant(argv^[2], vbs);
+  ctx^.ToVariant(argv^[2], vbs);
 
   if not varType(vbs) = varSingle then
   begin
@@ -125,18 +128,19 @@ begin
   end;
 
  // Title, Desc, html, size
-  SlickeMsg(sdsAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbOK], uxmtOk, vbs);
+  SlickeMsg(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), [mbOK], uxmtOk, vbs);
 end;
 
-function JSHTMLYesNo(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSHTMLYesNo(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   vbs: variant; //Variant box size
 begin
-  Result := JS_FALSE;
+  res^ := JS_FALSE;
   if argc <> 3 then
     ExtError(sdsAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
 
-  ctx^^.ToVariant(argv^[2], vbs);
+  ctx^.ToVariant(argv^[2], vbs);
 
   if not varType(vbs) = varSingle then
   begin
@@ -145,56 +149,58 @@ begin
   end;
 
  // Title, Desc, html, size
-  if SlickeMsg(sdsAuto, ctx^^.ToUtf8(argv^[0]), ctx^^.ToUtf8(argv^[1]), [mbYes, mbNo], uxmtOk, vbs) = mrYes then
-    Result := JS_TRUE
+  if SlickeMsg(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), [mbYes, mbNo], uxmtOk, vbs) = mrYes then
+    res^ := JS_TRUE
   else
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
 end;
 
 // Set the UX colors for different BG levels
-function JSLevelColor(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSLevelColor(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 begin
-  Result := JS_TRUE;
+  res^ := JS_TRUE;
   if not (argc in [3,6,10]) then
   begin
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
     Exit;
   end;
 
   if argc >= 3 then
   begin
-    bg_color_ok := HTMLColorToTColor(ctx^^.ToUtf8(argv^[0]));
-    bg_color_hi := HTMLColorToTColor(ctx^^.ToUtf8(argv^[1]));
-    bg_color_lo := HTMLColorToTColor(ctx^^.ToUtf8(argv^[2]));
+    bg_color_ok := HTMLColorToTColor(ctx^.ToUtf8(argv^[0]));
+    bg_color_hi := HTMLColorToTColor(ctx^.ToUtf8(argv^[1]));
+    bg_color_lo := HTMLColorToTColor(ctx^.ToUtf8(argv^[2]));
   end;
   if argc >= 6 then
   begin
-    bg_color_ok_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[3]));
-    bg_color_hi_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[4]));
-    bg_color_lo_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[5]));
+    bg_color_ok_txt := HTMLColorToTColor(ctx^.ToUtf8(argv^[3]));
+    bg_color_hi_txt := HTMLColorToTColor(ctx^.ToUtf8(argv^[4]));
+    bg_color_lo_txt := HTMLColorToTColor(ctx^.ToUtf8(argv^[5]));
   end;
   if argc = 10 then
   begin
-    bg_rel_color_hi := HTMLColorToTColor(ctx^^.ToUtf8(argv^[5]));
-    bg_rel_color_lo := HTMLColorToTColor(ctx^^.ToUtf8(argv^[6]));
-    bg_rel_color_hi_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[7]));
-    bg_rel_color_lo_txt := HTMLColorToTColor(ctx^^.ToUtf8(argv^[8]));
+    bg_rel_color_hi := HTMLColorToTColor(ctx^.ToUtf8(argv^[5]));
+    bg_rel_color_lo := HTMLColorToTColor(ctx^.ToUtf8(argv^[6]));
+    bg_rel_color_hi_txt := HTMLColorToTColor(ctx^.ToUtf8(argv^[7]));
+    bg_rel_color_lo_txt := HTMLColorToTColor(ctx^.ToUtf8(argv^[8]));
   end;
 end;
 
 // Handle badge size, mainly on Windows
-function JSBadge(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSBadge(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   vbw, vbf: variant;
 begin
-  Result := JS_TRUE;
+  res^ := JS_TRUE;
   if not (argc in [1,2]) then
   begin
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
     Exit;
   end;
 
-  ctx^^.ToVariant(argv^[0], vbw);
+  ctx^.ToVariant(argv^[0], vbw);
 
   if not varType(vbw) = varDecimal then
   begin
@@ -205,11 +211,11 @@ begin
 
   if argc = 2 then
   begin
-    ctx^^.ToVariant(argv^[1], vbf);
+    ctx^.ToVariant(argv^[1], vbf);
     if not VarType(vbf) = varInteger then
     begin
       ExtError(sdsAuto, 'Badge font size must be an integer!');
-      Result := JS_FALSE;
+      res^ := JS_FALSE;
       exit;
     end;
     badge_font := vbf;
@@ -217,46 +223,48 @@ begin
 end;
 
 // Set the dot size
-function JSDotSize(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSDotSize(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   vds: variant;
 begin
-  Result := JS_TRUE;
+  res^ := JS_TRUE;
   if argc <> 1 then
   begin
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
     Exit;
   end;
 
-  ctx^^.ToVariant(argv^[0], vds);
+  ctx^.ToVariant(argv^[0], vds);
 
   if not varType(vds) = varInteger then
   begin
     ExtError(sdsAuto, 'Dot size must be an integer');
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
     exit;
   end;
   dotscale := vds;
 end;
 
 // Set the dot adjustment
-function JSDotAdjust(ctx: PJSContext; this_val: JSValueRaw; argc: integer; argv: PJSValues): JSValueRaw;
+procedure JSDotAdjust(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
 var
   vda: variant;
 begin
-  Result := JS_TRUE;
+  res^ := JS_TRUE;
   if argc <> 1 then
   begin
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
     Exit;
   end;
 
-  ctx^^.ToVariant(argv^[0], vda);
+  ctx^.ToVariant(argv^[0], vda);
 
   if not varType(vda) = varSingle then
   begin
     ExtError(sdsAuto, 'Dot size must be a floating number');
-    Result := JS_FALSE;
+    res^ := JS_FALSE;
     exit;
   end;
 

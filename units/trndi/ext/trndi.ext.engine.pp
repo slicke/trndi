@@ -1634,18 +1634,18 @@ begin
   if ctx = nil then Exit;
 
   // Trndi.alert/.confirm/.prompt/.select/.log and the bare alert() global → UI group.
-  addClassFunctionIf(epUI, 'alert',   ExtFunction(@JSDoAlert), 1);
-  addClassFunctionIf(epUI, 'confirm', ExtFunction(@JSDoYesNo), 1);
-  addClassFunctionIf(epUI, 'prompt',  ExtFunction(@JSInput),   4);
-  addClassFunctionIf(epUI, 'select',  ExtFunction(@JSCombo),  -1);
-  addClassFunctionIf(epUI, 'log',     ExtFunction(@JSDoLog),   1);
-  addFunctionIf     (epUI, 'alert',   ExtFunction(@JSDoAlert), 1);
+  addClassFunctionIf(epUI, 'alert',   @JSDoAlert, 1);
+  addClassFunctionIf(epUI, 'confirm', @JSDoYesNo, 1);
+  addClassFunctionIf(epUI, 'prompt',  @JSInput,   4);
+  addClassFunctionIf(epUI, 'select',  @JSCombo,  -1);
+  addClassFunctionIf(epUI, 'log',     @JSDoLog,   1);
+  addFunctionIf     (epUI, 'alert',   @JSDoAlert, 1);
 
   // Timer family → timers group (baseline, always granted today).
-  addFunctionIf(epTimers, 'setTimeout',    ExtFunction(@JSSetTimeout),  2);
-  addFunctionIf(epTimers, 'setInterval',   ExtFunction(@JSSetInterval), 2);
-  addFunctionIf(epTimers, 'clearTimeout',  ExtFunction(@JSClearTimer),  1);
-  addFunctionIf(epTimers, 'clearInterval', ExtFunction(@JSClearTimer),  1);
+  addFunctionIf(epTimers, 'setTimeout',    @JSSetTimeout,  2);
+  addFunctionIf(epTimers, 'setInterval',   @JSSetInterval, 2);
+  addFunctionIf(epTimers, 'clearTimeout',  @JSClearTimer,  1);
+  addFunctionIf(epTimers, 'clearInterval', @JSClearTimer,  1);
 
   // console.log/push/logs object — UI group. RegisterConsoleLog writes into ctx directly.
   if CanRegister(epUI) then
@@ -1653,8 +1653,8 @@ begin
 
   // Native backends for performance.now() and the crypto shim. Permission-free:
   // a monotonic clock and random bytes touch nothing user-sensitive.
-  addFunction('trndiPerfNow',   ExtFunction(@JSPerfNow),   0);
-  addFunction('trndiRandomHex', ExtFunction(@JSRandomHex), 1);
+  addFunction('trndiPerfNow',   @JSPerfNow,   0);
+  addFunction('trndiRandomHex', @JSRandomHex, 1);
 
   // Permission-free polyfills for every context: ES library methods,
   // atob/btoa/queueMicrotask, URL/URLSearchParams/TextEncoder/TextDecoder,
