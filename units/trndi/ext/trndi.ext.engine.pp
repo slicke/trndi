@@ -1964,9 +1964,14 @@ begin
   ctx := CurrentRegistrationContext;
   if ctx = nil then Exit;
   GlobalObj := JS_GetGlobalObject(ctx);
-  JSObject := JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, GlobalObj, pansichar(Name), JSObject);
-  // Note: GlobalObj/JSObject lifetime managed by QuickJS; avoid freeing raw values improperly
+  try
+    // JS_SetPropertyStr consumes JSObject (on failure too), so that one is not
+    // ours to free - but the global object is a fresh reference and is.
+    JSObject := JS_NewObject(ctx);
+    JS_SetPropertyStr(ctx, GlobalObj, pansichar(Name), JSObject);
+  finally
+    JS_FreeValue(ctx, GlobalObj);
+  end;
 end;
 
 {** Set a global JS string variable in the current registration context. }
@@ -1979,8 +1984,13 @@ begin
   ctx := CurrentRegistrationContext;
   if ctx = nil then Exit;
   GlobalObj := JS_GetGlobalObject(ctx);
-  JValue := JS_NewString(ctx, pansichar(Value));
-  JS_SetPropertyStr(ctx, GlobalObj, pansichar(VarName), JValue);
+  try
+    // JValue is consumed by JS_SetPropertyStr; GlobalObj is ours to release.
+    JValue := JS_NewString(ctx, pansichar(Value));
+    JS_SetPropertyStr(ctx, GlobalObj, pansichar(VarName), JValue);
+  finally
+    JS_FreeValue(ctx, GlobalObj);
+  end;
 end;
 
 {** Set a global JS int64 variable in the current registration context. }
@@ -1993,8 +2003,13 @@ begin
   ctx := CurrentRegistrationContext;
   if ctx = nil then Exit;
   GlobalObj := JS_GetGlobalObject(ctx);
-  JValue := JS_NewBigInt64(ctx, Value);
-  JS_SetPropertyStr(ctx, GlobalObj, pansichar(VarName), JValue);
+  try
+    // JValue is consumed by JS_SetPropertyStr; GlobalObj is ours to release.
+    JValue := JS_NewBigInt64(ctx, Value);
+    JS_SetPropertyStr(ctx, GlobalObj, pansichar(VarName), JValue);
+  finally
+    JS_FreeValue(ctx, GlobalObj);
+  end;
 end;
 
 {******************************************************************************
@@ -3071,9 +3086,19 @@ var
   Func: JSValue;
 begin
   if ctx = nil then Exit(false);
+  // GetValue hands back an owned reference on success; this runs once per
+  // extension per broadcast, so dropping it leaked the function object (and
+  // every object it closes over) on every glucose update.
   if not ctx^.GetValue(pchar(FuncName), func) then
     Exit(false);
-  Result := func.IsObject;
+  try
+    // IsFunction, not IsObject: the callers all require a callable and a
+    // non-callable global of the same name would otherwise report true here
+    // and then be silently skipped at the call itself.
+    Result := JS_IsFunction(ctx, func);
+  finally
+    JS_FreeValue(ctx, func);
+  end;
 end;
 
 {** Determine whether a global function exists and is callable.

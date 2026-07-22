@@ -82,6 +82,7 @@ type
     procedure TestUtf8RoundTrip;
     procedure TestBigIntToInt64;
     procedure TestBigIntToVariant;
+    procedure TestGetValueReferenceIsOwned;
     procedure TestPromiseJobsRun;
   end;
 
@@ -500,6 +501,44 @@ begin
   finally
     JS_FreeValue(FContext, v);
   end;
+end;
+
+procedure TQuickJSBindingTests.TestGetValueReferenceIsOwned;
+
+  { Plant a global function and a WeakRef to it, run probe, then drop the
+    global and collect. The WeakRef can still see the function only if some
+    reference is outstanding - which is exactly what forgetting to free a
+    GetValue result looks like from the JS side. }
+  function OutlivesGC(freeIt: boolean): boolean;
+  var
+    f: JSValue;
+    i: integer;
+  begin
+    EvalToString('globalThis.probeFn = function probeFn() {};' +
+      'globalThis.probeRef = new WeakRef(globalThis.probeFn); "ok"');
+
+    for i := 1 to 20 do
+      if FContext^.GetValue('probeFn', f) and freeIt then
+        JS_FreeValue(FContext, f);
+
+    EvalToString('delete globalThis.probeFn; "ok"');
+    // Twice: the first pass can leave cycle members for the second.
+    JS_RunGC(FRuntime);
+    JS_RunGC(FRuntime);
+    Result := EvalToString('String(globalThis.probeRef.deref() !== undefined)') = 'true';
+  end;
+
+begin
+  // GetValue hands back an owned reference. Nothing in the type system says so,
+  // and the leak it causes is invisible until an extension has been broadcast
+  // to a few thousand times - so pin the contract here.
+  if EvalToString('typeof WeakRef') <> 'function' then
+    Ignore('this QuickJS build has no WeakRef; ownership is untestable from JS');
+
+  AssertTrue('dropping the GetValue result should keep the function alive ' +
+    '(if this fails the test can no longer detect a leak)', OutlivesGC(false));
+  AssertFalse('a freed GetValue result should not keep the function alive',
+    OutlivesGC(true));
 end;
 
 procedure TQuickJSBindingTests.TestPromiseJobsRun;
