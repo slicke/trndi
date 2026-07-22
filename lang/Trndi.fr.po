@@ -1,0 +1,3578 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.9\n"
+
+#: slicke.ux.alert.dlgerr
+msgid "An error occurred while creating a message dialog"
+msgstr "Une erreur s'est produite lors de la création d'une boîte de dialogue"
+
+#: slicke.ux.alert.serr
+msgid "Script execution failed"
+msgstr "Échec de l'exécution du script"
+
+#: slicke.ux.alert.sexterr
+msgid "Error occurred in extension"
+msgstr "Une erreur s'est produite dans l'extension"
+
+#: slicke.ux.alert.sexttitle
+msgid "Extension error"
+msgstr "Erreur d'extension"
+
+#: slicke.ux.alert.skey
+msgid "Key"
+msgstr "Touche"
+
+#: slicke.ux.alert.smbselect
+msgid "Select"
+msgstr "Sélectionner"
+
+#: slicke.ux.alert.smbuxabort
+msgid "Abort"
+msgstr "Abandonner"
+
+#: slicke.ux.alert.smbSlickeAgree
+msgid "Agree"
+msgstr "Accepter"
+
+#: slicke.ux.alert.smbuxall
+msgctxt "slicke.ux.alert.smbuxall"
+msgid "All"
+msgstr "Tout"
+
+#: slicke.ux.alert.smbuxcancel
+msgid "Cancel"
+msgstr "Annuler"
+
+#: slicke.ux.alert.smbuxclose
+msgctxt "slicke.ux.alert.smbuxclose"
+msgid "Close"
+msgstr "Fermer"
+
+#: slicke.ux.alert.smbSlickeDefault
+msgctxt "slicke.ux.alert.smbSlickeDefault"
+msgid "Default"
+msgstr "Par défaut"
+
+#: slicke.ux.alert.smbuxhelp
+msgctxt "slicke.ux.alert.smbuxhelp"
+msgid "Help"
+msgstr "Aide"
+
+#: slicke.ux.alert.smbuxignore
+msgid "Ignore"
+msgstr "Ignorer"
+
+#: slicke.ux.alert.smbSlickeMinimize
+msgid "Minimize"
+msgstr "Réduire"
+
+#: slicke.ux.alert.smbuxno
+msgid "No"
+msgstr "Non"
+
+#: slicke.ux.alert.smbuxnotoall
+msgid "No To All"
+msgstr "Non à tout"
+
+#: slicke.ux.alert.smbuxok
+msgctxt "slicke.ux.alert.smbuxok"
+msgid "OK"
+msgstr "OK"
+
+#: slicke.ux.alert.smbSlickeOpenFile
+msgid "Open File"
+msgstr "Ouvrir un fichier"
+
+#: slicke.ux.alert.smbSlickeRead
+msgid "Read..."
+msgstr "Lire..."
+
+#: slicke.ux.alert.smbuxretry
+msgid "Retry"
+msgstr "Réessayer"
+
+#: slicke.ux.alert.smbSlickeSnooze
+msgid "Snooze"
+msgstr "Répéter"
+
+#: slicke.ux.alert.smbuxyestoall
+msgid "Yes To All"
+msgstr "Oui à tout"
+
+#: slicke.ux.alert.smbyes
+msgid "Yes"
+msgstr "Oui"
+
+#: slicke.ux.alert.smsgtitle
+msgid "Message"
+msgstr "Message"
+
+#: slicke.ux.alert.ssucctitle
+msgid "Information"
+msgstr "Information"
+
+#: slicke.ux.alert.surl
+msgid "Leave the app and open your browser? The link may not be secure!"
+msgstr "Quitter l'application et ouvrir votre navigateur ? Le lien pourrait ne pas être sécurisé !"
+
+#: slicke.ux.alert.surltitle
+msgid "Open external link?"
+msgstr "Ouvrir le lien externe ?"
+
+#: slicke.ux.alert.svalue
+msgid "Value"
+msgstr "Valeur"
+
+#: tfbg.bmenupanelclose.caption
+msgctxt "tfbg.bmenupanelclose.caption"
+msgid "✖ Close"
+msgstr "✖ Fermer"
+
+#: tfbg.bsettings.caption
+msgctxt "tfbg.bsettings.caption"
+msgid "Settings"
+msgstr "Paramètres"
+
+#: tfbg.btouchfull.caption
+msgid "⇱ Full screen"
+msgstr "⇱ Plein écran"
+
+#: tfbg.btouchmenu.caption
+msgid "☰ Menu"
+msgstr "☰ Menu"
+
+#: tfbg.btouchsettings.caption
+msgctxt "tfbg.btouchsettings.caption"
+msgid "⚙ Settings"
+msgstr "⚙ Paramètres"
+
+#: tfbg.lmissing.caption
+msgid "No recent readings!"
+msgstr "Aucune lecture récente !"
+
+#: tfbg.lpredict.caption
+msgctxt "tfbg.lpredict.caption"
+msgid "Predictions"
+msgstr "Prédictions"
+
+#: tfbg.ltir.caption
+msgid "Time In Range"
+msgstr "Temps dans la cible"
+
+#: tfbg.lval.caption
+msgctxt "tfbg.lval.caption"
+msgid "Setup"
+msgstr "Configuration"
+
+#: tfbg.mi24h.caption
+msgid "Show last-day readings"
+msgstr "Afficher les lectures du dernier jour"
+
+#: tfbg.miadotadjust.caption
+msgid "Adjust Dot Positions"
+msgstr "Ajuster la position des points"
+
+#: tfbg.miadotcount.caption
+msgctxt "tfbg.miadotcount.caption"
+msgid "Set Dot Count"
+msgstr "Définir le nombre de points"
+
+#: tfbg.miadots.caption
+msgid "Dot stats"
+msgstr "Statistiques des points"
+
+#: tfbg.miadvanced.caption
+msgid "> Service Menu"
+msgstr "> Menu de service"
+
+#: tfbg.miasysteminfo.caption
+msgid "System Info"
+msgstr "Informations système"
+
+#: tfbg.miatouch.caption
+msgid "Force Touchscreen"
+msgstr "Forcer l'écran tactile"
+
+#: tfbg.miatouchauto.caption
+msgid "Auto"
+msgstr "Auto"
+
+#: tfbg.miatouchno.caption
+msgid "Force No"
+msgstr "Forcer non"
+
+#: tfbg.miatouchyes.caption
+msgid "Force Yes"
+msgstr "Forcer oui"
+
+#: tfbg.mibasalrate.caption
+msgid "Current Basal"
+msgstr "Débit basal actuel"
+
+#: tfbg.midebugbackend.caption
+msgid "Announce raw backend data"
+msgstr "Annoncer les données brutes du backend"
+
+#: tfbg.midns.caption
+msgid "Run DNS Lookup Test"
+msgstr "Exécuter un test de résolution DNS"
+
+#: tfbg.midotsinview.caption
+msgid "Are dots in view?"
+msgstr "Les points sont-ils visibles ?"
+
+#: tfbg.midotval.caption
+msgid "Reading: ?"
+msgstr "Lecture : ?"
+
+#: tfbg.miexit.caption
+msgid "Exit Trndi"
+msgstr "Quitter Trndi"
+
+#: tfbg.miextlog.caption
+msgid "Extensions Log"
+msgstr "Journal des extensions"
+
+#: tfbg.mifloaton.caption
+msgid "Show Floating Window"
+msgstr "Afficher la fenêtre flottante"
+
+#: tfbg.miforce.caption
+msgid "Force Update"
+msgstr "Forcer la mise à jour"
+
+#: tfbg.mifullscreen.caption
+msgid "Toggle Fullscreen"
+msgstr "Basculer en plein écran"
+
+#: tfbg.miguidelines.caption
+msgid "Show Guide Lines"
+msgstr "Afficher les lignes de repère"
+
+#: tfbg.mihistory.caption
+msgid "Show history"
+msgstr "Afficher l'historique"
+
+#: tfbg.miinfo.caption
+msgid "Limits"
+msgstr "Limites"
+
+#: tfbg.milimitexplain.caption
+msgid "Explain"
+msgstr "Expliquer"
+
+#: tfbg.mipredict.caption
+msgid "Prediction..."
+msgstr "Prédiction..."
+
+#: tfbg.mipref.caption
+msgid "Views"
+msgstr "Vues"
+
+#: tfbg.mireadingssince.caption
+msgid "Show readings since.."
+msgstr "Afficher les lectures depuis..."
+
+#: tfbg.mirefresh.caption
+msgid "Refresh in:"
+msgstr "Actualisation dans :"
+
+#: tfbg.misettings.caption
+msgid "&Settings"
+msgstr "&Paramètres"
+
+#: tfbg.pnoffrange.caption
+msgid "- Off Range -"
+msgstr "- Hors cible -"
+
+#: tfbg.pnoffreading.caption
+msgid "Off Reading"
+msgstr "Pas de lecture"
+
+#: tfbg.pnwarnlast.caption
+msgid "Last recieved reading:"
+msgstr "Dernière lecture reçue :"
+
+#: tfconf.badd.caption
+msgid "+ Add"
+msgstr "+ Ajouter"
+
+#: tfconf.bcommon.caption
+msgid "Go to Quick Settings"
+msgstr "Aller aux paramètres rapides"
+
+#: tfconf.bexportsettings.caption
+msgctxt "tfconf.bexportsettings.caption"
+msgid "Export Settings"
+msgstr "Exporter les paramètres"
+
+#: tfconf.bextopen.caption
+msgid "Show Folder"
+msgstr "Afficher le dossier"
+
+#: tfconf.bextreload.caption
+msgid "Reload"
+msgstr "Recharger"
+
+#: tfconf.bfontarrow.caption
+msgid "Arrow font..."
+msgstr "Police de la flèche..."
+
+#: tfconf.bfontreading.caption
+msgid "Reading font..."
+msgstr "Police de la lecture..."
+
+#: tfconf.bfontreset.caption
+msgctxt "tfconf.bfontreset.caption"
+msgid "Reset Fonts"
+msgstr "Réinitialiser les polices"
+
+#: tfconf.bfonttime.caption
+msgid "Time font..."
+msgstr "Police de l'heure..."
+
+#: tfconf.bimportsettings.caption
+msgctxt "tfconf.bimportsettings.caption"
+msgid "Import Settings"
+msgstr "Importer les paramètres"
+
+#: tfconf.blogin.caption
+msgctxt "tfconf.blogin.caption"
+msgid "Get CareLink token…"
+msgstr "Obtenir un jeton CareLink…"
+
+#: tfconf.bremove.caption
+msgid "- Remove"
+msgstr "- Supprimer"
+
+#: tfconf.btest.caption
+msgid "Test"
+msgstr "Test"
+
+#: tfconf.btestannounce.caption
+msgid "Test Announce"
+msgstr "Tester l'annonce"
+
+#: tfconf.btestproxy.caption
+msgid "Test proxy"
+msgstr "Tester le proxy"
+
+#: tfconf.btestspeech.caption
+msgid "Test Speech"
+msgstr "Tester la synthèse vocale"
+
+#: tfconf.btreset.caption
+msgid "Reset"
+msgstr "Réinitialiser"
+
+#: tfconf.btusersave.caption
+msgctxt "tfconf.btusersave.caption"
+msgid "Save"
+msgstr "Enregistrer"
+
+#: tfconf.button3.caption
+msgid "Check for update"
+msgstr "Vérifier les mises à jour"
+
+#: tfconf.caption
+msgctxt "tfconf.caption"
+msgid "Settings"
+msgstr "Paramètres"
+
+#: tfconf.cbalerthilo.caption
+msgid "Alert me when blood sugar is high/low"
+msgstr "M'alerter en cas de glycémie haute/basse"
+
+#: tfconf.cbalertmissing.caption
+msgid "Alert me when readings are missing / not fresh"
+msgstr "M'alerter lorsque les lectures manquent / ne sont plus récentes"
+
+#: tfconf.cbalternate.caption
+msgid "Alternate arrow and reading display"
+msgstr "Alterner l'affichage de la flèche et de la lecture"
+
+#: tfconf.cbautostart.caption
+msgid "Start with system"
+msgstr "Démarrer avec le système"
+
+#: tfconf.cbbadgetrend.caption
+msgid "Show trend arrow in taskbar/dock"
+msgstr "Afficher la flèche de tendance dans la barre des tâches/dock"
+
+#: tfconf.cbchroma.caption
+msgid "Enable Razer Chroma integration"
+msgstr "Activer l'intégration Razer Chroma"
+
+#: tfconf.cbchromahigh.text
+msgctxt "tfconf.cbchromahigh.text"
+msgid "Breath (pulse)"
+msgstr "Respiration (pulsation)"
+
+#: tfconf.cbchromalow.text
+msgctxt "tfconf.cbchromalow.text"
+msgid "Breath (pulse)"
+msgstr "Respiration (pulsation)"
+
+#: tfconf.cbchromanormal.caption
+msgid "Make units green when reading is normal *"
+msgstr "Faire passer les unités au vert quand la lecture est normale *"
+
+#: tfconf.cbclock.caption
+msgid "Show clock for 5 sec every 20 sec"
+msgstr "Afficher l'horloge 5 s toutes les 20 s"
+
+#: tfconf.cbconnectivitybutton.caption
+msgid "Enable connectivity button"
+msgstr "Activer le bouton de connectivité"
+
+#: tfconf.cbcust.caption
+msgctxt "tfconf.cbcust.caption"
+msgid "Use custom values"
+msgstr "Utiliser des valeurs personnalisées"
+
+#: tfconf.cbcust1.caption
+msgctxt "tfconf.cbcust1.caption"
+msgid "Use custom values"
+msgstr "Utiliser des valeurs personnalisées"
+
+#: tfconf.cbcustrange.caption
+msgctxt "tfconf.cbcustrange.caption"
+msgid "Use custom values"
+msgstr "Utiliser des valeurs personnalisées"
+
+#: tfconf.cbdotfresh.caption
+msgid "Highlight the newest dot while the reading is fresh"
+msgstr "Mettre en évidence le point le plus récent tant que la lecture est fraîche"
+
+#: tfconf.cbflash.caption
+msgid "Badge Flashing"
+msgstr "Clignotement du badge"
+
+#: tfconf.cbflashhi.caption
+msgid "Flash on high blood sugar"
+msgstr "Clignoter en cas de glycémie élevée"
+
+#: tfconf.cbflashlow.caption
+msgid "Flash on low blood sugar"
+msgstr "Clignoter en cas de glycémie basse"
+
+#: tfconf.cbflashperfect.caption
+msgid "Flash on perfect reading (5.5mmol/L / 100mg/dL)"
+msgstr "Clignoter en cas de lecture parfaite (5,5 mmol/L / 100 mg/dL)"
+
+#: tfconf.cbhcontrast.caption
+msgid "High Contrast"
+msgstr "Contraste élevé"
+
+#: tfconf.cbmediadisable.caption
+msgid "Disable the entire media system"
+msgstr "Désactiver tout le système multimédia"
+
+#: tfconf.cbmovediffright.caption
+msgid "Move to right"
+msgstr "Déplacer à droite"
+
+#: tfconf.cbmultitouch.caption
+msgid "Multi-touch"
+msgstr "Multi-touch"
+
+#: tfconf.cbmusicpause.caption
+msgid "Pause music when high/low"
+msgstr "Mettre la musique en pause en cas de glycémie haute/basse"
+
+#: tfconf.cbnoborders.caption
+msgid "Hide window borders"
+msgstr "Masquer les bordures de la fenêtre"
+
+#: tfconf.cbnotice.caption
+msgid "System notifications"
+msgstr "Notifications système"
+
+#: tfconf.cboffbar.caption
+msgid "Show a sidebar when value is not in range"
+msgstr "Afficher une barre latérale lorsque la valeur est hors cible"
+
+#: tfconf.cbontop.caption
+msgid "Keep window always on top"
+msgstr "Garder la fenêtre toujours au premier plan"
+
+#: tfconf.cbpainthilo.caption
+msgid "Color the graph's background with your range"
+msgstr "Colorer l'arrière-plan du graphique selon votre plage"
+
+#: tfconf.cbpainthilorange.caption
+msgid "Color the graph's background with your custom range"
+msgstr "Colorer l'arrière-plan du graphique selon votre plage personnalisée"
+
+#: tfconf.cbpaintlines.caption
+msgid "Show threshold lines"
+msgstr "Afficher les lignes de seuil"
+
+#: tfconf.cbpredictdots.caption
+msgid "Show predictions as dots on the trend (replaces the prediction text)"
+msgstr "Afficher les prédictions sous forme de points sur la tendance (remplace le texte de prédiction)"
+
+#: tfconf.cbpredictions.caption
+msgid "Show glucose predictions"
+msgstr "Afficher les prédictions de glycémie"
+
+#: tfconf.cbpredictshort.caption
+msgid "Show only trend arrows / 1 reading (short mode)"
+msgstr "Afficher uniquement les flèches de tendance / 1 lecture (mode court)"
+
+#: tfconf.cbpredictshortfullarrows.caption
+msgid "Use full arrow set (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
+msgstr "Utiliser le jeu complet de flèches (↑↑, ↑, ↗, →, ↘, ↓, ↓↓)"
+
+#: tfconf.cbpredictshortminutes.text
+msgid "10 minutes"
+msgstr "10 minutes"
+
+#: tfconf.cbpredictshortsize.text
+msgid "small"
+msgstr "petit"
+
+#: tfconf.cbprivacy.caption
+msgid "Privacy Mode (Hide glucose value)"
+msgstr "Mode privé (masquer la valeur de glycémie)"
+
+#: tfconf.cbprogress.caption
+msgid "Display progress to next update on the left"
+msgstr "Afficher la progression vers la prochaine mise à jour à gauche"
+
+#: tfconf.cbrangecolor.caption
+msgid "Use range color for window background"
+msgstr "Utiliser la couleur de la plage pour l'arrière-plan de la fenêtre"
+
+#: tfconf.cbrotatingarrow.caption
+msgid "Rotate trend arrow by rate of change"
+msgstr "Faire pivoter la flèche de tendance selon la vitesse de variation"
+
+#: tfconf.cbshowmean.caption
+msgid "Show mean blood sugar reading next to TIR"
+msgstr "Afficher la glycémie moyenne à côté du TIR"
+
+#: tfconf.cbshowsensorexpiry.caption
+msgid "Show sensor expiry in top-center badge"
+msgstr "Afficher l'expiration du capteur dans le badge supérieur central"
+
+#: tfconf.cbsize.caption
+msgid "Remember window size"
+msgstr "Mémoriser la taille de la fenêtre"
+
+#: tfconf.cbsys.text
+msgid "NightScout"
+msgstr "NightScout"
+
+#: tfconf.cbtimestamp.caption
+msgid "Show reading time (instead of minutes ago)"
+msgstr "Afficher l'heure de la lecture (au lieu du nombre de minutes écoulées)"
+
+#: tfconf.cbtir.caption
+msgid "Include full high/low in time-in-range, not just the custom range"
+msgstr "Inclure les limites haute/basse complètes dans le temps dans la cible, pas seulement la plage personnalisée"
+
+#: tfconf.cbtircolor.caption
+msgctxt "tfconf.cbtircolor.caption"
+msgid "Use this color:"
+msgstr "Utiliser cette couleur :"
+
+#: tfconf.cbtircolorbg.caption
+msgctxt "tfconf.cbtircolorbg.caption"
+msgid "Adjust color based on background"
+msgstr "Ajuster la couleur selon l'arrière-plan"
+
+#: tfconf.cbtircolorbgcustom.caption
+msgctxt "tfconf.cbtircolorbgcustom.caption"
+msgid "Adjust color based on background"
+msgstr "Ajuster la couleur selon l'arrière-plan"
+
+#: tfconf.cbtircolorcustom.caption
+msgctxt "tfconf.cbtircolorcustom.caption"
+msgid "Use this color:"
+msgstr "Utiliser cette couleur :"
+
+#: tfconf.cbtiricon.caption
+msgid "Show a smiley instead of percentage"
+msgstr "Afficher un smiley au lieu d'un pourcentage"
+
+#: tfconf.cbtitlecolor.caption
+msgid "Color the title bar with glucose color (Windows only)"
+msgstr "Colorer la barre de titre selon la glycémie (Windows uniquement)"
+
+#: tfconf.cbtouch.caption
+msgid "Touch screen"
+msgstr "Écran tactile"
+
+#: tfconf.cbtts.caption
+msgid "Enable Text-To-Speech"
+msgstr "Activer la synthèse vocale"
+
+#: tfconf.cbuser.caption
+msgid "Account color"
+msgstr "Couleur du compte"
+
+#: tfconf.cbusercolor.caption
+msgid "Display users' colors on the main and floating windows"
+msgstr "Afficher les couleurs des utilisateurs sur la fenêtre principale et la fenêtre flottante"
+
+#: tfconf.cbwarnlohi.caption
+msgid "Warn when going high or low"
+msgstr "Avertir en cas de tendance haute ou basse"
+
+#: tfconf.cbwebapi.caption
+msgid "Enable Web API"
+msgstr "Activer l'API Web"
+
+#: tfconf.cgnotifications.caption
+msgctxt "tfconf.cgnotifications.caption"
+msgid "Notifications"
+msgstr "Notifications"
+
+#: tfconf.cl_hi_bg.caption
+msgctxt "tfconf.cl_hi_bg.caption"
+msgid "High"
+msgstr "Haute"
+
+#: tfconf.cl_hi_bg_cust.caption
+msgid "High Background"
+msgstr "Arrière-plan haut"
+
+#: tfconf.cl_hi_txt.caption
+msgctxt "tfconf.cl_hi_txt.caption"
+msgid "High"
+msgstr "Haute"
+
+#: tfconf.cl_hi_txt_cust.caption
+msgid "High Text"
+msgstr "Texte haut"
+
+#: tfconf.cl_lo_bg.caption
+msgctxt "tfconf.cl_lo_bg.caption"
+msgid "Low"
+msgstr "Basse"
+
+#: tfconf.cl_lo_bg_cust.caption
+msgid "Low Background"
+msgstr "Arrière-plan bas"
+
+#: tfconf.cl_lo_txt.caption
+msgctxt "tfconf.cl_lo_txt.caption"
+msgid "Low"
+msgstr "Basse"
+
+#: tfconf.cl_lo_txt_cust.caption
+msgid "Low Text"
+msgstr "Texte bas"
+
+#: tfconf.cl_ok_bg.caption
+msgctxt "tfconf.cl_ok_bg.caption"
+msgid "OK"
+msgstr "OK"
+
+#: tfconf.cl_ok_txt.caption
+msgctxt "tfconf.cl_ok_txt.caption"
+msgid "OK"
+msgstr "OK"
+
+#: tfconf.edproxyport.text
+msgid "8080"
+msgstr "8080"
+
+#: tfconf.gbalertbehavior.caption
+msgid "Alert behavior"
+msgstr "Comportement des alertes"
+
+#: tfconf.gbdisplayprefs.caption
+msgid "Display Preferences"
+msgstr "Préférences d'affichage"
+
+#: tfconf.gbmedia.caption
+msgctxt "tfconf.gbmedia.caption"
+msgid "Play Media"
+msgstr "Lire un média"
+
+#: tfconf.gbmulti.caption
+msgid "Account Settings"
+msgstr "Paramètres du compte"
+
+#: tfconf.gbnetwork.caption
+msgid "Network"
+msgstr "Réseau"
+
+#: tfconf.gboverride.caption
+msgctxt "tfconf.gboverride.caption"
+msgid "Override High / Low limits"
+msgstr "Remplacer les limites haute/basse"
+
+#: tfconf.gboverride1.caption
+msgctxt "tfconf.gboverride1.caption"
+msgid "Override High / Low limits"
+msgstr "Remplacer les limites haute/basse"
+
+#: tfconf.gbsettings.caption
+msgid "Settings Management"
+msgstr "Gestion des paramètres"
+
+#: tfconf.gburl.caption
+msgctxt "tfconf.gburl.caption"
+msgid "Use URL"
+msgstr "Utiliser une URL"
+
+#: tfconf.groupbox1.caption
+msgid "System Features"
+msgstr "Fonctionnalités système"
+
+#: tfconf.groupbox10.caption
+msgid "Layout"
+msgstr "Disposition"
+
+#: tfconf.groupbox11.caption
+msgctxt "tfconf.groupbox11.caption"
+msgid "General"
+msgstr "Général"
+
+#: tfconf.groupbox12.caption
+msgctxt "tfconf.groupbox12.caption"
+msgid "Advanced"
+msgstr "Avancé"
+
+#: tfconf.groupbox13.caption
+msgid "Window"
+msgstr "Fenêtre"
+
+#: tfconf.groupbox2.caption
+msgid "Available Extensions"
+msgstr "Extensions disponibles"
+
+#: tfconf.groupbox3.caption
+msgid "Extension Info"
+msgstr "Informations sur l'extension"
+
+#: tfconf.groupbox4.caption
+msgid "All accounts"
+msgstr "Tous les comptes"
+
+#: tfconf.groupbox5.caption
+msgid "Extra Settings"
+msgstr "Paramètres supplémentaires"
+
+#: tfconf.groupbox6.caption
+msgid "In-range coloring"
+msgstr "Coloration dans la cible"
+
+#: tfconf.groupbox7.caption
+msgid "Override Custom Range"
+msgstr "Remplacer la plage personnalisée"
+
+#: tfconf.groupbox8.caption
+msgctxt "tfconf.groupbox8.caption"
+msgid "Predictions"
+msgstr "Prédictions"
+
+#: tfconf.groupbox9.caption
+msgctxt "tfconf.groupbox9.caption"
+msgid "Display"
+msgstr "Affichage"
+
+#: tfconf.label1.caption
+msgctxt "tfconf.label1.caption"
+msgid "Readings are outdated after (minutes):"
+msgstr "Les lectures sont considérées comme obsolètes après (minutes) :"
+
+#: tfconf.label10.caption
+msgid "High (eg https://open.spotify.com/... or spotify:track:...)"
+msgstr "Haut (ex. https://open.spotify.com/... ou spotify:track:...)"
+
+#: tfconf.label11.caption
+msgid "Low (eg https://open.spotify.com/... or spotify:track:...)"
+msgstr "Bas (ex. https://open.spotify.com/... ou spotify:track:...)"
+
+#: tfconf.label12.caption
+msgctxt "tfconf.label12.caption"
+msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
+msgstr "Lecture parfaite (5,5 mmol/L ou 100 mg/dL)"
+
+#: tfconf.label13.caption
+msgctxt "tfconf.label13.caption"
+msgid "Decimal separator:"
+msgstr "Séparateur décimal :"
+
+#: tfconf.label14.caption
+msgid "NOTE: Support depends on your data source "
+msgstr "NOTE : la prise en charge dépend de votre source de données "
+
+#: tfconf.label15.caption
+msgctxt "tfconf.label15.caption"
+msgid "Server Address / Dexcom Username"
+msgstr "Adresse du serveur / nom d'utilisateur Dexcom"
+
+#: tfconf.label17.caption
+msgid "These settings reside in different parts of the settings dialog, but has been collected here for your convinience!"
+msgstr "Ces paramètres se trouvent dans différentes parties de la boîte de dialogue des paramètres, mais ont été regroupés ici pour votre commodité !"
+
+#: tfconf.label18.caption
+msgid "Connection"
+msgstr "Connexion"
+
+#: tfconf.label20.caption
+msgid "The custom range is a subrange with your ideal goal."
+msgstr "La plage personnalisée est une sous-plage correspondant à votre objectif idéal."
+
+#: tfconf.label21.caption
+msgid "NOTE: Colors will be blended with Trndi's background"
+msgstr "NOTE : les couleurs seront mélangées avec l'arrière-plan de Trndi"
+
+#: tfconf.label22.caption
+msgid "Change Trndi's default background colors, depending on glucose reading"
+msgstr "Modifier les couleurs d'arrière-plan par défaut de Trndi selon la lecture de glycémie"
+
+#: tfconf.label23.caption
+msgid "Change Trndi's default text colors, depending on glucose reading"
+msgstr "Modifier les couleurs de texte par défaut de Trndi selon la lecture de glycémie"
+
+#: tfconf.label24.caption
+msgid "Change Trndi's default background and colors, when in the custom range"
+msgstr "Modifier l'arrière-plan et les couleurs par défaut de Trndi lorsque la valeur est dans la plage personnalisée"
+
+#: tfconf.label25.caption
+msgid "Maximum delta slots"
+msgstr "Nombre maximal d'intervalles delta"
+
+#: tfconf.label26.caption
+msgid "High (eg https://url.local/hi)"
+msgstr "Haut (ex. https://url.local/hi)"
+
+#: tfconf.label27.caption
+msgid "Low (eg https://url.local/lo)"
+msgstr "Bas (ex. https://url.local/lo)"
+
+#: tfconf.label28.caption
+msgctxt "tfconf.label28.caption"
+msgid "Perfect Reading (5.5mmol/L or 100 mg/dL)"
+msgstr "Lecture parfaite (5,5 mmol/L ou 100 mg/dL)"
+
+#: tfconf.label29.caption
+msgid "Trndi can control the color of Razer keyboards, mouses and other devices"
+msgstr "Trndi peut contrôler la couleur des claviers, souris et autres périphériques Razer"
+
+#: tfconf.label3.caption
+msgid "Nickname:"
+msgstr "Surnom :"
+
+#: tfconf.label30.caption
+msgid "Trndi will control these devices:"
+msgstr "Trndi contrôlera ces périphériques :"
+
+#: tfconf.label31.caption
+msgid "Units will pulse in red on high and blue on low"
+msgstr "Les unités pulseront en rouge en cas de valeur haute et en bleu en cas de valeur basse"
+
+#: tfconf.label32.caption
+msgid "Razer Synapse required on Windows. OpenRazer on Linux. No support for other platforms at this time."
+msgstr "Razer Synapse requis sur Windows. OpenRazer sur Linux. Aucune prise en charge des autres plateformes pour le moment."
+
+#: tfconf.label33.caption
+msgctxt "tfconf.label33.caption"
+msgid "Decimal separator:"
+msgstr "Séparateur décimal :"
+
+#: tfconf.label34.caption
+msgctxt "tfconf.label34.caption"
+msgid "Readings are outdated after (minutes):"
+msgstr "Les lectures sont considérées comme obsolètes après (minutes) :"
+
+#: tfconf.label35.caption
+msgid "You can press \"s\" at any time to have the current reading read out loud"
+msgstr "Vous pouvez appuyer sur « s » à tout moment pour faire lire la lecture actuelle à voix haute"
+
+#: tfconf.label36.caption
+msgid "Voice Type:"
+msgstr "Type de voix :"
+
+#: tfconf.label37.caption
+msgid "Rate:"
+msgstr "Vitesse :"
+
+#: tfconf.label38.caption
+msgid "High contrast disables some of Trndis Time-in-Range coloring"
+msgstr "Le contraste élevé désactive une partie de la coloration du temps dans la cible de Trndi"
+
+#: tfconf.label39.caption
+msgid "Diff scale:"
+msgstr "Échelle de différence :"
+
+#: tfconf.label4.caption
+msgid "Window start-up position"
+msgstr "Position de démarrage de la fenêtre"
+
+#: tfconf.label40.caption
+msgid "Diff position:"
+msgstr "Position de la différence :"
+
+#: tfconf.label41.caption
+msgid "Prediction scale:"
+msgstr "Échelle de prédiction :"
+
+#: tfconf.label42.caption
+msgid "* When Trndi is in focus, units may turn off coloring if this is disabled. This is a Chroma limitation."
+msgstr "* Lorsque Trndi est au premier plan, les unités peuvent désactiver la coloration si cette option est décochée. Il s'agit d'une limitation de Chroma."
+
+#: tfconf.label5.caption
+msgid "Black = transparent"
+msgstr "Noir = transparent"
+
+#: tfconf.label6.caption
+msgid "Language"
+msgstr "Langue"
+
+#: tfconf.label7.caption
+msgid "Time-in-range (TIR) is the amount of time you are within your high/low goal."
+msgstr "Le temps dans la cible (TIR) est la durée pendant laquelle vous restez dans votre objectif haut/bas."
+
+#: tfconf.label9.caption
+msgid "Trndi can trigger Spotify or Deezer to play a song when low/high"
+msgstr "Trndi peut déclencher la lecture d'un morceau sur Spotify ou Deezer en cas de valeur basse/haute"
+
+#: tfconf.labelproxyhost.caption
+msgid "Proxy Host:"
+msgstr "Hôte du proxy :"
+
+#: tfconf.labelproxypass.caption
+msgid "Proxy Pass:"
+msgstr "Mot de passe du proxy :"
+
+#: tfconf.labelproxyport.caption
+msgid "Proxy Port:"
+msgstr "Port du proxy :"
+
+#: tfconf.labelproxyuser.caption
+msgid "Proxy User:"
+msgstr "Utilisateur du proxy :"
+
+#: tfconf.lack.caption
+msgid "Libraries"
+msgstr "Bibliothèques"
+
+#: tfconf.lago.caption
+msgid "100 min"
+msgstr "100 min"
+
+#: tfconf.lalertdurrow.caption
+msgid "Must persist (minutes)"
+msgstr "Doit persister (minutes)"
+
+#: tfconf.lalerthicol.caption
+msgctxt "tfconf.lalerthicol.caption"
+msgid "High"
+msgstr "Haute"
+
+#: tfconf.lalerthystrow.caption
+msgctxt "tfconf.lalerthystrow.caption"
+msgid "Clear margin (mg/dL)"
+msgstr "Marge de récupération (mg/dL)"
+
+#: tfconf.lalertlocol.caption
+msgctxt "tfconf.lalertlocol.caption"
+msgid "Low"
+msgstr "Basse"
+
+#: tfconf.lalerturgcol.caption
+msgid "Urgent low"
+msgstr "Basse urgente"
+
+#: tfconf.larch.caption
+msgid "Unknown Architecture"
+msgstr "Architecture inconnue"
+
+#: tfconf.lchromahigh.caption
+msgid "On high:"
+msgstr "En cas de haut :"
+
+#: tfconf.lchromalow.caption
+msgid "On low:"
+msgstr "En cas de bas :"
+
+#: tfconf.lconfigpredict.caption
+msgid "Glucose Predictions Settings"
+msgstr "Paramètres des prédictions de glycémie"
+
+#: tfconf.ldiff.caption
+msgid "+0,0"
+msgstr "+0,0"
+
+#: tfconf.lext.caption
+msgctxt "tfconf.lext.caption"
+msgid "Plugin Folder"
+msgstr "Dossier des extensions"
+
+#: tfconf.lextcopyright.caption
+msgid "for more info"
+msgstr "pour plus d'informations"
+
+#: tfconf.lextcount.caption
+msgid "Extensions count:"
+msgstr "Nombre d'extensions :"
+
+#: tfconf.lextname.caption
+msgid "Choose an extension"
+msgstr "Choisir une extension"
+
+#: tfconf.lhiover.caption
+msgctxt "tfconf.lhiover.caption"
+msgid "High over"
+msgstr "Haut au-dessus de"
+
+#: tfconf.lhiover1.caption
+msgctxt "tfconf.lhiover1.caption"
+msgid "High over"
+msgstr "Haut au-dessus de"
+
+#: tfconf.lhiover2.caption
+msgid "Maximum minutes to count time in range on (depending on source data availability):"
+msgstr "Nombre maximal de minutes à prendre en compte pour le temps dans la cible (selon la disponibilité des données source) :"
+
+#: tfconf.lhiover3.caption
+msgctxt "tfconf.lhiover3.caption"
+msgid "High over"
+msgstr "Haut au-dessus de"
+
+#: tfconf.llicense.caption
+msgid "License"
+msgstr "Licence"
+
+#: tfconf.llounder.caption
+msgctxt "tfconf.llounder.caption"
+msgid "Low under"
+msgstr "Bas en dessous de"
+
+#: tfconf.llounder1.caption
+msgctxt "tfconf.llounder1.caption"
+msgid "Low under"
+msgstr "Bas en dessous de"
+
+#: tfconf.llounder2.caption
+msgctxt "tfconf.llounder2.caption"
+msgid "Low under"
+msgstr "Bas en dessous de"
+
+#: tfconf.los.caption
+msgid "Unknown System"
+msgstr "Système inconnu"
+
+#: tfconf.lpass.caption
+msgid "API Key / Dexcom Password"
+msgstr "Clé API / mot de passe Dexcom"
+
+#: tfconf.lpredictshortminutes.caption
+msgid "Prediction horizon:"
+msgstr "Horizon de prédiction :"
+
+#: tfconf.lpredictshortsize.caption
+msgid "Trend arrow size:"
+msgstr "Taille de la flèche de tendance :"
+
+#: tfconf.lproblematic.caption
+msgid "Compatibility mode: Your window manager does not support all features, please consider eg KDE"
+msgstr "Mode de compatibilité : votre gestionnaire de fenêtres ne prend pas en charge toutes les fonctionnalités, envisagez par exemple KDE"
+
+#: tfconf.lproxydesc.caption
+msgid ""
+"Enter a proxy server below, to have Trndi connect using it.\n"
+"Should the connection fail, Trndi will fall back to a direct connection.\n"
+"\n"
+"Proxy support is available for Windows, Linux, BSD and Haiku.\n"
+"macOS users must set the proxy settings in their System Settings.\n"
+"\n"
+"Leave empty to use a normal connection."
+msgstr ""
+"Saisissez un serveur proxy ci-dessous pour que Trndi s'y connecte.\n"
+"En cas d'échec de la connexion, Trndi reviendra à une connexion directe.\n"
+"\n"
+"La prise en charge du proxy est disponible pour Windows, Linux, BSD et Haiku.\n"
+"Les utilisateurs macOS doivent configurer le proxy dans les Réglages Système.\n"
+"\n"
+"Laissez vide pour utiliser une connexion normale."
+
+#: tfconf.lproxytitle.caption
+msgid "Proxy Settings"
+msgstr "Paramètres du proxy"
+
+#: tfconf.lsettingshelp.caption
+msgid "Export all settings to a file for backup or transfer to another device. Import to restore settings."
+msgstr "Exportez tous les paramètres dans un fichier pour la sauvegarde ou le transfert vers un autre appareil. Importez pour restaurer les paramètres."
+
+#: tfconf.ltestannounce.caption
+msgid "Test an announcement"
+msgstr "Tester une annonce"
+
+#: tfconf.lusername.caption
+msgid "User:"
+msgstr "Utilisateur :"
+
+#: tfconf.lusertrack.caption
+msgid "Add users below, if you wish to track more than one person."
+msgstr "Ajoutez des utilisateurs ci-dessous si vous souhaitez suivre plusieurs personnes."
+
+#: tfconf.lwaitsys.caption
+msgid "Please wait..."
+msgstr "Veuillez patienter..."
+
+#: tfconf.lwarnpredict.caption
+msgid "WARNING: This is a very experimental feature!. Do not depend on these readings!"
+msgstr "ATTENTION : il s'agit d'une fonctionnalité très expérimentale ! Ne vous fiez pas à ces lectures !"
+
+#: tfconf.lwidgetset.caption
+msgid "Unknown Widgetset"
+msgstr "Kit de widgets inconnu"
+
+#: tfconf.lwm.caption
+msgid "Unknown Window Manager"
+msgstr "Gestionnaire de fenêtres inconnu"
+
+#: tfconf.rbpredictshortarrowonly.caption
+msgid "Arrow only"
+msgstr "Flèche uniquement"
+
+#: tfconf.rbpredictshortshowvalue.caption
+msgid "Show time and value (e.g., ⏱10' ↗ 5.5)"
+msgstr "Afficher l'heure et la valeur (ex. ⏱10' ↗ 5.5)"
+
+#: tfconf.rbtrendwindow.caption
+msgctxt "tfconf.rbtrendwindow.caption"
+msgid "Trend window"
+msgstr "Fenêtre de tendance"
+
+#: tfconf.rbunit.caption
+msgid "Display Unit"
+msgstr "Unité d'affichage"
+
+#: tfconf.tsaccess.caption
+msgid "Accessibility"
+msgstr "Accessibilité"
+
+#: tfconf.tsadvanced.caption
+msgctxt "tfconf.tsadvanced.caption"
+msgid "Advanced"
+msgstr "Avancé"
+
+#: tfconf.tsbackgrounds.caption
+msgid "Backgrounds"
+msgstr "Arrière-plans"
+
+#: tfconf.tschroma.caption
+msgid "Razer Chroma"
+msgstr "Razer Chroma"
+
+#: tfconf.tscolors.caption
+msgid "Colors"
+msgstr "Couleurs"
+
+#: tfconf.tscommon.caption
+msgid "Quick Settings"
+msgstr "Paramètres rapides"
+
+#: tfconf.tscustom.caption
+msgid "Customization"
+msgstr "Personnalisation"
+
+#: tfconf.tscustomrange.caption
+msgid "Custom range"
+msgstr "Plage personnalisée"
+
+#: tfconf.tsdisplay.caption
+msgctxt "tfconf.tsdisplay.caption"
+msgid "Display"
+msgstr "Affichage"
+
+#: tfconf.tsext.caption
+msgid "Extensions"
+msgstr "Extensions"
+
+#: tfconf.tsgeneral.caption
+msgctxt "tfconf.tsgeneral.caption"
+msgid "General"
+msgstr "Général"
+
+#: tfconf.tsintegration.caption
+msgid "Integrations"
+msgstr "Intégrations"
+
+#: tfconf.tsmulti.caption
+msgid "Multi User"
+msgstr "Multi-utilisateur"
+
+#: tfconf.tspredictions.caption
+msgctxt "tfconf.tspredictions.caption"
+msgid "Predictions"
+msgstr "Prédictions"
+
+#: tfconf.tsproxy.caption
+msgid "Proxy"
+msgstr "Proxy"
+
+#: tfconf.tssystem.caption
+msgid "System"
+msgstr "Système"
+
+#: tfconf.tstexts.caption
+msgctxt "tfconf.tstexts.caption"
+msgid "Texts"
+msgstr "Textes"
+
+#: tfconf.tstir.caption
+msgctxt "tfconf.tstir.caption"
+msgid "Time-in-range"
+msgstr "Temps dans la cible"
+
+#: tffloat.caption
+msgid "Floating Display"
+msgstr "Affichage flottant"
+
+#: tffloat.ltime.caption
+msgid "00:00"
+msgstr "00:00"
+
+#: tffloat.lval.caption
+msgctxt "tffloat.lval.caption"
+msgid "Setup"
+msgstr "Configuration"
+
+#: tffloat.menuitem1.caption
+msgid "&Hide"
+msgstr "&Masquer"
+
+#: tffloat.mibig.caption
+msgctxt "tffloat.mibig.caption"
+msgid "Big"
+msgstr "Grand"
+
+#: tffloat.miclock.caption
+msgid "Show clock"
+msgstr "Afficher l'horloge"
+
+#: tffloat.micustomsize.caption
+msgctxt "tffloat.micustomsize.caption"
+msgid "Custom"
+msgstr "Personnalisé"
+
+#: tffloat.micustomvisible.caption
+msgctxt "tffloat.micustomvisible.caption"
+msgid "Custom"
+msgstr "Personnalisé"
+
+#: tffloat.mifontblack.caption
+msgid "Black"
+msgstr "Noir"
+
+#: tffloat.mifontcolor.caption
+msgid "Font Color"
+msgstr "Couleur de police"
+
+#: tffloat.mifontmain.caption
+msgid "Main Window Color"
+msgstr "Couleur de la fenêtre principale"
+
+#: tffloat.mifontwhite.caption
+msgid "White"
+msgstr "Blanc"
+
+#: tffloat.mimain.caption
+msgid "Show/Hide Main Window"
+msgstr "Afficher/masquer la fenêtre principale"
+
+#: tffloat.minormal.caption
+msgctxt "tffloat.minormal.caption"
+msgid "Normal"
+msgstr "Normal"
+
+#: tffloat.misize.caption
+msgid "Size"
+msgstr "Taille"
+
+#: tffloat.mismall.caption
+msgctxt "tffloat.mismall.caption"
+msgid "Small"
+msgstr "Petit"
+
+#: tffloat.mivisible.caption
+msgid "Visibility"
+msgstr "Visibilité"
+
+#: tffloat.mixl.caption
+msgid "Very Big"
+msgstr "Très grand"
+
+#: tfsplash.lsplashwarn.caption
+msgid ""
+"⚠️ IMPORTANT MEDICAL WARNING ⚠️\n"
+"\n"
+"This app is NOT a medical device.\n"
+"• Do NOT make medical decisions based on this data\n"
+"• Data may be WRONG, delayed, or unavailable  \n"
+"• Always verify with your official CGM device\n"
+"• For emergencies, contact medical professionals\n"
+"\n"
+"By continuing, you acknowledge that:\n"
+"• You use this app at your own risk\n"
+"• The developers have NO LIABILITY\n"
+"• You have read and agree to the full terms\n"
+"\n"
+"This app is licensed under the \n"
+"GNU General Public License version 3 with \n"
+"an additional medical disclaimer.\n"
+"See https://github.com/slicke/trndi/LICENSE.md"
+msgstr ""
+"⚠️ AVERTISSEMENT MÉDICAL IMPORTANT ⚠️\n"
+"\n"
+"Cette application n'est PAS un dispositif médical.\n"
+"• Ne prenez PAS de décisions médicales basées sur ces données\n"
+"• Les données peuvent être ERRONÉES, retardées ou indisponibles  \n"
+"• Vérifiez toujours avec votre dispositif CGM officiel\n"
+"• En cas d'urgence, contactez des professionnels de santé\n"
+"\n"
+"En continuant, vous reconnaissez que :\n"
+"• Vous utilisez cette application à vos propres risques\n"
+"• Les développeurs n'assument AUCUNE RESPONSABILITÉ\n"
+"• Vous avez lu et acceptez les conditions complètes\n"
+"\n"
+"Cette application est distribuée sous la \n"
+"licence publique générale GNU version 3, avec \n"
+"une clause de non-responsabilité médicale additionnelle.\n"
+"Voir https://github.com/slicke/trndi/LICENSE.md"
+
+#: trndi.api.dexcom.serrdexlogin
+msgctxt "trndi.api.dexcom.serrdexlogin"
+msgid "Login error: Could not establish a valid session"
+msgstr "Erreur de connexion : impossible d'établir une session valide"
+
+#: trndi.api.dexcom.serrdexpass
+msgid "Invalid Dexcom password or account credentials"
+msgstr "Mot de passe Dexcom ou identifiants de compte invalides"
+
+#: trndi.api.dexcom.sparamdesc
+msgctxt "trndi.api.dexcom.sparamdesc"
+msgid ""
+"Dexcom region selection:\n"
+"\n"
+"Choose the server based on your account region:\n"
+"• Dexcom (USA): for accounts served by share2.dexcom.com\n"
+"• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com\n"
+"\n"
+"If you are unsure, try “Outside USA” first if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+"Sélection de la région Dexcom :\n"
+"\n"
+"Choisissez le serveur en fonction de la région de votre compte :\n"
+"• Dexcom (USA) : pour les comptes servis par share2.dexcom.com\n"
+"• Dexcom (hors USA) : pour les comptes servis par shareous1.dexcom.com\n"
+"\n"
+"En cas de doute, essayez d'abord « Hors USA » si vous vivez en dehors des États-Unis.\n"
+"Votre nom d'utilisateur et votre mot de passe sont ceux de votre compte Dexcom (pas Share)."
+
+#: trndi.api.dexcom.sparamdeschtml
+msgid ""
+"<b>Dexcom</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+"<b>Dexcom</b> : sélection de la région :<br><br>Choisissez le serveur en fonction de la <u>région de votre compte</u> :<br>• Dexcom (USA) : pour les comptes <i>(servis par share2.dexcom.com)</i><br>• Dexcom (hors USA) : pour les comptes <i>(servis par shareous1.dexcom.com)</i><br><br>En cas de doute, essayez d'abord <b>Hors USA</b> si vous vivez en dehors des États-Unis.\n"
+"Votre nom d'utilisateur et votre mot de passe sont ceux de votre compte Dexcom (pas Share)."
+
+#: trndi.api.dexcom.sparampassword
+msgid "Dexcom Password"
+msgstr "Mot de passe Dexcom"
+
+#: trndi.api.dexcom.sparamusername
+msgid "Dexcom Username"
+msgstr "Nom d'utilisateur Dexcom"
+
+#: trndi.api.dexcomnew.sdexnewerrlogin
+msgctxt "trndi.api.dexcomnew.sdexnewerrlogin"
+msgid "Login error: Could not establish a valid session"
+msgstr "Erreur de connexion : impossible d'établir une session valide"
+
+#: trndi.api.dexcomnew.sdexnewerrpass
+msgid "Incorrect username or password combination"
+msgstr "Combinaison nom d'utilisateur/mot de passe incorrecte"
+
+#: trndi.api.dexcomnew.sdexnewparamdesc
+msgid ""
+"Dexcom region selection:\n"
+"\n"
+"Choose the server based on your account region:\n"
+"• Dexcom (USA): for accounts served by share2.dexcom.com\n"
+"• Dexcom (Outside USA): for accounts served by shareous1.dexcom.com\n"
+"• Dexcom (Japan): for accounts served by share.dexcom.jp\n"
+"\n"
+"If you are unsure, try \"Outside USA\" first if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+"Sélection de la région Dexcom :\n"
+"\n"
+"Choisissez le serveur en fonction de la région de votre compte :\n"
+"• Dexcom (USA) : pour les comptes servis par share2.dexcom.com\n"
+"• Dexcom (hors USA) : pour les comptes servis par shareous1.dexcom.com\n"
+"• Dexcom (Japon) : pour les comptes servis par share.dexcom.jp\n"
+"\n"
+"En cas de doute, essayez d'abord \"Hors USA\" si vous vivez en dehors des États-Unis.\n"
+"Votre nom d'utilisateur et votre mot de passe sont ceux de votre compte Dexcom (pas Share)."
+
+#: trndi.api.dexcomnew.sdexnewparamdeschtml
+msgid ""
+"<b>Dexcom</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Dexcom (USA): for accounts <i>(served by share2.dexcom.com)</i><br>• Dexcom (Outside USA): for accounts <i>(served by shareous1.dexcom.com)</i><br>• Dexcom (Japan): for accounts <i>(served by share.dexcom.jp)</i><br><br>If you are unsure, try <b>Outside USA</b> first, if you live outside the US.\n"
+"Your username and password are your Dexcom Account (not Share) credentials."
+msgstr ""
+"<b>Dexcom</b> : sélection de la région :<br><br>Choisissez le serveur en fonction de la <u>région de votre compte</u> :<br>• Dexcom (USA) : pour les comptes <i>(servis par share2.dexcom.com)</i><br>• Dexcom (hors USA) : pour les comptes <i>(servis par shareous1.dexcom.com)</i><br>• Dexcom (Japon) : pour les comptes <i>(servis par share.dexcom.jp)</i><br><br>En cas de doute, essayez d'abord <b>Hors USA</b> si vous vivez en dehors des États-Unis.\n"
+"Votre nom d'utilisateur et votre mot de passe sont ceux de votre compte Dexcom (pas Share)."
+
+#: trndi.api.dexcomnew.sdexnewparampassword
+msgid "Password"
+msgstr "Mot de passe"
+
+#: trndi.api.dexcomnew.sdexnewparamregion
+msgid "Region (\"usa\", \"japan\"/\"jp\", or empty)"
+msgstr "Région (\"usa\", \"japan\"/\"jp\", ou vide)"
+
+#: trndi.api.dexcomnew.sdexnewparamusername
+msgid "Dexcom Account Username"
+msgstr "Nom d'utilisateur du compte Dexcom"
+
+#: trndi.api.nightscout.sparamdesc
+msgctxt "trndi.api.nightscout.sparamdesc"
+msgid ""
+"NightScout v2 setup (use FULL access token):\n"
+"\n"
+"1) Open your NightScout site (e.g., https://your-site).\n"
+"2) Go to Admin -> Tokens — or API Secret.\n"
+"3) If you use Tokens:\n"
+"   - Create a token with at least READ scope.\n"
+"   - Copy the FULL access token value exactly as shown.\n"
+"4) In Trndi:\n"
+"   - Address: enter your NightScout URL\n"
+"   - Auth: paste the FULL access token (not just a suffix).\n"
+"\n"
+"Note: If you instead use the legacy API Secret, paste your API Secret value as-is."
+msgstr ""
+"Configuration NightScout v2 (utilisez le jeton d'accès COMPLET) :\n"
+"\n"
+"1) Ouvrez votre site NightScout (ex. https://votre-site).\n"
+"2) Allez dans Admin -> Tokens — ou API Secret.\n"
+"3) Si vous utilisez les jetons (Tokens) :\n"
+"   - Créez un jeton avec au moins la portée READ.\n"
+"   - Copiez la valeur COMPLÈTE du jeton d'accès telle qu'affichée.\n"
+"4) Dans Trndi :\n"
+"   - Adresse : saisissez l'URL de votre NightScout\n"
+"   - Authentification : collez le jeton d'accès COMPLET (pas seulement un suffixe).\n"
+"\n"
+"Remarque : si vous utilisez plutôt l'ancien API Secret, collez sa valeur telle quelle."
+
+#: trndi.api.nightscout.sparamdeschtml
+msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v2 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token (not just a suffix).</li></ul></li></ol><p style=\"border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;\"><strong>⚠️ Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p></div>"
+msgstr "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><h2 style=\"margin-bottom: 10px;\">🌙 Configuration NightScout v2</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(utilisez le jeton d'accès COMPLET)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Ouvrez votre site NightScout (ex. <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://votre-site</code>).</li><li style=\"margin-bottom: 10px;\">Allez dans <strong>Admin → Tokens</strong> — ou <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">Si vous utilisez les jetons (Tokens) :<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Créez un jeton avec au moins la portée <strong>READ</strong>.</li><li>Copiez la valeur <strong>COMPLÈTE</strong> du jeton d'accès telle qu'affichée.</li></ul></li><li style=\"margin-bottom: 10px;\">Dans Trndi :<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adresse :</strong> saisissez l'URL de votre NightScout</li><li><strong>Authentification :</strong> collez le jeton d'accès COMPLET (pas seulement un suffixe).</li></ul></li></ol><p style=\"border-left: 4px solid #ffc107; padding: 10px; margin-top: 15px;\"><strong>⚠️ Remarque :</strong> si vous utilisez plutôt l'ancien API Secret, collez sa valeur telle quelle.</p></div>"
+
+#: trndi.api.nightscout.sparampassword
+msgctxt "trndi.api.nightscout.sparampassword"
+msgid "API Secret"
+msgstr "API Secret"
+
+#: trndi.api.nightscout.sparamusername
+msgctxt "trndi.api.nightscout.sparamusername"
+msgid "NightScout URL"
+msgstr "URL NightScout"
+
+#: trndi.api.nightscout3.sparamdesc
+msgctxt "trndi.api.nightscout3.sparamdesc"
+msgid ""
+"** ALPHA DRIVER - Please use \"NightScout\" for daily use! **\n"
+"NightScout v3 setup (use FULL access token):\n"
+"\n"
+"1) Open your NightScout site (e.g., https://your-site).\n"
+"2) Go to Admin -> Tokens — or API Secret.\n"
+"3) If you use Tokens:\n"
+"   - Create a token with at least READ scope.\n"
+"   - Copy the FULL access token value exactly as shown.\n"
+"4) In Trndi:\n"
+"   - Address: enter your NightScout URL\n"
+"   - Auth: paste the FULL access token.\n"
+"\n"
+"Tip: Both \"abc123\" and \"token=abc123\" formats are accepted.\n"
+"Note: If you instead use the legacy API Secret, paste your API Secret value as-is.\n"
+"Note 2: Your access token should look like: trndi-abc123 (or whatever name you chose)"
+msgstr ""
+"** PILOTE ALPHA - Veuillez utiliser \"NightScout\" pour un usage quotidien ! **\n"
+"Configuration NightScout v3 (utilisez le jeton d'accès COMPLET) :\n"
+"\n"
+"1) Ouvrez votre site NightScout (ex. https://votre-site).\n"
+"2) Allez dans Admin -> Tokens — ou API Secret.\n"
+"3) Si vous utilisez les jetons (Tokens) :\n"
+"   - Créez un jeton avec au moins la portée READ.\n"
+"   - Copiez la valeur COMPLÈTE du jeton d'accès telle qu'affichée.\n"
+"4) Dans Trndi :\n"
+"   - Adresse : saisissez l'URL de votre NightScout\n"
+"   - Authentification : collez le jeton d'accès COMPLET.\n"
+"\n"
+"Astuce : les deux formats \"abc123\" et \"token=abc123\" sont acceptés.\n"
+"Remarque : si vous utilisez plutôt l'ancien API Secret, collez sa valeur telle quelle.\n"
+"Remarque 2 : votre jeton d'accès devrait ressembler à : trndi-abc123 (ou le nom que vous avez choisi)"
+
+#: trndi.api.nightscout3.sparamdeschtml
+msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALPHA DRIVER - Please use \"NightScout\" for daily use! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Tip:</strong> Both <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> and <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> are accepted.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your access token should look like: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you chose).</p></div></div>"
+msgstr "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ PILOTE ALPHA - Veuillez utiliser \"NightScout\" pour un usage quotidien ! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 Configuration NightScout v3</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(utilisez le jeton d'accès COMPLET)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Ouvrez votre site NightScout (ex. <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://votre-site</code>).</li><li style=\"margin-bottom: 10px;\">Allez dans <strong>Admin → Tokens</strong> — ou <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">Si vous utilisez les jetons (Tokens) :<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Créez un jeton avec au moins la portée <strong>READ</strong>.</li><li>Copiez la valeur <strong>COMPLÈTE</strong> du jeton d'accès telle qu'affichée.</li></ul></li><li style=\"margin-bottom: 10px;\">Dans Trndi :<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adresse :</strong> saisissez l'URL de votre NightScout</li><li><strong>Authentification :</strong> collez le jeton d'accès COMPLET.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Astuce :</strong> les deux formats <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> et <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> sont acceptés.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Remarque :</strong> si vous utilisez plutôt l'ancien API Secret, collez sa valeur telle quelle.</p><p style=\"margin: 0;\"><strong>📝 Remarque 2 :</strong> votre jeton d'accès devrait ressembler à : <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (ou le nom que vous avez choisi).</p></div></div>"
+
+#: trndi.api.nightscout3.sparampassword
+msgid "Auth token"
+msgstr "Jeton d'authentification"
+
+#: trndi.api.nightscout3.sparamusername
+msgctxt "trndi.api.nightscout3.sparamusername"
+msgid "NightScout URL"
+msgstr "URL NightScout"
+
+#: trndi.api.xdrip.sparamdesc
+msgctxt "trndi.api.xdrip.sparamdesc"
+msgid ""
+"xDrip setup:\n"
+"\n"
+"Address: your xDrip REST endpoint (base URL).\n"
+"Auth: API secret (plain text; server hashes it)."
+msgstr ""
+"Configuration xDrip :\n"
+"\n"
+"Adresse : votre point de terminaison REST xDrip (URL de base).\n"
+"Authentification : secret API (texte brut ; le serveur le hache)."
+
+#: trndi.api.xdrip.sparamdeschtml
+msgid "<b>xDrip setup:</b><br><br>Address: your xDrip REST endpoint (base URL).<br>Auth: API secret (plain text; server hashes it)."
+msgstr "<b>Configuration xDrip :</b><br><br>Adresse : votre point de terminaison REST xDrip (URL de base).<br>Authentification : secret API (texte brut ; le serveur le hache)."
+
+#: trndi.api.xdrip.sparampassword
+msgctxt "trndi.api.xdrip.sparampassword"
+msgid "API Secret"
+msgstr "API Secret"
+
+#: trndi.api.xdrip.sparamusername
+msgid "xDrip URL"
+msgstr "URL xDrip"
+
+#: trndi.strings.rs_alert_snooze
+msgid "Snooze alerts"
+msgstr "Répéter les alertes"
+
+#: trndi.strings.rs_alert_snooze_active
+#, object-pascal-format
+msgid "Snoozed until %s"
+msgstr "Répété jusqu'à %s"
+
+#: trndi.strings.rs_alert_snooze_for
+#, object-pascal-format
+msgid "Alerts snoozed for %d minutes"
+msgstr "Alertes répétées pendant %d minutes"
+
+#: trndi.strings.rs_alert_snooze_not_active
+msgid "Snooze is not active"
+msgstr "La répétition n'est pas active"
+
+#: trndi.strings.rs_alert_snooze_off
+msgid "Alert snooze disabled"
+msgstr "Répétition des alertes désactivée"
+
+#: trndi.strings.rs_alert_snooze_resume
+msgid "Resume alerts"
+msgstr "Reprendre les alertes"
+
+#: trndi.strings.rs_api_notice
+msgid "Data source notice"
+msgstr "Avis sur la source de données"
+
+#: trndi.strings.rs_attention_missing
+msgid "Outdated Readings!"
+msgstr "Lectures obsolètes !"
+
+#: trndi.strings.rs_attention_missing_desc
+msgid "Readings are not fresh, have your phone lost connection to the sensor?"
+msgstr "Les lectures ne sont plus récentes, votre téléphone a-t-il perdu la connexion avec le capteur ?"
+
+#: trndi.strings.rs_attention_sensor_fault
+msgid "Possible sensor fault"
+msgstr "Défaillance possible du capteur"
+
+#: trndi.strings.rs_attention_sensor_fault_desc
+msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
+msgstr "Trndi a détecté des écarts importants et répétés entre des lectures consécutives. Vérifiez avec votre application/appareil CGM officiel."
+
+#: trndi.strings.rs_changes_apply
+msgctxt "trndi.strings.rs_changes_apply"
+msgid "Apply this value when Trndi starts?"
+msgstr "Appliquer cette valeur au démarrage de Trndi ?"
+
+#: trndi.strings.rs_cleanup
+msgid "Wait. Shutting down extensions engine..."
+msgstr "Veuillez patienter. Arrêt du moteur d'extensions..."
+
+#: trndi.strings.rs_cleanup_wait
+#, object-pascal-format
+msgid "Please wait up to %d seconds..."
+msgstr "Veuillez patienter jusqu'à %d secondes..."
+
+#: trndi.strings.rs_compute_failed_ago
+msgid "Long ago"
+msgstr "Il y a longtemps"
+
+#: trndi.strings.rs_conn_auth_expired
+msgid "Auth expired"
+msgstr "Authentification expirée"
+
+#: trndi.strings.rs_conn_click_for_details
+msgid "Click for details"
+msgstr "Cliquez pour plus de détails"
+
+#: trndi.strings.rs_conn_details
+#, object-pascal-format
+msgid ""
+"Connection status: %s\n"
+"\n"
+"Details:\n"
+"%s"
+msgstr ""
+"État de la connexion : %s\n"
+"\n"
+"Détails :\n"
+"%s"
+
+#: trndi.strings.rs_conn_no_details
+msgid "No connection details available yet."
+msgstr "Aucun détail de connexion disponible pour le moment."
+
+#: trndi.strings.rs_conn_ok
+msgctxt "trndi.strings.rs_conn_ok"
+msgid "OK"
+msgstr "OK"
+
+#: trndi.strings.rs_conn_ok_info
+msgid "Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs."
+msgstr "La connexion est actuellement saine. Un diagnostic détaillé apparaîtra ici en cas de problème de connectivité."
+
+#: trndi.strings.rs_conn_rate_limited
+msgid "Rate-limited"
+msgstr "Limité en débit"
+
+#: trndi.strings.rs_conn_retrying
+msgid "Retrying"
+msgstr "Nouvelle tentative"
+
+#: trndi.strings.rs_custom_dots
+#, object-pascal-format
+msgid "Custom Size [%.2f]"
+msgstr "Taille personnalisée [%.2f]"
+
+#: trndi.strings.rs_data_tyoe_err_func
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_tyoe_err_func"
+msgid "Datatype \"%s\" was not expected, in function \"%s\". Expected \"%s\""
+msgstr "Le type de donnée « %s » n'était pas attendu, dans la fonction « %s ». Attendu : « %s »"
+
+#: trndi.strings.rs_data_type_err
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_type_err"
+msgid "Datatype %s was not expected, expected in function %s"
+msgstr "Le type de donnée %s n'était pas attendu, dans la fonction %s"
+
+#: trndi.strings.rs_data_type_err_pos
+#, object-pascal-format
+msgctxt "trndi.strings.rs_data_type_err_pos"
+msgid "Datatype %s was not expected, expected in function %s, parameter %d"
+msgstr "Le type de donnée %s n'était pas attendu, dans la fonction %s, paramètre %d"
+
+#: trndi.strings.rs_date_picker_caption
+msgid "Choose a date"
+msgstr "Choisir une date"
+
+#: trndi.strings.rs_date_picker_desc_limited
+#, object-pascal-format
+msgid "%s supports a max time of %d days"
+msgstr "%s prend en charge une durée maximale de %d jours"
+
+#: trndi.strings.rs_date_picker_desc_unlimited
+#, object-pascal-format
+msgid "%s time limit depends on server configuration"
+msgstr "La limite de temps de %s dépend de la configuration du serveur"
+
+#: trndi.strings.rs_date_picker_no_readings
+msgid "No readings returned for the selected date range."
+msgstr "Aucune lecture retournée pour la période sélectionnée."
+
+#: trndi.strings.rs_date_picker_no_readings_err
+#, object-pascal-format
+msgid "No readings returned: %s"
+msgstr "Aucune lecture retournée : %s"
+
+#: trndi.strings.rs_date_picker_title
+msgid "Choose a date to show readings from"
+msgstr "Choisir une date à partir de laquelle afficher les lectures"
+
+#: trndi.strings.rs_days_ago
+#, object-pascal-format
+msgid "%d days ago"
+msgstr "Il y a %d jours"
+
+#: trndi.strings.rs_diff
+msgid "This is the change from the latest reading"
+msgstr "Il s'agit de la variation par rapport à la dernière lecture"
+
+#: trndi.strings.rs_dns_internet_ok
+msgid "Your internet connection is working!"
+msgstr "Votre connexion internet fonctionne !"
+
+#: trndi.strings.rs_extfailed
+#, object-pascal-format
+msgid "The following extension file returned an error while loading: %s"
+msgstr "Le fichier d'extension suivant a renvoyé une erreur lors du chargement : %s"
+
+#: trndi.strings.rs_ext_confirm
+msgctxt "trndi.strings.rs_ext_confirm"
+msgid "Extension Confirmation"
+msgstr "Confirmation de l'extension"
+
+#: trndi.strings.rs_ext_err
+msgctxt "trndi.strings.rs_ext_err"
+msgid "Extension Error"
+msgstr "Erreur d'extension"
+
+#: trndi.strings.rs_ext_event
+msgctxt "trndi.strings.rs_ext_event"
+msgid "Extension Event"
+msgstr "Événement d'extension"
+
+#: trndi.strings.rs_ext_file
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ext_file"
+msgid "File \"%s\" not found"
+msgstr "Fichier « %s » introuvable"
+
+#: trndi.strings.rs_ext_msg
+msgctxt "trndi.strings.rs_ext_msg"
+msgid "Extension Message"
+msgstr "Message d'extension"
+
+#: trndi.strings.rs_ext_shutdown
+msgid "Shutting down extensions..."
+msgstr "Arrêt des extensions..."
+
+#: trndi.strings.rs_ext_user_info
+msgctxt "trndi.strings.rs_ext_user_info"
+msgid "User Information"
+msgstr "Informations utilisateur"
+
+#: trndi.strings.rs_ext_warn
+msgctxt "trndi.strings.rs_ext_warn"
+msgid "Extension Warning"
+msgstr "Avertissement d'extension"
+
+#: trndi.strings.rs_font_error
+#, object-pascal-format
+msgid "You're missing the standard font \"%s\". Trndi will work as intended, but some icons may be missing and/or distorted!"
+msgstr "Il vous manque la police standard « %s ». Trndi fonctionnera comme prévu, mais certaines icônes peuvent être manquantes et/ou déformées !"
+
+#: trndi.strings.rs_force_quit_setup
+msgid "Trndi will now shut down to apply settings, please re-start it manually!"
+msgstr "Trndi va maintenant se fermer pour appliquer les paramètres, veuillez le redémarrer manuellement !"
+
+#: trndi.strings.rs_force_refresh
+msgctxt "trndi.strings.rs_force_refresh"
+msgid "Forcefully refresh the reading?"
+msgstr "Forcer l'actualisation de la lecture ?"
+
+#: trndi.strings.rs_force_refresh_cached
+#, object-pascal-format
+msgctxt "trndi.strings.rs_force_refresh_cached"
+msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
+msgstr "La dernière mise à jour date de %d secondes. Attendre encore %d secondes pour des données fraîches, ou forcer l'actualisation maintenant ?"
+
+#: trndi.strings.rs_force_refresh_detail
+msgctxt "trndi.strings.rs_force_refresh_detail"
+msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
+msgstr "Forcer l'actualisation contourne le cache et effectue un appel API immédiat. Attendre permet au système d'utiliser efficacement les données en cache."
+
+#: trndi.strings.rs_high
+msgid "HIGH"
+msgstr "HAUT"
+
+#: trndi.strings.rs_history_item
+#, object-pascal-format
+msgid ""
+"» Selected Reading: %s\n"
+"Δ Difference: %s\n"
+"↔ Trend: %s\n"
+"📻 RSSI: %s\n"
+"𐩘 Noise: %s\n"
+"ℹ Source: %s\n"
+"💻 Device: %s"
+msgstr ""
+"» Lecture sélectionnée : %s\n"
+"Δ Différence : %s\n"
+"↔ Tendance : %s\n"
+"📻 RSSI : %s\n"
+"𐩘 Bruit : %s\n"
+"ℹ Source : %s\n"
+"💻 Appareil : %s"
+
+#: trndi.strings.rs_hi_level
+#, object-pascal-format
+msgid "Hi > %.1f"
+msgstr "Haut > %.1f"
+
+#: trndi.strings.rs_hi_predict
+#, object-pascal-format
+msgid "High Predicted in %d minutes!"
+msgstr "Valeur haute prévue dans %d minutes !"
+
+#: trndi.strings.rs_hi_predict_soon
+msgid "High Predicted soon!"
+msgstr "Valeur haute prévue bientôt !"
+
+#: trndi.strings.rs_init_api
+msgid "Initializing API..."
+msgstr "Initialisation de l'API..."
+
+#: trndi.strings.rs_init_chroma
+msgid "Initializing Chroma..."
+msgstr "Initialisation de Chroma..."
+
+#: trndi.strings.rs_init_connect
+msgid "Attempting to connect..."
+msgstr "Tentative de connexion..."
+
+#: trndi.strings.rs_init_custom_overrides
+msgid "Initializing custom overrides..."
+msgstr "Initialisation des remplacements personnalisés..."
+
+#: trndi.strings.rs_init_fetch
+msgctxt "trndi.strings.rs_init_fetch"
+msgid "Fetching first reading..."
+msgstr "Récupération de la première lecture..."
+
+#: trndi.strings.rs_init_first
+msgctxt "trndi.strings.rs_init_first"
+msgid "Processing first reading..."
+msgstr "Traitement de la première lecture..."
+
+#: trndi.strings.rs_init_fonts
+msgid "Processing fonts..."
+msgstr "Traitement des polices..."
+
+#: trndi.strings.rs_init_initial
+msgid "Preparing initial setup..."
+msgstr "Préparation de la configuration initiale..."
+
+#: trndi.strings.rs_init_license
+msgid "Verifying license..."
+msgstr "Vérification de la licence..."
+
+#: trndi.strings.rs_init_linux
+msgid "Attempting to adjust Linux overrides..."
+msgstr "Tentative d'ajustement des paramètres Linux..."
+
+#: trndi.strings.rs_init_locale
+msgid "Setting up locale settings..."
+msgstr "Configuration des paramètres régionaux..."
+
+#: trndi.strings.rs_init_mac
+msgid "Attempting to adjust macOS overrides..."
+msgstr "Tentative d'ajustement des paramètres macOS..."
+
+#: trndi.strings.rs_init_media
+msgid "Starting Media Backend..."
+msgstr "Démarrage du système multimédia..."
+
+#: trndi.strings.rs_init_profiles
+msgid "Processing user profiles..."
+msgstr "Traitement des profils utilisateur..."
+
+#: trndi.strings.rs_init_trndi
+msgid "Starting Trndi..."
+msgstr "Démarrage de Trndi..."
+
+#: trndi.strings.rs_init_ui
+msgid "Initializing UI..."
+msgstr "Initialisation de l'interface..."
+
+#: trndi.strings.rs_init_unit
+msgid "Determining glucose unit..."
+msgstr "Détermination de l'unité de glycémie..."
+
+#: trndi.strings.rs_init_ux
+msgid "Initializing UX..."
+msgstr "Initialisation de l'expérience utilisateur..."
+
+#: trndi.strings.rs_last_recieve
+#, object-pascal-format
+msgid "Last reading was %s (%s)"
+msgstr "La dernière lecture était %s (%s)"
+
+#: trndi.strings.rs_last_recieve_age
+#, object-pascal-format
+msgid "Threshold: %d minutes"
+msgstr "Seuil : %d minutes"
+
+#: trndi.strings.rs_last_recieve_no
+msgid "There's no last reading to show"
+msgstr "Il n'y a aucune dernière lecture à afficher"
+
+#: trndi.strings.rs_last_update
+#, object-pascal-format
+msgid "%d min"
+msgstr "%d min"
+
+#: trndi.strings.rs_latest_reading
+#, object-pascal-format
+msgid "Latest Reading: Value = %.2f, Date = %s"
+msgstr "Dernière lecture : valeur = %.2f, date = %s"
+
+#: trndi.strings.rs_limit_explain_text
+msgid ""
+"Hi = When BG is considered high\n"
+"Lo = When BG is considered low\n"
+"\n"
+"Ranges: Defines \"desirable\" levels within normal. Not supported by all backends"
+msgstr ""
+"Haut = Quand la glycémie est considérée comme élevée\n"
+"Bas = Quand la glycémie est considérée comme basse\n"
+"\n"
+"Plages : définit des niveaux « souhaitables » dans la normale. Non pris en charge par tous les backends"
+
+#: trndi.strings.rs_limit_explain_title
+msgid "Limit Explanation"
+msgstr "Explication des limites"
+
+#: trndi.strings.rs_log_desc
+msgctxt "trndi.strings.rs_log_desc"
+msgid "Trndi has captured data sent to console.log in a JavaScript extension"
+msgstr "Trndi a capturé des données envoyées à console.log dans une extension JavaScript"
+
+#: trndi.strings.rs_log_empty_msg
+msgctxt "trndi.strings.rs_log_empty_msg"
+msgid "<No message provided>"
+msgstr "<Aucun message fourni>"
+
+#: trndi.strings.rs_log_no_buffered
+msgctxt "trndi.strings.rs_log_no_buffered"
+msgid "No buffered console messages to show."
+msgstr "Aucun message de console mis en mémoire tampon à afficher."
+
+#: trndi.strings.rs_log_receive
+msgctxt "trndi.strings.rs_log_receive"
+msgid "Output through console.log has been received"
+msgstr "Une sortie via console.log a été reçue"
+
+#: trndi.strings.rs_low
+msgid "LOW"
+msgstr "BAS"
+
+#: trndi.strings.rs_lo_level
+#, object-pascal-format
+msgid "Lo < %.1f"
+msgstr "Bas < %.1f"
+
+#: trndi.strings.rs_lo_predict
+#, object-pascal-format
+msgid "Low Predicted in %d minutes!"
+msgstr "Valeur basse prévue dans %d minutes !"
+
+#: trndi.strings.rs_lo_predict_soon
+msgid "Low Predicted soon!"
+msgstr "Valeur basse prévue bientôt !"
+
+#: trndi.strings.rs_menu_force
+msgid "Force update"
+msgstr "Forcer la mise à jour"
+
+#: trndi.strings.rs_menu_help
+msgctxt "trndi.strings.rs_menu_help"
+msgid "Help"
+msgstr "Aide"
+
+#: trndi.strings.rs_menu_name
+msgid "Glucose"
+msgstr "Glycémie"
+
+#: trndi.strings.rs_menu_settings
+msgctxt "trndi.strings.rs_menu_settings"
+msgid "Settings"
+msgstr "Paramètres"
+
+#: trndi.strings.rs_missing_label
+#, object-pascal-format
+msgid "Label %s is missing!"
+msgstr "L'étiquette %s est manquante !"
+
+#: trndi.strings.rs_multiname
+#, object-pascal-format
+msgid "Showing data for: \"%s\""
+msgstr "Affichage des données pour : « %s »"
+
+#: trndi.strings.rs_multiname_def
+msgid "Showing the standard user"
+msgstr "Affichage de l'utilisateur standard"
+
+#: trndi.strings.rs_multiname_def_named
+#, object-pascal-format
+msgid "Showing %s (standard user)"
+msgstr "Affichage de %s (utilisateur standard)"
+
+#: trndi.strings.rs_multiname_named
+#, object-pascal-format
+msgid "Showing data for: %s (username \"%s\")"
+msgstr "Affichage des données pour : %s (nom d'utilisateur « %s »)"
+
+#: trndi.strings.rs_multiple_accounts
+msgid "Trndi found multiple accounts. Please choose one for this instance"
+msgstr "Trndi a trouvé plusieurs comptes. Veuillez en choisir un pour cette instance"
+
+#: trndi.strings.rs_multiuser_box
+msgid "Trndi found multiple accounts. Please choose one for this instance, or continue with the default account"
+msgstr "Trndi a trouvé plusieurs comptes. Veuillez en choisir un pour cette instance, ou continuer avec le compte par défaut"
+
+#: trndi.strings.rs_multiuser_box_title
+msgid "User select"
+msgstr "Sélection de l'utilisateur"
+
+#: trndi.strings.rs_nodata_error
+msgid "No data, error(?):"
+msgstr "Aucune donnée, erreur (?) :"
+
+#: trndi.strings.rs_nodata_none
+msgid "<none>"
+msgstr "<aucun>"
+
+#: trndi.strings.rs_noplugins
+msgctxt "trndi.strings.rs_noplugins"
+msgid "Built Without Support"
+msgstr "Compilé sans prise en charge"
+
+#: trndi.strings.rs_no_backend
+msgid ""
+"No readings received.\n"
+"\n"
+"Has your CGM synced recently? \n"
+"Is the remote server working?"
+msgstr ""
+"Aucune lecture reçue.\n"
+"\n"
+"Votre CGM a-t-il synchronisé récemment ? \n"
+"Le serveur distant fonctionne-t-il ?"
+
+#: trndi.strings.rs_no_boot_reading
+msgid "No recent data available!"
+msgstr "Aucune donnée récente disponible !"
+
+#: trndi.strings.rs_no_internet
+msgid "Your internet connection is not working, Trndi cannot fetch readings!"
+msgstr "Votre connexion internet ne fonctionne pas, Trndi ne peut pas récupérer les lectures !"
+
+#: trndi.strings.rs_no_trace
+msgctxt "trndi.strings.rs_no_trace"
+msgid "No stack trace available"
+msgstr "Aucune pile d'appels disponible"
+
+#: trndi.strings.rs_off_hi
+msgid "Over range"
+msgstr "Au-dessus de la cible"
+
+#: trndi.strings.rs_off_lo
+msgid "Under range"
+msgstr "En dessous de la cible"
+
+#: trndi.strings.rs_outdated_time
+#, object-pascal-format
+msgid "%s (%d.%.2d min ago)"
+msgstr "%s (il y a %d.%.2d min)"
+
+#: trndi.strings.rs_over
+msgid "over"
+msgstr "au-dessus"
+
+#: trndi.strings.rs_predict
+msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
+msgstr "Vos futures lectures prédites sont affichées en bas à droite de la fenêtre ; la différence par rapport à la dernière lecture est affichée au centre"
+
+#: trndi.strings.rs_predictions_stable
+msgid "No change predicted →"
+msgstr "Aucun changement prévu →"
+
+#: trndi.strings.rs_predictions_unavailable
+msgid "Predictions unavailable"
+msgstr "Prédictions indisponibles"
+
+#: trndi.strings.rs_prediction_confidence
+#, object-pascal-format
+msgid ""
+"Prediction confidence: %.0f%%\n"
+"\n"
+"This score shows how cleanly the recent readings fit the trend model. Low values mean the data was noisy or contained outliers, so the forecast is less reliable than usual."
+msgstr ""
+"Confiance de la prédiction : %.0f%%\n"
+"\n"
+"Ce score indique à quel point les lectures récentes correspondent au modèle de tendance. Des valeurs faibles signifient que les données étaient bruitées ou contenaient des valeurs aberrantes, rendant la prévision moins fiable qu'à l'accoutumée."
+
+#: trndi.strings.rs_predict_amount_caption
+msgid "Force predictions"
+msgstr "Forcer les prédictions"
+
+#: trndi.strings.rs_predict_amount_desc
+msgid "Enter the amount of readings to predict (1-20)"
+msgstr "Saisissez le nombre de lectures à prédire (1-20)"
+
+#: trndi.strings.rs_predict_amount_title
+msgid "Force a prediction"
+msgstr "Forcer une prédiction"
+
+#: trndi.strings.rs_prom_err_capt
+#, object-pascal-format
+msgctxt "trndi.strings.rs_prom_err_capt"
+msgid "The asynchronous function %s failed to complete"
+msgstr "La fonction asynchrone %s ne s'est pas terminée correctement"
+
+#: trndi.strings.rs_quit_caption
+msgid "Exit Trndi?"
+msgstr "Quitter Trndi ?"
+
+#: trndi.strings.rs_quit_minimize
+msgid "Would you like to minimize to the Dock, or close Trndi?"
+msgstr "Souhaitez-vous réduire dans le Dock, ou fermer Trndi ?"
+
+#: trndi.strings.rs_quit_minimize_title
+msgid "Quit or Minimize?"
+msgstr "Quitter ou réduire ?"
+
+#: trndi.strings.rs_quit_minimize_win
+msgid "Would you like Trndi to to hide in the Taskbar, or close?"
+msgstr "Souhaitez-vous que Trndi se masque dans la barre des tâches, ou se ferme ?"
+
+#: trndi.strings.rs_quit_msg
+msgid "Quit the app?"
+msgstr "Quitter l'application ?"
+
+#: trndi.strings.rs_range_color
+msgid "The entire window will now change color when out of range, instead of just displaying a colored notification in the top. Applies after the next sync."
+msgstr "Toute la fenêtre changera désormais de couleur en cas de dépassement de la cible, au lieu d'afficher simplement une notification colorée en haut. S'applique après la prochaine synchronisation."
+
+#: trndi.strings.rs_range_explanation
+#, object-pascal-format
+msgid "In addition to high and low levels, you have set a personal range within \"OK\". You are now %s that range"
+msgstr "En plus des niveaux haut et bas, vous avez défini une plage personnelle dans « OK ». Vous êtes actuellement %s cette plage"
+
+#: trndi.strings.rs_range_hi
+#, object-pascal-format
+msgid "Range Hi > %.1f"
+msgstr "Plage haute > %.1f"
+
+#: trndi.strings.rs_range_hi_unsupported
+msgid "Hi range not supported by API"
+msgstr "Plage haute non prise en charge par l'API"
+
+#: trndi.strings.rs_range_lo
+#, object-pascal-format
+msgid "Range Lo < %.1f"
+msgstr "Plage basse < %.1f"
+
+#: trndi.strings.rs_range_lo_unsupported
+msgid "Lo range not supported by API"
+msgstr "Plage basse non prise en charge par l'API"
+
+#: trndi.strings.rs_refresh
+#, object-pascal-format
+msgid "⟳ Updated: <b>%s</b> <i>(Next update: %s)</i>"
+msgstr "⟳ Mis à jour : <b>%s</b> <i>(Prochaine mise à jour : %s)</i>"
+
+#: trndi.strings.rs_refresh_plain
+#, object-pascal-format
+msgid "⟳ Updated: %s (Next update: %s)"
+msgstr "⟳ Mis à jour : %s (Prochaine mise à jour : %s)"
+
+#: trndi.strings.rs_refresh_prompt
+msgctxt "trndi.strings.rs_refresh_prompt"
+msgid "Refresh?"
+msgstr "Actualiser ?"
+
+#: trndi.strings.rs_restart_apply
+msgid "Trndi must be restarted for settings to take effect"
+msgstr "Trndi doit être redémarré pour que les paramètres prennent effet"
+
+#: trndi.strings.rs_rhistory
+msgid "Reading history"
+msgstr "Historique des lectures"
+
+#: trndi.strings.rs_rh_info
+msgid "These are the messages currently held in Trndi's log"
+msgstr "Voici les messages actuellement conservés dans le journal de Trndi"
+
+#: trndi.strings.rs_rh_reading
+msgid "Reading"
+msgstr "Lecture"
+
+#: trndi.strings.rs_rh_time
+msgctxt "trndi.strings.rs_rh_time"
+msgid "Time"
+msgstr "Heure"
+
+#: trndi.strings.rs_rh_title
+msgid "Historical readings"
+msgstr "Lectures historiques"
+
+#: trndi.strings.rs_rh_unknown
+msgctxt "trndi.strings.rs_rh_unknown"
+msgid "Unknown"
+msgstr "Inconnu"
+
+#: trndi.strings.rs_right_click
+msgid "The settings dialog will now open, in the future please right-click the reading to open the menu."
+msgstr "La boîte de dialogue des paramètres va maintenant s'ouvrir, à l'avenir veuillez faire un clic droit sur la lecture pour ouvrir le menu."
+
+#: trndi.strings.rs_safemode
+msgid "Safe Mode Enabled"
+msgstr "Mode sans échec activé"
+
+#: trndi.strings.rs_safemode_desc
+msgid "Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!"
+msgstr "Trndi s'exécute en <b>mode sans échec</b> !<ul><li>Aucune action de démarrage des extensions ne sera exécutée</li><li>Vous ne pouvez pas utiliser les extensions, et aucune action ne sera déclenchée par elles</li></ul><br>Les extensions se chargeront au prochain démarrage, sauf si vous appuyez sur <b>CTRL</b> !"
+
+#: trndi.strings.rs_sensor_fault_suspect
+msgid "Sensor may be faulty: multiple abrupt reading jumps detected."
+msgstr "Le capteur est peut-être défectueux : plusieurs sauts brusques de lecture ont été détectés."
+
+#: trndi.strings.rs_service_adjust
+#, object-pascal-format
+msgid "Adjust: %.2f / Scale: %.2fx"
+msgstr "Ajustement : %.2f / Échelle : %.2fx"
+
+#: trndi.strings.rs_service_dot_adjust
+msgid "Dot Adjustment"
+msgstr "Ajustement des points"
+
+#: trndi.strings.rs_service_dot_adjust_add
+msgid "Add dot adjustment"
+msgstr "Ajouter un ajustement de point"
+
+#: trndi.strings.rs_service_dot_adjust_desc
+msgid "You can enter plus or minus. Plus = down. 0 = neutral"
+msgstr "Vous pouvez saisir plus ou moins. Plus = vers le bas. 0 = neutre"
+
+#: trndi.strings.rs_service_dot_count
+msgctxt "trndi.strings.rs_service_dot_count"
+msgid "Set Dot Count"
+msgstr "Définir le nombre de points"
+
+#: trndi.strings.rs_service_dot_count_desc
+#, object-pascal-format
+msgid "Enter how many trend dots to show (1-%d)."
+msgstr "Saisissez le nombre de points de tendance à afficher (1-%d)."
+
+#: trndi.strings.rs_service_dot_count_title
+msgid "Number of trend dots"
+msgstr "Nombre de points de tendance"
+
+#: trndi.strings.rs_service_predictions
+msgid "Predictions:"
+msgstr "Prédictions :"
+
+#: trndi.strings.rs_service_predict_point
+#, object-pascal-format
+msgid "Reading %d: %.1f %s at %s"
+msgstr "Lecture %d : %.1f %s à %s"
+
+#: trndi.strings.rs_service_predict_unable
+#, object-pascal-format
+msgid "Unable to predict: %s"
+msgstr "Impossible de prédire : %s"
+
+#: trndi.strings.rs_service_sysinfo
+#, object-pascal-format
+msgid ""
+"%s (%s)\n"
+"%s\n"
+"Default Separator: %s"
+msgstr ""
+"%s (%s)\n"
+"%s\n"
+"Séparateur par défaut : %s"
+
+#: trndi.strings.rs_settings_save
+msgid "Save settings?"
+msgstr "Enregistrer les paramètres ?"
+
+#: trndi.strings.rs_settings_saved
+msgid "Settings saved and applied. Some settings may require a restart"
+msgstr "Paramètres enregistrés et appliqués. Certains paramètres peuvent nécessiter un redémarrage"
+
+#: trndi.strings.rs_settings_save_desc
+msgid "Would you like to save any changes made?"
+msgstr "Souhaitez-vous enregistrer les modifications apportées ?"
+
+#: trndi.strings.rs_setup
+msgctxt "trndi.strings.rs_setup"
+msgid "Setup"
+msgstr "Configuration"
+
+#: trndi.strings.rs_speak_ghigh
+msgid "Going high"
+msgstr "En hausse"
+
+#: trndi.strings.rs_speak_glow
+msgid "Going low"
+msgstr "En baisse"
+
+#: trndi.strings.rs_speak_good
+msgid "Good"
+msgstr "Bien"
+
+#: trndi.strings.rs_speak_high
+msgctxt "trndi.strings.rs_speak_high"
+msgid "High"
+msgstr "Haut"
+
+#: trndi.strings.rs_speak_low
+msgctxt "trndi.strings.rs_speak_low"
+msgid "Low"
+msgstr "Bas"
+
+#: trndi.strings.rs_splash_loading
+msgid "Loading Extension: "
+msgstr "Chargement de l'extension : "
+
+#: trndi.strings.rs_splash_loading_init
+msgid "Loading Extensions..."
+msgstr "Chargement des extensions..."
+
+#: trndi.strings.rs_stack_err_msg
+#, object-pascal-format
+msgctxt "trndi.strings.rs_stack_err_msg"
+msgid ""
+"Error: %s \n"
+"Stack: %s %s"
+msgstr ""
+"Erreur : %s \n"
+"Pile : %s %s"
+
+#: trndi.strings.rs_stack_failed
+msgctxt "trndi.strings.rs_stack_failed"
+msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
+msgstr "Une erreur s'est produite et la pile d'appels n'a pas pu être chargée. Affichage de la trace inverse."
+
+#: trndi.strings.rs_tir_h
+#, object-pascal-format
+msgid "This is your time in range for the last %s hours and %s minutes"
+msgstr "Voici votre temps dans la cible pour les %s dernières heures et %s minutes"
+
+#: trndi.strings.rs_tir_h1
+#, object-pascal-format
+msgid "This is your time in range for the last hour and %s minutes"
+msgstr "Voici votre temps dans la cible pour la dernière heure et %s minutes"
+
+#: trndi.strings.rs_tir_m
+#, object-pascal-format
+msgid "This is your time in range for the last %s minutes"
+msgstr "Voici votre temps dans la cible pour les %s dernières minutes"
+
+#: trndi.strings.rs_tir_row2
+#, object-pascal-format
+msgid "Your low limit is %.1f, high is %.1f"
+msgstr "Votre limite basse est %.1f, la haute est %.1f"
+
+#: trndi.strings.rs_tir_row3
+#, object-pascal-format
+msgid "Your low range is %.1f, high is %.1f"
+msgstr "Votre plage basse est %.1f, la haute est %.1f"
+
+#: trndi.strings.rs_tpobottomleft
+msgctxt "trndi.strings.rs_tpobottomleft"
+msgid "Bottom Left"
+msgstr "En bas à gauche"
+
+#: trndi.strings.rs_tpobottomright
+msgctxt "trndi.strings.rs_tpobottomright"
+msgid "Bottom Right"
+msgstr "En bas à droite"
+
+#: trndi.strings.rs_tpocenter
+msgctxt "trndi.strings.rs_tpocenter"
+msgid "Desktop Center"
+msgstr "Centre du bureau"
+
+#: trndi.strings.rs_tpocustom
+msgctxt "trndi.strings.rs_tpocustom"
+msgid "Last position"
+msgstr "Dernière position"
+
+#: trndi.strings.rs_tpotopright
+msgctxt "trndi.strings.rs_tpotopright"
+msgid "Top Right"
+msgstr "En haut à droite"
+
+#: trndi.strings.rs_trndi_gihub
+msgid "Trndi on GitHub"
+msgstr "Trndi sur GitHub"
+
+#: trndi.strings.rs_type_error_msg
+msgctxt "trndi.strings.rs_type_error_msg"
+msgid "A data type was expected, but another was found"
+msgstr "Un type de donnée était attendu, mais un autre a été trouvé"
+
+#: trndi.strings.rs_type_err_capt
+msgctxt "trndi.strings.rs_type_err_capt"
+msgid "A data type differs from what was expected"
+msgstr "Un type de donnée diffère de ce qui était attendu"
+
+#: trndi.strings.rs_type_err_desc
+msgctxt "trndi.strings.rs_type_err_desc"
+msgid "The extension was stopped"
+msgstr "L'extension a été arrêtée"
+
+#: trndi.strings.rs_under
+msgid "under"
+msgstr "en dessous"
+
+#: trndi.strings.rs_unknown_err
+msgctxt "trndi.strings.rs_unknown_err"
+msgid "Unknown error"
+msgstr "Erreur inconnue"
+
+#: trndi.strings.rs_unknown_time
+msgid "Loading"
+msgstr "Chargement"
+
+#: trndi.strings.rs_user_caption
+#, object-pascal-format
+msgid "[%s] %s"
+msgstr "[%s] %s"
+
+#: trndi.strings.rs_ux_announce_off
+msgctxt "trndi.strings.rs_ux_announce_off"
+msgid "No longer announcing readings aloud"
+msgstr "N'annonce plus les lectures à voix haute"
+
+#: trndi.strings.rs_ux_announce_on
+msgctxt "trndi.strings.rs_ux_announce_on"
+msgid "Announcing readings aloud"
+msgstr "Annonce les lectures à voix haute"
+
+#: trndi.strings.rs_ux_api
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_api"
+msgid "⚙️ Trndi API Interface: %s"
+msgstr "⚙️ Interface API Trndi : %s"
+
+#: trndi.strings.rs_ux_changes_remember
+msgctxt "trndi.strings.rs_ux_changes_remember"
+msgid "Remember setting?"
+msgstr "Mémoriser le paramètre ?"
+
+#: trndi.strings.rs_ux_changes_save
+msgctxt "trndi.strings.rs_ux_changes_save"
+msgid "Save?"
+msgstr "Enregistrer ?"
+
+#: trndi.strings.rs_ux_customize_dot_size
+msgctxt "trndi.strings.rs_ux_customize_dot_size"
+msgid "Customize dot size"
+msgstr "Personnaliser la taille des points"
+
+#: trndi.strings.rs_ux_device
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_device"
+msgid "💻 Device: %s"
+msgstr "💻 Appareil : %s"
+
+#: trndi.strings.rs_ux_dot_size
+msgctxt "trndi.strings.rs_ux_dot_size"
+msgid "Dot Size"
+msgstr "Taille des points"
+
+#: trndi.strings.rs_ux_enter_dot_size
+msgctxt "trndi.strings.rs_ux_enter_dot_size"
+msgid "Enter a value, the dot size will multiply by this"
+msgstr "Saisissez une valeur, la taille des points sera multipliée par celle-ci"
+
+#: trndi.strings.rs_ux_noise
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_noise"
+msgid "𐩘 Noise: %d"
+msgstr "𐩘 Bruit : %d"
+
+#: trndi.strings.rs_ux_prediction_here
+#, object-pascal-format
+msgid "Prediction here: %s at %.2d:%.2d"
+msgstr "Prédiction ici : %s à %.2d:%.2d"
+
+#: trndi.strings.rs_ux_reading_here
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_reading_here"
+msgid "Reading here: %s at %.2d:%.2d"
+msgstr "Lecture ici : %s à %.2d:%.2d"
+
+#: trndi.strings.rs_ux_rssi
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_rssi"
+msgid "📻 RSSI (Signal Strength): %d%%"
+msgstr "📻 RSSI (force du signal) : %d%%"
+
+#: trndi.strings.rs_ux_sensor_expiry
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_sensor_expiry"
+msgid "⏱️ Sensor: %s"
+msgstr "⏱️ Capteur : %s"
+
+#: trndi.strings.rs_ux_transmitter_info
+msgctxt "trndi.strings.rs_ux_transmitter_info"
+msgid "Transmitter information"
+msgstr "Informations sur l'émetteur"
+
+#: trndi.strings.rs_ux_trend_window
+msgctxt "trndi.strings.rs_ux_trend_window"
+msgid "Trend window"
+msgstr "Fenêtre de tendance"
+
+#: trndi.strings.rs_ux_trend_window_fmt
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_trend_window_fmt"
+msgid "%d min (%d dots)"
+msgstr "%d min (%d points)"
+
+#: trndi.strings.rs_warn_bg_hi
+#, object-pascal-format
+msgid "High blood sugar! Currently: %s"
+msgstr "Glycémie élevée ! Actuellement : %s"
+
+#: trndi.strings.rs_warn_bg_hi_title
+msgid "Blood sugar high"
+msgstr "Glycémie haute"
+
+#: trndi.strings.rs_warn_bg_lo
+#, object-pascal-format
+msgid "Low blood sugar! Currently: %s"
+msgstr "Glycémie basse ! Actuellement : %s"
+
+#: trndi.strings.rs_warn_bg_lo_title
+msgid "Blood sugar low"
+msgstr "Glycémie basse"
+
+#: trndi.strings.rs_wizard_back
+msgid "← Back"
+msgstr "← Retour"
+
+#: trndi.strings.rs_wizard_finish
+msgid "Finish"
+msgstr "Terminer"
+
+#: trndi.strings.rs_wizard_need_addr
+msgctxt "trndi.strings.rs_wizard_need_addr"
+msgid "Please enter a server address or username."
+msgstr "Veuillez saisir une adresse de serveur ou un nom d'utilisateur."
+
+#: trndi.strings.rs_wizard_next
+msgid "Next →"
+msgstr "Suivant →"
+
+#: trndi.strings.rs_wizard_source
+msgid "Data source:"
+msgstr "Source de données :"
+
+#: trndi.strings.rs_wizard_step_fmt
+#, object-pascal-format
+msgid "Step %d of %d"
+msgstr "Étape %d sur %d"
+
+#: trndi.strings.rs_wizard_test
+msgid "Test connection"
+msgstr "Tester la connexion"
+
+#: trndi.strings.rs_wizard_testing
+msgid "Testing…"
+msgstr "Test en cours…"
+
+#: trndi.strings.rs_wizard_test_fail
+msgid "✗ Could not connect."
+msgstr "✗ Connexion impossible."
+
+#: trndi.strings.rs_wizard_test_ok
+msgid "✓ Connected!"
+msgstr "✓ Connecté !"
+
+#: trndi.strings.rs_wizard_thresh_body
+msgid ""
+"Set the glucose levels at which Trndi should alert you.\n"
+"\n"
+"These defaults are a common starting point — adjust to match your personal targets."
+msgstr ""
+"Définissez les niveaux de glycémie auxquels Trndi doit vous alerter.\n"
+"\n"
+"Ces valeurs par défaut constituent un point de départ courant — ajustez-les selon vos objectifs personnels."
+
+#: trndi.strings.rs_wizard_thresh_head
+msgid "Alert thresholds"
+msgstr "Seuils d'alerte"
+
+#: trndi.strings.rs_wizard_thresh_hi
+msgid "High alert"
+msgstr "Alerte haute"
+
+#: trndi.strings.rs_wizard_thresh_lo
+msgid "Low alert"
+msgstr "Alerte basse"
+
+#: trndi.strings.rs_wizard_title
+msgid "Welcome to Trndi"
+msgstr "Bienvenue dans Trndi"
+
+#: trndi.strings.rs_wizard_trend_120
+msgid "2 hours  (24 readings)"
+msgstr "2 heures  (24 lectures)"
+
+#: trndi.strings.rs_wizard_trend_180
+msgid "3 hours  (36 readings)"
+msgstr "3 heures  (36 lectures)"
+
+#: trndi.strings.rs_wizard_trend_30
+msgid "30 min  (6 readings)"
+msgstr "30 min  (6 lectures)"
+
+#: trndi.strings.rs_wizard_trend_50
+msgid "50 min  (10 readings)"
+msgstr "50 min  (10 lectures)"
+
+#: trndi.strings.rs_wizard_trend_90
+msgid "90 min  (18 readings)"
+msgstr "90 min  (18 lectures)"
+
+#: trndi.strings.rs_wizard_trend_body
+msgid "Choose how many readings to show in the main graph."
+msgstr "Choisissez le nombre de lectures à afficher dans le graphique principal."
+
+#: trndi.strings.rs_wizard_trend_head
+msgctxt "trndi.strings.rs_wizard_trend_head"
+msgid "Trend window"
+msgstr "Fenêtre de tendance"
+
+#: trndi.strings.rs_wizard_unit_head
+msgid "Choose your preferred glucose unit:"
+msgstr "Choisissez votre unité de glycémie préférée :"
+
+#: trndi.strings.rs_wizard_unit_mgdl
+msgid "mg/dL  (e.g. 100)"
+msgstr "mg/dL  (ex. 100)"
+
+#: trndi.strings.rs_wizard_unit_mmol
+msgid "mmol/L  (e.g. 5.5)"
+msgstr "mmol/L  (ex. 5,5)"
+
+#: trndi.strings.rs_wizard_welcome_body
+msgid ""
+"Trndi shows your continuous glucose monitor readings right on your desktop.\n"
+"\n"
+"This wizard will connect Trndi to your CGM data source. You will need your server address (or username) and API key / password.\n"
+"\n"
+"All settings can be changed later via right-click → Settings."
+msgstr ""
+"Trndi affiche les lectures de votre capteur de glycémie en continu directement sur votre bureau.\n"
+"\n"
+"Cet assistant va connecter Trndi à votre source de données CGM. Vous aurez besoin de votre adresse de serveur (ou nom d'utilisateur) et de votre clé API / mot de passe.\n"
+"\n"
+"Tous les paramètres peuvent être modifiés ultérieurement via un clic droit → Paramètres."
+
+#: trndi.strings.rs_wizard_welcome_head
+msgid "Let's get connected!"
+msgstr "Connectons-nous !"
+
+#: uconf.rs_alert_hysteresis_mgdl
+msgctxt "uconf.rs_alert_hysteresis_mgdl"
+msgid "Clear margin (mg/dL)"
+msgstr "Marge de récupération (mg/dL)"
+
+#: uconf.rs_alert_hysteresis_mmol
+msgid "Clear margin (mmol/L)"
+msgstr "Marge de récupération (mmol/L)"
+
+#: uconf.rs_announce_not_available
+#, object-pascal-format
+msgctxt "uconf.rs_announce_not_available"
+msgid "The text-to-speech (TTS) software \"%s\" is not available."
+msgstr "Le logiciel de synthèse vocale (TTS) « %s » n'est pas disponible."
+
+#: uconf.rs_auto
+msgid "Auto-detect"
+msgstr "Détection automatique"
+
+#: uconf.rs_badge_flash_help
+msgid "This controls how Trndi's icon in the status bar and/or tray will notify you visually."
+msgstr "Ceci contrôle comment l'icône de Trndi dans la barre d'état et/ou la zone de notification vous avertira visuellement."
+
+#: uconf.rs_beta
+msgid ""
+"This backend is in a beta stage, it may not work as intended!\n"
+" If possible, choose another backend."
+msgstr ""
+"Ce backend est en phase bêta, il pourrait ne pas fonctionner comme prévu !\n"
+" Si possible, choisissez un autre backend."
+
+#: uconf.rs_beta_dex
+msgid ""
+"This is a new Deccom backend, it's in a beta stage! If possible, choose the old backend.\n"
+"Please set your own thresholds in the Customization tab."
+msgstr ""
+"Il s'agit d'un nouveau backend Dexcom, il est en phase bêta ! Si possible, choisissez l'ancien backend.\n"
+"Veuillez définir vos propres seuils dans l'onglet Personnalisation."
+
+#: uconf.rs_carelink
+msgid ""
+"This backend is experimental!\n"
+"It needs token data captured from a one-time browser login — see the CareLink guide.\n"
+"Use a Care Partner (follower) account. Data may lag behind the pump."
+msgstr ""
+"Ce backend est expérimental !\n"
+"Il nécessite des données de jeton capturées lors d'une connexion navigateur unique — voir le guide CareLink.\n"
+"Utilisez un compte Care Partner (suiveur). Les données peuvent être en retard par rapport à la pompe."
+
+#: uconf.rs_choose_system
+msgid "Select your CGM system in the list, then enter your credentials"
+msgstr "Sélectionnez votre système CGM dans la liste, puis saisissez vos identifiants"
+
+#: uconf.rs_clear_margin_help
+msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
+msgstr "Une fois qu'une alerte se déclenche, la lecture doit récupérer ce nombre d'unités au-delà du seuil avant que l'alerte puisse se redéclencher."
+
+#: uconf.rs_color_bg
+msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
+msgstr "Trndi peut dessiner un rectangle/arrière-plan dans le fond du graphique, pour représenter visuellement vos limites haute et basse."
+
+#: uconf.rs_connect_help
+msgid "This will display a badge showing the internet connectivity status in the top."
+msgstr "Ceci affichera un badge indiquant l'état de la connectivité internet en haut."
+
+#: uconf.rs_current_acc
+#, object-pascal-format
+msgid "This only applies for the current loaded account:  %s"
+msgstr "Ceci ne s'applique qu'au compte actuellement chargé :  %s"
+
+#: uconf.rs_current_acc_def
+msgid "Settings for \"default\" only apply while multi-user is active"
+msgstr "Les paramètres pour « par défaut » ne s'appliquent que lorsque le mode multi-utilisateur est actif"
+
+#: uconf.rs_current_acc_no
+msgid "These settings are available when using a multi-account"
+msgstr "Ces paramètres sont disponibles lors de l'utilisation d'un compte multiple"
+
+#: uconf.rs_custom_range_help
+msgid "Override/set your own limits for the custom range. This is your personal ideal goal, within the high/low area."
+msgstr "Remplacez/définissez vos propres limites pour la plage personnalisée. Il s'agit de votre objectif idéal personnel, dans la zone haute/basse."
+
+#: uconf.rs_debug_backend_label
+msgid "(Ignored for debug backend)"
+msgstr "(Ignoré pour le backend de débogage)"
+
+#: uconf.rs_debug_warn
+msgid ""
+"This is a debug backend. It's used for testing purposes only!\n"
+"No data will be sent to any remote server."
+msgstr ""
+"Il s'agit d'un backend de débogage. Il est utilisé uniquement à des fins de test !\n"
+"Aucune donnée ne sera envoyée à un serveur distant."
+
+#: uconf.rs_decimal_help
+msgid "This replaces the decimal separator, eg setting \",\" will show the reading as 5,5 instead of 5.5"
+msgstr "Ceci remplace le séparateur décimal, par ex. définir « , » affichera la lecture 5,5 au lieu de 5.5"
+
+#: uconf.rs_default_account
+msgctxt "uconf.rs_default_account"
+msgid "Default"
+msgstr "Par défaut"
+
+#: uconf.rs_delta_max
+msgid "When the previous reading is missing, use the next available reading within this many 5-minute-intervals to calculate delta."
+msgstr "Lorsque la lecture précédente est manquante, utilisez la prochaine lecture disponible dans ce nombre d'intervalles de 5 minutes pour calculer le delta."
+
+#: uconf.rs_dex
+msgid ""
+"Dexcom servers do not provide custom high and low blood sugar values.\n"
+"Please set your own thresholds in the Customization tab."
+msgstr ""
+"Les serveurs Dexcom ne fournissent pas de valeurs de glycémie haute et basse personnalisées.\n"
+"Veuillez définir vos propres seuils dans l'onglet Personnalisation."
+
+#: uconf.rs_diff_right_help
+msgid "This controls if the difference/delta will show center or right (when predictions are on, this will swap the position of the values)"
+msgstr "Ceci contrôle si la différence/delta s'affiche au centre ou à droite (lorsque les prédictions sont activées, ceci inversera la position des valeurs)"
+
+#: uconf.rs_disable_media
+msgid "This turns off all media-related features. Can speed up start."
+msgstr "Ceci désactive toutes les fonctionnalités liées aux médias. Peut accélérer le démarrage."
+
+#: uconf.rs_display_advanced_help
+msgid "When supported by the backend, the sensor expiration time can be shown in Trndi"
+msgstr "Lorsque le backend le prend en charge, la date d'expiration du capteur peut être affichée dans Trndi"
+
+#: uconf.rs_display_general_help
+msgid ""
+"- A progressbar can show the time until the next update on the left hand side of the screen\n"
+"- The time can we displayed every 20 seconds, instead of the Reading\n"
+"- The reading and trend arrow can alternate positions"
+msgstr ""
+"- Une barre de progression peut afficher le temps restant avant la prochaine mise à jour à gauche de l'écran\n"
+"- L'heure peut être affichée toutes les 20 secondes, à la place de la lecture\n"
+"- La lecture et la flèche de tendance peuvent alterner de position"
+
+#: uconf.rs_display_window_help
+msgid ""
+"- The background color can be set to the current glucose range color\n"
+"- The window can stay over other windows\n"
+"- The window's borders can be hidden (may depend on operating system)"
+msgstr ""
+"- La couleur d'arrière-plan peut être définie selon la couleur de la plage de glycémie actuelle\n"
+"- La fenêtre peut rester au-dessus des autres fenêtres\n"
+"- Les bordures de la fenêtre peuvent être masquées (peut dépendre du système d'exploitation)"
+
+#: uconf.rs_driver_contributor
+msgid "Driver contributor: "
+msgstr "Contributeur du pilote : "
+
+#: uconf.rs_dupe_name
+msgid "Names must be unique"
+msgstr "Les noms doivent être uniques"
+
+#: uconf.rs_empty_proxy
+msgid "Proxy host is empty."
+msgstr "L'hôte du proxy est vide."
+
+#: uconf.rs_enter_any
+msgid "Please enter a name"
+msgstr "Veuillez saisir un nom"
+
+#: uconf.rs_enter_name
+msgid "Letters, space and numbers only"
+msgstr "Lettres, espaces et chiffres uniquement"
+
+#: uconf.rs_enter_user
+msgid "Enter a username"
+msgstr "Saisissez un nom d'utilisateur"
+
+#: uconf.rs_err_address
+msgctxt "uconf.rs_err_address"
+msgid "Address must start with http(s)://"
+msgstr "L'adresse doit commencer par http(s)://"
+
+#: uconf.rs_err_carelink_token
+msgctxt "uconf.rs_err_carelink_token"
+msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
+msgstr "L'identifiant doit être les données de jeton CareLink capturées (JSON, commençant par « { »)"
+
+#: uconf.rs_err_email
+msgctxt "uconf.rs_err_email"
+msgid "You must enter a valid e-mail address"
+msgstr "Vous devez saisir une adresse e-mail valide"
+
+#: uconf.rs_err_password
+msgctxt "uconf.rs_err_password"
+msgid "You must enter a password"
+msgstr "Vous devez saisir un mot de passe"
+
+#: uconf.rs_export_empty
+msgid "No settings to export."
+msgstr "Aucun paramètre à exporter."
+
+#: uconf.rs_export_ok
+msgid "Settings exported successfully."
+msgstr "Paramètres exportés avec succès."
+
+#: uconf.rs_export_title
+msgctxt "uconf.rs_export_title"
+msgid "Export Settings"
+msgstr "Exporter les paramètres"
+
+#: uconf.rs_extcount
+#, object-pascal-format
+msgid "Extensions count: %d"
+msgstr "Nombre d'extensions : %d"
+
+#: uconf.rs_ext_changed
+msgid " (changed since approval — Trndi will ask again)"
+msgstr " (modifié depuis l'approbation — Trndi redemandera)"
+
+#: uconf.rs_ext_granted
+msgid "Granted: "
+msgstr "Accordé : "
+
+#: uconf.rs_ext_not_approved
+msgid " (not yet approved)"
+msgstr " (pas encore approuvé)"
+
+#: uconf.rs_ext_reload_done
+msgid "Extensions were reloaded."
+msgstr "Les extensions ont été rechargées."
+
+#: uconf.rs_ext_reload_title
+msgid "Reload Extensions"
+msgstr "Recharger les extensions"
+
+#: uconf.rs_ext_requests
+msgid "Requests: "
+msgstr "Requêtes : "
+
+#: uconf.rs_font_help
+msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
+msgstr "Vous pouvez modifier la police de la lecture, de l'heure et de la flèche. Cliquez sur l'élément correspondant ici pour changer la police"
+
+#: uconf.rs_full_arrow_set_help
+msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
+msgstr "Ceci affichera toutes les flèches de prédiction, par défaut Trndi affiche seulement en hausse, en baisse ou stable"
+
+#: uconf.rs_hastouch
+msgid "Shows if Trndi detected a touch screen"
+msgstr "Indique si Trndi a détecté un écran tactile"
+
+#: uconf.rs_import_empty
+msgid "The selected file is empty."
+msgstr "Le fichier sélectionné est vide."
+
+#: uconf.rs_import_fail
+#, object-pascal-format
+msgid "Error importing settings: %s"
+msgstr "Erreur lors de l'importation des paramètres : %s"
+
+#: uconf.rs_import_ok
+msgid "Settings imported successfully. You need to restart Trndi for all changes to take effect. Do NOT save when exiting the settings dialog!"
+msgstr "Paramètres importés avec succès. Vous devez redémarrer Trndi pour que toutes les modifications prennent effet. N'enregistrez PAS en quittant la boîte de dialogue des paramètres !"
+
+#: uconf.rs_import_title
+msgctxt "uconf.rs_import_title"
+msgid "Import Settings"
+msgstr "Importer les paramètres"
+
+#: uconf.rs_min_minutes
+#, object-pascal-format
+msgid "When calculating time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
+msgstr "Lors du calcul du temps dans la cible, effectuez-le sur ce nombre de minutes. Si le nombre est supérieur aux données disponibles, la durée maximale sera utilisée - actuellement %d minutes."
+
+#: uconf.rs_multi_user_help
+msgid ""
+"Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.<br>In this section you can add/remove accounts. There's <i>always</i> a default account which cannot be deleted.\n"
+"Accounts have their own settings and remote servers, and are <i>\"sandboxed\"</i>.<br><br>Start a new instance of Trndi to log in to a given user account."
+msgstr ""
+"Trndi prend en charge <b>plus d'un utilisateur</b>, on appelle cela le <i>mode multi-utilisateur</i>.<br>Dans cette section, vous pouvez ajouter/supprimer des comptes. Il y a <i>toujours</i> un compte par défaut qui ne peut pas être supprimé.\n"
+"Les comptes ont leurs propres paramètres et serveurs distants, et sont <i>« isolés »</i>.<br><br>Démarrez une nouvelle instance de Trndi pour vous connecter à un compte utilisateur donné."
+
+#: uconf.rs_must_persist_help
+msgid "An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately."
+msgstr "Une alerte ne se déclenchera que si la condition a été vraie en continu pendant ce nombre de minutes. Définissez sur 0 pour un déclenchement immédiat."
+
+#: uconf.rs_newver
+#, object-pascal-format
+msgid "Version %s is available, would you like to go to the downloads page? You can also ignore this warning for 2 weeks."
+msgstr "La version %s est disponible, souhaitez-vous accéder à la page de téléchargement ? Vous pouvez aussi ignorer cet avertissement pendant 2 semaines."
+
+#: uconf.rs_newver_caption
+msgid "New version available"
+msgstr "Nouvelle version disponible"
+
+#: uconf.rs_newver_pr
+#, object-pascal-format
+msgid "This temporary Trndi build is now outdated, a newer stable version has been released: %s. Would you like to go to the downloads page?"
+msgstr "Cette build temporaire de Trndi est maintenant obsolète, une version stable plus récente a été publiée : %s. Souhaitez-vous accéder à la page de téléchargement ?"
+
+#: uconf.rs_newver_pre
+#, object-pascal-format
+msgid "A new pre-release for %s is available, would you like to go to the downloads page?"
+msgstr "Une nouvelle version préliminaire de %s est disponible, souhaitez-vous accéder à la page de téléchargement ?"
+
+#: uconf.rs_notifications
+msgctxt "uconf.rs_notifications"
+msgid "Notifications"
+msgstr "Notifications"
+
+#: uconf.rs_notification_help
+msgid "Trndi will show a system notification (if available) when your reading is in a dangerous state. Alerts will trigger once when hi/low and every 15 minutes when readings are missing."
+msgstr "Trndi affichera une notification système (si disponible) lorsque votre lecture est dans un état dangereux. Les alertes se déclenchent une fois en cas de haut/bas et toutes les 15 minutes lorsque des lectures sont manquantes."
+
+#: uconf.rs_notify_system
+msgid "Notifications will appear where you normally get notification messages."
+msgstr "Les notifications apparaîtront là où vous recevez habituellement les messages de notification."
+
+#: uconf.rs_notify_title
+msgid "A notification system is required"
+msgstr "Un système de notification est requis"
+
+#: uconf.rs_notify_txt
+#, object-pascal-format
+msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to receive notices."
+msgstr "Trndi utilise un système appelé « %s » pour envoyer des notifications de bureau, vous devez avoir ce système installé pour recevoir des notifications."
+
+#: uconf.rs_no_copyright
+msgid "- Extension has no copyright info -"
+msgstr "- L'extension n'a pas d'informations de copyright -"
+
+#: uconf.rs_no_extensions
+msgid "This version of Trndi does not support extensions"
+msgstr "Cette version de Trndi ne prend pas en charge les extensions"
+
+#: uconf.rs_no_extensions_copyright
+msgid "Please download a version of Trndi that supports extensions"
+msgstr "Veuillez télécharger une version de Trndi qui prend en charge les extensions"
+
+#: uconf.rs_no_extensions_system
+#, object-pascal-format
+msgid "Due to hardware limitations, %s on %s cannot support extensions"
+msgstr "En raison de limitations matérielles, %s sur %s ne peut pas prendre en charge les extensions"
+
+#: uconf.rs_outdated_help
+msgid "This is the time after which Trndi will show the \"no recent\" readings overlay. Trndi checks this when updating from the remote server, not every minute."
+msgstr "Ceci est le délai après lequel Trndi affichera l'incrustation « aucune lecture récente ». Trndi vérifie cela lors de la mise à jour depuis le serveur distant, pas chaque minute."
+
+#: uconf.rs_override_help
+msgid ""
+"Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
+"\n"
+"NightScout:\n"
+"Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.\n"
+"\n"
+"Dexcom:\n"
+"Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data."
+msgstr ""
+"Définir des valeurs ici vous permet de définir vos propres limites de glycémie haute et basse dans Trndi.\n"
+"\n"
+"NightScout :\n"
+"Trndi récupère automatiquement vos paramètres haut et bas personnalisés depuis NightScout, il est donc généralement inutile de les définir manuellement ici.\n"
+"\n"
+"Dexcom :\n"
+"Les serveurs Dexcom ne fournissent pas de valeurs haute et basse personnalisées. En les définissant ici, vous pouvez établir vos propres seuils pour les données Dexcom."
+
+#: uconf.rs_override_language
+msgid "Choose which language to run Trndi in. Should you choose the wrong one, you can press the Windows/\"meta\" button at start to force English!"
+msgstr "Choisissez la langue dans laquelle exécuter Trndi. Si vous choisissez la mauvaise, vous pouvez appuyer sur la touche Windows/« méta » au démarrage pour forcer l'anglais !"
+
+#: uconf.rs_override_ns
+msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
+msgstr "Vous utilisez le backend NightScout, vous devriez définir ces valeurs sur votre serveur (si possible), car Trndi utilise par défaut vos préférences NightScout"
+
+#: uconf.rs_pos
+#, object-pascal-format
+msgid "This feature depends on your Window Manager (WM). %s may not support this feature."
+msgstr "Cette fonctionnalité dépend de votre gestionnaire de fenêtres (WM). %s pourrait ne pas prendre en charge cette fonctionnalité."
+
+#: uconf.rs_pos_title
+msgid "Restricted Feature"
+msgstr "Fonctionnalité restreinte"
+
+#: uconf.rs_pos_unknown
+msgid "This feature depends on your Window Manager. It may not support this feature."
+msgstr "Cette fonctionnalité dépend de votre gestionnaire de fenêtres. Il pourrait ne pas la prendre en charge."
+
+#: uconf.rs_predictionwarn
+msgid "Trndi will try to predict future readings. This is experimental and potentially unsafe! Do not make any treatment decisions based on these values! This feature is used on your own risk and responsibility!"
+msgstr "Trndi tentera de prédire les futures lectures. Ceci est expérimental et potentiellement dangereux ! Ne prenez aucune décision de traitement basée sur ces valeurs ! Cette fonctionnalité est utilisée à vos propres risques et responsabilité !"
+
+#: uconf.rs_prediction_help
+msgid "Trndi can predict/guess what your reading will be in the future. This will be shown in the lower right part of the screen."
+msgstr "Trndi peut prédire/deviner quelle sera votre lecture dans le futur. Ceci sera affiché dans la partie inférieure droite de l'écran."
+
+#: uconf.rs_prediction_horizon
+msgid "The prediction horizon is how far in the future Trndi will show predictions, when just showing one. This is not an exact time, it may vary, it's just a target time."
+msgstr "L'horizon de prédiction indique jusqu'où dans le futur Trndi affichera les prédictions, lorsqu'une seule est affichée. Ce n'est pas une heure exacte, elle peut varier, c'est juste une heure cible."
+
+#: uconf.rs_pred_scale_help
+msgid "When predictions are enabled, this controls the size adjustment of the predictions"
+msgstr "Lorsque les prédictions sont activées, ceci contrôle l'ajustement de taille des prédictions"
+
+#: uconf.rs_privacy_help
+msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
+msgstr "En mode privé, la valeur réelle de glycémie est masquée. Trndi indiquera seulement à l'utilisateur si elle est bonne, haute ou basse."
+
+#: uconf.rs_remove_acc
+msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
+msgstr "Les comptes supprimés sont rendus inactifs, et peuvent être restaurés en ajoutant à nouveau le même nom"
+
+#: uconf.rs_rotating_arrow_help
+msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
+msgstr "Au lieu des flèches fixes haut/stable/bas, la flèche de tendance pivote en douceur pour correspondre à la vitesse de variation de votre glycémie : presque plate pour de petits changements, et penchée davantage vers le bas (ou le haut) plus le mouvement est rapide."
+
+#: uconf.rs_saftey_hi
+msgid "Trndi won't allow a larger limit, for your own safety. This can be overridden manually/via plugin"
+msgstr "Trndi n'autorisera pas une limite plus élevée, pour votre propre sécurité. Ceci peut être remplacé manuellement/via une extension"
+
+#: uconf.rs_saftey_low
+msgid "Trndi won't allow a lower limit, the backend system only reports values every 5 minutes. 6 = one reading missing."
+msgstr "Trndi n'autorisera pas une limite plus basse, le système backend ne rapporte des valeurs que toutes les 5 minutes. 6 = une lecture manquante."
+
+#: uconf.rs_scale_diff_help
+msgid "You can change the scale/size of the difference in reading since last, by entering a scale factor"
+msgstr "Vous pouvez modifier l'échelle/la taille de la différence de lecture depuis la dernière, en saisissant un facteur d'échelle"
+
+#: uconf.rs_select_font
+msgid "Select a font"
+msgstr "Sélectionner une police"
+
+#: uconf.rs_select_font_arrow
+msgid "Select a font for the arrow"
+msgstr "Sélectionner une police pour la flèche"
+
+#: uconf.rs_select_font_desc
+msgid "Choose a font to use"
+msgstr "Choisissez une police à utiliser"
+
+#: uconf.rs_select_font_reading
+msgid "Select a font for the reading"
+msgstr "Sélectionner une police pour la lecture"
+
+#: uconf.rs_select_font_time
+msgid "Select a font for the time"
+msgstr "Sélectionner une police pour l'heure"
+
+#: uconf.rs_settings_filter
+msgid "Settings files (*.trndi)|*.trndi|All files (*.*)|*.*"
+msgstr "Fichiers de paramètres (*.trndi)|*.trndi|Tous les fichiers (*.*)|*.*"
+
+#: uconf.rs_shortmode_full
+msgid "By default, Trndi only shows up/down/straight. You can enable the full range of arrows here - however you must realize that this is very experimental and potentially less accurate!"
+msgstr "Par défaut, Trndi affiche seulement haut/bas/stable. Vous pouvez activer ici la gamme complète de flèches - cependant vous devez comprendre que ceci est très expérimental et potentiellement moins précis !"
+
+#: uconf.rs_short_mode_help
+msgid "Only one reading will show, as just an arrow or a single prediction"
+msgstr "Une seule lecture s'affichera, sous forme de flèche ou d'une seule prédiction"
+
+#: uconf.rs_tandem
+msgid ""
+"This backend is in alpha stage, it may not work as intended!\n"
+"Please set your own thresholds in the Customization tab."
+msgstr ""
+"Ce backend est en phase alpha, il pourrait ne pas fonctionner comme prévu !\n"
+"Veuillez définir vos propres seuils dans l'onglet Personnalisation."
+
+#: uconf.rs_test_fail
+msgid "Could not connect!"
+msgstr "Connexion impossible !"
+
+#: uconf.rs_test_success
+msgid "Successfully connected!"
+msgstr "Connexion réussie !"
+
+#: uconf.rs_test_unsupported
+msgid "Sorry! Trndi does not (yet) support connection testing for this service!"
+msgstr "Désolé ! Trndi ne prend pas (encore) en charge le test de connexion pour ce service !"
+
+#: uconf.rs_threashold_lines_help
+msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
+msgstr "Trndi peut dessiner une ligne dans le fond du graphique, pour représenter l'emplacement de vos limites haute/basse."
+
+#: uconf.rs_timestamp_help
+msgid "By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead."
+msgstr "Par défaut, Trndi affiche le nombre de minutes depuis la dernière lecture, ce paramètre vous permet d'afficher plutôt l'heure de la dernière lecture."
+
+#: uconf.rs_update_snooze
+#, object-pascal-format
+msgid "You will be alerted again after %s"
+msgstr "Vous serez alerté à nouveau après %s"
+
+#: uconf.rs_uptodate
+msgid "You are up to date"
+msgstr "Vous êtes à jour"
+
+#: uconf.rs_uptodate_dev
+#, object-pascal-format
+msgid "You are using a development version, there's no stable release newer than this! The most recent stable release is %s"
+msgstr "Vous utilisez une version de développement, il n'existe pas de version stable plus récente que celle-ci ! La version stable la plus récente est %s"
+
+#: uconf.rs_uptodate_pr
+#, object-pascal-format
+msgid "You are using a newer temporary Trndi build, the latest stable release is: %s"
+msgstr "Vous utilisez une build temporaire de Trndi plus récente, la dernière version stable est : %s"
+
+#: uconf.rs_use_url_help
+msgid "Trndi can load a URL when high or low in your default web browser."
+msgstr "Trndi peut charger une URL en cas de valeur haute ou basse dans votre navigateur web par défaut."
+
+#: uconf.rs_warn_hilow
+msgid "This will show an overlay on the screen when a low or high is predicted"
+msgstr "Ceci affichera une incrustation à l'écran lorsqu'une valeur basse ou haute est prédite"
+
+#: uconf.rs_wayland
+msgid ""
+"Your desktop session is Wayland. Wayland compositors (including KWin) restrict third-party apps from forcing windows above others.\n"
+"Right-click the title bar, select more options and check the always-on-top option (or similar)"
+msgstr ""
+"Votre session de bureau est Wayland. Les compositeurs Wayland (dont KWin) empêchent les applications tierces de forcer des fenêtres au-dessus des autres.\n"
+"Faites un clic droit sur la barre de titre, sélectionnez plus d'options et cochez l'option toujours au premier plan (ou similaire)"
+
+#: uconf.rs_webapi
+msgid "Trndi can expose a <b>WebAPI</b> for use with <i>third-party systems</i>.<br><br>This is an advanced feature, you can safely disregard it if you don't know what it does!"
+msgstr "Trndi peut exposer une <b>API Web</b> pour une utilisation avec des <i>systèmes tiers</i>.<br><br>Il s'agit d'une fonctionnalité avancée, vous pouvez l'ignorer sans risque si vous ne savez pas à quoi elle sert !"
+
+#: uconf.rs_weblogin_bad_output
+msgctxt "uconf.rs_weblogin_bad_output"
+msgid "The login helper did not return valid token data."
+msgstr "L'assistant de connexion n'a pas renvoyé de données de jeton valides."
+
+#: uconf.rs_weblogin_btn_busy
+msgid "Signing in…"
+msgstr "Connexion en cours…"
+
+#: uconf.rs_weblogin_button
+msgctxt "uconf.rs_weblogin_button"
+msgid "Get CareLink token…"
+msgstr "Obtenir un jeton CareLink…"
+
+#: uconf.rs_weblogin_fail_title
+msgctxt "uconf.rs_weblogin_fail_title"
+msgid "Automatic login unavailable"
+msgstr "Connexion automatique indisponible"
+
+#: uconf.rs_weblogin_help
+#, object-pascal-format
+msgid "CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.<br><br>It needs Node.js installed. In a terminal, run:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field below and click Test.<br><br>Open the helper folder now?"
+msgstr "CareLink nécessite une connexion navigateur unique (avec CAPTCHA), Trndi utilise donc un petit assistant de connexion pour capturer votre jeton.<br><br>Il nécessite Node.js installé. Dans un terminal, exécutez :<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>Un navigateur s'ouvre — connectez-vous avec votre compte Care Partner et résolvez le CAPTCHA. L'assistant affiche ensuite un bloc JSON : copiez-le dans le champ de jeton ci-dessous et cliquez sur Tester.<br><br>Ouvrir le dossier de l'assistant maintenant ?"
+
+#: uconf.rs_weblogin_installing
+msgctxt "uconf.rs_weblogin_installing"
+msgid "Installing login helper dependencies (first run only)…"
+msgstr "Installation des dépendances de l'assistant de connexion (première exécution uniquement)…"
+
+#: uconf.rs_weblogin_nonode
+msgctxt "uconf.rs_weblogin_nonode"
+msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
+msgstr "Node.js est introuvable sur ce système, Trndi ne peut donc pas exécuter l'assistant de connexion pour vous. Installez Node.js (22.12+) — ou exécutez l'assistant manuellement."
+
+#: uconf.rs_weblogin_noscript
+msgctxt "uconf.rs_weblogin_noscript"
+msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
+msgstr "L'assistant de connexion CareLink intégré est introuvable à côté de Trndi. Vous pouvez toujours l'exécuter manuellement."
+
+#: uconf.rs_weblogin_no_output
+msgctxt "uconf.rs_weblogin_no_output"
+msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
+msgstr "L'assistant de connexion n'a renvoyé aucune donnée de jeton. La connexion a peut-être été annulée ou a expiré."
+
+#: uconf.rs_weblogin_npm_fail
+msgctxt "uconf.rs_weblogin_npm_fail"
+msgid "Could not install the login helper's dependencies (npm install failed)."
+msgstr "Impossible d'installer les dépendances de l'assistant de connexion (échec de npm install)."
+
+#: uconf.rs_weblogin_ok
+msgid "Login captured. Click Test to verify, then Save."
+msgstr "Connexion capturée. Cliquez sur Tester pour vérifier, puis sur Enregistrer."
+
+#: uconf.rs_weblogin_run_prompt
+msgid "Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token/login information automatically.<br><br>The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.<br><br>Start now?"
+msgstr "Trndi ouvrira une fenêtre de navigateur pour vous permettre de vous connecter à CareLink (avec CAPTCHA), puis capturera automatiquement le jeton/les informations de connexion.<br><br>La première exécution télécharge également les dépendances de l'assistant de connexion, ce qui peut prendre une minute. Gardez cette fenêtre ouverte et terminez la connexion dans le navigateur.<br><br>Démarrer maintenant ?"
+
+#: uconf.rs_weblogin_run_title
+msgctxt "uconf.rs_weblogin_run_title"
+msgid "CareLink login"
+msgstr "Connexion CareLink"
+
+#: uconf.rs_weblogin_title
+msgctxt "uconf.rs_weblogin_title"
+msgid "CareLink login helper"
+msgstr "Assistant de connexion CareLink"
+
+#: uconf.rs_weblogin_waiting
+msgctxt "uconf.rs_weblogin_waiting"
+msgid "Waiting for the browser sign-in to complete…"
+msgstr "En attente de la fin de la connexion dans le navigateur…"
+
+#: uconf.rs_xdrip
+msgid ""
+"Make sure you are on the same network as the xDrip app.\n"
+"Make sure that web access is turned on."
+msgstr ""
+"Assurez-vous d'être sur le même réseau que l'application xDrip.\n"
+"Assurez-vous que l'accès web est activé."
+
+#: ufloat.rs_custom_op
+msgctxt "ufloat.rs_custom_op"
+msgid "You can use shift+<number> to manually set visibility (0 = 100% visible)"
+msgstr "Vous pouvez utiliser majuscule+<nombre> pour définir manuellement la visibilité (0 = 100% visible)"
+
+#: ufloat.rs_custom_size
+msgctxt "ufloat.rs_custom_size"
+msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
+msgstr "Vous pouvez maintenir majuscule et plus (+) ou moins (-) pour modifier la taille de la fenêtre"
+
+#: uhistorygraph.rs_history_graph_axis_time
+msgctxt "uhistorygraph.rs_history_graph_axis_time"
+msgid "Time"
+msgstr "Heure"
+
+#: uhistorygraph.rs_history_graph_csv_title
+msgid "Save readings as CSV"
+msgstr "Enregistrer les lectures en CSV"
+
+#: uhistorygraph.rs_history_graph_empty
+msgid "No history data to plot"
+msgstr "Aucune donnée d'historique à tracer"
+
+#: uhistorygraph.rs_history_graph_help
+msgid "Click a dot to see the full reading details"
+msgstr "Cliquez sur un point pour voir tous les détails de la lecture"
+
+#: uhistorygraph.rs_history_graph_help_interact
+msgid "Hover or click dots for details. Right-click to choose a time range."
+msgstr "Survolez ou cliquez sur les points pour plus de détails. Clic droit pour choisir une période."
+
+#: uhistorygraph.rs_history_graph_hover_fmt
+#, object-pascal-format
+msgid "%s at %s"
+msgstr "%s à %s"
+
+#: uhistorygraph.rs_history_graph_key_basal
+msgid "Basal"
+msgstr "Basal"
+
+#: uhistorygraph.rs_history_graph_key_high
+msgctxt "uhistorygraph.rs_history_graph_key_high"
+msgid "High"
+msgstr "Haut"
+
+#: uhistorygraph.rs_history_graph_key_low
+msgctxt "uhistorygraph.rs_history_graph_key_low"
+msgid "Low"
+msgstr "Bas"
+
+#: uhistorygraph.rs_history_graph_key_predict
+msgid "Predicted"
+msgstr "Prédit"
+
+#: uhistorygraph.rs_history_graph_key_range
+msgid "In range"
+msgstr "Dans la cible"
+
+#: uhistorygraph.rs_history_graph_key_range_hi
+msgid "Range high"
+msgstr "Plage haute"
+
+#: uhistorygraph.rs_history_graph_key_range_lo
+msgid "Range low"
+msgstr "Plage basse"
+
+#: uhistorygraph.rs_history_graph_key_title
+msgid "Legend"
+msgstr "Légende"
+
+#: uhistorygraph.rs_history_graph_key_unknown
+msgctxt "uhistorygraph.rs_history_graph_key_unknown"
+msgid "Unknown"
+msgstr "Inconnu"
+
+#: uhistorygraph.rs_history_graph_menu_range
+msgid "Time range"
+msgstr "Période"
+
+#: uhistorygraph.rs_history_graph_menu_range_12h
+msgid "Last 12h"
+msgstr "12 dernières heures"
+
+#: uhistorygraph.rs_history_graph_menu_range_1h
+msgid "Last 1h"
+msgstr "Dernière heure"
+
+#: uhistorygraph.rs_history_graph_menu_range_24h
+msgid "Last 24h"
+msgstr "24 dernières heures"
+
+#: uhistorygraph.rs_history_graph_menu_range_3h
+msgid "Last 3h"
+msgstr "3 dernières heures"
+
+#: uhistorygraph.rs_history_graph_menu_range_6h
+msgid "Last 6h"
+msgstr "6 dernières heures"
+
+#: uhistorygraph.rs_history_graph_menu_range_all
+msgctxt "uhistorygraph.rs_history_graph_menu_range_all"
+msgid "All"
+msgstr "Tout"
+
+#: uhistorygraph.rs_history_graph_menu_save
+msgid "Save as Image..."
+msgstr "Enregistrer comme image..."
+
+#: uhistorygraph.rs_history_graph_menu_save_csv
+msgid "Save as CSV..."
+msgstr "Enregistrer en CSV..."
+
+#: uhistorygraph.rs_history_graph_point_count
+#, object-pascal-format
+msgid "%d readings"
+msgstr "%d lectures"
+
+#: uhistorygraph.rs_history_graph_range
+#, object-pascal-format
+msgid "%s – %s"
+msgstr "%s – %s"
+
+#: uhistorygraph.rs_history_graph_save_error
+#, object-pascal-format
+msgid "Failed to save graph: %s"
+msgstr "Échec de l'enregistrement du graphique : %s"
+
+#: uhistorygraph.rs_history_graph_save_success
+msgid "Graph saved successfully"
+msgstr "Graphique enregistré avec succès"
+
+#: uhistorygraph.rs_history_graph_save_title
+msgid "Save graph as PNG"
+msgstr "Enregistrer le graphique en PNG"
+
+#: uhistorygraph.rs_history_graph_title
+msgid "History graph"
+msgstr "Graphique d'historique"
+
+#: uhistorygraph.rs_history_graph_unit_fmt
+#, object-pascal-format
+msgid "Readings (%s)"
+msgstr "Lectures (%s)"
+
+#: uwizard.wz_err_address
+msgctxt "uwizard.wz_err_address"
+msgid "Address must start with http(s)://"
+msgstr "L'adresse doit commencer par http(s)://"
+
+#: uwizard.wz_err_carelink_token
+msgctxt "uwizard.wz_err_carelink_token"
+msgid "The credential must be the captured CareLink token data (JSON, starting with \"{\")"
+msgstr "L'identifiant doit être les données de jeton CareLink capturées (JSON, commençant par « { »)"
+
+#: uwizard.wz_err_email
+msgctxt "uwizard.wz_err_email"
+msgid "You must enter a valid e-mail address"
+msgstr "Vous devez saisir une adresse e-mail valide"
+
+#: uwizard.wz_err_need_addr
+msgctxt "uwizard.wz_err_need_addr"
+msgid "Please enter a server address or username."
+msgstr "Veuillez saisir une adresse de serveur ou un nom d'utilisateur."
+
+#: uwizard.wz_err_password
+msgctxt "uwizard.wz_err_password"
+msgid "You must enter a password"
+msgstr "Vous devez saisir un mot de passe"
+
+#: uwizard.wz_err_thresh_hi
+msgid "Please enter a valid high threshold (a number greater than zero)."
+msgstr "Veuillez saisir un seuil haut valide (un nombre supérieur à zéro)."
+
+#: uwizard.wz_err_thresh_lo
+msgid "Please enter a valid low threshold (a number greater than zero)."
+msgstr "Veuillez saisir un seuil bas valide (un nombre supérieur à zéro)."
+
+#: uwizard.wz_err_thresh_order
+msgid "The high threshold must be greater than the low threshold."
+msgstr "Le seuil haut doit être supérieur au seuil bas."
+
+#: uwizard.wz_test_no_support
+msgid "Connection testing is not supported for this service."
+msgstr "Le test de connexion n'est pas pris en charge pour ce service."
+
+#: uwizard.wz_weblogin_bad_output
+msgctxt "uwizard.wz_weblogin_bad_output"
+msgid "The login helper did not return valid token data."
+msgstr "L'assistant de connexion n'a pas renvoyé de données de jeton valides."
+
+#: uwizard.wz_weblogin_button
+msgctxt "uwizard.wz_weblogin_button"
+msgid "Get CareLink token…"
+msgstr "Obtenir un jeton CareLink…"
+
+#: uwizard.wz_weblogin_fail_title
+msgctxt "uwizard.wz_weblogin_fail_title"
+msgid "Automatic login unavailable"
+msgstr "Connexion automatique indisponible"
+
+#: uwizard.wz_weblogin_help
+#, object-pascal-format
+msgid ""
+"CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.\n"
+"\n"
+"It needs Node.js installed. In a terminal, run:\n"
+"\n"
+"    cd \"%s\"\n"
+"    npm install\n"
+"    %s\n"
+"\n"
+"A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field and click Test.\n"
+"\n"
+"Open the helper folder now?"
+msgstr ""
+"CareLink nécessite une connexion navigateur unique (avec CAPTCHA), Trndi utilise donc un petit assistant de connexion pour capturer votre jeton.\n"
+"\n"
+"Il nécessite Node.js installé. Dans un terminal, exécutez :\n"
+"\n"
+"    cd \"%s\"\n"
+"    npm install\n"
+"    %s\n"
+"\n"
+"Un navigateur s'ouvre — connectez-vous avec votre compte Care Partner et résolvez le CAPTCHA. L'assistant affiche ensuite un bloc JSON : copiez-le dans le champ de jeton et cliquez sur Tester.\n"
+"\n"
+"Ouvrir le dossier de l'assistant maintenant ?"
+
+#: uwizard.wz_weblogin_installing
+msgctxt "uwizard.wz_weblogin_installing"
+msgid "Installing login helper dependencies (first run only)…"
+msgstr "Installation des dépendances de l'assistant de connexion (première exécution uniquement)…"
+
+#: uwizard.wz_weblogin_nonode
+msgctxt "uwizard.wz_weblogin_nonode"
+msgid "Node.js was not found on this system, so Trndi cannot run the login helper for you. Install Node.js (22.12+) — or run the helper manually."
+msgstr "Node.js est introuvable sur ce système, Trndi ne peut donc pas exécuter l'assistant de connexion pour vous. Installez Node.js (22.12+) — ou exécutez l'assistant manuellement."
+
+#: uwizard.wz_weblogin_noscript
+msgctxt "uwizard.wz_weblogin_noscript"
+msgid "The bundled CareLink login helper was not found next to Trndi. You can still run it manually."
+msgstr "L'assistant de connexion CareLink intégré est introuvable à côté de Trndi. Vous pouvez toujours l'exécuter manuellement."
+
+#: uwizard.wz_weblogin_no_output
+msgctxt "uwizard.wz_weblogin_no_output"
+msgid "The login helper did not return any token data. The sign-in may have been cancelled or timed out."
+msgstr "L'assistant de connexion n'a renvoyé aucune donnée de jeton. La connexion a peut-être été annulée ou a expiré."
+
+#: uwizard.wz_weblogin_npm_fail
+msgctxt "uwizard.wz_weblogin_npm_fail"
+msgid "Could not install the login helper's dependencies (npm install failed)."
+msgstr "Impossible d'installer les dépendances de l'assistant de connexion (échec de npm install)."
+
+#: uwizard.wz_weblogin_ok
+msgid "Login captured. Click Test to verify."
+msgstr "Connexion capturée. Cliquez sur Tester pour vérifier."
+
+#: uwizard.wz_weblogin_run_prompt
+msgid ""
+"Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token automatically.\n"
+"\n"
+"The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.\n"
+"\n"
+"Start now?"
+msgstr ""
+"Trndi ouvrira une fenêtre de navigateur pour vous permettre de vous connecter à CareLink (avec CAPTCHA), puis capturera automatiquement le jeton.\n"
+"\n"
+"La première exécution télécharge également les dépendances de l'assistant de connexion, ce qui peut prendre une minute. Gardez cette fenêtre ouverte et terminez la connexion dans le navigateur.\n"
+"\n"
+"Démarrer maintenant ?"
+
+#: uwizard.wz_weblogin_run_title
+msgctxt "uwizard.wz_weblogin_run_title"
+msgid "CareLink login"
+msgstr "Connexion CareLink"
+
+#: uwizard.wz_weblogin_title
+msgctxt "uwizard.wz_weblogin_title"
+msgid "CareLink login helper"
+msgstr "Assistant de connexion CareLink"
+
+#: uwizard.wz_weblogin_waiting
+msgctxt "uwizard.wz_weblogin_waiting"
+msgid "Waiting for the browser sign-in to complete…"
+msgstr "En attente de la fin de la connexion dans le navigateur…"
