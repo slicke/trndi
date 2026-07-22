@@ -2420,11 +2420,11 @@ begin
   end;
   if EvalResult.IsException then
   try
+    // Eval already took the exception off the context, so err is the only copy
+    // that still exists. Fetching it a second time yields [uninitialized], and
+    // reading properties off that leaves a fresh TypeError pending.
     ExtError(sdsAuto, 'Error loading', err);
-    ResultStr := JS_ToCString(ctx, JS_GetException(ctx));
-    Result := 'Error: ' + ResultStr + err;
-    JS_FreeCString(ctx, ResultStr);
-    ExtError(sdsAuto, analyze(ctx, @evalresult));
+    Result := 'Error: ' + err;
   except
     on E: Exception do
       ExtError(sdsAuto, 'An extension''s code resulted in an error: ' + e.message);
@@ -2496,14 +2496,10 @@ begin
 
   if EvalResult.IsException then
   try
-    // Present error and capture exception string
+    // Present the error. Eval already cleared the exception and put its message
+    // and stack in err; asking the context again returns [uninitialized].
     ExtError(sdsAuto, 'Error loading', err);
-    ResultStr := JS_ToCString(FContext, JS_GetException(FContext));
-    Result := 'Error: ' + ResultStr + err;
-    JS_FreeCString(FContext, ResultStr);
-
-    // Optional detailed analysis hook
-    ExtError(sdsAuto, analyze(FContext, @evalresult));
+    Result := 'Error: ' + err;
   except
     on E: Exception do
       ExtError(sdsAuto, 'An extension''s code resulted in an error: ' + e.message);

@@ -76,6 +76,7 @@ type
     procedure TestEvalReturnsBool;
     procedure TestValuePredicates;
     procedure TestExceptionIsReported;
+    procedure TestEvalConsumesExceptionOnce;
     procedure TestNativeFunctionIsCalled;
     procedure TestNativeFunctionReceivesArguments;
     procedure TestPropertyRoundTrip;
@@ -284,6 +285,39 @@ begin
     AssertTrue('message should mention boom (got: ' + msg + ')', Pos('boom', msg) > 0);
   finally
     JS_FreeValue(FContext, err);
+  end;
+end;
+
+procedure TQuickJSBindingTests.TestEvalConsumesExceptionOnce;
+var
+  v, second: JSValue;
+  err: RawUtf8;
+  again: string;
+begin
+  // JSContextHelper.Eval clears the exception and hands back the text, so err is
+  // the only surviving copy. The engine used to ask the context a second time
+  // and paste the answer into the message the user sees - which is how
+  // "Error: [uninitialized]" ended up in front of real error text.
+  v := FContext^.Eval('throw new Error("boom")', 'test.js', JS_EVAL_TYPE_GLOBAL, err);
+  try
+    AssertTrue('expected an exception', v.IsException);
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+
+  AssertTrue('Eval must report the message (got: ' + string(err) + ')',
+    Pos('boom', string(err)) > 0);
+  AssertTrue('Eval must report the stack too (got: ' + string(err) + ')',
+    Pos('test.js', string(err)) > 0);
+
+  // The context is clean afterwards: nothing is left to fetch.
+  second := JS_GetException(FContext);
+  try
+    again := string(JS_ToUtf8(FContext, second));
+    AssertFalse('a second fetch must not still be holding the error (got: '
+      + again + ')', Pos('boom', again) > 0);
+  finally
+    JS_FreeValue(FContext, second);
   end;
 end;
 

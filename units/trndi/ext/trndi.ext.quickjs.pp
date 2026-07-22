@@ -1340,8 +1340,10 @@ begin
   ctx := @Self;
   err := '';
   Result := JS_Eval(ctx, script, filename, flags);
+  // Clearing here is what makes err the only surviving copy of the error, so
+  // take the stack too - callers have no second chance to ask for it.
   if Result.IsException then
-    ErrorMessage(true, err);
+    DumpError(err);
 end;
 
 function JSContextHelper.DumpError(out msg: RawUtf8): boolean;
