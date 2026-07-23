@@ -1640,9 +1640,12 @@ icon: SlickeUXImage = uxmtOK;
 sender: TForm = nil);
 const
   onFormName: string = 'uxd_on_form';
+  Margin = 5;
+  Gap = 10;
 var
   tp: TPanel;
   tl, tt: TLabel;
+  ts: TScrollBox;
   {$ifdef X_WIN}
   tb: TButton; // TDarkButton;
   {$else}
@@ -1653,40 +1656,43 @@ begin
   if (dialogsize = sdsOnForm) and ((sender <> nil) and (sender.FindComponent(onFormName) = nil)) then
   begin
 
-    if (sender <> nil) and (sender.Showing) and (GeTSlickeDialogSize(sdsAuto) = sdsBig) then
+    // Gate on touch, not on the resolved layout size: small touch panels now
+    // resolve to sdsMedium, and the full-screen overlay is wanted most exactly
+    // there. This is the original meaning of the test.
+    if (sender <> nil) and (sender.Showing) and TrndiNative.HasTouchScreen then
     begin
-      // On e.g. touch screens display a full screen message
+      // On e.g. touch screens display a full screen message. Child coordinates
+      // are in the parent's client space, and all four sides are anchored so the
+      // overlay keeps covering the form when it is resized or the screen rotates.
       tp := TPanel.Create(sender); // Create a panel to cover the screen
       tp.Name := onFormName;
       tp.caption := '';
       tp.Parent := sender;
       tp.Top := 0;
       tp.Left := 0;
-      tp.Height := sender.Height;
-      tp.Width := sender.Width;
+      tp.Width := sender.ClientWidth;
+      tp.Height := sender.ClientHeight;
+      tp.Anchors := [akLeft, akTop, akRight, akBottom];
       tp.BringToFront;
       tp.Color := uxclLightBlue;
 
+      // --- Title: measured, not guessed, so the body never lands on top of it ---
       tt := TLabel.Create(tp);
       tt.parent := tp;
-      tt.autosize := true;
-      tt.Font.Color := uxclBlue;
-      tt.Caption := title;
-      tt.Font.Size := tp.Width div 20;
-      tt.WordWrap := false;
-      tt.left := 5;
-      tt.top := 1;
-      tt.width := tp.width-10;
-      tt.height := 25;
+      tt.autosize := false;
       tt.WordWrap := true;
+      tt.Font.Color := uxclBlue;
       tt.Font.Style := [fsBold];
-  //    if IsProblematicWM then
-//        tl.Font.size := 38;
+      tt.Font.Size := tp.Width div 20;
+      tt.left := Margin;
+      tt.top := Margin;
+      tt.width := tp.Width - (Margin * 2);
+      tt.Anchors := [akLeft, akTop, akRight];
+      tt.Caption := title;
+      tt.Height := MeasureWrappedHeight(title, tt.Font, tt.Width);
 
-      // Button created first so we know its final Top before sizing the label.
-      // BringToFront is essential: in Qt the last-created sibling has the
-      // highest z-order, so without it the label (created after) sits on top
-      // and its QLabel widget intercepts touch events over the button area.
+      // Button created first so we know its final Top before sizing the message
+      // area below.
       {$ifdef X_WIN}tb := TButton.Create(tp);{$else}tb := TButton.Create(tp);{$endif}
       tb.Parent := tp;
       tb.AutoSize := true;
@@ -1700,26 +1706,53 @@ begin
 
       tb.Left := 0;
       tb.Width := tp.Width;
-      tb.Top := tp.Height - tb.Height - 10;
+      tb.Top := tp.Height - tb.Height - Gap;
+      tb.Anchors := [akLeft, akRight, akBottom];
       tb.Font.Color := sender.Font.Color;
-      tb.BringToFront;
 
-      tl := TLabel.Create(tp);
-      tl.parent := tp;
+      // --- Message: scrollable, so a long text is reachable instead of clipped ---
+      ts := TScrollBox.Create(tp);
+      ts.Parent := tp;
+      ts.BorderStyle := bsNone;
+      ts.ParentColor := false;
+      ts.Color := uxclLightBlue;
+      ts.Left := Margin;
+      ts.Top := tt.Top + tt.Height + Margin;
+      ts.Width := tp.Width - (Margin * 2);
+      ts.Height := tb.Top - ts.Top - Margin;
+      ts.Anchors := [akLeft, akTop, akRight, akBottom];
+      ts.HorzScrollBar.Visible := false;
+      ts.VertScrollBar.Visible := true;
+      // Realise the handle so ClientWidth below excludes the vertical scroll
+      // bar; without it the label is measured too wide and clips on the right.
+      ts.HandleNeeded;
+
+      tl := TLabel.Create(ts);
+      tl.parent := ts;
       tl.autosize := false;
       tl.Font.Color := uxclBlue;
-      tl.Caption := message;
       tl.Font.Size := tp.Width div 20;
-      tl.WordWrap := true;
-      tl.top := 30;
-      tl.left := 5;
-      tl.width := tp.width - 10;
-      tl.height := tb.Top - tl.Top - 4;  // stop above the button; no overlap
       if IsProblematicWM then
         tl.Font.size := 38;
+      tl.WordWrap := true;
+      tl.top := 0;
+      tl.left := 0;
+      tl.width := ts.ClientWidth;
+      tl.Anchors := [akLeft, akTop, akRight];
+      tl.Caption := message;
+      // Font is final before measuring; the scroll box supplies whatever height
+      // the wrapped text needs beyond the visible area.
+      tl.Height := MeasureWrappedHeight(message, tl.Font, tl.Width);
 
-      // df is owned by sender (the main form) — never freed from inside tb's event
-      df := TDialogForm.CreateNew(sender);
+      // BringToFront is essential: in Qt the last-created sibling has the
+      // highest z-order, so without it the message area (created after) sits on
+      // top and its widget intercepts touch events over the button area.
+      tb.BringToFront;
+
+      // Owned by the overlay panel, not by sender: releasing the panel disposes
+      // of the handler host too, so repeated messages don't accumulate hidden
+      // forms on the main window for the lifetime of the app.
+      df := TDialogForm.CreateNew(tp);
       tb.OnClick := @df.SlickeMessageOnClick;
       tb.OnMouseDown := @df.SlickeMessageOnMouseDown;
     end
@@ -3606,11 +3639,13 @@ var
 begin
   P := (sender as TButton).parent as TPanel;
   // Clear the name so the next SlickeMessage call can create a new overlay.
-  // Do NOT free here — in Qt, destroying a QWidget from inside its own
-  // clicked() signal causes the signal dispatch to access freed memory;
-  // the panel is owned by the parent form and freed when the form closes.
+  // Never free directly here — in Qt, destroying a QWidget from inside its own
+  // clicked() signal makes the signal dispatch touch freed memory. Hide now and
+  // let the LCL release it from the message loop once dispatch has unwound;
+  // that also frees the child labels, the button and the handler form.
   P.Name := '';
   P.Hide;
+  Application.ReleaseComponent(P);
 end;
 
 {** OnChange handler for font combo in ExtFontPicker - updates live preview. }
