@@ -834,11 +834,57 @@ begin
   Result := Format('#%.2x%.2x%.2x', [R, G, B]);
 end;
 
+{ ---------------------------------------------------------------------------
+  Screen fitting helpers
+
+  Dialog geometry is expressed in fixed pixel budgets. On small touch panels
+  (Raspberry Pi 7" 800x480, 1024x600 hats) those budgets exceed the display, so
+  every hard-coded width/height is passed through these clamps.
+  --------------------------------------------------------------------------- }
+
+const
+ { Largest share of the usable screen a dialog may occupy. }
+  MaxDialogScreenWidthFraction = 0.95;
+ { Smallest screen that still gets the full sdsBig layout; below this a touch
+   screen falls back to sdsMedium instead. }
+  BigLayoutMinScreenWidth  = 1024;
+  BigLayoutMinScreenHeight = 700;
+
+{ Usable screen width in pixels: the work area (taskbars/panels excluded) with
+  fallbacks for widgetsets that report nothing useful. }
+function ScreenUsableWidth: integer;
+begin
+  Result := Screen.WorkAreaWidth;
+  if Result <= 0 then
+    Result := Screen.Width;
+  if Result <= 0 then
+    Result := 640;
+end;
+
+{ Usable screen height in pixels; see ScreenUsableWidth. }
+function ScreenUsableHeight: integer;
+begin
+  Result := Screen.WorkAreaHeight;
+  if Result <= 0 then
+    Result := Screen.Height;
+  if Result <= 0 then
+    Result := 480;
+end;
+
+{ Clamp a proposed dialog width to what the display can actually show. }
+function FitDialogWidth(const AWidth: integer): integer;
+begin
+  Result := Min(AWidth, Round(ScreenUsableWidth * MaxDialogScreenWidthFraction));
+end;
+
 {**
   Determine whether dialogs should use the large layout.
   @param dialogsize Requested size mode.
   @returns @true if big layout should be used; @false otherwise.
-  @remarks When @code(dialogsize = sdsAuto), it checks @code(TrndiNative.HasTouchScreen).
+  @remarks When @code(dialogsize = sdsAuto), it checks @code(TrndiNative.HasTouchScreen)
+    and the usable screen size: big layout needs both touch and room for it, so
+    small touch panels get @code(sdsMedium) rather than a dialog wider than the
+    screen.
 }
 function GeTSlickeDialogSize(dialogsize: TSlickeDialogSize): TSlickeDialogSize;
 begin
@@ -848,10 +894,14 @@ begin
   sdsMedium:
     result := dialogsize;
   sdsAuto:
-    if TrndiNative.HasTouchScreen then
+    if not TrndiNative.HasTouchScreen then
+      result := sdsNormal
+    else
+    if (ScreenUsableWidth >= BigLayoutMinScreenWidth) and
+      (ScreenUsableHeight >= BigLayoutMinScreenHeight) then
       result := sdsBig
     else
-      result := sdsNormal;
+      result := sdsMedium;
   else
     result := GeTSlickeDialogSize(sdsAuto);
   end;
@@ -879,6 +929,9 @@ begin
   paragraphs := TStringList.Create;
   words := TStringList.Create;
   try
+    // A 0x0 bitmap has no usable canvas on GTK3 (Gdk-CRITICAL, zero metrics),
+    // which collapses every measured label; give it a surface first.
+    bmp.SetSize(1, 1);
     bmp.Canvas.Font.Assign(ALabel.Font);
 
     // Split by explicit line breaks first (each is a forced new line)
@@ -1051,6 +1104,8 @@ begin
   paragraphs := TStringList.Create;
   words := TStringList.Create;
   try
+    // See CalcWrappedHeight: measuring on a 0x0 canvas yields zero metrics on GTK3.
+    bmp.SetSize(1, 1);
     bmp.Canvas.Font.Assign(AFont);
 
     paragraphs.Text := NormalizeLineBreaks(AText);
@@ -1317,10 +1372,10 @@ var
   availableWidth: integer;
   currentIconSize: integer;
 begin
-  // --- Ensure minimum dialog width ---
-  Dialog.ClientWidth := MinWidthNormal;
+  // --- Ensure minimum dialog width, never wider than the display ---
+  Dialog.ClientWidth := FitDialogWidth(MinWidthNormal);
   if (size = sdsBig) and (Dialog.ClientWidth < MinWidthBig) then
-    Dialog.ClientWidth := MinWidthBig;
+    Dialog.ClientWidth := FitDialogWidth(MinWidthBig);
   Dialog.Color := bgcol;
 
   // --- Icon size scaling ---
@@ -2333,7 +2388,7 @@ begin
     ProposedWidth := ifthen((size = sdsBig) , 650, 500);
     if ProposedWidth > 900 then
       ProposedWidth := 900;
-    Dialog.ClientWidth := floor(ProposedWidth * hpadding);
+    Dialog.ClientWidth := FitDialogWidth(floor(ProposedWidth * hpadding));
 
     // Icon at top
     IconBox := TImage.Create(Dialog);
@@ -2391,7 +2446,7 @@ begin
       );
 
     // Calculate content height and adjust dialog
-    maxHeight := Round(Screen.Height * 0.8);
+    maxHeight := Round(ScreenUsableHeight * 0.8);
     contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
     if contentHeight < 150 then
       contentHeight := 150;  // Minimum height
@@ -2502,7 +2557,7 @@ begin
     Dialog.AutoSize := true;
     Dialog.KeyPreview := true;
     Dialog.OnKeyDown := @Dialog.FormKeyDown;
-    MaxDialogHeight := Round(Screen.Height * 0.8);
+    MaxDialogHeight := Round(ScreenUsableHeight * 0.8);
 
     // Main panel
     MainPanel := TPanel.Create(Dialog);
@@ -2588,6 +2643,8 @@ begin
 
     if ProposedWidth > 900 then
       ProposedWidth := 900;
+    // The minimums above can exceed a small panel's width; clamp last.
+    ProposedWidth := FitDialogWidth(ProposedWidth);
 
     Dialog.ClientWidth := ProposedWidth;
     MsgWidth := Dialog.ClientWidth - (IconBox.Width + (padding * 3));
@@ -3192,16 +3249,18 @@ procedure TDialogForm.ExpandLogDialog(Sender: TObject);
 var
   newHeight, newWidth: integer;
 begin
-  newHeight := Round(Screen.Height * 0.75);
-  newWidth := Round(Screen.Width * 0.75);
-  
+  // Work area rather than raw screen: on panels/taskbars the 3/4 box would
+  // otherwise be centred partly underneath them.
+  newHeight := Round(ScreenUsableHeight * 0.75);
+  newWidth := Round(ScreenUsableWidth * 0.75);
+
   // Resize the entire dialog
   Self.ClientWidth := newWidth;
   Self.ClientHeight := newHeight;
-  
+
   // Manually center the dialog
-  Self.Left := (Screen.Width - Self.Width) div 2;
-  Self.Top := (Screen.Height - Self.Height) div 2;
+  Self.Left := (ScreenUsableWidth - Self.Width) div 2;
+  Self.Top := (ScreenUsableHeight - Self.Height) div 2;
   
   if Assigned(LogExpandWrapper) then
     LogExpandWrapper.Height := Round(newHeight * 0.7)// LogExpandWrapper is the LogPanel - expand it to fill available space
