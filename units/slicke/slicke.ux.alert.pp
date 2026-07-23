@@ -871,6 +871,26 @@ begin
     Result := 480;
 end;
 
+{ Left edge of the usable area. Non-zero on a left-hand panel, and on a
+  multi-monitor desktop where the work area starts on a secondary screen.
+  Falls back to 0 whenever ScreenUsableWidth had to fall back too. }
+function ScreenUsableLeft: integer;
+begin
+  if Screen.WorkAreaWidth > 0 then
+    Result := Screen.WorkAreaLeft
+  else
+    Result := 0;
+end;
+
+{ Top edge of the usable area; see ScreenUsableLeft. }
+function ScreenUsableTop: integer;
+begin
+  if Screen.WorkAreaHeight > 0 then
+    Result := Screen.WorkAreaTop
+  else
+    Result := 0;
+end;
+
 { Clamp a proposed dialog width to what the display can actually show. }
 function FitDialogWidth(const AWidth: integer): integer;
 begin
@@ -1642,6 +1662,8 @@ const
   onFormName: string = 'uxd_on_form';
   Margin = 5;
   Gap = 10;
+  { Height the scrollable message area keeps even when the title wants it all. }
+  MinMessageHeight = 40;
 var
   tp: TPanel;
   tl, tt: TLabel;
@@ -1719,7 +1741,16 @@ begin
       ts.Left := Margin;
       ts.Top := tt.Top + tt.Height + Margin;
       ts.Width := tp.Width - (Margin * 2);
-      ts.Height := tb.Top - ts.Top - Margin;
+      // A title long enough to wrap past the button leaves no room at all, which
+      // would give a negative height (an LCL range error, or a zero-size widget
+      // that hides the message). Give the message area its minimum and let the
+      // title be the part that gets cut instead.
+      if (tb.Top - ts.Top - Margin) < MinMessageHeight then
+      begin
+        ts.Top := Max(tt.Top, tb.Top - Margin - MinMessageHeight);
+        tt.Height := Max(0, ts.Top - tt.Top - Margin);
+      end;
+      ts.Height := Max(0, tb.Top - ts.Top - Margin);
       ts.Anchors := [akLeft, akTop, akRight, akBottom];
       ts.HorzScrollBar.Visible := false;
       ts.VertScrollBar.Visible := true;
@@ -3291,9 +3322,11 @@ begin
   Self.ClientWidth := newWidth;
   Self.ClientHeight := newHeight;
 
-  // Manually center the dialog
-  Self.Left := (ScreenUsableWidth - Self.Width) div 2;
-  Self.Top := (ScreenUsableHeight - Self.Height) div 2;
+  // Manually center the dialog. The work area's origin matters as much as its
+  // size: a top or left panel, or a work area that begins on a secondary
+  // monitor, gives a non-zero origin that a bare width/2 ignores.
+  Self.Left := ScreenUsableLeft + ((ScreenUsableWidth - Self.Width) div 2);
+  Self.Top := ScreenUsableTop + ((ScreenUsableHeight - Self.Height) div 2);
   
   if Assigned(LogExpandWrapper) then
     LogExpandWrapper.Height := Round(newHeight * 0.7)// LogExpandWrapper is the LogPanel - expand it to fill available space
