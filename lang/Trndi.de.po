@@ -35,13 +35,34 @@ msgstr "Schlüssel"
 msgid "Select"
 msgstr "Auswählen"
 
+#: slicke.ux.alert.smbslickeagree
+msgid "Agree"
+msgstr "Zustimmen"
+
+#: slicke.ux.alert.smbslickedefault
+msgctxt "slicke.ux.alert.smbSlickeDefault"
+msgid "Default"
+msgstr "Standard"
+
+#: slicke.ux.alert.smbslickeminimize
+msgid "Minimize"
+msgstr "Minimieren"
+
+#: slicke.ux.alert.smbslickeopenfile
+msgid "Open File"
+msgstr "Datei öffnen"
+
+#: slicke.ux.alert.smbslickeread
+msgid "Read..."
+msgstr "Lesen..."
+
+#: slicke.ux.alert.smbslickesnooze
+msgid "Snooze"
+msgstr "Schlummern"
+
 #: slicke.ux.alert.smbuxabort
 msgid "Abort"
 msgstr "Abbrechen"
-
-#: slicke.ux.alert.smbSlickeAgree
-msgid "Agree"
-msgstr "Zustimmen"
 
 #: slicke.ux.alert.smbuxall
 msgctxt "slicke.ux.alert.smbuxall"
@@ -57,11 +78,6 @@ msgctxt "slicke.ux.alert.smbuxclose"
 msgid "Close"
 msgstr "Schließen"
 
-#: slicke.ux.alert.smbSlickeDefault
-msgctxt "slicke.ux.alert.smbSlickeDefault"
-msgid "Default"
-msgstr "Standard"
-
 #: slicke.ux.alert.smbuxhelp
 msgctxt "slicke.ux.alert.smbuxhelp"
 msgid "Help"
@@ -70,10 +86,6 @@ msgstr "Hilfe"
 #: slicke.ux.alert.smbuxignore
 msgid "Ignore"
 msgstr "Ignorieren"
-
-#: slicke.ux.alert.smbSlickeMinimize
-msgid "Minimize"
-msgstr "Minimieren"
 
 #: slicke.ux.alert.smbuxno
 msgid "No"
@@ -88,21 +100,9 @@ msgctxt "slicke.ux.alert.smbuxok"
 msgid "OK"
 msgstr "OK"
 
-#: slicke.ux.alert.smbSlickeOpenFile
-msgid "Open File"
-msgstr "Datei öffnen"
-
-#: slicke.ux.alert.smbSlickeRead
-msgid "Read..."
-msgstr "Lesen..."
-
 #: slicke.ux.alert.smbuxretry
 msgid "Retry"
 msgstr "Erneut versuchen"
-
-#: slicke.ux.alert.smbSlickeSnooze
-msgid "Snooze"
-msgstr "Schlummern"
 
 #: slicke.ux.alert.smbuxyestoall
 msgid "Yes To All"
@@ -606,7 +606,9 @@ msgid "Show a smiley instead of percentage"
 msgstr "Smiley statt Prozent anzeigen"
 
 #: tfconf.cbtitlecolor.caption
-msgid "Color the title bar with glucose color (Windows only)"
+#, fuzzy
+#| msgid "Color the title bar with glucose color (Windows only)"
+msgid "Color the title bar with glucose color (Windows/macOS only)"
 msgstr "Titelleiste mit Glucosefarbe einfärben (nur Windows)"
 
 #: tfconf.cbtouch.caption

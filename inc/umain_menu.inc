@@ -392,7 +392,13 @@ begin
   rlo := api.cgmRangeLo * BG_CONVERTIONS[un][mgdl];
 
   row2 := Format(RS_TIR_ROW2, [lo, hi]);
-  row3 := Format(RS_TIR_ROW3, [rlo, rhi]);
+  // Without a personal range the backend reports the disabled sentinels, which
+  // would read as "your low range is 0.0, high is 27.8" - drop the line.
+  if (api.cgmRangeLo <> TrndiAPI.CGM_RANGE_LO_DISABLED) and
+    (api.cgmRangeHi <> TrndiAPI.CGM_RANGE_HI_DISABLED) then
+    row3 := Format(RS_TIR_ROW3, [rlo, rhi])
+  else
+    row3 := '';
   if minTotal < 60 then
     msg := Format(RS_TIR_M, ['<b>'+minTotal.toString+'</b>'])
   else
@@ -405,7 +411,10 @@ begin
       msg := Format(RS_TIR_H, ['<b>'+hours.toString+'</b>', '<b>'+mins.toString+'</b>']);
   end;
 
-  SlickeHTMLMsg(sdsAuto, 'Trndi', msg+'<br><br><i>'+row2+'<br>'+row3+'</i>');
+  if row3 <> '' then
+    row3 := '<br>' + row3;
+
+  SlickeHTMLMsg(sdsAuto, 'Trndi', msg+'<br><br><i>'+row2+row3+'</i>');
 end;
 
 procedure TfBG.lValClick(Sender: TObject);

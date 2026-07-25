@@ -35,13 +35,34 @@ msgstr "Touche"
 msgid "Select"
 msgstr "Sélectionner"
 
+#: slicke.ux.alert.smbslickeagree
+msgid "Agree"
+msgstr "Accepter"
+
+#: slicke.ux.alert.smbslickedefault
+msgctxt "slicke.ux.alert.smbSlickeDefault"
+msgid "Default"
+msgstr "Par défaut"
+
+#: slicke.ux.alert.smbslickeminimize
+msgid "Minimize"
+msgstr "Réduire"
+
+#: slicke.ux.alert.smbslickeopenfile
+msgid "Open File"
+msgstr "Ouvrir un fichier"
+
+#: slicke.ux.alert.smbslickeread
+msgid "Read..."
+msgstr "Lire..."
+
+#: slicke.ux.alert.smbslickesnooze
+msgid "Snooze"
+msgstr "Répéter"
+
 #: slicke.ux.alert.smbuxabort
 msgid "Abort"
 msgstr "Abandonner"
-
-#: slicke.ux.alert.smbSlickeAgree
-msgid "Agree"
-msgstr "Accepter"
 
 #: slicke.ux.alert.smbuxall
 msgctxt "slicke.ux.alert.smbuxall"
@@ -57,11 +78,6 @@ msgctxt "slicke.ux.alert.smbuxclose"
 msgid "Close"
 msgstr "Fermer"
 
-#: slicke.ux.alert.smbSlickeDefault
-msgctxt "slicke.ux.alert.smbSlickeDefault"
-msgid "Default"
-msgstr "Par défaut"
-
 #: slicke.ux.alert.smbuxhelp
 msgctxt "slicke.ux.alert.smbuxhelp"
 msgid "Help"
@@ -70,10 +86,6 @@ msgstr "Aide"
 #: slicke.ux.alert.smbuxignore
 msgid "Ignore"
 msgstr "Ignorer"
-
-#: slicke.ux.alert.smbSlickeMinimize
-msgid "Minimize"
-msgstr "Réduire"
 
 #: slicke.ux.alert.smbuxno
 msgid "No"
@@ -88,21 +100,9 @@ msgctxt "slicke.ux.alert.smbuxok"
 msgid "OK"
 msgstr "OK"
 
-#: slicke.ux.alert.smbSlickeOpenFile
-msgid "Open File"
-msgstr "Ouvrir un fichier"
-
-#: slicke.ux.alert.smbSlickeRead
-msgid "Read..."
-msgstr "Lire..."
-
 #: slicke.ux.alert.smbuxretry
 msgid "Retry"
 msgstr "Réessayer"
-
-#: slicke.ux.alert.smbSlickeSnooze
-msgid "Snooze"
-msgstr "Répéter"
 
 #: slicke.ux.alert.smbuxyestoall
 msgid "Yes To All"
@@ -606,7 +606,9 @@ msgid "Show a smiley instead of percentage"
 msgstr "Afficher un smiley au lieu d'un pourcentage"
 
 #: tfconf.cbtitlecolor.caption
-msgid "Color the title bar with glucose color (Windows only)"
+#, fuzzy
+#| msgid "Color the title bar with glucose color (Windows only)"
+msgid "Color the title bar with glucose color (Windows/macOS only)"
 msgstr "Colorer la barre de titre selon la glycémie (Windows uniquement)"
 
 #: tfconf.cbtouch.caption
@@ -3576,3 +3578,4 @@ msgstr "Assistant de connexion CareLink"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "En attente de la fin de la connexion dans le navigateur…"
+

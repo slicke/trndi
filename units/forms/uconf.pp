@@ -498,6 +498,10 @@ TfConf = class(TForm)
   procedure cbCust1Change(Sender: TObject);
   procedure cbCustChange(Sender: TObject);
   procedure cbCustRangeChange(Sender: TObject);
+  procedure fsLoEditingDone(Sender: TObject);
+  procedure fsHiEditingDone(Sender: TObject);
+  procedure fsLoRangeEditingDone(Sender: TObject);
+  procedure fsHiRangeEditingDone(Sender: TObject);
   procedure cbPosChange(Sender: TObject);
   procedure cbPredictionsChange(Sender: TObject);
   procedure cbPredictShortChange(Sender: TObject);
@@ -573,6 +577,10 @@ public
   procedure EnsureTTSVoices;
   procedure PopulateChromaDevices;
   procedure UpdatePredictionStates;
+  {** Constrain the custom range spin edits to the low/high limit spin edits.
+      The custom range subdivides the low/high area, so it can never sit
+      outside it. Call after loading values or switching unit. }
+  procedure ApplyRangeBounds;
   procedure LoadExtensionList(const ExtensionsPath: string);
   procedure DeferExtensionList(const ExtensionsPath: string);
   {** True once the TTS voice list has been enumerated; while false the
@@ -2305,6 +2313,76 @@ begin
   eExt.Width := cbSys.Width;
 end;
 
+{------------------------------------------------------------------------------
+  ApplyRangeBounds
+  ----------------
+  The custom range is a personal target inside the low/high limits, so its
+  spin edits are bounded by fsLo/fsHi instead of by the raw unit maximum.
+  Values that already sit outside that window - an older config, or the
+  backend's "no personal range" sentinels - are pulled in by the LCL as soon
+  as the bounds are applied (GetLimitedValue only clamps while min < max).
+ ------------------------------------------------------------------------------}
+procedure TfConf.ApplyRangeBounds;
+var
+  loLimit, hiLimit: double;
+begin
+  loLimit := fsLo.Value;
+  hiLimit := fsHi.Value;
+
+  // Limits that make no sense (mid-typing, or lo above hi) would clamp the
+  // range to garbage - leave the fields alone until they settle.
+  if hiLimit <= loLimit then
+    Exit;
+
+  // Ceiling before floor, so the fields never see min > max in passing.
+  fsLoRange.MaxValue := hiLimit;
+  fsHiRange.MaxValue := hiLimit;
+  fsLoRange.MinValue := loLimit;
+  fsHiRange.MinValue := loLimit;
+
+  // The range's own ends must stay ordered too.
+  if fsLoRange.Value > fsHiRange.Value then
+    fsHiRange.Value := fsLoRange.Value;
+end;
+
+{------------------------------------------------------------------------------
+  fsLo/fsHi/fsLoRange/fsHiRange EditingDone
+  -----------------------------------------
+  Keep each pair ordered once the user leaves the field: the field just edited
+  wins and pushes the other end along. This runs on OnEditingDone rather than
+  OnChange because OnChange fires per keystroke - pushing on a half-typed "1"
+  on the way to "100" would wipe out the other end.
+
+  The limit pair matters beyond its own correctness: ApplyRangeBounds bows out
+  while lo >= hi, so an inverted limit pair would leave the custom range
+  unbounded as well.
+ ------------------------------------------------------------------------------}
+procedure TfConf.fsLoEditingDone(Sender: TObject);
+begin
+  if fsLo.Value > fsHi.Value then
+    fsHi.Value := fsLo.Value;
+  ApplyRangeBounds;
+end;
+
+procedure TfConf.fsHiEditingDone(Sender: TObject);
+begin
+  if fsHi.Value < fsLo.Value then
+    fsLo.Value := fsHi.Value;
+  ApplyRangeBounds;
+end;
+
+procedure TfConf.fsLoRangeEditingDone(Sender: TObject);
+begin
+  if fsLoRange.Value > fsHiRange.Value then
+    fsHiRange.Value := fsLoRange.Value;
+end;
+
+procedure TfConf.fsHiRangeEditingDone(Sender: TObject);
+begin
+  if fsHiRange.Value < fsLoRange.Value then
+    fsLoRange.Value := fsHiRange.Value;
+end;
+
 procedure TfConf.fsHi1Change(Sender: TObject);
 begin
   fsHi.Value := fsHi1.Value;
@@ -2314,6 +2392,7 @@ procedure TfConf.fsHiChange(Sender: TObject);
 begin
   fsHi1.DecimalPlaces := fsHi.DecimalPlaces;
   fsHi1.Value := fsHi.Value;
+  ApplyRangeBounds;
 end;
 
 procedure TfConf.fsLo1Change(Sender: TObject);
@@ -2325,6 +2404,7 @@ procedure TfConf.fsLoChange(Sender: TObject);
 begin
   fsLo1.DecimalPlaces := fsLo.DecimalPlaces;
   fsLo1.Value := fsLo.Value;
+  ApplyRangeBounds;
 end;
 
 procedure TfConf.Label12Click(Sender: TObject);
@@ -2414,6 +2494,12 @@ function RoundMMOL(const v: double): double;
     Result := round(v * TrndiAPI.toMMOL * 10) / 10;
   end;
 begin
+  // Drop the range floors set by ApplyRangeBounds: they are still expressed in
+  // the old unit and would clamp the values being converted below (a 70 mg/dL
+  // floor against a 3.9 mmol/L value). They are re-applied at the end.
+  fsLoRange.MinValue := 0;
+  fsHiRange.MinValue := 0;
+
   if (Sender is TForm) or (rbUnit.ItemIndex = 0) then
   begin
     fsHi.DecimalPlaces := 1;
@@ -2481,6 +2567,8 @@ begin
 
     rbPredictShortShowValue.Caption := StringReplace(rbPredictShortShowValue.Caption, '5.5', '100', [rfReplaceAll]);
   end;
+
+  ApplyRangeBounds;
 end;
 
 procedure TfConf.spTHRESHOLD1Change(Sender: TObject);
