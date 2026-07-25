@@ -771,12 +771,12 @@ procedure SaveUserSettings(f: TfConf);
       if f.TTSVoicesLoaded then
       begin
         SetSetting('tts.voice', cbTTSVoice.ItemIndex);
-        {$if defined(X_MAC) or defined(X_PC)}
+        // Index 0 is 'Default'; every other entry names a voice the platform
+        // TTS layer looks up by name, so the index alone is not enough.
         if cbTTSVoice.ItemIndex > 0 then
           SetSetting('tts.voice.name', cbTTSVoice.Text)
         else
           DeleteSetting('tts.voice.name');
-        {$endif}
       end;
       SetSetting('tts.rate', seTTSRate.Value);
 

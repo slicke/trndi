@@ -62,10 +62,14 @@ private
   FFlashBaseColor: TColor;
   FFlashCycleMS: integer;
   procedure FlashTimerTick(Sender: TObject);
+    {** Show the "no speech engine" message, at most once per session. }
+  procedure ReportSpeechFailure;
 public
   destructor Destroy; override;
-    {** Speaks @param(Text) using SAPI; falls back to default voice if a
-        locale-matching voice is not found. }
+    {** Speaks @param(Text) using SAPI on a background thread, honoring the
+        @code(tts.voice.name) and @code(tts.rate) settings. With no voice
+        configured, the first voice speaking the UI language is used; failing
+        that, the engine's default voice. }
   procedure Speak(const Text: string); override;
     {** Toggles immersive dark mode for @param(win).
         Requires Windows 10 1809+ (build >= 17763).
@@ -217,24 +221,78 @@ implementation
 uses
 ComObj, ActiveX, SyncObjs, base64;
 
+resourcestring
+RS_TTS_UNAVAILABLE =
+  'Text-to-speech is not available: no SAPI speech engine could be started. Install a speech voice from Windows Settings to enable spoken readings.';
+
+const
+  // ISpVoice::Speak flags (sapi.h)
+  SVSFDefault = 0;
+  SVSFlagsAsync = 1;
+  SVSFPurgeBeforeSpeak = 2;
+
+  // Win32 primary language ids (the low 10 bits of an LCID). Declared here so
+  // the mapping does not depend on which of these the RTL's Windows unit
+  // happens to export.
+  LANG_DANISH = $06;
+  LANG_GERMAN = $07;
+  LANG_ENGLISH = $09;
+  LANG_FRENCH = $0C;
+  LANG_NORWEGIAN = $14;
+  LANG_SWEDISH = $1D;
+
+  // Longest backlog the speech queue may hold. Utterances are glucose
+  // readings, so a deep queue only reads out values that stopped being true
+  // minutes ago; past this point the oldest entry is dropped. The cap also
+  // bounds the queue when the worker has died and nothing drains it.
+  MaxSpeechQueue = 8;
+
 type
+  {** Tri-state cache for @link(TTrndiNativeWindows.SpeakAvailable). }
+  TSpeakAvail = (sapUnknown, sapNo, sapYes);
+
+  {** One queued utterance together with the voice settings it should be
+      spoken with. Settings are resolved by the caller because only it can
+      reach the per-user settings store, and travel with the text. }
+  TSpeechRequest = record
+    Text: string;
+    VoiceName: string;      // exact SAPI description; '' selects by LangTag
+    LangTag: string;        // ISO 639 code of the UI language; '' = engine default
+    Rate: integer;          // already scaled to SAPI's -10..10
+  end;
+
   {** Background worker that owns a SAPI.SpVoice in an STA thread and
-      processes a simple queue of text to speak. }
+      processes a queue of utterances. }
   TSpeechWorker = class(TThread)
   private
-    FQueue: TStringList;
+    FQueue: array of TSpeechRequest;
     FCS: TCriticalSection;
     FEvent: TEvent;
     FVoice: olevariant;
+    // Token SAPI had selected before Trndi touched it, restored whenever a
+    // request asks for no particular voice.
+    FDefaultVoice: olevariant;
+    // Voice/language pair currently applied to FVoice, so repeat utterances
+    // with unchanged settings skip the slow token enumeration.
+    FActiveKey: string;
+    FActiveRate: integer;
+    procedure ApplyVoice(const Req: TSpeechRequest);
+    procedure SpeakRequest(const Req: TSpeechRequest);
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Enqueue(const Text: string);
+    procedure Enqueue(const Req: TSpeechRequest);
     procedure Execute; override;
   end;
 
 var
   gSpeechWorker: TSpeechWorker = nil;
+  // Set by the worker when SAPI could not be brought up at all. Read from the
+  // UI thread so the failure is reported once instead of the app silently
+  // queueing utterances nobody will ever speak.
+  gSpeechBroken: boolean = false;
+  // Cached SpeakAvailable answer; creating an SpVoice just to ask is slow.
+  gSpeakAvailable: TSpeakAvail = sapUnknown;
   // Pristine copy of Application.Icon captured before SetBadge ever mutates it.
   // SetBadge sources from here instead of Application.Icon so each call composites
   // onto the original logo rather than the previous badged result.
@@ -258,104 +316,294 @@ begin
   begin
     gSpeechWorker.Terminate;
     gSpeechWorker.FEvent.SetEvent;
+    // Utterances are spoken asynchronously and polled at 100 ms, so this
+    // returns promptly even when the worker was mid-sentence.
     gSpeechWorker.WaitFor;
     FreeAndNil(gSpeechWorker);
   end;
 end;
 
-procedure EnqueueSpeech(const Text: string);
+procedure EnqueueSpeech(const Req: TSpeechRequest);
 begin
   EnsureSpeechWorker;
   if Assigned(gSpeechWorker) then
-    gSpeechWorker.Enqueue(Text);
+    gSpeechWorker.Enqueue(Req);
+end;
+
+{------------------------------------------------------------------------------
+  PrimaryLangId
+  -------------
+  Map an ISO 639 code (the form Trndi stores in the 'locale' setting) onto the
+  Win32 primary language id carried in the low 10 bits of every LCID. Only the
+  languages Trndi ships translations for need an entry; anything else returns 0
+  and leaves the engine's own default voice in place.
+ ------------------------------------------------------------------------------}
+function PrimaryLangId(const Tag: string): word;
+var
+  code: string;
+begin
+  code := LowerCase(Copy(Tag, 1, 2));
+  if code = 'en' then
+    Result := LANG_ENGLISH
+  else
+  if code = 'sv' then
+    Result := LANG_SWEDISH
+  else
+  if code = 'da' then
+    Result := LANG_DANISH
+  else
+  if code = 'de' then
+    Result := LANG_GERMAN
+  else
+  if (code = 'nb') or (code = 'nn') or (code = 'no') then
+    Result := LANG_NORWEGIAN
+  else
+  if code = 'fr' then
+    Result := LANG_FRENCH
+  else
+  // No engine anywhere speaks Jämtlandic; Swedish is the nearest match and a
+  // great deal closer than reading jamska with an English voice.
+  if code = 'jm' then
+    Result := LANG_SWEDISH
+  else
+    Result := 0;
+end;
+
+{------------------------------------------------------------------------------
+  VoiceSpeaksLang
+  ---------------
+  Test a SAPI voice token against a primary language id. The token's 'Language'
+  attribute is a semicolon separated list of hex LCIDs (e.g. '41d;406'), so
+  every entry is masked down to its primary id before comparing — that way
+  sv-FI matches sv-SE.
+ ------------------------------------------------------------------------------}
+function VoiceSpeaksLang(const Token: olevariant; LangId: word): boolean;
+var
+  attr: string;
+  i, lcid: integer;
+begin
+  Result := false;
+  if LangId = 0 then
+    Exit;
+  try
+    attr := VarToStr(Token.GetAttribute('Language'));
+  except
+    // Tokens are free to omit the attribute; such a voice simply never matches
+    Exit;
+  end;
+  for i := 1 to WordCount(attr, [';']) do
+    if TryStrToInt('$' + Trim(ExtractWord(i, attr, [';'])), lcid) and
+      ((lcid and $3FF) = LangId) then
+      Exit(true);
 end;
 
 { TSpeechWorker }
 
 constructor TSpeechWorker.Create;
 begin
-  inherited Create(False);
+  // Created suspended: Execute dereferences FCS and FEvent straight away, so
+  // the thread must not be running before they exist.
+  inherited Create(true);
   FreeOnTerminate := False;
-  FQueue := TStringList.Create;
   FCS := TCriticalSection.Create;
   FEvent := TEvent.Create(nil, False, False, '');
-  
+  FActiveRate := MaxInt;    // force the first request to push a rate
+  Start;
 end;
 
 destructor TSpeechWorker.Destroy;
 begin
   FEvent.Free;
   FCS.Free;
-  FQueue.Free;
   inherited Destroy;
 end;
 
-procedure TSpeechWorker.Enqueue(const Text: string);
+procedure TSpeechWorker.Enqueue(const Req: TSpeechRequest);
 begin
   FCS.Enter;
   try
-    FQueue.Add(Text);
+    // Drop from the front when full: of a backlog of glucose announcements the
+    // newest is the one actually worth hearing.
+    while Length(FQueue) >= MaxSpeechQueue do
+      Delete(FQueue, 0, 1);
+    SetLength(FQueue, Length(FQueue) + 1);
+    FQueue[High(FQueue)] := Req;
   finally
     FCS.Leave;
   end;
   FEvent.SetEvent;
 end;
 
+{------------------------------------------------------------------------------
+  TSpeechWorker.ApplyVoice
+  ------------------------
+  Point FVoice at the voice this request asks for and set its rate. An explicit
+  voice name wins; with none, the first voice speaking the UI language is used;
+  failing both, SAPI's own default is restored. Enumerating tokens is slow, so
+  the resolved selection is cached and only redone when the request changes.
+ ------------------------------------------------------------------------------}
+procedure TSpeechWorker.ApplyVoice(const Req: TSpeechRequest);
+var
+  Voices, Token: olevariant;
+  i, chosen: integer;
+  wanted: word;
+  key, desc: string;
+begin
+  if Req.Rate <> FActiveRate then
+  try
+    FVoice.Rate := Req.Rate;
+    FActiveRate := Req.Rate;
+  except
+    // Rate is advisory — keep speaking at whatever the engine allows
+  end;
+
+  key := Req.VoiceName + #1 + Req.LangTag;
+  if key = FActiveKey then
+    Exit;
+  // Set before resolving: a request that finds no match must not re-enumerate
+  // every single utterance.
+  FActiveKey := key;
+
+  wanted := 0;
+  if Req.VoiceName = '' then
+    wanted := PrimaryLangId(Req.LangTag);
+
+  try
+    if (Req.VoiceName = '') and (wanted = 0) then
+    begin
+      // Nothing to match on. Restoring rather than leaving the previous token
+      // matters when the user switches the setting back to 'Default'.
+      if not VarIsEmpty(FDefaultVoice) then
+        FVoice.Voice := FDefaultVoice;
+      Exit;
+    end;
+
+    Voices := FVoice.GetVoices('', '');
+    if VarIsEmpty(Voices) then
+      Exit;
+
+    chosen := -1;
+    for i := 0 to Voices.Count - 1 do
+    begin
+      Token := Voices.Item(i);
+      if Req.VoiceName <> '' then
+      begin
+        desc := '';
+        try
+          desc := VarToStr(Token.GetDescription(0));
+        except
+          // Unreadable description; it can never be the one that was picked
+        end;
+        if SameText(desc, Req.VoiceName) then
+        begin
+          chosen := i;
+          Break;
+        end;
+      end
+      else
+      if VoiceSpeaksLang(Token, wanted) then
+      begin
+        chosen := i;
+        Break;
+      end;
+    end;
+
+    // No match means either a named voice that has since been uninstalled or
+    // no voice for the UI language at all. SAPI's default covers both.
+    if chosen >= 0 then
+      FVoice.Voice := Voices.Item(chosen)
+    else
+    if not VarIsEmpty(FDefaultVoice) then
+      FVoice.Voice := FDefaultVoice;
+  except
+    // Selection failed; the currently active voice still speaks
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  TSpeechWorker.SpeakRequest
+  --------------------------
+  Speak one utterance. The call is asynchronous and polled rather than
+  synchronous so Terminate is noticed mid-sentence — a blocking Speak would
+  hold up application shutdown for the rest of the utterance.
+ ------------------------------------------------------------------------------}
+procedure TSpeechWorker.SpeakRequest(const Req: TSpeechRequest);
+begin
+  ApplyVoice(Req);
+
+  FVoice.Speak(Req.Text, SVSFlagsAsync);
+  while not Terminated do
+    if FVoice.WaitUntilDone(100) then
+      Exit;
+
+  // Asked to stop while still talking: cut the utterance off.
+  FVoice.Speak('', SVSFPurgeBeforeSpeak or SVSFlagsAsync);
+end;
+
 procedure TSpeechWorker.Execute;
 var
   hr: HRESULT;
-  textToSpeak: string;
-  hasItem: Boolean;
+  comOwned: boolean;
+  req: TSpeechRequest;
+  hasItem: boolean;
 begin
-  // Initialize COM for this STA thread
+  // SAPI objects are apartment-threaded, so this thread must be an STA.
+  // RPC_E_CHANGED_MODE says COM was already up here in another mode; in that
+  // case the balancing CoUninitialize is not ours to make.
   hr := CoInitializeEx(nil, COINIT_APARTMENTTHREADED);
+  comOwned := Succeeded(hr);
   try
     try
       FVoice := CreateOleObject('SAPI.SpVoice');
     except
-      on E: Exception do
-        begin
-        Exit;
-      end;
+      // No speech engine. Flag it so the UI can say so once, and stop —
+      // draining a queue we cannot speak would only burn cycles.
+      gSpeechBroken := true;
+      Exit;
+    end;
+
+    // Remember the engine's own choice so ApplyVoice can put it back.
+    try
+      FDefaultVoice := FVoice.Voice;
+    except
+      FDefaultVoice := Unassigned;
     end;
 
     while not Terminated do
     begin
-      // Wait for work or timeout to check termination
+      // Wait for work, waking periodically to re-check termination
       FEvent.WaitFor(500);
-      hasItem := False;
-      textToSpeak := '';
+      hasItem := false;
       FCS.Enter;
       try
-        if FQueue.Count > 0 then
+        if Length(FQueue) > 0 then
         begin
-          textToSpeak := FQueue[0];
-          FQueue.Delete(0);
-          hasItem := True;
+          req := FQueue[0];
+          Delete(FQueue, 0, 1);
+          hasItem := true;
         end;
       finally
         FCS.Leave;
       end;
 
       if hasItem then
-      begin
-        try
-          // Speak synchronously on worker thread so multiple utterances are serialized
-          FVoice.Speak(textToSpeak, 0);
-        except
-          on E: Exception do
-            ;
-        end;
+      try
+        // One utterance at a time, so queued announcements stay serialized
+        SpeakRequest(req);
+      except
+        // A failed utterance must never take the worker down with it
       end;
     end;
 
   finally
     // Clean up COM/voice
     try
+      FDefaultVoice := Unassigned;
       FVoice := Unassigned;
     except
     end;
-    CoUninitialize;
+    if comOwned then
+      CoUninitialize;
   end;
 end;
 {------------------------------------------------------------------------------
@@ -420,20 +668,27 @@ end;
 {------------------------------------------------------------------------------
   SpeakAvailable (Windows)
   ------------------------
-  Check if SAPI is available by attempting to create the SpVoice object.
+  Check if SAPI is available by attempting to create the SpVoice object, once
+  per process.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.SpeakAvailable: boolean;
 var
   Voice: olevariant;
 begin
-  Result := false;
-  try
-    Voice := CreateOleObject('SAPI.SpVoice');
-    Result := true;
-  except
-    // SAPI not available
-    Result := false;
+  // Creating an SpVoice costs a COM activation plus SAPI engine startup, and
+  // this is called on UI paths, so the answer is resolved once per process.
+  if gSpeakAvailable = sapUnknown then
+  begin
+    try
+      Voice := CreateOleObject('SAPI.SpVoice');
+      gSpeakAvailable := sapYes;
+    except
+      // SAPI not available
+      gSpeakAvailable := sapNo;
+    end;
+    Voice := Unassigned;
   end;
+  Result := gSpeakAvailable = sapYes;
 end;
 
 {------------------------------------------------------------------------------
@@ -680,31 +935,83 @@ function UpdateLayeredWindow(hWnd: HWND; hdcDst: HDC; pptDst: Pointer;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Use SAPI to speak text asynchronously; pick a voice matching user locale when possible.
+  Resolve the configured voice and rate, then hand the utterance to the
+  background worker. Settings are read here rather than in the worker because
+  only the caller knows which user's settings are in scope.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeWindows.Speak(const Text: string);
 var
+  req: TSpeechRequest;
   Voice: olevariant;
+  lang: string;
 begin
-  // Enqueue speech to the background worker; if that fails, fall back to
+  if Text = '' then
+    Exit;
+
+  if not SpeakAvailable then
+  begin
+    ReportSpeechFailure;
+    Exit;
+  end;
+
+  req.Text := Text;
+  req.VoiceName := GetSetting('tts.voice.name', '');
+  // The setting holds the shared -100..100 scale (what spd-say takes on the
+  // Unix side); SAPI's Rate property is -10..10.
+  req.Rate := Round(GetIntSetting('tts.rate', 0) / 10);
+  if req.Rate < -10 then
+    req.Rate := -10
+  else
+  if req.Rate > 10 then
+    req.Rate := 10;
+  // Match the voice to the *UI* language, not the system one: what gets spoken
+  // is Trndi's own translated strings.
+  lang := GetSetting('locale', '');
+  if (lang = '') or (LowerCase(lang) = 'auto') then
+    lang := GetOSLanguage;
+  req.LangTag := lang;
+
+  // Enqueue for the background worker; if that fails, fall back to
   // a synchronous speak so the user still hears audio.
   try
-    EnqueueSpeech(Text);
+    EnqueueSpeech(req);
+    // The worker brings SAPI up on its own thread, so a failure there only
+    // becomes visible after the fact.
+    if gSpeechBroken then
+      ReportSpeechFailure;
     Exit;
   except
-    // Fall through to synchronous fallback
+    // Worker thread could not be started; fall through
   end;
 
   try
     try
       Voice := CreateOleObject('SAPI.SpVoice');
-      Voice.Speak(Text, 0);
+      // Deliberately synchronous, unlike the worker: releasing the object on
+      // return would cut off an asynchronous utterance mid-word. This blocks
+      // the caller, but only ever runs when a thread could not be created.
+      Voice.Speak(Text, SVSFDefault);
     except
       // Ignore fallback failures; avoid crashing the caller
     end;
   finally
     Voice := Unassigned;
   end;
+end;
+
+{------------------------------------------------------------------------------
+  ReportSpeechFailure
+  -------------------
+  Tell the user once per session that speech is dead. Without this a broken
+  SAPI install is completely silent: announcements are enabled, nothing is
+  spoken, and nothing explains why.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeWindows.ReportSpeechFailure;
+begin
+  if ttsErrorShown then
+    Exit;
+  ttsErrorShown := true;
+  ShowMessage(RS_TTS_UNAVAILABLE);
 end;
 
 {------------------------------------------------------------------------------
