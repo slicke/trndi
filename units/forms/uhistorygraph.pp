@@ -679,7 +679,18 @@ procedure DrawKeyPanel;
   var
     unitStr, rangeStr, rangeHiStr, rangeLoStr, hiStr, loStr: string;
     rangeHiVal, rangeLoVal, hiVal, loVal: double;
+    hasRange: boolean;
+    entries: integer;
   begin
+    // A backend without a personal range reports the disabled sentinels, so
+    // its key entries would read "Range (0.0 - 27.8 mmol/L)". Leave them out,
+    // matching the threshold lines, which are skipped for the same reason.
+    hasRange := (FCgmRangeHi <> TrndiAPI.CGM_RANGE_HI_DISABLED) and
+      (FCgmRangeLo <> TrndiAPI.CGM_RANGE_LO_DISABLED);
+    entries := 4;
+    if hasRange then
+      Inc(entries, 3);
+
     // Determine unit string
     if FUnit = mmol then
       unitStr := 'mmol/L'
@@ -712,7 +723,7 @@ procedure DrawKeyPanel;
     
     keyRect := Rect(PlotRect.Right + 12, PlotRect.Top,
       ClientWidth - 12,
-      PlotRect.Top + (KEY_BOX + 6) * 6 + INFO_PADDING * 3 + lineHeight);
+      PlotRect.Top + (KEY_BOX + 6) * (entries - 1) + INFO_PADDING * 3 + lineHeight);
     if keyRect.Right - keyRect.Left < 160 then
       keyRect.Right := keyRect.Left + 160;
     ACanvas.Brush.Style := bsSolid;
@@ -726,9 +737,12 @@ procedure DrawKeyPanel;
     ACanvas.Font.Style := [];
     keyX := keyRect.Left + INFO_PADDING;
     keyY := keyRect.Top + INFO_PADDING + lineHeight + 4;
-    DrawKeyEntry(rangeStr, LevelColor(BGRange));
-    DrawKeyEntry(rangeHiStr, LevelColor(BGRangeHI));
-    DrawKeyEntry(rangeLoStr, LevelColor(BGRangeLO));
+    if hasRange then
+    begin
+      DrawKeyEntry(rangeStr, LevelColor(BGRange));
+      DrawKeyEntry(rangeHiStr, LevelColor(BGRangeHI));
+      DrawKeyEntry(rangeLoStr, LevelColor(BGRangeLO));
+    end;
     DrawKeyEntry(hiStr, LevelColor(BGHigh));
     DrawKeyEntry(loStr, LevelColor(BGLOW));
     DrawKeyEntry(RS_HISTORY_GRAPH_KEY_BASAL, RGBToColor(120,170,255));

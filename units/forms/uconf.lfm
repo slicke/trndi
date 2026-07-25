@@ -124,6 +124,7 @@ object fConf: TfConf
             MaxValue = 600
             TabOrder = 0
             OnChange = fsHi1Change
+            OnEditingDone = fsHiEditingDone
           end
           object lLounder2: TLabel
             Left = 181
@@ -141,6 +142,7 @@ object fConf: TfConf
             MaxValue = 600
             TabOrder = 1
             OnChange = fsLo1Change
+            OnEditingDone = fsLoEditingDone
           end
         end
       end
@@ -2139,6 +2141,7 @@ object fConf: TfConf
             DecimalPlaces = 0
             MaxValue = 600
             TabOrder = 0
+            OnEditingDone = fsHiRangeEditingDone
           end
           object lLounder1: TLabel
             Left = 181
@@ -2155,6 +2158,7 @@ object fConf: TfConf
             DecimalPlaces = 0
             MaxValue = 600
             TabOrder = 1
+            OnEditingDone = fsLoRangeEditingDone
           end
         end
         object bCustomRangeHelp: TButton
@@ -2241,6 +2245,7 @@ object fConf: TfConf
             MaxValue = 600
             TabOrder = 0
             OnChange = fsHiChange
+            OnEditingDone = fsHiEditingDone
           end
           object lLounder: TLabel
             Left = 181
@@ -2258,6 +2263,7 @@ object fConf: TfConf
             MaxValue = 600
             TabOrder = 1
             OnChange = fsLoChange
+            OnEditingDone = fsLoEditingDone
           end
         end
       end

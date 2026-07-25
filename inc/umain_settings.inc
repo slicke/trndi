@@ -223,6 +223,7 @@ procedure LoadUserSettings(f: TfConf);
     po: TrndiPos;
     sizeVal: integer;
     minutesVal: integer;
+    loLimit, hiLimit, rangeLo, rangeHi: integer;
   function DefaultChromaAlertAction: string;
     begin
       {$ifdef Windows}
@@ -269,20 +270,37 @@ procedure LoadUserSettings(f: TfConf);
         DATA_FRESHNESS_THRESHOLD_MINUTES);
       spDeltaMax.Value := native.GetIntSetting('ux.delta_max', DELTA_MAX);
 
+      // A stored override wins; otherwise seed from the backend, or from plain
+      // defaults while no backend is up yet.
       if api = nil then
       begin
-        fsLo.Value := GetIntSetting('override.lo', 60);
-        fsHi.Value := GetIntSetting('override.hi', 180);
-        fsLoRange.Value := GetIntSetting('override.rangelo', 80);
-        fsHiRange.Value := GetIntSetting('override.rangehi', 160);
+        loLimit := GetIntSetting('override.lo', 60);
+        hiLimit := GetIntSetting('override.hi', 180);
+        rangeLo := GetIntSetting('override.rangelo', TrndiAPI.CGM_RANGE_LO_DISABLED);
+        rangeHi := GetIntSetting('override.rangehi', TrndiAPI.CGM_RANGE_HI_DISABLED);
       end
       else
       begin
-        fsLo.Value := GetIntSetting('override.lo', api.cgmLo);
-        fsHi.Value := GetIntSetting('override.hi', api.cgmHi);
-        fsLoRange.Value := GetIntSetting('override.rangelo', api.cgmRangeLo);
-        fsHiRange.Value := GetIntSetting('override.rangehi', api.cgmRangeHi);
+        loLimit := GetIntSetting('override.lo', api.cgmLo);
+        hiLimit := GetIntSetting('override.hi', api.cgmHi);
+        rangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
+        rangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
       end;
+
+      // A backend without a personal range reports the disabled sentinels
+      // (0 / 500 mg/dL), which showed up in the dialog as a custom range of
+      // "0 - 27.8 mmol/L". Fall back to the limits, which is what an unset
+      // range means in practice - the checkbox stays off, so nothing is
+      // written back unless the user actually enables it.
+      if rangeLo = TrndiAPI.CGM_RANGE_LO_DISABLED then
+        rangeLo := loLimit;
+      if rangeHi = TrndiAPI.CGM_RANGE_HI_DISABLED then
+        rangeHi := hiLimit;
+
+      fsLo.Value := loLimit;
+      fsHi.Value := hiLimit;
+      fsLoRange.Value := rangeLo;
+      fsHiRange.Value := rangeHi;
 
       fsDiffScale.Value := GetFloatSetting('ux.labels.ldiff.scale', 1);
       fsPredictScale.Value := GetFloatSetting('ux.labels.lpredict.scale', 1);
@@ -307,6 +325,10 @@ procedure LoadUserSettings(f: TfConf);
 
       if CheckSetting('unit', 'mmol', 'mmol') then
         rbUnitClick(Self);
+
+      // rbUnitClick only runs for mmol/L, so bind the custom range to the
+      // low/high limits here for the mg/dL case too.
+      ApplyRangeBounds;
 
       cbCust.Checked := GetBoolSetting('override.enabled');
       cbCustRange.Checked := GetBoolSetting('override.range');
@@ -547,6 +569,7 @@ procedure SaveUserSettings(f: TfConf);
   var
     langCode: string;
     i: integer;
+    loVal, hiVal, rangeLoVal, rangeHiVal: double;
   function IndexToChromaAction(const Index: integer): string;
     begin
       case Index of
@@ -635,19 +658,48 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('system.fresh_threshold', spTHRESHOLD.Value);
       SetSetting('ux.delta_max', spDeltaMax.Value);
 
+      // Both pairs are ordered as the user leaves each field, but a dialog
+      // closed while a field still holds focus never fires OnEditingDone -
+      // so never persist a pair that reads "low above high".
+      loVal := Min(fsLo.Value, fsHi.Value);
+      hiVal := Max(fsLo.Value, fsHi.Value);
+      rangeLoVal := Min(fsLoRange.Value, fsHiRange.Value);
+      rangeHiVal := Max(fsLoRange.Value, fsHiRange.Value);
+
       if rbUnit.ItemIndex = 0 then
       begin
-        SetSetting('override.lo', Round(fsLo.Value * TrndiAPI.toMGDL).ToString);
-        SetSetting('override.hi', Round(fsHi.Value * TrndiAPI.toMGDL).ToString);
-        SetSetting('override.rangelo', Round(fsLoRange.Value * TrndiAPI.toMGDL).ToString);
-        SetSetting('override.rangehi', Round(fsHiRange.Value * TrndiAPI.toMGDL).ToString);
+        SetSetting('override.lo', Round(loVal * TrndiAPI.toMGDL).ToString);
+        SetSetting('override.hi', Round(hiVal * TrndiAPI.toMGDL).ToString);
       end
       else
       begin
-        SetSetting('override.lo', Round(fsLo.Value).ToString);
-        SetSetting('override.hi', Round(fsHi.Value).ToString);
-        SetSetting('override.rangelo', Round(fsLoRange.Value).ToString);
-        SetSetting('override.rangehi', Round(fsHiRange.Value).ToString);
+        SetSetting('override.lo', Round(loVal).ToString);
+        SetSetting('override.hi', Round(hiVal).ToString);
+      end;
+
+      // The range fields always hold a usable value now (they fall back to the
+      // limits when the backend supplies no range), so writing them
+      // unconditionally would hand everyone who opens Settings a personal
+      // range they never asked for. Persist only while the box is ticked, and
+      // clear the keys otherwise so the backend's own range keeps applying -
+      // both override sites read these with the API value as the default.
+      if cbCustRange.Checked then
+      begin
+        if rbUnit.ItemIndex = 0 then
+        begin
+          SetSetting('override.rangelo', Round(rangeLoVal * TrndiAPI.toMGDL).ToString);
+          SetSetting('override.rangehi', Round(rangeHiVal * TrndiAPI.toMGDL).ToString);
+        end
+        else
+        begin
+          SetSetting('override.rangelo', Round(rangeLoVal).ToString);
+          SetSetting('override.rangehi', Round(rangeHiVal).ToString);
+        end;
+      end
+      else
+      begin
+        DeleteSetting('override.rangelo');
+        DeleteSetting('override.rangehi');
       end;
 
       native.SetFloatSetting('ux.labels.ldiff.scale', fsDiffScale.Value);

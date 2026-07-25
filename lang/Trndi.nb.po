@@ -35,13 +35,34 @@ msgstr "Nøkkel"
 msgid "Select"
 msgstr "Velg"
 
+#: slicke.ux.alert.smbslickeagree
+msgid "Agree"
+msgstr "Godta"
+
+#: slicke.ux.alert.smbslickedefault
+msgctxt "slicke.ux.alert.smbSlickeDefault"
+msgid "Default"
+msgstr "Standard"
+
+#: slicke.ux.alert.smbslickeminimize
+msgid "Minimize"
+msgstr "Minimer"
+
+#: slicke.ux.alert.smbslickeopenfile
+msgid "Open File"
+msgstr "Åpne fil"
+
+#: slicke.ux.alert.smbslickeread
+msgid "Read..."
+msgstr "Les..."
+
+#: slicke.ux.alert.smbslickesnooze
+msgid "Snooze"
+msgstr "Slumre"
+
 #: slicke.ux.alert.smbuxabort
 msgid "Abort"
 msgstr "Avbryt"
-
-#: slicke.ux.alert.smbSlickeAgree
-msgid "Agree"
-msgstr "Godta"
 
 #: slicke.ux.alert.smbuxall
 msgctxt "slicke.ux.alert.smbuxall"
@@ -57,11 +78,6 @@ msgctxt "slicke.ux.alert.smbuxclose"
 msgid "Close"
 msgstr "Lukk"
 
-#: slicke.ux.alert.smbSlickeDefault
-msgctxt "slicke.ux.alert.smbSlickeDefault"
-msgid "Default"
-msgstr "Standard"
-
 #: slicke.ux.alert.smbuxhelp
 msgctxt "slicke.ux.alert.smbuxhelp"
 msgid "Help"
@@ -70,10 +86,6 @@ msgstr "Hjelp"
 #: slicke.ux.alert.smbuxignore
 msgid "Ignore"
 msgstr "Ignorer"
-
-#: slicke.ux.alert.smbSlickeMinimize
-msgid "Minimize"
-msgstr "Minimer"
 
 #: slicke.ux.alert.smbuxno
 msgid "No"
@@ -88,21 +100,9 @@ msgctxt "slicke.ux.alert.smbuxok"
 msgid "OK"
 msgstr "OK"
 
-#: slicke.ux.alert.smbSlickeOpenFile
-msgid "Open File"
-msgstr "Åpne fil"
-
-#: slicke.ux.alert.smbSlickeRead
-msgid "Read..."
-msgstr "Les..."
-
 #: slicke.ux.alert.smbuxretry
 msgid "Retry"
 msgstr "Prøv igjen"
-
-#: slicke.ux.alert.smbSlickeSnooze
-msgid "Snooze"
-msgstr "Slumre"
 
 #: slicke.ux.alert.smbuxyestoall
 msgid "Yes To All"
@@ -606,7 +606,9 @@ msgid "Show a smiley instead of percentage"
 msgstr "Vis en smiley i stedet for prosent"
 
 #: tfconf.cbtitlecolor.caption
-msgid "Color the title bar with glucose color (Windows only)"
+#, fuzzy
+#| msgid "Color the title bar with glucose color (Windows only)"
+msgid "Color the title bar with glucose color (Windows/macOS only)"
 msgstr "Farg titellinjen med blodsukkerfargen (kun Windows)"
 
 #: tfconf.cbtouch.caption

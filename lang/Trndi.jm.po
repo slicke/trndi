@@ -35,13 +35,34 @@ msgstr "Nyckel"
 msgid "Select"
 msgstr "Velj"
 
+#: slicke.ux.alert.smbslickeagree
+msgid "Agree"
+msgstr "Accepterar"
+
+#: slicke.ux.alert.smbslickedefault
+msgctxt "slicke.ux.alert.smbSlickeDefault"
+msgid "Default"
+msgstr "Standard"
+
+#: slicke.ux.alert.smbslickeminimize
+msgid "Minimize"
+msgstr "Minimera"
+
+#: slicke.ux.alert.smbslickeopenfile
+msgid "Open File"
+msgstr "ôppna fil"
+
+#: slicke.ux.alert.smbslickeread
+msgid "Read..."
+msgstr "Les..."
+
+#: slicke.ux.alert.smbslickesnooze
+msgid "Snooze"
+msgstr "Snooza"
+
 #: slicke.ux.alert.smbuxabort
 msgid "Abort"
 msgstr "Avsluta"
-
-#: slicke.ux.alert.smbSlickeAgree
-msgid "Agree"
-msgstr "Accepterar"
 
 #: slicke.ux.alert.smbuxall
 msgctxt "slicke.ux.alert.smbuxall"
@@ -57,11 +78,6 @@ msgctxt "slicke.ux.alert.smbuxclose"
 msgid "Close"
 msgstr "Steng"
 
-#: slicke.ux.alert.smbSlickeDefault
-msgctxt "slicke.ux.alert.smbSlickeDefault"
-msgid "Default"
-msgstr "Standard"
-
 #: slicke.ux.alert.smbuxhelp
 msgctxt "slicke.ux.alert.smbuxhelp"
 msgid "Help"
@@ -70,10 +86,6 @@ msgstr "Hjelp"
 #: slicke.ux.alert.smbuxignore
 msgid "Ignore"
 msgstr "Ignorera"
-
-#: slicke.ux.alert.smbSlickeMinimize
-msgid "Minimize"
-msgstr "Minimera"
 
 #: slicke.ux.alert.smbuxno
 msgid "No"
@@ -88,21 +100,9 @@ msgctxt "slicke.ux.alert.smbuxok"
 msgid "OK"
 msgstr "ok"
 
-#: slicke.ux.alert.smbSlickeOpenFile
-msgid "Open File"
-msgstr "ôppna fil"
-
-#: slicke.ux.alert.smbSlickeRead
-msgid "Read..."
-msgstr "Les..."
-
 #: slicke.ux.alert.smbuxretry
 msgid "Retry"
 msgstr "Fôrsôk igen"
-
-#: slicke.ux.alert.smbSlickeSnooze
-msgid "Snooze"
-msgstr "Snooza"
 
 #: slicke.ux.alert.smbuxyestoall
 msgid "Yes To All"
@@ -616,7 +616,9 @@ msgid "Show a smiley instead of percentage"
 msgstr "Visa en smiley istellet fôr procent"
 
 #: tfconf.cbtitlecolor.caption
-msgid "Color the title bar with glucose color (Windows only)"
+#, fuzzy
+#| msgid "Color the title bar with glucose color (Windows only)"
+msgid "Color the title bar with glucose color (Windows/macOS only)"
 msgstr "Ferga titeln med blodsockerfergen (endast Windows)"
 
 #: tfconf.cbtouch.caption

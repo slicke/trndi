@@ -25,12 +25,33 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
-#: slicke.ux.alert.smbuxabort
-msgid "Abort"
+#: slicke.ux.alert.smbslickeagree
+msgid "Agree"
 msgstr ""
 
-#: slicke.ux.alert.smbSlickeAgree
-msgid "Agree"
+#: slicke.ux.alert.smbslickedefault
+msgctxt "slicke.ux.alert.smbSlickeDefault"
+msgid "Default"
+msgstr ""
+
+#: slicke.ux.alert.smbslickeminimize
+msgid "Minimize"
+msgstr ""
+
+#: slicke.ux.alert.smbslickeopenfile
+msgid "Open File"
+msgstr ""
+
+#: slicke.ux.alert.smbslickeread
+msgid "Read..."
+msgstr ""
+
+#: slicke.ux.alert.smbslickesnooze
+msgid "Snooze"
+msgstr ""
+
+#: slicke.ux.alert.smbuxabort
+msgid "Abort"
 msgstr ""
 
 #: slicke.ux.alert.smbuxall
@@ -47,11 +68,6 @@ msgctxt "slicke.ux.alert.smbuxclose"
 msgid "Close"
 msgstr ""
 
-#: slicke.ux.alert.smbSlickeDefault
-msgctxt "slicke.ux.alert.smbSlickeDefault"
-msgid "Default"
-msgstr ""
-
 #: slicke.ux.alert.smbuxhelp
 msgctxt "slicke.ux.alert.smbuxhelp"
 msgid "Help"
@@ -59,10 +75,6 @@ msgstr ""
 
 #: slicke.ux.alert.smbuxignore
 msgid "Ignore"
-msgstr ""
-
-#: slicke.ux.alert.smbSlickeMinimize
-msgid "Minimize"
 msgstr ""
 
 #: slicke.ux.alert.smbuxno
@@ -78,20 +90,8 @@ msgctxt "slicke.ux.alert.smbuxok"
 msgid "OK"
 msgstr ""
 
-#: slicke.ux.alert.smbSlickeOpenFile
-msgid "Open File"
-msgstr ""
-
-#: slicke.ux.alert.smbSlickeRead
-msgid "Read..."
-msgstr ""
-
 #: slicke.ux.alert.smbuxretry
 msgid "Retry"
-msgstr ""
-
-#: slicke.ux.alert.smbSlickeSnooze
-msgid "Snooze"
 msgstr ""
 
 #: slicke.ux.alert.smbuxyestoall
@@ -596,7 +596,7 @@ msgid "Show a smiley instead of percentage"
 msgstr ""
 
 #: tfconf.cbtitlecolor.caption
-msgid "Color the title bar with glucose color (Windows only)"
+msgid "Color the title bar with glucose color (Windows/macOS only)"
 msgstr ""
 
 #: tfconf.cbtouch.caption

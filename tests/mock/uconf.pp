@@ -162,6 +162,7 @@ type
     procedure rbUnitClick(Sender: TObject);
     procedure cbMediaDisableChange(Sender: TObject);
     procedure UpdatePredictionStates;
+    procedure ApplyRangeBounds;
 
     constructor Create(AOwner: TComponent = nil);
     destructor Destroy; override;
@@ -199,6 +200,11 @@ begin
 end;
 
 procedure TfConf.UpdatePredictionStates;
+begin
+  // no-op in tests
+end;
+
+procedure TfConf.ApplyRangeBounds;
 begin
   // no-op in tests
 end;
