@@ -88,6 +88,66 @@ that is the point of `prebuilt/`.
 There is no cross-glibc in Fedora's repos, so arm64 Linux is built natively
 rather than cross-compiled.
 
+### glibc floor
+
+A Linux library only runs on glibc at least as new as the one it was linked
+against, so the build host — not the code — decides which distros can load it.
+Check any of them with:
+
+```sh
+readelf -V libqjs.so.0.15.1 | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1
+```
+
+| target | built on | floor |
+|---|---|---|
+| `aarch64-linux` | Rocky 9 container (podman, on a Pi) | `GLIBC_2.34` |
+| `x86_64-linux` | Rocky 9 container (podman, on Fedora/WSL) | `GLIBC_2.34` |
+
+`GLIBC_2.34` is the number to hold: it matches the floor the `Trndi` binary
+itself records, so the engine is not what limits distro support. An earlier
+Fedora-built set floored at 2.38, which excluded Debian 12, Raspberry Pi OS
+bookworm, Ubuntu 22.04 and RHEL/Rocky 9 — all otherwise fine — and because the
+binding is link-time on Linux (`external QJSLIB`), `libqjs.so.0` is a `DT_NEEDED`
+entry the loader resolves before `main` runs. So the floor is not a limit on
+extensions, it is a limit on the whole program: an Extensions build below it
+fails to *launch* — no window, just a loader error — rather than starting up
+without extensions. "No Ext" builds link no engine and are unaffected by any of
+this, which is the fallback for a system that cannot meet the floor and cannot
+rebuild.
+
+Nothing in quickjs-ng needs 2.38; that floor was an artifact of Fedora's libc.
+Building the same source in a Rocky 9 container gives 2.34 on any host, without
+a VM — the sysroot supplies glibc, the host kernel is irrelevant, and
+old-userspace-on-new-kernel is the safe direction:
+
+```sh
+cd <repo root>
+podman run --rm \
+  -v "$PWD:/src" -w /src/externals/quickjs \
+  -e TRNDI_QJS_WORK=/tmp/qjsbuild \
+  quay.io/rockylinux/rockylinux:9 \
+  sh -c 'dnf install -y gcc cmake git && ./build.sh linux'
+```
+
+`TRNDI_QJS_WORK` keeps the quickjs-ng clone and the CMake tree inside the
+container, so only the finished libraries are written back through the bind
+mount — worth it on any slow mount, and a large difference under WSL. The image
+is named in full because Fedora's podman defaults to
+`short-name-mode = "enforcing"`, where a bare `rockylinux:9` prompts or fails.
+On an SELinux host (native Fedora/RHEL) add `:Z` to the volume; do *not* on
+WSL, where `/mnt/c` is drvfs and has no xattrs to relabel.
+
+Run it once per architecture, on a machine of that architecture (`build.sh
+linux` only ever builds for its host). Use it whenever these binaries are
+refreshed — rebuilding on a bleeding-edge host silently raises the floor for
+everyone, and nothing in CI catches it.
+
+Rootless podman under WSL usually needs one fix first: the distro's rootfs
+import strips file capabilities from `newuidmap`/`newgidmap`, and without them
+UID mapping fails with `should have setuid or have filecaps setuid`. Restore
+them with `sudo setcap cap_setuid+ep /usr/bin/newuidmap` and
+`sudo setcap cap_setgid+ep /usr/bin/newgidmap`, then `podman system migrate`.
+
 ## How the libraries are found at runtime
 
 They ship *beside* the executable rather than being installed system-wide, so
