@@ -863,9 +863,11 @@ begin
   JD_BOOL:
     Result.From(val.Data.BoolVal);
   JD_OBJ:
-      // ObjectVal holds a bare object pointer; rebuild a value around it.
-      // This borrows the reference, exactly as the previous integer cast did.
-    Result := JSValueFromPtr(JS_TAG_OBJECT, val.Data.ObjectVal);
+      // ObjectVal holds a bare object pointer; rebuild a value around it and
+      // take a reference. Every caller consumes what we return here — the
+      // array builder hands it to JS_SetPropertyUint32, the promise path frees
+      // it after JS_Call — so a borrowed reference would be over-released.
+    Result := JS_DupValue(ctx, JSValueFromPtr(JS_TAG_OBJECT, val.Data.ObjectVal));
   else
       // For non-supported types, return `undefined`
     Result := JS_UNDEFINED;
