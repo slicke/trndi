@@ -3123,7 +3123,12 @@ begin
     '$tn = [Windows.UI.Notifications.ToastNotification]::new($xml); ' +
     '[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId).Show($tn); ' +
     '} catch { ' +
-    'try { $_ | Out-String | Set-Content -Path $log -Encoding UTF8 } catch {} ' +
+    // Log the exception type and message only. Never "$_ | Out-String": an
+    // ErrorRecord carries the failing source line, and the script embeds the
+    // toast title/message as literals -- that would spill glucose values into
+    // a plaintext temp file on every toast failure.
+    'try { ($_.Exception.GetType().FullName + '': '' + $_.Exception.Message) | ' +
+    'Set-Content -Path $log -Encoding UTF8 } catch {} ' +
     '}';
 
   // Pass the script via -EncodedCommand (Base64 of UTF-16LE) instead of
