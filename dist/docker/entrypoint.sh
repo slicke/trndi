@@ -34,21 +34,15 @@ fi
 
 cd "$TRNDI_DIR" || exec "$@"
 
-# Mirror CI's per-architecture choice (.github/workflows/build.yml): amd64 builds
-# Extensions, arm64 builds No Ext - the prebuilt QuickJS libraries in
-# externals/quickjs/prebuilt only cover x86_64 so far.
-case "$(uname -m)" in
-  x86_64|amd64)
-    echo "==> Building Trndi (make release: Extensions (Release), Qt6 widgetset)"
-    build_target=release
-    ;;
-  *)
-    echo "==> Non-amd64 host: building without extensions, matching CI's linux-arm64 job"
-    build_target=noext-release
-    ;;
-esac
+# Both Linux CI jobs build Extensions (.github/workflows/build.yml), and
+# externals/quickjs/prebuilt ships libraries for x86_64-linux and aarch64-linux -
+# the .lpi picks the right directory from $(TargetCPU)-$(TargetOS) on its own.
+# Override with TRNDI_BUILD_TARGET=noext-release to skip the engine entirely.
+: "${TRNDI_BUILD_TARGET:=release}"
 
-if make "$build_target"; then
+echo "==> Building Trndi (make $TRNDI_BUILD_TARGET: Qt6 widgetset)"
+
+if make "$TRNDI_BUILD_TARGET"; then
   echo "==> Build succeeded. Binary: $TRNDI_DIR/build/Trndi"
 else
   echo "==> Build failed - dropping into a shell in $TRNDI_DIR for debugging." >&2
