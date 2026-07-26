@@ -1819,7 +1819,14 @@ begin
         for i := 0 to names.Count - 1 do
         begin
           k := names[i];
-          snapshot.Add(k + '=' + reg.ReadString(k));
+          // HKCU\Software\Trndi is user-writable, so a value we never wrote
+          // (REG_DWORD, REG_BINARY, ...) can turn up here. ReadString raises
+          // ERegistryException on those, which would abort the enumeration
+          // before SeedSettingsCache and leave the cache permanently cold.
+          // Type-check first and skip what we cannot represent; the type query
+          // reuses the already-open key, so this stays one open/close pair.
+          if reg.GetDataType(k) in [rdString, rdExpandString] then
+            snapshot.Add(k + '=' + reg.ReadString(k));
         end;
       end;
       TTrndiNativeBase.SeedSettingsCache(snapshot);
