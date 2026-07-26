@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|list-modules|test|assets|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|ide-libs|list-modules|test|assets|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -83,6 +83,16 @@ switch ($firstArg) {
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs }
         exit $LASTEXITCODE
+    }
+    "ide-libs" {
+        # The Lazarus IDE builds and runs Trndi.exe in the project root, so the
+        # QuickJS libraries have to sit there for an Extensions build started
+        # with F9 to load the engine. The build targets above already do this on
+        # Windows; the target exists so the same command works on every platform
+        # (see the Makefile's ide-libs).
+        Write-Host "Copying QuickJS libraries to the project root (for Lazarus IDE runs)" -ForegroundColor Cyan
+        Copy-QuickJSLibs
+        exit 0
     }
     "noext" {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
@@ -279,6 +289,8 @@ switch ($firstArg) {
         Write-Host "  noext-debug      Build without extensions, debug ('No Ext (Debug)' mode)"
         Write-Host "  test             Build tests/TrndiTestConsole.lpi and run it (spawns an in-process test server;"
         Write-Host "                   set TRNDI_NO_TESTSERVER=1 to skip integration tests)"
+        Write-Host "  ide-libs         Copy the QuickJS engine + ABI shim to the project root, for Extensions builds run from the Lazarus IDE (F9)"
+        Write-Host "                   (the build targets above already do this on Windows)"
         Write-Host "  list-modules     Show Pascal 'unit' modules found under units/ as a tree"
         Write-Host "  assets           Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
         Write-Host "  clean            Remove build artifacts (*.o, *.ppu, executables, ...); use -n or --dry-run to preview"

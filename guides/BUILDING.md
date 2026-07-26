@@ -33,14 +33,13 @@ See [externals/quickjs/README.md](/externals/quickjs/README.md#glibc-floor) for 
 
 #### Running from the Lazarus IDE
 
-`make`/`gmake` copy the executable *and* the QuickJS libraries into `build/`, but Lazarus itself builds and runs `Trndi` in the repo root — where those libraries are not. Extensions builds started from the IDE (Run > Run, F9) therefore fail to load the engine. Copy the pair for your platform to the repo root once; they are gitignored there:
+`make`/`gmake` copy the executable *and* the QuickJS libraries into `build/`, but Lazarus itself builds and runs `Trndi` in the repo root — where those libraries are not. Extensions builds started from the IDE (Run > Run, F9) therefore fail to load the engine. The `ide-libs` target puts the pair for your platform there (picking the right `prebuilt/<cpu>-<os>/` directory and recreating the `.so` symlinks on Linux); run it once per checkout, and again whenever you refresh `externals/quickjs/prebuilt/`:
 
 ```sh
-make qjs-links                                          # Linux only: recreate the .so symlinks
-cp -P externals/quickjs/prebuilt/x86_64-linux/* .       # or aarch64-linux, aarch64-darwin, …
+make ide-libs        # gmake ide-libs on macOS, .\make.ps1 ide-libs on Windows
 ```
 
-`.\make.ps1` already copies the DLLs to the repo root on Windows, so the IDE works there without an extra step.
+It does not build anything and does not care which build mode you use, so it costs nothing to re-run. The copies are gitignored in the repo root and `make clean` removes them. On Windows the build targets already copy the DLLs there, so `.\make.ps1 ide-libs` is only needed if you have never run a build.
 
 ### Qt6
 You need __libqt6pas__, and its development packages. These are normally available with your distro. See the _Linux section in [README.md](/README.md)_ on how to install libqt6pas.

@@ -5,6 +5,7 @@
 #   make release      -> release build
 #   make test         -> build and run tests (runner spawns an in-process Pascal test server)
 #   make test-noserver-> build and run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)
+#   make ide-libs     -> copy the QuickJS libraries to the project root (for Lazarus IDE runs)
 #   make clean        -> remove build artifacts
 #   make install      -> install binary to /usr/local/bin (requires sudo)
 #   make list-modes   -> list available build modes from Trndi.lpi
@@ -108,6 +109,35 @@ else
   QJS_LIBS := *.so*
 endif
 
+# Stage the QuickJS engine and its ABI shim next to a binary that has to load
+# them. $(1) is a space-separated list of destination directories (globs are
+# allowed; missing ones are skipped). The unversioned SONAME symlinks are not
+# tracked in git, so the libqjs.so -> libqjs.so.0 -> libqjs.so.<ver> chain is
+# recreated after copying. Used by 'build' for $(OUTDIR) and by 'ide-libs' for
+# the project root.
+# Where 'build' stages them: beside the executable in $(OUTDIR), and inside a
+# macOS bundle's Contents/MacOS. Empty for a No Ext build, which links no engine.
+QJS_BUILD_DESTS = "$(OUTDIR)" "$(OUTDIR)"/*.app/Contents/MacOS
+ifeq ($(BUILD_MODE_NAME),No Ext)
+  QJS_BUILD_DESTS =
+endif
+
+define stage-qjs-libs
+	@if [ -d "$(QJS_DIR)" ]; then \
+	  for dest in $(1); do \
+	    [ -d "$$dest" ] || continue; \
+	    cp -P $(QJS_DIR)/$(QJS_LIBS) "$$dest/" 2>/dev/null || true; \
+	    real=$$(cd "$$dest" && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
+	    if [ -n "$$real" ]; then \
+	      ( cd "$$dest" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
+	    fi; \
+	    echo "Copied QuickJS libraries to $$dest"; \
+	  done; \
+	else \
+	  echo "Warning: $(QJS_DIR) missing; extensions will fail to start. Build it with externals/quickjs/build.sh"; \
+	fi
+endef
+
 LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG)
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
@@ -115,7 +145,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets ide-libs
 
 all: release
 
@@ -134,6 +164,7 @@ help:
 	@echo "  list-modules Show Pascal 'unit' modules found under units/"
 	@echo "  check-module-names Check for mismatches between filenames and 'unit' declarations (uses scripts/check-module-names.pl)"
 	@echo "  show-mode  Show resolved build-mode and lazbuild flags"
+	@echo "  ide-libs   Copy the QuickJS engine + ABI shim into the project root, so Extensions builds run from the Lazarus IDE (F9) find them"
 	@echo "  noext      Build without JavaScript extension support (no QuickJS libraries needed) - use noext-release/noext-debug to override mode"
 	@echo "  assets     Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
 	@echo "  check-assets  Fail if a committed .lrs is out of sync with its sources (CI guard)"
@@ -164,6 +195,15 @@ qjs-links:
 	  ( cd "$(QJS_DIR)" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
 	fi
 
+# Stage the QuickJS libraries in the project root. The Lazarus IDE builds and
+# runs Trndi there, not in $(OUTDIR), so an Extensions build started with F9
+# otherwise fails to load the engine. Independent of build mode: run it once per
+# checkout (and again after refreshing externals/quickjs/prebuilt). The libraries
+# are gitignored in the root; 'make clean' removes them.
+.PHONY: ide-libs
+ide-libs: qjs-links
+	$(call stage-qjs-libs,.)
+
 build: qjs-links
 	mkdir -p $(OUTDIR)
 	@echo "Building $(LPI) (mode=$(BUILD_MODE_NAME), widgetset=$(WIDGETSET)) -> $(OUTDIR)"
@@ -182,23 +222,9 @@ build: qjs-links
 	# Copy translations into build dir for packaging/runtime
 	if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/. "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi
 	@# The extension engine links quickjs-ng and its ABI shim as shared libraries,
-	@# which must sit beside the executable. Symlinks are not tracked in git, so
-	@# recreate them here. Skipped for No Ext builds, which never load them.
-	@if [ "$(BUILD_MODE_NAME)" != "No Ext" ]; then \
-	  if [ -d "$(QJS_DIR)" ]; then \
-	    for dest in "$(OUTDIR)" "$(OUTDIR)"/*.app/Contents/MacOS; do \
-	      [ -d "$$dest" ] || continue; \
-	      cp -P $(QJS_DIR)/$(QJS_LIBS) "$$dest/" 2>/dev/null || true; \
-	      real=$$(cd "$$dest" && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
-	      if [ -n "$$real" ]; then \
-	        ( cd "$$dest" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
-	      fi; \
-	      echo "Copied QuickJS libraries to $$dest"; \
-	    done; \
-	  else \
-	    echo "Warning: $(QJS_DIR) missing; extensions will fail to start. Build it with externals/quickjs/build.sh"; \
-	  fi; \
-	fi
+	@# which must sit beside the executable (QJS_BUILD_DESTS is empty, and this
+	@# expands to nothing, for No Ext builds — they never load them).
+	$(if $(QJS_BUILD_DESTS),$(call stage-qjs-libs,$(QJS_BUILD_DESTS)))
 	@# Strip embedded debug info for smaller Release binaries (Linux default; override STRIP_RELEASE=0)
 	@if [ "$(BUILD_MODE)" = "Release" ] && [ "$(STRIP_RELEASE)" = "1" ]; then \
 	  if [ -f "$(OUTDIR)/Trndi" ]; then \
