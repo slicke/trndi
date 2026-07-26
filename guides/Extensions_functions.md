@@ -406,10 +406,23 @@ Stores a settings value, you can store anything under ```extval```.*, modifying 
 
 ### setLevelColor
 #### Sets the UX colors
+Accepts **3, 6 or 10** colors; any other argument count is rejected and the call returns `false`. Note that the last group is ordered high, low, then their text colors — unlike the ok/high/low grouping used by the first six.
+
+| Args | Sets |
+| --- | --- |
+| 1–3 | Reading background: ok, high, low |
+| 4–6 | Reading text color: ok, high, low |
+| 7–10 | Custom range levels set in NightScout (or via JS): background high, background low, text high, text low |
+
 ```javascript
-Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5',// Readings (ok, hi, lo))
-              '#7cd55d','#612828', '#5d75d5', // Colors for the dots (ok, hi, lo)
-              '#ffbfbf', '#bffff9'); // Color for the custom levels set in NightScout (or via JS) (hi, lo)
+// All ten — the values below are Trndi's built-in "Classic" theme
+Trndi.setLevelColor('#84DC00', '#FFDA07', '#0BBEFF', // Readings (ok, hi, lo)
+                    '#F2FFF2', '#FB5200', '#E9FEFF', // Text (ok, hi, lo)
+                    '#DEC972', '#EE59A8',            // Range background (hi, lo)
+                    '#77651C', '#4E072D');           // Range text (hi, lo)
+
+// Backgrounds only
+Trndi.setLevelColor('#84DC00', '#FFDA07', '#0BBEFF');
 ``` 
 ### setTimeAndRange
 #### Sets the max minutes to fetch and max readings to fetch (subject to which metric the API uses)
