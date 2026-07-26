@@ -1452,6 +1452,20 @@ var
   dval: double;
   borderColor: TColor;
   ShellIcon: HICON;
+  hMain: HWND;
+
+  // Application.MainForm is nil before the main form is built and again during
+  // teardown, while queued WM_TIMER ticks can still reach FlashTimerTick and
+  // land here. Reading .Handle directly would also force handle creation, so
+  // every window-dependent step goes through this.
+function MainFormHandle: HWND;
+  begin
+    if (Application <> nil) and (Application.MainForm <> nil) and
+      Application.MainForm.HandleAllocated then
+      Result := Application.MainForm.Handle
+    else
+      Result := 0;
+  end;
 
 function Luminance(c: TColor): double;
   var
@@ -1545,12 +1559,19 @@ begin
   try
     if Value = '' then
     begin
+      hMain := MainFormHandle;
       if (gOriginalAppIcon <> nil) and (not gOriginalAppIcon.Empty) then
         Application.Icon.Assign(gOriginalAppIcon)
       else
+      if Application.MainForm <> nil then
         Application.Icon.Assign(Application.MainForm.Icon);
-      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, 0);
-      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL, 0);
+      if hMain <> 0 then
+      begin
+        SendMessage(hMain, WM_SETICON, ICON_BIG, 0);
+        SendMessage(hMain, WM_SETICON, ICON_SMALL, 0);
+      end;
+      // The cached handle is retired regardless of whether a window was still
+      // around to notify, so teardown never strands it.
       if gLastBadgeIcon <> 0 then
       begin
         DestroyIcon(gLastBadgeIcon);
@@ -1732,20 +1753,27 @@ begin
     // requires before it re-reads the taskbar button icon.
     ShellIcon := CopyIcon(TempIcon.Handle);
     Application.Icon.Assign(TempIcon);
+    hMain := MainFormHandle;
     if ShellIcon <> 0 then
     begin
-      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG, ShellIcon);
-      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL, ShellIcon);
+      if hMain <> 0 then
+      begin
+        SendMessage(hMain, WM_SETICON, ICON_BIG, ShellIcon);
+        SendMessage(hMain, WM_SETICON, ICON_SMALL, ShellIcon);
+      end;
       // The shell now references the new handle; retire the previous one.
+      // Tracked even when no window was notified, so the copy is still freed
+      // by the next call rather than leaked.
       if gLastBadgeIcon <> 0 then
         DestroyIcon(gLastBadgeIcon);
       gLastBadgeIcon := ShellIcon;
     end
     else
+    if hMain <> 0 then
     begin
-      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_BIG,
+      SendMessage(hMain, WM_SETICON, ICON_BIG,
         Application.Icon.Handle);
-      SendMessage(Application.MainForm.Handle, WM_SETICON, ICON_SMALL,
+      SendMessage(hMain, WM_SETICON, ICON_SMALL,
         Application.Icon.Handle);
     end;
   finally
