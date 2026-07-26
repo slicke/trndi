@@ -43,6 +43,13 @@ argc: integer; argv: PJSValues; magic: integer);
 var
   comp, what, val: string;
 begin
+  res^ := JS_UNDEFINED;
+  if argc < 3 then
+  begin
+    ExtError(sdsAuto, '[uxProp] A property could not be set, as the parameter count was wrong; got ' + IntToStr(argc) + ', expected 3');
+    Exit;
+  end;
+
   // Parse the parameters
   comp := ctx^.ToUtf8(argv^[0]);
   what :=  ctx^.ToUtf8(argv^[1]);
@@ -81,6 +88,8 @@ var
   s: string;
 begin
   res^ := JS_UNDEFINED;
+  if argc < 1 then
+    Exit;
   s := ctx^.ToUtf8(argv^[0]);
 
   native.attention('Trndi - Extension Message', s);
