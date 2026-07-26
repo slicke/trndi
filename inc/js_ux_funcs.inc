@@ -94,11 +94,14 @@ var
 begin
   res^ := JS_UNDEFINED;
   if argc <> 5 then
+  begin
     ExtError(sdsAuto, '[htmlMsg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 5');
+    exit;
+  end;
 
   ctx^.ToVariant(argv^[4], vbs);
 
-  if not varType(vbs) = varSingle then
+  if not VarIsNumeric(vbs) then
   begin
     ExtError(sdsAuto, 'Box Size must be a float or integer');
     exit;
@@ -117,11 +120,14 @@ var
 begin
   res^ := JS_UNDEFINED;
   if argc <> 3 then
+  begin
     ExtError(sdsAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
+    exit;
+  end;
 
   ctx^.ToVariant(argv^[2], vbs);
 
-  if not varType(vbs) = varSingle then
+  if not VarIsNumeric(vbs) then
   begin
     ExtError(sdsAuto, 'Box Size must be a float or integer');
     exit;
@@ -138,11 +144,14 @@ var
 begin
   res^ := JS_FALSE;
   if argc <> 3 then
+  begin
     ExtError(sdsAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
+    exit;
+  end;
 
   ctx^.ToVariant(argv^[2], vbs);
 
-  if not varType(vbs) = varSingle then
+  if not VarIsNumeric(vbs) then
   begin
     ExtError(sdsAuto, 'Box Size must be a float or integer');
     exit;
@@ -202,7 +211,7 @@ begin
 
   ctx^.ToVariant(argv^[0], vbw);
 
-  if not varType(vbw) = varDecimal then
+  if (not VarIsNumeric(vbw)) or (vbw < 0.1) or (vbw > 1.0) then
   begin
     ExtError(sdsAuto, 'Badge size must be percentage: 0.1-1.0');
     exit;
@@ -212,7 +221,7 @@ begin
   if argc = 2 then
   begin
     ctx^.ToVariant(argv^[1], vbf);
-    if not VarType(vbf) = varInteger then
+    if not VarIsOrdinal(vbf) then
     begin
       ExtError(sdsAuto, 'Badge font size must be an integer!');
       res^ := JS_FALSE;
@@ -237,7 +246,7 @@ begin
 
   ctx^.ToVariant(argv^[0], vds);
 
-  if not varType(vds) = varInteger then
+  if not VarIsOrdinal(vds) then
   begin
     ExtError(sdsAuto, 'Dot size must be an integer');
     res^ := JS_FALSE;
@@ -261,7 +270,7 @@ begin
 
   ctx^.ToVariant(argv^[0], vda);
 
-  if not varType(vda) = varSingle then
+  if not VarIsNumeric(vda) then
   begin
     ExtError(sdsAuto, 'Dot size must be a floating number');
     res^ := JS_FALSE;
