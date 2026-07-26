@@ -189,10 +189,10 @@ begin
   end;
   if argc = 10 then
   begin
-    bg_rel_color_hi := HTMLColorToTColor(ctx^.ToUtf8(argv^[5]));
-    bg_rel_color_lo := HTMLColorToTColor(ctx^.ToUtf8(argv^[6]));
-    bg_rel_color_hi_txt := HTMLColorToTColor(ctx^.ToUtf8(argv^[7]));
-    bg_rel_color_lo_txt := HTMLColorToTColor(ctx^.ToUtf8(argv^[8]));
+    bg_rel_color_hi := HTMLColorToTColor(ctx^.ToUtf8(argv^[6]));
+    bg_rel_color_lo := HTMLColorToTColor(ctx^.ToUtf8(argv^[7]));
+    bg_rel_color_hi_txt := HTMLColorToTColor(ctx^.ToUtf8(argv^[8]));
+    bg_rel_color_lo_txt := HTMLColorToTColor(ctx^.ToUtf8(argv^[9]));
   end;
 end;
 
