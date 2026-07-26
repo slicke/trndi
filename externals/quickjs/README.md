@@ -79,10 +79,11 @@ target's directory as well if you want both to link against it.
 | `aarch64-linux` | build natively on the target (e.g. a Raspberry Pi) |
 | Windows ARM64 | build natively on the platform |
 
-Only `x86_64-linux` and `x86_64-win64` are committed so far, because those are
-the two a Linux host can produce. The macOS libraries have to be built on a Mac;
-until a set is committed, macOS can only build Trndi's "No Ext" modes. Anything
-`build.sh` produces is safe to commit — that is the point of `prebuilt/`.
+`x86_64-linux`, `aarch64-linux`, `x86_64-win64` and `aarch64-darwin` are
+committed. The two missing ones — `x86_64-darwin` (Intel Mac) and Windows ARM64
+— have to be built on the target itself; until they are, those hosts can only
+build Trndi's "No Ext" modes. Anything `build.sh` produces is safe to commit —
+that is the point of `prebuilt/`.
 
 There is no cross-glibc in Fedora's repos, so arm64 Linux is built natively
 rather than cross-compiled.

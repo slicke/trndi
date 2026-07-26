@@ -10,14 +10,23 @@ Trndi embeds __QuickJS__ (the [quickjs-ng](https://github.com/quickjs-ng/quickjs
 - On Linux the linker resolves `-lqjs` through an unversioned `libqjs.so` symlink. Symlinks are not tracked in git (a checkout onto NTFS flattens them into empty files), so `make` recreates them before calling lazbuild — run `make qjs-links` if you invoke `lazbuild` directly.
 - The binaries must sit beside `Trndi`/`Trndi.exe` at runtime. Linux builds carry an `$ORIGIN` runpath and macOS an `@loader_path` one; Windows resolves DLLs from the executable's directory. In a macOS `.app` the relevant directory is `Contents/MacOS`, which is where `dist/macos.sh` puts them.
 
-Prebuilt libraries currently ship for `x86_64-linux` and `x86_64-win64`. On any other target, build them with `externals/quickjs/build.sh` (needs a C toolchain and CMake) or use a "No Ext" build mode.
-
-macOS is the common case here — its libraries cannot be cross-built from Linux, so they are not committed. Build them once on the Mac and the Extensions modes work from then on:
+Prebuilt libraries currently ship for `x86_64-linux`, `aarch64-linux`, `x86_64-win64` and `aarch64-darwin` (Apple Silicon) — the four targets CI builds Extensions modes for. On any other target (Intel macOS, Windows on ARM), build them with `externals/quickjs/build.sh` (needs a C toolchain and CMake) or use a "No Ext" build mode:
 
 ```sh
-externals/quickjs/build.sh mac    # -> externals/quickjs/prebuilt/aarch64-darwin/
+externals/quickjs/build.sh mac    # -> externals/quickjs/prebuilt/<cpu>-darwin/
 gmake                             # or gmake test
 ``` See [externals/quickjs/README.md](/externals/quickjs/README.md) for how the shim works and why it exists.
+
+#### Running from the Lazarus IDE
+
+`make`/`gmake` copy the executable *and* the QuickJS libraries into `build/`, but Lazarus itself builds and runs `Trndi` in the repo root — where those libraries are not. Extensions builds started from the IDE (Run > Run, F9) therefore fail to load the engine. Copy the pair for your platform to the repo root once; they are gitignored there:
+
+```sh
+make qjs-links                                          # Linux only: recreate the .so symlinks
+cp -P externals/quickjs/prebuilt/x86_64-linux/* .       # or aarch64-linux, aarch64-darwin, …
+```
+
+`.\make.ps1` already copies the DLLs to the repo root on Windows, so the IDE works there without an extra step.
 
 ### Qt6
 You need __libqt6pas__, and its development packages. These are normally available with your distro. See the _Linux section in [README.md](/README.md)_ on how to install libqt6pas.
