@@ -118,9 +118,15 @@ begin
         firstEntry := TJSONObject(TJSONArray(js).Items[0]);
         rawDateMs := firstEntry.Get('date', int64(0));
         expectedDate := UnixToDateTime(rawDateMs div 1000, False);
-        AssertEquals('xDrip reading timestamp uses UTC epoch from server',
-          FormatDateTime('yyyy-mm-dd hh:nn:ss', expectedDate),
-          FormatDateTime('yyyy-mm-dd hh:nn:ss', readings[0].date));
+        // The fake server stamps each entry with the time of the request, so this
+        // raw fetch and the getReadings fetch above can straddle a second boundary.
+        // A timezone/epoch mis-mapping would be off by whole hours, so allow a few
+        // seconds of drift rather than demanding an exact match.
+        AssertTrue(Format('xDrip reading timestamp uses UTC epoch from server ' +
+          '(expected near %s but was %s)',
+          [FormatDateTime('yyyy-mm-dd hh:nn:ss', expectedDate),
+           FormatDateTime('yyyy-mm-dd hh:nn:ss', readings[0].date)]),
+          Abs(SecondsBetween(expectedDate, readings[0].date)) <= 5);
       finally
         js.Free;
       end;
