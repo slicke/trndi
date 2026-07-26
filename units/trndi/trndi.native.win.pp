@@ -2180,21 +2180,8 @@ begin
     {$endif}
     // --- end diagnostics ---
 
-    // Ensure the main form is visible or minimized so progress can be shown on taskbar
-    try
-      if Assigned(Application.MainForm) and
-         (not Application.MainForm.Visible) and
-         (Application.MainForm.WindowState <> wsMinimized) then
-      begin
-        Application.MainForm.WindowState := wsMinimized;
-        {$ifdef DEBUG}
-        TrndiDLog(PChar('[Trndi] updateBegin: Minimized main form to show progress'));
-       {$endif}
-      end;
-    except
-      on E: Exception do
-       {$ifdef DEBUG}TrndiDLog(PChar('[Trndi] updateBegin: Exception minimizing form: ' + E.Message));{$else};{$endif}
-    end;
+    // A hidden main form is left hidden: a background fetch must never force the
+    // window into view (or onto the taskbar). Progress simply goes unshown then.
 
     // Use indeterminate progress during the fetch (more visible).
     // No SetProgressValue here: a value call would flip the button back to
