@@ -432,7 +432,9 @@ jobs:
           sudo installer -pkg MacPorts.pkg -target /
           export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
           sudo port -v selfupdate
-          sudo port -N install fpc lazarus p7zip create-dmg
+          # gmake: the Makefile is GNU make syntax and macOS ships 3.81 as `make`
+          # (see CLAUDE.md — macOS uses gmake). Needed by the test step below.
+          sudo port -N install fpc lazarus p7zip create-dmg gmake
 
       - name: Write buildinfo (macOS)
         if: matrix.os_target == 'macos'
@@ -477,6 +479,15 @@ jobs:
           # unversioned (libqjs.dylib / libtqshim.dylib), so -lqjs links straight
           # against them — no symlink fixup is needed here, unlike on Linux.
           lazbuild --build-mode="Extensions (Release)" --ws=cocoa --cpu=aarch64 --os=darwin Trndi.lpi
+
+          # Run tests before packaging, as the Linux and Windows legs do. The
+          # Makefile's Darwin branch already resolves the cocoa widgetset and the
+          # aarch64-darwin QuickJS prebuilts, and TrndiTestConsole.lpi requires
+          # only FCL (no LCL), so this is a plain console run with no GUI session
+          # involved. It is also the first place CI actually *loads* the shipped
+          # dylibs rather than just linking them.
+          gmake test
+
           # Package zip & dmg (also on PRs, so packaging changes can be tested;
           # the publish job is gated on push-to-main, so PR artifacts only end up
           # attached to the workflow run, not a release).
