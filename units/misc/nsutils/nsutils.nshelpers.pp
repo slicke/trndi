@@ -33,7 +33,13 @@ interface
 uses
   CFBase,
   CFString,
-  {$IF (DEFINED(IPHONESIM) OR DEFINED(CPUARM) OR DEFINED(CPUAARCH64)) AND (NOT DEFINED(LCLCOCOA)) }  //iOS
+  {* Local change to this LGPL unit: upstream treats any ARM/AArch64 Darwin
+     target as iOS, which predates Apple Silicon — on an M-series Mac
+     CPUAARCH64 is defined and the target is still macOS, so the iOS branch was
+     selected and iPhoneAll (which does not exist for macOS) failed to compile.
+     Only LCL builds escaped it, via the LCLCOCOA test below. Detect iOS
+     explicitly instead; Trndi builds no iOS target, so this branch is inert. *}
+  {$IF (DEFINED(IPHONESIM) OR DEFINED(IOS)) AND (NOT DEFINED(LCLCOCOA)) }  //iOS
  {$IFDEF NoiPhoneAll}
   Foundation;
  {$ELSE}

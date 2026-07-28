@@ -21,7 +21,10 @@ uses
 SysUtils,
 Classes,
 Math,
-{$IF (DEFINED(IPHONESIM) OR DEFINED(CPUARM) OR DEFINED(CPUAARCH64)) AND (NOT DEFINED(LCLCOCOA)) }  //iOS
+{* Local change to this LGPL unit: detect iOS explicitly rather than treating
+   any AArch64 Darwin target as iOS, which breaks on Apple Silicon macOS.
+   See nsutils.nshelpers.pp for the full note. *}
+{$IF (DEFINED(IPHONESIM) OR DEFINED(IOS)) AND (NOT DEFINED(LCLCOCOA)) }  //iOS
 {$IFDEF NoiPhoneAll}
 Foundation,
 {$ELSE}
