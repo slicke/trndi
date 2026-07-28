@@ -136,6 +136,11 @@ end;
 function TfBG.FinalizeReadingUpdate(const Boot: boolean): boolean;
 begin
   Result := IsDataFresh;
+  if Result then
+    ApplyFreshDisplayState
+  else
+    ApplyStaleDisplayState;
+
   if (not Result) and (not Boot) then
     Exit;
 
@@ -156,39 +161,81 @@ begin
 end;
 
 function TfBG.IsDataFresh: boolean;
-var
-  reading: BGReading;
 begin
   Result := false;
   if firstboot then
     Exit(true);
 
-  reading := lastReading;
+  if Length(bgs) < 1 then
+    Exit(false);
 
-  Result := MinutesBetween(Now, reading.date) <= native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+  Result := MinutesBetween(Now, lastReading.date) <= native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+end;
 
-  if not Result then
+//------------------------------------------------------------------------------
+// Display state that accompanies IsDataFresh. Split out of the predicate so
+// both fetch paths (empty result and stale result) apply the same state — as
+// side effects of a short-circuited `or` they used to be skipped whenever the
+// result set was empty, which is exactly the boot-with-no-data case.
+//------------------------------------------------------------------------------
+
+procedure TfBG.ApplyFreshDisplayState;
+begin
+  if firstboot then
+    Exit;
+
+  // lVal.Font.Color is deliberately not restored here: fBG.color is still the
+  // stale black at this point (ProcessCurrentReading picks the new background
+  // afterwards), so any color computed now would be wrong. UpdateUIColors owns
+  // it and runs from FinalizeUIUpdate once the background is final.
+  tMissed.Enabled := false;
+end;
+
+procedure TfBG.ApplyStaleDisplayState;
+var
+  haveReading: boolean;
+begin
+  if firstboot then
+    Exit;
+
+  haveReading := Length(bgs) > 0;
+
+  if haveReading then
   begin
+    // Strike out the last known value rather than discarding it, and let
+    // tMissed tick its age. Both need a real timestamp: with bgs empty
+    // lastReading.date is 0, which tMissedTimer would render as an age of
+    // ~66 million minutes.
     tMissed.OnTimer(tMissed);
-    lVal.Font.Style := [fsStrikeOut];
-    if (not CaptionStartsWithDigit(lVal.Caption)) or (lArrow.Caption = 'lArrow') then
-    begin
-      lVal.Caption := '--';
-      lArrow.Caption := '';
-    end;
-    setColorMode(clBlack);
-    lVal.Font.Color := clWhite;
     tMissed.Enabled := true;
-    lArrow.Caption := '';
-    native.badgeTrend := '';
-    native.setBadge('--', clBlack, badge_width, badge_font);
+    lVal.Font.Style := [fsStrikeOut];
   end
   else
   begin
     tMissed.Enabled := false;
-    if lVal.Font.Color = clWhite then
-      lVal.Font.Color := GetTextColorForBackground(fBG.color);
+    lDiff.Caption := '';
+    lVal.Font.Style := [];
   end;
+
+  // Keep a numeric caption (the stale value); replace anything else — the boot
+  // spinner glyph, the design-time placeholder, a previous dash.
+  if (not haveReading) or (not CaptionStartsWithDigit(lVal.Caption)) or
+    (lArrow.Caption = 'lArrow') then
+    lVal.Caption := '--';
+
+  lArrow.Caption := '';
+  setColorMode(clBlack);
+  lVal.Font.Color := clWhite;
+
+  // setColorMode changed fBG.Color behind the UI-state cache's back. Without
+  // invalidating it, a recovery reading that happens to carry the same value,
+  // TIR and range color as the one before the outage compares equal on all
+  // four fields, ShouldUpdateUI returns false, and UpdateUIColors never runs —
+  // leaving this white caption on the restored (non-black) background.
+  FLastUIColor := TColor(-1);
+
+  native.badgeTrend := '';
+  native.setBadge('--', clBlack, badge_width, badge_font);
 end;
 
 procedure TfBG.SetNextUpdateTimer(const LastReadingTime: TDateTime);
@@ -899,6 +946,7 @@ var
   msg: string;
   i: integer;
   hasData: boolean;
+  fresh: boolean;
 begin
   Result := false;
 
@@ -983,7 +1031,15 @@ begin
 
   hideWarningPanel;
 
-  if (Length(bgs) < 1) or (not IsDataFresh) then
+  // An empty result set is never usable, even during firstboot (where
+  // IsDataFresh reports fresh so the unconfigured Setup screen is left alone).
+  fresh := (Length(bgs) > 0) and IsDataFresh;
+  if fresh then
+    ApplyFreshDisplayState
+  else
+    ApplyStaleDisplayState;
+
+  if not fresh then
   begin
     msg := RS_NO_BACKEND;
     if Trim(ErrorMsg) <> '' then
