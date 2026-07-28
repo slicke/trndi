@@ -66,9 +66,8 @@ type
 //
 // Each band fades in over AGradientPx rows at the top and bottom edges,
 // giving the band a soft transition into the surrounding background instead
-// of a hard rectangle. Reuses the LocalAlphaBlend import from
-// inc/umain_dots.inc on Windows; uses a TPortableNetworkGraphic on
-// GTK/Qt/Cocoa where TBitmap alpha compositing is unreliable.
+// of a hard rectangle. Raster and blit go through the shared primitives in
+// inc/umain_alphablit.inc.
 procedure DrawRangeBands(ACanvas: TCanvas; AWidth, AHeight: integer;
   const Bands: array of TRangeBand; AGradientPx: integer);
 
@@ -94,29 +93,17 @@ procedure DrawRangeBands(ACanvas: TCanvas; AWidth, AHeight: integer;
 
 var
   intf: TLazIntfImage;
-  rawDesc: TRawImageDescription;
+  img: TAlphaImage;
   y, i: integer;
   br, bg, bb: byte;
   dstR, dstG, dstB, dstA: double;
   srcA, invA: double;
-  pix: TFPColor;
-  outR, outG, outB, outA: integer;
-  {$ifdef Windows}
-  bmp: TBitmap;
-  blend: TLocalBlendFunction;
-  {$else}
-  png: TPortableNetworkGraphic;
-  {$endif}
 begin
   if (AWidth <= 0) or (AHeight <= 0) or (Length(Bands) = 0) then
     Exit;
 
-  intf := TLazIntfImage.Create(0, 0);
+  intf := NewAlphaRaster(1, AHeight);
   try
-    rawDesc.Init_BPP32_B8G8R8A8_BIO_TTB(1, AHeight);
-    intf.DataDescription := rawDesc;
-    intf.CreateData;
-
     for y := 0 to AHeight - 1 do
     begin
       dstR := 0; dstG := 0; dstB := 0; dstA := 0;
@@ -136,73 +123,21 @@ begin
         dstA := srcA + dstA * invA;
       end;
 
-      if dstA > 1 then dstA := 1
-      else if dstA < 0 then dstA := 0;
-
       // dstR/dstG/dstB are accumulated in premultiplied form already
       // (Porter-Duff: dstR = br*srcA + dstR*invA — the srcA factor is baked
-      // in, no division by aOut like DrawSmoothCircle's straight-form loop).
-      {$ifdef Windows}
-      // Win32 AlphaBlend with AC_SRC_ALPHA expects premultiplied RGB — write
-      // dstR directly. Multiplying by dstA again would darken twice.
-      outR := Round(dstR);
-      outG := Round(dstG);
-      outB := Round(dstB);
-      {$else}
-      // PNG / cross-platform draw expects straight (non-premultiplied) RGB,
-      // so divide the premultiplied accumulator by dstA to recover the
-      // original colour. Guard dstA = 0 (fully transparent row).
-      if dstA > 0 then
-      begin
-        outR := Round(dstR / dstA);
-        outG := Round(dstG / dstA);
-        outB := Round(dstB / dstA);
-      end
-      else
-      begin
-        outR := 0;
-        outG := 0;
-        outB := 0;
-      end;
-      {$endif}
-      outA := Round(dstA * 255);
-
-      if outR > 255 then outR := 255 else if outR < 0 then outR := 0;
-      if outG > 255 then outG := 255 else if outG < 0 then outG := 0;
-      if outB > 255 then outB := 255 else if outB < 0 then outB := 0;
-      if outA > 255 then outA := 255 else if outA < 0 then outA := 0;
-
-      pix.red := outR shl 8 or outR;
-      pix.green := outG shl 8 or outG;
-      pix.blue := outB shl 8 or outB;
-      pix.alpha := outA shl 8 or outA;
-      intf.Colors[0, y] := pix;
+      // in), which is exactly what PutPremultipliedPixel takes.
+      PutPremultipliedPixel(intf, 0, y, dstR, dstG, dstB, dstA);
     end;
 
-    {$ifdef Windows}
-    bmp := TBitmap.Create;
+    // One column stretched across the full width — the bands are uniform
+    // horizontally, so there is nothing to gain from rasterizing AWidth
+    // identical copies.
+    img := AlphaImageFromIntf(intf, 1, AHeight);
     try
-      bmp.PixelFormat := pf32bit;
-      bmp.SetSize(1, AHeight);
-      bmp.LoadFromIntfImage(intf);
-      blend.BlendOp := LOCAL_AC_SRC_OVER;
-      blend.BlendFlags := 0;
-      blend.SourceConstantAlpha := 255;
-      blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
-      LocalAlphaBlend(ACanvas.Handle, 0, 0, AWidth, AHeight,
-                      bmp.Canvas.Handle, 0, 0, 1, AHeight, blend);
+      BlitAlphaImage(ACanvas, img, 1, AHeight, 0, 0, AWidth, AHeight);
     finally
-      bmp.Free;
+      img.Free;
     end;
-    {$else}
-    png := TPortableNetworkGraphic.Create;
-    try
-      png.LoadFromIntfImage(intf);
-      ACanvas.StretchDraw(Classes.Rect(0, 0, AWidth, AHeight), png);
-    finally
-      png.Free;
-    end;
-    {$endif}
   finally
     intf.Free;
   end;

@@ -1099,6 +1099,7 @@ end;
 {$I ../../inc/umain_helpers.inc}
 {$I ../../inc/umain_init.inc}
 {$I ../../inc/umain_alerts.inc}
+{$I ../../inc/umain_alphablit.inc}
 {$I ../../inc/umain_dots.inc}
 {$I ../../inc/umain_glucose.inc}
 {$I ../../inc/umain_menu.inc}
