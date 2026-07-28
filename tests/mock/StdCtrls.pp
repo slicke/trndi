@@ -20,7 +20,7 @@ type
   public
     constructor Create(AOwner: Controls.TComponent = nil);
     destructor Destroy; override;
-    procedure AdjustSize; // macOS AutoSize helper
+    procedure AdjustSize; override; // macOS AutoSize helper
     property Caption: string read FCaption write FCaption;
     property Font: TFont read FFont write FFont;
     property Alignment: Graphics.TAlignment read FAlignment write FAlignment;
