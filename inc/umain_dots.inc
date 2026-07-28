@@ -3,54 +3,13 @@
    Included in the implementation section of umain.pp only.
 *)
 
-// DrawSmoothCircle: Antialiased disc (with optional outer ring) for the
-// drawn-dot mode. GDI's TCanvas.Ellipse is not antialiased even with
+// Trend-dot rasterizers. GDI's TCanvas.Ellipse is not antialiased even with
 // AntialiasingMode := amOn — it calls the standard Ellipse() API which is
-// strictly aliased.
-//
-// Approach: build a 32-bit premultiplied-alpha bitmap with the disc rendered
-// at its final size using analytical pixel coverage (`r + 0.5 - distance`,
-// clamped to [0,1] at the boundary). Then ask the OS to alpha-blend it over
-// the destination — Windows AlphaBlend reads the destination pixels directly
-// so we don't need to capture the underlying background ourselves (which was
-// unreliable on a TGraphicControl's canvas during the initial paint and
-// during window drag).
-{$ifdef Windows}
+// strictly aliased — so the shapes below are rendered at their final size
+// with analytical pixel coverage and handed to the OS compositor. See
+// inc/umain_alphablit.inc for the shared raster/blit primitives.
 type
-  // Local copy of the Win32 BLENDFUNCTION struct + msimg32!AlphaBlend import.
-  // We avoid `uses Windows` because Windows.TBitmap (the GDI BITMAP record)
-  // would shadow Graphics.TBitmap in the rest of this implementation file.
-  TLocalBlendFunction = packed record
-    BlendOp: byte;
-    BlendFlags: byte;
-    SourceConstantAlpha: byte;
-    AlphaFormat: byte;
-  end;
-const
-  LOCAL_AC_SRC_OVER  = $00;
-  LOCAL_AC_SRC_ALPHA = $01;
-
-function LocalAlphaBlend(
-  hdcDest: HDC; xDest, yDest, wDest, hDest: integer;
-  hdcSrc: HDC;  xSrc,  ySrc,  wSrc,  hSrc:  integer;
-  ftn: TLocalBlendFunction): LongBool;
-  stdcall; external 'msimg32' name 'AlphaBlend';
-{$endif}
-
-type
-  // Finished, platform-ready dot image: premultiplied 32-bit bitmap for the
-  // Win32 AlphaBlend path, RGBA PNG for the LCL Draw path elsewhere.
-  // TBitmap.Draw on GTK/Qt does not reliably composite an alpha channel
-  // (the corners with alpha=0 blit as the bitmap's raw RGB — black for our
-  // input). TPortableNetworkGraphic, in contrast, declares itself as a
-  // proper RGBA image to LCL, so Canvas.Draw composites with alpha via
-  // the backend (Cairo on GTK, QPainter on Qt).
-  {$ifdef Windows}
-  TDotImage = TBitmap;
-  {$else}
-  TDotImage = TPortableNetworkGraphic;
-  {$endif}
-  TDotImageCache = specialize TObjectDictionary<string, TDotImage>;
+  TDotImageCache = specialize TObjectDictionary<string, TAlphaImage>;
 
 const
   // Upper bound on distinct (shape, size, color, ...) combos kept alive. A
@@ -67,14 +26,14 @@ var
   // freed in the unit finalization of umain.pp.
   DotImageCache: TDotImageCache = nil;
 
-function GetCachedDotImage(const AKey: string): TDotImage;
+function GetCachedDotImage(const AKey: string): TAlphaImage;
 begin
   Result := nil;
   if Assigned(DotImageCache) then
     DotImageCache.TryGetValue(AKey, Result);
 end;
 
-procedure StoreCachedDotImage(const AKey: string; AImage: TDotImage);
+procedure StoreCachedDotImage(const AKey: string; AImage: TAlphaImage);
 begin
   if DotImageCache = nil then
     DotImageCache := TDotImageCache.Create([doOwnsValues]);
@@ -83,45 +42,20 @@ begin
   DotImageCache.AddOrSetValue(AKey, AImage);
 end;
 
-// Wrap a rasterized RGBA buffer in the platform image object.
-function DotImageFromIntf(intf: TLazIntfImage; ASize: integer): TDotImage;
+// Composite a finished dot image over ACanvas at the given offset. Dots are
+// always blitted 1:1 — they are rasterized at their final size.
+procedure BlitDotImage(ACanvas: TCanvas; AImage: TAlphaImage;
+  ASize, AOffsetX, AOffsetY: integer); inline;
 begin
-  {$ifdef Windows}
-  Result := TBitmap.Create;
-  Result.PixelFormat := pf32bit;
-  Result.SetSize(ASize, ASize);
-  Result.LoadFromIntfImage(intf);
-  {$else}
-  Result := TPortableNetworkGraphic.Create;
-  Result.LoadFromIntfImage(intf);
-  {$endif}
+  BlitAlphaImage(ACanvas, AImage, ASize, ASize, AOffsetX, AOffsetY,
+    ASize, ASize);
 end;
-
-// Composite a finished dot image over ACanvas at the given offset.
-procedure BlitDotImage(ACanvas: TCanvas; AImage: TDotImage;
-  ASize, AOffsetX, AOffsetY: integer);
-{$ifdef Windows}
-var
-  blend: TLocalBlendFunction;
-begin
-  blend.BlendOp := LOCAL_AC_SRC_OVER;
-  blend.BlendFlags := 0;
-  blend.SourceConstantAlpha := 255;
-  blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
-  LocalAlphaBlend(ACanvas.Handle, AOffsetX, AOffsetY, ASize, ASize,
-                  AImage.Canvas.Handle, 0, 0, ASize, ASize, blend);
-end;
-{$else}
-begin
-  ACanvas.Draw(AOffsetX, AOffsetY, AImage);
-end;
-{$endif}
 
 // Try to satisfy a paint entirely from the rendered-dot cache.
 function TryBlitCachedDot(ACanvas: TCanvas; const AKey: string;
   ASize, AOffsetX, AOffsetY: integer): boolean;
 var
-  img: TDotImage;
+  img: TAlphaImage;
 begin
   img := GetCachedDotImage(AKey);
   Result := img <> nil;
@@ -129,61 +63,14 @@ begin
     BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
 end;
 
-// Allocate the square RGBA raster both dot shapes render into.
-function NewDotIntf(ASize: integer): TLazIntfImage;
-var
-  rawDesc: TRawImageDescription;
-begin
-  Result := TLazIntfImage.Create(0, 0);
-  rawDesc.Init_BPP32_B8G8R8A8_BIO_TTB(ASize, ASize);
-  Result.DataDescription := rawDesc;
-  Result.CreateData;
-end;
-
-// Write one straight-alpha pixel (RGB in 0..255, AAlpha in 0..1), converting
-// to what the platform blit expects: premultiplied RGB for Win32 AlphaBlend,
-// straight RGB for the PNG / LCL Draw path.
-procedure PutDotPixel(AIntf: TLazIntfImage; X, Y: integer;
-  AR, AG, AB, AAlpha: double);
-var
-  outR, outG, outB, outA: integer;
-  pix: TFPColor;
-begin
-  if AAlpha < 0 then AAlpha := 0
-  else if AAlpha > 1 then AAlpha := 1;
-
-  {$ifdef Windows}
-  // Win32 AlphaBlend with AC_SRC_ALPHA expects premultiplied RGB.
-  outR := Round(AR * AAlpha);
-  outG := Round(AG * AAlpha);
-  outB := Round(AB * AAlpha);
-  {$else}
-  // PNG / cross-platform draw expects straight (non-premultiplied) RGB.
-  outR := Round(AR);
-  outG := Round(AG);
-  outB := Round(AB);
-  {$endif}
-  outA := Round(AAlpha * 255);
-
-  if outR > 255 then outR := 255 else if outR < 0 then outR := 0;
-  if outG > 255 then outG := 255 else if outG < 0 then outG := 0;
-  if outB > 255 then outB := 255 else if outB < 0 then outB := 0;
-
-  pix.red := outR shl 8 or outR;
-  pix.green := outG shl 8 or outG;
-  pix.blue := outB shl 8 or outB;
-  pix.alpha := outA shl 8 or outA;
-  AIntf.Colors[X, Y] := pix;
-end;
-
 // Wrap the finished raster in the platform image, cache it under AKey and
 // composite it onto the destination canvas. The caller still owns AIntf.
 procedure FinishDotRender(ACanvas: TCanvas; const AKey: string;
   AIntf: TLazIntfImage; ASize, AOffsetX, AOffsetY: integer);
 var
-  img: TDotImage;
+  img: TAlphaImage;
 begin
-  img := DotImageFromIntf(AIntf, ASize);
+  img := AlphaImageFromIntf(AIntf, ASize, ASize);
   StoreCachedDotImage(AKey, img);
   BlitDotImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
 end;
@@ -219,7 +106,7 @@ begin
   halfT := AThickness / 2.0;
   invSqrt2 := 1.0 / Sqrt(2);
 
-  intf := NewDotIntf(ASize);
+  intf := NewAlphaRaster(ASize, ASize);
   try
     for y := 0 to ASize - 1 do
       for x := 0 to ASize - 1 do
@@ -235,7 +122,7 @@ begin
         else
           aPix := halfT + 0.5 - dist;
 
-        PutDotPixel(intf, x, y, fr, fg, fb, aPix);
+        PutAlphaPixel(intf, x, y, fr, fg, fb, aPix);
       end;
 
     FinishDotRender(ACanvas, key, intf, ASize, AOffsetX, AOffsetY);
@@ -256,7 +143,7 @@ var
   fr, fg, fb: byte;
   rr, rg, rb: byte;
   invRing, aOut: double;
-  straightR, straightG, straightB: double;
+  premulR, premulG, premulB: double;
   hasRing: boolean;
   key: string;
 begin
@@ -292,7 +179,7 @@ begin
   ringOuter := r;
   ringInner := r - ARingWidth;
 
-  intf := NewDotIntf(ASize);
+  intf := NewAlphaRaster(ASize, ASize);
   try
     for y := 0 to ASize - 1 do
     begin
@@ -323,24 +210,17 @@ begin
           end;
         end;
 
-        // Porter-Duff "ring over disc over transparent", written in
-        // straight-alpha form. Premultiplied conversion (if needed) happens
-        // in PutDotPixel when the data is handed to the OS.
+        // Porter-Duff "ring over disc over transparent". The accumulator comes
+        // out premultiplied by construction, so hand it over as-is instead of
+        // dividing aOut back out only for the platform to multiply it in again.
         invRing := 1.0 - alphaRing;
         aOut := alphaRing + alphaDisc * invRing;
 
-        if aOut > 0 then
-        begin
-          straightR := (rr * alphaRing + fr * alphaDisc * invRing) / aOut;
-          straightG := (rg * alphaRing + fg * alphaDisc * invRing) / aOut;
-          straightB := (rb * alphaRing + fb * alphaDisc * invRing) / aOut;
-        end
-        else
-        begin
-          straightR := 0; straightG := 0; straightB := 0;
-        end;
+        premulR := rr * alphaRing + fr * alphaDisc * invRing;
+        premulG := rg * alphaRing + fg * alphaDisc * invRing;
+        premulB := rb * alphaRing + fb * alphaDisc * invRing;
 
-        PutDotPixel(intf, x, y, straightR, straightG, straightB, aOut);
+        PutPremultipliedPixel(intf, x, y, premulR, premulG, premulB, aOut);
       end;
     end;
 

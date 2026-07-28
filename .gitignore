@@ -73,14 +73,6 @@ Trndi-linux
 *.trc
 /Trndi.lpi.noext*
 
-# In case someone downloads it locally
-/mORMot
-/mORMot2
-
-# Externals and generated static artifacts (these are large; fetched by CI or via make)
-/externals/mORMot2
-/static
-
 # Vi temps
 .gitignore~
 ..gitignore.un~
