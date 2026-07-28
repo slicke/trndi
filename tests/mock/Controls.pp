@@ -97,6 +97,11 @@ type
     procedure Show; virtual;
     procedure SetFocus; virtual;
     procedure Update; virtual;
+    // Real LCL declares AdjustSize on TControl, so any control may be asked to
+    // re-run auto-sizing. Declared here (not just on TLabel) so mock TPaintBox
+    // and friends match: umain's macOS-only trend-dot path calls it on a
+    // TDotControl, which is a TPaintBox.
+    procedure AdjustSize; virtual;
     procedure Repaint; virtual;
     procedure Refresh; virtual;
     procedure SendToBack; virtual;
@@ -245,6 +250,13 @@ end;
 procedure TControl.SetFocus;
 begin
   // no-op for headless tests
+end;
+
+procedure TControl.AdjustSize;
+begin
+  // In real LCL this re-runs auto-sizing, which leaves a control whose AutoSize
+  // is off exactly as it was — the case for every mock control that does not
+  // override this. TLabel overrides it to measure its caption.
 end;
 
 procedure TControl.SetBounds(ALeft, ATop, AWidth, AHeight: Integer);
