@@ -9,12 +9,16 @@ concurrency:
   group: trndi-weekly-drift-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   toolchain-drift:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
@@ -75,12 +79,30 @@ jobs:
           echo "Summary: checked=$checked skipped=$skipped total=${#URLS[@]}" >> "$REPORT"
 
           echo >> "$REPORT"
-          echo "Pinned version hints (static excerpts from .github/workflows/build.yml; not execution logs):" >> "$REPORT"
+          echo "Pinned version hints (static excerpts from .github/; not execution logs):" >> "$REPORT"
           grep -rnE 'Lazarus%20[0-9]+\.[0-9]+|v[0-9]+\.[0-9]+\.[0-9]+|2\.3\.stable|fpc-laz_|qt6pas' .github/workflows/ .github/actions/ >> "$REPORT" || true
+
+          # Every download URL under .github/ must name the same Lazarus release.
+          # The amd64 pin lives in .github/actions/setup-lazarus; the arm64 leg
+          # and the Windows installer carry their own URLs and have silently
+          # fallen behind before (nightly sat on 4.6 while build.yml ran 4.8).
+          echo >> "$REPORT"
+          mapfile -t LAZ_VERSIONS < <(
+            { grep -rhoE 'Lazarus%20[0-9]+\.[0-9]+' .github/workflows/ .github/actions/ || true; } \
+              | sed 's/^Lazarus%20//' \
+              | sort -u
+          )
+          if [[ "${#LAZ_VERSIONS[@]}" -le 1 ]]; then
+            echo "Lazarus version consistency: OK (${LAZ_VERSIONS[*]:-none pinned})" >> "$REPORT"
+          else
+            echo "Lazarus version consistency: FAIL — multiple releases pinned: ${LAZ_VERSIONS[*]}" >> "$REPORT"
+            grep -rnE 'Lazarus%20[0-9]+\.[0-9]+' .github/workflows/ .github/actions/ >> "$REPORT"
+            FAIL=1
+          fi
 
           cat "$REPORT"
           if [[ "$FAIL" -ne 0 ]]; then
-            echo "One or more pinned URLs are unreachable. See report artifact." >&2
+            echo "Pinned URLs are unreachable and/or disagree on the Lazarus release. See report artifact." >&2
             exit 1
           fi
 

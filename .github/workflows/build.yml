@@ -19,7 +19,9 @@ on:
 #    - Windows (x64)
 #    Each platform produces its own artifact (.zip, .deb/.rpm for Linux, .dmg for macOS)
 #
-# 3. "publish" job runs regardless of build outcome ("if: always()").
+# 3. "publish" job runs only when every build leg succeeded (no "if: always()").
+#    A failed leg would otherwise publish a release with that platform's assets
+#    silently missing.
 #    - Downloads all artifacts
 #    - Uses "find -type f" to upload only files to the release (avoids directory errors)
 #    - Updates or creates the GitHub release with the unified version number
@@ -30,6 +32,10 @@ concurrency:
   # Cancel superseded PR builds; never cancel main/release builds
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Least privilege by default; jobs that write opt in individually below.
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -37,6 +43,7 @@ jobs:
   # ===================== DETERMINE VERSION =====================
   version:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     # Only determine version for push events to main (skip for PRs)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     outputs:
@@ -73,6 +80,13 @@ jobs:
     if: always()
     name: Build (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
+    # Well above the slowest leg (macOS, which builds its toolchain via
+    # MacPorts) but far below the 6h default a hung lazbuild would otherwise burn.
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      # The Windows leg pushes the NuGet package to GitHub Packages (main only).
+      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -89,9 +103,9 @@ jobs:
             # Preview image: needed for libqt6pas6/-dev, which only entered the
             # Ubuntu archive in 25.10 (not present on 24.04/ubuntu-latest).
             runner: ubuntu-26.04
-            fpc_laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-laz_3.2.2-210709_amd64.deb/download"
-            fpc_src_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-src_3.2.2-210709_amd64.deb/download"
-            laz_url: "https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/lazarus-project_4.8.0-0_amd64.deb/download"
+            # No toolchain URLs: amd64 inherits the pin owned by
+            # .github/actions/setup-lazarus, which every other workflow also
+            # uses. Only arm64 below needs its own (different architecture).
 
           # -------- Linux ARM64 --------
           - name: linux-arm64
@@ -203,15 +217,17 @@ jobs:
           # Build Trndi
           lazbuild --widgetset=qt6 --build-mode="Extensions (Release)" Trndi.lpi
 
-          # Run tests on pull requests (test runner embeds its own Pascal test server)
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            make test
-          fi
+          # Run tests on every event, not just PRs: a push to main publishes a
+          # release, so it is the last place that should skip the test gate.
+          # (The runner embeds its own Pascal test server.)
+          make test
 
           # Package portable ZIP (no PNG icon inside)
           mkdir -p artifacts
           cp Trndi artifacts/
-          [ -d "lang" ] && cp -r lang artifacts/
+          # `if` rather than `[ ... ] && cp`: under `set -e` a false test makes
+          # the AND-list return non-zero and kills the job with no message.
+          if [ -d "lang" ]; then cp -r lang artifacts/; fi
           # The binary carries an $ORIGIN runpath, so the QuickJS engine and its
           # ABI shim must travel beside it in every package layout below.
           # stage-qjs.sh installs the real library under its SONAME and skips the
@@ -234,7 +250,7 @@ jobs:
             PKG_DIR="pkgroot"
             mkdir -p "$PKG_DIR/usr/local/trndi"
             cp Trndi "$PKG_DIR/usr/local/trndi/"
-            [ -d "lang" ] && cp -r lang "$PKG_DIR/usr/local/trndi/"
+            if [ -d "lang" ]; then cp -r lang "$PKG_DIR/usr/local/trndi/"; fi
             sh dist/linux/stage-qjs.sh "$QJS_DIR" "$PKG_DIR/usr/local/trndi"
 
             # The CareLink login helper is compiled into the binary and written
@@ -255,7 +271,7 @@ jobs:
                 "$PKG_DIR/usr/local/share/trndi/kde-plasmoid/com.slicke.trndi.current"
             fi
             mkdir -p "$PKG_DIR/usr/share/pixmaps"
-            [ -f "Trndi.png" ] && cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"
+            if [ -f "Trndi.png" ]; then cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"; fi
             ICON=Trndi
             mkdir -p "$PKG_DIR/usr/share/applications"
             echo "[Desktop Entry]
@@ -291,8 +307,8 @@ jobs:
             echo "Packaging version: ${PKG_VERSION}"
 
             FPM_SCRIPTS=()
-            [ -f dist/linux/after-install.sh ] && FPM_SCRIPTS+=(--after-install dist/linux/after-install.sh)
-            [ -f dist/linux/after-remove.sh ] && FPM_SCRIPTS+=(--after-remove dist/linux/after-remove.sh)
+            if [ -f dist/linux/after-install.sh ]; then FPM_SCRIPTS+=(--after-install dist/linux/after-install.sh); fi
+            if [ -f dist/linux/after-remove.sh ]; then FPM_SCRIPTS+=(--after-remove dist/linux/after-remove.sh); fi
 
             fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture "${DEB_ARCH}" --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
             fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture "${RPM_ARCH}" --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
@@ -470,8 +486,9 @@ jobs:
           # they must travel beside it in the portable ZIP. (dist/macos.sh does
           # the same for the .app bundle below.)
           cp externals/quickjs/prebuilt/aarch64-darwin/*.dylib artifacts/
-          [ -d "lang" ] && cp -r lang artifacts/
-          [ -f "dist/macos_README.txt" ] && cp dist/macos_README.txt artifacts/README.txt
+          # `if` rather than `[ ... ] && cp` — see the Linux packaging note above.
+          if [ -d "lang" ]; then cp -r lang artifacts/; fi
+          if [ -f "dist/macos_README.txt" ]; then cp dist/macos_README.txt artifacts/README.txt; fi
           # The CareLink login helper is compiled into the binary and written to
           # the user's writable settings folder on demand — nothing to bundle.
           7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
@@ -511,13 +528,13 @@ jobs:
           # Windows resolves from the executable's own directory. Place them next
           # to Trndi.exe so the tests below and the packages built from here work.
           Copy-Item '.\externals\quickjs\prebuilt\x86_64-win64\*.dll' -Destination '.' -Force
-          # Run tests on pull requests via the same entry point developers use
-          # locally (test runner embeds its own Pascal test server). No extra
-          # args: make.ps1 forwards them to both lazbuild and the test exe.
-          if ("${{ github.event_name }}" -eq "pull_request") {
-            .\make.ps1 test
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
+          # Run tests via the same entry point developers use locally (the test
+          # runner embeds its own Pascal test server). No extra args: make.ps1
+          # forwards them to both lazbuild and the test exe. Runs on every event,
+          # not just PRs — a push to main publishes a release, so it is the last
+          # place that should skip the test gate.
+          .\make.ps1 test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           # Package ZIP
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
@@ -590,11 +607,19 @@ jobs:
   # ===================== PUBLISH =====================
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [version, build]
+    permissions:
+      # Creating/updating the GitHub Release and uploading its assets.
+      contents: write
     # Only create/update releases on direct pushes to main (not on pull_request events).
     # This is defense-in-depth: we removed `pull_request` from the workflow triggers above,
     # and additionally ensure the publish job only runs for push events to main.
-    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    #
+    # Note the absence of always(): with it, a failed build leg still produced a
+    # release, just missing that platform's assets. Plain `needs` semantics skip
+    # this job unless every leg succeeded, which is what we want for a release.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -842,6 +867,7 @@ jobs:
   # ===================== DISCORD NOTIFICATION =====================
   discord-notify:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [version, publish]
     # Only notify on successful releases to main
     if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
