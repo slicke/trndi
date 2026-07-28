@@ -560,6 +560,9 @@ private
   FExtDeferredPath: string;
   FExtPaths: TStringList;
   FOnReloadExtensions: TNotifyEvent;
+  {** Nesting counter that parks ApplyRangeBounds while the limit spin edits
+      are being rewritten in bulk (unit conversion), see ApplyRangeBounds. }
+  FRangeBoundsHeld: integer;
   procedure LoadProxySettingsIntoUI;
   procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
@@ -2321,11 +2324,21 @@ end;
   Values that already sit outside that window - an older config, or the
   backend's "no personal range" sentinels - are pulled in by the LCL as soon
   as the bounds are applied (GetLimitedValue only clamps while min < max).
+
+  fsLo/fsHi fire OnChange on every assignment, so this also runs from inside
+  rbUnitClick's unit conversion - at a point where the limits have already
+  been converted but the range fields have not. Clamping there would crush
+  the range against the new (much smaller) mmol/L ceiling before it is itself
+  converted, so the conversion holds the guard and re-applies the bounds once
+  every field is in the same unit again.
  ------------------------------------------------------------------------------}
 procedure TfConf.ApplyRangeBounds;
 var
   loLimit, hiLimit: double;
 begin
+  if FRangeBoundsHeld > 0 then
+    Exit;
+
   loLimit := fsLo.Value;
   hiLimit := fsHi.Value;
 
@@ -2500,6 +2513,11 @@ begin
   fsLoRange.MinValue := 0;
   fsHiRange.MinValue := 0;
 
+  // ...and keep fsLo/fsHi's OnChange from putting them straight back while
+  // the fields are half converted.
+  Inc(FRangeBoundsHeld);
+  try
+
   if (Sender is TForm) or (rbUnit.ItemIndex = 0) then
   begin
     fsHi.DecimalPlaces := 1;
@@ -2566,6 +2584,10 @@ begin
     lAlertHystRow.Caption        := RS_ALERT_HYSTERESIS_MGDL;
 
     rbPredictShortShowValue.Caption := StringReplace(rbPredictShortShowValue.Caption, '5.5', '100', [rfReplaceAll]);
+  end;
+
+  finally
+    Dec(FRangeBoundsHeld);
   end;
 
   ApplyRangeBounds;
