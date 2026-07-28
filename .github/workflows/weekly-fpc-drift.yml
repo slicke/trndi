@@ -79,7 +79,7 @@ jobs:
           # Every download URL under .github/ must name the same Lazarus release.
           # The amd64 pin lives in .github/actions/setup-lazarus; the arm64 leg
           # and the Windows installer carry their own URLs and have silently
-          # fallen behind before (nightly sat on 4.6 while build.yml ran 4.8).
+          # fallen behind before (one leg sat on 4.6 while another ran 4.8).
           echo >> "$REPORT"
           mapfile -t LAZ_VERSIONS < <(
             { grep -rhoE 'Lazarus%20[0-9]+\.[0-9]+' .github/workflows/ .github/actions/ || true; } \
