@@ -671,7 +671,21 @@ private
       by the main update loop to keep logic modular.
    }
   procedure ProcessCurrentReading;
+  {** Test whether the newest reading in @code(bgs) is within the freshness
+      threshold. Pure — the display state that goes with the answer lives in
+      @link(ApplyFreshDisplayState) / @link(ApplyStaleDisplayState) and must
+      be applied by the caller. Returns @false when @code(bgs) is empty. }
   function IsDataFresh: boolean;
+  {** Put the display into its "data is current" state: stop the missed-reading
+      ticker. Label colors are left to @link(UpdateUIColors), which runs later
+      in the pipeline once the new background color has been chosen. }
+  procedure ApplyFreshDisplayState;
+  {** Put the display into its "data is not current" state: black background,
+      dashed badge, no trend arrow. When a reading exists it is kept on screen
+      struck out and the missed-reading ticker runs; with no reading at all the
+      value falls back to a dash and the ticker stays off. Invalidates the
+      cached UI state so label colors are recomputed on recovery. }
+  procedure ApplyStaleDisplayState;
   {** Configure the timer for the next update based on the last reading time.
       This helps reduce unnecessary polling by setting intelligent intervals
       based on recency and backend requirements.
