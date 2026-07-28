@@ -19,7 +19,11 @@ interface
 
 uses
   SysUtils,
-{$IF DEFINED(IPHONESIM) OR DEFINED(CPUARM) OR DEFINED(CPUAARCH64)}  //iOS
+{* Local change to this LGPL unit: detect iOS explicitly rather than treating
+   any AArch64 Darwin target as iOS, which breaks on Apple Silicon macOS.
+   This unit never had the LCLCOCOA escape the sibling units use, so it took
+   the iOS branch even in an LCL build. See nsutils.nshelpers.pp. *}
+{$IF DEFINED(IPHONESIM) OR DEFINED(IOS)}  //iOS
  {$IFDEF NoiPhoneAll}
   Foundation;
  {$ELSE}
