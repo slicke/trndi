@@ -163,6 +163,33 @@ function getReadings(minNum, maxNum: integer; extras: string; out res: string): 
 
 See the Makefile or README for more details.
 
+### Debug builds and heaptrc
+
+The `Extensions (Debug)` and `No Ext (Debug)` modes link the heaptrc unit
+(`-gh`), and `Trndi.lpr` points its report at `heap.trc` so the Leakview package
+can read it. Heaptrc dumps that report from its finalization — after the main
+form is destroyed, so the window disappears and the process then lingers while
+the dump is written.
+
+That dump is slow: it resolves a backtrace for every unfreed block, and the
+frames that fall outside the executable (ntdll, kernel32, the QuickJS shim) make
+FPC's DWARF line-info reader scan every compilation unit without ever finding a
+match. On a debug build this can add **one to two minutes** to exit. Release
+builds are unaffected — they have neither `-gh` nor debug info.
+
+Set `HEAPTRC=disabled` to skip the dump and get an instant exit:
+
+```powershell
+$env:HEAPTRC = 'disabled'; .\Trndi.exe    # Windows
+```
+```bash
+HEAPTRC=disabled ./Trndi                  # Linux/BSD/macOS/Haiku
+```
+
+In Lazarus, add it once under Run → Run Parameters → Environment as a user
+override so debug sessions end promptly. Clear the variable when you actually
+want a leak report; no rebuild is needed either way.
+
 ## Running Tests
 
 - Use the Makefile for test runs:
