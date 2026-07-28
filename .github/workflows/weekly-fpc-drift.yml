@@ -54,12 +54,6 @@ jobs:
               continue
             fi
 
-            if [[ "$url" == *"nuget.pkg.github.com"* ]]; then
-              echo "SKIP $url (requires authentication)" >> "$REPORT"
-              skipped=$((skipped + 1))
-              continue
-            fi
-
             if [[ ! "$url" =~ (/download$|\.(deb|exe|7z|pkg|asc|png|git|json)$) ]]; then
               echo "SKIP $url (non-artifact base URL)" >> "$REPORT"
               skipped=$((skipped + 1))

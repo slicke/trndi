@@ -112,9 +112,6 @@ Download `TrndiSetup.exe` from the [latest release](https://github.com/slicke/tr
 ### Portable (No install needed)
 Download `Trndi-windows-x64.zip` from the [latest release](https://github.com/slicke/trndi/releases), extract and run `Trndi.exe`.
 
-### Advanced: Via NuGet/Chocolatey (GitHub Packages)
-You can install Trndi via NuGet from GitHub Packages (or Chocolatey), see the [guide](doc/NUGET.md).
-
 _See the [specific Windows guide](/doc/Windows.md) for more specifics._
 
 ## Linux

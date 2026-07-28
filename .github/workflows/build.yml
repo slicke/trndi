@@ -85,8 +85,6 @@ jobs:
     timeout-minutes: 120
     permissions:
       contents: read
-      # The Windows leg pushes the NuGet package to GitHub Packages (main only).
-      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -434,7 +432,7 @@ jobs:
           sudo port -v selfupdate
           # gmake: the Makefile is GNU make syntax and macOS ships 3.81 as `make`
           # (see CLAUDE.md — macOS uses gmake). Needed by the test step below.
-          sudo port -N install fpc lazarus p7zip create-dmg gmake
+          sudo port -N install fpc lazarus create-dmg gmake
 
       - name: Write buildinfo (macOS)
         if: matrix.os_target == 'macos'
@@ -488,21 +486,13 @@ jobs:
           # dylibs rather than just linking them.
           gmake test
 
-          # Package zip & dmg (also on PRs, so packaging changes can be tested;
+          # Package the .dmg (also on PRs, so packaging changes can be tested;
           # the publish job is gated on push-to-main, so PR artifacts only end up
-          # attached to the workflow run, not a release).
-          mkdir -p artifacts
-          cp Trndi artifacts/
-          # The binary resolves both dylibs through an @loader_path runpath, so
-          # they must travel beside it in the portable ZIP. (dist/macos.sh does
-          # the same for the .app bundle below.)
-          cp externals/quickjs/prebuilt/aarch64-darwin/*.dylib artifacts/
-          # `if` rather than `[ ... ] && cp` — see the Linux packaging note above.
-          if [ -d "lang" ]; then cp -r lang artifacts/; fi
-          if [ -f "dist/macos_README.txt" ]; then cp dist/macos_README.txt artifacts/README.txt; fi
+          # attached to the workflow run, not a release). The .dmg is the only
+          # macOS package — dist/macos.sh stages the binary, the QuickJS dylibs
+          # (resolved through an @loader_path runpath) and lang/ into the bundle.
           # The CareLink login helper is compiled into the binary and written to
           # the user's writable settings folder on demand — nothing to bundle.
-          7z a -tzip Trndi-macos-silicon.zip ./artifacts/* >/dev/null
           chmod +x dist/macos.sh
           if [ -d "lang" ]; then cp -r lang dist/; fi
           (cd dist && ./macos.sh)
@@ -574,27 +564,11 @@ jobs:
 
           # Build Inno Setup installer on every Windows build (incl. PRs) so .iss
           # regressions are caught before merge. Pass the unified version so it
-          # matches NuGet/Linux on main, and reflects the PR number on PRs.
+          # matches the Linux packages on main, and reflects the PR number on PRs.
           choco install innosetup -y
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' "/DMyAppVersion=$PKG_VERSION" '.\dist\windows_setup.iss'
           # Move the generated installer to the root for easier artifact upload
           Move-Item '.\dist\TrndiSetup.exe' '.\TrndiSetup.exe'
-
-          # NuGet packaging/publish only on push to main (not PRs, not workflow_dispatch)
-          if ("${{ github.event_name }}" -ne "push" -or "${{ github.ref }}" -ne "refs/heads/main") {
-            Write-Host "Not a push to main: skipping NuGet packaging/publish"
-          } else {
-            choco install nuget.commandline -y
-            # Update nuspec with actual version
-            $nuspecContent = Get-Content 'dist\trndi.nuspec' -Raw
-            $nuspecContent = $nuspecContent -replace 'VERSION_PLACEHOLDER', $PKG_VERSION
-            $nuspecContent | Set-Content 'dist\trndi.nuspec' -Encoding UTF8
-            # Pack the NuGet package
-            & nuget pack 'dist\trndi.nuspec' -OutputDirectory '.'
-            # Publish to GitHub Packages
-            & nuget sources Add -Name "GitHub" -Source "https://nuget.pkg.github.com/slicke/index.json" -UserName slicke -Password ${{ secrets.GITHUB_TOKEN }}
-            & nuget push trndi.*.nupkg -Source "GitHub" -SkipDuplicate
-          }
 
       # ===================== UPLOAD ARTIFACTS =====================
       - name: Upload Actions artifact
@@ -604,7 +578,6 @@ jobs:
           path: |
             *.zip
             *.dmg
-            *.nupkg
             TrndiSetup.exe
             artifacts/*.deb
             artifacts/*.rpm
@@ -777,14 +750,6 @@ jobs:
             echo "### macOS (Apple Silicon)"
             echo "macOS computers with Apple processors (Extensions supported)"
             shopt -s nullglob
-            files=(./release-files/macos-arm64-build/*.zip)
-            if [ ${#files[@]} -eq 0 ]; then
-              echo "- No macOS (Apple Silicon) releases for this build -"
-            else
-              for f in "${files[@]}"; do
-                echo "- $(basename "$f") — Portable binary + languages"
-              done
-            fi
             dmgs=(./release-files/macos-arm64-build/*.dmg)
             if [ ${#dmgs[@]} -eq 0 ]; then
               echo "- No macOS (.dmg) release for this build -"
@@ -795,8 +760,8 @@ jobs:
             fi
             echo
             echo "#### Special requirements for macOS"
-            echo "- Unzip / open the file"
-            echo "- In Terminal, run: \`xattr -c /path/to/Trndi\` (or \`.app\` bundle)"
+            echo "- Open the .dmg and drag Trndi to Applications"
+            echo "- In Terminal, run: \`xattr -c /path/to/Trndi.app\`"
             echo "- Replace \`/path/to/...\` with the actual path"
             echo "- Now you can launch normally"
             echo
@@ -823,16 +788,8 @@ jobs:
                 echo "- $(basename "$f") — Windows installer (recommended)"
               done
             fi
-            nupkgs=(./release-files/windows-x64-build/*.nupkg)
-            if [ ${#nupkgs[@]} -eq 0 ]; then
-              echo "- No NuGet package for this build -"
-            else
-              for f in "${nupkgs[@]}"; do
-                echo "- $(basename "$f") — Chocolatey package (\`choco install $(basename "$f")\`)"
-              done
-            fi
             echo
-            
+
             # Package signing key
             echo "---"
             echo
