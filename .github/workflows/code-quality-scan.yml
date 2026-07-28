@@ -35,6 +35,14 @@ jobs:
       - name: Install Lazarus/FPC toolchain
         uses: ./.github/actions/setup-lazarus
 
+      # Was a nightly job of its own alongside a duplicate of the build below.
+      # It is a static consistency check, so running it here — on every push and
+      # PR — catches a mismatch at review time instead of the next morning.
+      - name: Verify Pascal module naming consistency
+        run: |
+          set -euo pipefail
+          make check-module-names
+
       - name: Build Pascal target and capture diagnostics
         run: |
           # -e is intentionally omitted: the `if` block captures the build exit code
