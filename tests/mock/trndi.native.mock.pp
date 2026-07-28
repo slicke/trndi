@@ -8,9 +8,17 @@ uses
   trndi.native.win,
 {$ELSEIF DEFINED(X_LINUXBSD)}
   trndi.native.linux,
+{$ELSEIF DEFINED(X_MAC)}
+  trndi.native.mac,
 {$ELSE}
+  // Every other platform (Haiku, ...) descends from the repo's
+  // platform-agnostic implementation rather than the abstract base: base's
+  // request/requestEx are deliberate "not implemented" stubs, so a mock rooted
+  // there fails every HTTP-backed test. trndi.native.generic is the same
+  // fphttpclient-based implementation trndi.native.haiku builds on.
   {$define TRNDI_NATIVE_MOCK_BASE}
   fphttpclient,
+  trndi.native.generic,
 {$ENDIF}
   trndi.native.base;
 
@@ -21,8 +29,10 @@ type
     TTrndiNativeWindows
     {$elseif defined(X_LINUXBSD)}
     TTrndiNativeLinux
+    {$elseif defined(X_MAC)}
+    TTrndiNativeMac
     {$else}
-    TTrndiNativeBase
+    TTrndiNativeGeneric
     {$endif}
   )
   private
