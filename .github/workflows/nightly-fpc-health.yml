@@ -9,27 +9,24 @@ concurrency:
   group: trndi-nightly-fpc-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # Pinned Lazarus/FPC URLs — keep in sync with the linux-amd64 matrix entry in build.yml.
-  FPC_LAZ_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-laz_3.2.2-210709_amd64.deb/download
-  FPC_SRC_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/fpc-src_3.2.2-210709_amd64.deb/download
-  LAZ_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.6/lazarus-project_4.6.0-0_amd64.deb/download
 
 jobs:
   fpc-console-health:
     # Preview image: needed for libqt6pas6/-dev (setup-lazarus), which only
     # entered the Ubuntu archive in 25.10 (not present on 24.04/ubuntu-latest).
     runs-on: ubuntu-26.04
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
 
+      # Toolchain URLs come from the action's own pin — see setup-lazarus.
       - name: Install FPC/Lazarus and test prerequisites
         uses: ./.github/actions/setup-lazarus
-        with:
-          fpc_laz_url: ${{ env.FPC_LAZ_URL }}
-          fpc_src_url: ${{ env.FPC_SRC_URL }}
-          laz_url: ${{ env.LAZ_URL }}
 
       - name: Show tool versions
         run: |
