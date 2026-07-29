@@ -111,11 +111,30 @@ function BackendDisplayName(const code: string): string;
     display name (legacy settings stored the latter); nil if unknown. }
 function CreateBackend(const nameOrCode, target, creds: string): TrndiAPI;
 
+{** True when the value resolves to a registered backend. Callers that persist
+    'remote.type' must check this before trusting BackendCode/BackendDisplayName,
+    whose NightScout fallback would otherwise turn an unresolvable value into a
+    plausible-looking valid one and overwrite the user's configuration. }
+function BackendExists(const nameOrCode: string): boolean;
+
+{** True when the value names a debug/synthetic backend. Recognized from the
+    code prefix (or the display-name marker legacy settings stored) rather than
+    the registry, so it still answers in release builds — where those entries
+    are compiled out and would otherwise just look unknown. }
+function IsDebugBackend(const nameOrCode: string): boolean;
+
 {** Shared per-backend credential rules used by the settings form and the
     first-run wizard; bceNone when the values pass. }
 function CheckBackendCredentials(const nameOrCode, addr, pass: string): TBackendCredError;
 
 implementation
+
+const
+  // Debug backends are {$ifdef DEBUG}-gated out of BackendRegistry, so they are
+  // identified by these markers instead of by lookup — a release build has to
+  // recognize a debug value it can never resolve.
+  DebugCodePrefix = 'API_D_';
+  DebugNamePrefix = '* Debug ';
 
 function FindEntry(const nameOrCode: string; out entry: TBackendEntry): boolean;
 var
@@ -135,8 +154,21 @@ var
   e: TBackendEntry;
 begin
   for e in BackendRegistry do
-    if includeDebug or (Copy(e.code, 1, 6) <> 'API_D_') then
+    if includeDebug or not IsDebugBackend(e.code) then
       items.Add(e.name);
+end;
+
+function BackendExists(const nameOrCode: string): boolean;
+var
+  entry: TBackendEntry;
+begin
+  Result := FindEntry(nameOrCode, entry);
+end;
+
+function IsDebugBackend(const nameOrCode: string): boolean;
+begin
+  Result := (Copy(nameOrCode, 1, Length(DebugCodePrefix)) = DebugCodePrefix) or
+    (Copy(nameOrCode, 1, Length(DebugNamePrefix)) = DebugNamePrefix);
 end;
 
 function BackendClassOf(const nameOrCode: string): TrndiAPIClass;

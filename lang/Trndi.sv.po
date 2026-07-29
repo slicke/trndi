@@ -610,10 +610,8 @@ msgid "Show a smiley instead of percentage"
 msgstr "Visa en smiley istället för procent"
 
 #: tfconf.cbtitlecolor.caption
-#, fuzzy
-#| msgid "Color the title bar with glucose color (Windows only)"
 msgid "Color the title bar with glucose color (Windows/macOS only)"
-msgstr "Färga titeln med blodsockerfärgen (endast Windows)"
+msgstr "Färga titeln med blodsockerfärgen (endast Windows/macOS)"
 
 #: tfconf.cbtouch.caption
 msgid "Touch screen"
@@ -1617,6 +1615,28 @@ msgstr "Möjligt sensorfel"
 #: trndi.strings.rs_attention_sensor_fault_desc
 msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
 msgstr "Trndi har upptäckt upprepade stora hopp mellan angränsande avläsningar. Kontrollera mot din officiella CGM-app/enhet."
+
+#: trndi.strings.rs_backend_debug_gone_boot
+#, object-pascal-format
+msgid ""
+"Trndi is set up to use the debug data source \"%s\", which only exists in test builds.\n"
+"\n"
+"Open Settings and pick a real data source. Your other settings are kept."
+msgstr ""
+"Trndi är inställd till att använda debugdatakällan \"%s\", vilken endast finns i testbyggen.\n"
+"\n"
+"Öppna inställningar och välj en riktig datakälla. Dina övriga inställningar är oförändrade."
+
+#: trndi.strings.rs_backend_gone_boot
+#, object-pascal-format
+msgid ""
+"Trndi is set up to use the \"%s\" data source/backend, which this version does not have.\n"
+"\n"
+"Open Settings and pick a data source. Your other settings are kept."
+msgstr ""
+"Trndi är inställd till att använda datakällan/anslutningen \"%s\", vilken denna version saknar.\n"
+"\n"
+"Öppna inställningar och välj en datakälla. Dina övriga inställningar är oförändrade."
 
 #: trndi.strings.rs_changes_apply
 msgctxt "trndi.strings.rs_changes_apply"
@@ -2720,6 +2740,24 @@ msgstr "Text-till-tal (TTS-mjukvaran) \"%s\" är inte tillgänglig."
 msgid "Auto-detect"
 msgstr "Automatisk"
 
+#: uconf.rs_backend_debug_gone
+#, object-pascal-format
+msgid ""
+"This profile is set to a debug data source (%s), which only exists in test builds of Trndi.\n"
+"Pick a real data source below. Your settings are kept until you do."
+msgstr ""
+"Den här profilen är inställd för en datakälla (%s), som endast finns i testbyggen av Trndi\n"
+"Välj en riktig datakälla nedan. Dina inställningar behålls medan du gör så."
+
+#: uconf.rs_backend_gone
+#, object-pascal-format
+msgid ""
+"The configured data source (%s) is not available in this version of Trndi.\n"
+"Pick a data source below. Your settings are kept until you do."
+msgstr ""
+"Den inställda datakällan (%s) finns inte i denna version av Trndi\n"
+"Välj en datakälla nedan. Dina inställningar behålls medan du gör så."
+
 #: uconf.rs_badge_flash_help
 msgid "This controls how Trndi's icon in the status bar and/or tray will notify you visually."
 msgstr "Detta styr hur Trndi:s ikon visas i statusfältet och/eller klockkonen notifierar dig visuellt."
@@ -2878,6 +2916,14 @@ msgstr "Nyckeln måste vara den anskaffade CareLink-nyckelns data (JSON, startar
 msgctxt "uconf.rs_err_email"
 msgid "You must enter a valid e-mail address"
 msgstr "Du måste ange en riktig e-postadress"
+
+#: uconf.rs_err_no_backend
+msgid ""
+"No data source is selected.\n"
+"Pick one in the list under Backend — Trndi cannot fetch any readings without it."
+msgstr ""
+"Ingen datakälla har valts.\n"
+"Välj en från listan under Anslutning — Trndi kan inte hämta avläsningar utan en."
 
 #: uconf.rs_err_password
 msgctxt "uconf.rs_err_password"
@@ -3564,4 +3610,3 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
-

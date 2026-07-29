@@ -433,7 +433,7 @@ end;
 
 function TfBG.InitializeAPI: boolean;
 var
-  apiTarget, apiCreds, maxmin, maxresult: string;
+  apiTarget, apiCreds, maxmin, maxresult, remoteType: string;
   minmax, resultmax: integer;
 begin
   Result := true;
@@ -452,9 +452,32 @@ begin
 
   // The registry resolves both stable codes ('API_NS') and the display names
   // legacy settings stored, and instantiates the matching backend class.
-  api := CreateBackend(native.GetSetting('remote.type'), apiTarget, apiCreds);
+  remoteType := native.GetSetting('remote.type');
+  api := CreateBackend(remoteType, apiTarget, apiCreds);
   if api = nil then
+  begin
     Result := false;
+    // The caller drops to the "Setup" screen, which on its own is
+    // indistinguishable from a fresh install — name the missing backend so the
+    // user knows their configuration is intact and what to do about it.
+    if remoteType <> '' then
+    begin
+      if Assigned(fSplash) then
+        fSplash.Hide;
+      {$ifdef DEBUG}
+      // This build *is* a test build, so "only exists in test builds" would
+      // contradict itself — Settings lists the debug backends. An unresolvable
+      // API_D_* value here means that entry was renamed or removed, which is
+      // exactly what the generic message says.
+      ShowMessage(Format(RS_BACKEND_GONE_BOOT, [remoteType]));
+      {$else}
+      if IsDebugBackend(remoteType) then
+        ShowMessage(Format(RS_BACKEND_DEBUG_GONE_BOOT, [remoteType]))
+      else
+        ShowMessage(Format(RS_BACKEND_GONE_BOOT, [remoteType]));
+      {$endif}
+    end;
+  end;
 
   // Scale MAX_RESULT to the API's reporting frequency so all dot slots can be
   // filled even for backends that upload more often than every 5 minutes.
