@@ -2725,14 +2725,6 @@ msgstr ""
 "Ce backend est en phase bêta, il pourrait ne pas fonctionner comme prévu !\n"
 " Si possible, choisissez un autre backend."
 
-#: uconf.rs_beta_dex
-msgid ""
-"This is a new Deccom backend, it's in a beta stage! If possible, choose the old backend.\n"
-"Please set your own thresholds in the Customization tab."
-msgstr ""
-"Il s'agit d'un nouveau backend Dexcom, il est en phase bêta ! Si possible, choisissez l'ancien backend.\n"
-"Veuillez définir vos propres seuils dans l'onglet Personnalisation."
-
 #: uconf.rs_carelink
 msgid ""
 "This backend is experimental!\n"

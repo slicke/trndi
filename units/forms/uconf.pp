@@ -696,9 +696,6 @@ RS_DEX =
 RS_BETA =
   'This backend is in a beta stage, it may not work as intended!'+sLineBreak+' If possible, choose another backend.';
 
-RS_BETA_DEX =
-  'This is a new Deccom backend, it''s in a beta stage! If possible, choose the old backend.'+sLineBreak+'Please set your own thresholds in the Customization tab.';
-
 RS_XDRIP =
   'Make sure you are on the same network as the xDrip app.'+sLineBreak+'Make sure that web access is turned on.';
 
@@ -1157,7 +1154,10 @@ procedure WarnUnstableAPI;
     pnSysWarn.Color := $0000FBF4;
     case cbSys.Text of
     API_DEX_USA,
-    API_DEX_EU:
+    API_DEX_EU,
+    API_DEX_NEW_EU,
+    API_DEX_NEW_USA,
+    API_DEX_NEW_JP:
     begin
       gbOverride.Color := uxclLightBlue;
       lLoUnder.Font.Color := clBlack;
@@ -1172,13 +1172,6 @@ procedure WarnUnstableAPI;
     begin
       pnSysWarn.Show;
       lSysWarnInfo.Caption := warn + RS_BETA;
-    end;
-    API_DEX_NEW_EU,
-    API_DEX_NEW_USA,
-    API_DEX_NEW_JP:
-    begin
-      pnSysWarn.Show;
-      lSysWarnInfo.Caption := warn + RS_BETA_DEX;
     end;
     API_XDRIP:
     begin
