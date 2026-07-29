@@ -101,6 +101,10 @@ jobs:
           fi
 
       - name: Upload drift report
+        # The scan step exits 1 on drift and points at this artifact, so it has
+        # to upload on failure too — otherwise the report is missing in exactly
+        # the case someone needs to read it.
+        if: ${{ always() }}
         uses: actions/upload-artifact@v5
         with:
           name: weekly-fpc-drift-report
