@@ -2600,12 +2600,6 @@ msgid ""
 " If possible, choose another backend."
 msgstr ""
 
-#: uconf.rs_beta_dex
-msgid ""
-"This is a new Deccom backend, it's in a beta stage! If possible, choose the old backend.\n"
-"Please set your own thresholds in the Customization tab."
-msgstr ""
-
 #: uconf.rs_carelink
 msgid ""
 "This backend is experimental!\n"
