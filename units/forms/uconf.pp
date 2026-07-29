@@ -563,6 +563,9 @@ private
   {** Nesting counter that parks ApplyRangeBounds while the limit spin edits
       are being rewritten in bulk (unit conversion), see ApplyRangeBounds. }
   FRangeBoundsHeld: integer;
+  {** Stored 'remote.type' that no longer resolves to a registered backend;
+      empty otherwise. See the UnknownBackend property. }
+  FUnknownBackend: string;
   procedure LoadProxySettingsIntoUI;
   procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
@@ -589,6 +592,11 @@ public
   {** True once the TTS voice list has been enumerated; while false the
       cbTTSVoice selection is not meaningful and must not be persisted. }
   property TTSVoicesLoaded: boolean read FTTSVoicesLoaded;
+  {** The stored 'remote.type' when it no longer resolves to a registered
+      backend. The loader sets it and leaves cbSys unselected; cbSysChange
+      explains the situation and the save path preserves the stored value
+      until a real backend is picked. }
+  property UnknownBackend: string read FUnknownBackend write FUnknownBackend;
   property OnReloadExtensions: TNotifyEvent read FOnReloadExtensions
     write FOnReloadExtensions;
 end;
@@ -708,6 +716,12 @@ RS_CARELINK =
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
 
+RS_BACKEND_GONE =
+  'The configured data source (%s) is not available in this version of Trndi.'+sLineBreak+'Pick a data source below. Your settings are kept until you do.';
+
+RS_BACKEND_DEBUG_GONE =
+  'This profile is set to a debug data source (%s), which only exists in test builds of Trndi.'+sLineBreak+'Pick a real data source below. Your settings are kept until you do.';
+
 RS_DISABLE_MEDIA = 'This turns off all media-related features. Can speed up start.';
 
 RS_SCALE_DIFF_HELP = 'You can change the scale/size of the difference in reading since last, by entering a scale factor';
@@ -723,6 +737,8 @@ RS_Full_Arrow_Set_Help = 'This will display all prediction arrows, by default Tr
 RS_DECIMAL_HELP = 'This replaces the decimal separator, eg setting "," will show the reading as 5,5 instead of 5.5';
 
 RS_ERR_PASSWORD = 'You must enter a password';
+RS_ERR_NO_BACKEND =
+  'No data source is selected.'+sLineBreak+'Pick one in the list under Backend — Trndi cannot fetch any readings without it.';
 RS_ERR_EMAIL = 'You must enter a valid e-mail address';
 RS_ERR_ADDRESS = 'Address must start with http(s)://';
 RS_ERR_CARELINK_TOKEN = 'The credential must be the captured CareLink token data (JSON, starting with "{")';
@@ -1152,6 +1168,30 @@ procedure WarnUnstableAPI;
     info: string =  '';
   begin
     pnSysWarn.Color := $0000FBF4;
+
+    // Nothing is selected while FUnknownBackend holds an unresolvable stored
+    // value; say so instead of falling through to an empty (and therefore
+    // silent) picker.
+    if (cbSys.ItemIndex < 0) and (FUnknownBackend <> '') then
+    begin
+      pnSysWarn.Show;
+      pnSysWarn.Color := $00C8C8FF;
+      {$ifdef DEBUG}
+      // "Only exists in test builds" describes a release build, not this one:
+      // the debug backends are in the picker directly below. An unresolvable
+      // API_D_* value here means that entry was renamed or removed, so report
+      // it as a plain missing backend rather than contradicting the list the
+      // user is looking at.
+      lSysWarnInfo.Caption := warn + Format(RS_BACKEND_GONE, [FUnknownBackend]);
+      {$else}
+      if IsDebugBackend(FUnknownBackend) then
+        lSysWarnInfo.Caption := warn + Format(RS_BACKEND_DEBUG_GONE, [FUnknownBackend])
+      else
+        lSysWarnInfo.Caption := warn + Format(RS_BACKEND_GONE, [FUnknownBackend]);
+      {$endif}
+      Exit;
+    end;
+
     case cbSys.Text of
     API_DEX_USA,
     API_DEX_EU,
@@ -1203,6 +1243,10 @@ procedure WarnUnstableAPI;
 begin
   pnSysWarn.Hide;
   gbOverride.Color := clDefault;
+  // Picking anything resolves the unknown-backend state, so the save path stops
+  // preserving the stale value and writes the new selection.
+  if cbSys.ItemIndex >= 0 then
+    FUnknownBackend := '';
   //if not (sender is TfConf) then
   WarnUnstableAPI;
   // Update parameter labels above edits based on backend
@@ -1300,6 +1344,19 @@ end;
 
 function TfConf.validateUser(var error: string): boolean;
 begin
+  // cbSys is csDropDownList, so the only way to reach an unselected picker is
+  // the load path deliberately leaving it that way for a stored backend that no
+  // longer resolves. Closing here would keep that dead value (the save path
+  // skips an unselected picker so an unrelated change cannot clobber it),
+  // leaving Trndi with no usable data source — so require a choice instead.
+  // CheckBackendCredentials cannot catch this: an empty name misses the
+  // registry and reports bceNone.
+  if cbSys.ItemIndex < 0 then
+  begin
+    error := RS_ERR_NO_BACKEND;
+    Exit(false);
+  end;
+
   case CheckBackendCredentials(cbSys.Text, eAddr.Text, ePass.Text) of
   bceAddress:
     error := RS_ERR_ADDRESS;

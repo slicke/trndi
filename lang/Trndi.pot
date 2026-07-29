@@ -1524,6 +1524,22 @@ msgstr ""
 msgid "Trndi detected repeated large jumps between consecutive readings. Verify with your official CGM app/device."
 msgstr ""
 
+#: trndi.strings.rs_backend_debug_gone_boot
+#, object-pascal-format
+msgid ""
+"Trndi is set up to use the debug data source \"%s\", which only exists in test builds.\n"
+"\n"
+"Open Settings and pick a real data source. Your other settings are kept."
+msgstr ""
+
+#: trndi.strings.rs_backend_gone_boot
+#, object-pascal-format
+msgid ""
+"Trndi is set up to use the \"%s\" data source/backend, which this version does not have.\n"
+"\n"
+"Open Settings and pick a data source. Your other settings are kept."
+msgstr ""
+
 #: trndi.strings.rs_changes_apply
 msgctxt "trndi.strings.rs_changes_apply"
 msgid "Apply this value when Trndi starts?"
@@ -2590,6 +2606,20 @@ msgstr ""
 msgid "Auto-detect"
 msgstr ""
 
+#: uconf.rs_backend_debug_gone
+#, object-pascal-format
+msgid ""
+"This profile is set to a debug data source (%s), which only exists in test builds of Trndi.\n"
+"Pick a real data source below. Your settings are kept until you do."
+msgstr ""
+
+#: uconf.rs_backend_gone
+#, object-pascal-format
+msgid ""
+"The configured data source (%s) is not available in this version of Trndi.\n"
+"Pick a data source below. Your settings are kept until you do."
+msgstr ""
+
 #: uconf.rs_badge_flash_help
 msgid "This controls how Trndi's icon in the status bar and/or tray will notify you visually."
 msgstr ""
@@ -2732,6 +2762,12 @@ msgstr ""
 #: uconf.rs_err_email
 msgctxt "uconf.rs_err_email"
 msgid "You must enter a valid e-mail address"
+msgstr ""
+
+#: uconf.rs_err_no_backend
+msgid ""
+"No data source is selected.\n"
+"Pick one in the list under Backend — Trndi cannot fetch any readings without it."
 msgstr ""
 
 #: uconf.rs_err_password

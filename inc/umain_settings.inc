@@ -249,11 +249,26 @@ procedure LoadUserSettings(f: TfConf);
   begin
     with f, native do
     begin
-      remoteType := BackendDisplayName(GetSetting('remote.type'));
-      cbSys.ItemIndex := 0;
-      for i := 0 to cbSys.Items.Count - 1 do
-        if cbSys.Items[i] = remoteType then
-          cbSys.ItemIndex := i;
+      // A stored backend that no longer resolves — removed driver, hand-edited
+      // settings, or a debug backend picked in a test build and then run from a
+      // release build — must not be presented as NightScout, which is what
+      // BackendDisplayName falls back to. Leave the picker unselected instead;
+      // cbSysChange explains why and the save below keeps the stored value.
+      remoteType := GetSetting('remote.type');
+      if (remoteType = '') or BackendExists(remoteType) then
+      begin
+        f.UnknownBackend := '';
+        remoteType := BackendDisplayName(remoteType);
+        cbSys.ItemIndex := 0;
+        for i := 0 to cbSys.Items.Count - 1 do
+          if cbSys.Items[i] = remoteType then
+            cbSys.ItemIndex := i;
+      end
+      else
+      begin
+        f.UnknownBackend := remoteType;
+        cbSys.ItemIndex := -1;
+      end;
       f.cbSysChange(f);
       eAddr.Text := GetSetting('remote.target');
       ePass.Text := GetSetting('remote.creds');
@@ -595,7 +610,12 @@ procedure SaveUserSettings(f: TfConf);
       else
         SetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
 
-      SetSetting('remote.type', BackendCode(cbSys.Text), false);
+      // Only overwrite the stored backend when one is actually selected. An
+      // unresolvable value leaves cbSys unselected (see the load path), and
+      // BackendCode would silently turn it into 'API_NS' — losing the user's
+      // configuration on an unrelated save, e.g. after changing a font.
+      if cbSys.ItemIndex >= 0 then
+        SetSetting('remote.type', BackendCode(cbSys.Text), false);
       SetSetting('remote.target', eAddr.Text, false);
       SetSetting('remote.creds', ePass.Text, false);
 

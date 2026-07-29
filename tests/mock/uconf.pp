@@ -38,6 +38,9 @@ type
     // Real form defers voice enumeration to the Accessibility tab; the mock
     // pretends the list is always loaded so save paths stay exercised.
     TTSVoicesLoaded: boolean;
+    // Stored 'remote.type' that no longer resolves; a property on the real form
+    // (see uconf), a plain field here.
+    UnknownBackend: string;
 
     eAddr: TEdit;
     ePass: TEdit;

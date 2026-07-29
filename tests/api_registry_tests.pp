@@ -20,6 +20,8 @@ published
   procedure TestCreateBackendInstantiatesRegisteredClass;
   procedure TestCreateBackendAcceptsLegacyDisplayNames;
   procedure TestUnknownBackendFallbacks;
+  procedure TestBackendExistsSeparatesKnownFromUnknown;
+  procedure TestIsDebugBackendRecognizesCodesAndNames;
   procedure TestCredentialRules;
 end;
 
@@ -79,6 +81,38 @@ begin
   // Load/save fall back to NightScout, matching the historical behavior
   AssertEquals('API_NS', BackendCode('bogus'));
   AssertEquals(BackendDisplayName('API_NS'), BackendDisplayName('bogus'));
+end;
+
+{ Those NightScout fallbacks are why callers that persist 'remote.type' must ask
+  BackendExists first — otherwise an unresolvable stored value silently becomes
+  a valid-looking one and overwrites the user's configuration. }
+procedure TAPIRegistryTester.TestBackendExistsSeparatesKnownFromUnknown;
+var
+  e: TBackendEntry;
+begin
+  for e in BackendRegistry do
+  begin
+    AssertTrue('code exists: ' + e.code, BackendExists(e.code));
+    AssertTrue('name exists: ' + e.name, BackendExists(e.name));
+  end;
+  AssertFalse('bogus does not exist', BackendExists('bogus'));
+  AssertFalse('empty does not exist', BackendExists(''));
+  // The reported symptom: a real code with one stray character appended.
+  AssertFalse('near-miss code does not exist', BackendExists('API_D_FIRSTXd'));
+end;
+
+{ IsDebugBackend answers from the code/name markers rather than the registry, so
+  a release build — where the debug entries are compiled out — still recognizes
+  a debug value it can never resolve. }
+procedure TAPIRegistryTester.TestIsDebugBackendRecognizesCodesAndNames;
+begin
+  AssertTrue('debug code', IsDebugBackend('API_D_FIRSTX'));
+  // Unresolvable but still identifiable as a debug value
+  AssertTrue('near-miss debug code', IsDebugBackend('API_D_FIRSTXd'));
+  AssertTrue('legacy debug display name', IsDebugBackend('* Debug Backend *'));
+  AssertFalse('real backend code', IsDebugBackend('API_NS'));
+  AssertFalse('real backend name', IsDebugBackend('NightScout'));
+  AssertFalse('empty', IsDebugBackend(''));
 end;
 
 procedure TAPIRegistryTester.TestCredentialRules;

@@ -67,6 +67,8 @@ RS_MULTIPLE_ACCOUNTS = 'Trndi found multiple accounts. Please choose one for thi
 RS_USER_CAPTION = '[%s] %s';
 RS_UNKNOWN_TIME = 'Loading';
 RS_NO_INTERNET = 'Your internet connection is not working, Trndi cannot fetch readings!';
+RS_BACKEND_GONE_BOOT = 'Trndi is set up to use the "%s" data source/backend, which this version does not have.'+sLineBreak+sLineBreak+'Open Settings and pick a data source. Your other settings are kept.';
+RS_BACKEND_DEBUG_GONE_BOOT = 'Trndi is set up to use the debug data source "%s", which only exists in test builds.'+sLineBreak+sLineBreak+'Open Settings and pick a real data source. Your other settings are kept.';
 RS_DNS_INTERNET_OK = 'Your internet connection is working!';
   // Range messages
 RS_RANGE_EXPLANATION = 'In addition to high and low levels, you have set a personal range within "OK". You are now %s that range';
