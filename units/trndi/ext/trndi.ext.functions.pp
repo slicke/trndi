@@ -35,7 +35,7 @@ interface
 
 uses
 Classes, SysUtils, trndi.ext.quickjs, strutils, fgl,
-Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
+Forms, Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 
 var
 ConsoleBuffer: TStringList;
@@ -44,6 +44,17 @@ ConsoleBuffer: TStringList;
   Resource strings (can be translated if needed):
     - sNoTrace, sUnknownErr, sStackErrMsg, etc.
 *)
+
+{**
+  @name Extension error captions
+  @desc
+  Captions naming the extension subsystem. These live here rather than in
+  slicke.ux.alert so the dialog unit stays free of Trndi-specific vocabulary.
+}
+resourcestring
+sExtTitle   = 'Extension error';
+sExtErr     = 'Error occurred in extension';
+sErr        = 'Script execution failed';
 
 type
   {** Forward pointer to @link(JSValueVal) to prevent circular references. }
@@ -268,12 +279,72 @@ function checkJSParams(params: JSParameters; expect: JDTypes): integer; overload
 function checkJSParams(params: JSParameters; expect, expect2: JDTypes): integer;
 overload;
 
+  {**
+    Show an extension error dialog with a short message and an error dump in the log panel.
+    @param dialogsize Layout preset.
+    @param msg Short explanation shown as description.
+    @param error Detailed error text shown in the log panel.
+    @param icon Emoji icon (default gear).
+    @returns Modal result (default is [mbAbort]).
+    @remarks Captions name the extension subsystem. For general application
+    errors use @code(SlickeError) in slicke.ux.alert instead.
+  }
+function ExtError(const dialogsize: TSlickeDialogSize;
+const msg, error: string;
+const icon: SlickeUXImage = uxmtCog): TModalResult; overload;
+
+  {**
+    Show an extension error dialog with standard captions and the given error in the log panel.
+    @param dialogsize Layout preset.
+    @param error Error text to display in log panel.
+    @param icon Emoji icon (default gear).
+    @returns Modal result (default is [mbAbort]).
+  }
+function ExtError(const dialogsize: TSlickeDialogSize;
+const error: string;
+const icon: SlickeUXImage = uxmtCog): TModalResult; overload;
+
 const
 JS_TAG_UNKNOWN = -10;
 JS_PARAM_MISSMATCH = 150;
 JS_PARAM_OK = -1;
 
 implementation
+
+{------------------------------------------------------------------------------
+  ExtError
+  Extension-flavoured error dialogs. Thin wrappers over SlickeMsg that supply
+  the extension captions; the generic equivalent is SlickeError.
+-------------------------------------------------------------------------------}
+function ExtError(const dialogsize: TSlickeDialogSize;
+const msg, error: string;
+const icon: SlickeUXImage = uxmtCog): TModalResult;
+begin
+  Result := SlickeMsg(dialogsize,
+    sExtErr,  // caption
+    sErr,     // title
+    msg,      // description
+    error,    // log/dump text
+    uxclWhite, // dump background color
+    uxclRed, // dump text color
+    [mbAbort], // buttons
+    icon);
+end;
+
+function ExtError(const dialogsize: TSlickeDialogSize;
+const error: string;
+const icon: SlickeUXImage = uxmtCog): TModalResult;
+begin
+  Result := SlickeMsg(dialogsize,
+    sExtErr,   // caption
+    sExtTitle, // title
+    sErr,      // description
+    error,     // log
+    uxclWhite,
+    uxclRed,
+    [mbAbort],
+    icon);
+end;
 
 {------------------------------------------------------------------------------
   checkJSParams

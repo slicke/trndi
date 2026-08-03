@@ -39,8 +39,8 @@
 // This file now includes sub-files with categorized JS functions for better organization
 
 {$ifdef TrndiExt}
-uses 
- variants;
+uses
+ variants, trndi.ext.functions;   // trndi.ext.functions provides ExtError
 
 // Utility function: Convert HTML color (#RRGGBB) to TColor
 function HTMLColorToTColor(const HTMLColor: string): TColor;
