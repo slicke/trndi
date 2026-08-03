@@ -532,7 +532,7 @@ begin
   end;
 
   // Automatic path unavailable/failed — explain, then offer the manual route.
-  ExtError(sdsAuto, T.FailTitle, ErrText(res), uxmtWarning);
+  SlickeError(sdsAuto, T.FailTitle, ErrText(res), uxmtWarning);
   ShowManualWebLoginHelp(ACls, T);
 end;
 

@@ -1,11 +1,11 @@
-# ExtDatePicker Usage Example
+# SlickeDatePicker Usage Example
 
-The `ExtDatePicker` function provides a date picker dialog with optional min/max date constraints.
+The `SlickeDatePicker` function provides a date picker dialog with optional min/max date constraints.
 
 ## Function Signature
 
 ```pascal
-function ExtDatePicker(
+function SlickeDatePicker(
   const dialogsize: TSlickeDialogSize;
   const ACaption, ATitle, ADesc: string;
   ADefault: TDateTime;
@@ -41,7 +41,7 @@ var
   selectedDate: TDateTime;
   modalRes: TModalResult;
 begin
-  selectedDate := ExtDatePicker(
+  selectedDate := SlickeDatePicker(
     sdsNormal,
     'Select Date',
     'Choose a date',
@@ -69,7 +69,7 @@ begin
   minDate := Now;
   maxDate := Now + 30;
   
-  selectedDate := ExtDatePicker(
+  selectedDate := SlickeDatePicker(
     sdsNormal,
     'Schedule Appointment',
     'Select Appointment Date',
@@ -94,7 +94,7 @@ var
   modalRes: TModalResult;
 begin
   // Only allow dates in the past
-  selectedDate := ExtDatePicker(
+  selectedDate := SlickeDatePicker(
     sdsBig,                    // Use big layout for touch screens
     'Birth Date',
     'Enter Your Birth Date',

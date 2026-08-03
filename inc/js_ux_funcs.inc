@@ -117,7 +117,7 @@ begin
   end;
 
  // Title, Desc, html, size
-  ExtMessage(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), ctx^.ToUtf8(argv^[2]), ctx^.ToUtf8(argv^[3]), true,
+  SlickeMsgEx(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), ctx^.ToUtf8(argv^[2]), ctx^.ToUtf8(argv^[3]), true,
     $00AA6004, $00FDD8AA,  [mbOK], uxmtOK, vbs);
 end;
 

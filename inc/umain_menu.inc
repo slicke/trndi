@@ -88,7 +88,7 @@ var
   mr: TModalResult;
   da: single;
 begin
-  da := (ExtNumericInput(sdsAuto, RS_SERVICE_DOT_ADJUST, RS_SERVICE_DOT_ADJUST_ADD,
+  da := (SlickeNumericInput(sdsAuto, RS_SERVICE_DOT_ADJUST, RS_SERVICE_DOT_ADJUST_ADD,
     RS_SERVICE_DOT_ADJUST_DESC, DOT_ADJUST *
     100, FLOAT_NONE, FLOAT_NONE, false, mr) / 100);
 
@@ -108,7 +108,7 @@ var
   mr: TModalResult;
   newCount: integer;
 begin
-  newCount := ExtIntInput(sdsAuto, RS_SERVICE_DOT_COUNT, RS_SERVICE_DOT_COUNT_TITLE,
+  newCount := SlickeIntInput(sdsAuto, RS_SERVICE_DOT_COUNT, RS_SERVICE_DOT_COUNT_TITLE,
     Format(RS_SERVICE_DOT_COUNT_DESC, [MAX_DOT_COUNT]), ACTIVE_DOTS, mr);
 
   if mr <> mrOk then
@@ -214,7 +214,7 @@ var
   msg: string;
   mr: TModalResult;
 begin
-  i := ExtIntInput(sdsAuto, RS_PREDICT_AMOUNT_CAPTION, RS_PREDICT_AMOUNT_TITLE, RS_PREDICT_AMOUNT_DESC, 3, mr);
+  i := SlickeIntInput(sdsAuto, RS_PREDICT_AMOUNT_CAPTION, RS_PREDICT_AMOUNT_TITLE, RS_PREDICT_AMOUNT_DESC, 3, mr);
   if (mr <> mrOK) or (i < 1) then
     i := 3;
   if i > 20 then
@@ -262,7 +262,7 @@ begin
     description := Format(RS_DATE_PICKER_DESC_LIMITED, [api.getSystemName, maxDays]);
   end;
 
-  selectedDate := ExtDatePicker(
+  selectedDate := SlickeDatePicker(
     sdsAuto,
     RS_DATE_PICKER_CAPTION,
     RS_DATE_PICKER_TITLE,

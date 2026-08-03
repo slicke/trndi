@@ -406,11 +406,11 @@ begin
     if Assigned(FOwner.miDebugBackend) and FOwner.miDebugBackend.Checked and FOwner.Showing then
     begin
       if FDiag.IsEmpty then
-        slicke.ux.alert.ExtLog(sdsAuto,
+        slicke.ux.alert.SlickeLog(sdsAuto,
           IfThen(FForce, 'Debug Info (Forced)', 'Debug Info'),
           '[empty!]', FDiag)
       else
-        slicke.ux.alert.ExtLog(sdsAuto,
+        slicke.ux.alert.SlickeLog(sdsAuto,
           IfThen(FForce, 'Debug Info (Forced)', 'Debug Info'),
           '', FDiag, uxmtCustom, 10);
     end;

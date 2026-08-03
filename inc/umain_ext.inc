@@ -380,7 +380,7 @@ begin
       stmp := TTrndiExtEngine.Instance.ExtExecuteFile(extInfo);
       if Pos('Error:', stmp) = 1 then
         {$ifdef debug}
-        ExtMessage(sdsAuto, 'Extension Activation Failed!',
+        SlickeMsgEx(sdsAuto, 'Extension Activation Failed!',
           'The ' + ExtractFileNameOnly(extFile) + ' extension was loaded with an error',
           'Output below',
           'Return: ' + stmp + sLineBreak + sLineBreak + 'Log: ' +
