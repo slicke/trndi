@@ -260,7 +260,9 @@ TSlickeDialogSize = (sdsNormal = 0, sdsBig = 1, sdsAuto = 3, sdsOnForm = 4, sdsM
     @remarks Includes standard Lazarus modal buttons and a few custom labels (e.g. OpenFile, Minimize, Agree, Read, Default).
   }
 TSlickeMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze);
+  mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze,
+  {** Not a button: "no explicit default" sentinel for the @code(ADefault) parameter. }
+  mbSlickeNone);
 
   {** An ordered list of @link(TSlickeMsgDlgBtn) specifying which buttons to show.
       Written as @code([mbClose, mbCancel]) exactly like a set, but — unlike a set —
@@ -326,7 +328,8 @@ procedure SlickeMessage(const title, message: string; const icon: SlickeUXImage 
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 buttons: TSlickeMsgDlgBtns;
-const icon: SlickeUXImage = uxmtOK): TModalResult; overload;
+const icon: SlickeUXImage = uxmtOK;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {**
     Generic dialog with custom button set and Lazarus message type mapped to a default icon.
@@ -340,7 +343,8 @@ const icon: SlickeUXImage = uxmtOK): TModalResult; overload;
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 buttons: TSlickeMsgDlgBtns;
-const mtype: TMsgDlgType): TModalResult; overload;
+const mtype: TMsgDlgType;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {**
     Generic dialog with custom header line (caption), title and message and TMsgDlgType mapping.
@@ -355,7 +359,8 @@ const mtype: TMsgDlgType): TModalResult; overload;
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const header, title, message: string;
 buttons: TSlickeMsgDlgBtns;
-const mtype: TMsgDlgType): TModalResult; overload;
+const mtype: TMsgDlgType;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
 {**
   Simplified Extended message dialog for displaying yes/no dialogs
@@ -406,7 +411,8 @@ dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 
   {**
     Extended message dialog supporting an optional log/dump panel with custom colors.
@@ -428,7 +434,8 @@ dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 
   {**
     HTML-only dialog with buttons.
@@ -445,7 +452,8 @@ function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1; hpadding: single = 1): TModalResult; overload;
+scale: single = 1; hpadding: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {**
     Alias for @lnk(SlickeMsg) with HTML data
@@ -454,7 +462,8 @@ function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 
   {**
     Helper for @lnk(SlickeMsg) with text data
@@ -463,7 +472,8 @@ function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 
   {**
     Extended message dialog with HTML support in log panel.
@@ -488,7 +498,8 @@ dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult; overload;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
 {**
   @name Platform-ordered button rows
@@ -503,19 +514,22 @@ scale: single = 1): TModalResult; overload;
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 const buttons: TSlickeMsgDlgBtnRows;
-const icon: SlickeUXImage = uxmtOK): TModalResult; overload;
+const icon: SlickeUXImage = uxmtOK;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(SlickeDialog) with a Lazarus message type. }
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 const buttons: TSlickeMsgDlgBtnRows;
-const mtype: TMsgDlgType): TModalResult; overload;
+const mtype: TMsgDlgType;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(SlickeDialog) with a separate window caption. }
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const header, title, message: string;
 const buttons: TSlickeMsgDlgBtnRows;
-const mtype: TMsgDlgType): TModalResult; overload;
+const mtype: TMsgDlgType;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(SlickeMsg). }
 function SlickeMsg(
@@ -524,7 +538,8 @@ dumpbg: TColor;
 dumptext: TColor;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult; overload;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(SlickeMsg) with a layout preset. }
 function SlickeMsg(const dialogsize: TSlickeDialogSize;
@@ -533,28 +548,32 @@ dumpbg: TColor;
 dumptext: TColor;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult; overload;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware HTML-only @link(SlickeMsg). }
 function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1; hpadding: single = 1): TModalResult; overload;
+scale: single = 1; hpadding: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(SlickeHTMLMsg). }
 function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1): TModalResult; overload;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(SlickePrompt). }
 function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1): TModalResult; overload;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(ExtMessage). }
 function ExtMessage(const dialogsize: TSlickeDialogSize;
@@ -564,7 +583,8 @@ dumpbg: TColor;
 dumptext: TColor;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult; overload;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {**
     Convenience wrapper for @link(SlickeMsg) that shows a message and a log/dump with an OK button.
@@ -640,7 +660,8 @@ btns: TSlickeMsgDlgBtns;
 dumpbg: TColor = uxclLightGreen;
 dumptext: TColor = uxclDarkGreen;
 const icon: SlickeUXImage = uxmtOK;
-const scale: integer = 1): TModalResult;
+const scale: integer = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 
   {**
     Show a selection dialog using a drop-down list.
@@ -804,7 +825,8 @@ var
   {** Localized captions for each @link(TSlickeMsgDlgBtn). Initialized from resource strings. }
 langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
   smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
-  smbSlickeOpenFile, smbSlickeMinimize, smbSlickeAgree, smbSlickeRead, smbSlickeDefault, smbSlickeSnooze);
+  smbSlickeOpenFile, smbSlickeMinimize, smbSlickeAgree, smbSlickeRead, smbSlickeDefault, smbSlickeSnooze,
+  '');   // mbSlickeNone is a sentinel, never rendered
   {** When @true, dialogs created by this unit (@link(SlickeDialog), @link(SlickeList),
       @link(SlickeInput), etc.) get their own taskbar button. Defaults to @false,
       which keeps them off the taskbar as transient windows of the initiator.
@@ -897,6 +919,46 @@ begin
     Result := rows[0];
 end;
 
+{ Which button carries the dialog's default: the explicit override when one was
+  given, otherwise the first button as written. For a row list the caller passes
+  down row 0's first button, so the default never moves when the row is reversed. }
+function PickDefaultButton(const buttons: TSlickeMsgDlgBtns;
+  const ADefault: TSlickeMsgDlgBtn): TSlickeMsgDlgBtn;
+begin
+  if ADefault <> mbSlickeNone then
+    Result := ADefault
+  else
+  if Length(buttons) > 0 then
+    Result := buttons[0]
+  else
+    Result := mbSlickeNone;
+end;
+
+{ The default for a row list: the explicit override, else row 0's first button.
+  Row 0 is the affirmative-first order, so this stays correct when row 1 is used. }
+function RowDefault(const rows: TSlickeMsgDlgBtnRows;
+  const ADefault: TSlickeMsgDlgBtn): TSlickeMsgDlgBtn;
+begin
+  if ADefault <> mbSlickeNone then
+    Result := ADefault
+  else
+  if (Length(rows) > 0) and (Length(rows[0]) > 0) then
+    Result := rows[0][0]
+  else
+    Result := mbSlickeNone;
+end;
+
+{ Focus the default button, and mark it default where the widget supports it —
+  the Windows TDarkButton is a TCustomControl, so it only draws a focus ring. }
+procedure ApplyDefaultButton(Dialog: TDialogForm; Ctrl: TWinControl);
+begin
+  if not Assigned(Ctrl) then
+    Exit;
+  if Ctrl is TCustomButton then
+    (Ctrl as TCustomButton).Default := true;
+  Dialog.ActiveControl := Ctrl;
+end;
+
 { ---- Platform-ordered button rows -------------------------------------------
   Each of these resolves the row for the local convention and hands off to the
   matching flat-list version; no layout logic lives here. }
@@ -905,30 +967,33 @@ end;
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 const buttons: TSlickeMsgDlgBtnRows;
-const icon: SlickeUXImage = uxmtOK): TModalResult;
+const icon: SlickeUXImage = uxmtOK;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeDialog(dialogsize, title, message,
-    SlickeResolveButtonRow(buttons), icon);
+    SlickeResolveButtonRow(buttons), icon, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 const buttons: TSlickeMsgDlgBtnRows;
-const mtype: TMsgDlgType): TModalResult;
+const mtype: TMsgDlgType;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeDialog(dialogsize, title, message,
-    SlickeResolveButtonRow(buttons), mtype);
+    SlickeResolveButtonRow(buttons), mtype, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const header, title, message: string;
 const buttons: TSlickeMsgDlgBtnRows;
-const mtype: TMsgDlgType): TModalResult;
+const mtype: TMsgDlgType;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeDialog(dialogsize, header, title, message,
-    SlickeResolveButtonRow(buttons), mtype);
+    SlickeResolveButtonRow(buttons), mtype, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -938,10 +1003,11 @@ dumpbg: TColor;
 dumptext: TColor;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeMsg(caption, title, desc, logmsg, dumpbg, dumptext,
-    SlickeResolveButtonRow(buttons), icon, scale);
+    SlickeResolveButtonRow(buttons), icon, scale, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -951,10 +1017,11 @@ dumpbg: TColor;
 dumptext: TColor;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeMsg(dialogsize, caption, title, desc, logmsg, dumpbg, dumptext,
-    SlickeResolveButtonRow(buttons), icon, scale);
+    SlickeResolveButtonRow(buttons), icon, scale, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -962,10 +1029,11 @@ function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1; hpadding: single = 1): TModalResult;
+scale: single = 1; hpadding: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeMsg(dialogsize, caption, html,
-    SlickeResolveButtonRow(buttons), icon, scale, hpadding);
+    SlickeResolveButtonRow(buttons), icon, scale, hpadding, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -973,10 +1041,11 @@ function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeHTMLMsg(dialogsize, caption, html,
-    SlickeResolveButtonRow(buttons), icon, scale);
+    SlickeResolveButtonRow(buttons), icon, scale, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -984,10 +1053,11 @@ function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickePrompt(dialogsize, caption, text,
-    SlickeResolveButtonRow(buttons), icon, scale);
+    SlickeResolveButtonRow(buttons), icon, scale, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -998,10 +1068,12 @@ dumpbg: TColor;
 dumptext: TColor;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := ExtMessage(dialogsize, caption, title, desc, logmsg, isHTML,
-    dumpbg, dumptext, SlickeResolveButtonRow(buttons), icon, scale);
+    dumpbg, dumptext, SlickeResolveButtonRow(buttons), icon, scale,
+    RowDefault(buttons, ADefault));
 end;
 
 {$ifdef X_MAC}
@@ -1908,26 +1980,29 @@ end;
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 buttons: TSlickeMsgDlgBtns;
-const icon: SlickeUXImage = uxmtOK): TModalResult;
+const icon: SlickeUXImage = uxmtOK;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeMsg(dialogsize, sMsgTitle, title, message, '',
-    uxclBlue, uxclLightBlue, buttons, WChar(icon));
+    uxclBlue, uxclLightBlue, buttons, WChar(icon), 1, ADefault);
 end;
 
 {** See interface docs for behavior and parameters. }
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const title, message: string;
 buttons: TSlickeMsgDlgBtns;
-const mtype: TMsgDlgType): TModalResult;
+const mtype: TMsgDlgType;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
-  Result := SlickeDialog(dialogsize, sMsgTitle, title, message, buttons, mtype);
+  Result := SlickeDialog(dialogsize, sMsgTitle, title, message, buttons, mtype, ADefault);
 end;
 
 {** See interface docs for behavior and parameters. }
 function SlickeDialog(const dialogsize: TSlickeDialogSize;
 const header, title, message: string;
 buttons: TSlickeMsgDlgBtns;
-const mtype: TMsgDlgType): TModalResult;
+const mtype: TMsgDlgType;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 var
   icon: SlickeUXImage;
 begin
@@ -1947,7 +2022,7 @@ begin
   end;
 
   Result := SlickeMsg(dialogsize, header, title, message, '',
-    uxclBlue, uxclLightBlue, buttons, icon);
+    uxclBlue, uxclLightBlue, buttons, icon, 1, ADefault);
 end;
 
 
@@ -2631,13 +2706,14 @@ dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   // A dynamic array can only default to nil, so restore this function's own
   // documented default before forwarding.
   if Length(buttons) = 0 then
     buttons := [mbAbort];
-  result := SlickeMsg(sdsAuto, caption, title, desc, logmsg, dumpbg, dumptext, buttons, icon, scale);
+  result := SlickeMsg(sdsAuto, caption, title, desc, logmsg, dumpbg, dumptext, buttons, icon, scale, ADefault);
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -2648,14 +2724,14 @@ dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1
-): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   if Length(buttons) = 0 then
     buttons := [mbAbort];
   // Call ExtMessage with isHTML = false for backward compatibility
   Result := ExtMessage(dialogsize, caption, title, desc, logmsg, false,
-    dumpbg, dumptext, buttons, icon, scale);
+    dumpbg, dumptext, buttons, icon, scale, ADefault);
 end;
 
 
@@ -2663,11 +2739,12 @@ function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   if Length(buttons) = 0 then
     buttons := [mbOK];
-  result := SlickeMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons,icon, scale);
+  result := SlickeMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons, icon, scale, ADefault);
 end;
 
 {** Alias for SlickeMsg. }
@@ -2676,12 +2753,12 @@ const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1
-): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   if Length(buttons) = 0 then
     buttons := [mbOK];
-  result := SlickeMsg(dialogsize,caption,html,buttons,icon,scale);
+  result := SlickeMsg(dialogsize, caption, html, buttons, icon, scale, 1, ADefault);
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -2691,8 +2768,8 @@ const caption, html: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
 scale: single = 1;
-hpadding: single = 1
-): TModalResult;
+hpadding: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 const
   btnWidth = 75;
   padding  = 10;
@@ -2706,7 +2783,8 @@ var
   {$else}
   OkButton: TButton;
   {$endif}
-  mr: TSlickeMsgDlgBtn;
+  mr, defBtn: TSlickeMsgDlgBtn;
+  DefaultCtrl: TWinControl;
   ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: integer;
   bgcol: TColor;
   size: TSlickeDialogSize;
@@ -2838,6 +2916,8 @@ begin
 
     // Count buttons
     btnCount := Length(buttons);
+    defBtn := PickDefaultButton(buttons, ADefault);
+    DefaultCtrl := nil;
 
     ButtonActualWidth := ifthen((size = sdsBig) , btnWidth * 2, btnWidth);
     totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
@@ -2863,7 +2943,12 @@ begin
       OkButton.Top := HtmlPanel.Top + HtmlPanel.Height + padding;
       OkButton.ModalResult := UXButtonToModalResult(mr);
       Inc(posX, ButtonActualWidth + padding);
+      // Default is chosen by identity, not position, so it survives a reversed row
+      if (mr = defBtn) and (DefaultCtrl = nil) then
+        DefaultCtrl := OkButton;
     end;
+
+    ApplyDefaultButton(Dialog, DefaultCtrl);
 
     // Set final dialog height based on content
     finalHeight := OkButton.Top + OkButton.Height + padding;
@@ -2887,8 +2972,8 @@ dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1
-): TModalResult;
+scale: single = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 const
   btnWidth = 75;
   padding  = 10;
@@ -2907,7 +2992,8 @@ var
   {$else}
   OkButton: TButton;
   {$endif}
-  mr: TSlickeMsgDlgBtn;
+  mr, defBtn: TSlickeMsgDlgBtn;
+  DefaultCtrl: TWinControl;
   ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
   TitlePixelWidth, DescPixelWidth, TextPixelWidth,
   posX, ProposedWidth, btnCount, totalBtnWidth: integer;
@@ -3353,6 +3439,9 @@ begin
       Dialog.LogIsHTML := isHTML;
     end;
 
+    defBtn := PickDefaultButton(buttons, ADefault);
+    DefaultCtrl := nil;
+
     for mr in buttons do
     begin
       {$ifdef X_WIN}OkButton := TDarkButton.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
@@ -3371,9 +3460,13 @@ begin
       OkButton.Top := padding;
       OkButton.Left := posX;
       posX := posX + OkButton.Width + padding;
+      // Default is chosen by identity, not position, so it survives a reversed row
+      if (mr = defBtn) and (DefaultCtrl = nil) then
+        DefaultCtrl := OkButton;
     end;
 
     ButtonPanel.Height := OkButton.Top + OkButton.Height + (padding * 2);
+    ApplyDefaultButton(Dialog, DefaultCtrl);
 
     if Dialog.Height > MaxDialogHeight then
       Dialog.Height := MaxDialogHeight;
@@ -3442,7 +3535,8 @@ btns: TSlickeMsgDlgBtns;
 dumpbg: TColor = uxclLightGreen;
 dumptext: TColor = uxclDarkGreen;
 const icon: SlickeUXImage = uxmtOK;
-const scale: integer = 1): TModalResult;
+const scale: integer = 1;
+ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeMsg(dialogsize,
     sSuccTitle,
@@ -3531,6 +3625,8 @@ procedure ClickButton(idx: integer);
     else if comp is TDarkButton then
       (comp as TDarkButton).Click
     {$endif};
+    // Consume the key: the default button would otherwise fire a second time
+    Key := 0;
   end;
 
 begin
