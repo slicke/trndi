@@ -192,7 +192,7 @@ end;
 
 procedure TJSFuncs.ShowMsg(const str: string);
 begin
-  ExtLog(sdsAuto, 'Message from Extension', 'An extension triggered a message',
+  SlickeLog(sdsAuto, 'Message from Extension', 'An extension triggered a message',
     str, uxmtSquare);
 end;
 

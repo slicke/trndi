@@ -19,9 +19,9 @@
   The public API centers around:
   - @link(SlickeMessage) for simple, one-button informational messages.
   - @link(SlickeDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
-  - @link(SlickeMsg), @link(ExtLog), @link(ExtError), @link(ExtSucc), @link(ExtSuccEx) for rich dialogs with dumps/logs.
-  - @link(SlickeInput), @link(ExtPasswordInput), @link(ExtNumericInput), @link(ExtIntInput), @link(SlickeList), @link(ExtTable) for data entry.
-  - @link(ExtDatePicker) for date selection with optional min/max constraints.
+  - @link(SlickeMsg), @link(SlickeLog), @link(ExtError), @link(SlickeSucc), @link(SlickeSuccEx) for rich dialogs with dumps/logs.
+  - @link(SlickeInput), @link(SlickePasswordInput), @link(SlickeNumericInput), @link(SlickeIntInput), @link(SlickeList), @link(SlickeTable) for data entry.
+  - @link(SlickeDatePicker) for date selection with optional min/max constraints.
 
   Platform support:
   - Windows: emoji rendering via Direct2D/DirectWrite; custom dark-titlebar opt-in where possible.
@@ -60,6 +60,8 @@ sSuccTitle  = 'Information';
 sExtTitle   = 'Extension error';
 sExtErr     = 'Error occurred in extension';
 sErr        = 'Script execution failed';
+sErrTitle   = 'Error';
+sErrMsg     = 'An error occurred';
 sURLTitle   = 'Open external link?';
 sURL        = 'Leave the app and open your browser? The link may not be secure!';
 
@@ -210,7 +212,7 @@ public
   property titleText: string write title;
   property contentText: string write content;
   property extraText: string write extra;
-    {** OnChange handler for font combo box in ExtFontPicker. }
+    {** OnChange handler for font combo box in SlickeFontPicker. }
   procedure FontComboChange(Sender: TObject);
   procedure HTMLGetImageX(Sender: TIpHtmlNode; const URL: string; var Picture: TPicture);
   procedure HTMLHotClick(Sender: TObject);
@@ -491,7 +493,7 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
     @returns Modal result based on user button selection.
     @remarks HTML rendering is supported cross-platform via TIpHtmlPanel from IpHtml unit. Use standard HTML tags like &lt;b&gt;, &lt;i&gt;, &lt;font color="red"&gt;, etc.
   }
-function ExtMessage(const dialogsize: TSlickeDialogSize;
+function SlickeMsgEx(const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 isHTML: boolean;
 dumpbg: TColor = uxclWhite;
@@ -575,8 +577,8 @@ const icon: SlickeUXImage = uxmtInformation;
 scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
-  {** Row-aware @link(ExtMessage). }
-function ExtMessage(const dialogsize: TSlickeDialogSize;
+  {** Row-aware @link(SlickeMsgEx). }
+function SlickeMsgEx(const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 isHTML: boolean;
 dumpbg: TColor;
@@ -596,7 +598,7 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
     @param scale Log panel vertical scale multiplier.
     @returns @code(mrOK) if confirmed, otherwise the modal result selected by the user.
   }
-function ExtLog(const dialogsize: TSlickeDialogSize;
+function SlickeLog(const dialogsize: TSlickeDialogSize;
 const caption, msg, log: string;
 const icon: SlickeUXImage = uxmtCog;
 scale: integer = 1): TModalResult;
@@ -625,6 +627,20 @@ const error: string;
 const icon: SlickeUXImage = uxmtCog): TModalResult; overload;
 
   {**
+    Show a general error dialog with a short message and an error dump in the log panel.
+    @param dialogsize Layout preset.
+    @param msg Short explanation shown as description.
+    @param error Detailed error text shown in the log panel.
+    @param icon Emoji icon (default warning).
+    @returns Modal result (default is [mbAbort]).
+    @remarks Use this for application errors. @link(ExtError) is the extension-engine
+    variant and hardcodes captions naming the extension subsystem.
+  }
+function SlickeError(const dialogsize: TSlickeDialogSize;
+const msg, error: string;
+const icon: SlickeUXImage = uxmtWarning): TModalResult;
+
+  {**
     Show a success/information dialog with a dump panel.
     @param dialogsize Layout preset.
     @param msg Title text.
@@ -635,14 +651,14 @@ const icon: SlickeUXImage = uxmtCog): TModalResult; overload;
     @param icon Emoji icon (default @code(uxmtOK)).
     @returns Modal result (OK by default).
   }
-function ExtSucc(const dialogsize: TSlickeDialogSize;
+function SlickeSucc(const dialogsize: TSlickeDialogSize;
 const msg, desc, output: string;
 dumpbg: TColor = uxclLightGreen;
 dumptext: TColor = uxclDarkGreen;
 const icon: SlickeUXImage = uxmtOK): TModalResult;
 
   {**
-    Variant of @link(ExtSucc) that accepts a custom button set.
+    Variant of @link(SlickeSucc) that accepts a custom button set.
     @param dialogsize Layout preset.
     @param msg Title text.
     @param desc Description/body text.
@@ -654,7 +670,7 @@ const icon: SlickeUXImage = uxmtOK): TModalResult;
     @param scale The size of the text box (multiplyer)
     @returns Modal result.
   }
-function ExtSuccEx(const dialogsize: TSlickeDialogSize;
+function SlickeSuccEx(const dialogsize: TSlickeDialogSize;
 const msg, desc, output: string;
 btns: TSlickeMsgDlgBtns;
 dumpbg: TColor = uxclLightGreen;
@@ -714,7 +730,7 @@ const AMasked: boolean = false): string;
     @param icon Emoji icon (default gear).
     @returns The entered string when @code(ModalResult = mrOK); otherwise the previous/default content.
   }
-function ExtPasswordInput(const dialogsize: TSlickeDialogSize;
+function SlickePasswordInput(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc, ADefault: string;
 var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog): string;
@@ -733,7 +749,7 @@ const icon: SlickeUXImage = uxmtCog): string;
     @param icon Emoji icon (default gear).
     @returns Entered numeric value if OK; otherwise returns @code(ADefault).
   }
-function ExtNumericInput(const dialogsize: TSlickeDialogSize;
+function SlickeNumericInput(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
 AMin, AMax: double;
@@ -742,7 +758,7 @@ var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog): double;
 
   {**
-    Convenience wrapper over @link(ExtNumericInput) for integer-only input.
+    Convenience wrapper over @link(SlickeNumericInput) for integer-only input.
     @param dialogsize Layout preset.
     @param ACaption Window caption.
     @param ATitle Title text.
@@ -752,7 +768,7 @@ const icon: SlickeUXImage = uxmtCog): double;
     @param icon Emoji icon (default gear).
     @returns Entered integer value if OK; otherwise returns @code(ADefault).
   }
-function ExtIntInput(
+function SlickeIntInput(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: integer;
@@ -773,7 +789,7 @@ const icon: SlickeUXImage = uxmtCog
     @param value Column 1 header (defaults to localized @code(sValue)).
     @returns Selected row index on OK; -1 if canceled.
   }
-function ExtTable(const dialogsize: TSlickeDialogSize;
+function SlickeTable(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Keys, Values: array of string;
 const icon: SlickeUXImage = uxmtCog;
@@ -793,7 +809,7 @@ const value: string = ''): integer;
     @returns The selected TFont object if OK; otherwise returns @code(ADefaultFont).
     @remarks The returned font is a new instance; caller is responsible for freeing it.
   }
-function ExtFontPicker(const dialogsize: TSlickeDialogSize;
+function SlickeFontPicker(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefaultFont: TFont;
 const AFontSample: string;
@@ -813,7 +829,7 @@ const icon: SlickeUXImage = uxmtCog): TFont;
     @param icon Emoji icon (default gear).
     @returns Selected date if OK; otherwise returns @code(ADefault).
   }
-function ExtDatePicker(const dialogsize: TSlickeDialogSize;
+function SlickeDatePicker(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: TDateTime;
 AMinDate: TDateTime;
@@ -1061,7 +1077,7 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtMessage(const dialogsize: TSlickeDialogSize;
+function SlickeMsgEx(const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 isHTML: boolean;
 dumpbg: TColor;
@@ -1071,7 +1087,7 @@ const icon: SlickeUXImage = uxmtCog;
 scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
-  Result := ExtMessage(dialogsize, caption, title, desc, logmsg, isHTML,
+  Result := SlickeMsgEx(dialogsize, caption, title, desc, logmsg, isHTML,
     dumpbg, dumptext, SlickeResolveButtonRow(buttons), icon, scale,
     RowDefault(buttons, ADefault));
 end;
@@ -1878,7 +1894,7 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtIntInput(
+function SlickeIntInput(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: integer;
@@ -1886,11 +1902,11 @@ var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog
 ): integer;
 begin
-  result := round(ExtNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, FLOAT_NONE, FLOAT_NONE, false, ModalResult, icon));
+  result := round(SlickeNumericInput(dialogsize,ACaption,ATitle,ADesc,ADefault, FLOAT_NONE, FLOAT_NONE, false, ModalResult, icon));
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtNumericInput(
+function SlickeNumericInput(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
@@ -2253,7 +2269,7 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtPasswordInput(
+function SlickePasswordInput(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc, ADefault: string;
 var ModalResult: TModalResult;
@@ -2359,7 +2375,7 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtTable(
+function SlickeTable(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Keys, Values: array of string;
@@ -2448,7 +2464,7 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtFontPicker(
+function SlickeFontPicker(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefaultFont: TFont;
@@ -2584,7 +2600,7 @@ begin
   end;
 end;
 
-function ExtDatePicker(
+function SlickeDatePicker(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: TDateTime;
@@ -2671,7 +2687,7 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtLog(
+function SlickeLog(
 const dialogsize: TSlickeDialogSize;
 const caption, msg, log: string;
 const icon: SlickeUXImage = uxmtCog;
@@ -2729,8 +2745,8 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   if Length(buttons) = 0 then
     buttons := [mbAbort];
-  // Call ExtMessage with isHTML = false for backward compatibility
-  Result := ExtMessage(dialogsize, caption, title, desc, logmsg, false,
+  // Call SlickeMsgEx with isHTML = false for backward compatibility
+  Result := SlickeMsgEx(dialogsize, caption, title, desc, logmsg, false,
     dumpbg, dumptext, buttons, icon, scale, ADefault);
 end;
 
@@ -2964,7 +2980,7 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtMessage(
+function SlickeMsgEx(
 const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 isHTML: boolean;
@@ -3511,7 +3527,23 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtSucc(const dialogsize: TSlickeDialogSize;
+function SlickeError(const dialogsize: TSlickeDialogSize;
+const msg, error: string;
+const icon: SlickeUXImage = uxmtWarning): TModalResult;
+begin
+  Result := SlickeMsg(dialogsize,
+    sErrTitle, // caption
+    sErrMsg,   // title
+    msg,       // description
+    error,     // log/dump text
+    uxclWhite, // dump background color
+    uxclRed, // dump text color
+    [mbAbort], // buttons
+    icon);
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeSucc(const dialogsize: TSlickeDialogSize;
 const msg, desc, output: string;
 dumpbg: TColor = uxclLightGreen;
 dumptext: TColor = uxclDarkGreen;
@@ -3529,7 +3561,7 @@ begin
 end;
 
 {** See interface docs for behavior and parameters. }
-function ExtSuccEx(const dialogsize: TSlickeDialogSize;
+function SlickeSuccEx(const dialogsize: TSlickeDialogSize;
 const msg, desc, output: string;
 btns: TSlickeMsgDlgBtns;
 dumpbg: TColor = uxclLightGreen;
@@ -4089,7 +4121,7 @@ begin
   Application.ReleaseComponent(P);
 end;
 
-{** OnChange handler for font combo in ExtFontPicker - updates live preview. }
+{** OnChange handler for font combo in SlickeFontPicker - updates live preview. }
 procedure TDialogForm.FontComboChange(Sender: TObject);
 var
   Combo: TComboBox;

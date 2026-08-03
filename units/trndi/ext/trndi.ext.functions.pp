@@ -950,7 +950,7 @@ begin
   // Log via external logging function
   if fullMsg = '' then
     fullMsg := RS_LOG_EMPTY_MSG;
-  ExtLog(sdsAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
+  SlickeLog(sdsAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
 
   // Return undefined
   res^ := JS_UNDEFINED;
@@ -1060,7 +1060,7 @@ begin
   if (ConsoleBuffer <> nil) and (ConsoleBuffer.Count > 0) then
   begin
     fullMsg := ConsoleBuffer.Text;
-    ExtLog(sdsAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
+    SlickeLog(sdsAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
     ConsoleBuffer.Clear;
   end
   else

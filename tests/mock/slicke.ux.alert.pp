@@ -70,7 +70,7 @@ function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, de
 function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
 
 // Numeric and date inputs (headless stubs)
-function ExtIntInput(
+function SlickeIntInput(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: integer;
@@ -78,7 +78,7 @@ var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog
 ): integer;
 
-function ExtNumericInput(
+function SlickeNumericInput(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
@@ -88,7 +88,7 @@ var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog
 ): double;
 
-function ExtDatePicker(const dialogsize: TSlickeDialogSize;
+function SlickeDatePicker(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: TDateTime;
 AMinDate: TDateTime;
@@ -96,8 +96,8 @@ AMaxDate: TDateTime;
 var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog): TDateTime;
 
-function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
-function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
+function SlickeFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
+function SlickeFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont; overload;
 
 function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer; ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
@@ -173,7 +173,7 @@ begin
 end;
 
 // Headless numeric/date input stubs
-function ExtIntInput(
+function SlickeIntInput(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: integer;
@@ -182,10 +182,10 @@ const icon: SlickeUXImage = uxmtCog
 ): integer;
 begin
   // call numeric input with no min/max limits
-  Result := round(ExtNumericInput(dialogsize, ACaption, ATitle, ADesc, ADefault, FLOAT_NONE, FLOAT_NONE, false, ModalResult, icon));
+  Result := round(SlickeNumericInput(dialogsize, ACaption, ATitle, ADesc, ADefault, FLOAT_NONE, FLOAT_NONE, false, ModalResult, icon));
 end;
 
-function ExtNumericInput(
+function SlickeNumericInput(
 const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: double;
@@ -200,7 +200,7 @@ begin
   Result := ADefault;
 end;
 
-function ExtDatePicker(const dialogsize: TSlickeDialogSize;
+function SlickeDatePicker(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 ADefault: TDateTime;
 AMinDate: TDateTime;
@@ -223,7 +223,7 @@ begin
 end;
 
 
-function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont;
+function SlickeFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg, title2: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont;
 begin
   // Return a copy of the provided font for headless tests
   Result := TFont.Create;
@@ -233,10 +233,10 @@ begin
   mr := mrOk;
 end;
 
-function ExtFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont;
+function SlickeFontPicker(const dialogsize: TSlickeDialogSize; const caption, title, msg: string; AFont: TFont; const sampleText: string; var mr: TModalResult): TFont;
 begin
   // Provide fallback overload used by some callers
-  Result := ExtFontPicker(dialogsize, caption, title, msg, '', AFont, sampleText, mr);
+  Result := SlickeFontPicker(dialogsize, caption, title, msg, '', AFont, sampleText, mr);
 end;
 
 function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;

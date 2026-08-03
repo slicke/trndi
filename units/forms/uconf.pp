@@ -2539,7 +2539,7 @@ begin
   else
     title := RS_SELECT_FONT_DESC;
   end;
-  f := slicke.ux.alert.ExtFontPicker(sdsAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
+  f := slicke.ux.alert.SlickeFontPicker(sdsAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
   if mr = mrOK then
     (Sender as TLabel).Font := f;
 end;
