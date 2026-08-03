@@ -62,6 +62,18 @@ cp -r "${ROOT_DIR}/Trndi.app" macos/.
 rm -rf macos/Trndi.app/Contents/MacOS/Trndi
 cp "${ROOT_DIR}/Trndi" macos/Trndi.app/Contents/MacOS/Trndi
 
+# Extension builds link quickjs-ng and its ABI shim, which the binary resolves
+# through an @loader_path runpath — so they belong beside it. Absent for
+# "No Ext" builds, which simply never load them.
+QJS_ARCH="$(uname -m)"
+if [ "${QJS_ARCH}" = "arm64" ]; then QJS_ARCH=aarch64; fi
+QJS_DIR="${ROOT_DIR}/externals/quickjs/prebuilt/${QJS_ARCH}-darwin"
+if [ -d "${QJS_DIR}" ]; then
+  cp "${QJS_DIR}"/*.dylib macos/Trndi.app/Contents/MacOS/
+else
+  echo "WARN: no prebuilt QuickJS libraries for ${QJS_ARCH}-darwin; extensions will not load" >&2
+fi
+
 # Setup languages
 # Trndi currently looks for translations in "appdir/lang".
 # In a .app bundle, appdir resolves to Contents/MacOS, so keep lang/ there.
@@ -165,10 +177,6 @@ if [ -f "${SCRIPT_DIR}/macos_dmg_background.swift" ] && command -v swift >/dev/n
   fi
 fi
 
-# Track DMGs created during create-dmg run (some create-dmg variants may not
-# write exactly ./Trndi.dmg even if they succeed).
-MARKER_FILE="$(mktemp -t trndi_dmg_marker.XXXXXX)"
-touch "${MARKER_FILE}"
 CREATE_DMG_LOG="macos/create-dmg.log"
 CREATE_DMG_HELP_LOG="macos/create-dmg.help.log"
 rm -f "${CREATE_DMG_LOG}"
@@ -247,43 +255,6 @@ if [ ${CREATE_DMG_EXIT} -ne 0 ] || [ ! -f "Trndi.dmg" ]; then
     echo "-------------------------" >&2
     exit 1
   fi
-fi
-
-if [ ! -f "Trndi.dmg" ]; then
-  # Look for any newly created DMGs near the working directory.
-  dmg_candidates=("${(@0)$(find . macos -maxdepth 4 -type f -name "*.dmg" -newer "${MARKER_FILE}" -print0 2>/dev/null)}")
-
-  # Prefer a DMG that contains "Trndi" in the name.
-  best_candidate=""
-  for f in "${dmg_candidates[@]}"; do
-    case "${f}" in
-      *Trndi*.dmg) best_candidate="${f}"; break ;;
-    esac
-  done
-
-  # If no Trndi-named DMG found but exactly one DMG was produced, use it.
-  if [ -z "${best_candidate}" ] && [ ${#dmg_candidates[@]} -eq 1 ]; then
-    best_candidate="${dmg_candidates[1]}"
-  fi
-
-  if [ -n "${best_candidate}" ] && [ -f "${best_candidate}" ]; then
-    mv -f "${best_candidate}" "Trndi.dmg"
-  fi
-fi
-
-rm -f "${MARKER_FILE}" 2>/dev/null || true
-
-if [ ! -f "Trndi.dmg" ]; then
-  echo "ERROR: Could not find Trndi.dmg after create-dmg succeeded." >&2
-  echo "Working dir: $(pwd)" >&2
-  echo "DMG candidates in $(pwd):" >&2
-  ls -la ./*.dmg 2>/dev/null || true
-  echo "DMG candidates under $(pwd) (maxdepth 4):" >&2
-  find "$(pwd)" -maxdepth 4 -name "*.dmg" -print 2>/dev/null || true
-  echo "---- create-dmg output ----" >&2
-  cat "${CREATE_DMG_LOG}" >&2 || true
-  echo "--------------------------" >&2
-  exit 1
 fi
 
 rm -f rw*Trndi*.dmg(N)
