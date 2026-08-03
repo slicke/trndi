@@ -416,7 +416,10 @@ begin
     begin
       i := SlickeMsg(sdsAuto, 'License', 'You must accept the full terms conditions',
         'Do you agree to the terms and full license?', license,
-        uxclWhite, uxclRed, [mbYes, mbCancel, mbSlickeRead], uxmtCustom, uxscLarge);
+        uxclWhite, uxclRed,
+        // Cancel quits the app, so it never sits between the two continue actions
+        [[mbYes, mbSlickeRead, mbCancel], [mbSlickeRead, mbCancel, mbYes]],
+        uxmtCustom, uxscLarge);
       if i = mrYes then
         native.SetSetting('license.250608', true)
       else

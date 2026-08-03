@@ -97,7 +97,8 @@ begin
     DOT_ADJUST := da;
 
     if SlickeMsg(sdsAuto, RS_UX_CHANGES_SAVE, RS_UX_CHANGES_REMEMBER, RS_CHANGES_APPLY,
-      FormatFloat('0.00', da), uxclWhite, uxclRed, [mbYes, mbNo]) = mrYes then
+      FormatFloat('0.00', da), uxclWhite, uxclRed,
+      [[mbYes, mbNo], [mbNo, mbYes]]) = mrYes then
       native.SetFloatSetting('ux.dot_adjust', da);
   end;
 end;
@@ -528,7 +529,8 @@ begin
     msg := Format(RS_FORCE_REFRESH_CACHED, [secondsSinceLastCall, waitTime]);
 
     Result := slicke.UX.alert.SlickeMsg(sdsAuto, RS_REFRESH_PROMPT, msg,
-      RS_FORCE_REFRESH_DETAIL, '', uxclWhite, uxclRed, [mbRetry, mbCancel],
+      RS_FORCE_REFRESH_DETAIL, '', uxclWhite, uxclRed,
+      [[mbRetry, mbCancel], [mbCancel, mbRetry]],
       uxmtInformation);
 
     if Result = mrRetry then

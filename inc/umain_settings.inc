@@ -902,7 +902,8 @@ begin
     begin
       if IsProblematicWM then
         fBG.Hide;
-      if SlickePrompt(sdsAuto, RS_SETTINGS_SAVE,RS_SETTINGS_SAVE_DESC,[mbYes, mbNo]) <> mrYes then
+      if SlickePrompt(sdsAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC,
+        [[mbYes, mbNo], [mbNo, mbYes]]) <> mrYes then
       begin
         fBG.Show;
         Exit;

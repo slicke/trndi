@@ -21,6 +21,9 @@ type
     mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze);
   // Ordered list, mirroring the real unit: button order is preserved.
   TSlickeMsgDlgBtns = array of TSlickeMsgDlgBtn;
+  // One row per platform convention: [[win/kde], [mac/gnome]].
+  TSlickeMsgDlgBtnRows = array of TSlickeMsgDlgBtns;
+  TSlickeMsgDlgLayout = (smdlAuto, smdlAffirmativeFirst, smdlAffirmativeLast);
 
   TModalResult = Integer;
 
@@ -100,7 +103,20 @@ function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message:
 function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 function SlickeDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
 
+// Row-aware overloads, mirroring the real unit
+function SlickeUseReversedButtons: boolean;
+function SlickeResolveButtonRow(const rows: TSlickeMsgDlgBtnRows): TSlickeMsgDlgBtns;
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; const buttons: TSlickeMsgDlgBtnRows): TModalResult; overload;
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; const buttons: TSlickeMsgDlgBtnRows; const mtype: Integer): TModalResult; overload;
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; const buttons: TSlickeMsgDlgBtnRows; const mtype: Integer): TModalResult; overload;
+function SlickeMsg(const caption, title, desc, logmsg: string; dumpbg: TColor; dumptext: TColor; const buttons: TSlickeMsgDlgBtnRows; const icon: SlickeUXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor; dumptext: TColor; const buttons: TSlickeMsgDlgBtnRows; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const title, message: string; const buttons: TSlickeMsgDlgBtnRows; const mtype: Integer; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
+function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize; const caption, html: string; const buttons: TSlickeMsgDlgBtnRows; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult; overload;
+function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: string; const buttons: TSlickeMsgDlgBtnRows; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult; overload;
+
 var
+  SlickeButtonLayout: TSlickeMsgDlgLayout = smdlAuto;
   // When @true the real unit gives dialogs their own taskbar button; headless
   // stub keeps the flag so callers (umain_init.inc) compile unchanged.
   SlickeDialogsInTaskbar: boolean = false;
@@ -234,6 +250,63 @@ begin
 end;
 
 function SlickeDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer): TModalResult; overload;
+begin
+  Result := mrOk;
+end;
+
+// Row-aware stubs. The headless build has no desktop, so the detection always
+// reports the affirmative-first convention unless SlickeButtonLayout forces it.
+function SlickeUseReversedButtons: boolean;
+begin
+  Result := SlickeButtonLayout = smdlAffirmativeLast;
+end;
+
+function SlickeResolveButtonRow(const rows: TSlickeMsgDlgBtnRows): TSlickeMsgDlgBtns;
+begin
+  if Length(rows) = 0 then
+    Exit(nil);
+  if (Length(rows) > 1) and SlickeUseReversedButtons then
+    Result := rows[1]
+  else
+    Result := rows[0];
+end;
+
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; const buttons: TSlickeMsgDlgBtnRows): TModalResult;
+begin
+  Result := mrOk;
+end;
+
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const title, message: string; const buttons: TSlickeMsgDlgBtnRows; const mtype: Integer): TModalResult;
+begin
+  Result := mrOk;
+end;
+
+function SlickeDialog(const dialogsize: TSlickeDialogSize; const header, title, message: string; const buttons: TSlickeMsgDlgBtnRows; const mtype: Integer): TModalResult;
+begin
+  Result := mrOk;
+end;
+
+function SlickeMsg(const caption, title, desc, logmsg: string; dumpbg: TColor; dumptext: TColor; const buttons: TSlickeMsgDlgBtnRows; const icon: SlickeUXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult;
+begin
+  Result := mrOk;
+end;
+
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor; dumptext: TColor; const buttons: TSlickeMsgDlgBtnRows; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult;
+begin
+  Result := mrOk;
+end;
+
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const title, message: string; const buttons: TSlickeMsgDlgBtnRows; const mtype: Integer; extra: LongInt = 0; scale: Extended = 1): TModalResult;
+begin
+  Result := mrOk;
+end;
+
+function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize; const caption, html: string; const buttons: TSlickeMsgDlgBtnRows; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
+begin
+  Result := mrOk;
+end;
+
+function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: string; const buttons: TSlickeMsgDlgBtnRows; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;

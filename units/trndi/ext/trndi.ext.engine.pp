@@ -804,7 +804,7 @@ end;
 function TTrndiExtEngine.uxResponse(const dialogType: TMsgDlgType;
 const msg: string; const titleadd: string): integer;
 var
-  btns: TSlickeMsgDlgBtns;
+  btns: TSlickeMsgDlgBtnRows;
   header, title: string;
 begin
   title := titleadd;
@@ -812,31 +812,31 @@ begin
   case dialogType of
   mtWarning:
   begin
-    btns := [mbOK];
+    btns := [[mbOK]];
     title := Format('[%s] %s', [RS_EXT_WARN, title]);
     header := RS_EXT_WARN;
   end;
   mtError:
   begin
-    btns := [mbAbort];
+    btns := [[mbAbort]];
     title := Format('[%s] %s', [sExtErr, title]);
     header := sExtErr;
   end;
   mtInformation:
   begin
-    btns := [mbOK];
+    btns := [[mbOK]];
     title := Format('[%s] %s', [RS_EXT_MSG, title]);
     header := RS_EXT_MSG;
   end;
   mtConfirmation:
   begin
-    btns := [mbYes, mbNo];
+    btns := [[mbYes, mbNo], [mbNo, mbYes]];
     title := Format('[%s] %s', [RS_EXT_CONFIRM, title]);
     header := RS_EXT_CONFIRM;
   end;
   else
   begin
-    btns := [mbOK];
+    btns := [[mbOK]];
     title := Format('[%s] %s', [RS_EXT_EVENT, title]);
     header := RS_EXT_EVENT;
   end;

@@ -269,6 +269,29 @@ TSlickeMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
       parameter) to get the dialog's default buttons. }
 TSlickeMsgDlgBtns = array of TSlickeMsgDlgBtn;
 
+  {**
+    One button row per platform convention, written as a nested list:
+    @code([[mbOK, mbCancel], [mbCancel, mbOK]]).
+
+    The first row is used where the affirmative button comes first (Windows, KDE),
+    the second where it comes last (macOS, GNOME) — see @link(SlickeUseReversedButtons).
+    A single-element list @code([[mbOK, mbCancel]]) is used everywhere, and is
+    equivalent to passing the flat list @code([mbOK, mbCancel]).
+
+    @remarks A flat @link(TSlickeMsgDlgBtns) is never reordered: it means "show
+      exactly this, everywhere". Pass a nested list when the dialog should follow
+      the local convention.
+  }
+TSlickeMsgDlgBtnRows = array of TSlickeMsgDlgBtns;
+
+  {**
+    Which button-order convention dialogs follow.
+    @value smdlAuto Detect from the platform/desktop; @seealso(SlickeUseReversedButtons)
+    @value smdlAffirmativeFirst Affirmative button first, dismissive last (Windows, KDE).
+    @value smdlAffirmativeLast Affirmative button last (macOS, GNOME).
+  }
+TSlickeMsgDlgLayout = (smdlAuto, smdlAffirmativeFirst, smdlAffirmativeLast);
+
   {** Mapping of @link(TSlickeMsgDlgBtn) to localized captions. }
 ButtonLangs = array[TSlickeMsgDlgBtn] of string;
 
@@ -465,7 +488,83 @@ dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1): TModalResult;
+scale: single = 1): TModalResult; overload;
+
+{**
+  @name Platform-ordered button rows
+  @desc
+  Overloads taking a @link(TSlickeMsgDlgBtnRows) instead of a single button list, so a
+  dialog can follow the local convention: @code([[mbOK, mbCancel], [mbCancel, mbOK]])
+  shows the first row on Windows/KDE and the second on macOS/GNOME. Everything else
+  behaves exactly like the matching flat-list version.
+}
+
+  {** Row-aware @link(SlickeDialog). }
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
+const title, message: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtOK): TModalResult; overload;
+
+  {** Row-aware @link(SlickeDialog) with a Lazarus message type. }
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
+const title, message: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const mtype: TMsgDlgType): TModalResult; overload;
+
+  {** Row-aware @link(SlickeDialog) with a separate window caption. }
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
+const header, title, message: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const mtype: TMsgDlgType): TModalResult; overload;
+
+  {** Row-aware @link(SlickeMsg). }
+function SlickeMsg(
+const caption, title, desc, logmsg: string;
+dumpbg: TColor;
+dumptext: TColor;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtCog;
+scale: single = 1): TModalResult; overload;
+
+  {** Row-aware @link(SlickeMsg) with a layout preset. }
+function SlickeMsg(const dialogsize: TSlickeDialogSize;
+const caption, title, desc, logmsg: string;
+dumpbg: TColor;
+dumptext: TColor;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtCog;
+scale: single = 1): TModalResult; overload;
+
+  {** Row-aware HTML-only @link(SlickeMsg). }
+function SlickeMsg(const dialogsize: TSlickeDialogSize;
+const caption, html: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtCog;
+scale: single = 1; hpadding: single = 1): TModalResult; overload;
+
+  {** Row-aware @link(SlickeHTMLMsg). }
+function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
+const caption, html: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtInformation;
+scale: single = 1): TModalResult; overload;
+
+  {** Row-aware @link(SlickePrompt). }
+function SlickePrompt(const dialogsize: TSlickeDialogSize;
+const caption, text: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtInformation;
+scale: single = 1): TModalResult; overload;
+
+  {** Row-aware @link(ExtMessage). }
+function ExtMessage(const dialogsize: TSlickeDialogSize;
+const caption, title, desc, logmsg: string;
+isHTML: boolean;
+dumpbg: TColor;
+dumptext: TColor;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtCog;
+scale: single = 1): TModalResult; overload;
 
   {**
     Convenience wrapper for @link(SlickeMsg) that shows a message and a log/dump with an OK button.
@@ -711,11 +810,199 @@ langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXR
       which keeps them off the taskbar as transient windows of the initiator.
       Set this before opening a dialog. }
   SlickeDialogsInTaskbar: boolean = false;
+  {** Button-order convention used to pick a row from a @link(TSlickeMsgDlgBtnRows).
+      Defaults to @code(smdlAuto) (detect from the platform/desktop); set it to force
+      one convention, e.g. when testing the other platform's layout. }
+  SlickeButtonLayout: TSlickeMsgDlgLayout = smdlAuto;
+
+  {**
+    @returns @true when this platform puts the affirmative button last (macOS, GNOME),
+      @false when it comes first (Windows, KDE, Haiku).
+    @remarks Honours @link(SlickeButtonLayout) and the @code(TRNDI_BUTTON_LAYOUT)
+      environment variable (@code(win) / @code(mac) / @code(auto)); the desktop sniff
+      behind @code(smdlAuto) is evaluated once and cached.
+  }
+function SlickeUseReversedButtons: boolean;
+
+  {**
+    Pick the row matching this platform's convention.
+    @param rows Per-convention button rows; @seealso(TSlickeMsgDlgBtnRows)
+    @returns The row for this platform, or the only row when a single one is supplied.
+  }
+function SlickeResolveButtonRow(const rows: TSlickeMsgDlgBtnRows): TSlickeMsgDlgBtns;
 
 implementation
 {$ifdef X_WIN}
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
 {$endif}
+
+var
+  { Resolved once — the desktop cannot change under a running process. }
+  ButtonLayoutCache  : TSlickeMsgDlgLayout = smdlAuto;
+  ButtonLayoutCached : boolean = false;
+
+{ Detect the local button-order convention: macOS and the GNOME-derived desktops
+  put the affirmative button last, Windows/KDE/Haiku put it first. }
+function DetectButtonLayout: TSlickeMsgDlgLayout;
+var
+  s: string;
+begin
+  // An explicit override wins, so a mis-detected desktop is fixable without a rebuild.
+  // Qualified: the Windows unit exports a different GetEnvironmentVariable.
+  s := LowerCase(Trim(SysUtils.GetEnvironmentVariable('TRNDI_BUTTON_LAYOUT')));
+  if (s = 'win') or (s = 'kde') then
+    Exit(smdlAffirmativeFirst);
+  if (s = 'mac') or (s = 'gnome') then
+    Exit(smdlAffirmativeLast);
+
+  {$if defined(X_MAC)}
+  Result := smdlAffirmativeLast;
+  {$elseif defined(X_LINUXBSD)}
+  s := LowerCase(Trim(SysUtils.GetEnvironmentVariable('XDG_CURRENT_DESKTOP') + ' ' +
+    SysUtils.GetEnvironmentVariable('DESKTOP_SESSION') + ' ' +
+    SysUtils.GetEnvironmentVariable('XDG_SESSION_DESKTOP')));
+  if (Pos('gnome', s) > 0) or (Pos('cinnamon', s) > 0) or (Pos('budgie', s) > 0) or
+    (Pos('pantheon', s) > 0) or (Pos('unity', s) > 0) then
+    Result := smdlAffirmativeLast
+  else
+    Result := smdlAffirmativeFirst;
+  {$else}
+  Result := smdlAffirmativeFirst;
+  {$endif}
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeUseReversedButtons: boolean;
+begin
+  if SlickeButtonLayout <> smdlAuto then
+    Exit(SlickeButtonLayout = smdlAffirmativeLast);
+
+  if not ButtonLayoutCached then
+  begin
+    ButtonLayoutCache := DetectButtonLayout;
+    ButtonLayoutCached := true;
+  end;
+  Result := ButtonLayoutCache = smdlAffirmativeLast;
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeResolveButtonRow(const rows: TSlickeMsgDlgBtnRows): TSlickeMsgDlgBtns;
+begin
+  if Length(rows) = 0 then
+    Exit(nil);
+  // A single row means "same everywhere"; a second row is the reversed-convention one.
+  if (Length(rows) > 1) and SlickeUseReversedButtons then
+    Result := rows[1]
+  else
+    Result := rows[0];
+end;
+
+{ ---- Platform-ordered button rows -------------------------------------------
+  Each of these resolves the row for the local convention and hands off to the
+  matching flat-list version; no layout logic lives here. }
+
+{** See interface docs for behavior and parameters. }
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
+const title, message: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtOK): TModalResult;
+begin
+  Result := SlickeDialog(dialogsize, title, message,
+    SlickeResolveButtonRow(buttons), icon);
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
+const title, message: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const mtype: TMsgDlgType): TModalResult;
+begin
+  Result := SlickeDialog(dialogsize, title, message,
+    SlickeResolveButtonRow(buttons), mtype);
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeDialog(const dialogsize: TSlickeDialogSize;
+const header, title, message: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const mtype: TMsgDlgType): TModalResult;
+begin
+  Result := SlickeDialog(dialogsize, header, title, message,
+    SlickeResolveButtonRow(buttons), mtype);
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeMsg(
+const caption, title, desc, logmsg: string;
+dumpbg: TColor;
+dumptext: TColor;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtCog;
+scale: single = 1): TModalResult;
+begin
+  Result := SlickeMsg(caption, title, desc, logmsg, dumpbg, dumptext,
+    SlickeResolveButtonRow(buttons), icon, scale);
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeMsg(const dialogsize: TSlickeDialogSize;
+const caption, title, desc, logmsg: string;
+dumpbg: TColor;
+dumptext: TColor;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtCog;
+scale: single = 1): TModalResult;
+begin
+  Result := SlickeMsg(dialogsize, caption, title, desc, logmsg, dumpbg, dumptext,
+    SlickeResolveButtonRow(buttons), icon, scale);
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeMsg(const dialogsize: TSlickeDialogSize;
+const caption, html: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtCog;
+scale: single = 1; hpadding: single = 1): TModalResult;
+begin
+  Result := SlickeMsg(dialogsize, caption, html,
+    SlickeResolveButtonRow(buttons), icon, scale, hpadding);
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
+const caption, html: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtInformation;
+scale: single = 1): TModalResult;
+begin
+  Result := SlickeHTMLMsg(dialogsize, caption, html,
+    SlickeResolveButtonRow(buttons), icon, scale);
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickePrompt(const dialogsize: TSlickeDialogSize;
+const caption, text: string;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtInformation;
+scale: single = 1): TModalResult;
+begin
+  Result := SlickePrompt(dialogsize, caption, text,
+    SlickeResolveButtonRow(buttons), icon, scale);
+end;
+
+{** See interface docs for behavior and parameters. }
+function ExtMessage(const dialogsize: TSlickeDialogSize;
+const caption, title, desc, logmsg: string;
+isHTML: boolean;
+dumpbg: TColor;
+dumptext: TColor;
+const buttons: TSlickeMsgDlgBtnRows;
+const icon: SlickeUXImage = uxmtCog;
+scale: single = 1): TModalResult;
+begin
+  Result := ExtMessage(dialogsize, caption, title, desc, logmsg, isHTML,
+    dumpbg, dumptext, SlickeResolveButtonRow(buttons), icon, scale);
+end;
 
 {$ifdef X_MAC}
 function MacNSColorToTColor(const AColor: NSColor; const Fallback: TColor): TColor;
@@ -1490,18 +1777,32 @@ begin
   Result := Btn;
 end;
 
-{ Position two buttons centered below a control and set the dialog's client height. }
+{ Position two buttons centered below a control and set the dialog's client height.
+  Every caller passes (accept, reject); on macOS/GNOME that pair is swapped so the
+  input dialogs follow the same convention as the message dialogs. }
 procedure CenterButtons(Dialog: TDialogForm; Btn1, Btn2: TWinControl;
   AboveBottom: integer; const size: TSlickeDialogSize; Padding: integer);
 var
   total: integer;
+  first, second: TWinControl;
 begin
-  Btn1.Top := AboveBottom + ifthen(size = sdsBig, Padding * 3, Padding * 2);
-  Btn2.Top := Btn1.Top;
-  total := Btn1.Width + Padding + Btn2.Width;
-  Btn1.Left := (Dialog.ClientWidth - total) div 2;
-  Btn2.Left := Btn1.Left + Btn1.Width + Padding;
-  Dialog.ClientHeight := Btn1.Top + Btn1.Height + Padding;
+  if SlickeUseReversedButtons then
+  begin
+    first  := Btn2;
+    second := Btn1;
+  end
+  else
+  begin
+    first  := Btn1;
+    second := Btn2;
+  end;
+
+  first.Top := AboveBottom + ifthen(size = sdsBig, Padding * 3, Padding * 2);
+  second.Top := first.Top;
+  total := first.Width + Padding + second.Width;
+  first.Left := (Dialog.ClientWidth - total) div 2;
+  second.Left := first.Left + first.Width + Padding;
+  Dialog.ClientHeight := first.Top + first.Height + Padding;
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -2320,7 +2621,8 @@ const caption, desc: string;
 const micon: SlickeUXImage = uxmtConfirmation;
 const scale: single = 1): boolean;
 begin
-  result := SlickeMsg(dialogsize,caption, desc, [mbYes, mbNo], micon, scale) = mrYes;
+  result := SlickeMsg(dialogsize, caption, desc,
+    [[mbYes, mbNo], [mbNo, mbYes]], micon, scale) = mrYes;
 end;
 
 function SlickeMsg(
@@ -3746,7 +4048,7 @@ end;
 
 procedure TDialogForm.HTMLHotClick(Sender: TObject);
 begin
-  if SlickePrompt(sdsAuto, sURLTitle, sURL,[mbYes, mbNo]) = mrYes then
+  if SlickePrompt(sdsAuto, sURLTitle, sURL, [[mbYes, mbNo], [mbNo, mbYes]]) = mrYes then
     OpenURL((sender as TIpHtmlPanel).HotURL);
 end;
 
