@@ -19,7 +19,8 @@ type
 
   TSlickeMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
     mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze);
-  TSlickeMsgDlgBtns = set of TSlickeMsgDlgBtn;
+  // Ordered list, mirroring the real unit: button order is preserved.
+  TSlickeMsgDlgBtns = array of TSlickeMsgDlgBtn;
 
   TModalResult = Integer;
 
@@ -52,15 +53,15 @@ const
 
 procedure SlickeMessage(const title, message: string; const icon: SlickeUXImage = 0; sender: TForm = nil);
 
-function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize; const caption, html: string; buttons: TSlickeMsgDlgBtns = [mbOK]; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
+function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize; const caption, html: string; buttons: TSlickeMsgDlgBtns = nil; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
 
-function SlickeMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = [mbAbort]; const icon: SlickeUXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
-function SlickeMsg(const dialogsize: TSlickeDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = [mbAbort]; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
+function SlickeMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = nil; const icon: SlickeUXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = nil; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
 function SlickeMsg(const dialogsize: TSlickeDialogSize; const title, message: string; buttons: TSlickeMsgDlgBtns; const mtype: Integer; extra: LongInt = 0; scale: Extended = 1): TModalResult; overload;
 function SlickeMsgYesNo(const caption, desc: string; const micon: SlickeUXImage = uxmtInformation): boolean; overload;
 function SlickeMsgYesNo(const dialogsize: TSlickeDialogSize; const caption, desc: string; const micon: SlickeUXImage = uxmtInformation): boolean; overload;
 
-function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: string; buttons: TSlickeMsgDlgBtns = [mbOK]; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
+function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: string; buttons: TSlickeMsgDlgBtns = nil; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
 function SlickeInput(const dialogsize: TSlickeDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
 function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false): LongInt; overload;
 function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
@@ -115,17 +116,17 @@ procedure SlickeMessage(const title, message: string; const icon: SlickeUXImage 
 begin
   // No-op for headless tests
 end;
-function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize; const caption, html: string; buttons: TSlickeMsgDlgBtns = [mbOK]; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
+function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize; const caption, html: string; buttons: TSlickeMsgDlgBtns = nil; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;
 
-function SlickeMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = [mbAbort]; const icon: SlickeUXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult;
+function SlickeMsg(const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = nil; const icon: SlickeUXImage = uxmtInformation; extra: LongInt = 0; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;
 
-function SlickeMsg(const dialogsize: TSlickeDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = [mbAbort]; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult;
+function SlickeMsg(const dialogsize: TSlickeDialogSize; const caption, title, desc, logmsg: string; dumpbg: TColor = uxclWhite; dumptext: TColor = uxclRed; buttons: TSlickeMsgDlgBtns = nil; const mtype: Integer = 0; extra: LongInt = 0; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;
@@ -144,7 +145,7 @@ begin
   Result := True;
 end;
 
-function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: string; buttons: TSlickeMsgDlgBtns = [mbOK]; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
+function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: string; buttons: TSlickeMsgDlgBtns = nil; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1): TModalResult;
 begin
   Result := mrOk;
 end;
