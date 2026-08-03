@@ -1,5 +1,5 @@
 (*
- * slicke.ux.alert.pas
+ * slicke.ux.alert.pp
  * Adaptive Lazarus/FPC dialogs and input helpers (emoji icons, dark mode, touch-aware layout).
  * Copyright (c) Björn Lindh
  * GitHub: https://github.com/slicke/trndi
@@ -19,7 +19,7 @@
   The public API centers around:
   - @link(SlickeMessage) for simple, one-button informational messages.
   - @link(SlickeDialog) overloads for message dialogs with button sets or Lazarus TMsgDlgType mapping.
-  - @link(SlickeMsg), @link(SlickeLog), @link(ExtError), @link(SlickeSucc), @link(SlickeSuccEx) for rich dialogs with dumps/logs.
+  - @link(SlickeMsg), @link(SlickeLog), @link(SlickeError), @link(SlickeSucc), @link(SlickeSuccEx) for rich dialogs with dumps/logs.
   - @link(SlickeInput), @link(SlickePasswordInput), @link(SlickeNumericInput), @link(SlickeIntInput), @link(SlickeList), @link(SlickeTable) for data entry.
   - @link(SlickeDatePicker) for date selection with optional min/max constraints.
 
@@ -57,9 +57,6 @@ resourcestring
 dlgErr      = 'An error occurred while creating a message dialog';
 sMsgTitle   = 'Message';
 sSuccTitle  = 'Information';
-sExtTitle   = 'Extension error';
-sExtErr     = 'Error occurred in extension';
-sErr        = 'Script execution failed';
 sErrTitle   = 'Error';
 sErrMsg     = 'An error occurred';
 sURLTitle   = 'Open external link?';
@@ -604,37 +601,14 @@ const icon: SlickeUXImage = uxmtCog;
 scale: integer = 1): TModalResult;
 
   {**
-    Show an error dialog with a short message and an error dump in the log panel.
-    @param dialogsize Layout preset.
-    @param msg Short explanation shown as description.
-    @param error Detailed error text shown in the log panel.
-    @param icon Emoji icon (default gear).
-    @returns Modal result (default is [mbAbort]).
-  }
-function ExtError(const dialogsize: TSlickeDialogSize;
-const msg, error: string;
-const icon: SlickeUXImage = uxmtCog): TModalResult; overload;
-
-  {**
-    Show an error dialog with standard captions and the given error in the log panel.
-    @param dialogsize Layout preset.
-    @param error Error text to display in log panel.
-    @param icon Emoji icon (default gear).
-    @returns Modal result (default is [mbAbort]).
-  }
-function ExtError(const dialogsize: TSlickeDialogSize;
-const error: string;
-const icon: SlickeUXImage = uxmtCog): TModalResult; overload;
-
-  {**
     Show a general error dialog with a short message and an error dump in the log panel.
     @param dialogsize Layout preset.
     @param msg Short explanation shown as description.
     @param error Detailed error text shown in the log panel.
     @param icon Emoji icon (default warning).
     @returns Modal result (default is [mbAbort]).
-    @remarks Use this for application errors. @link(ExtError) is the extension-engine
-    variant and hardcodes captions naming the extension subsystem.
+    @remarks Captions are generic; callers needing subsystem-specific wording
+    should wrap @link(SlickeMsg) directly rather than extend this.
   }
 function SlickeError(const dialogsize: TSlickeDialogSize;
 const msg, error: string;
@@ -3492,38 +3466,6 @@ begin
   finally
     Dialog.Free;
   end;
-end;
-
-{** See interface docs for behavior and parameters. }
-function ExtError(const dialogsize: TSlickeDialogSize;
-const msg, error: string;
-const icon: SlickeUXImage = uxmtCog): TModalResult;
-begin
-  Result := SlickeMsg(dialogsize,
-    sExtErr,  // caption
-    sErr,     // title
-    msg,      // description
-    error,    // log/dump text
-    uxclWhite, // dump background color
-    uxclRed, // dump text color
-    [mbAbort], // buttons
-    icon);
-end;
-
-{** See interface docs for behavior and parameters. }
-function ExtError(const dialogsize: TSlickeDialogSize;
-const error: string;
-const icon: SlickeUXImage = uxmtCog): TModalResult;
-begin
-  Result := SlickeMsg(dialogsize,
-    sExtErr,   // caption
-    sExtTitle, // title
-    sErr,      // description
-    error,     // log
-    uxclWhite,
-    uxclRed,
-    [mbAbort],
-    icon);
 end;
 
 {** See interface docs for behavior and parameters. }
