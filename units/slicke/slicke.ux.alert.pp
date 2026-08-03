@@ -262,8 +262,12 @@ TSlickeDialogSize = (sdsNormal = 0, sdsBig = 1, sdsAuto = 3, sdsOnForm = 4, sdsM
 TSlickeMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
   mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze);
 
-  {** A set of @link(TSlickeMsgDlgBtn) to specify multiple buttons. }
-TSlickeMsgDlgBtns = set of TSlickeMsgDlgBtn;
+  {** An ordered list of @link(TSlickeMsgDlgBtn) specifying which buttons to show.
+      Written as @code([mbClose, mbCancel]) exactly like a set, but — unlike a set —
+      the order is preserved: buttons are laid out left to right in the order given,
+      and the same button may appear more than once. Pass @code(nil) (or omit the
+      parameter) to get the dialog's default buttons. }
+TSlickeMsgDlgBtns = array of TSlickeMsgDlgBtn;
 
   {** Mapping of @link(TSlickeMsgDlgBtn) to localized captions. }
 ButtonLangs = array[TSlickeMsgDlgBtn] of string;
@@ -292,7 +296,7 @@ procedure SlickeMessage(const title, message: string; const icon: SlickeUXImage 
     @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
     @param title Title text displayed above @code(message).
     @param message Description/body text.
-    @param buttons Button set to display.
+    @param buttons Buttons to display, in left-to-right order.
     @param icon Emoji icon; defaults to @code(uxmtOK).
     @returns Lazarus modal result corresponding to the button clicked.
   }
@@ -306,7 +310,7 @@ const icon: SlickeUXImage = uxmtOK): TModalResult; overload;
     @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
     @param title Title text displayed above @code(message).
     @param message Description/body text.
-    @param buttons Button set to display.
+    @param buttons Buttons to display, in left-to-right order.
     @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
     @returns Lazarus modal result corresponding to the button clicked.
   }
@@ -321,7 +325,7 @@ const mtype: TMsgDlgType): TModalResult; overload;
     @param header Window caption (top title bar).
     @param title Title text (bold, in content).
     @param message Description/body text.
-    @param buttons Button set to display.
+    @param buttons Buttons to display, in left-to-right order.
     @param mtype Lazarus message dialog type; maps to a reasonable emoji icon.
     @returns Lazarus modal result corresponding to the button clicked.
   }
@@ -368,7 +372,7 @@ const scale: single = 1): boolean;
   @param logmsg Optional log/dump text displayed in a fixed panel at the bottom; pass empty to hide.
   @param dumpbg Background color for log/dump panel (ARGB).
   @param dumptext Text color for log/dump panel (ARGB).
-  @param buttons Button set to display (default [mbAbort]).
+  @param buttons Buttons to display, in left-to-right order (default [mbAbort]).
   @param icon Emoji icon to render.
   @param scale Optional log panel vertical scale multiplier (for big outputs).
   @returns Lazarus modal result corresponding to the button clicked.
@@ -377,7 +381,7 @@ function SlickeMsg(
 const caption, title, desc, logmsg: string;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TSlickeMsgDlgBtns = [mbAbort];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
 scale: single = 1): TModalResult;
 
@@ -390,7 +394,7 @@ scale: single = 1): TModalResult;
     @param logmsg Optional log/dump text displayed in a fixed panel at the bottom; pass empty to hide.
     @param dumpbg Background color for log/dump panel (ARGB).
     @param dumptext Text color for log/dump panel (ARGB).
-    @param buttons Button set to display (default [mbAbort]).
+    @param buttons Buttons to display, in left-to-right order (default [mbAbort]).
     @param icon Emoji icon to render.
     @param scale Optional log panel vertical scale multiplier (for big outputs).
     @returns Lazarus modal result corresponding to the button clicked.
@@ -399,7 +403,7 @@ function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TSlickeMsgDlgBtns = [mbAbort];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
 scale: single = 1): TModalResult;
 
@@ -408,7 +412,7 @@ scale: single = 1): TModalResult;
     @param dialogsize Layout preset.
     @param caption Window caption.
     @param html HTML content to display in the dialog.
-    @param buttons Button set to display.
+    @param buttons Buttons to display, in left-to-right order (default [mbAbort]).
     @param icon Emoji icon (default gear).
     @param scale Content height multiplier (default 1).
     @returns Modal result based on user button selection.
@@ -416,7 +420,7 @@ scale: single = 1): TModalResult;
   }
 function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
-buttons: TSlickeMsgDlgBtns = [mbAbort];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
 scale: single = 1; hpadding: single = 1): TModalResult; overload;
 
@@ -425,7 +429,7 @@ scale: single = 1; hpadding: single = 1): TModalResult; overload;
   }
 function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
-buttons: TSlickeMsgDlgBtns = [mbOK];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
 scale: single = 1): TModalResult;
 
@@ -434,7 +438,7 @@ scale: single = 1): TModalResult;
   }
 function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
-buttons: TSlickeMsgDlgBtns = [mbOK];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
 scale: single = 1): TModalResult;
 
@@ -448,7 +452,7 @@ scale: single = 1): TModalResult;
     @param isHTML If @true, logmsg is interpreted as HTML data using TIpHtmlPanel; otherwise plain text with TMemo.
     @param dumpbg Background color for log panel (default white).
     @param dumptext Text color for log panel (default red, ignored if HTML is used).
-    @param buttons Set of buttons to display.
+    @param buttons Buttons to display, in left-to-right order (default [mbAbort]).
     @param icon Emoji icon (default gear).
     @param scale Log panel vertical scale multiplier.
     @returns Modal result based on user button selection.
@@ -459,7 +463,7 @@ const caption, title, desc, logmsg: string;
 isHTML: boolean;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TSlickeMsgDlgBtns = [mbAbort];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
 scale: single = 1): TModalResult;
 
@@ -2323,10 +2327,14 @@ function SlickeMsg(
 const caption, title, desc, logmsg: string;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TSlickeMsgDlgBtns = [mbAbort];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
 scale: single = 1): TModalResult;
 begin
+  // A dynamic array can only default to nil, so restore this function's own
+  // documented default before forwarding.
+  if Length(buttons) = 0 then
+    buttons := [mbAbort];
   result := SlickeMsg(sdsAuto, caption, title, desc, logmsg, dumpbg, dumptext, buttons, icon, scale);
 end;
 
@@ -2336,11 +2344,13 @@ const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TSlickeMsgDlgBtns = [mbAbort];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
 scale: single = 1
 ): TModalResult;
 begin
+  if Length(buttons) = 0 then
+    buttons := [mbAbort];
   // Call ExtMessage with isHTML = false for backward compatibility
   Result := ExtMessage(dialogsize, caption, title, desc, logmsg, false,
     dumpbg, dumptext, buttons, icon, scale);
@@ -2349,10 +2359,12 @@ end;
 
 function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
-buttons: TSlickeMsgDlgBtns = [mbOK];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
 scale: single = 1): TModalResult;
 begin
+  if Length(buttons) = 0 then
+    buttons := [mbOK];
   result := SlickeMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons,icon, scale);
 end;
 
@@ -2360,11 +2372,13 @@ end;
 function SlickeHTMLMsg(
 const dialogsize: TSlickeDialogSize;
 const caption, html: string;
-buttons: TSlickeMsgDlgBtns = [mbOK];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
 scale: single = 1
 ): TModalResult;
 begin
+  if Length(buttons) = 0 then
+    buttons := [mbOK];
   result := SlickeMsg(dialogsize,caption,html,buttons,icon,scale);
 end;
 
@@ -2372,7 +2386,7 @@ end;
 function SlickeMsg(
 const dialogsize: TSlickeDialogSize;
 const caption, html: string;
-buttons: TSlickeMsgDlgBtns = [mbAbort];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
 scale: single = 1;
 hpadding: single = 1
@@ -2431,10 +2445,10 @@ function DecorateLinks(const Src, LinkColorHtml: string): string;
     end;
   end;
 begin
-  // An empty set would leave OkButton unassigned when the dialog height is
-  // computed below; fall back to a lone OK button.
-  if buttons = [] then
-    buttons := [mbOK];
+  // An empty list would leave OkButton unassigned when the dialog height is
+  // computed below; fall back to this function's documented default.
+  if Length(buttons) = 0 then
+    buttons := [mbAbort];
   bgcol := getBackground;
   size := GeTSlickeDialogSize(dialogsize);
 
@@ -2521,9 +2535,7 @@ begin
     HtmlPanel.Height := contentHeight;
 
     // Count buttons
-    btnCount := 0;
-    for mr in buttons do
-      Inc(btnCount);
+    btnCount := Length(buttons);
 
     ButtonActualWidth := ifthen((size = sdsBig) , btnWidth * 2, btnWidth);
     totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
@@ -2571,7 +2583,7 @@ const caption, title, desc, logmsg: string;
 isHTML: boolean;
 dumpbg: TColor = uxclWhite;
 dumptext: TColor = uxclRed;
-buttons: TSlickeMsgDlgBtns = [mbAbort];
+buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
 scale: single = 1
 ): TModalResult;
@@ -2604,10 +2616,10 @@ var
   sysfont, htmlstr: string;
   hpd: TIpHttpDataProvider;
 begin
-  // An empty set would leave OkButton unassigned when the button panel height
-  // is computed below; fall back to a lone OK button.
-  if buttons = [] then
-    buttons := [mbOK];
+  // An empty list would leave OkButton unassigned when the button panel height
+  // is computed below; fall back to this function's documented default.
+  if Length(buttons) = 0 then
+    buttons := [mbAbort];
   bgcol := getBackground;
   size := GeTSlickeDialogSize(dialogsize);
 
@@ -2990,9 +3002,7 @@ begin
       ButtonActualWidth := btnWidth;
     end;
 
-    btnCount := 0;
-    for mr in buttons do
-      Inc(btnCount);
+    btnCount := Length(buttons);
     if btnCount = 0 then
       btnCount := 1;
 
