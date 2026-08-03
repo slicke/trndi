@@ -1247,7 +1247,7 @@ begin
     speakReading;
   'R', 'r':
     if slicke.UX.alert.SlickeDialog(sdsAuto, RS_REFRESH_PROMPT, RS_FORCE_REFRESH,
-      [mbYes, mbNo]) = mrYes then
+      [[mbYes, mbNo], [mbNo, mbYes]]) = mrYes then
       miForce.Click;
   'I', 'i':
     miSettings.Click;
@@ -1325,8 +1325,9 @@ begin
   if not firstboot then
     if self.Showing then
     begin
+      // macOS order: alternate action left, Cancel beside the default, default last
       mr := SlickeDialog(sdsAuto, RS_QUIT_MINIMIZE_TITLE, RS_QUIT_MINIMIZE,
-        [mbClose, mbSlickeMinimize, mbCancel]);
+        [mbClose, mbCancel, mbSlickeMinimize]);
       case mr of
       mrClose:
       begin
@@ -1374,7 +1375,8 @@ begin
   CloseAction := caFree;
   {$else}
   if not firstboot then
-    if SlickeDialog(sdsAuto, RS_QUIT_CAPTION, RS_QUIT_MSG, [mbYes, mbNo], uxmtOK) = mrNo then
+    if SlickeDialog(sdsAuto, RS_QUIT_CAPTION, RS_QUIT_MSG,
+      [[mbYes, mbNo], [mbNo, mbYes]], uxmtOK) = mrNo then
     begin
       FShuttingDown := false;
       CloseAction := caNone;

@@ -1333,7 +1333,8 @@ end;
 
 procedure TfConf.bDeltaMaxHelpClick({%H-}Sender: TObject);
 begin
-  if SlickeDialog(sdsAuto,'Delta', RS_DELTA_MAX,[mbOK, mbSlickeRead]) <> mrOK then
+  if SlickeDialog(sdsAuto,'Delta', RS_DELTA_MAX,
+    [[mbOK, mbSlickeRead], [mbSlickeRead, mbOK]]) <> mrOK then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md');
 end;
 
@@ -1648,7 +1649,8 @@ begin
   if url <> '' then
   begin
     if SlickeMsg(sdsAuto, RS_NOTIFICATIONS, RS_NOTIFY_TITLE,
-      Format(RS_NOTIFY_TXT, [ns]), '', uxclWhite, uxclRed, [mbOK, mbSlickeRead],
+      Format(RS_NOTIFY_TXT, [ns]), '', uxclWhite, uxclRed,
+      [[mbOK, mbSlickeRead], [mbSlickeRead, mbOK]],
       uxmtCustom, 0) <> mrOk then
       OpenURL(url);
   end
@@ -2126,7 +2128,8 @@ begin
       s := Format(RS_NEWVER_PR, [rn])
     else
       s := Format(RS_NEWVER, [rn]);
-    if SlickeDialog(sdsAuto, RS_NEWVER_CAPTION, s, [mbYes, mbNo], mtInformation) = mrYes then
+    if SlickeDialog(sdsAuto, RS_NEWVER_CAPTION, s,
+      [[mbYes, mbNo], [mbNo, mbYes]], mtInformation) = mrYes then
       OpenURL(r);
   end
   else begin
@@ -2153,7 +2156,8 @@ end;
 procedure TfConf.bWebAPIClick(Sender: TObject);
 begin
 
-  if SlickeHTMLMsg(sdsAuto,'WebAPI', RS_WEBAPI, [mbOK, mbSlickeRead], uxmtOK) <> mrOk then
+  if SlickeHTMLMsg(sdsAuto,'WebAPI', RS_WEBAPI,
+    [[mbOK, mbSlickeRead], [mbSlickeRead, mbOK]], uxmtOK) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/doc/WebAPI.md');
 end;
 
@@ -2504,7 +2508,8 @@ const
     '- This app may contain bugs or errors that could display incorrect data' + sHTMLLineBreak + sHTMLLineBreak +
     '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>';
 begin
-  if SlickeMsg(sdsAuto, 'License', txt, [mbOK, mbSlickeRead], uxmtOK, uxscHuge) <> mrOk then
+  if SlickeMsg(sdsAuto, 'License', txt,
+    [[mbOK, mbSlickeRead], [mbSlickeRead, mbOK]], uxmtOK, uxscHuge) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 

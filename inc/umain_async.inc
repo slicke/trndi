@@ -638,7 +638,7 @@ begin
       else
         newVersionMessage := Format(RS_NEWVER, [FReleaseName]);
       case SlickeDialog(sdsAuto, RS_NEWVER_CAPTION, newVersionMessage,
-        [mbYes, mbNo, mbIgnore], mtInformation) of
+        [[mbYes, mbNo, mbIgnore], [mbIgnore, mbNo, mbYes]], mtInformation) of
       mrYes:
         OpenURL(FDownloadURL);
       mrIgnore:

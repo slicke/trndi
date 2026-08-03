@@ -167,7 +167,7 @@ begin
   end;
 
  // Title, Desc, html, size
-  if SlickeMsg(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), [mbYes, mbNo], uxmtOk, vbs) = mrYes then
+  if SlickeMsg(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), [[mbYes, mbNo], [mbNo, mbYes]], uxmtOk, vbs) = mrYes then
     res^ := JS_TRUE
   else
     res^ := JS_FALSE;

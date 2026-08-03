@@ -446,7 +446,7 @@ begin
   begin
     if SlickeMsg(sdsNormal, 'System setting change', '<b>ALERT</b><br>An extension is requesting permission to edit this settings value:'+sHTMLLineBreak+
       '<i>'+key+'</i>'+sHTMLLineBreak+sHTMLLineBreak+'New value: ' + val + sHTMLLineBreak + 'Current Value: ' + curr + sHTMLLineBreak + sHTMLLineBreak +
-      'Allow this change?',[mbYes, mbNo],uxmtWarning) = mrYes then
+      'Allow this change?',[[mbYes, mbNo], [mbNo, mbYes]],uxmtWarning) = mrYes then
       native.SetSetting(key, val);
   end
   else
