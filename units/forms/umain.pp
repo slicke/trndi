@@ -1327,7 +1327,7 @@ begin
     begin
       // macOS order: alternate action left, Cancel beside the default, default last
       mr := SlickeDialog(sdsAuto, RS_QUIT_MINIMIZE_TITLE, RS_QUIT_MINIMIZE,
-        [mbClose, mbCancel, mbSlickeMinimize]);
+        [mbClose, mbCancel, mbSlickeMinimize], uxmtOK, mbSlickeMinimize);
       case mr of
       mrClose:
       begin
@@ -1356,7 +1356,7 @@ begin
     if self.Showing then
     begin
       mr := SlickeDialog(sdsAuto, RS_QUIT_MINIMIZE_TITLE, RS_QUIT_MINIMIZE_WIN,
-        [mbClose, mbSlickeMinimize, mbCancel]);
+        [mbClose, mbSlickeMinimize, mbCancel], uxmtOK, mbSlickeMinimize);
       if mr = mrCancel then
       begin
         FShuttingDown := false;
