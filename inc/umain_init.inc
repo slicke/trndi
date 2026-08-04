@@ -405,7 +405,11 @@ const
     'By continuing, you acknowledge that:'#10 +
     '• You use this app at your own risk'#10 +
     '• The developers have NO LIABILITY'#10 +
-    '• You have read and agree to the full terms';
+    '• You have read and agree to the full terms'#10 + #10 +
+    // The dialog asks the user to accept "the full license", so name it: Trndi
+    // is GPLv3, and the warnings above are its GPL section 7 additional terms.
+    'Trndi is free software under the GNU General Public License v3,'#10 +
+    'with the medical disclaimer above as an additional term.';
 var
   i: integer;
 begin
@@ -429,7 +433,9 @@ begin
         Halt(1);
       end
       else
-        OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
+        // "Read" on a medical-warning gate wants the disclaimer, which states
+        // its GPL section 7 relationship and links the license text itself.
+        OpenURL('https://github.com/slicke/trndi/blob/main/DISCLAIMER.md');
     end;
   end;
 end;

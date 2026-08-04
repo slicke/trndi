@@ -1323,7 +1323,7 @@ msgid ""
 "This app is licensed under the \n"
 "GNU General Public License version 3 with \n"
 "an additional medical disclaimer.\n"
-"See https://github.com/slicke/trndi/LICENSE.md"
+"See https://github.com/slicke/trndi/blob/main/DISCLAIMER.md"
 msgstr ""
 
 #: trndi.api.dexcom.serrdexlogin
