@@ -1118,6 +1118,45 @@ end;
 
 
 {**
+   Width a button row needs so no caption is clipped.
+   Buttons used to be a flat @code(btnWidth); that clips longer localised
+   captions, e.g. Swedish "Försök igen" for @code(mbRetry).
+   @param AFont Font the buttons will render with.
+   @param buttons Row to measure.
+   @param AMinWidth Size preset, used as a floor so short rows keep their look.
+   @param AFontSize Overrides the font size when non-zero (big dialogs bump it).
+   @returns Width to give every button in the row.
+}
+function MeasureButtonWidth(const AFont: TFont; const buttons: TSlickeMsgDlgBtns;
+AMinWidth: integer; AFontSize: integer = 0): integer;
+const
+  CaptionPadding = 30;          // breathing room either side of the caption
+var
+  mr: TSlickeMsgDlgBtn;
+  w: integer;
+begin
+  Result := AMinWidth;
+  // Measured on a scratch bitmap, not a form/panel canvas: those can SIGABRT
+  // outside a paint event on Cocoa, and a 0x0 canvas yields zero metrics on
+  // GTK3, so the size must be set before the font is touched.
+  with Graphics.TBitmap.Create do
+  try
+    SetSize(1, 1);
+    Canvas.Font.Assign(AFont);
+    if AFontSize > 0 then
+      Canvas.Font.Size := AFontSize;
+    for mr in buttons do
+    begin
+      w := Canvas.TextWidth(langs[mr]) + CaptionPadding;
+      if w > Result then
+        Result := w;
+    end;
+  finally
+    Free;
+  end;
+end;
+
+{**
    Helper for getting the base color, based on color mode
 }
 function getBaseColor: TColor;
@@ -3135,9 +3174,19 @@ begin
     defBtn := PickDefaultButton(buttons, ADefault);
     DefaultCtrl := nil;
 
-    ButtonActualWidth := ifthen((size = sdsBig) , btnWidth * 2, btnWidth);
+    // Grow the row to its widest caption; the preset stays the floor. The font
+    // size mirrors the one applied to the buttons themselves below.
+    ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons,
+      ifthen((size = sdsBig), btnWidth * 2, btnWidth),
+      ifthen((size = sdsBig), 12, 0));
     totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
+    // A wider row can outgrow the dialog; widen it rather than let the buttons
+    // run off the edge.
+    if Dialog.ClientWidth < totalBtnWidth + (padding * 2) then
+      Dialog.ClientWidth := FitDialogWidth(totalBtnWidth + (padding * 2));
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
+    if posX < padding then
+      posX := padding;
 
     // Create buttons
     for mr in buttons do
@@ -3306,7 +3355,24 @@ begin
     end;
     TextPixelWidth := Max(TitlePixelWidth, DescPixelWidth);
 
+    // Size the button row here, before the dialog width is settled, so a row
+    // widened to fit its captions can push the dialog out rather than overflow.
+    btnCount := Length(buttons);
+    if btnCount = 0 then
+      btnCount := 1;
+    case size of
+    sdsBig:
+      ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons, btnWidth * 2);
+    sdsMedium:
+      ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons, ceil(btnWidth * 1.5));
+    else
+      ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons, btnWidth);
+    end;
+    totalBtnWidth := (ButtonActualWidth * btnCount) + (padding * (btnCount - 1));
+
     ProposedWidth := IconBox.Width + TextPixelWidth + (padding * 6) + 20;
+    if ProposedWidth < totalBtnWidth + (padding * 2) then
+      ProposedWidth := totalBtnWidth + (padding * 2);
 
     if (size = sdsBig) then
     begin
@@ -3597,21 +3663,9 @@ begin
     ButtonPanel.BevelOuter := bvNone;
     ButtonPanel.Color := bgcol;
 
-    case size of
-    sdsBig:
-      ButtonActualWidth := btnWidth*2;
-    sdsMedium:
-      ButtonActualWidth := ceil(btnWidth*1.5);
-    else
-      ButtonActualWidth := btnWidth;
-    end;
+    // ButtonActualWidth, btnCount and totalBtnWidth were measured above, before
+    // the dialog width was fixed, so the row is guaranteed to fit by here.
 
-    btnCount := Length(buttons);
-    if btnCount = 0 then
-      btnCount := 1;
-
-    totalBtnWidth := (ButtonActualWidth * btnCount) + (padding * (btnCount - 1));
-    
     // Always center the action buttons
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
     if posX < padding then
