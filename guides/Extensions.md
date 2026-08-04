@@ -20,13 +20,36 @@ To create, or install, a plugin - create/move a ```.js``` file in/to the plugin 
 # Writing an extension
  See the full reference of functions in [Extensions Functions](Extensions_functions.md)
 
-# Info and Copyright
-To have your extensions show their name and copyright, add a header at the very start:
+# Extension manifest
+Each extension may begin with a `/* ... */` manifest comment. It must be the
+first content in the file; a UTF-8 byte-order mark (BOM) is allowed, but do not
+put a blank line, a `//` comment, or a shebang before it. The manifest supplies
+the name shown by Trndi, copyright details, and requested permissions.
+
+Use explicit directives for new extensions:
+
+```javascript
+/*
+@name My Extension
+@copyright (c) My Name
+@version 1.0.0
+@description A short description of the extension.
+@homepage https://example.com/my-extension
+@license MIT
+@perms net
+*/
 ```
-/* My Extension
-(c) My Name*/
-```
-If no /* is present, the plugin will not show any info. If your first row is another comment it might be shown as copyright.
+
+`@name`, `@copyright`, `@version`, `@description`, `@homepage`, and `@license`
+are metadata. `@perms` controls access and is described below. Directives are
+case-insensitive and their values are free text. Unknown directives or
+permission names make the manifest invalid and prevent the extension from
+loading.
+
+Existing extensions remain compatible: the first non-empty manifest line is
+used as the name and a line beginning with `(c)` or `copyright` is used as the
+author/copyright value. Prefer the explicit directives for all new or updated
+extensions.
 
 # Async code and top-level await
 Extensions can use `await` directly at the top level of the script — when a
@@ -34,7 +57,8 @@ script fails to parse because of it, Trndi automatically re-evaluates it inside
 an async wrapper:
 
 ```javascript
-/* Release check
+/*
+@name Release check
 @perms net
 */
 const res = await fetch("https://api.github.com/repos/slicke/trndi/releases/latest");
@@ -66,11 +90,13 @@ the user the first time the extension is loaded.
 
 ## Declaring permissions
 Add an `@perms` line inside the header comment block, listing the promptable
-groups your extension needs:
+groups your extension needs. The only valid names are `net`, `exec`, and
+`settings`:
 
 ```javascript
-/* My Extension
-(c) My Name
+/*
+@name My Extension
+@copyright (c) My Name
 @perms net, exec
 */
 ```
