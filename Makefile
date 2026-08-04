@@ -45,6 +45,9 @@ LAZRES ?= $(shell \
 # CareLink login helper: source files -> generated resource (in repo-root assets/).
 CARELINK_ASSET_LRS  = assets/carelink_assets.lrs
 CARELINK_ASSET_SRCS = tools/carelink-login/carelink-login.mjs tools/carelink-login/package.json tools/carelink-login/package-lock.json
+# Formatter config for FPC's ptop, generated from JCFSettings.xml (see 'make ptop').
+JCF_SETTINGS = JCFSettings.xml
+PTOP_CFG     = ptop.cfg
 # BUILD_MODE is a short hint (Release/Debug) for backward compatibility
 # BUILD_MODE_NAME is the actual project build-mode name as seen in Trndi.lpi
 BUILD_MODE ?= Release
@@ -145,7 +148,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets ide-libs
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets ide-libs ptop
 
 all: release
 
@@ -168,6 +171,7 @@ help:
 	@echo "  noext      Build without JavaScript extension support (no QuickJS libraries needed) - use noext-release/noext-debug to override mode"
 	@echo "  assets     Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
 	@echo "  check-assets  Fail if a committed .lrs is out of sync with its sources (CI guard)"
+	@echo "  ptop       Regenerate $(PTOP_CFG) from $(JCF_SETTINGS) (formatter config for ptop)"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
 	@echo "  dist       Create a minimal tarball in $(OUTDIR)"
 	@echo "  run        Build (if needed) and run the built binary (use RUN_ARGS to pass args)"
@@ -301,6 +305,15 @@ check-assets:
 	 fi; \
 	 rm -f "$$tmp"; \
 	 echo "$(CARELINK_ASSET_LRS) is up to date."
+
+# Regenerate the ptop formatter config from JCFSettings.xml, keeping the JEDI
+# Code Formatter profile the only place formatting is described. ptop maps just
+# a subset of it; the generated header lists what was and was not carried over.
+# Mirrors '.\make.ps1 ptop' on Windows.
+ptop:
+	@perl scripts/jcf-to-ptop.pl -o $(PTOP_CFG)
+	@echo "Wrote $(PTOP_CFG). Indent and line length are ptop command-line options, not"
+	@echo "config keys, so run it as: ptop $$(perl scripts/jcf-to-ptop.pl --args) -c $(PTOP_CFG) <in> <out>"
 
 list-modes:
 	@echo "Available build modes in $(LPI):"
