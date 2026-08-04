@@ -1680,9 +1680,177 @@ begin
 end;
 
 {$else}
+
+{$ifdef X_MAC}
+type
+  // SF Symbols landed in macOS 11, long after FPC 3.2.2's Cocoa headers were
+  // generated, so the class selector is declared by hand here. MacDrawSymbol
+  // gates the call on the OS version before it is ever sent.
+NSImageSFSymbols = objccategory external (NSImage)
+  class function imageWithSystemSymbolName_accessibilityDescription(
+    symbolName: NSString; descr: NSString): NSImage;
+    message 'imageWithSystemSymbolName:accessibilityDescription:';
+end;
+
+// Map a dialog icon codepoint onto the closest SF Symbol and the system colour
+// macOS draws it in. An empty name means no good match, which sends the caller
+// back to the emoji renderer.
+function MacSymbolForIcon(const Emoji: widestring; out tint: NSColor): string;
+
+  function C(r, g, b: double): NSColor;
+  begin
+    Result := NSColor.colorWithCalibratedRed_green_blue_alpha(r, g, b, 1.0);
+  end;
+
+begin
+  Result := '';
+  tint := nil;
+  if Emoji = '' then
+    Exit;
+  case Word(Emoji[1]) of
+  $2705:                        // systemGreen
+  begin
+    Result := 'checkmark.circle.fill';
+    tint := C(0.20, 0.78, 0.35);
+  end;
+  $26A0:                        // systemOrange
+  begin
+    Result := 'exclamationmark.triangle.fill';
+    tint := C(1.00, 0.58, 0.00);
+  end;
+  $274C:                        // systemRed
+  begin
+    Result := 'xmark.circle.fill';
+    tint := C(1.00, 0.23, 0.19);
+  end;
+  $2139:                        // systemBlue
+  begin
+    Result := 'info.circle.fill';
+    tint := C(0.00, 0.48, 1.00);
+  end;
+  $2753:                        // systemBlue
+  begin
+    Result := 'questionmark.circle.fill';
+    tint := C(0.00, 0.48, 1.00);
+  end;
+  $2699:                        // systemGray
+  begin
+    Result := 'gearshape.fill';
+    tint := C(0.56, 0.56, 0.58);
+  end;
+  $2B1C:                        // systemGray
+  begin
+    Result := 'square';
+    tint := C(0.56, 0.56, 0.58);
+  end;
+  end;
+end;
+
+// Draw the icon as an SF Symbol at W x H device pixels. Vector source, so it is
+// resolution-independent, and it gives the icons the shape and colour macOS
+// itself uses rather than the emoji font's boxed glyphs. Returns false whenever
+// anything is unavailable so the caller falls back to the emoji renderer.
+function MacDrawSymbol(bmp: Graphics.TBitmap; const Emoji: widestring;
+W, H: integer; bgcol: TColor): boolean;
+var
+  symName: string;
+  tint: NSColor;
+  img: NSImage;
+  rep: NSBitmapImageRep;
+  prevCtx, ctx: NSGraphicsContext;
+  full: NSRect;
+  inset: CGFloat;
+  lazimg: TLazIntfImage;
+  raw, p: PByte;
+  x, y, rowBytes: integer;
+  br, bg_, bb, r8, g8, b8: byte;
+  osv: NSOperatingSystemVersion;
+begin
+  Result := false;
+  if (W <= 0) or (H <= 0) then
+    Exit;
+  osv := NSProcessInfo.processInfo.operatingSystemVersion;
+  if osv.majorVersion < 11 then
+    Exit;
+
+  symName := MacSymbolForIcon(Emoji, tint);
+  if (symName = '') or (tint = nil) then
+    Exit;
+
+  img := NSImage.imageWithSystemSymbolName_accessibilityDescription(
+    NSString.stringWithUTF8String(PChar(symName)), nil);
+  if img = nil then
+    Exit;
+
+  rep := NSBitmapImageRep(NSBitmapImageRep.alloc).
+    initWithBitmapDataPlanes_pixelsWide_pixelsHigh_bitsPerSample_samplesPerPixel_hasAlpha_isPlanar_colorSpaceName_bytesPerRow_bitsPerPixel(
+    nil, W, H, 8, 4, true, false, NSDeviceRGBColorSpace, W * 4, 32);
+  if rep = nil then
+    Exit;
+  try
+    ctx := NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
+    if ctx = nil then
+      Exit;
+
+    full := NSMakeRect(0, 0, W, H);
+    inset := W * 0.08;          // keep the glyph off the very edge
+
+    prevCtx := NSGraphicsContext.currentContext;
+    NSGraphicsContext.setCurrentContext(ctx);
+    try
+      // Symbol first on a clear rep, then tint only what it covers via
+      // sourceAtop, then slide the background in underneath with
+      // destinationOver -- tinting after the fill would recolour the fill too.
+      img.drawInRect_fromRect_operation_fraction(
+        NSMakeRect(inset, inset, W - inset * 2, H - inset * 2),
+        NSZeroRect, NSCompositeSourceOver, 1.0);
+      tint.set_;
+      NSRectFillUsingOperation(full, NSCompositeSourceAtop);
+      RedGreenBlue(ColorToRGB(bgcol), br, bg_, bb);
+      NSColor.colorWithCalibratedRed_green_blue_alpha(
+        br / 255, bg_ / 255, bb / 255, 1.0).set_;
+      NSRectFillUsingOperation(full, NSCompositeDestinationOver);
+    finally
+      NSGraphicsContext.setCurrentContext(prevCtx);
+    end;
+
+    raw := PByte(rep.bitmapData);
+    if raw = nil then
+      Exit;
+    rowBytes := rep.bytesPerRow;
+
+    lazimg := TLazIntfImage.Create(W, H, [riqfRGB]);
+    try
+      for y := 0 to H - 1 do
+      begin
+        p := raw + (y * rowBytes);
+        for x := 0 to W - 1 do
+        begin
+          // RGBA8888; the destinationOver fill leaves every pixel opaque, so
+          // premultiplication is the identity here and the bytes are direct.
+          r8 := p[0];
+          g8 := p[1];
+          b8 := p[2];
+          lazimg.Colors[x, y] := FPColor((r8 shl 8) or r8, (g8 shl 8) or g8,
+            (b8 shl 8) or b8, alphaOpaque);
+          Inc(p, 4);
+        end;
+      end;
+      bmp.LoadFromIntfImage(lazimg);
+      Result := true;
+    finally
+      lazimg.Free;
+    end;
+  finally
+    rep.release;
+  end;
+end;
+{$endif}
+
 {**
   Render an emoji into a @code(TImage) using the standard canvas (non-Windows).
-  Uses "Apple Color Emoji" on macOS and "Noto Color Emoji" elsewhere.
+  Uses SF Symbols on macOS 11+, otherwise "Apple Color Emoji" on macOS and
+  "Noto Color Emoji" elsewhere.
   @param Image Target image control.
   @param Emoji Emoji text (usually a single codepoint).
   @param bgcol Background color.
@@ -1712,6 +1880,12 @@ begin
   bmp.SetSize(W, H);
   Image.Stretch := true;   // no-op when scale = 1, since bitmap = control size
   Image.Transparent := true;
+
+  {$ifdef X_MAC}
+  // Native symbols where macOS offers one; the emoji font below is the fallback.
+  if MacDrawSymbol(bmp, Emoji, W, H, bgcol) then
+    Exit;
+  {$endif}
 
   bmp.Canvas.Brush.Color := bgcol;
   bmp.Canvas.FillRect(0, 0, W, H);
