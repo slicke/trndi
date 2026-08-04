@@ -1731,6 +1731,18 @@ NSImageSFSymbols = objccategory external (NSImage)
     message 'imageWithSystemSymbolName:accessibilityDescription:';
 end;
 
+  // Which of the initWithBitmapDataPlanes: overloads the shipped Cocoa headers
+  // declare varies between FPC builds -- the CI toolchain does not have the
+  // no-bitmapFormat one that fpcupdeluxe installs. Declaring the selector here
+  // makes this independent of the header vintage. Returns id rather than
+  // instancetype for the same reason.
+NSBitmapImageRepRGBA = objccategory external (NSBitmapImageRep)
+  function trndiInitRGBA(planes: PChar; width: NSInteger; height: NSInteger;
+    bps: NSInteger; spp: NSInteger; alpha: ObjCBOOL; planar: ObjCBOOL;
+    colorSpaceName_: NSString; rBytes: NSInteger; pBits: NSInteger): id;
+    message 'initWithBitmapDataPlanes:pixelsWide:pixelsHigh:bitsPerSample:samplesPerPixel:hasAlpha:isPlanar:colorSpaceName:bytesPerRow:bitsPerPixel:';
+end;
+
 // Map a dialog icon codepoint onto the closest SF Symbol and the system colour
 // macOS draws it in. An empty name means no good match, which sends the caller
 // back to the emoji renderer.
@@ -1823,9 +1835,8 @@ begin
   if img = nil then
     Exit;
 
-  rep := NSBitmapImageRep(NSBitmapImageRep.alloc).
-    initWithBitmapDataPlanes_pixelsWide_pixelsHigh_bitsPerSample_samplesPerPixel_hasAlpha_isPlanar_colorSpaceName_bytesPerRow_bitsPerPixel(
-    nil, W, H, 8, 4, true, false, NSDeviceRGBColorSpace, W * 4, 32);
+  rep := NSBitmapImageRep(NSBitmapImageRep(NSBitmapImageRep.alloc).trndiInitRGBA(
+    nil, W, H, 8, 4, true, false, NSDeviceRGBColorSpace, W * 4, 32));
   if rep = nil then
     Exit;
   try
