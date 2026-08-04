@@ -42,7 +42,8 @@ unit umain_tests;
 interface
 
 uses
-  fpcunit, testregistry, umain, SysUtils, StdCtrls, ExtCtrls, Classes, trndi.native, trndi.types;
+  fpcunit, testregistry, umain, SysUtils, StdCtrls, ExtCtrls, Classes, trndi.native, trndi.types,
+  trndi.funcs;
 
 type
   TUmainTests = class(TTestCase)
@@ -53,6 +54,12 @@ type
     procedure TestDotsInViewBottomOverflow;
     procedure TestDotsInViewNoParent;
     procedure TestDotsInViewNoDots;
+
+    // Narrow-window trend-dot clamp
+    procedure TestTrendDotStrideWideWindow;
+    procedure TestTrendDotStrideNarrowWindow;
+    procedure TestTrendDotStrideDegenerateWidth;
+    procedure TestTrendDotVisibleAnchorsOnNewest;
 
     // Startup / shutdown tests
     procedure TestFormCreateStartsTimers;
@@ -275,6 +282,161 @@ begin
 
   finally
     // If native still assigned, free it here (some tests expect FormDestroy to free it)
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// A window with room to spare renders every slot — the clamp must stay out of
+// the way at ordinary sizes.
+procedure TUmainTests.TestTrendDotStrideWideWindow;
+var
+  g: TfBG;
+  n: TrndiNative;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      AssertEquals('10 dots in an 800 px window need no skipping',
+        1, g.TrendDotStrideForTests(800, 10));
+      AssertEquals('39 columns in an 800 px window still fit',
+        1, g.TrendDotStrideForTests(800, 39));
+
+      // The clamp must stay clear of ordinary use: a 50-dot trend has to
+      // render in full at the 320 px startup width (umain.lfm), predictions
+      // on or off. Tightening MIN_DOT_COLUMN_PX must not silently break this.
+      AssertEquals('50 dots must fit the 320 px startup window',
+        1, g.TrendDotStrideForTests(320, 50));
+      AssertEquals('50 dots plus 3 prediction slots must fit it too',
+        1, g.TrendDotStrideForTests(320, 50 + PREDICTION_DOT_COUNT));
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// Once the columns fall below MIN_DOT_COLUMN_PX the stride must rise enough
+// that the *rendered* count fits the width — that's the property that stops
+// the dots overlapping, so assert it rather than hard-coded strides alone.
+procedure TUmainTests.TestTrendDotStrideNarrowWindow;
+var
+  g: TfBG;
+  n: TrndiNative;
+  stride, rendered: integer;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      AssertEquals('36 columns in 120 px needs every 2nd dot',
+        2, g.TrendDotStrideForTests(120, 36));
+      AssertEquals('288 columns in the 320 px startup window must be thinned',
+        6, g.TrendDotStrideForTests(320, 288));
+
+      // Worst supported case: a full 24 h window on a small screen. Assert the
+      // invariant rather than a literal stride — whatever survives the thinning
+      // must itself need no further thinning, which is the property that stops
+      // the dots overlapping. Stays honest if MIN_DOT_COLUMN_PX is retuned.
+      stride := g.TrendDotStrideForTests(1000, 288);
+      AssertTrue('288 columns in 1000 px must be thinned', stride > 1);
+      rendered := (288 + stride - 1) div stride;
+      AssertEquals('What survives thinning must fit without thinning again',
+        1, g.TrendDotStrideForTests(1000, rendered));
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// Boot and teardown hand out zero/absurd widths; the stride must stay a legal
+// divisor (>= 1) so the visibility test never divides by zero.
+procedure TUmainTests.TestTrendDotStrideDegenerateWidth;
+var
+  g: TfBG;
+  n: TrndiNative;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      AssertEquals('Zero width falls back to no skipping',
+        1, g.TrendDotStrideForTests(0, 36));
+      AssertEquals('Negative width falls back to no skipping',
+        1, g.TrendDotStrideForTests(-100, 36));
+      AssertEquals('A single column is never skipped',
+        1, g.TrendDotStrideForTests(4, 1));
+      AssertTrue('A width narrower than one column still yields a valid stride',
+        g.TrendDotStrideForTests(5, 36) >= 1);
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// The newest slot carries the "fresh" ring and is what the user reads, so it
+// must survive every stride; skipping walks backwards from there.
+procedure TUmainTests.TestTrendDotVisibleAnchorsOnNewest;
+var
+  g: TfBG;
+  n: TrndiNative;
+  i: integer;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      AssertTrue('Newest slot is always rendered at stride 2',
+        g.TrendDotVisibleInStrideForTests(36, 36, 2));
+      AssertFalse('Second-newest slot is skipped at stride 2',
+        g.TrendDotVisibleInStrideForTests(35, 36, 2));
+      AssertTrue('Third-newest slot is rendered at stride 2',
+        g.TrendDotVisibleInStrideForTests(34, 36, 2));
+      AssertTrue('Newest slot is always rendered at stride 4',
+        g.TrendDotVisibleInStrideForTests(36, 36, 4));
+      AssertTrue('Fifth-newest slot is rendered at stride 4',
+        g.TrendDotVisibleInStrideForTests(32, 36, 4));
+
+      for i := 1 to 36 do
+        AssertTrue('Stride 1 renders every slot',
+          g.TrendDotVisibleInStrideForTests(i, 36, 1));
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
     if Assigned(native) then
     begin
       native.Free;
