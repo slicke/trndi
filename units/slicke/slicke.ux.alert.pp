@@ -1896,9 +1896,13 @@ begin
   bmp := Image.Picture.Bitmap;
   bmp.SetSize(W, H);
   Image.Stretch := true;   // no-op when scale = 1, since bitmap = control size
-  // Stretch alone fills the client rect and would distort the icon if a caller
-  // ever gives IconBox a non-square size; every one is square today.
+  // Stretch alone fills the client rect, which distorts the icon whenever the
+  // control is not square -- and an alLeft-aligned IconBox is not: LCL forces
+  // its Height to the parent's client height regardless of what was assigned.
+  // Proportional keeps the aspect; Center keeps the result off the top-left
+  // corner of the taller box.
   Image.Proportional := true;
+  Image.Center := true;
   Image.Transparent := true;
 
   {$ifdef X_MAC}
