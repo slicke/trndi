@@ -1759,7 +1759,7 @@ var
   rep: NSBitmapImageRep;
   prevCtx, ctx: NSGraphicsContext;
   full: NSRect;
-  inset: CGFloat;
+  inset: double;          // not CGFloat: that type is not exported into scope here
   lazimg: TLazIntfImage;
   raw, p: PByte;
   x, y, rowBytes: integer;
@@ -1860,6 +1860,7 @@ var
   Inset, W, H: integer;
   scale: double;
   bmp: Graphics.TBitmap;
+  es: string;
 begin
   // Render at the display's backing scale factor. The canvas draws in logical
   // points, so a 1:1 bitmap is upscaled by the compositor and comes out soft on
@@ -1903,10 +1904,13 @@ begin
   // on a dark dialog background.
   bmp.Canvas.Font.Color := getBaseColor;
 
+  // Convert explicitly rather than letting the compiler do a lossy implicit
+  // WideString -> AnsiString narrowing on the canvas calls.
+  es := UTF8Encode(Emoji);
   bmp.Canvas.TextOut(
-    (W - bmp.Canvas.TextWidth(Emoji)) div 2,
-    (H - bmp.Canvas.TextHeight(Emoji)) div 2,
-    Emoji
+    (W - bmp.Canvas.TextWidth(es)) div 2,
+    (H - bmp.Canvas.TextHeight(es)) div 2,
+    es
     );
 end;
 {$endif}
