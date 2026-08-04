@@ -5,16 +5,12 @@ msgstr "Content-Type: text/plain; charset=UTF-8"
 msgid "An error occurred while creating a message dialog"
 msgstr ""
 
-#: slicke.ux.alert.serr
-msgid "Script execution failed"
+#: slicke.ux.alert.serrmsg
+msgid "An error occurred"
 msgstr ""
 
-#: slicke.ux.alert.sexterr
-msgid "Error occurred in extension"
-msgstr ""
-
-#: slicke.ux.alert.sexttitle
-msgid "Extension error"
+#: slicke.ux.alert.serrtitle
+msgid "Error"
 msgstr ""
 
 #: slicke.ux.alert.skey
@@ -1313,7 +1309,7 @@ msgid ""
 "This app is licensed under the \n"
 "GNU General Public License version 3 with \n"
 "an additional medical disclaimer.\n"
-"See https://github.com/slicke/trndi/blob/main/DISCLAIMER.md"
+"See https://github.com/slicke/trndi/LICENSE.md"
 msgstr ""
 
 #: trndi.api.dexcom.serrdexlogin
@@ -1476,6 +1472,21 @@ msgstr ""
 
 #: trndi.api.xdrip.sparamusername
 msgid "xDrip URL"
+msgstr ""
+
+#: trndi.ext.functions.serr
+msgctxt "trndi.ext.functions.serr"
+msgid "Script execution failed"
+msgstr ""
+
+#: trndi.ext.functions.sexterr
+msgctxt "trndi.ext.functions.sexterr"
+msgid "Error occurred in extension"
+msgstr ""
+
+#: trndi.ext.functions.sexttitle
+msgctxt "trndi.ext.functions.sexttitle"
+msgid "Extension error"
 msgstr ""
 
 #: trndi.strings.rs_alert_snooze

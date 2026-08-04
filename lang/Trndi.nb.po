@@ -15,17 +15,13 @@ msgstr ""
 msgid "An error occurred while creating a message dialog"
 msgstr "Det oppstod en feil under opprettelsen av en meldingsdialog"
 
-#: slicke.ux.alert.serr
-msgid "Script execution failed"
-msgstr "Skriptkjøring mislyktes"
+#: slicke.ux.alert.serrmsg
+msgid "An error occurred"
+msgstr ""
 
-#: slicke.ux.alert.sexterr
-msgid "Error occurred in extension"
-msgstr "Feil i utvidelsen"
-
-#: slicke.ux.alert.sexttitle
-msgid "Extension error"
-msgstr "Utvidelsesfeil"
+#: slicke.ux.alert.serrtitle
+msgid "Error"
+msgstr ""
 
 #: slicke.ux.alert.skey
 msgid "Key"
@@ -1323,7 +1319,7 @@ msgid ""
 "This app is licensed under the \n"
 "GNU General Public License version 3 with \n"
 "an additional medical disclaimer.\n"
-"See https://github.com/slicke/trndi/blob/main/DISCLAIMER.md"
+"See https://github.com/slicke/trndi/LICENSE.md"
 msgstr ""
 
 #: trndi.api.dexcom.serrdexlogin
@@ -1483,6 +1479,24 @@ msgstr "API-hemmelighet"
 #: trndi.api.xdrip.sparamusername
 msgid "xDrip URL"
 msgstr "xDrip-adresse"
+
+#: trndi.ext.functions.serr
+#, fuzzy
+msgctxt "trndi.ext.functions.serr"
+msgid "Script execution failed"
+msgstr "Skriptkjøring mislyktes"
+
+#: trndi.ext.functions.sexterr
+#, fuzzy
+msgctxt "trndi.ext.functions.sexterr"
+msgid "Error occurred in extension"
+msgstr "Feil i utvidelsen"
+
+#: trndi.ext.functions.sexttitle
+#, fuzzy
+msgctxt "trndi.ext.functions.sexttitle"
+msgid "Extension error"
+msgstr "Utvidelsesfeil"
 
 #: trndi.strings.rs_alert_snooze
 msgid "Snooze alerts"
