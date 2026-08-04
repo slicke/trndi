@@ -2816,6 +2816,14 @@ msgstr ""
 msgid "Granted: "
 msgstr ""
 
+#: uconf.rs_ext_invalid
+msgid "Invalid manifest, will not load: "
+msgstr ""
+
+#: uconf.rs_ext_invalid_mark
+msgid "⚠ "
+msgstr ""
+
 #: uconf.rs_ext_not_approved
 msgid " (not yet approved)"
 msgstr ""
@@ -2831,6 +2839,14 @@ msgstr "Erweiterungen neu laden"
 #: uconf.rs_ext_requests
 msgid "Requests: "
 msgstr "Anfragen: "
+
+#: uconf.rs_ext_reset_done
+msgid "The stored decision was cleared. Trndi will ask again the next time the extension is loaded."
+msgstr ""
+
+#: uconf.rs_ext_reset_title
+msgid "Extension permissions"
+msgstr ""
 
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"

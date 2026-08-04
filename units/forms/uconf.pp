@@ -331,6 +331,7 @@ TfConf = class(TForm)
   lChromaLow: TLabel;
   lbExtensions: TCheckListBox;
   bExtReload: TButton;
+  bExtResetPerms: TButton;
   lCopyright: TLabel;
   lExtCopyright: TLabel;
   lExtCount: TLabel;
@@ -457,6 +458,7 @@ TfConf = class(TForm)
   procedure bCustomRangeHelpClick({%H-}Sender: TObject);
   procedure bExtOpenClick({%H-}Sender: TObject);
   procedure bExtReloadClick({%H-}Sender: TObject);
+  procedure bExtResetPermsClick({%H-}Sender: TObject);
   procedure bFontReadingClick(Sender: TObject);
   procedure bFontArrowClick(Sender: TObject);
   procedure bFontTimeClick(Sender: TObject);
@@ -802,6 +804,15 @@ RS_EXT_GRANTED = 'Granted: ';
 RS_EXT_NOT_APPROVED = ' (not yet approved)';
 RS_EXT_CHANGED = ' (changed since approval — Trndi will ask again)';
 
+{ Marks list entries whose manifest is rejected; such extensions are skipped
+  at startup, so the list must not present them as ready to run. }
+RS_EXT_INVALID_MARK = '⚠ ';
+RS_EXT_INVALID = 'Invalid manifest, will not load: ';
+
+RS_EXT_RESET_TITLE = 'Extension permissions';
+RS_EXT_RESET_DONE =
+  'The stored decision was cleared. Trndi will ask again the next time the extension is loaded.';
+
 RS_TEST_UNSUPPORTED = 'Sorry! Trndi does not (yet) support connection testing for this service!';
 RS_TEST_SUCCESS = 'Successfully connected!';
 RS_TEST_FAIL = 'Could not connect!';
@@ -947,7 +958,10 @@ begin
   {$ifdef TrndiExt}
   if (FExtPaths = nil) or (lbExtensions.ItemIndex < 0) or
      (lbExtensions.ItemIndex >= FExtPaths.Count) then
+  begin
+    bExtResetPerms.Enabled := false;
     Exit;
+  end;
 
   lExtName.Caption := '';
   lExtCopyright.Caption := '';
@@ -972,6 +986,12 @@ begin
   end;
 
   manifest := ParseExtManifest(scriptText);
+  extId := ExtIdFromPath(path);
+  // Grants are keyed to the file's hash (ext.perm.<id>.hash/.granted), so an
+  // edited file shows as pending. A stored hash is also the only thing the
+  // reset button has to clear.
+  storedHash := tnative.GetSetting('ext.perm.' + extId + '.hash', '');
+  bExtResetPerms.Enabled := storedHash <> '';
 
   if manifest.DisplayName <> '' then
     lExtName.Caption := manifest.DisplayName
@@ -983,13 +1003,20 @@ begin
   else
     lExtCopyright.Caption := RS_NO_COPYRIGHT;
 
-  // Grant status for the promptable groups. Grants are keyed to the file's
-  // hash (ext.perm.<id>.hash/.granted), so an edited file shows as pending.
+  // A rejected manifest is skipped by the loader in umain_ext.inc, so report
+  // that instead of a permission state the extension will never reach.
+  // ErrorMessage may list several problems; keep it on the label's one line.
+  if not manifest.IsValid then
+  begin
+    lExtPerms.Caption := RS_EXT_INVALID +
+      StringReplace(manifest.ErrorMessage, sLineBreak, '; ', [rfReplaceAll]);
+    Exit;
+  end;
+
+  // Grant status for the promptable groups.
   permsCsv := PermSetToCSV(manifest.Requested * PermPromptable);
   if permsCsv <> '' then
   begin
-    extId := ExtIdFromPath(path);
-    storedHash := tnative.GetSetting('ext.perm.' + extId + '.hash', '');
     if (storedHash <> '') and (storedHash = HashScript(scriptText)) then
     begin
       granted := CSVToPermSet(
@@ -1004,6 +1031,34 @@ begin
     else
       lExtPerms.Caption := RS_EXT_REQUESTS + permsCsv + RS_EXT_NOT_APPROVED;
   end;
+  {$endif}
+end;
+
+{------------------------------------------------------------------------------
+  Drop the remembered permission decision for the selected extension. Clearing
+  the stored hash is what makes GrantPermissionsFor treat it as never approved,
+  so the user is prompted again on the next load; .granted and .author go with
+  it rather than lingering as orphans.
+------------------------------------------------------------------------------}
+procedure TfConf.bExtResetPermsClick(Sender: TObject);
+{$ifdef TrndiExt}
+var
+  extId: string;
+{$endif}
+begin
+  {$ifdef TrndiExt}
+  if (FExtPaths = nil) or (lbExtensions.ItemIndex < 0) or
+     (lbExtensions.ItemIndex >= FExtPaths.Count) then
+    Exit;
+
+  extId := ExtIdFromPath(FExtPaths[lbExtensions.ItemIndex]);
+  tnative.DeleteSetting('ext.perm.' + extId + '.hash');
+  tnative.DeleteSetting('ext.perm.' + extId + '.granted');
+  tnative.DeleteSetting('ext.perm.' + extId + '.author');
+
+  // Refresh the info box and the button's own enabled state.
+  lbExtensionsSelectionChange(nil, false);
+  SlickeMessage(RS_EXT_RESET_TITLE, RS_EXT_RESET_DONE, uxmtInformation);
   {$endif}
 end;
 
@@ -1049,9 +1104,10 @@ begin
       for i := 0 to extFiles.Count - 1 do
       begin
         scriptPath := extFiles[i];
-        manifest.DisplayName := '';
-        manifest.Author := '';
-        manifest.Requested := [];
+        // Full reset: an unreadable file must not inherit the previous
+        // iteration's manifest fields. It also leaves IsValid False, which is
+        // right - the loader skips unreadable files too.
+        manifest := Default(TExtManifest);
         try
           scriptBuf.LoadFromFile(scriptPath);
           manifest := ParseExtManifest(scriptBuf.Text);
@@ -1061,6 +1117,10 @@ begin
           displayName := manifest.DisplayName
         else
           displayName := ExtractFileName(scriptPath);
+        // Flag what the loader will refuse; the checkbox only reflects the
+        // user's own enable flag and would otherwise look ready to run.
+        if not manifest.IsValid then
+          displayName := RS_EXT_INVALID_MARK + displayName;
         addedIdx := lbExtensions.Items.Add(displayName);
         FExtPaths.Add(scriptPath);
         extId := ExtIdFromPath(scriptPath);
