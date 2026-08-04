@@ -34,3 +34,8 @@ sudo cp -r gnome-shell-extension/trndi-current /usr/share/gnome-shell/extensions
 - If no value is available it shows `--`.
 - GNOME requires the extension `metadata.json` to list your GNOME Shell major version in `shell-version`.
 	The DEB/RPM installer auto-adds your current version during install.
+
+## License
+
+GPL-3.0-only, like the rest of Trndi — see `LICENSE.md` in the [Trndi repository](https://github.com/slicke/trndi).
+Trndi is not a medical device; see `DISCLAIMER.md`.

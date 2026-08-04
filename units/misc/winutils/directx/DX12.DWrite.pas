@@ -1,3 +1,30 @@
+{$REGION 'Copyright (C) CMC Development Team'}
+{ **************************************************************************
+  Copyright (C) 2015 CMC Development Team
+
+  CMC is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 2 of the License, or
+  (at your option) any later version.
+
+  CMC is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with CMC. If not, see <http://www.gnu.org/licenses/>.
+  ************************************************************************** }
+
+{ **************************************************************************
+  Additional Copyright (C) for this modul:
+
+  Copyright (c) Microsoft Corporation.  All rights reserved.
+
+  This unit is a Pascal translation of Windows SDK header files. Trndi uses it
+  under the "or any later version" option above, as part of a GPLv3 work.
+  ************************************************************************** }
+{$ENDREGION}
 unit DX12.DWrite;
 
 {$IFDEF FPC}
