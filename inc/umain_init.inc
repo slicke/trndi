@@ -411,19 +411,42 @@ const
     // is GPLv3, and the warnings above are its GPL section 7 additional terms.
     'Trndi is free software under the GNU General Public License v3,'#10 +
     'with the medical disclaimer above as an additional term.';
+  // Every license key we have ever shipped, newest last. Add the outgoing key
+  // here whenever the current one is bumped, so a returning user is told the
+  // terms changed instead of being shown a first-run gate again.
+  priorKeys: array[0..0] of string = ('license.250608');
 var
-  i: integer;
+  i, k: integer;
+  termsChanged: boolean;
+  title, question: string;
 begin
   // The key is dated: bump it whenever the terms above change materially, so
   // everyone re-accepts what they are actually agreeing to. 260804 added the
   // warning that alerts are not an alarm system (see DISCLAIMER.md).
   if native.GetBoolSetting('license.260804') <> true then
   begin
+    termsChanged := false;
+    for k := low(priorKeys) to high(priorKeys) do
+      if native.GetBoolSetting(priorKeys[k]) then
+        termsChanged := true;
+
+    if termsChanged then
+    begin
+      // The GPLv3 text itself never changes, so a re-prompt can only mean the
+      // medical disclaimer (the GPL section 7 additional term) moved.
+      title := 'Trndi''s medical disclaimer has been updated';
+      question := 'You accepted an earlier version. Do you agree to the updated terms?';
+    end
+    else
+    begin
+      title := 'You must accept the full terms conditions';
+      question := 'Do you agree to the terms and full license?';
+    end;
+
     i := 0;
     while i <> mrYes do
     begin
-      i := SlickeMsg(sdsAuto, 'License', 'You must accept the full terms conditions',
-        'Do you agree to the terms and full license?', license,
+      i := SlickeMsg(sdsAuto, 'License', title, question, license,
         uxclWhite, uxclRed,
         // Cancel quits the app, so it never sits between the two continue actions
         [[mbYes, mbSlickeRead, mbCancel], [mbSlickeRead, mbCancel, mbYes]],
