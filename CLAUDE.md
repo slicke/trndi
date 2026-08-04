@@ -16,6 +16,7 @@ Windows (this machine — `lazbuild` is not on PATH; the scripts find it at `C:\
 .\make.ps1 clean        # remove build artifacts (-n for dry run)
 .\make.ps1 list-modules # tree of all units
 .\make.ps1 assets       # regenerate assets/carelink_assets.lrs via lazres
+.\make.ps1 ptop         # regenerate ptop.cfg from JCFSettings.xml (needs perl)
 $env:TRNDI_NO_TESTSERVER = '1'; .\make.ps1 test   # skip integration tests
 ```
 

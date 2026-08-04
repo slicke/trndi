@@ -43,7 +43,7 @@ This keeps `main` stable and integrates new features smoothly.
 - Avoid platform `{$IFDEF}` blocks in `trndi.native.base`; use `trndi.native.win|linux|mac` for specifics.
 - Keep methods small and intention-revealing. Add a short comment if the purpose isn’t obvious.
 - Prefer pure Pascal for helpers unless a native tool is required.
-- **Formatting:** We use JEDI Code Formatter (see `JCFSettings.xml` in the repo) for consistent code style. Please format your code before submitting a PR.
+- **Formatting:** We use JEDI Code Formatter (see `JCFSettings.xml` in the repo) for consistent code style. Please format your code before submitting a PR. If your editor drives FPC's `ptop` instead, run `make ptop` (`.\make.ps1 ptop` on Windows) to regenerate `ptop.cfg` from `JCFSettings.xml` — it carries over what ptop can express (indent, keyword case, no line rebreaking) and the generated header lists what it cannot. `JCFSettings.xml` stays the source of truth.
 
 ## Code Quality
 

@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|ide-libs|list-modules|test|assets|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|ide-libs|list-modules|test|assets|ptop|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -42,6 +42,23 @@ function Find-Lazbuild {
     return $null
 }
 $laz = Find-Lazbuild
+
+# 'ptop' runs a Perl script. Unlike 'list-modules' there is no PowerShell twin --
+# duplicating the generator would defeat the point of a single formatting source
+# of truth -- so find the perl that Git for Windows already ships.
+function Find-Perl {
+    $cmd = Get-Command perl -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Path }
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if ($git) {
+        $cand = Join-Path (Split-Path -Parent (Split-Path -Parent $git.Source)) 'usr\bin\perl.exe'
+        if (Test-Path $cand) { return $cand }
+    }
+    foreach ($p in @('C:\Program Files\Git\usr\bin\perl.exe', 'C:\Strawberry\perl\bin\perl.exe')) {
+        if (Test-Path $p) { return $p }
+    }
+    return $null
+}
 
 # The extension engine links quickjs-ng and its ABI shim as shared libraries.
 # Windows resolves them from the executable's own directory, so place them next
@@ -279,6 +296,27 @@ switch ($firstArg) {
         Write-Host "Normalized $out to LF" -ForegroundColor Cyan
         exit 0
     }
+    "ptop" {
+        # Regenerate ptop.cfg from JCFSettings.xml, so the JEDI Code Formatter
+        # profile stays the only place formatting is described. ptop maps just a
+        # subset of it; the generated header lists what was and was not carried
+        # over. Mirrors 'make ptop' on Linux/macOS/BSD.
+        $perl = Find-Perl
+        if (-not $perl) { Write-Error "perl not found (looked on PATH, next to git.exe, and in the usual install locations)."; exit 1 }
+
+        $out = 'ptop.cfg'
+        Write-Host "Regenerating $out from JCFSettings.xml via $perl" -ForegroundColor Cyan
+        & $perl 'scripts\jcf-to-ptop.pl' -o $out
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+        # Indent width and line length are ptop command-line options, not config
+        # file keys, so they have to travel with every invocation.
+        $flags = (& $perl 'scripts\jcf-to-ptop.pl' --args).Trim()
+        Write-Host "Wrote $out. Run ptop as: ptop $flags -c $out <in> <out>"
+        Write-Host "VS Code (alefragnani.pascal-formatter): set pascal.formatter.engineParameters to this file," -ForegroundColor DarkGray
+        Write-Host "and pascal.format.indent / pascal.format.wrapLineLength to match the flags above." -ForegroundColor DarkGray
+        exit 0
+    }
     "help" {
         Write-Host "Trndi make.ps1" -ForegroundColor Cyan
         Write-Host "  ./make.ps1 [target] (no target -> release)" -ForegroundColor Cyan
@@ -293,6 +331,7 @@ switch ($firstArg) {
         Write-Host "                   (the build targets above already do this on Windows)"
         Write-Host "  list-modules     Show Pascal 'unit' modules found under units/ as a tree"
         Write-Host "  assets           Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
+        Write-Host "  ptop             Regenerate ptop.cfg from JCFSettings.xml (formatter config for ptop; needs perl)"
         Write-Host "  clean            Remove build artifacts (*.o, *.ppu, executables, ...); use -n or --dry-run to preview"
         Write-Host "  help             Show this help"
         Write-Host "Notes:" -ForegroundColor Cyan
