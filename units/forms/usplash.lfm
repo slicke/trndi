@@ -24009,7 +24009,7 @@ object fSplash: TfSplash
     Top = 82
     Width = 386
     AutoSize = False
-    Caption = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#13#10#13#10'This app is NOT a medical device.'#13#10'• Do NOT make medical decisions based on this data'#13#10'• Data may be WRONG, delayed, or unavailable  '#13#10'• Always verify with your official CGM device'#13#10'• For emergencies, contact medical professionals'#13#10#13#10'By continuing, you acknowledge that:'#13#10'• You use this app at your own risk'#13#10'• The developers have NO LIABILITY'#13#10'• You have read and agree to the full terms'#13#10#13#10'This app is licensed under the '#13#10'GNU General Public License version 3 with '#13#10'an additional medical disclaimer.'#13#10'See https://github.com/slicke/trndi/LICENSE.md'
+    Caption = '⚠️ IMPORTANT MEDICAL WARNING ⚠️'#13#10#13#10'This app is NOT a medical device.'#13#10'• Do NOT make medical decisions based on this data'#13#10'• Data may be WRONG, delayed, or unavailable  '#13#10'• Always verify with your official CGM device'#13#10'• For emergencies, contact medical professionals'#13#10#13#10'By continuing, you acknowledge that:'#13#10'• You use this app at your own risk'#13#10'• The developers have NO LIABILITY'#13#10'• You have read and agree to the full terms'#13#10#13#10'This app is licensed under the '#13#10'GNU General Public License version 3 with '#13#10'an additional medical disclaimer.'#13#10'See https://github.com/slicke/trndi/blob/main/DISCLAIMER.md'
     Font.Color = 12500670
     Font.Height = -10
     ParentFont = False
