@@ -1758,8 +1758,10 @@ var
   img: NSImage;
   rep: NSBitmapImageRep;
   prevCtx, ctx: NSGraphicsContext;
-  full: NSRect;
+  full, dst: NSRect;
   inset: double;          // not CGFloat: that type is not exported into scope here
+  sz: NSSize;
+  avail, k, dw, dh: double;
   lazimg: TLazIntfImage;
   raw, p: PByte;
   x, y, rowBytes: integer;
@@ -1795,14 +1797,28 @@ begin
     full := NSMakeRect(0, 0, W, H);
     inset := W * 0.08;          // keep the glyph off the very edge
 
+    // drawInRect: stretches to fill whatever rect it is handed, and SF Symbols
+    // are not square (exclamationmark.triangle.fill is markedly wider than it
+    // is tall), so fit the intrinsic size inside the box and centre it instead
+    // of letting it distort.
+    dst := NSMakeRect(inset, inset, W - inset * 2, H - inset * 2);
+    sz := img.size;
+    if (sz.width > 0) and (sz.height > 0) then
+    begin
+      avail := W - inset * 2;
+      k := Min(avail / sz.width, (H - inset * 2) / sz.height);
+      dw := sz.width * k;
+      dh := sz.height * k;
+      dst := NSMakeRect((W - dw) / 2, (H - dh) / 2, dw, dh);
+    end;
+
     prevCtx := NSGraphicsContext.currentContext;
     NSGraphicsContext.setCurrentContext(ctx);
     try
       // Symbol first on a clear rep, then tint only what it covers via
       // sourceAtop, then slide the background in underneath with
       // destinationOver -- tinting after the fill would recolour the fill too.
-      img.drawInRect_fromRect_operation_fraction(
-        NSMakeRect(inset, inset, W - inset * 2, H - inset * 2),
+      img.drawInRect_fromRect_operation_fraction(dst,
         NSZeroRect, NSCompositeSourceOver, 1.0);
       tint.set_;
       NSRectFillUsingOperation(full, NSCompositeSourceAtop);
@@ -1880,6 +1896,9 @@ begin
   bmp := Image.Picture.Bitmap;
   bmp.SetSize(W, H);
   Image.Stretch := true;   // no-op when scale = 1, since bitmap = control size
+  // Stretch alone fills the client rect and would distort the icon if a caller
+  // ever gives IconBox a non-square size; every one is square today.
+  Image.Proportional := true;
   Image.Transparent := true;
 
   {$ifdef X_MAC}
