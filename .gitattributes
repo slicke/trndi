@@ -1,3 +1,20 @@
+# Normalize every text file to LF, both in the repository and in the working
+# tree on all platforms. Before this, ~40% of tracked sources were committed
+# with CRLF and 22 files had mixed endings, so editing the same unit on Linux
+# and Windows produced whole-file phantom diffs. FPC, Lazarus and PowerShell
+# all read LF fine on Windows, and there is no .bat/.cmd in the tree that would
+# require CRLF. Contributors need no local core.autocrlf setting: this wins.
+* text=auto eol=lf
+
+# Lazarus binary artifacts. Auto-detection already classifies these, but state
+# it so a stray text-looking header can never trigger EOL rewriting.
+*.res binary
+*.ico binary
+*.icns binary
+
+# The rules below are redundant under the global one above, but are kept
+# because their rationale must survive any future change to that default.
+
 # Enforce LF line endings for all shell scripts
 *.sh text eol=lf
 
