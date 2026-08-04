@@ -115,6 +115,18 @@ uxclLightGreen = $0095EEC4;
 uxclDarkGreen = $00147C4A;
 uxclGray = $00322B27;
 
+  {**
+    @name Dark scheme palette
+    @desc
+    The greys the dialogs fall back to in dark mode. Kept here as named
+    constants because they used to be repeated as literal RGB() calls in every
+    dialog, which is how controls ended up missing the dark branch.
+  }
+uxclDarkBg = $00202020;    // Dialog background       (RGB 32, 32, 32)
+uxclDarkInput = $00353535; // Data-entry background   (RGB 53, 53, 53)
+uxclDarkFixed = $00232323; // Grid header cells       (RGB 35, 35, 35)
+uxclDarkText = $00F5F5F5;  // Text on the above       (RGB 245, 245, 245)
+
  {**
     @name Dialog Scales
     @desc
@@ -1189,8 +1201,7 @@ var
 begin
   {$ifdef X_WIN}
   light := GetSysColor(COLOR_BTNFACE);
-  dark := RGB(32, 32, 32);
-//    bg := IfThen(TrndiNative.isDarkMode, uxclGray, bg);
+  dark := uxclDarkBg;
   {$else}
   {$ifdef X_MAC}
   // Use Cocoa semantic control background color for native macOS dialogs.
@@ -1203,6 +1214,143 @@ begin
   {$endif}
 
   result := IfThen(TrndiNative.isDarkMode, dark, light);
+end;
+
+{$ifdef X_WIN}
+{ ---------------------------------------------------------------------------
+  Dark theming for native Win32 controls
+
+  Assigning Color/Font.Color only covers the part of a control the LCL paints
+  itself. The visual style still draws the frame, the combo box drop-down
+  button, the spin arrows and the scroll bars, and it draws them from the light
+  theme -- which is why a dark dialog used to show light-mode widgets that
+  merely had a dark fill. A control renders as its dark variant only once it is
+  switched to one of comctl's "DarkMode_*" theme classes.
+
+  The process is opted into dark app mode at startup (SetPreferredDarkMode in
+  Trndi.lpr); that is the precondition for these classes to resolve at all.
+  --------------------------------------------------------------------------- }
+const
+ { "Common file dialog" -- the class carrying dark edits and combo boxes. }
+  DarkThemeCFD = 'DarkMode_CFD';
+ { Dark scroll bars, up/down arrows and list/tree views. }
+  DarkThemeExplorer = 'DarkMode_Explorer';
+
+function SetWindowTheme(AWnd: HWND; pszSubAppName, pszSubIdList: PWideChar):
+HRESULT; stdcall; external 'uxtheme.dll' name 'SetWindowTheme';
+
+type
+  TAllowDarkModeForWindow = function(AWnd: HWND; Allow: BOOL): BOOL; stdcall;
+
+var
+ { uxtheme ordinal 133, undocumented and absent on some builds, so it is
+   resolved lazily and allowed to stay nil -- SetWindowTheme alone still does
+   most of the work. }
+  GAllowDarkWindow: TAllowDarkModeForWindow = nil;
+  GAllowDarkWindowTried: boolean = false;
+
+{ Switch a single window to a dark comctl theme class. }
+procedure WinDarkTheme(AWnd: HWND; const ATheme: unicodestring);
+var
+  uxt: HMODULE;
+begin
+  if AWnd = 0 then
+    Exit;
+
+  if not GAllowDarkWindowTried then
+  begin
+    GAllowDarkWindowTried := true;
+    // SetWindowTheme above is statically imported, so uxtheme.dll is already
+    // in the process; a handle is enough and nothing needs freeing.
+    uxt := GetModuleHandle('uxtheme.dll');
+    if uxt <> 0 then
+      GAllowDarkWindow := TAllowDarkModeForWindow(
+        GetProcAddress(uxt, MAKEINTRESOURCE(133)));
+  end;
+
+  if Assigned(GAllowDarkWindow) then
+    GAllowDarkWindow(AWnd, true);
+  SetWindowTheme(AWnd, PWideChar(ATheme), nil);
+  // The control caches its theme handle on creation and would keep painting
+  // with the light one until something else happened to invalidate it.
+  SendMessage(AWnd, WM_THEMECHANGED, 0, 0);
+end;
+
+{**
+  Apply the dark theme to a control and to every native window it is built
+  from.
+
+  The recursion is the point: several LCL controls are composites whose visible
+  parts are children, so theming the outer handle alone leaves them light.
+  @code(TFloatSpinEditEx) and @code(TDateEdit) are containers holding a real
+  EDIT plus a buddy button, and a combo box keeps its drop-down list in a
+  window of its own that @code(GetComboBoxInfo) has to be asked for.
+}
+procedure WinDarkThemeTree(AControl: TWinControl);
+var
+  i: integer;
+  cbi: TComboBoxInfo;
+begin
+  if (AControl = nil) or (not AControl.HandleAllocated) then
+    Exit;
+
+  if AControl is TCustomComboBox then
+  begin
+    WinDarkTheme(AControl.Handle, DarkThemeCFD);
+    cbi := Default(TComboBoxInfo);
+    cbi.cbSize := SizeOf(cbi);
+    if GetComboBoxInfo(AControl.Handle, @cbi) then
+    begin
+      // Explorer rather than CFD: the list is what carries a scroll bar.
+      if cbi.hwndList <> 0 then
+        WinDarkTheme(cbi.hwndList, DarkThemeExplorer);
+      // csDropDownList has no edit and reports the combo itself here.
+      if (cbi.hwndItem <> 0) and (cbi.hwndItem <> AControl.Handle) then
+        WinDarkTheme(cbi.hwndItem, DarkThemeCFD);
+    end;
+  end
+  else
+  // Memo before edit: TCustomMemo descends from TCustomEdit, but its scroll
+  // bars matter more than its border, and a window gets only one theme class.
+  if AControl is TCustomMemo then
+    WinDarkTheme(AControl.Handle, DarkThemeExplorer)
+  else
+  if AControl is TCustomEdit then
+    WinDarkTheme(AControl.Handle, DarkThemeCFD)
+  else
+    // Grids, scroll boxes and up/down buttons: Explorer is the class that
+    // carries the dark scroll bars and arrows.
+    WinDarkTheme(AControl.Handle, DarkThemeExplorer);
+
+  for i := 0 to AControl.ControlCount - 1 do
+    if AControl.Controls[i] is TWinControl then
+      WinDarkThemeTree(TWinControl(AControl.Controls[i]));
+end;
+{$endif}
+
+{**
+  Apply the active color scheme to a data-entry control.
+
+  Replaces the per-dialog colour blocks that used to be copy-pasted into each
+  input helper. On Windows the colours alone are not enough -- see
+  @link(WinDarkThemeTree) -- but the theme pass needs a window handle, so it
+  runs from @link(TDialogForm.DoShow) rather than here.
+  @param AControl The edit, combo box, grid or picker to restyle.
+}
+procedure ApplyInputColors(AControl: TWinControl);
+begin
+  {$ifdef X_WIN}
+  if TrndiNative.isDarkMode then
+  begin
+    AControl.Color := uxclDarkInput;
+    AControl.Font.Color := uxclDarkText;
+  end;
+  {$else}
+  {$ifdef X_MAC}
+  AControl.Color := MacInputBackgroundColor(AControl.Color);
+  AControl.Font.Color := MacInputTextColor(AControl.Font.Color);
+  {$endif}
+  {$endif}
 end;
 
 {**
@@ -2207,18 +2355,7 @@ begin
       Edit.minvalue := AMin;
     if AMax <> FLOAT_NONE then
       Edit.maxvalue := AMax;
-    {$ifdef X_WIN}
-    if TrndiNative.isDarkMode then
-    begin
-      Edit.Color := RGBToColor(53, 53, 53);
-      Edit.Font.Color := RGBToColor(245, 245, 245);
-    end;
-    {$else}
-    {$ifdef X_MAC}
-    Edit.Color := MacInputBackgroundColor(Edit.Color);
-    Edit.Font.Color := MacInputTextColor(Edit.Font.Color);
-    {$endif}
-    {$endif}
+    ApplyInputColors(Edit);
     if float then
     begin
       Edit.DecimalPlaces := 2;
@@ -2490,18 +2627,7 @@ begin
     Edit.Text := ADefault;
     if AMasked then
       Edit.EchoMode := emPassword;
-    {$ifdef X_WIN}
-    if TrndiNative.isDarkMode then
-    begin
-      Edit.Color := RGBToColor(53, 53, 53);
-      Edit.Font.Color := RGBToColor(245, 245, 245);
-    end;
-    {$else}
-    {$ifdef X_MAC}
-    Edit.Color := MacInputBackgroundColor(Edit.Color);
-    Edit.Font.Color := MacInputTextColor(Edit.Font.Color);
-    {$endif}
-    {$endif}
+    ApplyInputColors(Edit);
     if (size = sdsBig) then
       Edit.Font.Size := 20;
 
@@ -2592,18 +2718,7 @@ begin
     Combo.Style := csDropDownList;
     Combo.Left := DescLabel.Left;
     Combo.Width := DescLabel.Width;
-    {$ifdef X_WIN}
-    if TrndiNative.isDarkMode then
-    begin
-      Combo.Color := RGBToColor(53, 53, 53);
-      Combo.Font.Color := RGBToColor(245, 245, 245);
-    end;
-    {$else}
-    {$ifdef X_MAC}
-    Combo.Color := MacInputBackgroundColor(Combo.Color);
-    Combo.Font.Color := MacInputTextColor(Combo.Font.Color);
-    {$endif}
-    {$endif}
+    ApplyInputColors(Combo);
     if (size = sdsBig) then
       Combo.Font.Size := 20;
     Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
@@ -2672,18 +2787,14 @@ begin
     Grid.Top := DescLabel.Top + DescLabel.Height + Padding;
     Grid.Height := ifthen((size = sdsBig) , GridHeight + 80, GridHeight);
     Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing];
+    ApplyInputColors(Grid);
+    // Header cells sit a shade apart from the data cells on both schemes.
     {$ifdef X_WIN}
     if TrndiNative.isDarkMode then
-    begin
-      Grid.Color := RGBToColor(53, 53, 53);
-      Grid.FixedColor := RGBToColor(35, 35, 35);
-      Grid.Font.Color := RGBToColor(245, 245, 245);
-    end;
+      Grid.FixedColor := uxclDarkFixed;
     {$else}
     {$ifdef X_MAC}
-    Grid.Color := MacInputBackgroundColor(Grid.Color);
     Grid.FixedColor := MacDialogBackgroundColor(Grid.FixedColor);
-    Grid.Font.Color := MacInputTextColor(Grid.Font.Color);
     {$endif}
     {$endif}
     Grid.ColCount := 2;
@@ -2768,18 +2879,7 @@ begin
     FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
     FontCombo.Style := csDropDownList;
     FontCombo.Sorted := true;
-    {$ifdef X_WIN}
-    if TrndiNative.isDarkMode then
-    begin
-      FontCombo.Color := RGBToColor(53, 53, 53);
-      FontCombo.Font.Color := RGBToColor(245, 245, 245);
-    end;
-    {$else}
-    {$ifdef X_MAC}
-    FontCombo.Color := MacInputBackgroundColor(FontCombo.Color);
-    FontCombo.Font.Color := MacInputTextColor(FontCombo.Font.Color);
-    {$endif}
-    {$endif}
+    ApplyInputColors(FontCombo);
     
     // Populate with system fonts
     FontCombo.Items.Assign(Screen.Fonts);
@@ -2904,18 +3004,7 @@ begin
     if AMaxDate <> 0 then
       DatePicker.MaxDate := AMaxDate;
     
-    {$ifdef X_WIN}
-    if TrndiNative.isDarkMode then
-    begin
-      DatePicker.Color := RGBToColor(53, 53, 53);
-      DatePicker.Font.Color := RGBToColor(245, 245, 245);
-    end;
-    {$else}
-    {$ifdef X_MAC}
-    DatePicker.Color := MacInputBackgroundColor(DatePicker.Color);
-    DatePicker.Font.Color := MacInputTextColor(DatePicker.Font.Color);
-    {$endif}
-    {$endif}
+    ApplyInputColors(DatePicker);
     if (size = sdsBig) then
     begin
       DatePicker.Font.Size := 20;
@@ -3844,13 +3933,28 @@ end;
 {** Override to apply custom title bar colors on show. }
 
 procedure TDialogForm.DoShow;
+{$ifdef X_WIN}
+var
+  i: integer;
+{$endif}
 begin
   inherited DoShow;
-  // Your show-time logic here. Example placeholder:
   if TrndiNative.isDarkMode then
     TrndiNative.SetTitleColor(handle, self.Color, clWhite)
   else
     TrndiNative.SetTitleColor(handle, self.Color, clBlack);
+
+  {$ifdef X_WIN}
+  // Switch the native children to comctl's dark theme classes. This runs here
+  // rather than where the controls are built because SetWindowTheme needs a
+  // window handle, and by DoShow every child is guaranteed to have one.
+  // Walking the whole tree also reaches the controls no dialog ever styled by
+  // hand -- scroll boxes, the log memo, the grid's scroll bars.
+  if TrndiNative.isDarkMode then
+    for i := 0 to ControlCount - 1 do
+      if Controls[i] is TWinControl then
+        WinDarkThemeTree(TWinControl(Controls[i]));
+  {$endif}
 end;
 
 {**
@@ -4209,7 +4313,7 @@ begin
   else
   begin
     // Dark mode
-    Canvas.Pen.Color := RGBToColor(32, 32, 32);  // Match form background
+    Canvas.Pen.Color := uxclDarkBg;  // Match form background
     
     if FDown then
     begin
@@ -4221,7 +4325,7 @@ begin
     end
     else
     begin
-      Canvas.Brush.Color := RGBToColor(53, 53, 53);  // Normal state
+      Canvas.Brush.Color := uxclDarkInput;  // Normal state
     end;
     
     Canvas.RoundRect(BtnRect, 4, 4);
@@ -4238,7 +4342,7 @@ begin
     end;
     
     // Text in light color for dark mode
-    Canvas.Font.Color := RGBToColor(245, 245, 245);
+    Canvas.Font.Color := uxclDarkText;
   end;
   
   // Draw text centered
