@@ -99,7 +99,7 @@ uxmtError          = WChar($274C); // ❌ Cross mark
 uxmtInformation    = WChar($2139); // ℹ️ Info symbol
 uxmtConfirmation   = WChar($2753); // ❓ Question mark
 uxmtCog            = WChar($2699); // ⚙️ Gear
-uxmtSquare         = WChar($274F); // ❏ Square
+uxmtSquare         = WChar($2B1C); // ⬜ Square (U+274F is a dingbat, absent from every emoji font)
 uxmtCustom         = uxmtCog;
 
   {**
@@ -1604,7 +1604,7 @@ var
   TargetProps: TD2D1_RENDER_TARGET_PROPERTIES;
   Bitmap: Graphics.TBitmap;
   TextRect: TD2D1_RECT_F;
-  BG: TD2D1_COLOR_F;
+  BG, FG: TD2D1_COLOR_F;
   R: TRect;
   Inset: single;
 begin
@@ -1649,9 +1649,12 @@ begin
         'en-us', TextFormat
         );
 
-      // Brush for text rendering
+      // Brush for text rendering. Colour glyphs carry their own layers and
+      // ignore it, but a codepoint Segoe UI Emoji lacks falls back to a
+      // monochrome face -- drawing that in the background colour hides it.
       BG := TColorToColorF(bgcol, 1.0);
-      RT.CreateSolidColorBrush(@BG, nil, Brush);
+      FG := TColorToColorF(getBaseColor, 1.0);
+      RT.CreateSolidColorBrush(@FG, nil, Brush);
 
       // Drawing area with inset
       TextRect := RectF(Inset, Inset, Image.Width - Inset, Image.Height - Inset);
@@ -1679,34 +1682,56 @@ end;
 {$else}
 {**
   Render an emoji into a @code(TImage) using the standard canvas (non-Windows).
-  Uses "Noto Color Emoji" when available.
+  Uses "Apple Color Emoji" on macOS and "Noto Color Emoji" elsewhere.
   @param Image Target image control.
   @param Emoji Emoji text (usually a single codepoint).
   @param bgcol Background color.
 }
 procedure AssignEmoji(Image: TImage; const Emoji: widestring; bgcol: TColor = clWhite);
 var
-  Inset: integer;
+  Inset, W, H: integer;
+  scale: double;
+  bmp: Graphics.TBitmap;
 begin
-  Image.Picture.Bitmap.SetSize(Image.Width, Image.Height);
+  // Render at the display's backing scale factor. The canvas draws in logical
+  // points, so a 1:1 bitmap is upscaled by the compositor and comes out soft on
+  // Retina; an oversized bitmap stretched back into the control's logical
+  // bounds lands on device pixels instead.
+  scale := 1;
+  {$ifdef X_MAC}
+  if NSScreen.mainScreen <> nil then
+    scale := NSScreen.mainScreen.backingScaleFactor;
+  if scale < 1 then
+    scale := 1;
+  {$endif}
+
+  W := Round(Image.Width * scale);
+  H := Round(Image.Height * scale);
+
+  bmp := Image.Picture.Bitmap;
+  bmp.SetSize(W, H);
+  Image.Stretch := true;   // no-op when scale = 1, since bitmap = control size
   Image.Transparent := true;
 
-  Image.Picture.Bitmap.Canvas.Brush.Color := bgcol;
-  Image.Picture.Bitmap.Canvas.FillRect(0, 0, Image.Width, Image.Height);
+  bmp.Canvas.Brush.Color := bgcol;
+  bmp.Canvas.FillRect(0, 0, W, H);
 
-  Inset := Round(Image.Width * 0.15); // 15% padding around the emoji
+  Inset := Round(W * 0.15); // 15% padding around the emoji
 
   {$ifdef Darwin}
-  Image.Picture.Bitmap.Canvas.Font.Name := 'Apple Color Emoji';
+  bmp.Canvas.Font.Name := 'Apple Color Emoji';
   {$else}
-  Image.Picture.Bitmap.Canvas.Font.Name := 'Noto Color Emoji';
+  bmp.Canvas.Font.Name := 'Noto Color Emoji';
   {$endif}
-  Image.Picture.Bitmap.Canvas.Font.Size := Image.Height - (Inset * 2);
-  Image.Picture.Bitmap.Canvas.Font.Color := clBlack;
+  bmp.Canvas.Font.Size := H - (Inset * 2);
+  // Colour glyphs ignore this; it only reaches codepoints the emoji font lacks
+  // and that fall back to a monochrome face, which must not be hardcoded black
+  // on a dark dialog background.
+  bmp.Canvas.Font.Color := getBaseColor;
 
-  Image.Picture.Bitmap.Canvas.TextOut(
-    (Image.Width - Image.Picture.Bitmap.Canvas.TextWidth(Emoji)) div 2,
-    (Image.Height - Image.Picture.Bitmap.Canvas.TextHeight(Emoji)) div 2,
+  bmp.Canvas.TextOut(
+    (W - bmp.Canvas.TextWidth(Emoji)) div 2,
+    (H - bmp.Canvas.TextHeight(Emoji)) div 2,
     Emoji
     );
 end;
@@ -2849,8 +2874,8 @@ begin
     {$endif}
     IconBox.Width := ifthen((size = sdsBig) , 80, 48);
     IconBox.Height := IconBox.Width;
-    {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
-    {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
+    // No font to set here: AssignEmoji renders onto its own bitmap canvas and
+    // never consults IconBox.Font.
     AssignEmoji(IconBox, icon, bgcol);
 
     // HTML panel
@@ -3051,8 +3076,8 @@ begin
       IconBox.Width := 50;
     end;
     IconBox.Height := IconBox.Width;
-    {$ifdef X_WIN}IconBox.Font.Name := 'Segoe UI Emoji';{$endif}
-    {$ifdef Darwin}IconBox.Font.Name := 'Apple Color Emoji';{$endif}
+    // No font to set here: AssignEmoji renders onto its own bitmap canvas and
+    // never consults IconBox.Font.
     Dialog.HandleNeeded;
     AssignEmoji(IconBox, icon, bgcol);
 
