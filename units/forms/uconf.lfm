@@ -4030,7 +4030,7 @@ object fConf: TfConf
       end
       object GroupBox2: TGroupBox
         Left = 10
-        Height = 360
+        Height = 332
         Top = 30
         Width = 617
         Align = alClient
@@ -4042,7 +4042,7 @@ object fConf: TfConf
         TabOrder = 0
         object lbExtensions: TCheckListBox
           Left = 5
-          Height = 330
+          Height = 302
           Top = 5
           Width = 603
           Align = alClient
@@ -4056,13 +4056,13 @@ object fConf: TfConf
       end
       object GroupBox3: TGroupBox
         Left = 10
-        Height = 97
-        Top = 400
+        Height = 125
+        Top = 372
         Width = 617
         Align = alBottom
         BorderSpacing.Around = 10
         Caption = 'Extension Info'
-        ClientHeight = 77
+        ClientHeight = 105
         ClientWidth = 613
         ParentBackground = False
         TabOrder = 1
@@ -4087,6 +4087,17 @@ object fConf: TfConf
           Height = 1
           Top = 40
           Width = 1
+        end
+        object bExtResetPerms: TButton
+          Left = 8
+          Height = 26
+          Top = 66
+          Width = 145
+          AutoSize = True
+          Caption = 'Reset permissions'
+          Enabled = False
+          TabOrder = 0
+          OnClick = bExtResetPermsClick
         end
       end
       object Panel3: TPanel
