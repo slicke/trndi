@@ -400,6 +400,7 @@ const
     'This app is NOT a medical device.'#10 +
     '• Do NOT make medical decisions based on this data'#10 +
     '• Data may be WRONG, delayed, or unavailable'#10 +
+    '• Alerts may be delayed or never arrive — Trndi is NOT an alarm'#10 +
     '• Always verify with your official CGM device'#10 +
     '• For emergencies, contact medical professionals'#10 + #10 +
     'By continuing, you acknowledge that:'#10 +
@@ -413,7 +414,10 @@ const
 var
   i: integer;
 begin
-  if native.GetBoolSetting('license.250608') <> true then
+  // The key is dated: bump it whenever the terms above change materially, so
+  // everyone re-accepts what they are actually agreeing to. 260804 added the
+  // warning that alerts are not an alarm system (see DISCLAIMER.md).
+  if native.GetBoolSetting('license.260804') <> true then
   begin
     i := 0;
     while i <> mrYes do
@@ -425,7 +429,7 @@ begin
         [[mbYes, mbSlickeRead, mbCancel], [mbSlickeRead, mbCancel, mbYes]],
         uxmtCustom, uxscLarge);
       if i = mrYes then
-        native.SetSetting('license.250608', true)
+        native.SetSetting('license.260804', true)
       else
       if i = mrCancel then
       begin
