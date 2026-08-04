@@ -1,0 +1,11 @@
+# Revisions to skip when running `git blame`.
+#
+# Enable locally with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# (GitHub and GitLab pick this file up automatically.)
+#
+# Only whole-tree mechanical reformatting belongs here -- never a commit that
+# changes behaviour.
+
+# Normalize all text files to LF line endings (EOL-only, 126 files)
+d121365f3e78ae7d2ef9e8413e540993bcfeaf66
