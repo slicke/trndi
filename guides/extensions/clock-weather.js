@@ -1,5 +1,7 @@
-/* Notify extension for Nightscout
-(c) slicke / No copyright
+/*
+@name Clock Weather
+@copyright (c) slicke / No copyright
+@description Replaces the clock with the current outdoor temperature.
 @perms net
 */
 // Show the current weather instead of the clock

@@ -1,5 +1,7 @@
-/* Bedtime Check
-(c) Trndi sample extension
+/*
+@name Bedtime Check
+@copyright (c) Trndi sample extension
+@description Nudges once per night if you are trending out of a safe pre-sleep band.
 */
 // Once per night, between BEDTIME_START and BEDTIME_END, look at the
 // current reading and suggest action if you're trending out of a safe

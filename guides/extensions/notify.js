@@ -1,5 +1,7 @@
-/* Notify extension for Nightscout
-(c) slicke / No copyright
+/*
+@name Notify
+@copyright (c) slicke / No copyright
+@description Sends a desktop notification via notify-send on high readings.
 @perms exec
 */
 function updateCallback(curr, mgdl, mmol, ts){

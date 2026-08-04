@@ -1,5 +1,7 @@
-/* IFTTT Webhooks
-(c) Trndi sample extension
+/*
+@name IFTTT Webhooks
+@copyright (c) Trndi sample extension
+@description Fires IFTTT Maker Webhook events on glucose conditions.
 @perms net, settings
 */
 // Fires IFTTT Maker Webhook events on glucose conditions.

@@ -1,5 +1,7 @@
-/* Discord Webhooks
-(c) Trndi sample extension
+/*
+@name Discord Webhooks
+@copyright (c) Trndi sample extension
+@description Posts to a Discord channel via webhook on glucose conditions.
 @perms net, settings
 */
 // Posts to a Discord channel via webhook on glucose conditions.

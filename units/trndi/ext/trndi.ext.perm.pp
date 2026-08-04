@@ -52,7 +52,7 @@ type
   TExtPermGroup = (epData, epUI, epTimers, epNet, epExec, epSettings);
   TExtPermSet = set of TExtPermGroup;
 
-      {** Parsed manifest from an extension's leading /* ... */ comment block.
+  {** Parsed manifest from an extension's leading /* ... */ comment block.
       @name and @copyright are preferred; the historical first-line and (c)
       forms remain supported for existing extensions. }
   TExtManifest = record
@@ -172,7 +172,7 @@ begin
   Result := LowerCase(base);
 end;
 
-{ Strip leading "//" or "*" decoration from a manifest body line. }
+{ Strip leading "*" decoration from a manifest body line. }
 function StripLineDecoration(const line: string): string;
 var
   s: string;
