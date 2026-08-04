@@ -30,6 +30,16 @@ if [ -d "../lang" ]; then
   cp -r ../lang macos/Trndi.app/Contents/MacOS/
 fi
 
+# GPLv3 sections 4 and 6 require the license to travel with the binary, so put
+# it in the bundle's Resources (unsigned data, safe for codesign).
+mkdir -p macos/Trndi.app/Contents/Resources
+for LIC in LICENSE.md DISCLAIMER.md THIRD-PARTY.md; do
+  [ -f "../${LIC}" ] && cp "../${LIC}" macos/Trndi.app/Contents/Resources/
+done
+if [ -f "../externals/quickjs/LICENSE.quickjs-ng" ] && [ -d "${QJS_DIR}" ]; then
+  cp ../externals/quickjs/LICENSE.quickjs-ng macos/Trndi.app/Contents/Resources/
+fi
+
 # The CareLink login helper is compiled into the binary (see
 # assets/carelink_assets.lrs) and written to the user's writable
 # settings folder on demand, so nothing is bundled into the .app here —

@@ -2506,7 +2506,36 @@ const
     '- The developers assume NO LIABILITY for any harm, injury, or damages' + sHTMLLineBreak +
     '- You use this app entirely at your own risk' + sHTMLLineBreak +
     '- This app may contain bugs or errors that could display incorrect data' + sHTMLLineBreak + sHTMLLineBreak +
-    '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>';
+    '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>'
+    {$ifdef TrndiExt}
+    // The extension engine links quickjs-ng, whose MIT license requires its
+    // copyright and permission notice to accompany every copy. No-ext builds
+    // don't ship the library, so the notice is omitted there.
+    + sHTMLLineBreak + sHTMLLineBreak +
+    '<b>### THIRD-PARTY SOFTWARE ###</b>' + sHTMLLineBreak +
+    'The extension engine includes quickjs-ng, used under the MIT license:' + sHTMLLineBreak + sHTMLLineBreak +
+    'The MIT License (MIT)' + sHTMLLineBreak + sHTMLLineBreak +
+    'Copyright (c) 2017-2026 Fabrice Bellard' + sHTMLLineBreak +
+    'Copyright (c) 2017-2024 Charlie Gordon' + sHTMLLineBreak +
+    'Copyright (c) 2023-2026 Ben Noordhuis' + sHTMLLineBreak +
+    'Copyright (c) 2023-2026 Saúl Ibarra Corretgé' + sHTMLLineBreak + sHTMLLineBreak +
+    'Permission is hereby granted, free of charge, to any person obtaining a copy ' +
+    'of this software and associated documentation files (the "Software"), to deal ' +
+    'in the Software without restriction, including without limitation the rights ' +
+    'to use, copy, modify, merge, publish, distribute, sublicense, and/or sell ' +
+    'copies of the Software, and to permit persons to whom the Software is ' +
+    'furnished to do so, subject to the following conditions:' + sHTMLLineBreak + sHTMLLineBreak +
+    'The above copyright notice and this permission notice shall be included in ' +
+    'all copies or substantial portions of the Software.' + sHTMLLineBreak + sHTMLLineBreak +
+    'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR ' +
+    'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, ' +
+    'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL ' +
+    'THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER ' +
+    'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, ' +
+    'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN ' +
+    'THE SOFTWARE.' + sHTMLLineBreak + sHTMLLineBreak +
+    'Other bundled components are listed in THIRD-PARTY.md.'
+    {$endif};
 begin
   if SlickeMsg(sdsAuto, 'License', txt,
     [[mbOK, mbSlickeRead], [mbSlickeRead, mbOK]], uxmtOK, uxscHuge) <> mrOk then

@@ -256,6 +256,16 @@ jobs:
             # to the user's writable settings folder on demand — nothing to
             # bundle next to it.
 
+            # GPLv3 sections 4 and 6: the license has to accompany the binary.
+            # The MIT notice follows the quickjs-ng libraries staged above.
+            mkdir -p "$PKG_DIR/usr/share/doc/trndi"
+            for LIC in LICENSE.md DISCLAIMER.md THIRD-PARTY.md; do
+              [ -f "$LIC" ] && cp "$LIC" "$PKG_DIR/usr/share/doc/trndi/"
+            done
+            if [ -f externals/quickjs/LICENSE.quickjs-ng ] && [ -d "$QJS_DIR" ]; then
+              cp externals/quickjs/LICENSE.quickjs-ng "$PKG_DIR/usr/share/doc/trndi/"
+            fi
+
             # Optional GNOME Shell top-bar indicator extension source
             if [ -d "gnome-shell-extension/trndi-current" ]; then
               mkdir -p "$PKG_DIR/usr/local/share/trndi/gnome-shell-extension"
