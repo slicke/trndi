@@ -1,5 +1,7 @@
-/* fetch() demo
-(c) Trndi sample extension
+/*
+@name fetch() demo
+@copyright (c) Trndi sample extension
+@description Demonstrates Trndi's browser-style fetch() API.
 @perms net
 */
 // Shows the fetch() API: a browser-style HTTP client for extensions.

@@ -52,11 +52,19 @@ type
   TExtPermGroup = (epData, epUI, epTimers, epNet, epExec, epSettings);
   TExtPermSet = set of TExtPermGroup;
 
-  {** Parsed manifest from an extension's leading /* ... */ comment block. }
+      {** Parsed manifest from an extension's leading /* ... */ comment block.
+      @name and @copyright are preferred; the historical first-line and (c)
+      forms remain supported for existing extensions. }
   TExtManifest = record
-    DisplayName: string;       // first non-empty line of the header
-    Author: string;            // line beginning with "(c)"
-    Requested: TExtPermSet;    // groups listed on a "@perms ..." line
+    DisplayName: string;
+    Author: string;
+    Version: string;
+    Description: string;
+    Homepage: string;
+    License: string;
+    Requested: TExtPermSet;
+    IsValid: boolean;
+    ErrorMessage: string;
   end;
 
 const
@@ -75,7 +83,8 @@ const
      'Run external programs (runCMD)',
      'Read/write Trndi settings and CGM thresholds');
 
-{** Parse the leading /* ... */ block from an extension source. }
+{** Parse the leading /* ... */ block from an extension source. Invalid
+    directives make IsValid False and explain the reason in ErrorMessage. }
 function ParseExtManifest(const Script: string): TExtManifest;
 
 {** SHA-256 hex digest of the script source. Used to detect edits and force re-prompt. }
@@ -87,7 +96,8 @@ function ExtIdFromPath(const FileName: string): string;
 {** Convert a permission set to comma-separated names, baseline excluded. }
 function PermSetToCSV(const s: TExtPermSet): string;
 
-{** Parse "net, exec, settings" into a set. Unknown names are ignored. }
+{** Parse "net, exec, settings" into a set. Unknown names are ignored.
+    ParseExtManifest validates permission names for extension manifests. }
 function CSVToPermSet(const s: string): TExtPermSet;
 
 {** Map a name like "net" to epNet. Returns False if unknown. }
@@ -175,58 +185,98 @@ end;
 
 function ParseExtManifest(const Script: string): TExtManifest;
 var
-  s, body, line: string;
+  s, body: string;
   startIdx, endIdx: integer;
-  lines: TStringArray;
-  i: integer;
-  trimmed, lc: string;
+  lines, parts: TStringArray;
+  i, j: integer;
+  trimmed, lc, value: string;
   haveName: boolean;
+  g: TExtPermGroup;
+
+  function DirectiveValue(const Directive: string; out AValue: string): boolean;
+  var
+    rest: string;
+  begin
+    Result := False;
+    if Copy(lc, 1, Length(Directive)) <> Directive then Exit;
+    rest := Copy(trimmed, Length(Directive) + 1, MaxInt);
+    if (rest <> '') and not (rest[1] in [' ', #9]) then Exit;
+    AValue := Trim(rest);
+    Result := True;
+  end;
+
+  procedure AddError(const Msg: string);
+  begin
+    Result.IsValid := False;
+    if Result.ErrorMessage <> '' then
+      Result.ErrorMessage := Result.ErrorMessage + sLineBreak;
+    Result.ErrorMessage := Result.ErrorMessage + Msg;
+  end;
+
 begin
   Result.DisplayName := '';
   Result.Author := '';
+  Result.Version := '';
+  Result.Description := '';
+  Result.Homepage := '';
+  Result.License := '';
   Result.Requested := [];
+  Result.IsValid := True;
+  Result.ErrorMessage := '';
 
   s := Script;
   if s = '' then Exit;
+  if Copy(s, 1, 3) = #$EF#$BB#$BF then
+    Delete(s, 1, 3); // Permit UTF-8 files saved with a BOM.
 
   startIdx := Pos('/*', s);
-  if startIdx <> 1 then
-    Exit;  // header block must start the file (mirrors existing convention)
-
+  if startIdx <> 1 then Exit;
   endIdx := PosEx('*/', s, startIdx + 2);
-  if endIdx = 0 then
-    Exit;
+  if endIdx = 0 then Exit;
 
   body := Copy(s, startIdx + 2, endIdx - startIdx - 2);
   lines := body.Split([#13, #10], TStringSplitOptions.None);
-
   haveName := False;
   for i := 0 to High(lines) do
   begin
     trimmed := StripLineDecoration(lines[i]);
     if trimmed = '' then Continue;
-
     lc := LowerCase(trimmed);
 
-    if (not haveName) and (Pos('@perms', lc) <> 1) and (Pos('(c)', lc) <> 1)
-       and (Pos('copyright', lc) <> 1) then
+    if DirectiveValue('@name', value) then
+    begin
+      Result.DisplayName := value;
+      haveName := value <> '';
+    end
+    else if DirectiveValue('@copyright', value) then
+      Result.Author := value
+    else if DirectiveValue('@version', value) then
+      Result.Version := value
+    else if DirectiveValue('@description', value) then
+      Result.Description := value
+    else if DirectiveValue('@homepage', value) then
+      Result.Homepage := value
+    else if DirectiveValue('@license', value) then
+      Result.License := value
+    else if DirectiveValue('@perms', value) then
+    begin
+      parts := value.Split([',', ' ', #9], TStringSplitOptions.ExcludeEmpty);
+      for j := 0 to High(parts) do
+        if ParsePermName(parts[j], g) then
+          Include(Result.Requested, g)
+        else
+          AddError('Unknown permission: ' + parts[j]);
+    end
+    else if (Pos('(c)', lc) = 1) or (Pos('copyright', lc) = 1) then
+    begin
+      if Result.Author = '' then Result.Author := trimmed;
+    end
+    else if trimmed[1] = '@' then
+      AddError('Unknown manifest directive: ' + trimmed)
+    else if not haveName then
     begin
       Result.DisplayName := trimmed;
       haveName := True;
-      Continue;
-    end;
-
-    if (Pos('(c)', lc) = 1) or (Pos('copyright', lc) = 1) then
-    begin
-      if Result.Author = '' then
-        Result.Author := trimmed;
-      Continue;
-    end;
-
-    if Pos('@perms', lc) = 1 then
-    begin
-      Result.Requested := CSVToPermSet(Copy(trimmed, Length('@perms') + 1, MaxInt));
-      Continue;
     end;
   end;
 end;
