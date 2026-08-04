@@ -27,3 +27,8 @@ Then add it via: **Right click panel → Add Widgets… → “Trndi Current”*
 ```bash
 kpackagetool6 --type Plasma/Applet -r com.slicke.trndi.current
 ```
+
+## License
+
+GPL-3.0-only, like the rest of Trndi — see `LICENSE.md` in the [Trndi repository](https://github.com/slicke/trndi).
+Trndi is not a medical device; see `DISCLAIMER.md`.
