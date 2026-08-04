@@ -2808,6 +2808,10 @@ msgstr ""
 msgid " (changed since approval — Trndi will ask again)"
 msgstr ""
 
+#: uconf.rs_ext_choose
+msgid "Choose an extension for more info"
+msgstr ""
+
 #: uconf.rs_ext_granted
 msgid "Granted: "
 msgstr ""
@@ -2818,6 +2822,11 @@ msgstr ""
 
 #: uconf.rs_ext_invalid_mark
 msgid "⚠ "
+msgstr ""
+
+#: uconf.rs_ext_license
+#, object-pascal-format
+msgid "License: %s"
 msgstr ""
 
 #: uconf.rs_ext_not_approved
@@ -2836,12 +2845,21 @@ msgstr ""
 msgid "Requests: "
 msgstr ""
 
+#: uconf.rs_ext_reset_btn
+msgid "Reset permissions"
+msgstr ""
+
 #: uconf.rs_ext_reset_done
 msgid "The stored decision was cleared. Trndi will ask again the next time the extension is loaded."
 msgstr ""
 
 #: uconf.rs_ext_reset_title
 msgid "Extension permissions"
+msgstr ""
+
+#: uconf.rs_ext_version
+#, object-pascal-format
+msgid "Version %s"
 msgstr ""
 
 #: uconf.rs_font_help
@@ -3079,6 +3097,30 @@ msgstr ""
 
 #: uconf.rs_timestamp_help
 msgid "By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead."
+msgstr ""
+
+#: uconf.rs_trend_120
+msgid "120 min (24 dots)"
+msgstr ""
+
+#: uconf.rs_trend_180
+msgid "180 min (36 dots)"
+msgstr ""
+
+#: uconf.rs_trend_250
+msgid "250 min (50 dots)"
+msgstr ""
+
+#: uconf.rs_trend_30
+msgid "30 min (6 dots)"
+msgstr ""
+
+#: uconf.rs_trend_50
+msgid "50 min (10 dots)"
+msgstr ""
+
+#: uconf.rs_trend_90
+msgid "90 min (18 dots)"
 msgstr ""
 
 #: uconf.rs_update_snooze

@@ -338,6 +338,10 @@ TfConf = class(TForm)
   lArch: TLabel;
   lExtName: TLabel;
   lExtPerms: TLabel;
+  lExtVersion: TLabel;
+  lExtDesc: TLabel;
+  lExtHomepage: TLabel;
+  lExtLicense: TLabel;
   lbChroma: TListBox;
   lHiOver2: TLabel;
   lOS: TLabel;
@@ -529,6 +533,7 @@ TfConf = class(TForm)
   procedure fsLoChange({%H-}Sender: TObject);
   procedure Label12Click(Sender: TObject);
   procedure lAckClick(Sender: TObject);
+  procedure lExtHomepageClick({%H-}Sender: TObject);
   procedure lbExtensionsClickCheck(Sender: TObject);
   procedure lbExtensionsDblClick(Sender: TObject);
   procedure lbExtensionsSelectionChange(Sender: TObject; User: boolean);
@@ -591,6 +596,15 @@ public
   procedure ApplyRangeBounds;
   procedure LoadExtensionList(const ExtensionsPath: string);
   procedure DeferExtensionList(const ExtensionsPath: string);
+  {** Assign the captions the .po file cannot pick up from the .lfm.
+      @seealso(ApplyCaptionsFromResources implementation notes) }
+  procedure ApplyCaptionsFromResources;
+  {** Blank the Extension Info panel; optional rows are hidden, not emptied,
+      so the visible rows stay packed against the top of the panel. }
+  procedure ClearExtensionInfo;
+  {** Show an optional manifest row, hiding it when the value is absent.
+      Fmt is a single-%s format string, or '' to show Value verbatim. }
+  procedure SetExtInfoLabel(ALabel: TLabel; const Value, Fmt: string);
   {** True once the TTS voice list has been enumerated; while false the
       cbTTSVoice selection is not meaningful and must not be persisted. }
   property TTSVoicesLoaded: boolean read FTTSVoicesLoaded;
@@ -809,6 +823,22 @@ RS_EXT_CHANGED = ' (changed since approval — Trndi will ask again)';
 RS_EXT_INVALID_MARK = '⚠ ';
 RS_EXT_INVALID = 'Invalid manifest, will not load: ';
 
+{ Trend window options. These live here rather than in rbTrendWindow.Items in
+  the .lfm because TStrings items are never extracted for translation. Order is
+  significant: umain_settings.inc maps the ItemIndex to a reading count.
+  uwizard's RS_WIZARD_TREND_* cover the same setting - reword both together. }
+RS_TREND_30 = '30 min (6 dots)';
+RS_TREND_50 = '50 min (10 dots)';
+RS_TREND_90 = '90 min (18 dots)';
+RS_TREND_120 = '120 min (24 dots)';
+RS_TREND_180 = '180 min (36 dots)';
+RS_TREND_250 = '250 min (50 dots)';
+
+RS_EXT_RESET_BTN = 'Reset permissions';
+RS_EXT_CHOOSE = 'Choose an extension for more info';
+RS_EXT_VERSION = 'Version %s';
+RS_EXT_LICENSE = 'License: %s';
+
 RS_EXT_RESET_TITLE = 'Extension permissions';
 RS_EXT_RESET_DONE =
   'The stored decision was cleared. Trndi will ask again the next time the extension is loaded.';
@@ -945,6 +975,86 @@ begin
   SlickeHTMLMsg(sdsAuto, 'Trndi', txt,[mbOK],uxmtInformation,25);
 end;
 
+{ Only http(s) links are offered as clickable; a manifest must not be able to
+  hand OpenURL an arbitrary scheme. }
+function IsWebUrl(const s: string): boolean;
+var
+  lc: string;
+begin
+  lc := LowerCase(s);
+  Result := (Pos('http://', lc) = 1) or (Pos('https://', lc) = 1);
+end;
+
+{------------------------------------------------------------------------------
+  Captions the translation files can never pick up from the .lfm:
+
+    - rbTrendWindow's options are TStrings items, and Items are not extracted
+      from an .lfm at all - no .po entry is ever generated for them.
+    - Plain captions (bExtResetPerms) are extracted, but only out of
+      units/forms/uconf.lrj, which the Lazarus form designer writes when a form
+      is saved. lazbuild does not generate it - not even when the file is
+      missing - so a caption added by hand-editing the .lfm stays untranslated
+      until someone opens the form in the IDE.
+
+  Assigning from resourcestrings sidesteps both: .rsj is regenerated on every
+  lazbuild, so `make` alone keeps lang/*.po complete.
+------------------------------------------------------------------------------}
+procedure TfConf.ApplyCaptionsFromResources;
+var
+  keep: integer;
+begin
+  bExtResetPerms.Caption := RS_EXT_RESET_BTN;
+
+  keep := rbTrendWindow.ItemIndex;
+  rbTrendWindow.Items.BeginUpdate;
+  try
+    rbTrendWindow.Items.Clear;
+    // Order must match the ItemIndex -> reading count mapping in
+    // umain_settings.inc (6, 10, 18, 24, 36, 50).
+    rbTrendWindow.Items.Add(RS_TREND_30);
+    rbTrendWindow.Items.Add(RS_TREND_50);
+    rbTrendWindow.Items.Add(RS_TREND_90);
+    rbTrendWindow.Items.Add(RS_TREND_120);
+    rbTrendWindow.Items.Add(RS_TREND_180);
+    rbTrendWindow.Items.Add(RS_TREND_250);
+  finally
+    rbTrendWindow.Items.EndUpdate;
+  end;
+  // Re-listing drops the selection; keep the .lfm default until the settings
+  // load overwrites it.
+  if (keep >= 0) and (keep < rbTrendWindow.Items.Count) then
+    rbTrendWindow.ItemIndex := keep;
+end;
+
+procedure TfConf.ClearExtensionInfo;
+begin
+  lExtName.Caption := RS_EXT_CHOOSE;
+  lExtCopyright.Caption := '';
+  lExtPerms.Caption := '';
+  lExtVersion.Visible := false;
+  lExtDesc.Visible := false;
+  lExtHomepage.Visible := false;
+  lExtLicense.Visible := false;
+  bExtResetPerms.Enabled := false;
+end;
+
+procedure TfConf.SetExtInfoLabel(ALabel: TLabel; const Value, Fmt: string);
+begin
+  ALabel.Visible := Value <> '';
+  if not ALabel.Visible then
+    Exit;
+  if Fmt <> '' then
+    ALabel.Caption := Format(Fmt, [Value])
+  else
+    ALabel.Caption := Value;
+end;
+
+procedure TfConf.lExtHomepageClick(Sender: TObject);
+begin
+  if IsWebUrl(lExtHomepage.Caption) then
+    OpenURL(lExtHomepage.Caption);
+end;
+
 procedure TfConf.lbExtensionsSelectionChange(Sender: TObject; User: boolean);
 {$ifdef TrndiExt}
 var
@@ -959,13 +1069,11 @@ begin
   if (FExtPaths = nil) or (lbExtensions.ItemIndex < 0) or
      (lbExtensions.ItemIndex >= FExtPaths.Count) then
   begin
-    bExtResetPerms.Enabled := false;
+    ClearExtensionInfo;
     Exit;
   end;
 
-  lExtName.Caption := '';
-  lExtCopyright.Caption := '';
-  lExtPerms.Caption := '';
+  ClearExtensionInfo;
 
   path := FExtPaths[lbExtensions.ItemIndex];
   scriptText := '';
@@ -1003,13 +1111,28 @@ begin
   else
     lExtCopyright.Caption := RS_NO_COPYRIGHT;
 
+  SetExtInfoLabel(lExtVersion, manifest.Version, RS_EXT_VERSION);
+  SetExtInfoLabel(lExtDesc, manifest.Description, '');
+  SetExtInfoLabel(lExtLicense, manifest.License, RS_EXT_LICENSE);
+  SetExtInfoLabel(lExtHomepage, manifest.Homepage, '');
+  // Non-web homepages are still shown, just not as something clickable.
+  if IsWebUrl(manifest.Homepage) then
+  begin
+    lExtHomepage.Cursor := crHandPoint;
+    lExtHomepage.Font.Style := [fsUnderline];
+  end
+  else
+  begin
+    lExtHomepage.Cursor := crDefault;
+    lExtHomepage.Font.Style := [];
+  end;
+
   // A rejected manifest is skipped by the loader in umain_ext.inc, so report
-  // that instead of a permission state the extension will never reach.
-  // ErrorMessage may list several problems; keep it on the label's one line.
+  // that instead of a permission state the extension will never reach. The
+  // label wraps, so a multi-problem ErrorMessage keeps its line breaks.
   if not manifest.IsValid then
   begin
-    lExtPerms.Caption := RS_EXT_INVALID +
-      StringReplace(manifest.ErrorMessage, sLineBreak, '; ', [rfReplaceAll]);
+    lExtPerms.Caption := RS_EXT_INVALID + manifest.ErrorMessage;
     Exit;
   end;
 
@@ -1093,9 +1216,7 @@ begin
     FExtPaths := TStringList.Create;
   FExtPaths.Clear;
   lbExtensions.Clear;
-  lExtName.Caption := '';
-  lExtCopyright.Caption := '';
-  lExtPerms.Caption := '';
+  ClearExtensionInfo;
 
   extFiles := FindAllFiles(ExtensionsPath, '*.js', false);
   try
@@ -2326,6 +2447,8 @@ var
   bottombar: tpanel;
   bottomclose: tbutton;
 begin
+  ApplyCaptionsFromResources;
+
   // Base app version + build date + widgetset + target CPU
   lVersion.Caption := GetProductVersionMajorMinor('12.x');
   // If CI embedded a real build number, append it. CI/BUILD_NUMBER are

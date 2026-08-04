@@ -4030,21 +4030,21 @@ object fConf: TfConf
       end
       object GroupBox2: TGroupBox
         Left = 10
-        Height = 332
+        Height = 467
         Top = 30
-        Width = 617
+        Width = 327
         Align = alClient
         BorderSpacing.Around = 10
         Caption = 'Available Extensions'
-        ClientHeight = 340
-        ClientWidth = 613
+        ClientHeight = 447
+        ClientWidth = 323
         ParentBackground = False
         TabOrder = 0
         object lbExtensions: TCheckListBox
           Left = 5
-          Height = 302
+          Height = 437
           Top = 5
-          Width = 603
+          Width = 313
           Align = alClient
           BorderSpacing.Around = 5
           ItemHeight = 0
@@ -4055,45 +4055,107 @@ object fConf: TfConf
         end
       end
       object GroupBox3: TGroupBox
-        Left = 10
-        Height = 125
-        Top = 372
-        Width = 617
-        Align = alBottom
+        Left = 357
+        Height = 467
+        Top = 30
+        Width = 270
+        Align = alRight
         BorderSpacing.Around = 10
         Caption = 'Extension Info'
-        ClientHeight = 105
-        ClientWidth = 613
+        ClientHeight = 447
+        ClientWidth = 266
         ParentBackground = False
         TabOrder = 1
         object lExtName: TLabel
-          Left = 8
+          Left = 6
           Height = 15
-          Top = 8
-          Width = 114
+          Top = 6
+          Width = 254
+          Align = alTop
+          BorderSpacing.Around = 6
           Caption = 'Choose an extension'
           Font.Style = [fsBold]
           ParentFont = False
+          WordWrap = True
+        end
+        object lExtVersion: TLabel
+          Left = 6
+          Height = 15
+          Top = 27
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Bottom = 6
+          WordWrap = True
         end
         object lExtCopyright: TLabel
-          Left = 8
+          Left = 6
           Height = 15
-          Top = 24
-          Width = 70
-          Caption = 'for more info'
+          Top = 48
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Bottom = 6
+          WordWrap = True
+        end
+        object lExtDesc: TLabel
+          Left = 6
+          Height = 15
+          Top = 69
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Bottom = 6
+          WordWrap = True
+        end
+        object lExtHomepage: TLabel
+          Cursor = crHandPoint
+          Left = 6
+          Height = 15
+          Top = 90
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Bottom = 6
+          Font.Style = [fsUnderline]
+          ParentFont = False
+          WordWrap = True
+          OnClick = lExtHomepageClick
+        end
+        object lExtLicense: TLabel
+          Left = 6
+          Height = 15
+          Top = 111
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Bottom = 6
+          WordWrap = True
         end
         object lExtPerms: TLabel
-          Left = 8
-          Height = 1
-          Top = 40
-          Width = 1
+          Left = 6
+          Height = 15
+          Top = 132
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Bottom = 6
+          WordWrap = True
         end
         object bExtResetPerms: TButton
-          Left = 8
+          Left = 6
           Height = 26
-          Top = 66
-          Width = 145
+          Top = 415
+          Width = 254
+          Align = alBottom
           AutoSize = True
+          BorderSpacing.Around = 6
           Caption = 'Reset permissions'
           Enabled = False
           TabOrder = 0
