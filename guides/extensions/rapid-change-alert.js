@@ -1,5 +1,7 @@
-/* Rapid Change Alert
-(c) Trndi sample extension
+/*
+@name Rapid Change Alert
+@copyright (c) Trndi sample extension
+@description Warns when glucose is moving fast in either direction.
 */
 // Warns when glucose is moving fast in either direction.
 //

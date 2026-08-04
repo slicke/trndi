@@ -40,16 +40,33 @@ Use explicit directives for new extensions:
 */
 ```
 
-`@name`, `@copyright`, `@version`, `@description`, `@homepage`, and `@license`
-are metadata. `@perms` controls access and is described below. Directives are
-case-insensitive and their values are free text. Unknown directives or
-permission names make the manifest invalid and prevent the extension from
-loading.
+`@name` and `@copyright` are shown by Trndi — in the permission prompt and in
+the extension list in settings. `@version`, `@description`, `@homepage` and
+`@license` are recorded but not displayed anywhere yet; declare them for
+documentation and forward compatibility. `@perms` controls access and is
+described below. Directives are case-insensitive and their values are free
+text. Unknown directives or permission names make the manifest invalid and
+prevent the extension from loading.
+
+Asterisk decoration is stripped, so the common JSDoc-style block works too:
+
+```javascript
+/*
+ * @name My Extension
+ * @perms net
+ */
+```
 
 Existing extensions remain compatible: the first non-empty manifest line is
 used as the name and a line beginning with `(c)` or `copyright` is used as the
 author/copyright value. Prefer the explicit directives for all new or updated
 extensions.
+
+If the block is not the very first thing in the file, Trndi finds no manifest
+at all — it does not warn, the extension simply loads with no name, no
+copyright and no permissions, and any promptable function fails at runtime with
+`ReferenceError: asyncGet is not defined` (or similar). See
+[Migrating older extensions](#migrating-older-extensions) below.
 
 # Async code and top-level await
 Extensions can use `await` directly at the top level of the script — when a
@@ -90,8 +107,10 @@ the user the first time the extension is loaded.
 
 ## Declaring permissions
 Add an `@perms` line inside the header comment block, listing the promptable
-groups your extension needs. The only valid names are `net`, `exec`, and
-`settings`:
+groups your extension needs — `net`, `exec` and `settings`. The baseline names
+(`data`, `ui`, `timers`) are also accepted, but listing them has no effect
+since those groups are always granted. Any other name makes the manifest
+invalid and the extension will not load:
 
 ```javascript
 /*

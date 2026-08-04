@@ -1,5 +1,7 @@
-/* Stale Reading Watchdog
-(c) Trndi sample extension
+/*
+@name Stale Reading Watchdog
+@copyright (c) Trndi sample extension
+@description Escalating alert when no fresh reading arrives within a window.
 */
 // Escalating alert when no fresh reading arrives within a window.
 // Useful for catching sensor disconnects, dead phones, or lost uploaders.

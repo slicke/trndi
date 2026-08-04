@@ -339,7 +339,7 @@ begin
         end;
       end;
 
-            manifest := ParseExtManifest(string(fileSrc));
+      manifest := ParseExtManifest(string(fileSrc));
       if not manifest.IsValid then
       begin
         ShowMessage('Invalid extension manifest in ' + ExtractFileName(extFile) + ':' +

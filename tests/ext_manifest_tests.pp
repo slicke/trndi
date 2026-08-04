@@ -51,6 +51,10 @@ type
     procedure TestExplicitManifest;
     procedure TestLegacyManifest;
     procedure TestUnknownPermissionIsRejected;
+    procedure TestUnknownDirectiveIsRejected;
+    procedure TestBaselinePermissionIsAccepted;
+    procedure TestAsteriskDecorationIsStripped;
+    procedure TestManifestMustStartTheFile;
     procedure TestUtf8BomIsAccepted;
   end;
 
@@ -104,6 +108,58 @@ begin
   AssertFalse('unknown permissions must reject the manifest', manifest.IsValid);
   AssertTrue('error identifies the unknown permission',
     Pos('netwerk', manifest.ErrorMessage) > 0);
+end;
+
+procedure TExtensionManifestTests.TestUnknownDirectiveIsRejected;
+var
+  manifest: TExtManifest;
+begin
+  manifest := ParseExtManifest('/*' + LineEnding + '@name Invalid' + LineEnding +
+    '@auther Nobody' + LineEnding + '*/');
+
+  AssertFalse('unknown directives must reject the manifest', manifest.IsValid);
+  AssertTrue('error identifies the unknown directive',
+    Pos('@auther', manifest.ErrorMessage) > 0);
+end;
+
+procedure TExtensionManifestTests.TestBaselinePermissionIsAccepted;
+var
+  manifest: TExtManifest;
+begin
+  // Baseline groups are always granted; naming them is pointless but legal.
+  manifest := ParseExtManifest('/*' + LineEnding + '@name Baseline' + LineEnding +
+    '@perms timers, net' + LineEnding + '*/');
+
+  AssertTrue('baseline permission names must not reject the manifest',
+    manifest.IsValid);
+  AssertTrue('timers requested', epTimers in manifest.Requested);
+  AssertTrue('net requested', epNet in manifest.Requested);
+end;
+
+procedure TExtensionManifestTests.TestAsteriskDecorationIsStripped;
+var
+  manifest: TExtManifest;
+begin
+  manifest := ParseExtManifest('/*' + LineEnding + ' * @name Decorated' + LineEnding +
+    ' * @perms net' + LineEnding + ' */');
+
+  AssertTrue('decorated manifest should be valid', manifest.IsValid);
+  AssertEquals('decorated name', 'Decorated', manifest.DisplayName);
+  AssertTrue('net requested', epNet in manifest.Requested);
+end;
+
+procedure TExtensionManifestTests.TestManifestMustStartTheFile;
+var
+  manifest: TExtManifest;
+begin
+  // A block that does not open the file yields no manifest at all - and no
+  // error, so the extension loads nameless and without permissions.
+  manifest := ParseExtManifest('#!/usr/bin/env node' + LineEnding +
+    '/*' + LineEnding + '@name Too late' + LineEnding + '@perms net' + LineEnding + '*/');
+
+  AssertTrue('a missing manifest is not an error', manifest.IsValid);
+  AssertEquals('no name is picked up', '', manifest.DisplayName);
+  AssertTrue('no permissions are requested', manifest.Requested = []);
 end;
 
 procedure TExtensionManifestTests.TestUtf8BomIsAccepted;

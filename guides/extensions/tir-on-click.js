@@ -1,5 +1,7 @@
-/* TIR On Click
-(c) Trndi sample extension
+/*
+@name TIR On Click
+@copyright (c) Trndi sample extension
+@description Click the Time-in-Range bar for a 3h / 24h / 7d comparison report.
 */
 // Click the Time-in-Range bar to get a clean HTML report comparing
 // the last 3h / 24h / 7d windows side by side.
