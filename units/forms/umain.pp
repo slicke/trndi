@@ -637,7 +637,7 @@ private
   procedure actOnTrend(proc: TTrendProcLoop);
   procedure setDotWidth(l: TDotControl; c, ix: integer; {%H-}ls: array of TDotControl);
   procedure HideDot(l: TDotControl; {%H-}c, {%H-}ix: integer);
-  procedure showDot(l: TDotControl; {%H-}c, {%H-}ix: integer);
+  procedure showDot(l: TDotControl; {%H-}c, ix: integer);
   procedure ResizeDot(l: TDotControl; {%H-}c, ix: integer);
   procedure initDot(l: TDotControl; c, ix: integer);
   procedure ExpandDot(l: TDotControl; c, ix: integer);
@@ -864,6 +864,14 @@ private
       PREDICTION_DOT_COUNT when the prediction-dot view is active, so the
       history dots compress to leave room for future dots on the right. }
   function TrendColumnCount: integer;
+  {** Slot-skip factor keeping the trend legible in a narrow window: 1 renders
+      every slot, 2 every other one, and so on. Derived from the current
+      ClientWidth — see TrendDotStride. }
+  function DotStride: integer;
+  {** True when the trend slot at `ix` (1-based; ACTIVE_DOTS is the newest) is
+      rendered at the current window width. Hidden slots keep their reading, so
+      the visible time window is unchanged — only its resolution drops. }
+  function DotSlotVisible(ix: integer): boolean;
   {** True when predictions should render as hollow dots on the main trend
       (predictions enabled AND the dot view selected) rather than as text. }
   function PredictionDotsActive: boolean;

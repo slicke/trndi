@@ -309,7 +309,10 @@ begin
       // from the slot edges, centred in the same square the history dot would
       // occupy. Drawn rather than typeset so we don't depend on a font that
       // ships the glyph at consistent metrics across platforms.
-      xSize := Max(6, Round(d * 0.6));
+      // Floor at MIN_DOT_DIAMETER_PX rather than a fixed 6: at the small
+      // diameters a dense trend produces, a 6 px mark is wider than the slot
+      // it sits in and gets clipped by a negative offset.
+      xSize := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.6));
       xOff  := (d - xSize) div 2;
       DrawSmoothX(L.Canvas, xSize, dotColor, Max(2, xSize div 8), xOff, xOff);
       Exit;
@@ -650,6 +653,23 @@ begin
     Inc(Result, PREDICTION_DOT_COUNT);
 end;
 
+// Slot-skip factor for the current window width — see TrendDotStride. Plain
+// integer math on the live ClientWidth, so callers just recompute it instead
+// of caching a value that every resize would invalidate.
+function TfBG.DotStride: integer;
+begin
+  Result := TrendDotStride(fBG.ClientWidth, Max(TrendColumnCount, 1));
+end;
+
+// True when the trend slot at ix (1-based; ACTIVE_DOTS is the newest) is
+// rendered at the current window width. Slots this hides keep their reading
+// and their Hint — only Visible is withheld — so widening the window brings
+// them straight back on the next resize pass.
+function TfBG.DotSlotVisible(ix: integer): boolean;
+begin
+  Result := TrendDotVisibleInStride(ix, ACTIVE_DOTS, DotStride);
+end;
+
 // True when predictions should be drawn as hollow dots on the trend rather
 // than written into the lPredict label. Requires the dots to exist.
 function TfBG.PredictionDotsActive: boolean;
@@ -761,10 +781,11 @@ begin
       l.Visible := false;
 end;
 
-// Shows a dot only if it has valid data (non-empty Hint)
+// Shows a dot only if it has valid data (non-empty Hint) and the current
+// window is wide enough to render its slot (see DotSlotVisible).
 procedure TfBG.ShowDot(l: TDotControl; c, ix: integer);
 begin
-  if l.Hint <> '' then
+  if (l.Hint <> '') and DotSlotVisible(ix) then
     l.Visible := true;
 end;
 
@@ -777,12 +798,20 @@ begin
   // Divide the width by the full column count (history + any prediction slots)
   // so history dots compress to leave room for future dots on the right.
   slotW := Max(1, fBG.ClientWidth div Max(TrendColumnCount, 1));
+  // A history dot the narrow-window clamp kept also owns the columns of the
+  // dots it stands in for, so let it grow into that room rather than sitting at
+  // the 8 px floor with a wide gap either side. Prediction dots keep
+  // single-column sizing: their count is fixed and they stay one column apart.
+  if ix <= ACTIVE_DOTS then
+    slotW := slotW * DotStride;
   l.AutoSize := false;
   if (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH) or (l.Caption = DOT_PREDICT) then
   begin
     // Square sizing — DotPaint draws a circle inscribed in this box. 0.6
     // matches the visible disc area of the legacy ● glyph at 85% slot width.
-    d := Max(8, Round(slotW * 0.6));
+    // The floor has to stay below 0.6 * MIN_DOT_COLUMN_PX or dots overlap at
+    // the very width the clamp considers acceptable.
+    d := Max(MIN_DOT_DIAMETER_PX, Round(slotW * 0.6));
     l.Width := d;
     l.Height := d;
     // Keep Font.Size proportional so consumers that copy the dot's font

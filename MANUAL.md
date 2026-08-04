@@ -105,6 +105,12 @@ Those small dots you see across the screen show your recent readings over time:
 
 **How to use them**: Click on any dot to see the actual number for that reading.
 
+**In a narrow window**: If the window gets too small to fit every dot, Trndi thins
+them out and draws only every second (or third, …) one, so they never smear
+together. The time span shown does not change — you still see the same history you
+picked under *Trend window*, just at a coarser resolution — and the most recent
+reading is always among the dots kept. Widen the window and the rest come back.
+
 ### Predictions (Experimental)
 When enabled, Trndi can show where your blood sugar might be heading in the next 5-15 minutes.
 
