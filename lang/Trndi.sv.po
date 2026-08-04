@@ -15,17 +15,13 @@ msgstr ""
 msgid "An error occurred while creating a message dialog"
 msgstr "Ett fel uppstod medan en meddelanderuta skulle skapas"
 
-#: slicke.ux.alert.serr
-msgid "Script execution failed"
-msgstr "Skriptkörning misslyckades"
+#: slicke.ux.alert.serrmsg
+msgid "An error occurred"
+msgstr ""
 
-#: slicke.ux.alert.sexterr
-msgid "Error occurred in extension"
-msgstr "Fel i ett tillägg"
-
-#: slicke.ux.alert.sexttitle
-msgid "Extension error"
-msgstr "Tilläggsfel"
+#: slicke.ux.alert.serrtitle
+msgid "Error"
+msgstr ""
 
 #: slicke.ux.alert.skey
 msgid "Key"
@@ -1318,6 +1314,25 @@ msgid "Very Big"
 msgstr "Mycket stor"
 
 #: tfsplash.lsplashwarn.caption
+#, fuzzy
+#| msgid ""
+#| "⚠️ IMPORTANT MEDICAL WARNING ⚠️\n"
+#| "\n"
+#| "This app is NOT a medical device.\n"
+#| "• Do NOT make medical decisions based on this data\n"
+#| "• Data may be WRONG, delayed, or unavailable  \n"
+#| "• Always verify with your official CGM device\n"
+#| "• For emergencies, contact medical professionals\n"
+#| "\n"
+#| "By continuing, you acknowledge that:\n"
+#| "• You use this app at your own risk\n"
+#| "• The developers have NO LIABILITY\n"
+#| "• You have read and agree to the full terms\n"
+#| "\n"
+#| "This app is licensed under the \n"
+#| "GNU General Public License version 3 with \n"
+#| "an additional medical disclaimer.\n"
+#| "See https://github.com/slicke/trndi/blob/main/DISCLAIMER.md"
 msgctxt "tfsplash.lsplashwarn.caption"
 msgid ""
 "⚠️ IMPORTANT MEDICAL WARNING ⚠️\n"
@@ -1336,7 +1351,7 @@ msgid ""
 "This app is licensed under the \n"
 "GNU General Public License version 3 with \n"
 "an additional medical disclaimer.\n"
-"See https://github.com/slicke/trndi/blob/main/DISCLAIMER.md"
+"See https://github.com/slicke/trndi/LICENSE.md"
 msgstr ""
 "⚠️ VIKTIG MEDICINSK VARNING ⚠️\n"
 "\n"
@@ -1569,6 +1584,24 @@ msgstr "API-hemlighet"
 #: trndi.api.xdrip.sparamusername
 msgid "xDrip URL"
 msgstr "xDrip-adress"
+
+#: trndi.ext.functions.serr
+#, fuzzy
+msgctxt "trndi.ext.functions.serr"
+msgid "Script execution failed"
+msgstr "Skriptkörning misslyckades"
+
+#: trndi.ext.functions.sexterr
+#, fuzzy
+msgctxt "trndi.ext.functions.sexterr"
+msgid "Error occurred in extension"
+msgstr "Fel i ett tillägg"
+
+#: trndi.ext.functions.sexttitle
+#, fuzzy
+msgctxt "trndi.ext.functions.sexttitle"
+msgid "Extension error"
+msgstr "Tilläggsfel"
 
 #: trndi.strings.rs_alert_snooze
 msgid "Snooze alerts"
@@ -3610,3 +3643,4 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
+
