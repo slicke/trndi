@@ -63,3 +63,15 @@ begin
   else
     Result := nil;
 end;
+
+// Named A-prefixed: a plain ClientWidth parameter shadows TControl's property
+// of the same name and FPC rejects the declaration outright.
+function TfBG.TrendDotStrideForTests(AClientWidth, AColumnCount: integer): integer;
+begin
+  Result := TrendDotStride(AClientWidth, AColumnCount);
+end;
+
+function TfBG.TrendDotVisibleInStrideForTests(SlotIndex, ActiveDots, Stride: integer): boolean;
+begin
+  Result := TrendDotVisibleInStride(SlotIndex, ActiveDots, Stride);
+end;

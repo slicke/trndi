@@ -111,6 +111,66 @@ begin
     Result := bottomResult;
 end;
 
+// Smallest circle DotPaint will draw. The analytic rasterizers bail out below
+// 2 px; 3 still reads as a dot rather than a smudge. This is the floor that
+// decides how many dots a window can hold — a larger one does not make a
+// crowded trend more legible, it just makes the dots overlap sooner.
+const
+  MIN_DOT_DIAMETER_PX = 3;
+
+// Horizontal room (px) one trend column needs before its dots start to crowd.
+//
+// ResizeDot draws a dot at 0.6 * column width, floored at MIN_DOT_DIAMETER_PX,
+// so the two rules cross at 3 / 0.6 = 5 px. Above that the 40% gap between
+// neighbours scales with the window; below it the dot can no longer shrink and
+// the gap collapses into overlap — which is what smears the trend into a solid
+// bar. 6 sits just above the crossover.
+//
+// This is deliberately permissive: at the 320 px startup width it admits ~53
+// columns, so a 50-dot trend renders in full at the default window size and
+// the clamp only engages past that.
+const
+  MIN_DOT_COLUMN_PX = 6;
+
+// How many trend slots to advance between rendered dots so a narrow window
+// never draws more dots than it has room for. 1 = render every slot.
+//
+// This is purely visual: the skipped slots keep their readings and their
+// placement, they are just not shown. The trend still spans the time window
+// the user picked (ACTIVE_DOTS * INTERVAL_MINUTES), only at a coarser
+// resolution — resizing must never change *which* history is on screen.
+//
+// Pure helper operating on plain data for unit tests
+function TrendDotStride(ClientWidth, ColumnCount: integer): integer;
+var
+  maxCols: integer;
+begin
+  Result := 1;
+  if (ClientWidth <= 0) or (ColumnCount <= 1) then
+    Exit;
+
+  maxCols := ClientWidth div MIN_DOT_COLUMN_PX;
+  if maxCols < 1 then
+    maxCols := 1;
+  if ColumnCount <= maxCols then
+    Exit;
+
+  // Round up, so the kept count never exceeds what fits: 30 columns with room
+  // for 20 gives stride 2 (15 rendered), not stride 1.
+  Result := (ColumnCount + maxCols - 1) div maxCols;
+end;
+
+// True when the trend slot at SlotIndex (1-based; ActiveDots is the newest)
+// is one of the slots the given stride renders. Anchored on the newest slot
+// so the latest reading — which carries the "fresh" ring and is the one the
+// user actually looks at — is never the dot that gets dropped.
+// Pure helper operating on plain data for unit tests
+function TrendDotVisibleInStride(SlotIndex, ActiveDots, Stride: integer): boolean;
+begin
+  Result := (Stride <= 1) or (SlotIndex >= ActiveDots) or
+    (((ActiveDots - SlotIndex) mod Stride) = 0);
+end;
+
 
 
 function TfBG.dotsInView: integer;

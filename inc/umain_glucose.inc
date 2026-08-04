@@ -1698,7 +1698,9 @@ begin
 
   if Assigned(l) then
   begin
-    l.Visible := true;
+    // The slot is filled either way (Result below drives PlaceTrendDots'
+    // search cursor) — a narrow window only withholds the dot from view.
+    l.Visible := DotSlotVisible(labelNumber);
     l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
 
     DecodeTime(reading.date, H, M, S, MS);

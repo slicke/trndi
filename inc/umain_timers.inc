@@ -630,9 +630,14 @@ var
   Value: glucose;
   ok: boolean;
   wasVisible: boolean;
+  ix: integer;
 begin
-  for Dot in TrendDots do
+  // Indexed rather than a for-in: showing a dot needs its slot number so the
+  // narrow-window clamp can decide whether this slot is one of the rendered
+  // ones. TrendDots is 1-based with index 0 left nil.
+  for ix := Low(TrendDots) to High(TrendDots) do
   begin
+    Dot := TrendDots[ix];
     if not Assigned(Dot) then Continue;
     wasVisible := Dot.Visible;
 
@@ -648,14 +653,16 @@ begin
       else
         SetPointHeight(Dot, Value, fBG.ClientHeight);
 
-      Dot.Visible := true;
+      // Position the dot regardless — only its visibility is clamped, so
+      // widening the window brings it back already in the right place.
+      Dot.Visible := DotSlotVisible(ix);
     end
     else
     if Dot.Hint <> '' then
     begin
       TrndiDLog(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
         [Dot.Hint, BoolToStr(wasVisible, true)]));
-      Dot.Visible := wasVisible;
+      Dot.Visible := wasVisible and DotSlotVisible(ix);
     end
     else
       Dot.Visible := false;
