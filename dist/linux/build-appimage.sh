@@ -40,6 +40,17 @@ if [ -d "lang" ]; then
   cp -r lang "${APP_DIR}/usr/share/trndi/"
 fi
 
+# GPLv3 sections 4 and 6 require the license to accompany the binary; the MIT
+# notice ships whenever the quickjs-ng libraries were staged above.
+echo "Copying license files..."
+mkdir -p "${APP_DIR}/usr/share/doc/trndi"
+for LIC in LICENSE.md DISCLAIMER.md THIRD-PARTY.md; do
+  [ -f "${LIC}" ] && cp -v "${LIC}" "${APP_DIR}/usr/share/doc/trndi/"
+done
+if [ -f "externals/quickjs/LICENSE.quickjs-ng" ] && [ -d "${QJS_DIR}" ]; then
+  cp -v externals/quickjs/LICENSE.quickjs-ng "${APP_DIR}/usr/share/doc/trndi/"
+fi
+
 # The CareLink login helper is compiled into the binary (see
 # assets/carelink_assets.lrs) and written to the user's writable
 # settings folder on demand, so nothing is bundled here — the AppImage mount is

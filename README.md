@@ -1,6 +1,6 @@
 > ⚠️ _Quick intro:_ __Right-click__ on Trndi's window to open its menu for settings and other options!
 
-[![Build & Release (All Platforms)](https://github.com/slicke/trndi/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/slicke/trndi/actions/workflows/build.yml) [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue?logo=paypal)](https://www.paypal.com/donate/?business=84S8A9EBJGGK8&no_recurring=0&item_name=Support+Trndi%21&currency_code=EUR) [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=github)](https://github.com/sponsors/slicke)
+[![Build & Release (All Platforms)](https://github.com/slicke/trndi/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/slicke/trndi/actions/workflows/build.yml) [![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue?logo=paypal)](https://www.paypal.com/donate/?business=84S8A9EBJGGK8&no_recurring=0&item_name=Support+Trndi%21&currency_code=EUR) [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=github)](https://github.com/sponsors/slicke) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE.md)
 
 ![Trndi](doc/img/trndi-logo.png)
 
@@ -38,6 +38,7 @@
 - [Settings storage](#settings-storage)
 - [Contributing](#contributing)
 - [Languages / Translations](#languages--translations)
+- [License](#license)
 
 
 ### Screenshots
@@ -407,3 +408,10 @@ _See also [BUILDING.md](guides/BUILDING.md)_
 
 ## Languages / Translations
 To contribute a translation, check out [LANGUAGES.md](doc/LANGUAGES.md).
+
+## License
+Trndi is free software, licensed under the **GNU General Public License, version 3** — see [LICENSE.md](LICENSE.md).
+
+Trndi is **not a medical device**. Additional terms under GPLv3 section 7 disclaim warranty and liability; read [DISCLAIMER.md](DISCLAIMER.md) before using it, and never make medical decisions based on this app.
+
+Trndi bundles third-party components under MIT, LGPL, and other GPL-compatible licenses. They are inventoried in [THIRD-PARTY.md](THIRD-PARTY.md).

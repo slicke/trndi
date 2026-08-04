@@ -12,6 +12,12 @@ Two libraries are involved:
 
 Keeping the engine unpatched means upgrading quickjs-ng is a rebuild, not a re-patch.
 
+quickjs-ng is MIT-licensed. Because `prebuilt/` ships compiled copies of it, its
+notice travels with them in [`LICENSE.quickjs-ng`](LICENSE.quickjs-ng); Trndi
+also reproduces it in the app's License dialog in extension builds. Refresh the
+file whenever `QJS_TAG` in `build.sh` moves. The shim `tq_shim.c` is Trndi's own
+code and is GPLv3 like the rest of the app.
+
 ## Why a shim is needed
 
 quickjs-ng's `JSValue` is a 16-byte struct on 64-bit targets. Passing or returning
