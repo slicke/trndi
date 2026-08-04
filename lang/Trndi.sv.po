@@ -2963,6 +2963,10 @@ msgstr "Tilläggsantal: %d"
 msgid " (changed since approval — Trndi will ask again)"
 msgstr " (ändrad sedan tillåten — Trndi frågar igen)"
 
+#: uconf.rs_ext_choose
+msgid "Choose an extension for more info"
+msgstr "Välj ett tillägg för mer info"
+
 #: uconf.rs_ext_granted
 msgid "Granted: "
 msgstr "Tillåtet: "
@@ -2974,6 +2978,11 @@ msgstr "Ogiltigt manifest, kommer ej laddas: "
 #: uconf.rs_ext_invalid_mark
 msgid "⚠ "
 msgstr "⚠ "
+
+#: uconf.rs_ext_license
+#, object-pascal-format
+msgid "License: %s"
+msgstr "Licens: %s"
 
 #: uconf.rs_ext_not_approved
 msgid " (not yet approved)"
@@ -2991,6 +3000,10 @@ msgstr "Omladda tillägg"
 msgid "Requests: "
 msgstr "Förfrågningar: "
 
+#: uconf.rs_ext_reset_btn
+msgid "Reset permissions"
+msgstr "Nolla åtkomster"
+
 #: uconf.rs_ext_reset_done
 msgid "The stored decision was cleared. Trndi will ask again the next time the extension is loaded."
 msgstr "Det sparade valet har raderats. Trndi kommer fråga igen nästa gång tillägget laddas."
@@ -2998,6 +3011,11 @@ msgstr "Det sparade valet har raderats. Trndi kommer fråga igen nästa gång ti
 #: uconf.rs_ext_reset_title
 msgid "Extension permissions"
 msgstr "Tilläggsåtkomster"
+
+#: uconf.rs_ext_version
+#, object-pascal-format
+msgid "Version %s"
+msgstr "Version %s"
 
 #: uconf.rs_font_help
 msgid "You can change the font of the reading, time and arrow. Click on the respective item here to change the font"
@@ -3246,6 +3264,30 @@ msgstr "Trndi kan rita en linje på grafens bakgrund, för att representera dina
 #: uconf.rs_timestamp_help
 msgid "By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead."
 msgstr "Som standard visar Trndi antalet minuter sedan senaste avläsning, denna inställning gör att tiden för avläsningen visas istället."
+
+#: uconf.rs_trend_120
+msgid "120 min (24 dots)"
+msgstr "120 min (24 punkter)"
+
+#: uconf.rs_trend_180
+msgid "180 min (36 dots)"
+msgstr "180 min (36 punkter)"
+
+#: uconf.rs_trend_250
+msgid "250 min (50 dots)"
+msgstr "250 min (50 punkter)"
+
+#: uconf.rs_trend_30
+msgid "30 min (6 dots)"
+msgstr "30 min (6 punkter)"
+
+#: uconf.rs_trend_50
+msgid "50 min (10 dots)"
+msgstr "50 min (10 punkter)"
+
+#: uconf.rs_trend_90
+msgid "90 min (18 dots)"
+msgstr "90 min (18 punkter)"
 
 #: uconf.rs_update_snooze
 #, object-pascal-format
