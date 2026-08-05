@@ -102,6 +102,16 @@ var
   AboutMenu,
   CheckUpdatesMenu: TMenuItem;
 begin
+  {$ifdef DARWIN}
+  { Modification notice (2026-08-05): use the native Command modifier for
+    macOS menu shortcuts instead of the Ctrl-based shortcuts loaded from LFM. }
+  miSettings.ShortCut := ShortCut(Ord('S'), [ssMeta]);
+  miHistory.ShortCut := ShortCut(Ord('H'), [ssMeta]);
+  miFullScreen.ShortCut := ShortCut(Ord('F'), [ssMeta]);
+  miFloatOn.ShortCut := ShortCut(Ord('W'), [ssMeta]);
+  miExit.ShortCut := ShortCut(Ord('Q'), [ssMeta]);
+  {$endif}
+
   {$ifdef X_MAC}
   MacAppDelegate := TMyAppDelegate.alloc.init;
   NSApp.setDelegate(NSObject(MacAppDelegate));
@@ -139,9 +149,10 @@ begin
   AppMenu.Items[1].Caption := '-';
   {$endif}
 
-  SettingsMenu := TMenuitem.Create(self);
-  settingsmenu.Caption := RS_MENU_SETTINGS;
-  settingsmenu.OnClick := misettings.OnClick;
+  SettingsMenu := TMenuItem.Create(self);
+  SettingsMenu.Caption := RS_MENU_SETTINGS;
+  SettingsMenu.OnClick := miSettings.OnClick;
+  SettingsMenu.ShortCut := miSettings.ShortCut;
   {$ifdef DARWIN}
   AppMenu.Insert(2, SettingsMenu);
   {$else}
@@ -166,7 +177,6 @@ begin
 
   // On macOS, change "Exit Trndi" to "Quit Trndi" for consistency
   miExit.Caption := 'Quit Trndi';
-  miExit.ShortCut := 16465; // Cmd+Q
   {$endif}
 
   helpmenu := TMenuItem.Create(self);
