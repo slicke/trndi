@@ -1385,6 +1385,7 @@ end;
 const
  { Largest share of the usable screen a dialog may occupy. }
   MaxDialogScreenWidthFraction = 0.95;
+  MaxDialogScreenHeightFraction = 0.95;
  { Smallest screen that still gets the full sdsBig layout; below this a touch
    screen falls back to sdsMedium instead. }
   BigLayoutMinScreenWidth  = 1024;
@@ -1437,6 +1438,30 @@ begin
   Result := Min(AWidth, Round(ScreenUsableWidth * MaxDialogScreenWidthFraction));
 end;
 
+{ Clamp a proposed dialog height to what the display can actually show.
+
+  Height matters more than width: the button row lives at the bottom, so a
+  dialog taller than the screen puts the only way to answer it out of reach -
+  and a touch user has no Alt+drag to pull the window back up. Callers size
+  their content against the button block first; this is the final guard for
+  the cases that arithmetic cannot catch. }
+function FitDialogHeight(const AHeight: integer): integer;
+begin
+  Result := Min(AHeight, Round(ScreenUsableHeight * MaxDialogScreenHeightFraction));
+end;
+
+{ Whether a row of AButtonCount buttons fits side by side across AClientWidth,
+  outer padding included. When it does not, callers stack the buttons instead:
+  FitDialogWidth caps the dialog at the display, so a row that wants more than
+  the screen has simply cannot be granted it, and laying it out anyway runs the
+  tail buttons off the right edge where nothing can reach them. }
+function ButtonRowFits(const AClientWidth, AButtonCount, AButtonWidth,
+  APadding: integer): boolean;
+begin
+  Result := (AButtonCount * AButtonWidth) + ((AButtonCount - 1) * APadding) +
+    (APadding * 2) <= AClientWidth;
+end;
+
 { ---------------------------------------------------------------------------
   Touch metrics
 
@@ -1487,14 +1512,14 @@ begin
   Result := TouchPresent;
 end;
 
-{ Minimum height a tappable control needs, or 0 on a mouse-only system.
+{ Smallest edge a tappable control may have, or 0 on a mouse-only system.
 
   Scaled off the screen DPI so the floor stays a *physical* size. Everything
   else in this unit is literal pixels - runtime-created dialogs never get the
   LCL's auto-scaling - but a target measuring 9 mm on one panel and 4 mm on
   another is not a floor at all. Never shrinks below the 96 DPI value, so a
   widgetset that reports nothing useful still yields 44. }
-function TouchTargetHeight: integer;
+function TouchTargetSize: integer;
 begin
   if not DialogsAreTouch then
     Exit(0);
@@ -1503,10 +1528,12 @@ begin
     Result := (BaseTouchTargetPx * Screen.PixelsPerInch) div 96;
 end;
 
-{ Raise a proposed control height to the touch minimum where one applies. }
-function TouchHeight(const AHeight: integer): integer;
+{ Raise a proposed control dimension to the touch minimum where one applies.
+  Axis-neutral: nearly every caller is sizing a height, since that is the
+  binding constraint on a button, but square controls pass their width too. }
+function TouchMin(const ASize: integer): integer;
 begin
-  Result := Max(AHeight, TouchTargetHeight);
+  Result := Max(ASize, TouchTargetSize);
 end;
 
 { ---------------------------------------------------------------------------
@@ -2417,7 +2444,7 @@ begin
   // otherwise left the button at its 25 px desktop height, roughly 4 mm.
   // Height only; 80 px is already wide enough for a fingertip, and widening
   // here would clip captions the row layout has no chance to re-measure.
-  Btn.Height := TouchHeight(Btn.Height);
+  Btn.Height := TouchMin(Btn.Height);
   if AddToButtons then
     Dialog.addButton(ACaption);
   Result := Btn;
@@ -2444,11 +2471,28 @@ begin
   end;
 
   first.Top := AboveBottom + ifthen(size = sdsBig, Padding * 3, Padding * 2);
-  second.Top := first.Top;
   total := first.Width + Padding + second.Width;
-  first.Left := (Dialog.ClientWidth - total) div 2;
-  second.Left := first.Left + first.Width + Padding;
-  Dialog.ClientHeight := first.Top + first.Height + Padding;
+
+  if total + (Padding * 2) > Dialog.ClientWidth then
+  begin
+    // Even a pair can outgrow a narrow panel once the captions are translated
+    // and the buttons are touch-sized. Stack full width, accept above reject -
+    // the same order the row would have used.
+    first.Left   := Padding;
+    first.Width  := Dialog.ClientWidth - (Padding * 2);
+    second.Left  := first.Left;
+    second.Width := first.Width;
+    second.Top   := first.Top + first.Height + Padding;
+  end
+  else
+  begin
+    second.Top  := first.Top;
+    first.Left  := (Dialog.ClientWidth - total) div 2;
+    second.Left := first.Left + first.Width + Padding;
+  end;
+
+  Dialog.ClientHeight := FitDialogHeight(Max(first.Top + first.Height,
+    second.Top + second.Height) + Padding);
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -2974,9 +3018,10 @@ begin
     // scrolls, an unhittable row does not.
     // Guarded rather than written unconditionally: DefaultRowHeight reads back
     // as -1 while it still means "derive from the font", and on a mouse-only
-    // system TouchHeight would hand that sentinel straight back as a literal.
-    if TouchTargetHeight > 0 then
-      Grid.DefaultRowHeight := TouchTargetHeight;
+    // system TouchMin would hand that sentinel straight back as a literal.
+    // (TouchTargetSize is 0 there, so the row height is simply left alone.)
+    if TouchTargetSize > 0 then
+      Grid.DefaultRowHeight := TouchTargetSize;
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -3173,7 +3218,7 @@ begin
     if (size = sdsBig) then
       DatePicker.Height := DatePicker.Height * 2;
     // The drop-down button on the right is the smallest target in this dialog.
-    DatePicker.Height := TouchHeight(DatePicker.Height);
+    DatePicker.Height := TouchMin(DatePicker.Height);
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -3305,6 +3350,8 @@ var
   mr, defBtn: TSlickeMsgDlgBtn;
   DefaultCtrl: TWinControl;
   ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: integer;
+  ButtonHeight, buttonBlockHeight, rowTop, availableHeight: integer;
+  stackButtons: boolean;
   bgcol: TColor;
   size: TSlickeDialogSize;
   sysfont, htmlstr: string;
@@ -3422,18 +3469,9 @@ begin
       htmldata
       );
 
-    // Calculate content height and adjust dialog
-    maxHeight := Round(ScreenUsableHeight * 0.8);
-    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
-    if contentHeight < 150 then
-      contentHeight := 150;  // Minimum height
-    if contentHeight > (maxHeight - 200) then
-      contentHeight := maxHeight - 200;  // Leave room for icon and buttons
-    
-    HtmlViewer.Height := contentHeight;
-    HtmlPanel.Height := contentHeight;
-
-    // Count buttons
+    // --- Button metrics, settled before the content is sized ----------------
+    // The buttons are the part that must never be pushed off the bottom, so
+    // they claim their space first and the message area takes what is left.
     btnCount := Length(buttons);
     defBtn := PickDefaultButton(buttons, ADefault);
     DefaultCtrl := nil;
@@ -3443,16 +3481,43 @@ begin
     ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons,
       ifthen((size = sdsBig), btnWidth * 2, btnWidth),
       ifthen((size = sdsBig), 12, 0));
+    ButtonHeight := TouchMin(ifthen((size = sdsBig) , 50, 25));
     totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
     // A wider row can outgrow the dialog; widen it rather than let the buttons
     // run off the edge.
     if Dialog.ClientWidth < totalBtnWidth + (padding * 2) then
       Dialog.ClientWidth := FitDialogWidth(totalBtnWidth + (padding * 2));
+
+    // FitDialogWidth refuses to exceed the display, so the row may still not
+    // fit - touch-sized buttons and a handful of captions outgrow an 800px
+    // panel easily. Stack them full width rather than lose the tail.
+    stackButtons := not ButtonRowFits(Dialog.ClientWidth, btnCount,
+      ButtonActualWidth, padding);
+    if stackButtons then
+      buttonBlockHeight := (btnCount * ButtonHeight) + ((btnCount - 1) * padding)
+    else
+      buttonBlockHeight := ButtonHeight;
+
+    // --- Content gets the height left over after the icon row and buttons ---
+    maxHeight := Round(ScreenUsableHeight * 0.8);
+    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
+    // Was a flat "maxHeight - 200", which silently underestimated once the
+    // button block could be several stacked touch-sized rows tall.
+    availableHeight := maxHeight - HtmlPanel.Top - buttonBlockHeight - (padding * 2);
+    if contentHeight > availableHeight then
+      contentHeight := availableHeight;
+    if contentHeight < 150 then
+      contentHeight := 150;  // Minimum height
+
+    HtmlViewer.Height := contentHeight;
+    HtmlPanel.Height := contentHeight;
+
+    // --- Create buttons -----------------------------------------------------
+    rowTop := HtmlPanel.Top + HtmlPanel.Height + padding;
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
     if posX < padding then
       posX := padding;
 
-    // Create buttons
     for mr in buttons do
     begin
       {$ifdef X_WIN}
@@ -3464,14 +3529,24 @@ begin
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := langs[mr];
       dialog.addButton(okbutton.caption);
-      OkButton.Width := ButtonActualWidth;
-      OkButton.Height := TouchHeight(ifthen((size = sdsBig) , 50, 25));
+      OkButton.Height := ButtonHeight;
       if (size = sdsBig) then
         OkButton.Font.Size := 12;
-      OkButton.Left := posX;
-      OkButton.Top := HtmlPanel.Top + HtmlPanel.Height + padding;
+      if stackButtons then
+      begin
+        OkButton.Width := Dialog.ClientWidth - (padding * 2);
+        OkButton.Left  := padding;
+        OkButton.Top   := rowTop;
+        Inc(rowTop, ButtonHeight + padding);
+      end
+      else
+      begin
+        OkButton.Width := ButtonActualWidth;
+        OkButton.Left  := posX;
+        OkButton.Top   := rowTop;
+        Inc(posX, ButtonActualWidth + padding);
+      end;
       OkButton.ModalResult := UXButtonToModalResult(mr);
-      Inc(posX, ButtonActualWidth + padding);
       // Default is chosen by identity, not position, so it survives a reversed row
       if (mr = defBtn) and (DefaultCtrl = nil) then
         DefaultCtrl := OkButton;
@@ -3479,9 +3554,10 @@ begin
 
     ApplyDefaultButton(Dialog, DefaultCtrl);
 
-    // Set final dialog height based on content
+    // Set final dialog height based on content. OkButton is the last one
+    // created, which is the bottom-most whether the row was stacked or not.
     finalHeight := OkButton.Top + OkButton.Height + padding;
-    Dialog.ClientHeight := finalHeight;
+    Dialog.ClientHeight := FitDialogHeight(finalHeight);
 
     dialog.setContent(caption, htmldata);
     dialog.hasHTML := true;
@@ -3525,7 +3601,8 @@ var
   DefaultCtrl: TWinControl;
   ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
   TitlePixelWidth, DescPixelWidth, TextPixelWidth,
-  posX, ProposedWidth, btnCount, totalBtnWidth: integer;
+  posX, ProposedWidth, btnCount, totalBtnWidth, rowTop: integer;
+  stackButtons: boolean;
   bgcol: TColor;
   TempFont: TFont;
   size: TSlickeDialogSize;
@@ -3927,8 +4004,13 @@ begin
     ButtonPanel.BevelOuter := bvNone;
     ButtonPanel.Color := bgcol;
 
-    // ButtonActualWidth, btnCount and totalBtnWidth were measured above, before
-    // the dialog width was fixed, so the row is guaranteed to fit by here.
+    // ButtonActualWidth, btnCount and totalBtnWidth were measured above, and
+    // ProposedWidth was grown to cover the row - but FitDialogWidth then capped
+    // it at the display, so on a panel narrower than the row needs the fit is
+    // not guaranteed at all. Stack in that case; the panel is alBottom, so a
+    // taller block grows upward into the message area instead of off-screen.
+    stackButtons := not ButtonRowFits(Dialog.ClientWidth, btnCount,
+      ButtonActualWidth, padding);
 
     // Always center the action buttons
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
@@ -3950,8 +4032,10 @@ begin
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := '⛶';  // Maximize symbol
 // No dialog add here
-      OkButton.Width := ifthen((size = sdsBig), 50, 30);
-      OkButton.Height := ifthen((size = sdsBig), 50, 25);
+      // The smallest control in the dialog, and square-ish, so the touch floor
+      // applies to both axes here rather than height alone.
+      OkButton.Width := TouchMin(ifthen((size = sdsBig), 50, 30));
+      OkButton.Height := TouchMin(ifthen((size = sdsBig), 50, 25));
       OkButton.Left := padding;
       OkButton.Top := padding;
       OkButton.OnClick := @Dialog.ExpandLogDialog;
@@ -3976,6 +4060,12 @@ begin
     defBtn := PickDefaultButton(buttons, ADefault);
     DefaultCtrl := nil;
 
+    rowTop := padding;
+    // The expand button occupies the panel's top-left corner. A centered row
+    // clears it, but a full-width stacked one would be drawn straight over it.
+    if stackButtons and Assigned(Dialog.LogExpandButton) then
+      rowTop := Dialog.LogExpandButton.Top + Dialog.LogExpandButton.Height + padding;
+
     for mr in buttons do
     begin
       {$ifdef X_WIN}OkButton := TDarkButton.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
@@ -3984,16 +4074,27 @@ begin
       OkButton.Caption := langs[mr];
       dialog.addButton(okbutton.caption);
       OkButton.ModalResult := UXButtonToModalResult(mr);
-      OkButton.Width := ButtonActualWidth;
       case size of
       sdsBig:
         OkButton.Height := OkButton.Height * 2;
       sdsMedium:
         OkButton.Height := ceil(OkButton.Height * 1.5);
       end;
-      OkButton.Top := padding;
-      OkButton.Left := posX;
-      posX := posX + OkButton.Width + padding;
+      OkButton.Height := TouchMin(OkButton.Height);
+      if stackButtons then
+      begin
+        OkButton.Width := Dialog.ClientWidth - (padding * 2);
+        OkButton.Left  := padding;
+        OkButton.Top   := rowTop;
+        Inc(rowTop, OkButton.Height + padding);
+      end
+      else
+      begin
+        OkButton.Width := ButtonActualWidth;
+        OkButton.Left  := posX;
+        OkButton.Top   := padding;
+        posX := posX + OkButton.Width + padding;
+      end;
       // Default is chosen by identity, not position, so it survives a reversed row
       if (mr = defBtn) and (DefaultCtrl = nil) then
         DefaultCtrl := OkButton;
