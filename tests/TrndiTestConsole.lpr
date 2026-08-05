@@ -62,6 +62,7 @@ uses
   carelink_time_tests,
   api_nightscout_tests,
   api_nightscout3_tests,
+  alert_engine_tests,
     system_media_controller_tests,
   ext_manifest_tests
   // Only where externals/quickjs ships a prebuilt engine (see the project's
