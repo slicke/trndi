@@ -62,6 +62,20 @@ RS_LAST_RECIEVE = 'Last reading was %s (%s)';
 RS_DAYS_AGO = '%d days ago';
 RS_LAST_RECIEVE_NO = 'There''s no last reading to show';
 RS_LAST_RECIEVE_AGE = 'Threshold: %d minutes';
+
+  // Stale-data status card (shown instead of the reading when data is outdated)
+RS_STALE_WAITING = 'Waiting for data';
+RS_STALE_NO_DATA = 'No data for %s';
+RS_STALE_LOST = 'Connection lost — %s';
+RS_STALE_AGE_MIN = '%d min';
+RS_STALE_AGE_HOUR = '%d h %d min';
+RS_STALE_AGE_HOUR_ONLY = '%d h';
+RS_STALE_AGE_DAY = '%d d %d h';
+RS_STALE_LAST_AT = 'Last %s at %s';
+RS_STALE_LAST_AT_DAY = 'Last %s at %s, %s';
+RS_STALE_RETRY_IN = 'Retrying in %d s';
+RS_STALE_RETRY_NOW = 'Retrying now…';
+
 RS_MISSING_LABEL = 'Label %s is missing!';
 RS_MULTIPLE_ACCOUNTS = 'Trndi found multiple accounts. Please choose one for this instance';
 RS_USER_CAPTION = '[%s] %s';
@@ -109,7 +123,6 @@ RS_PREDICT_AMOUNT_TITLE = 'Force a prediction';
 RS_PREDICT_AMOUNT_DESC = 'Enter the amount of readings to predict (1-20)';
 
 // Time messages
-RS_OUTDATED_TIME = '%s (%d.%.2d min ago)';
 RS_LATEST_READING = 'Latest Reading: Value = %.2f, Date = %s';
 
 RS_RESTART_APPLY = 'Trndi must be restarted for settings to take effect';

@@ -64,6 +64,8 @@ Shows how old the reading is (e.g., "3 min ago"). If this number gets large (lik
 - Trndi can't reach the data source
 
 **When to worry**: If it says more than 15-20 minutes ago, check your CGM system.
+Once data is stale, this line is replaced by a status card along the bottom of
+the window — see [Why is my reading dimmed](#why-is-my-reading-dimmed-with-a-card-at-the-bottom).
 
 ---
 
@@ -177,8 +179,22 @@ If you need to monitor multiple people (like family members), you can:
 
 ## Troubleshooting Common Questions
 
-### Why is my reading crossed out?
-The reading is more than 15 minutes old. Trndi marks old data to show it might not be current.
+### Why is my reading dimmed, with a card at the bottom?
+The reading is older than the freshness threshold (11 minutes by default). Trndi
+keeps the last known value on screen but dims it, and shows a status card along
+the bottom edge with how long data has been missing, when the last reading came
+in, and when the next retry is due.
+
+The card changes as the outage gets longer:
+- **Slate** — just past the threshold. A missed reading or two is routine.
+- **Amber** — over 30 minutes without data.
+- **Red**, with a struck-through clock — over an hour; the card reads
+  "Connection lost". At this point the sensor or the follower link is probably
+  down rather than just slow.
+
+Click the card to expand it for the data source's own message and the threshold
+in use. Click again to collapse it.
+
 - **Fix**: Check that your CGM, phone, or uploader is working
 
 ### Why does it say "No data" or "?"

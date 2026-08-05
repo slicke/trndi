@@ -412,7 +412,7 @@ procedure TfBG.tResizeTimer(Sender: TObject);
 var
   resizeWarnTint: TColor;
   resizeWarnAlpha: byte;
-  resizeWarnFullCover: boolean;
+  resizeWarnLayout: TWarnLayout;
 begin
   tResize.Enabled := false;
 
@@ -421,7 +421,7 @@ begin
     if pnWarning.Visible then
     begin
       fixWarningPanel;
-      GetWarnSeverityVisual(FWarnSeverity, resizeWarnTint, resizeWarnAlpha, resizeWarnFullCover);
+      GetWarnSeverityVisual(FWarnSeverity, resizeWarnTint, resizeWarnAlpha, resizeWarnLayout);
       ApplyAlphaControl(pnWarning, resizeWarnAlpha);
     end;
     Exit;
@@ -807,6 +807,10 @@ end;
 // Update remote on timer
 procedure TfBG.tMainTimer(Sender: TObject);
 begin
+  // tMain repeats, so the next attempt is one interval out from here. Recorded
+  // for the stale card's countdown (a TTimer exposes no "time remaining");
+  // SetNextUpdateTimer overwrites it with the resynced time if data lands.
+  FNextFetchAt := IncMilliSecond(Now, tMain.Interval);
   updateReading;
   {$ifdef TrndiExt}
   callFuncWithBGReadings('updateCallback', [DateTimeToStr(Now)]);
@@ -831,33 +835,16 @@ begin
   updateReading;
 end;
 
+// Ticks once a second for as long as data is stale. The age and the retry
+// countdown live on the status card, so this just asks the card to recompute
+// its captions (and to re-lay out if the outage crossed an escalation
+// boundary) — see RefreshStaleCard.
 procedure TfBG.tMissedTimer(Sender: TObject);
-var
-  nowTick: TDateTime;
-  d: TDateTime;
-  min, sec: int64;
 begin
   if firstboot then
     exit;
 
-  nowTick := Now;
-  d := lastReading.date;
-
-  min := MilliSecondsBetween(nowTick, d) div MILLIS_PER_MINUTE;
-  if min < 0 then
-    min := 0;
-  if min > 60000000 then
-  begin
-    d := lastDataReading.date;
-    min := MilliSecondsBetween(nowTick, d) div MILLIS_PER_MINUTE;
-    if min < 0 then
-      min := 0;
-  end;
-  sec := (MilliSecondsBetween(nowTick, d) mod MILLIS_PER_MINUTE) div 1000;
-  if sec < 0 then
-    sec := 0;
-
-  lDiff.Caption := Format(RS_OUTDATED_TIME, [FormatDateTime('hh:nn', d), min, sec]);
+  RefreshStaleCard;
 end;
 
 procedure TfBG.tSetupTimer(Sender: TObject);

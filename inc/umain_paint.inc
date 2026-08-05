@@ -88,6 +88,55 @@ begin
   Canvas.Ellipse(barX, dotY, barX + barW, dotY + barW);
 end;
 
+// Draw the stale-data glyph: a clock face with hour/minute hands, struck
+// through by a diagonal bar once the outage is long enough to read as a lost
+// connection rather than a late reading. Vector rather than an emoji so the
+// card renders identically on every widgetset.
+procedure DrawStaleGlyph(Canvas: TCanvas; CenterX, CenterY, Size: integer;
+  Fill, Stroke: TColor; Struck: boolean);
+var
+  radius, handLen, ringW, off: integer;
+begin
+  if Size < 12 then
+    Size := 12;
+  radius := Size div 2;
+  ringW := Max(2, Size div 10);
+
+  // Face
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := Fill;
+  Canvas.Pen.Color := Stroke;
+  Canvas.Pen.Width := ringW;
+  Canvas.Pen.Style := psSolid;
+  Canvas.Ellipse(CenterX - radius, CenterY - radius,
+    CenterX + radius, CenterY + radius);
+
+  // Hands frozen at 10:10 — a stopped clock reads as "time has passed", and
+  // the symmetric pose stays legible at the small sizes the card uses.
+  Canvas.Pen.Width := Max(2, Size div 11);
+  handLen := round(radius * 0.55);
+  Canvas.MoveTo(CenterX, CenterY);
+  Canvas.LineTo(CenterX, CenterY - handLen);
+  Canvas.MoveTo(CenterX, CenterY);
+  Canvas.LineTo(CenterX + round(handLen * 0.75), CenterY + round(handLen * 0.4));
+
+  if Struck then
+  begin
+    // The slash is drawn twice: once in the fill color as a slightly wider
+    // "cut", then the stroke on top, so it reads as a gap through the face
+    // rather than a line lying over it.
+    off := round(radius * 0.78);
+    Canvas.Pen.Color := Fill;
+    Canvas.Pen.Width := Max(4, Size div 5);
+    Canvas.MoveTo(CenterX - off, CenterY + off);
+    Canvas.LineTo(CenterX + off, CenterY - off);
+    Canvas.Pen.Color := Stroke;
+    Canvas.Pen.Width := Max(2, Size div 10);
+    Canvas.MoveTo(CenterX - off, CenterY + off);
+    Canvas.LineTo(CenterX + off, CenterY - off);
+  end;
+end;
+
 type
   TRangeBand = record
     Top, Bottom: integer;
@@ -182,26 +231,26 @@ end;
 
 procedure TfBG.pnWarningPaint(Sender: TObject);
 const
-  RadiusFull = 20;
+  RadiusCard = 18;
   RadiusBanner = 14;
 var
   P: TPanel;
   panelFillColor, strokeColor, accentColor, glyphFill: TColor;
   tintColor: TColor;
   opacityTmp: byte;
-  isFullCover: boolean;
+  layout: TWarnLayout;
   radius: integer;
   glyphSize, glyphX, glyphY: integer;
   chevronCX, chevronCY, chevronS: integer;
   chevPts: array[0..2] of TPoint;
   pulseAmt: double;
-  bannerBaseH: integer;
+  headRowH, accentW: integer;
 begin
   P := TPanel(Sender);
-  GetWarnSeverityVisual(FWarnSeverity, tintColor, opacityTmp, isFullCover);
+  GetWarnSeverityVisual(FWarnSeverity, tintColor, opacityTmp, layout);
 
-  if isFullCover then
-    radius := RadiusFull
+  if layout = wlStatusCard then
+    radius := RadiusCard
   else
     radius := RadiusBanner;
 
@@ -220,7 +269,7 @@ begin
     // For wsSoon, pulse the tint between base orange and a brighter shade on a
     // 2-second cadence. Driven by tProgressTimer; mirrors the alternation
     // pattern already used in pnNextProgressPaint for overdue readings.
-    if (FWarnSeverity = wsSoon) and not isFullCover then
+    if FWarnSeverity = wsSoon then
     begin
       if (SecondOf(Now) mod 2) = 0 then
         pulseAmt := 0.45
@@ -242,32 +291,72 @@ begin
     MoveTo(radius div 2, 2);
     LineTo(P.Width - (radius div 2), 2);
 
-    // Vector severity glyph
     accentColor := DarkenColor(panelFillColor, 0.45);
     glyphFill := BlendColors(clWhite, panelFillColor, 0.85);
-    if isFullCover then
+
+    if layout = wlStatusCard then
     begin
-      // Watermark behind the caption: large, low-contrast triangle.
-      // Heavy bias toward the panel color so it stays a subtle watermark and
-      // doesn't reduce contrast with the caption text drawn on top.
-      glyphSize := Max(48, Min(P.Width, P.Height) div 4);
-      glyphX := P.Width div 2;
-      glyphY := glyphSize div 2 + 16;
-      glyphFill := BlendColors(clWhite, panelFillColor, 0.80);
-      DrawWarningGlyph(P.Canvas, glyphX, glyphY, glyphSize,
-        glyphFill, accentColor, accentColor);
+      // ----- Stale status card -----
+      // The headline row is whatever fixWarningPanel gave lMissing; deriving
+      // the glyph and chevron from those bounds keeps them aligned with the
+      // text and unaffected by the expanded detail rows growing below.
+      headRowH := lMissing.Height;
+      if headRowH <= 0 then
+        headRowH := P.Height;
+
+      // Severity is carried by a bright bar down the leading edge rather than
+      // by the whole surface, so escalating from slate to red doesn't turn the
+      // card into a block of alarm color.
+      accentW := Max(3, P.Width div 90);
+      Brush.Color := LightenColor(tintColor, 0.45);
+      Pen.Style := psClear;
+      FillRect(0, radius div 2, accentW, P.Height - (radius div 2));
+      Pen.Style := psSolid;
+
+      // Clock glyph centered in the gutter fixWarningPanel reserved to the left
+      // of the headline (0 .. lMissing.Left).
+      glyphSize := Max(16, Min(round(headRowH * 0.72),
+        lMissing.Left - accentW - 10));
+      glyphX := Max(accentW + 4 + (glyphSize div 2), lMissing.Left div 2);
+      glyphY := lMissing.Top + (headRowH div 2);
+      DrawStaleGlyph(P.Canvas, glyphX, glyphY, glyphSize,
+        panelFillColor, glyphFill, FStaleStage = stLost);
+
+      if WarnShowDetails then
+      begin
+        chevronS := Max(5, P.Width div 60);
+        chevronCX := P.Width - (chevronS * 2) - 6;
+        chevronCY := lMissing.Top + (headRowH div 2);
+        if FWarnExpanded then
+        begin
+          // Up chevron (▴)
+          chevPts[0] := MkPoint(chevronCX, chevronCY - chevronS div 2);
+          chevPts[1] := MkPoint(chevronCX - chevronS, chevronCY + chevronS div 2);
+          chevPts[2] := MkPoint(chevronCX + chevronS, chevronCY + chevronS div 2);
+        end
+        else
+        begin
+          // Down chevron (▾)
+          chevPts[0] := MkPoint(chevronCX - chevronS, chevronCY - chevronS div 2);
+          chevPts[1] := MkPoint(chevronCX + chevronS, chevronCY - chevronS div 2);
+          chevPts[2] := MkPoint(chevronCX, chevronCY + chevronS div 2);
+        end;
+        Brush.Color := BlendColors(glyphFill, panelFillColor, 0.35);
+        Pen.Style := psClear;
+        Polygon(chevPts);
+      end;
     end
     else
     begin
       // Banner: glyph and chevron live within the collapsed (base) area, so they
       // don't move when the expanded detail row appears below.
-      bannerBaseH := FWarnBannerBaseH;
-      if bannerBaseH <= 0 then
-        bannerBaseH := P.Height;
+      headRowH := FWarnBannerBaseH;
+      if headRowH <= 0 then
+        headRowH := P.Height;
 
-      glyphSize := Max(20, bannerBaseH - 20);
+      glyphSize := Max(20, headRowH - 20);
       glyphX := 12 + glyphSize div 2;
-      glyphY := bannerBaseH div 2;
+      glyphY := headRowH div 2;
       DrawWarningGlyph(P.Canvas, glyphX, glyphY, glyphSize,
         glyphFill, accentColor, accentColor);
 
@@ -276,7 +365,7 @@ begin
       begin
         chevronS := 6;
         chevronCX := P.Width - 16;
-        chevronCY := bannerBaseH div 2;
+        chevronCY := headRowH div 2;
         if FWarnExpanded then
         begin
           // Up chevron (▴)

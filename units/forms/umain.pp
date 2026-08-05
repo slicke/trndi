@@ -218,8 +218,22 @@ TDotControl = TPaintBox;
   // Severity of an active warning. Drives panel layout, colors, and opacity.
   // wsInfo:     soft prediction (look-ahead, > 3 min)        — slim amber banner
   // wsSoon:     imminent prediction (≤ 3 min)                — slim orange banner with pulse
-  // wsCritical: no recent data / backend failure              — full-cover red card
+  // wsCritical: no recent data / backend failure              — stale status card
 TWarnSeverity = (wsInfo, wsSoon, wsCritical);
+  // Panel geometry that goes with a severity. Kept separate from the severity
+  // itself because wsCritical no longer implies "cover the whole window" — the
+  // stale card is a compact bottom-anchored surface that leaves the (dimmed)
+  // last reading and the trend dots on screen.
+  // wlBanner:     slim strip pinned to the top of the form
+  // wlStatusCard: rounded card pinned to the bottom of the form
+TWarnLayout = (wlBanner, wlStatusCard);
+  // How long data has been missing. Drives the stale card's tint and wording so
+  // a two-minute hiccup doesn't look like a lost sensor. Boundaries are
+  // STALE_LATE_MINUTES / STALE_LOST_MINUTES, measured from the last reading.
+  // stDelayed: past the freshness threshold — neutral slate, "no data for N"
+  // stLate:    past STALE_LATE_MINUTES      — amber
+  // stLost:    past STALE_LOST_MINUTES      — red, "connection lost"
+TStaleStage = (stDelayed, stLate, stLost);
   // Procedures which are applied to the trend drawing
 TTrendProc = procedure(l: TDotControl; c, ix: integer) of object;
 TTrendProcLoop = procedure(l: TDotControl; c, ix: integer;
@@ -234,6 +248,16 @@ TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
 const
   // Public timing constants used across the unit/interface
 CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
+  // Escalation boundaries for the stale-data card, in minutes since the last
+  // reading. Below the first one the card stays neutral (a missed reading or
+  // two is routine); the red "connection lost" state is reserved for outages
+  // long enough that the sensor or the follower link is probably down.
+STALE_LATE_MINUTES = 30;
+STALE_LOST_MINUTES = 60;
+  // Background used while data is stale. Near-black, but not pure black — the
+  // status card has to sit on it and still read as a raised surface. Written as
+  // a TColor literal ($00BBGGRR) because RGBToColor isn't a constant expression.
+STALE_BG_COLOR = TColor($001F1916); // RGB(22, 25, 31)
 
 type
   { TfBG }
@@ -488,18 +512,11 @@ TfBG = class(TForm)
   {$endif}
 private
   function AlertsSnoozed: boolean;
-  function GetControlAbsolutePos(const Ctrl: TControl): TPoint;
-  function GetPanelClientPos(const Ctrl: TControl; const Panel: TPanel): TPoint;
-  function PointInsideRoundedRect(const X, Y, W, H, R: integer): boolean;
   function GetSensorBadgeText: string;
   procedure HideConnectionBadge;
   procedure EnsureConnectionBadgeControls;
   procedure ApplyConnectionBadgeLayout(const DisplayStatus: string;
     const DisplayColor: TColor; const IsCentered: boolean);
-  procedure EnsureWarningDots;
-  procedure SyncWarningOverlayDots(const P: TPanel);
-  procedure EnsureWarningLabels;
-  procedure SyncWarningOverlayLabels(const P: TPanel);
   procedure SetAlertSnoozeMinutes(const Minutes: integer);
   procedure UpdateAlertSnoozeMenu;
   function ClassifyConnectionStatus(const ErrorText: string): string;
@@ -567,11 +584,11 @@ private
   FInternetBadgeShadow: TShape;
   FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (created when RotatingArrow is on)
   FLastArrowAngle: single;  // Last computed trend-arrow angle (shared with the float window)
-  FWarningDots: array of TDotControl;
-  FWarningLabels: array[1..4] of TLabel; // lArrow, lVal, lDiff, lAgo overlay
   FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
+  FStaleStage: TStaleStage;     // Escalation step of the active stale card
+  FNextFetchAt: TDateTime;      // When tMain will fire next; drives the retry countdown
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
   FLastFetchHadData: boolean; // true when last API call returned ≥1 readings (used to avoid reusing cache after an empty fetch)
   FCachedReadingsValid: boolean; // Fast-path flag to avoid lock when cache is empty (volatile-like)
@@ -611,7 +628,23 @@ private
     clearDisplayValues: boolean = false; showDetails: boolean = true);
   procedure hideWarningPanel;
   procedure GetWarnSeverityVisual(severity: TWarnSeverity;
-    out tintColor: TColor; out opacity: byte; out isFullCover: boolean);
+    out tintColor: TColor; out opacity: byte; out layout: TWarnLayout);
+  {** Escalation step for the currently displayed outage, derived from the age
+      of @code(lastDataReading) against @link(STALE_LATE_MINUTES) /
+      @link(STALE_LOST_MINUTES). Returns @code(stDelayed) when no reading has
+      ever arrived, so a cold boot doesn't open on a red panel. }
+  function CurrentStaleStage: TStaleStage;
+  {** Render a minute count as a compact human duration ("7 min", "1 h 12 min",
+      "2 d 3 h") for the stale card headline. }
+  function FormatStaleAge(const Minutes: int64): string;
+  {** Compose the three text rows of the stale card: @code(Headline) (live age),
+      @code(Detail) (last reading and retry countdown) and @code(Extra) (the
+      backend message and freshness threshold, shown only when expanded). }
+  procedure BuildStaleCardText(out Headline, Detail, Extra: string);
+  {** Recompute and repaint the stale card in place. Called once per second by
+      @link(tMissedTimer) so the age and retry countdown stay live without
+      going through the full resize path. }
+  procedure RefreshStaleCard;
   procedure CalcRangeTime;
   function GetValidatedPosition: TrndiPos;
     {** Acquire the latest reading(s) and process them for display.
@@ -680,11 +713,12 @@ private
       ticker. Label colors are left to @link(UpdateUIColors), which runs later
       in the pipeline once the new background color has been chosen. }
   procedure ApplyFreshDisplayState;
-  {** Put the display into its "data is not current" state: black background,
-      dashed badge, no trend arrow. When a reading exists it is kept on screen
-      struck out and the missed-reading ticker runs; with no reading at all the
-      value falls back to a dash and the ticker stays off. Invalidates the
-      cached UI state so label colors are recomputed on recovery. }
+  {** Put the display into its "data is not current" state: dark slate
+      background, dashed badge, no trend arrow. When a reading exists it stays
+      on screen as a dimmed hero value (the age and context move to the stale
+      card) and the missed-reading ticker runs; with no reading at all the value
+      falls back to a dash and the ticker stays off. Invalidates the cached UI
+      state so label colors are recomputed on recovery. }
   procedure ApplyStaleDisplayState;
   {** Configure the timer for the next update based on the last reading time.
       This helps reduce unnecessary polling by setting intelligent intervals
@@ -1698,7 +1732,7 @@ procedure TfBG.FormResize(Sender: TObject);
 var
   warnTintTmp: TColor;
   warnAlphaTmp: byte;
-  warnFullCoverTmp: boolean;
+  warnLayoutTmp: TWarnLayout;
 begin
   if Sender = lval then
     tResize.OnTimer(self)
@@ -1728,7 +1762,7 @@ begin
     // Opacity is derived from the current severity (see GetWarnSeverityVisual).
     if pnWarning.Visible then
     begin
-      GetWarnSeverityVisual(FWarnSeverity, warnTintTmp, warnAlphaTmp, warnFullCoverTmp);
+      GetWarnSeverityVisual(FWarnSeverity, warnTintTmp, warnAlphaTmp, warnLayoutTmp);
       ApplyAlphaControl(pnWarning, warnAlphaTmp);
     end;
 

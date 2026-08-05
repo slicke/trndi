@@ -40,230 +40,80 @@
    Included in the implementation section of umain.pp only.
 *)
 
-function TfBG.GetControlAbsolutePos(const Ctrl: TControl): TPoint;
+// Shrink-to-fit: the largest size <= AStart (never below AMin) at which AText
+// fits AMaxW x AMaxH. Shrink-only on purpose — the stale card derives its row
+// heights from the form, not from its text, so the type never grows to fill
+// and the layout can't twitch as the age counts up.
+function FitFontSize(const AFont: TFont; const AText: string;
+  AMaxW, AMaxH, AStart, AMin: integer): integer;
 var
-  cur: TControl;
+  bmp: TBitmap;
 begin
-  Result.X := 0;
-  Result.Y := 0;
-  cur := Ctrl;
-  while Assigned(cur) do
-  begin
-    Inc(Result.X, cur.Left);
-    Inc(Result.Y, cur.Top);
-    cur := cur.Parent;
-  end;
-end;
+  Result := AStart;
+  if (AText = '') or (AMaxW <= 0) or (AMaxH <= 0) then
+    Exit;
 
-function TfBG.GetPanelClientPos(const Ctrl: TControl; const Panel: TPanel): TPoint;
-var
-  ctrlPos: TPoint;
-  panelPos: TPoint;
-begin
-  ctrlPos := GetControlAbsolutePos(Ctrl);
-  panelPos := GetControlAbsolutePos(Panel);
-  Result.X := ctrlPos.X - panelPos.X;
-  Result.Y := ctrlPos.Y - panelPos.Y;
-end;
-
-function TfBG.PointInsideRoundedRect(const X, Y, W, H, R: integer): boolean;
-var
-  dx, dy: integer;
-  rr: integer;
-begin
-  if (X < 0) or (Y < 0) or (X >= W) or (Y >= H) then
-    Exit(False);
-
-  if ((X >= R) and (X < W - R)) or ((Y >= R) and (Y < H - R)) then
-    Exit(True);
-
-  rr := R * R;
-
-  if (X < R) and (Y < R) then
-  begin
-    dx := X - R;
-    dy := Y - R;
-    Exit((dx * dx + dy * dy) <= rr);
-  end;
-
-  if (X >= W - R) and (Y < R) then
-  begin
-    dx := X - (W - R - 1);
-    dy := Y - R;
-    Exit((dx * dx + dy * dy) <= rr);
-  end;
-
-  if (X < R) and (Y >= H - R) then
-  begin
-    dx := X - R;
-    dy := Y - (H - R - 1);
-    Exit((dx * dx + dy * dy) <= rr);
-  end;
-
-  if (X >= W - R) and (Y >= H - R) then
-  begin
-    dx := X - (W - R - 1);
-    dy := Y - (H - R - 1);
-    Exit((dx * dx + dy * dy) <= rr);
-  end;
-
-  Result := True;
-end;
-
-procedure TfBG.EnsureWarningDots;
-var
-  i: integer;
-begin
-  if Length(FWarningDots) < ACTIVE_DOTS + 1 then
-    SetLength(FWarningDots, ACTIVE_DOTS + 1);
-  for i := 1 to ACTIVE_DOTS do
-    if not Assigned(FWarningDots[i]) then
+  // Measure on a temp TBitmap — TLabel.Canvas outside paint is unsafe on
+  // Cocoa, and a 0x0 bitmap yields zero metrics on GTK3.
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(AFont);
+    while Result > AMin do
     begin
-      FWarningDots[i] := TPaintBox.Create(Self);
-      with TPaintBox(FWarningDots[i]) do
-      begin
-        Parent := pnWarning;
-        AutoSize := false;
-        OnPaint := @DotPaint;
-      end;
-
-      with FWarningDots[i] do
-      begin
-        Visible := false;
-        Caption := DOT_GRAPH;
-        PopupMenu := pmSettings;
-        Cursor := crHandPoint;
-        OnClick := @onTrendClick;
-      end;
+      bmp.Canvas.Font.Size := Result;
+      if (bmp.Canvas.TextWidth(AText) <= AMaxW) and
+         (bmp.Canvas.TextHeight(AText) <= AMaxH) then
+        Break;
+      Dec(Result);
     end;
-end;
-
-procedure TfBG.EnsureWarningLabels;
-var
-  labels: array[1..4] of TLabel;
-  i: integer;
-begin
-  labels[1] := lArrow;
-  labels[2] := lVal;
-  labels[3] := lDiff;
-  labels[4] := lAgo;
-
-  for i := 1 to 4 do
-    if not Assigned(FWarningLabels[i]) then
-    begin
-      FWarningLabels[i] := TLabel.Create(Self);
-      with FWarningLabels[i] do
-      begin
-        Parent := pnWarning;
-        AutoSize := false;
-        Transparent := true;
-        Visible := false;
-      end;
-    end;
-end;
-
-procedure TfBG.SyncWarningOverlayDots(const P: TPanel);
-var
-  i: integer;
-  srcDot, dstDot: TDotControl;
-  dotPos: TPoint;
-  centerX, centerY: integer;
-begin
-  EnsureWarningDots;
-
-  if Length(TrendDots) <= ACTIVE_DOTS then Exit;
-  for i := 1 to ACTIVE_DOTS do
-  begin
-    srcDot := TrendDots[i];
-    dstDot := FWarningDots[i];
-
-    if (srcDot = nil) or (dstDot = nil) then
-      Continue;
-
-    if srcDot.Visible then
-    begin
-      dotPos := GetPanelClientPos(srcDot, P);
-      dstDot.Parent := P;
-      dstDot.Caption := srcDot.Caption;
-      dstDot.Hint := srcDot.Hint;
-      dstDot.ShowHint := srcDot.ShowHint or (srcDot.Hint <> '');
-      dstDot.Tag := srcDot.Tag;
-      dstDot.Font.Assign(srcDot.Font);
-      dstDot.Width := srcDot.Width;
-      dstDot.Height := srcDot.Height;
-      dstDot.Left := dotPos.X;
-      dstDot.Top := dotPos.Y;
-
-      centerX := dstDot.Left + (dstDot.Width div 2);
-      centerY := dstDot.Top + (dstDot.Height div 2);
-      if PointInsideRoundedRect(centerX, centerY, P.Width, P.Height, 20) then
-      begin
-        dstDot.Visible := true;
-        dstDot.BringToFront;
-      end
-      else
-        dstDot.Visible := false;
-    end
-    else
-      dstDot.Visible := false;
+  finally
+    bmp.Free;
   end;
 end;
 
-procedure TfBG.SyncWarningOverlayLabels(const P: TPanel);
+// Height a word-wrapped AText needs at AFontSize inside AMaxW. Counts each hard
+// line's wrapped runs rather than assuming one row per line, so the card's
+// detail area is sized from real metrics instead of a guessed multiplier.
+// ASlack is appended to the last line for measurement only — the caller uses it
+// to reserve room for text that grows in place (a retry countdown gaining a
+// digit) without paying for a whole spare row.
+function MeasureWrappedHeight(const AFont: TFont; const AText: string;
+  AMaxW, AFontSize: integer; const ASlack: string = ''): integer;
 var
-  srcLabels: array[1..4] of TLabel;
-  i: integer;
-  srcLbl, dstLbl: TLabel;
-  lblPos: TPoint;
-  centerX, centerY: integer;
+  bmp: TBitmap;
+  lines: TStringList;
+  i, rows, lineW, lineH: integer;
+  measured: string;
 begin
-  EnsureWarningLabels;
+  Result := 0;
+  if (AText = '') or (AMaxW <= 0) then
+    Exit;
 
-  srcLabels[1] := lArrow;
-  srcLabels[2] := lVal;
-  srcLabels[3] := lDiff;
-  srcLabels[4] := lAgo;
+  bmp := TBitmap.Create;
+  lines := TStringList.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(AFont);
+    bmp.Canvas.Font.Size := AFontSize;
+    lineH := bmp.Canvas.TextHeight('Hg');
+    if lineH <= 0 then
+      lineH := AFontSize * 2;
 
-  for i := 1 to 4 do
-  begin
-    srcLbl := srcLabels[i];
-    dstLbl := FWarningLabels[i];
-
-    if (srcLbl = nil) or (dstLbl = nil) then
-      Continue;
-
-    if srcLbl.Visible and (srcLbl.Caption <> '') then
+    lines.Text := AText;
+    rows := 0;
+    for i := 0 to lines.Count - 1 do
     begin
-      lblPos := GetPanelClientPos(srcLbl, P);
-      dstLbl.Parent := P;
-      dstLbl.Caption := srcLbl.Caption;
-      dstLbl.Font.Assign(srcLbl.Font);
-      if i <= 2 then
-        dstLbl.Font.Color := BlendColors(srcLbl.Font.Color, P.Color, 0.25)
-      else
-        dstLbl.Font.Color := BlendColors(srcLbl.Font.Color, P.Color, 0.6);
-      dstLbl.Alignment := srcLbl.Alignment;
-      dstLbl.Layout := srcLbl.Layout;
-      dstLbl.Width := srcLbl.Width;
-      dstLbl.Height := srcLbl.Height;
-      dstLbl.Left := lblPos.X;
-      dstLbl.Top := lblPos.Y;
-
-      centerX := dstLbl.Left + (dstLbl.Width div 2);
-      centerY := dstLbl.Top + (dstLbl.Height div 2);
-      if PointInsideRoundedRect(centerX, centerY, P.Width, P.Height, 20) then
-      begin
-        dstLbl.Visible := true;
-        if i <= 2 then
-          dstLbl.SendToBack
-        else
-          dstLbl.BringToFront;
-      end
-      else
-        dstLbl.Visible := false;
-    end
-    else
-      dstLbl.Visible := false;
+      measured := lines[i];
+      if i = lines.Count - 1 then
+        measured := measured + ASlack;
+      lineW := bmp.Canvas.TextWidth(measured);
+      rows := rows + Max(1, Ceil(lineW / AMaxW));
+    end;
+    Result := Max(1, rows) * lineH;
+  finally
+    lines.Free;
+    bmp.Free;
   end;
 end;
 
@@ -601,50 +451,212 @@ end;
 
 // Map a severity level to its visual properties. Single source of truth so
 // paint, layout, and the resize handler stay consistent.
+//
+// wsCritical delegates its tint to the escalation stage: an outage a few
+// minutes past the freshness threshold is routine and gets a neutral slate,
+// while red is held back for the point where the sensor link is likely gone.
+// Reserving red also stops "stale" from being mistaken for a hypo alarm.
 procedure TfBG.GetWarnSeverityVisual(severity: TWarnSeverity;
-  out tintColor: TColor; out opacity: byte; out isFullCover: boolean);
+  out tintColor: TColor; out opacity: byte; out layout: TWarnLayout);
 begin
   case severity of
     wsInfo:
       begin
-        tintColor   := RGBToColor(230, 178, 50);   // amber
-        opacity     := 240;
-        isFullCover := false;
+        tintColor := RGBToColor(230, 178, 50);   // amber
+        opacity   := 240;
+        layout    := wlBanner;
       end;
     wsSoon:
       begin
-        tintColor   := RGBToColor(230, 126, 34);   // pumpkin/orange
-        opacity     := 240;
-        isFullCover := false;
+        tintColor := RGBToColor(230, 126, 34);   // pumpkin/orange
+        opacity   := 240;
+        layout    := wlBanner;
       end;
   else
-    // wsCritical
-    tintColor   := RGBToColor(192, 57, 43);        // pomegranate
-    opacity     := 240;
-    isFullCover := true;
+    // wsCritical — stale/no data
+    case FStaleStage of
+      stLate:
+        tintColor := RGBToColor(198, 146, 42);   // amber
+      stLost:
+        tintColor := RGBToColor(184, 62, 50);    // pomegranate
+    else
+      // stDelayed
+      tintColor := RGBToColor(64, 74, 92);       // slate
+    end;
+    opacity := 245;
+    layout  := wlStatusCard;
   end;
+end;
+
+function TfBG.CurrentStaleStage: TStaleStage;
+var
+  age: int64;
+  bg: BGReading;
+begin
+  // No reading has ever landed (cold boot, backend never answered): there is no
+  // outage to escalate, only an absence. Stay neutral.
+  if not tryLastReading(bg) then
+    Exit(stDelayed);
+
+  age := MinutesBetween(Now, lastDataReading.date);
+  if age >= STALE_LOST_MINUTES then
+    Result := stLost
+  else
+  if age >= STALE_LATE_MINUTES then
+    Result := stLate
+  else
+    Result := stDelayed;
+end;
+
+function TfBG.FormatStaleAge(const Minutes: int64): string;
+var
+  m: int64;
+begin
+  m := Minutes;
+  if m < 0 then
+    m := 0;
+
+  if m >= MinsPerDay then
+    Result := Format(RS_STALE_AGE_DAY, [m div MinsPerDay, (m mod MinsPerDay) div 60])
+  else
+  if m >= 60 then
+  begin
+    if (m mod 60) = 0 then
+      Result := Format(RS_STALE_AGE_HOUR_ONLY, [m div 60])
+    else
+      Result := Format(RS_STALE_AGE_HOUR, [m div 60, m mod 60]);
+  end
+  else
+    Result := Format(RS_STALE_AGE_MIN, [m]);
+end;
+
+procedure TfBG.BuildStaleCardText(out Headline, Detail, Extra: string);
+var
+  bg: BGReading;
+  age, retrySecs: int64;
+  val, last, ageText: string;
+  haveReading: boolean;
+begin
+  val := '';
+  haveReading := tryLastReading(bg);
+  // tryLastReading can hand back a placeholder whose formatted value is a dash;
+  // fall back to the last row that actually carried a number, which is also
+  // what the age is measured against.
+  if haveReading then
+  begin
+    val := bg.format(un, BG_MSG_SHORT);
+    if (val <> '') and (val[1] = '-') then
+    begin
+      bg := lastDataReading;
+      val := bg.format(un, BG_MSG_SHORT);
+    end;
+  end;
+
+  if not haveReading then
+  begin
+    Headline := RS_STALE_WAITING;
+    Detail   := RS_LAST_RECIEVE_NO;
+  end
+  else
+  begin
+    age := MinutesBetween(Now, lastDataReading.date);
+    ageText := FormatStaleAge(age);
+    if FStaleStage = stLost then
+      Headline := Format(RS_STALE_LOST, [ageText])
+    else
+      Headline := Format(RS_STALE_NO_DATA, [ageText]);
+
+    last := FormatDateTime('hh:nn', bg.date);
+    if DateOf(bg.date) <> DateOf(Now) then
+      Detail := Format(RS_STALE_LAST_AT_DAY, [val, last,
+        Format(RS_DAYS_AGO, [DaysBetween(Now, bg.date)])])
+    else
+      Detail := Format(RS_STALE_LAST_AT, [val, last]);
+  end;
+
+  // Retry countdown rides along on the detail row. FNextFetchAt is set by
+  // SetNextUpdateTimer; while a worker is in flight there is nothing to count
+  // down to, so say so instead of showing a frozen number.
+  if FApiCallInFlight then
+    Detail := Detail + ' · ' + RS_STALE_RETRY_NOW
+  else
+  if FNextFetchAt > 0 then
+  begin
+    retrySecs := SecondsBetween(FNextFetchAt, Now);
+    if FNextFetchAt <= Now then
+      Detail := Detail + ' · ' + RS_STALE_RETRY_NOW
+    else
+      Detail := Detail + ' · ' + Format(RS_STALE_RETRY_IN, [retrySecs]);
+  end;
+
+  // Expanded row: the backend's own message plus the threshold that decided
+  // this reading is stale in the first place. The message is composed for a
+  // full-height panel (RS_NO_BACKEND carries blank lines between its
+  // sentences); flatten it to single-spaced lines so it fits the card's two
+  // detail rows.
+  Extra := Trim(FWarnMessage);
+  while Pos(LineEnding + LineEnding, Extra) > 0 do
+    Extra := StringReplace(Extra, LineEnding + LineEnding, LineEnding, [rfReplaceAll]);
+  if Extra <> '' then
+    Extra := Extra + LineEnding;
+  Extra := Extra + Format(RS_LAST_RECIEVE_AGE,
+    [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
+end;
+
+procedure TfBG.RefreshStaleCard;
+var
+  newStage: TStaleStage;
+  head, detail, extra: string;
+begin
+  if not (Assigned(pnWarning) and pnWarning.Visible) then
+    Exit;
+  if FWarnSeverity <> wsCritical then
+    Exit;
+
+  newStage := CurrentStaleStage;
+  if newStage <> FStaleStage then
+  begin
+    // Crossing an escalation boundary changes the tint and the headline
+    // wording, so re-run the full layout once. Everything in between is a
+    // caption swap — the geometry and font sizes are derived from the card
+    // size, not from the text, so they can't drift as the age counts up.
+    FStaleStage := newStage;
+    fixWarningPanel;
+  end
+  else
+  begin
+    BuildStaleCardText(head, detail, extra);
+    lMissing.Caption := head;
+    if FWarnExpanded and (extra <> '') then
+      pnWarnLast.Caption := detail + LineEnding + extra
+    else
+      pnWarnLast.Caption := detail;
+  end;
+
+  pnWarning.Repaint;
 end;
 
 procedure TfBG.fixWarningPanel;
 const
-  GLYPH_AREA_W = 56;   // Reserved width for the severity glyph on the left
+  GLYPH_AREA_W = 56;   // Reserved width for the banner glyph on the left
   CHEVRON_AREA_W = 28; // Reserved width for expand chevron on the right
 var
   padding: integer;
   calculatedFontSize: integer;
   bg: BGReading;
   last, val: string;
-  measureBmp: TBitmap;
-  warnLastTextH: integer;
   tintColor: TColor;
   opacityTmp: byte;
-  isFullCover: boolean;
+  layout: TWarnLayout;
   baseBannerH, expandedExtraH: integer;
   detailCaption: string;
+  headText, detailText, extraText: string;
+  cardW, cardH, headH, detailH, extraH, glyphW, cardPad, detailW: integer;
+  headFont, detailFont: integer;
 begin
   calculatedFontSize := 12;
   pnWarning.AutoSize := false;
-  GetWarnSeverityVisual(FWarnSeverity, tintColor, opacityTmp, isFullCover);
+  GetWarnSeverityVisual(FWarnSeverity, tintColor, opacityTmp, layout);
 
   // Pick a high-contrast caption color against the tinted panel. Use pure
   // white/black (not a tint-derived shade) so the title doesn't share hue with
@@ -657,82 +669,135 @@ begin
   // the title clearly reads as primary and the detail as secondary.
   pnWarnLast.Font.Color := BlendColors(lMissing.Font.Color, tintColor, 0.35);
 
-  // Compose the "last reading" detail caption once; reused by both layouts.
-  detailCaption := '';
-  if WarnShowDetails then
+  if layout = wlStatusCard then
   begin
-    if tryLastReading(bg) then
+    // ----- Critical: compact status card pinned to the bottom -----
+    // Type sizes come from the form, not from the text, so the per-second age
+    // update in RefreshStaleCard is a pure caption swap: nothing reflows and
+    // the card doesn't twitch as "9 min" becomes "10 min".
+    BuildStaleCardText(headText, detailText, extraText);
+
+    // Margins track the smaller dimension: a wide-but-short window shouldn't
+    // spend a quarter of its height on the gap under the card.
+    padding := Max(8, Min(ClientWidth div 28, ClientHeight div 22));
+    cardPad := Max(8, ClientHeight div 40);
+    cardW := Min(ClientWidth - (padding * 2), Max(220, round(ClientWidth * 0.86)));
+    if cardW < 120 then
+      cardW := Max(60, ClientWidth - 8);
+
+    // Measured below at the detail size, so the bold banner face left on the
+    // label by a previous wsInfo/wsSoon show can't skew the row count.
+    pnWarnLast.Font.Style := [];
+    headFont := Max(11, Min(30, ClientHeight div 16));
+    detailFont := Max(8, round(headFont * 0.62));
+    headH := round(headFont * 1.9);
+    glyphW := Max(28, headH);
+    // Text column: everything left of the chevron, right of the glyph gutter.
+    detailW := Max(20, cardW - (cardPad * 2) - glyphW);
+
+    // Two digits of slack: the retry countdown ticks up in place and must not
+    // wrap onto a row the card wasn't sized for.
+    detailH := MeasureWrappedHeight(pnWarnLast.Font, detailText, detailW,
+      detailFont, '00');
+
+    // The expanded row carries the backend message and the threshold, both of
+    // which wrap — measure rather than guess a row count.
+    extraH := 0;
+    if FWarnExpanded and WarnShowDetails and (extraText <> '') then
+      extraH := MeasureWrappedHeight(pnWarnLast.Font, extraText, detailW, detailFont);
+
+    cardH := (cardPad * 2) + headH + detailH + extraH;
+    // A small window (or a tall expanded row) must not push the card over the
+    // value it is meant to annotate: cap it at 48% of the form and let the
+    // expanded text clip instead.
+    if cardH > round(ClientHeight * 0.48) then
     begin
-      val := bg.format(un, BG_MSG_SHORT);
-      if (val <> '') and (val[1] = '-') then
-      begin
-        bg := lastDataReading;
-        val := bg.format(un, BG_MSG_SHORT);
-      end;
-      last := FormatDateTime('hh:nn', bg.date);
-      if DateOf(bg.date) <> Dateof(now) then
-        last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
-      detailCaption := Format(RS_LAST_RECIEVE, [val, last]);
-    end
-    else
-      detailCaption := RS_LAST_RECIEVE_NO;
-    detailCaption := detailCaption + LineEnding +
-      Format(RS_LAST_RECIEVE_AGE, [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
-  end;
-
-  if isFullCover then
-  begin
-    // ----- Critical: full-cover refreshed card (covers trend, mirrors dots/labels) -----
-    padding := (ClientWidth div 25);
-    if not native.HasTouchScreen then
-      padding := padding * 2;
-    pnWarning.Width  := ClientWidth - (padding * 2);
-    pnWarning.Left   := padding;
-    pnWarning.Top    := padding;
-    pnWarning.Height := ClientHeight - (padding * 2);
-
-    // Vector glyph is drawn by pnWarningPaint as a watermark behind the text,
-    // so the caption no longer carries the emoji prefix.
-    lMissing.Caption := FWarnMessage;
-    lMissing.AutoSize := false;
-    lMissing.Left   := 5;
-    lMissing.Top    := 5;
-    lMissing.Width  := pnWarning.Width - 10;
-    lMissing.Height := pnWarning.Height - 60;
-    lMissing.WordWrap := true;
-    lMissing.OptimalFill := true;
-    ScaleLbl(lMissing, taCenter, tlCenter);
-    calculatedFontSize := lMissing.Font.Size;
-    if native.HasTouchScreen then
-      pnWarning.Font.Color := pnWarning.Color;
-
-    pnWarnLast.Caption := detailCaption;
-    pnWarnLast.Font.Size := Max(8, Min(20, calculatedFontSize div 3));
-    pnWarnLast.Alignment := taLeftJustify;
-    pnWarnLast.Layout := tlTop;
-
-    measureBmp := TBitmap.Create;
-    try
-      measureBmp.SetSize(1, 1);
-      measureBmp.Canvas.Font.Assign(pnWarning.Font);
-      measureBmp.Canvas.Font.Size := pnWarnLast.Font.Size;
-      warnLastTextH := measureBmp.Canvas.TextHeight(pnWarnLast.Caption);
-    finally
-      measureBmp.Free;
+      cardH := Max(48, round(ClientHeight * 0.48));
+      extraH := Max(0, cardH - (cardPad * 2) - headH - detailH);
     end;
 
-    pnWarnLast.Height := warnLastTextH * 2;
-    pnWarnLast.Width  := pnWarning.Width - 10;
-    pnWarnLast.Left   := 5;
-    pnWarnLast.Top    := pnWarning.Height - pnWarnLast.Height - 5;
-    pnWarnLast.Visible := WarnShowDetails;
+    pnWarning.Width  := cardW;
+    pnWarning.Left   := (ClientWidth - cardW) div 2;
+    pnWarning.Height := cardH;
+    pnWarning.Top    := Max(0, ClientHeight - cardH - padding);
 
-    SyncWarningOverlayDots(pnWarning);
-    SyncWarningOverlayLabels(pnWarning);
+    // glyphW is the gutter reserved for the clock glyph pnWarningPaint draws;
+    // it centers the glyph in 0..lMissing.Left, so the two stay in step.
+    lMissing.Caption := headText;
+    lMissing.AutoSize := false;
+    lMissing.WordWrap := false;
+    lMissing.OptimalFill := false;
+    lMissing.Font.Style := [fsBold];
+    lMissing.Alignment := taLeftJustify;
+    lMissing.Layout := tlCenter;
+    lMissing.Left   := cardPad + glyphW;
+    lMissing.Top    := cardPad;
+    lMissing.Width  := Max(20, cardW - cardPad - glyphW - CHEVRON_AREA_W);
+    lMissing.Height := headH;
+    // Shrink the headline if it can't fit the row — measured with two extra
+    // digits of slack so the per-second age update (which only swaps captions)
+    // still fits as "9 min" grows into "10 min".
+    lMissing.Font.Size := FitFontSize(lMissing.Font, headText + '00',
+      lMissing.Width, headH, headFont, 9);
+    lMissing.Visible := true;
+
+    if WarnShowDetails then
+    begin
+      if (extraH > 0) and (extraText <> '') then
+        pnWarnLast.Caption := detailText + LineEnding + extraText
+      else
+        pnWarnLast.Caption := detailText;
+      pnWarnLast.AutoSize := false;
+      pnWarnLast.WordWrap := true;
+      pnWarnLast.OptimalFill := false;
+      pnWarnLast.Font.Size := detailFont;
+      pnWarnLast.Font.Style := [];
+      pnWarnLast.Alignment := taLeftJustify;
+      pnWarnLast.Layout := tlTop;
+      pnWarnLast.Left   := cardPad + glyphW;
+      pnWarnLast.Top    := cardPad + headH;
+      pnWarnLast.Width  := detailW;
+      pnWarnLast.Height := detailH + extraH;
+      pnWarnLast.Visible := true;
+    end
+    else
+      pnWarnLast.Visible := false;
+
+    // Keep the dimmed hero clear of the card. lVal is alClient and vertically
+    // centered, so it can only be as tall as the band left above the card —
+    // counted on both sides of center. ResizeUIElements' ScaleLbl takes the
+    // font back over once fresh data restores the normal layout.
+    lVal.Font.Size := FitFontSize(lVal.Font, lVal.Caption,
+      Max(20, ClientWidth - 16),
+      Max(24, ClientHeight - (2 * (cardH + padding))), 150, 8);
+    lVal.Refresh;
   end
   else
   begin
     // ----- Info/Soon: slim filled banner anchored at the top -----
+    // Compose the "last reading" detail caption for the banner's expanded row.
+    detailCaption := '';
+    if WarnShowDetails then
+    begin
+      if tryLastReading(bg) then
+      begin
+        val := bg.format(un, BG_MSG_SHORT);
+        if (val <> '') and (val[1] = '-') then
+        begin
+          bg := lastDataReading;
+          val := bg.format(un, BG_MSG_SHORT);
+        end;
+        last := FormatDateTime('hh:nn', bg.date);
+        if DateOf(bg.date) <> Dateof(now) then
+          last := last + ' ' + Format(RS_DAYS_AGO, [DaysBetween(now, bg.date)]);
+        detailCaption := Format(RS_LAST_RECIEVE, [val, last]);
+      end
+      else
+        detailCaption := RS_LAST_RECIEVE_NO;
+      detailCaption := detailCaption + LineEnding +
+        Format(RS_LAST_RECIEVE_AGE, [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
+    end;
+
     padding := Max(8, ClientWidth div 40);
     baseBannerH := Max(56, ClientHeight div 9);
     expandedExtraH := 0;
@@ -745,19 +810,11 @@ begin
     pnWarning.Height := baseBannerH + expandedExtraH;
     FWarnBannerBaseH := baseBannerH;
 
-    // Slim banner: trend dots/labels stay visible naturally underneath. No mirroring.
-    // Hide any previously-mirrored controls that may linger from a prior critical show.
-    for warnLastTextH := 1 to Length(FWarningDots) - 1 do
-      if Assigned(FWarningDots[warnLastTextH]) then
-        FWarningDots[warnLastTextH].Visible := false;
-    for warnLastTextH := 1 to 4 do
-      if Assigned(FWarningLabels[warnLastTextH]) then
-        FWarningLabels[warnLastTextH].Visible := false;
-
     lMissing.Caption := FWarnMessage;
     lMissing.AutoSize := false;
     lMissing.WordWrap := true;
     lMissing.OptimalFill := true;
+    lMissing.Font.Style := [fsBold];
     lMissing.Left   := GLYPH_AREA_W;
     lMissing.Top    := 6;
     lMissing.Width  := Max(40, pnWarning.Width - GLYPH_AREA_W - CHEVRON_AREA_W);
@@ -789,15 +846,37 @@ procedure TfBG.showWarningPanel(const message: string;
 var
   tintColor: TColor;
   opacityTmp: byte;
-  isFullCover: boolean;
+  layout: TWarnLayout;
 begin
   FWarnSeverity := severity;
   FWarnExpanded := false;
   WarnShowDetails := showDetails;
   FWarnMessage := message;
+  // The critical tint is stage-derived, so the stage has to be current before
+  // GetWarnSeverityVisual is asked for a color.
+  if severity = wsCritical then
+    FStaleStage := CurrentStaleStage;
 
-  GetWarnSeverityVisual(severity, tintColor, opacityTmp, isFullCover);
+  GetWarnSeverityVisual(severity, tintColor, opacityTmp, layout);
   pnWarning.Color := tintColor;
+
+  // The caption labels cover most of the panel and TGraphicControl doesn't
+  // pass clicks up to its parent, so without this the expand chevron only
+  // responds on the slivers of bare panel around the text.
+  lMissing.OnClick := @pnWarningClick;
+  pnWarnLast.OnClick := @pnWarningClick;
+  if WarnShowDetails then
+  begin
+    pnWarning.Cursor := crHandPoint;
+    lMissing.Cursor := crHandPoint;
+    pnWarnLast.Cursor := crHandPoint;
+  end
+  else
+  begin
+    pnWarning.Cursor := crDefault;
+    lMissing.Cursor := crDefault;
+    pnWarnLast.Cursor := crDefault;
+  end;
 
   pnWarning.Visible := true;
   tPing.Enabled := true;
@@ -812,7 +891,10 @@ begin
        (not (Assigned(pnNextProgress) and pnNextProgress.Visible)) then
     tProgress.Enabled := false;
 
-  if clearDisplayValues then
+  // On the stale card ApplyStaleDisplayState already owns lVal — it writes the
+  // dimmed hero from lastDataReading, including the RS_HIGH / RS_LOW captions,
+  // which this digit test would otherwise throw away for a dash.
+  if clearDisplayValues and (layout <> wlStatusCard) then
     if (not CaptionStartsWithDigit(lVal.Caption)) or (lArrow.Caption = 'lArrow') then
     begin
       lVal.Caption := '--';
