@@ -195,8 +195,8 @@ public
     cookieJar: TStringList = nil; followRedirects: boolean = true;
     maxRedirects: integer = 10; customHeaders: TStringList = nil;
     prefix: boolean = true): THTTPResponse; override;
-    {** Detect a touchscreen by scanning /proc/bus/input/devices for entries
-        whose handlers point at accessible /dev/input/eventX nodes. }
+    {** Detect a touchscreen from Linux input-device names, direct-input
+        properties, and absolute-axis capability bitmaps. }
   class function DetectTouchScreen(out multi: boolean): boolean; override;
     {** Microsecond monotonic clock via clock_gettime(CLOCK_MONOTONIC).
         Random bytes come from the base implementation's /dev/urandom. }
@@ -2735,9 +2735,9 @@ end;
 {------------------------------------------------------------------------------
   DetectTouchScreen (Linux)
   -------------------------
-  Walk /proc/bus/input/devices, treat blocks mentioning "touch" as candidates,
-  and confirm by trying to open the referenced /dev/input/eventX node. Sets
-  @code(multi) when the block exposes ABS_MT_* events.
+  Walk /proc/bus/input/devices and verify event handlers using sysfs capability
+  bitmaps. Direct absolute devices and explicitly named touchscreens qualify;
+  ABS_MT_POSITION_X/Y identify multi-touch without opening protected event nodes.
  ------------------------------------------------------------------------------}
 {------------------------------------------------------------------------------
   MonotonicMicroseconds
@@ -2768,61 +2768,93 @@ begin
 end;
 
 class function TTrndiNativeLinux.DetectTouchScreen(out multi: boolean): boolean;
+const
+  INPUT_PROP_DIRECT = 0;
+  ABS_X = 0;
+  ABS_Y = 1;
+  ABS_MT_POSITION_X = 53;
+  ABS_MT_POSITION_Y = 54;
 var
   SL, Block: TStringList;
-  i, j: integer;
-  Line, Handler, DevPath: string;
-  LineLower, HandlerLower: string;
-  HasAccessibleDevice: boolean;
-  F: Integer;
+  i: integer;
+
+  function HasCapability(const EventName, CapabilityName: string;
+    Code: integer): boolean;
+  var
+    CapabilityFile: string;
+    Content, Words: TStringList;
+    WordIndex, TokenIndex, WordBits: integer;
+    Value: QWord;
+  begin
+    Result := false;
+    CapabilityFile := '/sys/class/input/' + EventName +
+      '/device/capabilities/' + CapabilityName;
+    if not FileExists(CapabilityFile) then
+      Exit;
+
+    Content := TStringList.Create;
+    Words := TStringList.Create;
+    try
+      Content.LoadFromFile(CapabilityFile);
+      Words.StrictDelimiter := true;
+      Words.Delimiter := ' ';
+      Words.DelimitedText := Trim(Content.Text);
+      WordBits := SizeOf(PtrUInt) * 8;
+      WordIndex := Code div WordBits;
+      TokenIndex := Words.Count - WordIndex - 1;
+      if (TokenIndex < 0) or
+         not TryStrToQWord('$' + Words[TokenIndex], Value) then
+        Exit;
+      Result := (Value and (QWord(1) shl (Code mod WordBits))) <> 0;
+    finally
+      Words.Free;
+      Content.Free;
+    end;
+  end;
 
   procedure AnalyzeBlock;
   var
     k: integer;
+    Line, Handler, EventName, DevPath, BlockLower: string;
+    IsNamedTouchScreen, IsDirect, HasPosition, HasMultiPosition: boolean;
   begin
     if Block.Count = 0 then
       Exit;
-    if not Block.Text.ToLower.Contains('touch') then
-      Exit;
 
-    HasAccessibleDevice := false;
+    EventName := '';
     for k := 0 to Block.Count - 1 do
     begin
       Line := Block[k];
-      LineLower := LowerCase(Line);
       if (Pos('H: Handlers=', Line) = 1) or (Pos('H: ', Line) = 1) then
-      begin
-        if Pos('event', LineLower) > 0 then
           for Handler in Line.Split([' ', '=']) do
+          if Pos('event', LowerCase(Handler)) = 1 then
           begin
-            HandlerLower := LowerCase(Handler);
-            if Pos('event', HandlerLower) > 0 then
+            DevPath := '/dev/input/' + Handler;
+            if FileExists(DevPath) then
             begin
-              DevPath := '/dev/input/' + Handler;
-              if FileExists(DevPath) then
-              begin
-                F := FileOpen(DevPath, fmOpenRead);
-                if F <> -1 then
-                begin
-                  FileClose(F);
-                  HasAccessibleDevice := true;
-                  Break;
-                end;
-              end;
+              EventName := Handler;
+              Break;
             end;
           end;
-        if HasAccessibleDevice then
-          Break;
-      end;
+      if EventName <> '' then
+        Break;
     end;
+    if EventName = '' then
+      Exit;
 
-    if HasAccessibleDevice then
+    BlockLower := LowerCase(Block.Text);
+    IsNamedTouchScreen := (Pos('touchscreen', BlockLower) > 0) or
+      (Pos('touch screen', BlockLower) > 0);
+    IsDirect := HasCapability(EventName, 'properties', INPUT_PROP_DIRECT);
+    HasPosition := HasCapability(EventName, 'abs', ABS_X) and
+      HasCapability(EventName, 'abs', ABS_Y);
+    HasMultiPosition := HasCapability(EventName, 'abs', ABS_MT_POSITION_X) and
+      HasCapability(EventName, 'abs', ABS_MT_POSITION_Y);
+
+    if IsNamedTouchScreen or (IsDirect and (HasPosition or HasMultiPosition)) then
     begin
       Result := true;
-      if Block.Text.Contains('ABS_MT_POSITION') or
-         Block.Text.Contains('ABS_MT_SLOT') or
-         Block.Text.Contains('ABS_MT_TRACKING_ID') then
-        multi := true;
+      multi := multi or HasMultiPosition;
     end;
   end;
 

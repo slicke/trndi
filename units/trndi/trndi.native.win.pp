@@ -193,7 +193,7 @@ public
       No third-party module (e.g. BurntToast) required; uses PowerShell's
       built-in AUMID so we don't have to register one ourselves. }
   procedure attention(topic, message: string); override;
-  {** Detect a touchscreen via SM_DIGITIZER (NID_INTEGRATED_TOUCH + NID_READY).
+  {** Detect an integrated or external touchscreen via SM_DIGITIZER.
       Sets @code(multi) when NID_MULTI_INPUT is reported. }
   class function DetectTouchScreen(out multi: boolean): boolean; override;
   {** Play an audio file asynchronously via MCI (winmm); .wav/.mp3/.wma
@@ -3161,8 +3161,8 @@ end;
 {------------------------------------------------------------------------------
   DetectTouchScreen (Windows)
   ---------------------------
-  Read SM_DIGITIZER and check NID_INTEGRATED_TOUCH + NID_READY for "has touch",
-  NID_MULTI_INPUT for multi-touch capability.
+  Read SM_DIGITIZER and require a ready integrated or external touch device.
+  NID_MULTI_INPUT reports multi-touch capability.
  ------------------------------------------------------------------------------}
 {------------------------------------------------------------------------------
   GetRandomBytes
@@ -3204,15 +3204,16 @@ end;
 class function TTrndiNativeWindows.DetectTouchScreen(out multi: boolean): boolean;
 const
   NID_INTEGRATED_TOUCH = $00000001;
+  NID_EXTERNAL_TOUCH   = $00000002;
   NID_MULTI_INPUT      = $00000040;
   NID_READY            = $00000080;
 var
   Value: integer;
 begin
   Value := GetSystemMetrics(SM_DIGITIZER);
-  Result := ((Value and NID_INTEGRATED_TOUCH) <> 0) and
+    Result := ((Value and (NID_INTEGRATED_TOUCH or NID_EXTERNAL_TOUCH)) <> 0) and
             ((Value and NID_READY) <> 0);
-  multi  := (Value and NID_MULTI_INPUT) <> 0;
+  multi := Result and ((Value and NID_MULTI_INPUT) <> 0);
 end;
 
 {------------------------------------------------------------------------------

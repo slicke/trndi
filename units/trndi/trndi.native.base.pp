@@ -1045,10 +1045,16 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.HasTouchScreen(out multi: boolean): boolean;
 begin
-  DetectTouchScreen(multi);
-  // Parentheses required: a bare HasTouchScreen here denotes this function's
-  // result variable, not the parameterless overload.
-  Result := HasTouchScreen();
+  Result := DetectTouchScreen(multi);
+  case touchOverride of
+  tbTrue:
+    Result := true;
+  tbFalse:
+    begin
+      Result := false;
+      multi := false;
+    end;
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -1060,14 +1066,7 @@ class function TTrndiNativeBase.HasTouchScreen: boolean;
 var
   mt: boolean;
 begin
-  case touchOverride of
-  tbTrue:
-    Result := true;
-  tbFalse:
-    Result := false;
-  else
-    Result := DetectTouchScreen(mt);
-  end;
+  Result := HasTouchScreen(mt);
 end;
 
 {------------------------------------------------------------------------------
