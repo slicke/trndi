@@ -396,10 +396,9 @@ begin
   ApplyTrendDotCount(newCount);
 end;
 
-// Free and clear the trend-dot and warning-overlay dot controls so
-// CreateTrendDots can rebuild them at a new ACTIVE_DOTS count. Both arrays
-// are 1-based (index 0 unused). Callers must follow up with CreateTrendDots,
-// which also re-points the named lDotN aliases.
+// Free and clear the trend-dot controls so CreateTrendDots can rebuild them at
+// a new ACTIVE_DOTS count. The array is 1-based (index 0 unused). Callers must
+// follow up with CreateTrendDots, which also re-points the named lDotN aliases.
 procedure TfBG.FreeTrendDotControls;
 var
   i: integer;
@@ -411,13 +410,6 @@ begin
       TrendDots[i] := nil;
     end;
   SetLength(TrendDots, 0);
-  for i := 1 to High(FWarningDots) do
-    if Assigned(FWarningDots[i]) then
-    begin
-      FWarningDots[i].Free;
-      FWarningDots[i] := nil;
-    end;
-  SetLength(FWarningDots, 0);
 end;
 
 // Apply a new main-trend dot count: persist it, rebuild the dot controls and

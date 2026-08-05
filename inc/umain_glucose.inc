@@ -226,11 +226,15 @@ begin
   // afterwards), so any color computed now would be wrong. UpdateUIColors owns
   // it and runs from FinalizeUIUpdate once the background is final.
   tMissed.Enabled := false;
+  // Hand the value's size back to the LCL's fill-the-label logic, which
+  // ApplyStaleDisplayState turns off so the card can shrink the dimmed hero.
+  lVal.OptimalFill := true;
 end;
 
 procedure TfBG.ApplyStaleDisplayState;
 var
   haveReading: boolean;
+  stale: BGReading;
 begin
   if firstboot then
     Exit;
@@ -239,30 +243,60 @@ begin
 
   if haveReading then
   begin
-    // Strike out the last known value rather than discarding it, and let
-    // tMissed tick its age. Both need a real timestamp: with bgs empty
-    // lastReading.date is 0, which tMissedTimer would render as an age of
-    // ~66 million minutes.
+    // Let tMissed drive the stale card's live age; it needs a real timestamp,
+    // since with bgs empty lastReading.date is 0.
     tMissed.OnTimer(tMissed);
     tMissed.Enabled := true;
-    lVal.Font.Style := [fsStrikeOut];
   end
   else
-  begin
     tMissed.Enabled := false;
-    lDiff.Caption := '';
-    lVal.Font.Style := [];
+
+  // The age and the last-reading context belong to the stale card now, so the
+  // delta and "last update" slots are cleared rather than repeating the same
+  // facts around it. lAgo in particular is only re-armed by FinalizeUpdate on
+  // the fresh path, so without this it would sit on the boot caption for the
+  // whole outage.
+  lDiff.Caption := '';
+  lAgo.Caption := '';
+  lVal.Font.Style := [];
+  // lVal is alClient with OptimalFill, so it normally scales to the whole form
+  // and would run under the card. Turn the fill off for the duration of the
+  // outage; fixWarningPanel then sizes the hero to the band above the card,
+  // and ApplyFreshDisplayState hands the fill back on recovery.
+  lVal.OptimalFill := false;
+
+  // Put the last known value back up as a dimmed hero rather than blanking it:
+  // it is still the most recent thing we know, and the card underneath states
+  // plainly how old it is. Written from lastDataReading rather than left to
+  // whatever happens to be on screen, so a cold boot that lands straight on
+  // stale data shows the value too instead of the boot spinner's glyph.
+  lVal.Caption := '--';
+  if haveReading and (not privacyMode) then
+  begin
+    stale := lastDataReading;
+    if not stale.empty then
+    begin
+      // Same out-of-scale mapping ProcessCurrentReading applies, so a stale
+      // reading past the sensor's limits doesn't come back as a bare number.
+      if Assigned(api) and (stale.val > api.limitHI) then
+        lVal.Caption := RS_HIGH
+      else
+      if Assigned(api) and (stale.val < api.limitLO) then
+        lVal.Caption := RS_LOW
+      else
+        lVal.Caption := stale.format(un, BG_MSG_SHORT, BGPrimary);
+      lVal.Hint := lVal.Caption;
+    end;
   end;
 
-  // Keep a numeric caption (the stale value); replace anything else — the boot
-  // spinner glyph, the design-time placeholder, a previous dash.
-  if (not haveReading) or (not CaptionStartsWithDigit(lVal.Caption)) or
-    (lArrow.Caption = 'lArrow') then
-    lVal.Caption := '--';
-
   lArrow.Caption := '';
-  setColorMode(clBlack);
-  lVal.Font.Color := clWhite;
+  // A dark slate rather than pure black: the stale card has to sit on top of
+  // it and still read as a raised surface.
+  setColorMode(STALE_BG_COLOR);
+  // Dimmed hero — white at ~58% against the stale background (BlendColors'
+  // alpha weights the *first* argument). Computed rather than a literal grey
+  // so it tracks STALE_BG_COLOR.
+  lVal.Font.Color := BlendColors(clWhite, STALE_BG_COLOR, 0.58);
 
   // setColorMode changed fBG.Color behind the UI-state cache's back. Without
   // invalidating it, a recovery reading that happens to carry the same value,
@@ -289,9 +323,12 @@ begin
 
   tMain.Interval := intervalMs + REFRESH_RESYNC_BUFFER_MS;
   tMain.Enabled := true;
+  // TTimer has no "time remaining", so remember when this one is due; the stale
+  // card counts down to it.
+  FNextFetchAt := IncMilliSecond(Now, tMain.Interval);
 
   miRefresh.Caption := Format(RS_REFRESH_PLAIN, [TimeToStr(LastReadingTime),
-    TimeToStr(IncMilliSecond(Now, tMain.Interval))]);
+    TimeToStr(FNextFetchAt)]);
   {$if DEFINED(X_MAC) OR DEFINED(X_LINUXBSD)}
   if assigned(upmenu) then
     upMenu.Caption:= miRefresh.Caption;

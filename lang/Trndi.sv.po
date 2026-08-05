@@ -1969,6 +1969,7 @@ msgstr "Det finns inget senaste värde att visa"
 
 #: trndi.strings.rs_last_update
 #, object-pascal-format
+msgctxt "trndi.strings.rs_last_update"
 msgid "%d min"
 msgstr "%d min"
 
@@ -2130,11 +2131,6 @@ msgstr "Över område"
 #: trndi.strings.rs_off_lo
 msgid "Under range"
 msgstr "Under område"
-
-#: trndi.strings.rs_outdated_time
-#, object-pascal-format
-msgid "%s (%d.%.2d min ago)"
-msgstr "%s (%d.%.2d min sedan)"
 
 #: trndi.strings.rs_over
 msgid "over"
@@ -2406,6 +2402,60 @@ msgstr ""
 msgctxt "trndi.strings.rs_stack_failed"
 msgid "An error occurred, and the stacktrace could not be loaded. Showing backtrace."
 msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspårning."
+
+#: trndi.strings.rs_stale_age_day
+#, object-pascal-format
+msgid "%d d %d h"
+msgstr ""
+
+#: trndi.strings.rs_stale_age_hour
+#, object-pascal-format
+msgid "%d h %d min"
+msgstr ""
+
+#: trndi.strings.rs_stale_age_hour_only
+#, object-pascal-format
+msgid "%d h"
+msgstr ""
+
+#: trndi.strings.rs_stale_age_min
+#, object-pascal-format, fuzzy
+msgctxt "trndi.strings.rs_stale_age_min"
+msgid "%d min"
+msgstr "%d min"
+
+#: trndi.strings.rs_stale_last_at
+#, object-pascal-format
+msgid "Last %s at %s"
+msgstr ""
+
+#: trndi.strings.rs_stale_last_at_day
+#, object-pascal-format
+msgid "Last %s at %s, %s"
+msgstr ""
+
+#: trndi.strings.rs_stale_lost
+#, object-pascal-format
+msgid "Connection lost — %s"
+msgstr ""
+
+#: trndi.strings.rs_stale_no_data
+#, object-pascal-format
+msgid "No data for %s"
+msgstr ""
+
+#: trndi.strings.rs_stale_retry_in
+#, object-pascal-format
+msgid "Retrying in %d s"
+msgstr ""
+
+#: trndi.strings.rs_stale_retry_now
+msgid "Retrying now…"
+msgstr ""
+
+#: trndi.strings.rs_stale_waiting
+msgid "Waiting for data"
+msgstr ""
 
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
