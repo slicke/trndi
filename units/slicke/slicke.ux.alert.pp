@@ -1677,6 +1677,28 @@ begin
   end;
 end;
 
+{ Narrowest a dialog of this layout size should be before its content is even
+  considered.
+
+  Deliberately not one figure for all three presets. The floor exists so a short
+  prompt does not end up pinched between its own icon and button row, and both of
+  those grow with the preset: 480 px that looks generous around 9 pt type is
+  cramped around 24 pt with 160 px buttons, which is what the big and medium
+  touch layouts use. Small panels are unaffected either way - FitDialogWidth caps
+  everything at the display, so the floor only really speaks on a screen with
+  room to spare. }
+function MinDialogWidth(const size: TSlickeDialogSize): integer;
+begin
+  case size of
+  sdsBig:
+    Result := 680;
+  sdsMedium:
+    Result := 560;
+  else
+    Result := 400;
+  end;
+end;
+
 { Apply SizeFontSize to a control's font, leaving it alone at sdsNormal. }
 procedure ApplyDialogFont(AFont: TFont; const size: TSlickeDialogSize;
   const ABigSize: integer);
@@ -2003,6 +2025,24 @@ begin
     bmp.Free;
     lines.Free;
   end;
+end;
+
+{**
+  Width at which body text in this font reaches a comfortable line measure.
+  @param AFont Font the text will render with.
+  @returns Pixel width of a line of about forty characters.
+  @remarks Needed because a sentence measured unwrapped at 24 pt asks for more
+    width than any dialog should occupy: at that size the text has to be allowed
+    to break, or the dialog stretches to the edge of the screen to keep one line
+    intact. Expressed in characters of the font itself rather than in pixels, so
+    it holds at any type size and DPI - @code(n) is close to the average
+    lowercase advance, and forty of them sits at the short end of the 45-75
+    character measure typography treats as readable, which suits a dialog rather
+    than a page of prose.
+}
+function ComfortableTextWidth(AFont: TFont): integer;
+begin
+  Result := MeasureTextWidth(StringOfChar('n', 35), AFont);
 end;
 
 {**
@@ -2555,7 +2595,7 @@ begin
   maxWidth := IfThen(size = sdsBig, MaxWidthBig, MaxWidthNormal);
   // Floor: the button row and the input control below still need room, and a
   // dialog narrower than its own icon block reads as broken.
-  minWidth := IfThen(size = sdsNormal, 400, 480);
+  minWidth := MinDialogWidth(size);
   Dialog.ClientWidth := FitDialogWidth(
     Min(Max(currentIconSize + textWidth + (Padding * 3), minWidth), maxWidth));
   Dialog.Color := bgcol;
@@ -3925,20 +3965,29 @@ begin
     TextPanel.BevelOuter := bvNone;
     TextPanel.Color := bgcol;
 
-    // Width calculations. Measure via a temporary TBitmap rather than
-    // Dialog.Canvas: TForm/TPanel canvases outside a paint event can SIGABRT
-    // on the Cocoa widgetset (see memory `cocoa-label-canvas`). The Dialog
-    // hasn't been shown yet here, so its canvas context is not guaranteed.
-    TitlePixelWidth := 0;
-    with Graphics.TBitmap.Create do
+    // Width calculations, measured with the type the labels below actually get.
+    // This used to measure everything at Dialog.Font - the 9 pt system size -
+    // while big mode renders the same text at 24 pt, so the content asked for
+    // well under half the room it needed and the size floor did all the work.
+    // (MeasureTextWidth measures on a scratch bitmap, not Dialog.Canvas: a form
+    // canvas outside a paint event can SIGABRT on Cocoa, and the dialog is not
+    // shown yet here.)
+    TempFont := TFont.Create;
     try
-      SetSize(1, 1);
-      Canvas.Font.Assign(Dialog.Font);
-      if Trim(title) <> '' then
-        TitlePixelWidth := Canvas.TextWidth(title);
-      DescPixelWidth := Canvas.TextWidth(desc);
+      TempFont.Assign(Dialog.Font);
+      ApplyDialogFont(TempFont, size, 24);
+      TempFont.Style := [fsBold];
+      TitlePixelWidth := MeasureTextWidth(title, TempFont);
+      TempFont.Style := [];
+      DescPixelWidth := MeasureTextWidth(desc, TempFont);
+      // Only where the type was scaled up: at 24 pt an unwrapped sentence would
+      // push the dialog to the 900 px cap every time, so hold the message to a
+      // readable measure and let it break. The title keeps its full width - a
+      // wrapped heading looks worse than a wide dialog.
+      if SizeFontSize(size, 24) > 0 then
+        DescPixelWidth := Min(DescPixelWidth, ComfortableTextWidth(TempFont));
     finally
-      Free;
+      TempFont.Free;
     end;
     TextPixelWidth := Max(TitlePixelWidth, DescPixelWidth);
 
@@ -3965,14 +4014,7 @@ begin
     if ProposedWidth < totalBtnWidth + (padding * 2) then
       ProposedWidth := totalBtnWidth + (padding * 2);
 
-    if (size = sdsBig) then
-    begin
-      if ProposedWidth < 650 then
-        ProposedWidth := 650;
-    end
-    else
-    if ProposedWidth < 400 then
-      ProposedWidth := 400;
+    ProposedWidth := Max(ProposedWidth, MinDialogWidth(size));
 
     if logmsg <> '' then
       if ProposedWidth < 500 then
@@ -3984,6 +4026,11 @@ begin
     ProposedWidth := FitDialogWidth(ProposedWidth);
 
     Dialog.ClientWidth := ProposedWidth;
+    // This dialog autosizes, and once the panels report their preferred widths
+    // AutoSize will happily pull the form back in below the width settled above -
+    // which is how a big-mode dialog ended up narrower than a medium one.
+    // Constraints are the one thing AutoSize will not argue with.
+    Dialog.Constraints.MinWidth := Dialog.Width;
     MsgWidth := Dialog.ClientWidth - (IconBox.Width + (padding * 3));
 
     // Desc height
