@@ -1437,6 +1437,115 @@ begin
   Result := Min(AWidth, Round(ScreenUsableWidth * MaxDialogScreenWidthFraction));
 end;
 
+{ ---------------------------------------------------------------------------
+  Touch metrics
+
+  The layout size (sdsNormal/sdsMedium/sdsBig) governs information density:
+  how large the type is and how much room the dialog may take. Whether the
+  user is pointing with a finger is a separate question, and the two do not
+  move together - a 7" 800x480 panel resolves to sdsMedium precisely because
+  it has no room for big type, yet its controls need the largest hit targets
+  of any display Trndi runs on. Touch minimums are therefore applied on top of
+  the size preset instead of being folded into it.
+  --------------------------------------------------------------------------- }
+
+const
+ { Smallest comfortable finger target at 96 DPI. Apple's HIG asks for 44pt and
+   Material for 48dp; 44 is the common floor, and lands a little over 8 mm on
+   the ~133 DPI Raspberry Pi 7" panel. }
+  BaseTouchTargetPx = 44;
+
+var
+ { Touch hardware cannot appear or vanish while the app runs, and probing for
+   it costs a walk of /proc/bus/input/devices plus the /sys capability files on
+   Linux - far too much to repeat for every button of every dialog. The user's
+   override is deliberately NOT cached: the Touch menu and the UX debug item
+   both flip it between one dialog and the next. }
+  TouchProbed: boolean = false;
+  TouchPresent: boolean = false;
+
+{ Whether dialogs should size their controls for finger input. Mirrors
+  TrndiNative.HasTouchScreen (override wins, detection otherwise), but keeps
+  the expensive half memoized. }
+function DialogsAreTouch: boolean;
+var
+  multi: boolean;
+begin
+  // Qualified: Trndi.Native re-exports TTrndiBool as a type alias, which brings
+  // the type into scope but not its values. Any state other than these two
+  // (tbUnset, tbUnknown) means "decide automatically", matching HasTouchScreen.
+  if TrndiNative.touchOverride = TTrndiBool.tbTrue then
+    Exit(true);
+  if TrndiNative.touchOverride = TTrndiBool.tbFalse then
+    Exit(false);
+
+  if not TouchProbed then
+  begin
+    TouchPresent := TrndiNative.DetectTouchScreen(multi);
+    TouchProbed  := true;
+  end;
+  Result := TouchPresent;
+end;
+
+{ Minimum height a tappable control needs, or 0 on a mouse-only system.
+
+  Scaled off the screen DPI so the floor stays a *physical* size. Everything
+  else in this unit is literal pixels - runtime-created dialogs never get the
+  LCL's auto-scaling - but a target measuring 9 mm on one panel and 4 mm on
+  another is not a floor at all. Never shrinks below the 96 DPI value, so a
+  widgetset that reports nothing useful still yields 44. }
+function TouchTargetHeight: integer;
+begin
+  if not DialogsAreTouch then
+    Exit(0);
+  Result := BaseTouchTargetPx;
+  if Screen.PixelsPerInch > 96 then
+    Result := (BaseTouchTargetPx * Screen.PixelsPerInch) div 96;
+end;
+
+{ Raise a proposed control height to the touch minimum where one applies. }
+function TouchHeight(const AHeight: integer): integer;
+begin
+  Result := Max(AHeight, TouchTargetHeight);
+end;
+
+{ ---------------------------------------------------------------------------
+  Layout size metrics
+
+  Control sizing used to be spelled out as `ifthen(size = sdsBig, 20, 0)` at
+  every single site, which is why sdsMedium - added later - was missing from
+  most of them and left small touch panels with desktop-sized type. Route the
+  choice through here so a new preset has to be handled in one place.
+  --------------------------------------------------------------------------- }
+
+{ Font size for a dialog control, given the size it uses at sdsBig. sdsMedium
+  sits one step (4 pt) below sdsBig, which is the relationship every site that
+  did spell medium out already used, with a floor that keeps the smallest
+  controls legible. Returns 0 at sdsNormal, meaning "leave the inherited
+  system font size alone". }
+function SizeFontSize(const size: TSlickeDialogSize; const ABigSize: integer): integer;
+begin
+  case size of
+  sdsBig:
+    Result := ABigSize;
+  sdsMedium:
+    Result := Max(ABigSize - 4, 12);
+  else
+    Result := 0;
+  end;
+end;
+
+{ Apply SizeFontSize to a control's font, leaving it alone at sdsNormal. }
+procedure ApplyDialogFont(AFont: TFont; const size: TSlickeDialogSize;
+  const ABigSize: integer);
+var
+  pt: integer;
+begin
+  pt := SizeFontSize(size, ABigSize);
+  if pt > 0 then
+    AFont.Size := pt;
+end;
+
 {**
   Determine whether dialogs should use the large layout.
   @param dialogsize Requested size mode.
@@ -1454,7 +1563,7 @@ begin
   sdsMedium:
     result := dialogsize;
   sdsAuto:
-    if not TrndiNative.HasTouchScreen then
+    if not DialogsAreTouch then
       result := sdsNormal
     else
     if (ScreenUsableWidth >= BigLayoutMinScreenWidth) and
@@ -2303,6 +2412,12 @@ begin
     Btn.Height := Btn.Height * 2;
     Btn.Font.Size := 12;
   end;
+  // Applied after the preset, not inside it: a finger needs the same target on
+  // a 7" panel as on a 24" one, and that panel resolves to sdsMedium - which
+  // otherwise left the button at its 25 px desktop height, roughly 4 mm.
+  // Height only; 80 px is already wide enough for a fingertip, and widening
+  // here would clip captions the row layout has no chance to re-measure.
+  Btn.Height := TouchHeight(Btn.Height);
   if AddToButtons then
     Dialog.addButton(ACaption);
   Result := Btn;
@@ -2408,8 +2523,7 @@ begin
     end
     else
       Edit.DecimalPlaces := 0;
-    if (size = sdsBig) then
-      Edit.Font.Size := 20;
+    ApplyDialogFont(Edit.Font, size, 20);
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk,     false);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -2509,7 +2623,7 @@ begin
     // Gate on touch, not on the resolved layout size: small touch panels now
     // resolve to sdsMedium, and the full-screen overlay is wanted most exactly
     // there. This is the original meaning of the test.
-    if (sender <> nil) and (sender.Showing) and TrndiNative.HasTouchScreen then
+    if (sender <> nil) and (sender.Showing) and DialogsAreTouch then
     begin
       // On e.g. touch screens display a full screen message. Child coordinates
       // are in the parent's client space, and all four sides are anchored so the
@@ -2673,8 +2787,7 @@ begin
     if AMasked then
       Edit.EchoMode := emPassword;
     ApplyInputColors(Edit);
-    if (size = sdsBig) then
-      Edit.Font.Size := 20;
+    ApplyDialogFont(Edit.Font, size, 20);
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -2764,8 +2877,7 @@ begin
     Combo.Left := DescLabel.Left;
     Combo.Width := DescLabel.Width;
     ApplyInputColors(Combo);
-    if (size = sdsBig) then
-      Combo.Font.Size := 20;
+    ApplyDialogFont(Combo.Font, size, 20);
     Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
     Combo.ItemIndex := 0;
 
@@ -2855,8 +2967,16 @@ begin
       Grid.Cells[1, i + 1] := Values[i];
     end;
 
-    if (size = sdsBig) then
-      Grid.Font.Size := 14;
+    ApplyDialogFont(Grid.Font, size, 14);
+    // Grid rows are tap targets in their own right - selecting one is how this
+    // dialog is answered - so they get the same floor as a button. Fewer rows
+    // fit inside the fixed grid height, which is the correct trade: the grid
+    // scrolls, an unhittable row does not.
+    // Guarded rather than written unconditionally: DefaultRowHeight reads back
+    // as -1 while it still means "derive from the font", and on a mouse-only
+    // system TouchHeight would hand that sentinel straight back as a literal.
+    if TouchTargetHeight > 0 then
+      Grid.DefaultRowHeight := TouchTargetHeight;
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -2937,8 +3057,7 @@ begin
     if FontCombo.Items.Count > 0 then
       FontCombo.ItemIndex := 0;
     
-    if (size = sdsBig) then
-      FontCombo.Font.Size := 16;
+    ApplyDialogFont(FontCombo.Font, size, 16);
 
     // --- Preview Label ---
     PreviewLabel := TLabel.Create(Dialog);
@@ -3050,11 +3169,11 @@ begin
       DatePicker.MaxDate := AMaxDate;
     
     ApplyInputColors(DatePicker);
+    ApplyDialogFont(DatePicker.Font, size, 20);
     if (size = sdsBig) then
-    begin
-      DatePicker.Font.Size := 20;
       DatePicker.Height := DatePicker.Height * 2;
-    end;
+    // The drop-down button on the right is the smallest target in this dialog.
+    DatePicker.Height := TouchHeight(DatePicker.Height);
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -3346,7 +3465,7 @@ begin
       OkButton.Caption := langs[mr];
       dialog.addButton(okbutton.caption);
       OkButton.Width := ButtonActualWidth;
-      OkButton.Height := ifthen((size = sdsBig) , 50, 25);
+      OkButton.Height := TouchHeight(ifthen((size = sdsBig) , 50, 25));
       if (size = sdsBig) then
         OkButton.Font.Size := 12;
       OkButton.Left := posX;
