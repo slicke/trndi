@@ -2406,20 +2406,20 @@ msgstr "Ett fel uppstod och stackspårningen kunde inte laddas. Visar bakåtspå
 #: trndi.strings.rs_stale_age_day
 #, object-pascal-format
 msgid "%d d %d h"
-msgstr ""
+msgstr "%d d %d tim"
 
 #: trndi.strings.rs_stale_age_hour
 #, object-pascal-format
 msgid "%d h %d min"
-msgstr ""
+msgstr "%d tim %d min"
 
 #: trndi.strings.rs_stale_age_hour_only
 #, object-pascal-format
 msgid "%d h"
-msgstr ""
+msgstr "%d tim"
 
 #: trndi.strings.rs_stale_age_min
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.strings.rs_stale_age_min"
 msgid "%d min"
 msgstr "%d min"
@@ -2427,35 +2427,35 @@ msgstr "%d min"
 #: trndi.strings.rs_stale_last_at
 #, object-pascal-format
 msgid "Last %s at %s"
-msgstr ""
+msgstr "Senast %s vid %s"
 
 #: trndi.strings.rs_stale_last_at_day
 #, object-pascal-format
 msgid "Last %s at %s, %s"
-msgstr ""
+msgstr "Senast %s vid %s, %s"
 
 #: trndi.strings.rs_stale_lost
 #, object-pascal-format
 msgid "Connection lost — %s"
-msgstr ""
+msgstr "Anslutning förlorad — %s"
 
 #: trndi.strings.rs_stale_no_data
 #, object-pascal-format
 msgid "No data for %s"
-msgstr ""
+msgstr "Ingen data på %s"
 
 #: trndi.strings.rs_stale_retry_in
 #, object-pascal-format
 msgid "Retrying in %d s"
-msgstr ""
+msgstr "Försöker om %d s"
 
 #: trndi.strings.rs_stale_retry_now
 msgid "Retrying now…"
-msgstr ""
+msgstr "Försöker igen nu..."
 
 #: trndi.strings.rs_stale_waiting
 msgid "Waiting for data"
-msgstr ""
+msgstr "Väntar på data"
 
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
@@ -3729,4 +3729,3 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
-
