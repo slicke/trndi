@@ -35,6 +35,8 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-05): Added Screen.Fonts to mirror the LCL
+   screen font list used by Linux-specific UI initialization in headless tests. *)
 unit Controls;
 
 {$mode ObjFPC}{$H+}
@@ -206,6 +208,8 @@ type
     ActiveForm: TObject;
     // Menu font used by owner-draw menu code paths
     MenuFont: TFont;
+    // Installed font names exposed by the real LCL screen object.
+    Fonts: TStringList;
   end;
 
 var
@@ -387,8 +391,14 @@ initialization
   Screen.Monitors[0].WorkAreaRect := Screen.WorkAreaRect;
   Screen.ActiveForm := nil;
   Screen.MenuFont := TFont.Create;
+  Screen.Fonts := TStringList.Create;
 
 finalization
+  if Assigned(Screen.Fonts) then
+  begin
+    Screen.Fonts.Free;
+    Screen.Fonts := nil;
+  end;
   if Assigned(Screen.MenuFont) then
   begin
     Screen.MenuFont.Free;
