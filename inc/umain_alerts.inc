@@ -35,6 +35,8 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-05): Replaced floating-point wrapped-row
+   rounding with integer ceiling division for FPC/macOS compatibility. *)
 (* Warning overlay panel, connection badge, and alert snooze for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -108,7 +110,7 @@ begin
       if i = lines.Count - 1 then
         measured := measured + ASlack;
       lineW := bmp.Canvas.TextWidth(measured);
-      rows := rows + Max(1, Ceil(lineW / AMaxW));
+      rows := rows + Max(1, (lineW + AMaxW - 1) div AMaxW);
     end;
     Result := Max(1, rows) * lineH;
   finally
