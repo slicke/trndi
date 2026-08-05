@@ -38,7 +38,17 @@ Classes, SysUtils, forms, controls;
     @param fname Out parameter that receives a preferred UI font name for emoji/mono display.
     @returns @true if the font (or a fallback) is available; otherwise @false.
   }
-function FontGUIInList(out fname: string): boolean;
+function FontGUIInList(out fname: string): boolean; overload;
+
+  {**
+    As @link(FontGUIInList), but also reports whether the selected face is a
+    monochrome one. Monochrome faces honour @code(Font.Color), so the caller can
+    tint an icon; colour-bitmap emoji fonts ignore it.
+    @param fname Out parameter that receives a preferred UI font name for emoji/mono display.
+    @param monochrome Out parameter, @true when the face draws in @code(Font.Color).
+    @returns @true if the font (or a fallback) is available; otherwise @false.
+  }
+function FontGUIInList(out fname: string; out monochrome: boolean): boolean; overload;
 
   {**
     Check if a suitable text font exists on this system and return its name.
@@ -93,31 +103,76 @@ begin
   {$endif}
 end;
 
+{$if DEFINED(X_LINUXBSD)}
+type
+  TUXIconFont = record
+    name: string;
+    monochrome: boolean;
+  end;
+
+const
+  // Tried in order. The monochrome face comes first on purpose: it is outline
+  // based, so it stays crisp when scaled up to icon size, and it draws in
+  // Font.Color, which lets the dialogs tint each icon the way macOS tints its
+  // SF Symbols. Noto Color Emoji is a CBDT bitmap font -- it upscales soft and
+  // ignores the tint -- so it is the fallback rather than the first choice.
+  // Symbola is last: plain outlines, rarely installed, but it covers the whole
+  // dingbat range when neither Noto is present.
+  UXIconFonts: array[0..2] of TUXIconFont = (
+    (name: 'Noto Emoji'; monochrome: true),
+    (name: 'Noto Color Emoji'; monochrome: false),
+    (name: 'Symbola'; monochrome: true));
+{$endif}
+
 {**
   See interface docs. Returns a font suitable for UI/emoji display if available.
 }
-function FontGUIInList(out fname: string): boolean;
+function FontGUIInList(out fname: string; out monochrome: boolean): boolean;
+{$if DEFINED(X_LINUXBSD)}
+var
+  i: integer;
+{$endif}
 begin
   {$if DEFINED(X_LINUXBSD)}
-  fname := 'Noto Color Emoji';
-  try
-    Result := (Screen.Fonts.IndexOf('Noto Emoji') >= 0) or
-      (Screen.Fonts.IndexOf('Noto Color Emoji') >= 0);
-  finally
-  end;
+  for i := Low(UXIconFonts) to High(UXIconFonts) do
+    if Screen.Fonts.IndexOf(UXIconFonts[i].name) >= 0 then
+    begin
+      fname := UXIconFonts[i].name;
+      monochrome := UXIconFonts[i].monochrome;
+      Exit(true);
+    end;
+  // Nothing usable: hand back the preferred name so the caller can name it in
+  // the "please install a font" message, and claim nothing about the substitute
+  // fontconfig will end up picking.
+  fname := UXIconFonts[Low(UXIconFonts)].name;
+  monochrome := false;
+  Result := false;
   {$elseif DEFINED(WINDOWS)}
   fname := 'Segoe UI Symbol';
+  monochrome := true;
   try
     Result := Screen.Fonts.IndexOf(fname) >= 0;
   finally
   end;
   {$elseif DEFINED(HAIKU)}
   fname := 'Noto Sans';
+  monochrome := true;
   result := true; // System font!
   {$else}
   fname := 'font';
+  monochrome := false;
   Result := true;
   {$endif}
+end;
+
+{**
+  See interface docs. Thin wrapper for callers that only need the font name.
+}
+function FontGUIInList(out fname: string): boolean;
+var
+  monochrome: boolean;
+begin
+  Result := FontGUIInList(fname, monochrome);
 end;
 
 {$ifdef X_LINUXBSD}
