@@ -2061,10 +2061,38 @@ begin
 end;
 {$endif}
 
+{$ifndef Darwin}
+// The colour macOS draws each SF Symbol in, as a TColor. Reused wherever the
+// icon font is a monochrome face, so the same dialog icon comes out in the same
+// colour on every platform instead of only on macOS. False means no mapping,
+// and the caller falls back to the plain foreground colour.
+function IconTint(const Emoji: widestring; out col: TColor): boolean;
+begin
+  Result := true;
+  col := clNone;
+  if Emoji = '' then
+    Exit(false);
+  case Word(Emoji[1]) of
+  $2705:
+    col := RGBToColor(52, 199, 89);    // systemGreen
+  $26A0:
+    col := RGBToColor(255, 149, 0);    // systemOrange
+  $274C:
+    col := RGBToColor(255, 59, 48);    // systemRed
+  $2139, $2753:
+    col := RGBToColor(0, 122, 255);    // systemBlue
+  $2699, $2B1C:
+    col := RGBToColor(142, 142, 147);  // systemGray
+  else
+    Result := false;
+  end;
+end;
+{$endif}
+
 {**
   Render an emoji into a @code(TImage) using the standard canvas (non-Windows).
-  Uses SF Symbols on macOS 11+, otherwise "Apple Color Emoji" on macOS and
-  "Noto Color Emoji" elsewhere.
+  Uses SF Symbols on macOS 11+, otherwise "Apple Color Emoji" on macOS and the
+  best available icon font elsewhere (see @link(FontGUIInList)).
   @param Image Target image control.
   @param Emoji Emoji text (usually a single codepoint).
   @param bgcol Background color.
@@ -2075,6 +2103,11 @@ var
   scale: double;
   bmp: Graphics.TBitmap;
   es: string;
+  {$ifndef Darwin}
+  iconFont: string;
+  monoFont: boolean;
+  tint: TColor;
+  {$endif}
 begin
   // Render at the display's backing scale factor. The canvas draws in logical
   // points, so a 1:1 bitmap is upscaled by the compositor and comes out soft on
@@ -2116,14 +2149,26 @@ begin
 
   {$ifdef Darwin}
   bmp.Canvas.Font.Name := 'Apple Color Emoji';
-  {$else}
-  bmp.Canvas.Font.Name := 'Noto Color Emoji';
-  {$endif}
-  bmp.Canvas.Font.Size := H - (Inset * 2);
   // Colour glyphs ignore this; it only reaches codepoints the emoji font lacks
   // and that fall back to a monochrome face, which must not be hardcoded black
   // on a dark dialog background.
   bmp.Canvas.Font.Color := getBaseColor;
+  {$else}
+  // Ask for the best face actually installed rather than assuming the colour
+  // Noto is there -- naming a missing font hands the glyph to whatever
+  // fontconfig substitutes, which is where the reported tofu boxes came from.
+  if not FontGUIInList(iconFont, monoFont) then
+    monoFont := false;
+  bmp.Canvas.Font.Name := iconFont;
+  // A monochrome face draws in Font.Color, so it gets the same per-severity
+  // tint the SF Symbols path uses on macOS. On a colour face the tint is
+  // ignored by the glyph itself and only reaches the codepoints it lacks, so
+  // the plain foreground colour is the safer value there.
+  if not (monoFont and IconTint(Emoji, tint)) then
+    tint := getBaseColor;
+  bmp.Canvas.Font.Color := tint;
+  {$endif}
+  bmp.Canvas.Font.Size := H - (Inset * 2);
 
   // Convert explicitly rather than letting the compiler do a lossy implicit
   // WideString -> AnsiString narrowing on the canvas calls.

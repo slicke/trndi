@@ -261,7 +261,7 @@ Right click or click/hold the reading (or "Setup" text) and choose settings to a
 
 > _NOTE_ To receive notifications see [here](guides/Notifications.md)
 
-> See a box instead of an icon? On Debian systems, you may need to install a graphic font. I recommend fonts-noto-color-emoji.
+> See a box instead of an icon? On Debian systems, you may need to install a graphic font. Trndi prefers `fonts-noto-emoji` (monochrome — it scales cleanly and gets tinted per icon), and falls back to `fonts-noto-color-emoji` or Symbola if that is the one you have.
 
 ### Which backend should I use?
 Backends are explained [here](doc/Backends.md).

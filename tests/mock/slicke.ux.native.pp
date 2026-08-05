@@ -13,7 +13,8 @@ interface
 
 uses Classes, SysUtils, Forms;
 
-function FontGUIInList(out fname: string): boolean;
+function FontGUIInList(out fname: string): boolean; overload;
+function FontGUIInList(out fname: string; out monochrome: boolean): boolean; overload;
 function FontTXTInList(out fname: string): boolean;
 function IsProblematicWM: boolean;
 function IsSemiProblematicWM: boolean;
@@ -24,6 +25,13 @@ implementation
 function FontGUIInList(out fname: string): boolean;
 begin
   fname := 'font';
+  Result := true;
+end;
+
+function FontGUIInList(out fname: string; out monochrome: boolean): boolean;
+begin
+  fname := 'font';
+  monochrome := false;
   Result := true;
 end;
 

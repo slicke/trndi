@@ -702,7 +702,19 @@ begin
   {$ifndef DARWIN}
   fSplash.incProgress(25, RS_INIT_MAC);
   fBG.font.Name := txtFontName;
+  {$if DEFINED(X_LINUXBSD)}
+  // Not the emoji font here: the trend glyphs are plain arrows (U+2191..U+2198)
+  // and the emoji fonts only cover the two diagonals, so ↗/↘ came out in the
+  // emoji face while ↑/↓/→ fell through to whatever fontconfig substituted --
+  // different weight per trend, and Font.Color only reaching half of them.
+  // DejaVu covers the whole arrow block in one style and is on every desktop.
+  if Screen.Fonts.IndexOf('DejaVu Sans') >= 0 then
+    lArrow.Font.Name := 'DejaVu Sans'
+  else
+    lArrow.Font.Name := txtFontName;
+  {$else}
   lArrow.Font.Name := guifontName;
+  {$endif}
   {$endif}
 
 
