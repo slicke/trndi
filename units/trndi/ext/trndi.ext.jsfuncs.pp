@@ -55,22 +55,15 @@ type
   public
     function httpRequest(ctx: pointer; const func: string; const params: JSParameters;
       out res: JSValueVal): boolean;
-    function jsonget(ctx: pointer; const func: string; const params: JSParameters;
-      out res: JSValueVal): boolean;
-    function bgDump(ctx: pointer; const func: string; const params: JSParameters;
-      out res: JSValueVal): boolean;
     function setLimits(ctx: pointer; const func: string; const params: JSParameters;
-      out res: JSValueVal): boolean;
-    function querySvc(ctx: pointer; const func: string; const params: JSParameters;
       out res: JSValueVal): boolean;
     function runCMD(ctx: pointer; const func: string; const params: JSParameters;
       out res: JSValueVal): boolean;
 
     constructor Create(cgm: TrndiAPI);
 
-    {** Register the gated promise-style helpers (httpRequest/jsonGet/runCMD/
-        setLimits/setLevelColor/querySvc) and the fetch()/asyncGet/asyncPost JS
-        shims into the engine's current registration context. Must be called
+    {** Register the gated promise-style helpers behind the public v2 facade
+        into the engine's current registration context. Must be called
         inside a TTrndiExtEngine.BeginRegistration/EndRegistration block so
         each call is filtered against that extension's grants. }
     procedure RegisterForCurrent;
@@ -98,13 +91,12 @@ const
       promise with a TypeError containing 'timeout' when the server does not
       answer in time. Header lookup is case-insensitive since servers may send
       lowercase names (HTTP/2). Bodies are buffered — no streaming,
-      AbortController or binary. Also defines asyncGet/asyncPost as thin
-      aliases over httpRequest so the legacy promises keep working (and gain
-      the non-blocking path) without a native backend. }
+      AbortController or binary. }
 FETCH_SHIM: string =
   '(function () {' + LineEnding +
   '  if (typeof httpRequest !== "function" || typeof globalThis.fetch === "function")' + LineEnding +
   '    return;' + LineEnding +
+  '  var request = globalThis.httpRequest;' + LineEnding +
   '  function makeHeaders(obj) {' + LineEnding +
   '    var lower = {};' + LineEnding +
   '    for (var k in obj) lower[k.toLowerCase()] = obj[k];' + LineEnding +
@@ -132,7 +124,7 @@ FETCH_SHIM: string =
   '        if (k.toLowerCase() === "content-type") hasCT = true;' + LineEnding +
   '      }' + LineEnding +
   '    if (body !== "" && !hasCT) hdrs["Content-Type"] = "text/plain;charset=UTF-8";' + LineEnding +
-  '    return httpRequest(method, String(url), JSON.stringify(hdrs), body, timeout).then(' + LineEnding +
+  '    return request(method, String(url), JSON.stringify(hdrs), body, timeout).then(' + LineEnding +
   '      function (raw) {' + LineEnding +
   '        var r = JSON.parse(raw);' + LineEnding +
   '        return {' + LineEnding +
@@ -151,29 +143,12 @@ FETCH_SHIM: string =
   '      function (err) { throw new TypeError(String(err)); }' + LineEnding +
   '    );' + LineEnding +
   '  };' + LineEnding +
-  '  globalThis.asyncGet = function (url) {' + LineEnding +
-  '    return httpRequest("GET", String(url), "{}", "").then(' + LineEnding +
-  '      function (raw) { return JSON.parse(raw).body; },' + LineEnding +
-  '      function () { throw "Cannot fetch URL " + url; }' + LineEnding +
-  '    );' + LineEnding +
-  '  };' + LineEnding +
-  '  globalThis.asyncPost = function (url, body, contentType) {' + LineEnding +
-  '    var h = {};' + LineEnding +
-  '    if (contentType === undefined) h["Content-Type"] = "application/json";' + LineEnding +
-  '    else if (contentType !== "") h["Content-Type"] = String(contentType);' + LineEnding +
-  '    return httpRequest("POST", String(url), JSON.stringify(h),' + LineEnding +
-  '      (body === undefined || body === null) ? "" : String(body)).then(' + LineEnding +
-  '      function (raw) { return JSON.parse(raw).body; },' + LineEnding +
-  '      function (err) { throw "Cannot POST to URL " + url + ": " + String(err); }' + LineEnding +
-  '    );' + LineEnding +
-  '  };' + LineEnding +
   '})();';
 
 procedure TJSFuncs.RegisterForCurrent;
 begin
   with TTrndiExtEngine.Instance do
   begin
-    AddPromiseIf(epNet,      'jsonGet',       JSCallbackFunction(@jsonGet), 2);
     // Threaded: the HTTP round-trip runs on the promise worker thread so the
     // UI never blocks. httpRequest must therefore stay free of UI/JS calls.
     AddPromiseIf(epNet,      'httpRequest',   JSCallbackFunction(@httpRequest), 4, 5, true);
@@ -181,7 +156,6 @@ begin
     // min=max=1 (the old default) let only the one-arg form through, which the
     // body then mishandled by indexing the missing params[1]/params[2].
     AddPromiseIf(epExec,     'runCMD',        JSCallbackFunction(@runCMD), 1, 4);
-    AddPromiseIf(epData,     'querySvc',      JSCallbackFunction(@querySvc));
     AddPromiseIf(epSettings, 'setLimits',     JSCallbackFunction(@setLimits), 2, 5);
     AddPromiseIf(epUI,       'setLevelColor', JSCallbackFunction(@setLimits), 3, 6);
 
@@ -194,20 +168,6 @@ procedure TJSFuncs.ShowMsg(const str: string);
 begin
   SlickeLog(sdsAuto, 'Message from Extension', 'An extension triggered a message',
     str, uxmtSquare);
-end;
-
-// Blood Glucose dump, from JS.
-// Not yet implemented. The previous body issued a synchronous getReadings
-// call on the main thread and discarded the result, which blocked the UI
-// during the HTTP round-trip without returning anything to JS. A proper
-// implementation needs a deferred-resolve path in the JS engine so the
-// fetch can run on a TGlucoseFetchThread-style worker and resolve the
-// promise from ApplyResult.
-function TJSFuncs.bgDump(ctx: pointer; const func: string;
-  const params: JSParameters; out res: JSValueVal): boolean;
-begin
-  ShowMsg('bgDump is not yet implemented');
-  Result := False;
 end;
 
 // Native backend for the JS fetch() shim. Registered with threaded=true, so it
@@ -351,76 +311,6 @@ begin
   end;
 end;
 
-function TJSFuncs.jsonget(ctx: pointer; const func: string;
-  const params: JSParameters; out res: JSValueVal): boolean;
-var
-  s, r: string;
-  v, v2: JSValueVal;
-  jsonData, jval: TJSONData;
-begin
-  v := params[0]^;
-  v2 := params[1]^;
-
-  // URL must be a string (param 0) and path must be a string (param 1)
-  if not v.mustbe(JD_STR, func, 0) then
-  begin
-    Result := False;
-    r := 'Wrong data type for URL';
-    v := StringToValueVal(r);
-    res := v;
-    Exit(False);
-  end;
-  if not v2.mustbe(JD_STR, func, 1) then
-  begin
-    Result := False;
-    r := 'Wrong data type for JSON path';
-    v := StringToValueVal(r);
-    res := v;
-    Exit(False);
-  end;
-
-  if not TrndiNative.getURL(v.Data.StrVal, s) then
-  begin
-    Result := False;
-    r := 'Cannot fetch URL ' + v.Data.StrVal;
-    v := StringToValueVal(r);
-    res := v;
-    Exit(False);
-  end;
-
-  // Try to parse JSON and find the path. Uses fpjson.GetJSON and FindPath
-  jsonData := nil;
-  try
-    jsonData := GetJSON(s);
-    jval := jsonData.FindPath(v2.Data.StrVal); // path like "a.b[0].c"
-    if jval = nil then
-    begin
-      Result := False;
-      r := 'JSON path not found: ' + v2.Data.StrVal;
-    end
-    else
-    begin
-      // Prefer native string for JSON strings, otherwise return JSON text for objects/numbers/arrays
-      if jval.JSONType = jtString then
-        r := jval.AsString
-      else
-        r := jval.AsJSON;
-      Result := True;
-    end;
-  except
-    on E: Exception do
-    begin
-      Result := False;
-      r := 'JSON parse error: ' + E.Message;
-    end;
-  end;
-  if Assigned(jsonData) then
-    jsonData.Free;
-
-  v := StringToValueVal(r);
-  res := v;
-end;
-
 // Set high/low values
 function TJSFuncs.setLimits(ctx: pointer; const func: string;
   const params: JSParameters; out res: JSValueVal): boolean;
@@ -462,16 +352,6 @@ begin
   v := IntToValueVal(tapi.cgmHi);
   res := v;
   Result := True;
-end;
-
-// Query the backend via JS
-// Not yet implemented: reject the promise with a clear message rather than
-// leaving Result/res uninitialized (which resolved with stack garbage).
-function TJSFuncs.querySvc(ctx: pointer; const func: string;
-  const params: JSParameters; out res: JSValueVal): boolean;
-begin
-  res := StringToValueVal('querySvc is not implemented');
-  Result := false;
 end;
 
 // Run an external program via JS: runCMD(cmd [, argString [, delimiter]]).

@@ -10,7 +10,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
 > - **`data`**: `getReading`, `getCurrentReading`, `getReadings`, `getLimits`, `getStatistics`, `getBasalRate`, `getUnit`, `getLocale`, `getBuild`, `getCurrentAPI`, `getCurrentUser`, `getCurrentNickname`, `predictReadings`
 > - **`ui`**: `alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`
 > - **`timers`**: `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`
-> - **`net`** (declare): `fetch`, `asyncGet`, `asyncPost`, `jsonGet`
+> - **`net`** (declare): `Trndi.net.fetch`
 > - **`exec`** (declare): `runCMD`
 > - **`settings`** (declare): `getSetting`, `setSetting`, `setLimits`, `setTimeAndRange`, `setOverrideThresholdMinutes`
 > - **No permission needed**: `atob`, `btoa`, `queueMicrotask`, `URL`, `URLSearchParams`, `TextEncoder`, `TextDecoder`, `performance.now`, `crypto.randomUUID`, `crypto.getRandomValues`, `structuredClone`, plus modern JS methods (`replaceAll`, `at`, `findLast`, `Object.hasOwn`, `Promise.allSettled`, `Promise.any`, ...)
@@ -60,11 +60,8 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [crypto](#crypto)
    - [structuredClone](#structuredclone)
    - [Modern JavaScript methods](#modern-javascript-methods)
- - [Promises (global)](#promises-global)
+ - [Network](#network)
    - [fetch](#fetch)
-   - [asyncGet](#asyncget)
-   - [asyncPost](#asyncpost)
-   - [jsonGet](#jsonget)
    - [runCMD](#runcmd)
    - [setLimits](#setlimits)
  - [Callbacks](#callbacks)
@@ -82,6 +79,25 @@ Trndi supports ES2023, and provides these functions in addition to it:
 
 ## Trndi functions
 These functions are available via `Trndi.*`, such as `Trndi.alert(...)`:
+
+### Preferred v2 namespaces
+New extensions can use the v2 facade described in
+[Extensions.md](Extensions.md#preferred-trndi-api-v2). It is additive and maps
+to the functions documented below:
+
+| Preferred method | Existing method | Permission |
+| --- | --- | --- |
+| `Trndi.data.current()` | `Trndi.getCurrentReading()` | `data` |
+| `Trndi.data.readings({ limit })` | `Trndi.getReadings(limit)` | `data` |
+| `Trndi.data.limits()` | `Trndi.getLimits()` | `data` |
+| `Trndi.data.statistics({ minutes })` | `Trndi.getStatistics(minutes)` | `data` |
+| `Trndi.data.predict({ count })` | `Trndi.predictReadings(count)` + `predictionConfidence()` | `data` |
+| `Trndi.net.fetch(url, init)` | v2 network API | `net` |
+| `Trndi.storage.get/set/remove(key)` | namespaced `getSetting` / `setSetting` | `settings` |
+
+Use `Trndi.api.permissions`, `Trndi.permissions.has(name)`, and
+`Trndi.permissions.require(name)` to make optional permissions explicit. The
+API version is available as `Trndi.api.version` (`"2.0"`).
 ### alert
 #### Show an alert
 ```javascript
@@ -535,6 +551,11 @@ function updateCallback(reading_system, reading_mgdl, reading_mmol, time) {
 - Predictions are based on linear trend and don't account for meals, insulin, or other factors
 - Accuracy decreases for predictions further into the future
 - Maximum 20 predictions can be requested
+- All prediction counts supported by Trndi are returned. Earlier releases
+  accidentally returned an empty array when more than five were requested.
+- `Trndi.predictionConfidence()` returns the `0..1` fit confidence from the
+  most recent prediction run. Prefer `Trndi.data.predict({ count })`, which
+  returns both `{ values, confidence }`.
 
 ### setTimeout
 #### Schedule a function to run once after a delay
@@ -673,7 +694,7 @@ const encoded = btoa("user:password");   // "dXNlcjpwYXNzd29yZA=="
 const decoded = atob(encoded);           // "user:password"
 
 // Typical use: HTTP Basic auth
-const res = await fetch(url, {
+const res = await Trndi.net.fetch(url, {
   headers: { "Authorization": "Basic " + btoa(user + ":" + pass) }
 });
 ```
@@ -703,7 +724,7 @@ Queues a callback on the microtask queue (same timing as `Promise.resolve().then
 const u = new URL("https://api.example.com/v1/data");
 u.searchParams.set("sessionId", sessionId);
 u.searchParams.set("minutes", "1440");
-const res = await fetch(u.toString());
+const res = await Trndi.net.fetch(u.toString());
 
 // Parse an existing URL
 const parsed = new URL("https://user:pw@host.com:8443/path?x=1#frag");
@@ -796,17 +817,16 @@ await Promise.any([p1, p2]);         // first fulfilled; AggregateError if all r
 
 No permission is needed; they are added (non-enumerable, standards-shaped) to every extension automatically. If a future engine upgrade provides them natively, the native versions win.
 
-## Promises (global)
-These are global promises, not prefixed with `Trndi.`:
+## Network
 
 ### fetch
 #### Standard-style HTTP requests
-A subset of the browser `fetch()` API, available when the `net` permission is
-granted. Unlike `asyncGet`/`asyncPost`, the request runs on a background
-thread, so the Trndi window stays responsive during slow requests.
+A subset of the browser `fetch()` API, available as `Trndi.net.fetch()` when
+the `net` permission is granted. The request runs on a background thread, so
+the Trndi window stays responsive during slow requests.
 
 ```javascript
-const response = await fetch(url, options?)
+const response = await Trndi.net.fetch(url, options?)
 ```
 - `url` (string, required) — Full URL.
 - `options.method` (string) — `GET` (default) or `POST`. Other methods reject.
@@ -830,7 +850,7 @@ API, non-2xx responses resolve — check `response.ok`). Not supported:
 streaming, `AbortController` (use `timeout`), `FormData`, binary bodies.
 
 ```javascript
-const res = await fetch("https://api.example.com/status", {
+const res = await Trndi.net.fetch("https://api.example.com/status", {
   headers: { "X-Api-Key": "abc123" },
   timeout: 5000                       // give up after 5 seconds
 });
@@ -840,47 +860,6 @@ if (res.ok) {
 }
 ```
 
-### asyncGet 
-#### Fetches a URL
-Shorthand for a `fetch()` GET that resolves with the body string. Like
-`fetch`, it runs on a background thread and rejects only on transport
-failure (non-2xx responses resolve with the server's body).
-```javascript
-asyncGet("https://sample-files.com/downloads/documents/txt/simple.txt")
-  .then(result => console.log(result))
-  .catch(error => console.log(`Error: ${error}`));
-  ``` 
-### asyncPost
-#### POSTs a body to a URL
-Sends an HTTP POST. Useful for outgoing webhooks (Discord, Slack, Home
-Assistant, Mattermost, etc.). Shorthand for a `fetch()` POST that resolves
-with the body string.
-```javascript
-asyncPost(url, body, contentType?)
-```
-- `url` (string, required) — Full URL to POST to.
-- `body` (string, required) — Request body. Stringify JSON yourself.
-- `contentType` (string, optional) — Defaults to `application/json`. Pass
-  an empty string to omit the header entirely (rarely useful).
-
-Resolves with the response body as a string. Rejects with the error
-message on transport failure. Non-2xx responses still resolve (with the
-server's response body) — inspect it yourself if you care.
-
-```javascript
-const payload = JSON.stringify({ content: "Glucose is 4.2 mmol/L" });
-asyncPost("https://discord.com/api/webhooks/.../...", payload)
-  .then(()  => console.log("posted"))
-  .catch(err => console.log("post failed: " + err));
-```
-
-### jsonGet 
-#### Fetches a URL and extracts a JSON path
-```javascript
-asyncGet("https://some-json", "item.subitem")
-  .then(result => console.log(result))
-  .catch(error => console.log(`Error: ${error}`));
-  ``` 
 ### runCMD 
 #### Runs a program locally
 ```javascript

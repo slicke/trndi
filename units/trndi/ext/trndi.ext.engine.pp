@@ -220,6 +220,9 @@ private
   FCurrentRegCtx: JSContext;
     {** Active permissions for the current registration target. Used by *If gated helpers. }
   FCurrentRegPerms: TExtPermSet;
+    {** Stable extension id for the current registration target. Empty outside
+        per-extension provisioning. }
+  FCurrentRegExtId: string;
 
   function GetOutput: RawUtf8;
   procedure SetOutput(const val: RawUtf8);
@@ -529,6 +532,10 @@ public
     {** True if the permission is granted for the registration currently in
         progress. Always true outside a BeginRegistration block (legacy/admin path). }
   function CanRegister(const grp: TExtPermGroup): boolean;
+
+    {** Stable id of the extension currently being provisioned. This is empty
+        outside a @code(BeginRegistration)..@code(EndRegistration) block. }
+  function CurrentRegistrationExtensionId: string;
 
     {** Create a fresh JSContext for an extension and prep it (intrinsics + Trndi class +
         opaque pointer). Caller is responsible for invoking BeginRegistration / running
@@ -2297,12 +2304,19 @@ begin
   if Ext = nil then Exit;
   FCurrentRegCtx := Ext^.Ctx;
   FCurrentRegPerms := Ext^.Granted;
+  FCurrentRegExtId := Ext^.ExtId;
 end;
 
 procedure TTrndiExtEngine.EndRegistration;
 begin
   FCurrentRegCtx := nil;
   FCurrentRegPerms := [];
+  FCurrentRegExtId := '';
+end;
+
+function TTrndiExtEngine.CurrentRegistrationExtensionId: string;
+begin
+  Result := FCurrentRegExtId;
 end;
 
 const

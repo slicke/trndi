@@ -79,7 +79,7 @@ const
     ('Read glucose data and app info',
      'Show dialogs, play sounds, change visual settings',
      'Schedule timers',
-     'Make network requests (fetch/asyncGet/jsonGet)',
+     'Make network requests (fetch)',
      'Run external programs (runCMD)',
      'Read/write Trndi settings and CGM thresholds');
 
