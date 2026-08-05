@@ -470,7 +470,14 @@ begin
   // Skip threshold/range bands until the first fetch has landed — drawing
   // them over an empty form (no dot to anchor them against) just produces
   // the "what is this?" lines visible in the boot screenshot.
-  if FBootFetchPending then
+  //
+  // The stale card gets the same treatment: the bands and their hairlines
+  // grade a *current* value against the thresholds, and there isn't one. Left
+  // on, they float over a dimmed reading nobody should be acting on. The card
+  // being up (wsCritical) is exactly the "data is not current" condition —
+  // cheaper to read here than recomputing freshness on every paint.
+  if FBootFetchPending or
+     (Assigned(pnWarning) and pnWarning.Visible and (FWarnSeverity = wsCritical)) then
   begin
     drawLo := false;
     drawHi := false;
