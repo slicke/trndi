@@ -11,9 +11,10 @@ const getStockholmTemperature = () => {
     const q = encodeURIComponent('Stockholm');
     const url = `https://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${q}&aqi=no`;
     
-    return jsonGet(url, "current.temp_c")
-        .then(val => {
-            return val;
+    return Trndi.net.fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            return String(data.current.temp_c);
         })
         .catch(e => {
             console.error('Failed to fetch Stockholm temperature', e);

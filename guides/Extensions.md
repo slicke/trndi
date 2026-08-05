@@ -20,6 +20,68 @@ To create, or install, a plugin - create/move a ```.js``` file in/to the plugin 
 # Writing an extension
  See the full reference of functions in [Extensions Functions](Extensions_functions.md)
 
+# Preferred `Trndi` API (v2)
+Extensions use the v2 facade on `Trndi`. It groups the supported extension API
+into discoverable namespaces.
+
+```javascript
+const reading = Trndi.data.current();
+const recent = Trndi.data.readings({ limit: 6 });
+const prediction = Trndi.data.predict({ count: 6 });
+
+console.log(Trndi.api.version);       // "2.0"
+console.log(Trndi.api.permissions);   // e.g. ["data", "ui", "timers", "net"]
+```
+
+`Trndi.api` contains the API version, this extension's stable identifier,
+granted permission names, and a `capabilities` object (`network`, `exec`, and
+`storage`). Check `Trndi.permissions.has("net")` before optional features, or
+use `Trndi.permissions.require("net")` to throw a clear error explaining how
+to request it.
+
+## Data and network
+
+```javascript
+const limits = Trndi.data.limits();
+const stats = Trndi.data.statistics({ minutes: 24 * 60 });
+const { values, confidence } = Trndi.data.predict({ count: 6 });
+
+if (Trndi.permissions.has("net")) {
+  const response = await Trndi.net.fetch("https://example.com/status");
+  console.log(response.status);
+}
+```
+
+`Trndi.data.*` delegates to the established reading/statistics methods and
+therefore preserves their result shapes. `predict()` returns `{ values,
+confidence }`; each value remains the legacy `[system, mgdl, mmol, timestamp]`
+array. Unlike earlier releases, any count supported by the prediction engine is
+returned instead of only counts up to five.
+
+## Private extension storage
+
+Extensions with the `settings` permission can keep private state without
+building raw `extval.*` keys. Keys are automatically scoped to the extension
+file's stable identifier:
+
+```javascript
+/*
+@name Counter
+@perms settings
+*/
+const previous = Number(Trndi.storage.get("count") || 0);
+Trndi.storage.set("count", previous + 1);
+// Trndi.storage.remove("count");
+```
+
+`Trndi.storage` is available only when `Trndi.api.capabilities.storage` is
+true. Storage currently uses the same string settings backend as the legacy
+`getSetting`/`setSetting` methods; values are not automatically JSON encoded.
+
+The v2 facade is the supported public API. Its implementation currently uses
+the established bridge methods internally, but legacy global network shortcuts
+(`asyncGet`, `asyncPost`, and `jsonGet`) are no longer exposed to extensions.
+
 # Extension manifest
 Each extension may begin with a `/* ... */` manifest comment. It must be the
 first content in the file; a UTF-8 byte-order mark (BOM) is allowed, but do not
@@ -65,7 +127,7 @@ extensions.
 If the block is not the very first thing in the file, Trndi finds no manifest
 at all — it does not warn, the extension simply loads with no name, no
 copyright and no permissions, and any promptable function fails at runtime with
-`ReferenceError: asyncGet is not defined` (or similar). See
+`ReferenceError: fetch is not defined` (or similar). See
 [Migrating older extensions](#migrating-older-extensions) below.
 
 # Async code and top-level await
@@ -78,7 +140,7 @@ an async wrapper:
 @name Release check
 @perms net
 */
-const res = await fetch("https://api.github.com/repos/slicke/trndi/releases/latest");
+const res = await Trndi.net.fetch("https://api.github.com/repos/slicke/trndi/releases/latest");
 console.log("status: " + res.status);
 ```
 
@@ -101,7 +163,7 @@ the user the first time the extension is loaded.
 - **`timers`** — schedule callbacks (`setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`)
 
 ## Promptable (must be declared; user approves on first load)
-- **`net`**      — make network requests (`fetch`, `asyncGet`, `asyncPost`, `jsonGet`)
+- **`net`**      — make network requests (`Trndi.net.fetch`)
 - **`exec`**     — run external programs (`runCMD`)
 - **`settings`** — read/write Trndi settings and CGM thresholds (`getSetting`, `setSetting`, `setLimits`, `setTimeAndRange`, `setOverrideThresholdMinutes`)
 
@@ -128,6 +190,6 @@ edited later, you'll be prompted again.
 ## Migrating older extensions
 Extensions written before per-extension permissions need an `@perms` line if
 they use any promptable function. Without it the function will not be defined
-in the script's context and you'll see `ReferenceError: asyncGet is not
+in the script's context and you'll see `ReferenceError: fetch is not
 defined` (or similar) at runtime. Add the matching group to `@perms`, reload,
 and approve at the prompt.

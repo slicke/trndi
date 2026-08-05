@@ -15,8 +15,9 @@
 //        trndi_rapid_rise  - glucose is rising fast
 //        trndi_rapid_fall  - glucose is dropping fast
 //        trndi_stale       - no fresh reading for STALE_AFTER_MIN minutes
-//   3. On first load you'll be prompted for your key. It is stored under
-//      `extval.ifttt.key` - clear that setting to be re-prompted.
+//   3. On first load you'll be prompted for your key. It is stored privately
+//      for this extension - clear it with Trndi.storage.remove("key") to
+//      be re-prompted.
 //
 // Each request is a GET to:
 //   https://maker.ifttt.com/trigger/{event}/with/key/{KEY}
@@ -30,7 +31,7 @@ const STALE_AFTER_MIN       = 20;   // fire trndi_stale after this many minutes
 const lastFiredAt = {};             // event name -> ms timestamp
 
 function getKey() {
-  let key = Trndi.getSetting("extval.ifttt.key");
+  let key = Trndi.storage.get("key");
   if (key === false || key === "") {
     key = Trndi.prompt(
       "IFTTT Webhooks key",
@@ -38,7 +39,7 @@ function getKey() {
       ""
     );
     if (!key) return false;
-    Trndi.setSetting("extval.ifttt.key", key);
+    Trndi.storage.set("key", key);
   }
   return key;
 }
@@ -61,7 +62,7 @@ function fire(event, value, unit, ctx) {
             + "&value3=" + encodeURIComponent(ctx || "");
 
   lastFiredAt[event] = Date.now();
-  asyncGet(url)
+  Trndi.net.fetch(url)
     .then(()  => console.log("IFTTT fired: " + event))
     .catch(err => console.log("IFTTT error (" + event + "): " + err));
 }

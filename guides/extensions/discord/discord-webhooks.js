@@ -9,8 +9,9 @@
 // Setup:
 //   1. In your Discord server: Server Settings -> Integrations -> Webhooks
 //      -> New Webhook. Pick a channel and copy the webhook URL.
-//   2. On first load Trndi prompts for the URL. It's stored under
-//      `extval.discord.url` - clear that setting to be re-prompted.
+//   2. On first load Trndi prompts for the URL. It is stored privately for
+//      this extension - clear it with Trndi.storage.remove("url") to be
+//      re-prompted.
 //
 // Messages are posted via POST to the webhook URL with a JSON body:
 //   { "username": "...", "content": "...", "embeds": [ ... ] }
@@ -31,7 +32,7 @@ const COLOR_STALE = 0x95A5A6; // gray
 const lastFiredAt = {}; // event name -> ms timestamp
 
 function getUrl() {
-  let url = Trndi.getSetting("extval.discord.url");
+  let url = Trndi.storage.get("url");
   if (url === false || url === "") {
     url = Trndi.prompt(
       "Discord webhook URL",
@@ -39,7 +40,7 @@ function getUrl() {
       ""
     );
     if (!url) return false;
-    Trndi.setSetting("extval.discord.url", url);
+    Trndi.storage.set("url", url);
   }
   return url;
 }
@@ -65,7 +66,11 @@ function post(event, title, description, color) {
   });
 
   lastFiredAt[event] = Date.now();
-  asyncPost(url, payload)
+  Trndi.net.fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload
+  })
     .then(()  => console.log("Discord posted: " + event))
     .catch(err => console.log("Discord error (" + event + "): " + err));
 }

@@ -14,7 +14,7 @@
 
 async function demoGet() {
   // GET + JSON: look up the latest Trndi release on GitHub
-  const res = await fetch("https://api.github.com/repos/slicke/trndi/releases/latest", {
+  const res = await Trndi.net.fetch("https://api.github.com/repos/slicke/trndi/releases/latest", {
     headers: { "Accept": "application/vnd.github+json" }
   });
 
@@ -35,7 +35,7 @@ async function demoGet() {
 async function demoPost() {
   // POST: send a JSON body. Stringify yourself and set the content type
   // (string bodies default to text/plain, per the fetch spec).
-  const res = await fetch("https://httpbin.org/post", {
+  const res = await Trndi.net.fetch("https://httpbin.org/post", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ hello: "from Trndi" })
