@@ -258,7 +258,13 @@ begin
   // whole outage.
   lDiff.Caption := '';
   lAgo.Caption := '';
-  lVal.Font.Style := [];
+  // Struck out as well as dimmed: the dimming alone reads as "de-emphasised",
+  // which isn't the same claim as "do not act on this number". Only when a
+  // value is actually there — a bare '--' with a line through it is noise.
+  if haveReading then
+    lVal.Font.Style := [fsStrikeOut]
+  else
+    lVal.Font.Style := [];
   // lVal is alClient with OptimalFill, so it normally scales to the whole form
   // and would run under the card. Turn the fill off for the duration of the
   // outage; fixWarningPanel then sizes the hero to the band above the card,
