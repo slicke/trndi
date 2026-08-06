@@ -321,13 +321,36 @@ begin
 end;
 
 procedure TfBG.tProgressTimer(Sender: TObject);
+const
+  PROGRESS_TICK_MS = 1000;   // enough to keep a 5-minute bar moving smoothly
+  PROGRESS_PULSE_MS = 125;   // frame rate for the overdue breathing pulse
+var
+  wantMs, nowSec: integer;
 begin
+  wantMs := PROGRESS_TICK_MS;
   if Assigned(pnNextProgress) and pnNextProgress.Visible then
+  begin
     pnNextProgress.Repaint;
+    // pnNextProgressPaint sets FProgressPulsing while the reading is overdue;
+    // the pulse needs real frames, the rest of the cycle does not.
+    if FProgressPulsing then
+      wantMs := PROGRESS_PULSE_MS;
+  end;
+  if tProgress.Interval <> wantMs then
+    tProgress.Interval := wantMs;
+
   // Drive the wsSoon pulse: 1-second tick is enough for the discrete two-tone
-  // alternation in pnWarningPaint to feel like a deliberate alert beat.
+  // alternation in pnWarningPaint to feel like a deliberate alert beat — and
+  // repainting that whole card at the pulse rate above would only flicker.
   if Assigned(pnWarning) and pnWarning.Visible and (FWarnSeverity = wsSoon) then
-    pnWarning.Repaint;
+  begin
+    nowSec := SecondOf(Now);
+    if nowSec <> FWarnPulseSecond then
+    begin
+      FWarnPulseSecond := nowSec;
+      pnWarning.Repaint;
+    end;
+  end;
 end;
 
 procedure TfBG.tClockTimer(Sender: TObject);

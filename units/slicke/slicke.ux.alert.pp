@@ -1338,19 +1338,47 @@ end;
   @param AControl The edit, combo box, grid or picker to restyle.
 }
 procedure ApplyInputColors(AControl: TWinControl);
+var
+  bg, fg: TColor;
+  recolor: boolean;
+  i: integer;
 begin
+  bg := AControl.Color;
+  fg := AControl.Font.Color;
+  recolor := false;
+
   {$ifdef X_WIN}
   if TrndiNative.isDarkMode then
   begin
-    AControl.Color := uxclDarkInput;
-    AControl.Font.Color := uxclDarkText;
+    bg := uxclDarkInput;
+    fg := uxclDarkText;
+    recolor := true;
   end;
   {$else}
   {$ifdef X_MAC}
-  AControl.Color := MacInputBackgroundColor(AControl.Color);
-  AControl.Font.Color := MacInputTextColor(AControl.Font.Color);
+  bg := MacInputBackgroundColor(bg);
+  fg := MacInputTextColor(fg);
+  recolor := true;
   {$endif}
   {$endif}
+
+  if not recolor then
+    Exit;
+
+  AControl.Color := bg;
+  AControl.Font.Color := fg;
+
+  // TDateEdit and TFloatSpinEditEx are composite: the text the user sees belongs
+  // to an inner edit child, and the assignment above reaches only the container
+  // (those classes reintroduce Color to forward it, but a reintroduced property
+  // is invisible through a TWinControl reference). Hence the one bright white
+  // field the date and numeric dialogs showed in an otherwise dark dialog.
+  for i := 0 to AControl.ControlCount - 1 do
+    if AControl.Controls[i] is TCustomEdit then
+    begin
+      TCustomEdit(AControl.Controls[i]).Color := bg;
+      TCustomEdit(AControl.Controls[i]).Font.Color := fg;
+    end;
 end;
 
 {**
@@ -1385,6 +1413,7 @@ end;
 const
  { Largest share of the usable screen a dialog may occupy. }
   MaxDialogScreenWidthFraction = 0.95;
+  MaxDialogScreenHeightFraction = 0.95;
  { Smallest screen that still gets the full sdsBig layout; below this a touch
    screen falls back to sdsMedium instead. }
   BigLayoutMinScreenWidth  = 1024;
@@ -1437,6 +1466,250 @@ begin
   Result := Min(AWidth, Round(ScreenUsableWidth * MaxDialogScreenWidthFraction));
 end;
 
+{ Clamp a proposed dialog height to what the display can actually show.
+
+  Height matters more than width: the button row lives at the bottom, so a
+  dialog taller than the screen puts the only way to answer it out of reach -
+  and a touch user has no Alt+drag to pull the window back up. Callers size
+  their content against the button block first; this is the final guard for
+  the cases that arithmetic cannot catch. }
+function FitDialogHeight(const AHeight: integer): integer;
+begin
+  Result := Min(AHeight, Round(ScreenUsableHeight * MaxDialogScreenHeightFraction));
+end;
+
+{ Whether a row of AButtonCount buttons fits side by side across AClientWidth,
+  outer padding included. When it does not, callers stack the buttons instead:
+  FitDialogWidth caps the dialog at the display, so a row that wants more than
+  the screen has simply cannot be granted it, and laying it out anyway runs the
+  tail buttons off the right edge where nothing can reach them. }
+function ButtonRowFits(const AClientWidth, AButtonCount, AButtonWidth,
+  APadding: integer): boolean;
+begin
+  Result := (AButtonCount * AButtonWidth) + ((AButtonCount - 1) * APadding) +
+    (APadding * 2) <= AClientWidth;
+end;
+
+{ ---------------------------------------------------------------------------
+  Touch metrics
+
+  The layout size (sdsNormal/sdsMedium/sdsBig) governs information density:
+  how large the type is and how much room the dialog may take. Whether the
+  user is pointing with a finger is a separate question, and the two do not
+  move together - a 7" 800x480 panel resolves to sdsMedium precisely because
+  it has no room for big type, yet its controls need the largest hit targets
+  of any display Trndi runs on. Touch minimums are therefore applied on top of
+  the size preset instead of being folded into it.
+  --------------------------------------------------------------------------- }
+
+const
+ { Smallest comfortable finger target at 96 DPI. Apple's HIG asks for 44pt and
+   Material for 48dp; 44 is the common floor, and lands a little over 8 mm on
+   the ~133 DPI Raspberry Pi 7" panel. }
+  BaseTouchTargetPx = 44;
+
+var
+ { Touch hardware cannot appear or vanish while the app runs, and probing for
+   it costs a walk of /proc/bus/input/devices plus the /sys capability files on
+   Linux - far too much to repeat for every button of every dialog. The user's
+   override is deliberately NOT cached: the Touch menu and the UX debug item
+   both flip it between one dialog and the next. }
+  TouchProbed: boolean = false;
+  TouchPresent: boolean = false;
+
+{ Whether dialogs should size their controls for finger input. Mirrors
+  TrndiNative.HasTouchScreen (override wins, detection otherwise), but keeps
+  the expensive half memoized. }
+function DialogsAreTouch: boolean;
+var
+  multi: boolean;
+begin
+  // Qualified: Trndi.Native re-exports TTrndiBool as a type alias, which brings
+  // the type into scope but not its values. Any state other than these two
+  // (tbUnset, tbUnknown) means "decide automatically", matching HasTouchScreen.
+  if TrndiNative.touchOverride = TTrndiBool.tbTrue then
+    Exit(true);
+  if TrndiNative.touchOverride = TTrndiBool.tbFalse then
+    Exit(false);
+
+  if not TouchProbed then
+  begin
+    TouchPresent := TrndiNative.DetectTouchScreen(multi);
+    TouchProbed  := true;
+  end;
+  Result := TouchPresent;
+end;
+
+{ Smallest edge a tappable control may have, or 0 on a mouse-only system.
+
+  Scaled off the screen DPI so the floor stays a *physical* size. Everything
+  else in this unit is literal pixels - runtime-created dialogs never get the
+  LCL's auto-scaling - but a target measuring 9 mm on one panel and 4 mm on
+  another is not a floor at all. Never shrinks below the 96 DPI value, so a
+  widgetset that reports nothing useful still yields 44. }
+function TouchTargetSize: integer;
+begin
+  if not DialogsAreTouch then
+    Exit(0);
+  Result := BaseTouchTargetPx;
+  if Screen.PixelsPerInch > 96 then
+    Result := (BaseTouchTargetPx * Screen.PixelsPerInch) div 96;
+end;
+
+{ Raise a proposed control dimension to the touch minimum where one applies.
+  Axis-neutral: nearly every caller is sizing a height, since that is the
+  binding constraint on a button, but square controls pass their width too. }
+function TouchMin(const ASize: integer): integer;
+begin
+  Result := Max(ASize, TouchTargetSize);
+end;
+
+{ Height a text input (edit, spin edit, combo box, date picker) should have at
+  this layout size, or 0 meaning "leave the widgetset default alone".
+
+  Derived from the font rather than from a multiple of the control's current
+  height, which is what the individual dialogs used to do: an auto-sizing edit
+  has not necessarily re-measured itself while a runtime dialog is still being
+  built - it has no handle yet, so no widgetset metrics - and scaling the 23 px
+  design-time default gives a box too short for the 20 pt type these dialogs
+  ask for. The text is the one figure available before the dialog is realised.
+
+  Returns 0 for a mouse-only dialog at sdsNormal, so desktop layouts stay
+  pixel-identical to what they were. }
+function DialogInputHeight(AFont: TFont; const size: TSlickeDialogSize): integer;
+var
+  textHeight: integer;
+begin
+  if (size = sdsNormal) and not DialogsAreTouch then
+    Exit(0);
+
+  // Measured on a scratch bitmap for the reasons given in MeasureButtonWidth:
+  // a form/panel canvas can SIGABRT outside a paint event on Cocoa, and a 0x0
+  // canvas reports nothing on GTK3.
+  with Graphics.TBitmap.Create do
+  try
+    SetSize(1, 1);
+    Canvas.Font.Assign(AFont);
+    textHeight := Canvas.TextHeight('Hg');
+  finally
+    Free;
+  end;
+
+  // Frame plus vertical breathing room, proportional to the type so 20 pt text
+  // is not pressed against the border and 9 pt text is not swimming in the box.
+  Result := textHeight + Max(textHeight div 2, 8);
+  case size of
+  sdsBig:
+    Result := Round(Result * 1.3);
+  sdsMedium:
+    Result := Round(Result * 1.15);
+  end;
+  Result := TouchMin(Result);
+end;
+
+{ Give an input control the height DialogInputHeight asks for, never shrinking
+  one that is already taller.
+
+  AutoSize goes off first: TEdit and TComboBox derive their height from the font
+  and discard an assignment to Height the next time the widgetset re-measures
+  them, which is how the touch floor got lost on those two. Combo boxes take the
+  height as their ItemHeight as well - the closed box on Win32 is sized from it,
+  and the drop-down rows are tap targets in their own right, which matters most
+  in the font picker where the list holds every installed family. }
+procedure ApplyDialogInputHeight(AControl: TWinControl;
+  const size: TSlickeDialogSize);
+var
+  h: integer;
+begin
+  h := DialogInputHeight(AControl.Font, size);
+  if h <= AControl.Height then
+    Exit;
+  AControl.AutoSize := false;
+  AControl.Height := h;
+  // TComboBox rather than TCustomComboBox: ItemHeight is only published on the
+  // former, and every combo these dialogs build is one.
+  if AControl is TComboBox then
+    TComboBox(AControl).ItemHeight := Max(h - 6, 12);
+end;
+
+{ ---------------------------------------------------------------------------
+  Layout size metrics
+
+  Control sizing used to be spelled out as `ifthen(size = sdsBig, 20, 0)` at
+  every single site, which is why sdsMedium - added later - was missing from
+  most of them and left small touch panels with desktop-sized type. Route the
+  choice through here so a new preset has to be handled in one place.
+  --------------------------------------------------------------------------- }
+
+{ Font size for a dialog control, given the size it uses at sdsBig. sdsMedium
+  sits one step (4 pt) below sdsBig, which is the relationship every site that
+  did spell medium out already used, with a floor that keeps the smallest
+  controls legible. Returns 0 at sdsNormal, meaning "leave the inherited
+  system font size alone". }
+function SizeFontSize(const size: TSlickeDialogSize; const ABigSize: integer): integer;
+begin
+  case size of
+  sdsBig:
+    Result := ABigSize;
+  sdsMedium:
+    Result := Max(ABigSize - 4, 12);
+  else
+    Result := 0;
+  end;
+end;
+
+{ Caption point size for a dialog button, or 0 for "leave the system font size
+  alone". Buttons are the one control whose type did not follow the layout size:
+  the big and medium presets stretched them to 50 and 44 px and left a 9 pt
+  caption floating in the middle of a dialog whose input field had grown to
+  20 pt. Kept separate from SizeFontSize because a button caption sits well
+  below body type - it has to fit a fixed box, and the row's width is measured
+  from this same figure. }
+function ButtonFontSize(const size: TSlickeDialogSize): integer;
+begin
+  case size of
+  sdsBig:
+    Result := 12;
+  sdsMedium:
+    Result := 11;
+  else
+    Result := 0;
+  end;
+end;
+
+{ Narrowest a dialog of this layout size should be before its content is even
+  considered.
+
+  Deliberately not one figure for all three presets. The floor exists so a short
+  prompt does not end up pinched between its own icon and button row, and both of
+  those grow with the preset: 480 px that looks generous around 9 pt type is
+  cramped around 24 pt with 160 px buttons, which is what the big and medium
+  touch layouts use. Small panels are unaffected either way - FitDialogWidth caps
+  everything at the display, so the floor only really speaks on a screen with
+  room to spare. }
+function MinDialogWidth(const size: TSlickeDialogSize): integer;
+begin
+  case size of
+  sdsBig:
+    Result := 680;
+  sdsMedium:
+    Result := 560;
+  else
+    Result := 400;
+  end;
+end;
+
+{ Apply SizeFontSize to a control's font, leaving it alone at sdsNormal. }
+procedure ApplyDialogFont(AFont: TFont; const size: TSlickeDialogSize;
+  const ABigSize: integer);
+var
+  pt: integer;
+begin
+  pt := SizeFontSize(size, ABigSize);
+  if pt > 0 then
+    AFont.Size := pt;
+end;
+
 {**
   Determine whether dialogs should use the large layout.
   @param dialogsize Requested size mode.
@@ -1454,7 +1727,7 @@ begin
   sdsMedium:
     result := dialogsize;
   sdsAuto:
-    if not TrndiNative.HasTouchScreen then
+    if not DialogsAreTouch then
       result := sdsNormal
     else
     if (ScreenUsableWidth >= BigLayoutMinScreenWidth) and
@@ -1716,6 +1989,60 @@ begin
     paragraphs.Free;
     words.Free;
   end;
+end;
+
+{**
+  Width the longest line of a text needs, unwrapped.
+  @param AText Text to measure; embedded line breaks are honoured.
+  @param AFont Font it will render with.
+  @returns Pixel width of the widest line.
+  @remarks Used to size a dialog to its content before any label exists to
+    measure. Measured on a scratch bitmap; see @code(MeasureWrappedHeight).
+}
+function MeasureTextWidth(const AText: string; AFont: TFont): integer;
+var
+  bmp: Graphics.TBitmap;
+  lines: TStringList;
+  i, w: integer;
+begin
+  Result := 0;
+  if Trim(AText) = '' then
+    Exit;
+
+  bmp := Graphics.TBitmap.Create;
+  lines := TStringList.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(AFont);
+    lines.Text := NormalizeLineBreaks(AText);
+    for i := 0 to lines.Count - 1 do
+    begin
+      w := bmp.Canvas.TextWidth(lines[i]);
+      if w > Result then
+        Result := w;
+    end;
+  finally
+    bmp.Free;
+    lines.Free;
+  end;
+end;
+
+{**
+  Width at which body text in this font reaches a comfortable line measure.
+  @param AFont Font the text will render with.
+  @returns Pixel width of a line of about forty characters.
+  @remarks Needed because a sentence measured unwrapped at 24 pt asks for more
+    width than any dialog should occupy: at that size the text has to be allowed
+    to break, or the dialog stretches to the edge of the screen to keep one line
+    intact. Expressed in characters of the font itself rather than in pixels, so
+    it holds at any type size and DPI - @code(n) is close to the average
+    lowercase advance, and forty of them sits at the short end of the 45-75
+    character measure typography treats as readable, which suits a dialog rather
+    than a page of prose.
+}
+function ComfortableTextWidth(AFont: TFont): integer;
+begin
+  Result := MeasureTextWidth(StringOfChar('n', 35), AFont);
 end;
 
 {**
@@ -2205,25 +2532,73 @@ const bgcol: TColor;
 const ATitle, ADesc: string;
 IconBox: TImage;
 TitleLabel, DescLabel: TLabel;
-MinWidthNormal: integer = 650;
-MinWidthBig: integer = 800;
+MaxWidthNormal: integer = 650;
+MaxWidthBig: integer = 800;
 IconSize: integer = 48;
 Padding: integer = 16
 );
 var
   availableWidth: integer;
   currentIconSize: integer;
+  titleFontSize, descFontSize: integer;
+  minWidth, maxWidth, textWidth: integer;
+  probe: TFont;
 begin
-  // --- Ensure minimum dialog width, never wider than the display ---
-  Dialog.ClientWidth := FitDialogWidth(MinWidthNormal);
-  if (size = sdsBig) and (Dialog.ClientWidth < MinWidthBig) then
-    Dialog.ClientWidth := FitDialogWidth(MinWidthBig);
-  Dialog.Color := bgcol;
+  // --- Type sizes, settled first: the width is measured against them ---
+  titleFontSize := 0;   // 0 = keep the inherited system font size
+  descFontSize  := 0;
+  case size of
+  sdsBig:
+  begin
+    titleFontSize := 26;
+    descFontSize  := 24;
+  end;
+  sdsMedium:
+  begin
+    titleFontSize := 22;
+    descFontSize  := 20;
+  end;
+  end;
 
   // --- Icon size scaling ---
   currentIconSize := IconSize;
-  if (size = sdsBig) then
+  case size of
+  sdsBig:
     currentIconSize := IconSize * 2;
+  sdsMedium:
+    // Medium was left at the desktop icon size while its type grew to 22 pt,
+    // which left the icon looking like an afterthought beside the title.
+    currentIconSize := (IconSize * 3) div 2;
+  end;
+
+  // --- Dialog width: measured, then held between a floor and the preset cap ---
+  // The width used to be pinned at the preset for every dialog regardless of
+  // content, so a one-line prompt sat in 650 px of mostly empty dialog - which
+  // on a small touch panel is most of the display. Measure what the text wants
+  // and treat the preset as the ceiling it always effectively was.
+  probe := TFont.Create;
+  try
+    probe.Assign(Dialog.Font);
+    probe.Style := [fsBold];
+    if titleFontSize > 0 then
+      probe.Size := titleFontSize;
+    textWidth := MeasureTextWidth(ATitle, probe);
+
+    probe.Style := [];
+    if descFontSize > 0 then
+      probe.Size := descFontSize;
+    textWidth := Max(textWidth, MeasureTextWidth(ADesc, probe));
+  finally
+    probe.Free;
+  end;
+
+  maxWidth := IfThen(size = sdsBig, MaxWidthBig, MaxWidthNormal);
+  // Floor: the button row and the input control below still need room, and a
+  // dialog narrower than its own icon block reads as broken.
+  minWidth := MinDialogWidth(size);
+  Dialog.ClientWidth := FitDialogWidth(
+    Min(Max(currentIconSize + textWidth + (Padding * 3), minWidth), maxWidth));
+  Dialog.Color := bgcol;
 
   // --- Create & position the icon ---
   IconBox.Parent := Dialog;
@@ -2251,10 +2626,8 @@ begin
   TitleLabel.Left := IconBox.Left + IconBox.Width + Padding;
   availableWidth := Dialog.ClientWidth - TitleLabel.Left - Padding;
   TitleLabel.Width := availableWidth;
-  if (size = sdsBig) then
-    TitleLabel.Font.Size := 26;
-  if (size = sdsMedium) then
-    TitleLabel.Font.Size := 22;
+  if titleFontSize > 0 then
+    TitleLabel.Font.Size := titleFontSize;
   TitleLabel.Top := IconBox.Top; // aligns with icon top
   TitleLabel.Caption := ATitle;
   TitleLabel.Font.Color := getBaseColor;
@@ -2267,12 +2640,8 @@ begin
   DescLabel.Font.Style := [];
   DescLabel.Left := TitleLabel.Left;
   DescLabel.Width := availableWidth;
-  case size of
-  sdsBig:
-    DescLabel.Font.Size := 24;
-  sdsMedium:
-    DescLabel.Font.Size := 20;
-  end;
+  if descFontSize > 0 then
+    DescLabel.Font.Size := descFontSize;
   DescLabel.Top := TitleLabel.Top + TitleLabel.Height + Padding;
   DescLabel.Caption := ADesc;
   DescLabel.Font.Color := getBaseColor;
@@ -2296,13 +2665,32 @@ begin
   {$ifdef LCLGTK2}Btn.Font.Color := clBlack;{$endif}
   Btn.Caption := ACaption;
   Btn.ModalResult := AModalResult;
-  Btn.Width := 80;
-  if size = sdsBig then
+  if ButtonFontSize(size) > 0 then
+    Btn.Font.Size := ButtonFontSize(size);
+  case size of
+  sdsBig:
   begin
-    Btn.Width := Btn.Width * 2;
+    Btn.Width := 160;
     Btn.Height := Btn.Height * 2;
-    Btn.Font.Size := 12;
   end;
+  sdsMedium:
+  begin
+    Btn.Width := 120;
+    Btn.Height := Ceil(Btn.Height * 1.4);
+  end;
+  else
+    Btn.Width := 80;
+  end;
+  // The preset is a floor, not the answer: a translated caption ("Försök igen"
+  // for mbRetry) outgrows it, and these dialogs lay their buttons out from the
+  // widths set here with no chance to re-measure afterwards.
+  Btn.Width := Max(Btn.Width, MeasureTextWidth(ACaption, Btn.Font) + 30);
+  // Applied after the preset, not inside it: a finger needs the same target on
+  // a 7" panel as on a 24" one, and that panel resolves to sdsMedium - which
+  // otherwise left the button at its 25 px desktop height, roughly 4 mm. The
+  // same rule sizes the input controls, so a button and the edit above it end
+  // up within a few pixels of each other instead of visibly mismatched.
+  Btn.Height := Max(Btn.Height, DialogInputHeight(Btn.Font, size));
   if AddToButtons then
     Dialog.addButton(ACaption);
   Result := Btn;
@@ -2329,11 +2717,28 @@ begin
   end;
 
   first.Top := AboveBottom + ifthen(size = sdsBig, Padding * 3, Padding * 2);
-  second.Top := first.Top;
   total := first.Width + Padding + second.Width;
-  first.Left := (Dialog.ClientWidth - total) div 2;
-  second.Left := first.Left + first.Width + Padding;
-  Dialog.ClientHeight := first.Top + first.Height + Padding;
+
+  if total + (Padding * 2) > Dialog.ClientWidth then
+  begin
+    // Even a pair can outgrow a narrow panel once the captions are translated
+    // and the buttons are touch-sized. Stack full width, accept above reject -
+    // the same order the row would have used.
+    first.Left   := Padding;
+    first.Width  := Dialog.ClientWidth - (Padding * 2);
+    second.Left  := first.Left;
+    second.Width := first.Width;
+    second.Top   := first.Top + first.Height + Padding;
+  end
+  else
+  begin
+    second.Top  := first.Top;
+    first.Left  := (Dialog.ClientWidth - total) div 2;
+    second.Left := first.Left + first.Width + Padding;
+  end;
+
+  Dialog.ClientHeight := FitDialogHeight(Max(first.Top + first.Height,
+    second.Top + second.Height) + Padding);
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -2380,7 +2785,11 @@ begin
   try
     Dialog.Caption := ACaption;
     Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poScreenCenter;
+    // Work area rather than the raw screen, matching the message dialogs and the
+    // width/height clamps: on a display with a bottom panel, centring against the
+    // full screen pushes the button row behind it - and a touch user has no
+    // Alt+drag to pull the dialog back up. The other input dialogs below follow.
+    Dialog.Position := poWorkAreaCenter;
 
     IconBox := TImage.Create(Dialog);
     TitleLabel := TLabel.Create(Dialog);
@@ -2408,8 +2817,10 @@ begin
     end
     else
       Edit.DecimalPlaces := 0;
-    if (size = sdsBig) then
-      Edit.Font.Size := 20;
+    ApplyDialogFont(Edit.Font, size, 20);
+    // After the font: the height is derived from it. The spin buttons split
+    // whatever height the field gets, so this is the smallest target here.
+    ApplyDialogInputHeight(Edit, size);
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk,     false);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -2509,7 +2920,7 @@ begin
     // Gate on touch, not on the resolved layout size: small touch panels now
     // resolve to sdsMedium, and the full-screen overlay is wanted most exactly
     // there. This is the original meaning of the test.
-    if (sender <> nil) and (sender.Showing) and TrndiNative.HasTouchScreen then
+    if (sender <> nil) and (sender.Showing) and DialogsAreTouch then
     begin
       // On e.g. touch screens display a full screen message. Child coordinates
       // are in the parent's client space, and all four sides are anchored so the
@@ -2654,7 +3065,7 @@ begin
   try
     Dialog.Caption := ACaption;
     Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poScreenCenter;
+    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
 
     IconBox := TImage.Create(Dialog);
     TitleLabel := TLabel.Create(Dialog);
@@ -2673,8 +3084,8 @@ begin
     if AMasked then
       Edit.EchoMode := emPassword;
     ApplyInputColors(Edit);
-    if (size = sdsBig) then
-      Edit.Font.Size := 20;
+    ApplyDialogFont(Edit.Font, size, 20);
+    ApplyDialogInputHeight(Edit, size);
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -2746,7 +3157,7 @@ begin
   try
     Dialog.Caption := ACaption;
     Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poScreenCenter;
+    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
 
     IconBox := TImage.Create(Dialog);
     TitleLabel := TLabel.Create(Dialog);
@@ -2764,8 +3175,8 @@ begin
     Combo.Left := DescLabel.Left;
     Combo.Width := DescLabel.Width;
     ApplyInputColors(Combo);
-    if (size = sdsBig) then
-      Combo.Font.Size := 20;
+    ApplyDialogFont(Combo.Font, size, 20);
+    ApplyDialogInputHeight(Combo, size);
     Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
     Combo.ItemIndex := 0;
 
@@ -2816,7 +3227,7 @@ begin
   try
     Dialog.Caption := ACaption;
     Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poScreenCenter;
+    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
 
     IconBox := TImage.Create(Dialog);
     TitleLabel := TLabel.Create(Dialog);
@@ -2831,7 +3242,11 @@ begin
     Grid.Width := DescLabel.Width;
     Grid.Top := DescLabel.Top + DescLabel.Height + Padding;
     Grid.Height := ifthen((size = sdsBig) , GridHeight + 80, GridHeight);
-    Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing];
+    // goRowSelect: this dialog answers with Grid.Row, so a tap anywhere in a row
+    // should light up the row it is about to return - picking out a single cell
+    // on a touch screen is both fiddly and misleading about what was selected.
+    Grid.Options := [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine,
+      goColSizing, goRowSelect];
     ApplyInputColors(Grid);
     // Header cells sit a shade apart from the data cells on both schemes.
     {$ifdef X_WIN}
@@ -2844,8 +3259,12 @@ begin
     {$endif}
     Grid.ColCount := 2;
     Grid.RowCount := Length(Keys) + 1;
+    // Equal shares of whatever the grid is wide, rather than two flat 120 px
+    // columns leaving the rest of a 500 px grid empty. AutoFillColumns keeps
+    // the split when the columns are dragged and allows for the scroll bar.
     Grid.ColWidths[0] := 120;
     Grid.ColWidths[1] := 120;
+    Grid.AutoFillColumns := true;
 
     Grid.Cells[0, 0] := IfThen(key = '', sKEY, key);
     Grid.Cells[1, 0] := IfThen(value = '', sVALUE, value);
@@ -2855,8 +3274,24 @@ begin
       Grid.Cells[1, i + 1] := Values[i];
     end;
 
-    if (size = sdsBig) then
-      Grid.Font.Size := 14;
+    ApplyDialogFont(Grid.Font, size, 14);
+    // Grid rows are tap targets in their own right - selecting one is how this
+    // dialog is answered - so they get the same floor as a button. Fewer rows
+    // fit inside the fixed grid height, which is the correct trade: the grid
+    // scrolls, an unhittable row does not.
+    // Guarded rather than written unconditionally: DefaultRowHeight reads back
+    // as -1 while it still means "derive from the font", and on a mouse-only
+    // system TouchMin would hand that sentinel straight back as a literal.
+    // (TouchTargetSize is 0 there, so the row height is simply left alone.)
+    if TouchTargetSize > 0 then
+    begin
+      Grid.DefaultRowHeight := TouchTargetSize;
+      // Whole rows only: the fixed grid height is not a multiple of a 44 px row,
+      // so the last one came out sliced in half - which reads as a rendering
+      // fault and invites a tap on a row whose text is cut off.
+      Grid.Height := ((Grid.Height div TouchTargetSize) * TouchTargetSize) +
+        (Grid.BorderWidth * 2) + 2;
+    end;
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -2907,7 +3342,7 @@ begin
   try
     Dialog.Caption := ACaption;
     Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poScreenCenter;
+    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
 
     IconBox := TImage.Create(Dialog);
     TitleLabel := TLabel.Create(Dialog);
@@ -2937,8 +3372,10 @@ begin
     if FontCombo.Items.Count > 0 then
       FontCombo.ItemIndex := 0;
     
-    if (size = sdsBig) then
-      FontCombo.Font.Size := 16;
+    ApplyDialogFont(FontCombo.Font, size, 16);
+    // Before the preview label is placed: that one is positioned off the
+    // combo's height.
+    ApplyDialogInputHeight(FontCombo, size);
 
     // --- Preview Label ---
     PreviewLabel := TLabel.Create(Dialog);
@@ -3026,7 +3463,7 @@ begin
   try
     Dialog.Caption := ACaption;
     Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poScreenCenter;
+    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
 
     IconBox := TImage.Create(Dialog);
     TitleLabel := TLabel.Create(Dialog);
@@ -3050,11 +3487,24 @@ begin
       DatePicker.MaxDate := AMaxDate;
     
     ApplyInputColors(DatePicker);
-    if (size = sdsBig) then
+    ApplyDialogFont(DatePicker.Font, size, 20);
+    ApplyDialogInputHeight(DatePicker, size);
+    // The calendar button on the right is the smallest target in this dialog: it
+    // keeps its ~14 px glyph width however tall the field grows, so square it off
+    // against the field height rather than leave a fingertip aiming at a sliver.
+    if TouchTargetSize > 0 then
+      DatePicker.ButtonWidth := DatePicker.Height;
+    {$ifdef X_WIN}
+    // That button is an LCL-drawn TSpeedButton, so the dark comctl theme applied
+    // in DoShow never reaches it, and at touch size its light face is a bright
+    // square in a dark dialog. Flat and transparent lets the field colour behind
+    // it show through instead.
+    if TrndiNative.isDarkMode and (DatePicker.Button <> nil) then
     begin
-      DatePicker.Font.Size := 20;
-      DatePicker.Height := DatePicker.Height * 2;
+      DatePicker.Button.Flat := true;
+      DatePicker.Button.Transparent := true;
     end;
+    {$endif}
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
@@ -3186,6 +3636,8 @@ var
   mr, defBtn: TSlickeMsgDlgBtn;
   DefaultCtrl: TWinControl;
   ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: integer;
+  ButtonHeight, buttonBlockHeight, rowTop, availableHeight: integer;
+  stackButtons: boolean;
   bgcol: TColor;
   size: TSlickeDialogSize;
   sysfont, htmlstr: string;
@@ -3303,18 +3755,9 @@ begin
       htmldata
       );
 
-    // Calculate content height and adjust dialog
-    maxHeight := Round(ScreenUsableHeight * 0.8);
-    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
-    if contentHeight < 150 then
-      contentHeight := 150;  // Minimum height
-    if contentHeight > (maxHeight - 200) then
-      contentHeight := maxHeight - 200;  // Leave room for icon and buttons
-    
-    HtmlViewer.Height := contentHeight;
-    HtmlPanel.Height := contentHeight;
-
-    // Count buttons
+    // --- Button metrics, settled before the content is sized ----------------
+    // The buttons are the part that must never be pushed off the bottom, so
+    // they claim their space first and the message area takes what is left.
     btnCount := Length(buttons);
     defBtn := PickDefaultButton(buttons, ADefault);
     DefaultCtrl := nil;
@@ -3323,17 +3766,44 @@ begin
     // size mirrors the one applied to the buttons themselves below.
     ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons,
       ifthen((size = sdsBig), btnWidth * 2, btnWidth),
-      ifthen((size = sdsBig), 12, 0));
+      ButtonFontSize(size));
+    ButtonHeight := TouchMin(ifthen((size = sdsBig) , 50, 25));
     totalBtnWidth := (btnCount * ButtonActualWidth) + ((btnCount - 1) * padding);
     // A wider row can outgrow the dialog; widen it rather than let the buttons
     // run off the edge.
     if Dialog.ClientWidth < totalBtnWidth + (padding * 2) then
       Dialog.ClientWidth := FitDialogWidth(totalBtnWidth + (padding * 2));
+
+    // FitDialogWidth refuses to exceed the display, so the row may still not
+    // fit - touch-sized buttons and a handful of captions outgrow an 800px
+    // panel easily. Stack them full width rather than lose the tail.
+    stackButtons := not ButtonRowFits(Dialog.ClientWidth, btnCount,
+      ButtonActualWidth, padding);
+    if stackButtons then
+      buttonBlockHeight := (btnCount * ButtonHeight) + ((btnCount - 1) * padding)
+    else
+      buttonBlockHeight := ButtonHeight;
+
+    // --- Content gets the height left over after the icon row and buttons ---
+    maxHeight := Round(ScreenUsableHeight * 0.8);
+    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
+    // Was a flat "maxHeight - 200", which silently underestimated once the
+    // button block could be several stacked touch-sized rows tall.
+    availableHeight := maxHeight - HtmlPanel.Top - buttonBlockHeight - (padding * 2);
+    if contentHeight > availableHeight then
+      contentHeight := availableHeight;
+    if contentHeight < 150 then
+      contentHeight := 150;  // Minimum height
+
+    HtmlViewer.Height := contentHeight;
+    HtmlPanel.Height := contentHeight;
+
+    // --- Create buttons -----------------------------------------------------
+    rowTop := HtmlPanel.Top + HtmlPanel.Height + padding;
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
     if posX < padding then
       posX := padding;
 
-    // Create buttons
     for mr in buttons do
     begin
       {$ifdef X_WIN}
@@ -3345,14 +3815,24 @@ begin
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := langs[mr];
       dialog.addButton(okbutton.caption);
-      OkButton.Width := ButtonActualWidth;
-      OkButton.Height := ifthen((size = sdsBig) , 50, 25);
-      if (size = sdsBig) then
-        OkButton.Font.Size := 12;
-      OkButton.Left := posX;
-      OkButton.Top := HtmlPanel.Top + HtmlPanel.Height + padding;
+      OkButton.Height := ButtonHeight;
+      if ButtonFontSize(size) > 0 then
+        OkButton.Font.Size := ButtonFontSize(size);
+      if stackButtons then
+      begin
+        OkButton.Width := Dialog.ClientWidth - (padding * 2);
+        OkButton.Left  := padding;
+        OkButton.Top   := rowTop;
+        Inc(rowTop, ButtonHeight + padding);
+      end
+      else
+      begin
+        OkButton.Width := ButtonActualWidth;
+        OkButton.Left  := posX;
+        OkButton.Top   := rowTop;
+        Inc(posX, ButtonActualWidth + padding);
+      end;
       OkButton.ModalResult := UXButtonToModalResult(mr);
-      Inc(posX, ButtonActualWidth + padding);
       // Default is chosen by identity, not position, so it survives a reversed row
       if (mr = defBtn) and (DefaultCtrl = nil) then
         DefaultCtrl := OkButton;
@@ -3360,9 +3840,10 @@ begin
 
     ApplyDefaultButton(Dialog, DefaultCtrl);
 
-    // Set final dialog height based on content
+    // Set final dialog height based on content. OkButton is the last one
+    // created, which is the bottom-most whether the row was stacked or not.
     finalHeight := OkButton.Top + OkButton.Height + padding;
-    Dialog.ClientHeight := finalHeight;
+    Dialog.ClientHeight := FitDialogHeight(finalHeight);
 
     dialog.setContent(caption, htmldata);
     dialog.hasHTML := true;
@@ -3406,7 +3887,8 @@ var
   DefaultCtrl: TWinControl;
   ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
   TitlePixelWidth, DescPixelWidth, TextPixelWidth,
-  posX, ProposedWidth, btnCount, totalBtnWidth: integer;
+  posX, ProposedWidth, btnCount, totalBtnWidth, rowTop: integer;
+  stackButtons: boolean;
   bgcol: TColor;
   TempFont: TFont;
   size: TSlickeDialogSize;
@@ -3483,20 +3965,29 @@ begin
     TextPanel.BevelOuter := bvNone;
     TextPanel.Color := bgcol;
 
-    // Width calculations. Measure via a temporary TBitmap rather than
-    // Dialog.Canvas: TForm/TPanel canvases outside a paint event can SIGABRT
-    // on the Cocoa widgetset (see memory `cocoa-label-canvas`). The Dialog
-    // hasn't been shown yet here, so its canvas context is not guaranteed.
-    TitlePixelWidth := 0;
-    with Graphics.TBitmap.Create do
+    // Width calculations, measured with the type the labels below actually get.
+    // This used to measure everything at Dialog.Font - the 9 pt system size -
+    // while big mode renders the same text at 24 pt, so the content asked for
+    // well under half the room it needed and the size floor did all the work.
+    // (MeasureTextWidth measures on a scratch bitmap, not Dialog.Canvas: a form
+    // canvas outside a paint event can SIGABRT on Cocoa, and the dialog is not
+    // shown yet here.)
+    TempFont := TFont.Create;
     try
-      SetSize(1, 1);
-      Canvas.Font.Assign(Dialog.Font);
-      if Trim(title) <> '' then
-        TitlePixelWidth := Canvas.TextWidth(title);
-      DescPixelWidth := Canvas.TextWidth(desc);
+      TempFont.Assign(Dialog.Font);
+      ApplyDialogFont(TempFont, size, 24);
+      TempFont.Style := [fsBold];
+      TitlePixelWidth := MeasureTextWidth(title, TempFont);
+      TempFont.Style := [];
+      DescPixelWidth := MeasureTextWidth(desc, TempFont);
+      // Only where the type was scaled up: at 24 pt an unwrapped sentence would
+      // push the dialog to the 900 px cap every time, so hold the message to a
+      // readable measure and let it break. The title keeps its full width - a
+      // wrapped heading looks worse than a wide dialog.
+      if SizeFontSize(size, 24) > 0 then
+        DescPixelWidth := Min(DescPixelWidth, ComfortableTextWidth(TempFont));
     finally
-      Free;
+      TempFont.Free;
     end;
     TextPixelWidth := Max(TitlePixelWidth, DescPixelWidth);
 
@@ -3505,11 +3996,15 @@ begin
     btnCount := Length(buttons);
     if btnCount = 0 then
       btnCount := 1;
+    // Measured with the caption size the buttons themselves get below, or the
+    // row comes out sized for 9 pt text and clips the larger captions.
     case size of
     sdsBig:
-      ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons, btnWidth * 2);
+      ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons, btnWidth * 2,
+        ButtonFontSize(size));
     sdsMedium:
-      ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons, ceil(btnWidth * 1.5));
+      ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons,
+        ceil(btnWidth * 1.5), ButtonFontSize(size));
     else
       ButtonActualWidth := MeasureButtonWidth(Dialog.Font, buttons, btnWidth);
     end;
@@ -3519,14 +4014,7 @@ begin
     if ProposedWidth < totalBtnWidth + (padding * 2) then
       ProposedWidth := totalBtnWidth + (padding * 2);
 
-    if (size = sdsBig) then
-    begin
-      if ProposedWidth < 650 then
-        ProposedWidth := 650;
-    end
-    else
-    if ProposedWidth < 400 then
-      ProposedWidth := 400;
+    ProposedWidth := Max(ProposedWidth, MinDialogWidth(size));
 
     if logmsg <> '' then
       if ProposedWidth < 500 then
@@ -3538,6 +4026,11 @@ begin
     ProposedWidth := FitDialogWidth(ProposedWidth);
 
     Dialog.ClientWidth := ProposedWidth;
+    // This dialog autosizes, and once the panels report their preferred widths
+    // AutoSize will happily pull the form back in below the width settled above -
+    // which is how a big-mode dialog ended up narrower than a medium one.
+    // Constraints are the one thing AutoSize will not argue with.
+    Dialog.Constraints.MinWidth := Dialog.Width;
     MsgWidth := Dialog.ClientWidth - (IconBox.Width + (padding * 3));
 
     // Desc height
@@ -3667,6 +4160,10 @@ begin
         MsgLabel.AutoSize := false;
         MsgLabel.Caption := desc;
         MsgLabel.Font.Color := getBaseColor;
+        // Medium never got the type size it was measured with above, so the
+        // label reserved room for 20 pt and then drew the message at the 9 pt
+        // system size, leaving a band of empty dialog under it.
+        ApplyDialogFont(MsgLabel.Font, size, 24);
         MsgLabel.Width := MsgWidth;
         MsgLabel.Height := NeededHeight;
         dialog.contentText := msglabel.Caption;
@@ -3680,6 +4177,7 @@ begin
         MsgLabel.AutoSize := false;
         MsgLabel.Caption := desc;
         MsgLabel.Font.Color := getBaseColor;
+        ApplyDialogFont(MsgLabel.Font, size, 24);  // see the scrolling branch
         if Assigned(TitleLabel) then
           MsgLabel.Top := TitleLabel.Top + TitleLabel.Height + padding
         else
@@ -3808,8 +4306,13 @@ begin
     ButtonPanel.BevelOuter := bvNone;
     ButtonPanel.Color := bgcol;
 
-    // ButtonActualWidth, btnCount and totalBtnWidth were measured above, before
-    // the dialog width was fixed, so the row is guaranteed to fit by here.
+    // ButtonActualWidth, btnCount and totalBtnWidth were measured above, and
+    // ProposedWidth was grown to cover the row - but FitDialogWidth then capped
+    // it at the display, so on a panel narrower than the row needs the fit is
+    // not guaranteed at all. Stack in that case; the panel is alBottom, so a
+    // taller block grows upward into the message area instead of off-screen.
+    stackButtons := not ButtonRowFits(Dialog.ClientWidth, btnCount,
+      ButtonActualWidth, padding);
 
     // Always center the action buttons
     posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
@@ -3831,8 +4334,10 @@ begin
       {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
       OkButton.Caption := '⛶';  // Maximize symbol
 // No dialog add here
-      OkButton.Width := ifthen((size = sdsBig), 50, 30);
-      OkButton.Height := ifthen((size = sdsBig), 50, 25);
+      // The smallest control in the dialog, and square-ish, so the touch floor
+      // applies to both axes here rather than height alone.
+      OkButton.Width := TouchMin(ifthen((size = sdsBig), 50, 30));
+      OkButton.Height := TouchMin(ifthen((size = sdsBig), 50, 25));
       OkButton.Left := padding;
       OkButton.Top := padding;
       OkButton.OnClick := @Dialog.ExpandLogDialog;
@@ -3857,6 +4362,12 @@ begin
     defBtn := PickDefaultButton(buttons, ADefault);
     DefaultCtrl := nil;
 
+    rowTop := padding;
+    // The expand button occupies the panel's top-left corner. A centered row
+    // clears it, but a full-width stacked one would be drawn straight over it.
+    if stackButtons and Assigned(Dialog.LogExpandButton) then
+      rowTop := Dialog.LogExpandButton.Top + Dialog.LogExpandButton.Height + padding;
+
     for mr in buttons do
     begin
       {$ifdef X_WIN}OkButton := TDarkButton.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
@@ -3865,16 +4376,29 @@ begin
       OkButton.Caption := langs[mr];
       dialog.addButton(okbutton.caption);
       OkButton.ModalResult := UXButtonToModalResult(mr);
-      OkButton.Width := ButtonActualWidth;
+      if ButtonFontSize(size) > 0 then
+        OkButton.Font.Size := ButtonFontSize(size);
       case size of
       sdsBig:
         OkButton.Height := OkButton.Height * 2;
       sdsMedium:
         OkButton.Height := ceil(OkButton.Height * 1.5);
       end;
-      OkButton.Top := padding;
-      OkButton.Left := posX;
-      posX := posX + OkButton.Width + padding;
+      OkButton.Height := TouchMin(OkButton.Height);
+      if stackButtons then
+      begin
+        OkButton.Width := Dialog.ClientWidth - (padding * 2);
+        OkButton.Left  := padding;
+        OkButton.Top   := rowTop;
+        Inc(rowTop, OkButton.Height + padding);
+      end
+      else
+      begin
+        OkButton.Width := ButtonActualWidth;
+        OkButton.Left  := posX;
+        OkButton.Top   := padding;
+        posX := posX + OkButton.Width + padding;
+      end;
       // Default is chosen by identity, not position, so it survives a reversed row
       if (mr = defBtn) and (DefaultCtrl = nil) then
         DefaultCtrl := OkButton;
