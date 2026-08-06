@@ -587,6 +587,8 @@ private
   FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
+  FWarnPulseSecond: integer;    // Second the wsSoon pulse last repainted on
+  FProgressPulsing: boolean;    // Set by pnNextProgressPaint while a reading is overdue
   FStaleStage: TStaleStage;     // Escalation step of the active stale card
   FNextFetchAt: TDateTime;      // When tMain will fire next; drives the retry countdown
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
