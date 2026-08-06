@@ -82,7 +82,7 @@ Classifies a reading relative to configured thresholds:
 - **BGLOW** - Below low threshold (urgent)
 
 ### **Delta**
-The change in glucose value between consecutive readings, typically measured over 5 minutes. Can be positive (rising) or negative (falling).
+The change in glucose value between consecutive readings. Can be positive (rising) or negative (falling). Readings carry the raw difference from the previous reading, but the main window displays it normalized to a 5-minute rate, so a dropped reading (a 10-minute gap) does not show as a doubled delta.
 
 ### **BG_NO_VAL**
 Magic constant value (-904) used to indicate an unset or missing glucose reading.

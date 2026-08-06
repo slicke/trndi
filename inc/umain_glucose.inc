@@ -143,13 +143,26 @@ begin
   if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * DELTA_MAX)) then
     lDiff.Caption := '--'
   else
-  if reading.deltaEmpty then
   begin
-    deltaVal := bgs[0].convert(un) - bgs[1].convert(un);
+    // Show the change over one reporting interval, not the raw difference
+    // between the last two samples. When a reading is dropped, bgs[1] sits two
+    // intervals back and the raw difference silently covers twice the window it
+    // appears to — a gap just under the DELTA_MAX cutoff still passes the guard
+    // above. Normalising keeps this number agreeing with the trend arrow, which
+    // already scales the same way in UpdateTrendArrow, and with what xDrip and
+    // Nightscout report for the same gap.
+    if reading.deltaEmpty then
+      deltaVal := bgs[0].convert(un) - bgs[1].convert(un)
+    else
+      // Backend-supplied deltas (Tandem, CareLink) store the raw observed
+      // difference too, so they need the same scaling.
+      deltaVal := reading.convert(un, BGDelta);
+
+    // Clamp the divisor to a full interval so samples arriving closer together
+    // than usual can't amplify a small drift into a large-looking delta.
+    deltaVal := deltaVal * INTERVAL_MINUTES / Max(gapMin, INTERVAL_MINUTES);
     lDiff.Caption := FormatSigned(deltaVal);
-  end
-  else
-    lDiff.Caption := reading.format(un, BG_MSG_SIG_SHORT, BGDelta);
+  end;
   lArrow.Caption := reading.trend.Img;
   UpdateTrendArrow(reading, havePrev, gapMin);
   lVal.Font.Style := [];
