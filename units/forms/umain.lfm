@@ -236,7 +236,9 @@ object fBG: TfBG
     Width = 8
     Align = alLeft
     BevelOuter = bvNone
+    DoubleBuffered = True
     ParentBackground = False
+    ParentDoubleBuffered = False
     TabOrder = 7
     OnPaint = pnNextProgressPaint
   end
@@ -534,6 +536,7 @@ object fBG: TfBG
   end
   object tProgress: TTimer
     Enabled = False
+    Interval = 1000
     OnTimer = tProgressTimer
     Left = 48
     Top = 200
