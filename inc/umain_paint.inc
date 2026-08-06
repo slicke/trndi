@@ -699,21 +699,96 @@ begin
   end;
 end;
 
-// Paint handler for the left-side "next reading" progress indicator
+// Paint handler for the left-side "next reading" progress indicator.
+//
+// The indicator is a capsule-shaped tube that fills from the bottom as the next
+// reading approaches. Every pixel column is derived from the capsule's own
+// geometry instead of from Canvas.RoundRect: no widgetset gives us an
+// anti-aliased rounded rect — let alone a gradient clipped to one — so the caps
+// would be visibly stepped and the fill would push square corners out past the
+// rounded outline. Columns are emitted as vertical runs of equal colour, which
+// keeps a repaint at a few dozen FillRects rather than a per-pixel loop.
 procedure TfBG.pnNextProgressPaint(Sender: TObject);
+const
+  WARM_FROM  = 0.90;    // fraction at which the fill starts warming toward amber
+  MENISCUS_H = 2;       // px of bright surface line drawn on top of the liquid
+  SHADOW_H   = 6.0;     // px of contact shadow where the liquid meets the cap
+  PULSE_MS   = 1600;    // one full breath while the reading is overdue
 var
   pnl: TPanel;
-  elapsedMs, overdueMs: int64;
-  frac: double;
-  fillR: TRect;
-  fillCol, trackCol: TColor;
-  cr, fillH, y: integer;
-  isOverdue: boolean;
-  t: double;
+  cvs: TCanvas;
+  bgCol, trackCol, fillCol, runCol, rowCol: TColor;
+  elapsedMs: int64;
+  frac, warmth, pulse: double;
+  trackW, cx, rad, dx, dy, capTop, capBot, xn, shade, lvlTop, lvlBot, cov: double;
+  m, w, h, x, y, runTop: integer;
+
+  function Shaded(base: TColor; amt: double): TColor;
+  begin
+    if amt >= 0 then
+      Result := LightenColor(base, amt)
+    else
+      Result := DarkenColor(base, 1.0 + amt);
+  end;
+
+  // Colour of the tube at row yy of the column being painted, before the
+  // capsule's edge coverage is applied.
+  function SurfaceAt(yy: integer): TColor;
+  var
+    below, depth: double;
+  begin
+    // How much of this pixel row sits below the liquid surface
+    below := Min(1.0, Max(0.0, (yy + 1) - lvlTop));
+    if below <= 0 then
+      // Empty part of the tube: a hair darker down the middle, so the channel
+      // reads as recessed rather than as a flat stripe.
+      Exit(Shaded(trackCol, -0.06 * exp(-sqr(xn - 0.5) / 0.10)));
+
+    depth := Min(1.0, Max(0.0, (lvlBot - yy) / Max(1.0, lvlBot - lvlTop)));
+    Result := BlendColors(LightenColor(fillCol, 0.10 * depth), fillCol, 0.55);
+    // Contact shadow where the liquid sits in the bottom cap. Kept at a fixed
+    // few pixels: it is a lighting detail, not something that should grow with
+    // the fill — and every distinct row colour costs one more FillRect.
+    if lvlBot - yy < SHADOW_H then
+      Result := DarkenColor(Result, 0.90 + 0.10 * ((lvlBot - yy) / SHADOW_H));
+    if (yy < lvlTop + MENISCUS_H) and (lvlBot - lvlTop > 4) then
+      Result := LightenColor(Result, 0.38);     // bright meniscus at the surface
+    Result := Shaded(Result, shade);
+    if below < 1.0 then                         // the surface row is a blend of both
+      Result := BlendColors(Result, Shaded(trackCol, -0.06), below);
+  end;
+
+  procedure FlushRun(y0, y1: integer; col: TColor);
+  begin
+    if (y0 < 0) or (y1 <= y0) then
+      Exit;
+    cvs.Brush.Color := col;
+    cvs.FillRect(Classes.Rect(x, y0, x + 1, y1));
+  end;
+
 begin
   pnl := Sender as TPanel;
+  cvs := pnl.Canvas;
+  w := pnl.Width;
+  h := pnl.Height;
+  bgCol := fBG.Color;
+
+  // The panel is painted edge to edge every time — the capsule is drawn onto
+  // the window colour, so nothing of the previous frame can survive around it.
+  cvs.Brush.Style := bsSolid;
+  cvs.Pen.Style := psClear;
+  cvs.Brush.Color := bgCol;
+  cvs.FillRect(Classes.Rect(0, 0, w, h));
+
   if (bgs = nil) or (Length(bgs) = 0) then
     Exit;
+
+  m := Max(1, w div 10);          // margin, so the caps never touch the panel edge
+  trackW := w - 2 * m;
+  if (trackW < 2) or (h < 4 * m) then
+    Exit;
+  cx := m + trackW / 2;
+  rad := trackW / 2;
 
   elapsedMs := MilliSecondsBetween(Now, lastReading.date);
   if elapsedMs < 0 then
@@ -726,71 +801,73 @@ begin
   else
     frac := 1.0;
   {$POP}
-  overdueMs := BG_REFRESH + 60000;
-  isOverdue := elapsedMs > overdueMs;
+  FProgressPulsing := elapsedMs > BG_REFRESH + 60000;
 
-  // Track: dark recessed pill channel
-  trackCol := BlendColors(fBG.Color, clBlack, 0.72);
-
-  // Fill: teal (fresh reading) → amber (reading due) → pomegranate (overdue, pulsing)
-  // Colors mirror the modern theme palette so the bar feels consistent.
-  if isOverdue then
-  begin
-    // When past 6 min: pulse the entire bar between deep pomegranate and a
-    // bright fiery red-orange to grab attention without text/badges.
-    if (SecondOf(Now) mod 2 = 0) then
-      fillCol := RGBToColor(192, 57, 43)     // pomegranate
-    else
-      fillCol := RGBToColor(255, 110, 70);   // bright alert red-orange
-  end
-  else if frac >= 0.8 then
-    fillCol := RGBToColor(230, 126, 34)   // pumpkin      — matches bg_color_hi
+  // Track: a recessed channel, darker than the window on light backgrounds and
+  // lighter on dark ones, so the empty part of the tube stays visible either way.
+  if IsLightColor(bgCol) then
+    trackCol := BlendColors(clBlack, bgCol, 0.16)
   else
-    fillCol := BlendColors(
-      RGBToColor(230, 126, 34),  // amber (reached at frac = 0.8)
-      RGBToColor(46, 150, 136),  // teal  (at frac = 0, just after a reading)
-      frac / 0.8
-    );
+    trackCol := BlendColors(clWhite, bgCol, 0.10);
 
-  // Capsule radius: half the panel width gives a perfect pill shape
-  cr := Max(3, pnl.Width div 2);
-
-  // Step 1 — draw the full-panel track as a dark pill
-  with pnl.Canvas do
+  // Fill: teal for most of the cycle → amber as the reading falls due →
+  // pomegranate once it is late. The teal stage only brightens as it rises;
+  // blending teal straight into amber across the whole cycle would spend
+  // minutes in the muddy olive midpoint the two colours share.
+  if FProgressPulsing then
   begin
-    Brush.Style := bsSolid;
-    Brush.Color := trackCol;
-    Pen.Style := psClear;
-    RoundRect(0, 0, pnl.Width, pnl.Height, cr * 2, cr * 2);
-  end;
-
-  if frac <= 0 then
-    Exit;
-
-  // Step 2 — fill: flat-top rectangle with vertical gradient (grows upward from the bottom)
-  fillH := Max(1, Round(frac * (pnl.Height - 2)));
-  fillR := Classes.Rect(1, pnl.Height - 1 - fillH, pnl.Width - 1, pnl.Height - 1);
-
-  with pnl.Canvas do
+    // Breathe rather than flash: tProgressTimer speeds up while a reading is
+    // overdue, so this ramp is sampled often enough to read as continuous.
+    pulse := 0.5 - 0.5 * cos(2 * Pi * ((GetTickCount64 mod PULSE_MS) / PULSE_MS));
+    fillCol := BlendColors(RGBToColor(255, 105, 66), RGBToColor(183, 47, 36), pulse);
+  end
+  else if frac >= WARM_FROM then
   begin
-    Pen.Style := psClear;
-    Brush.Style := bsSolid;
-    for y := fillR.Top to fillR.Bottom - 1 do
+    warmth := (frac - WARM_FROM) / (1.0 - WARM_FROM);
+    warmth := warmth * warmth * (3 - 2 * warmth);   // ease through the mixed shades
+    fillCol := BlendColors(RGBToColor(230, 126, 34), RGBToColor(42, 182, 166), warmth);
+  end
+  else
+    fillCol := BlendColors(RGBToColor(42, 182, 166), RGBToColor(34, 138, 138),
+      frac / WARM_FROM);
+
+  lvlBot := h - m;
+  lvlTop := lvlBot - frac * (h - 2 * m);
+
+  for x := 0 to w - 1 do
+  begin
+    dx := (x + 0.5) - cx;
+    if Abs(dx) >= rad then
+      Continue;
+    // Where this column enters and leaves the capsule — the straight sides are
+    // pixel aligned, so only the caps need the circle.
+    dy := sqrt(rad * rad - dx * dx);
+    capTop := (m + rad) - dy;
+    capBot := (h - m - rad) + dy;
+
+    // Soft cylindrical shading: a specular band left of centre, a gentle
+    // falloff to the right, which is what makes the thin bar read as a tube.
+    xn := ((x + 0.5) - m) / trackW;
+    shade := 0.22 * exp(-sqr(xn - 0.30) / 0.07) - 0.18 * Max(0.0, xn - 0.55);
+
+    runTop := -1;
+    runCol := clNone;
+    for y := Floor(capTop) to Ceil(capBot) - 1 do
     begin
-      t := (y - fillR.Top) / Max(1.0, double(fillR.Bottom - 1 - fillR.Top));
-      Brush.Color := BlendColors(fillCol, LightenColor(fillCol, 0.18), t);
-      FillRect(Classes.Rect(fillR.Left, y, fillR.Right, y + 1));
+      if (y < 0) or (y >= h) then
+        Continue;
+      cov := Max(0.0, Min(Min(1.0, (y + 1) - capTop), Min(1.0, capBot - y)));
+      if cov <= 0 then
+        Continue;
+      rowCol := SurfaceAt(y);
+      if cov < 1.0 then                  // anti-alias the cap against the window
+        rowCol := BlendColors(rowCol, bgCol, cov);
+      if (runTop >= 0) and (rowCol = runCol) then
+        Continue;
+      FlushRun(runTop, y, runCol);
+      runTop := y;
+      runCol := rowCol;
     end;
+    FlushRun(runTop, Min(h, Ceil(capBot)), runCol);
   end;
-
-  // Step 3 — edge highlights: bright left strip (specular), subtle right shadow
-  with pnl.Canvas do
-  begin
-    Pen.Style := psClear;
-    Brush.Color := LightenColor(fillCol, 0.40);
-    FillRect(Classes.Rect(fillR.Left, fillR.Top, fillR.Left + 1, fillR.Bottom));
-    Brush.Color := DarkenColor(fillCol, 0.12);
-    FillRect(Classes.Rect(fillR.Right - 1, fillR.Top, fillR.Right, fillR.Bottom));
-  end;
-
 end;
