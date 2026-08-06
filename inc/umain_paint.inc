@@ -714,11 +714,12 @@ const
   MENISCUS_H = 2;       // px of bright surface line drawn on top of the liquid
   SHADOW_H   = 6.0;     // px of contact shadow where the liquid meets the cap
   PULSE_MS   = 1600;    // one full breath while the reading is overdue
+  OVERDUE_GRACE_MS = 60000;  // grace past the due time before the tube pulses
 var
   pnl: TPanel;
   cvs: TCanvas;
   bgCol, trackCol, fillCol, runCol, rowCol: TColor;
-  elapsedMs: int64;
+  elapsedMs, spanMs: int64;
   frac, warmth, pulse: double;
   trackW, cx, rad, dx, dy, capTop, capBot, xn, shade, lvlTop, lvlBot, cov: double;
   m, w, h, x, y, runTop: integer;
@@ -790,18 +791,34 @@ begin
   cx := m + trackW / 2;
   rad := trackW / 2;
 
-  elapsedMs := MilliSecondsBetween(Now, lastReading.date);
+  // Signed on purpose: MilliSecondsBetween is Abs()-based, which turns a
+  // future-dated reading (uploader clock ahead of ours — the same skew
+  // TrndiAPI.timeDiff exists for) into a large positive "age" and pegs the tube
+  // full. Subtracting directly keeps the sign so the guard below can catch it.
+  elapsedMs := Round((Now - lastReading.date) * MSecsPerDay);
   if elapsedMs < 0 then
     elapsedMs := 0;
-  // BG_REFRESH is a constant, so the guard folds away — kept as a
-  // divide-by-zero safety net should the interval ever become configurable
-  {$PUSH}{$WARN 6018 OFF}
-  if BG_REFRESH > 0 then
-    frac := Min(1.0, elapsedMs / BG_REFRESH)
+
+  // Count the cycle the scheduler *targets*: BG_REFRESH plus the resync padding
+  // SetNextUpdateTimer adds to give the CGM time to report. A flat BG_REFRESH
+  // leaves the tube pegged full through that padding every single cycle.
+  //
+  // Deliberately not the literal next-fetch time: when a reading lands already
+  // old, SetNextUpdateTimer clamps to a MIN_REFRESH_INTERVAL_MS retry, and
+  // stretching the fill to reach full at that retry would slow the tube down
+  // exactly when data is late — six minutes in and still filling. Late data
+  // should read as full and overdue; the retry countdown belongs to the stale
+  // card, which already shows it.
+  spanMs := BG_REFRESH + REFRESH_RESYNC_BUFFER_MS;
+
+  if spanMs > 0 then
+    frac := Min(1.0, elapsedMs / spanMs)
   else
     frac := 1.0;
-  {$POP}
-  FProgressPulsing := elapsedMs > BG_REFRESH + 60000;
+  // A minute past the top before the tube starts breathing red — the same grace
+  // as before, now counted from the end of the padded cycle rather than from a
+  // bare BG_REFRESH, so it lands 15 s later than it used to.
+  FProgressPulsing := elapsedMs > spanMs + OVERDUE_GRACE_MS;
 
   // Track: a recessed channel, darker than the window on light backgrounds and
   // lighter on dark ones, so the empty part of the tube stays visible either way.
