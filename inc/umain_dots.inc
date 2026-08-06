@@ -455,17 +455,11 @@ end;
 procedure TfBG.AdjustGraph;
 var
   da: integer;
-  centerShift: integer;
 begin
   // SetPointHeight places dots by their Top edge, but a drawn circle is
-  // geometrically centred in its bounding box — shift the whole row up by
-  // half a diameter so the dot's centre lands on the intended value-Y.
-  if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) then
-  begin
-    centerShift := -(TrendDots[1].Height div 2);
-    if centerShift <> 0 then
-      ApplyTrendDotTopOffset(centerShift);
-  end;
+  // geometrically centred in its bounding box — lift each dot by half of its
+  // own diameter so its centre lands on the intended value-Y.
+  ApplyTrendDotCenterShift;
 
   ApplyTrendDotTopOffset(round(ClientHeight * DOT_ADJUST));
 
@@ -595,6 +589,28 @@ end;
 procedure TfBG.HideDot(l: TDotControl; c, ix: integer);
 begin
   l.Visible := false;
+end;
+
+// Lift every dot by half of its own height, so the circle DotPaint draws is
+// centred on the value-Y that SetPointHeight assigned to the dot's Top edge.
+// This has to be per dot rather than one shared offset: ResizeDot gives the
+// history dots a stride-widened diameter while the prediction dots keep the
+// single-column one, so a shift derived from the history row would push the
+// (smaller) prediction dots visibly above their own value.
+procedure TfBG.ApplyTrendDotCenterShift;
+var
+  l: TDotControl;
+begin
+  for l in TrendDots do
+  begin
+    if not Assigned(l) then Continue;
+    l.Top := l.Top - (l.Height div 2);
+  end;
+  for l in PredictionDots do
+  begin
+    if not Assigned(l) then Continue;
+    l.Top := l.Top - (l.Height div 2);
+  end;
 end;
 
 procedure TfBG.ApplyTrendDotTopOffset(const Offset: integer);
@@ -736,8 +752,8 @@ begin
   end;
 end;
 
-// Re-apply value-based vertical positions to visible prediction dots from
-// their cached Hint values (mirrors UpdateTrendDots for the history dots).
+// Re-apply value-based vertical positions to the prediction dots from their
+// cached Hint values (mirrors UpdateTrendDots for the history dots).
 procedure TfBG.UpdatePredictionDotHeights;
 var
   l: TDotControl;
@@ -749,8 +765,11 @@ begin
   for l in PredictionDots do
   begin
     if not Assigned(l) then Continue;
-    if not l.Visible then Continue;
-
+    // Reposition hidden dots too. ApplyTrendDotTopOffset/CenterShift move every
+    // prediction dot regardless of visibility, so skipping the hidden ones here
+    // would let those offsets pile up on a stale Top for as long as the dot is
+    // hidden — mirrors UpdateTrendDots, which also places invisible history
+    // dots so they are already correct when they come back.
     if TryStrToFloat(l.Hint, Value, native.locale) then
     begin
       if un = mgdl then

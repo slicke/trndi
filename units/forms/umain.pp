@@ -676,6 +676,7 @@ private
   procedure ResizeDot(l: TDotControl; {%H-}c, ix: integer);
   procedure initDot(l: TDotControl; c, ix: integer);
   procedure ExpandDot(l: TDotControl; c, ix: integer);
+  procedure ApplyTrendDotCenterShift;
   procedure ApplyTrendDotTopOffset(const Offset: integer);
   procedure RepaintVisibleTrendDots;
   procedure CreateTrendDots;
