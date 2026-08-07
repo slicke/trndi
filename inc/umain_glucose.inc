@@ -340,6 +340,15 @@ begin
 
   native.badgeTrend := '';
   native.setBadge('--', clBlack, badge_width, badge_font);
+
+  // The float mirrors the main window's value, colours and arrow, but it only
+  // ever got them from FinalizeUpdate — which sits on the fresh path, so an
+  // always-on-top window kept showing the last reading in its live range colour
+  // with a trend arrow beside it for the whole outage, with nothing to say the
+  // data had stopped. Everything it mirrors is final by this point: the
+  // background, the value caption, the strike-through and the dimmed colour are
+  // all set above, so this last call is enough to carry the outage across.
+  UpdateFloatingWindow;
 end;
 
 procedure TfBG.SetNextUpdateTimer(const LastReadingTime: TDateTime);
@@ -803,9 +812,20 @@ begin
     fFloat.Color := fBg.Color;
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lVal.Visible := true;
+    // Carries the stale strike-through. The float has no room for a status
+    // card, so the struck-out value is most of what says "do not act on this".
+    // Mirrored rather than set from the freshness flag so the fresh path clears
+    // it by the same route.
+    fFloat.lVal.Font.Style := lVal.Font.Style;
     fFloat.lArrow.Caption := lArrow.Caption;
     fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
-    if fFloat.miFontMain.Checked then
+    // The fixed black/white font choice is a preference about the *live* look,
+    // made against a range colour. It does not survive the switch to
+    // STALE_BG_COLOR — black on near-black leaves the value barely readable, and
+    // an unreadable value is worse than an overridden preference. So while data
+    // is stale take the main window's computed dimmed tone regardless, which is
+    // derived from the stale background and therefore always legible on it.
+    if fFloat.miFontMain.Checked or FTrendDataStale then
     begin
       fFloat.lVal.font.color := lval.font.color;
       fFloat.larrow.font.color := fFloat.lVal.font.color;
@@ -816,7 +836,11 @@ begin
     fFloat.FormResize(fFloat);
 
     // Mirror the rotating trend arrow (uses the angle cached by UpdateTrendArrow).
-    fFloat.SetTrendArrow(RotatingArrow, FLastArrowAngle, fFloat.lArrow.Font.Color);
+    // Suppressed while data is stale for the same reason the main window's is:
+    // the cached angle describes a reading that is no longer current, and the
+    // float is small enough that an arrow is most of what you read off it.
+    fFloat.SetTrendArrow(RotatingArrow and (not FTrendDataStale),
+      FLastArrowAngle, fFloat.lArrow.Font.Color);
   end;
 end;
 

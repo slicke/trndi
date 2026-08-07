@@ -496,33 +496,12 @@ begin
     fFloat.Show;
     if not assigned(fFloat.onhide) then
       ffloat.OnHide := @TfFloatOnHide;
-    fFloat.Color := fBg.Color;
-    fFloat.lVal.Caption := lval.Caption;
-    fFloat.lVal.Visible := true;
-    if fFloat.miFontMain.Checked then
-    begin
-      fFloat.lVal.font.color := lval.font.color;
-      fFloat.larrow.font.color := fFloat.lVal.font.color;
-    end;
-    fFloat.lArrow.Caption := lArrow.Caption;
-    fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
-    if userColorBar then
-    begin
-      fFloat.pnMultiUser.Visible := true;
-      fFloat.pnMultiUser.Color := pnMultiUser.Color;
-    end;
-    fFloat.FormResize(fFloat);
-    fFloat.lArrow.Caption := lArrow.Caption;
-    fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
-    fFloat.lVal.Visible := true;
-    if fFloat.miFontMain.Checked then
-    begin
-      fFloat.lVal.Font.Color := lVal.Font.Color;
-      fFloat.lArrow.Font.Color := fFloat.lVal.Font.Color;
-    end;
-    fFloat.pnMultiUser.Visible := userColorBar;
-    if fFloat.pnMultiUser.Visible then
-      fFloat.pnMultiUser.Color := pnMultiUser.Color;
+    // Seed the window through the same mirror the fetch paths use, rather than
+    // repeating the assignments here. The copy this replaced had drifted: it
+    // never carried lVal's font style, so a float opened during an outage came
+    // up without the stale strike-through, and it never called SetTrendArrow,
+    // so the rotating arrow only appeared on the next fetch.
+    UpdateFloatingWindow;
   end;
   miFloatOn.Checked := fFloat.Showing;
 end;
