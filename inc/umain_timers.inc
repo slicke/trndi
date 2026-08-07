@@ -868,6 +868,10 @@ begin
     exit;
 
   RefreshStaleCard;
+  // The graph has to age with the card: without this the last dot stays parked
+  // in the newest slot for the whole outage. Self-limiting — the call is a
+  // no-op until the slot grid crosses an INTERVAL_MINUTES boundary.
+  RefreshStaleTrendDots;
 end;
 
 procedure TfBG.tSetupTimer(Sender: TObject);
