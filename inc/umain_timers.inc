@@ -568,6 +568,13 @@ begin
   if Assigned(FTrendArrow) then
   begin
     FTrendArrow.BoundsRect := lArrow.BoundsRect;
+    // Stale data has no current direction to point in. ApplyStaleDisplayState
+    // hides the overlay when the outage starts; without this gate the next
+    // resize would hand it straight back, since RotatingArrow alone says
+    // nothing about whether the reading it points at is still current.
+    if FTrendDataStale then
+      FTrendArrow.Visible := false
+    else
     if RotatingArrow then
     begin
       lArrow.Visible := false;
