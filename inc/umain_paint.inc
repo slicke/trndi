@@ -869,7 +869,9 @@ begin
 
     runTop := -1;
     runCol := clNone;
-    for y := Floor(capTop) to Ceil(capBot) - 1 do
+    // Qualified: MacOSAll re-exports C floor/ceil (Double), which would
+    // otherwise shadow Math's Integer-returning versions on macOS.
+    for y := Math.Floor(capTop) to Math.Ceil(capBot) - 1 do
     begin
       if (y < 0) or (y >= h) then
         Continue;
@@ -885,6 +887,6 @@ begin
       runTop := y;
       runCol := rowCol;
     end;
-    FlushRun(runTop, Min(h, Ceil(capBot)), runCol);
+    FlushRun(runTop, Min(h, Math.Ceil(capBot)), runCol);
   end;
 end;
