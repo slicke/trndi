@@ -111,9 +111,31 @@ type
     property Items: TMenuItem read FItems;
   end;
 
+const
+  // TShortCut modifier bit declared by LCLType (FPC's Classes only has
+  // scShift/scCtrl/scAlt); needed for the macOS Command-key shortcuts.
+  scMeta = $1000;
+
+function ShortCut(const Key: Word; const Shift: TShiftState): TShortCut;
 function ShortCutToText(ShortCut: Integer): string;
 
 implementation
+
+function ShortCut(const Key: Word; const Shift: TShiftState): TShortCut;
+begin
+  // Mirrors LCLType.KeyToShortCut so tests see the same values as the LCL.
+  if (Key and $FF00) <> 0 then
+    Exit(0);
+  Result := Key;
+  if ssShift in Shift then
+    Inc(Result, scShift);
+  if ssCtrl in Shift then
+    Inc(Result, scCtrl);
+  if ssAlt in Shift then
+    Inc(Result, scAlt);
+  if ssMeta in Shift then
+    Inc(Result, scMeta);
+end;
 
 function ShortCutToText(ShortCut: Integer): string;
 begin
