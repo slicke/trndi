@@ -451,6 +451,36 @@ begin
   AdjustGraph;
 end;
 
+// Keep the graph honest for the duration of an outage. Dot slots are anchored
+// to wall-clock INTERVAL_MINUTES boundaries, so with no new reading arriving the
+// trace has to march left and leave the newest slots empty — otherwise the last
+// dot sits in the "now" column for the whole outage and the graph reads as live
+// while the card underneath says there is no data. The fresh path gets this for
+// free from ApplyFetchedReadings; the stale path never reached PlaceTrendDots.
+//
+// Called once a second from tMissed, so the work has to be conditional:
+// PlaceTrendDots exits untouched until the slot grid or the readings move and
+// reports which of the two happened, so the relayout below runs only on the
+// ticks that actually moved a dot.
+//
+// The relayout is this function's own job. On the fresh path PlaceTrendDots is
+// followed by FinalizeUpdate's deferred resize, which ends in AdjustGraph;
+// nothing schedules that during an outage, so leaving it out here would strand
+// the dots at the raw value-Y that SetPointHeight assigns, uncentered.
+procedure TfBG.RefreshStaleTrendDots;
+begin
+  if firstboot or FShuttingDown then
+    Exit;
+  if Length(bgs) = 0 then
+    Exit;
+
+  if not PlaceTrendDots(bgs) then
+    Exit;
+
+  UpdateTrendDots;
+  AdjustGraph;
+end;
+
 // Post-process the graph
 procedure TfBG.AdjustGraph;
 var

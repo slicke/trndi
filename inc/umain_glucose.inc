@@ -1127,6 +1127,18 @@ begin
   // An empty result set is never usable, even during firstboot (where
   // IsDataFresh reports fresh so the unconfigured Setup screen is left alone).
   fresh := (Length(bgs) > 0) and IsDataFresh;
+
+  // Freshness tints the trend dots (DetermineColorForReading fades them once
+  // this flag is up), so a flip has to force PlaceTrendDots to reprocess even
+  // when neither the readings nor the slot grid moved — same FLastReadingsHash
+  // reset ApplyTrendDotCount uses. Without it the trace keeps its live colors
+  // until the next INTERVAL_MINUTES boundary happens to roll over.
+  if FTrendDataStale <> (not fresh) then
+  begin
+    FTrendDataStale := not fresh;
+    FLastReadingsHash := 0;
+  end;
+
   if fresh then
     ApplyFreshDisplayState
   else
@@ -1156,6 +1168,12 @@ begin
     // marks that look like fresh predictions.
     HidePredictionDots;
     lPredict.Visible := false;
+
+    // The history itself is still worth showing, but it has to keep moving:
+    // re-place it here (and once a second from tMissed) so the dots slide out
+    // of the newest slots as the outage grows, and pick up the faded stale
+    // coloring the flag above just turned on.
+    RefreshStaleTrendDots;
 
     if akMissing in FAlertEngine.EvaluateMissing then
       native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
@@ -1482,13 +1500,14 @@ begin
 end;
 
 // PlaceTrendDots method to map readings to TrendDots
-procedure TfBG.PlaceTrendDots(const Readings: array of BGReading);
+function TfBG.PlaceTrendDots(const Readings: array of BGReading): boolean;
 var
   SortedReadings: array of BGReading;
   currentTime: TDateTime;
   currentHash: cardinal;
   timeBucket: int64;
 begin
+  Result := false;
   if Length(Readings) = 0 then
     Exit;
 
@@ -1501,6 +1520,12 @@ begin
   currentHash := CalculateReadingsHash(Readings);
   if (currentHash = FLastReadingsHash) and (timeBucket = FLastDotTimeBucket) then
     Exit;
+
+  // Reported so callers that own their own relayout (RefreshStaleTrendDots)
+  // can skip it in lockstep with this short-circuit, rather than inferring it
+  // from the cache fields below — FLastReadingsHash is also used as a
+  // force-reprocess sentinel, so its value alone can't answer "did we run?".
+  Result := true;
 
   FLastReadingsHash := currentHash;
   FLastDotTimeBucket := timeBucket;
@@ -1786,6 +1811,10 @@ end;
 
 function TfBG.DetermineColorForReading(const Reading: BGReading): TColor;
 begin
+  // High contrast returns early on purpose: it is an accessibility mode whose
+  // whole point is maximum separation from the background, and fading the dots
+  // toward STALE_BG_COLOR would work directly against it. The stale card, the
+  // struck-out hero value and the emptying slots still carry the message there.
   if native.GetBoolSetting('main.high_contrast', false) then
   begin
     result := GetTextColorForBackground(fbg.color);
@@ -1813,6 +1842,14 @@ begin
   end;
 
   Result := LightenColor(Result, -0.8);
+
+  // While data is stale the trace is a record, not a live plot. Fade it toward
+  // the stale background so the dots read as history — at full saturation a red
+  // one looks exactly like an active hypo/hyper, which is the one reading the
+  // graph is least entitled to claim during an outage. BlendColors weights its
+  // *first* argument, so STALE_DOT_BLEND is how much range color survives.
+  if FTrendDataStale then
+    Result := BlendColors(Result, STALE_BG_COLOR, STALE_DOT_BLEND);
 end;
 
 function TfBG.setColorMode: boolean;

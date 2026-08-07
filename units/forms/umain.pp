@@ -258,6 +258,11 @@ STALE_LOST_MINUTES = 60;
   // status card has to sit on it and still read as a raised surface. Written as
   // a TColor literal ($00BBGGRR) because RGBToColor isn't a constant expression.
 STALE_BG_COLOR = TColor($001F1916); // RGB(22, 25, 31)
+  // How much of a trend dot's own range color survives while data is stale;
+  // the remainder is STALE_BG_COLOR. Faded rather than flattened to grey so the
+  // hi/lo banding is still readable, but a red history dot can no longer be
+  // mistaken for a live hypo/hyper at a glance.
+STALE_DOT_BLEND = 0.42;
 
 type
   { TfBG }
@@ -538,6 +543,10 @@ private
   FLastReadingsHash: cardinal; // Hash of last readings for change detection
   FLastDotTimeBucket: int64; // 5-min wall-clock bucket of the last dot placement
   FLatestIsFresh: boolean; // Latest reading within the freshness threshold (drives DOT_FRESH)
+  FTrendDataStale: boolean; // Latest fetch was not fresh — fades the trend dots
+                            // (DetermineColorForReading) so the frozen trace
+                            // doesn't read as a live plot. Set by
+                            // ApplyFetchedReadings, which owns the verdict.
   FLastAPICall: TDateTime; // Timestamp of the last successful API call
   FCachedReadings: array of BGReading; // Readings saved from last fetch
   FLastUIColor: TColor;
@@ -658,8 +667,17 @@ private
       anchors readings to a fixed grid (5-minute intervals) and updates the
       state of `TrendDots` accordingly.
       @param(Readings The array of BGReading to map.)
+      @returns(True when the slots were actually re-placed; False when the call
+        short-circuited because neither the readings nor the wall-clock slot
+        grid had moved since the last placement.)
    }
-  procedure PlaceTrendDots(const Readings: array of BGReading);
+  function PlaceTrendDots(const Readings: array of BGReading): boolean;
+  {** Re-place the trend dots while data is stale, so the trace keeps marching
+      left and vacates the newest slots instead of freezing with the last
+      reading parked in the "now" column. Cheap enough to call every second:
+      @link(PlaceTrendDots) short-circuits until the slot grid or the readings
+      actually move, and the relayout is skipped with it. }
+  procedure RefreshStaleTrendDots;
   {** Return the mean as a formatted string using the requested unit.
       - mmol/L: one decimal place
       - mg/dL: integer (no decimals)
