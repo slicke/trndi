@@ -271,6 +271,13 @@ begin
   // whole outage.
   lDiff.Caption := '';
   lAgo.Caption := '';
+  // Same reasoning for time-in-range, which CalcRangeTime only recomputes on
+  // the fresh path: it is a percentage over a window that has stopped
+  // collecting, so leaving it up reads as a live statistic. Cleared rather than
+  // hidden because ScaleLbl force-shows every label it touches on resize, but
+  // returns immediately on an empty caption — the same way lDiff/lAgo stay
+  // gone. CalcRangeTime fills it back in on recovery.
+  lTir.Caption := '';
   // Struck out as well as dimmed: the dimming alone reads as "de-emphasised",
   // which isn't the same claim as "do not act on this number". Only when a
   // value is actually there — a bare '--' with a line through it is noise.
@@ -309,6 +316,13 @@ begin
   end;
 
   lArrow.Caption := '';
+  // Clearing the caption only silences the glyph. With RotatingArrow on the
+  // direction is drawn by a separate vector overlay that no caption change can
+  // reach, so it would keep asserting a trend over a struck-out value for the
+  // whole outage. ResizeUIElements re-shows it on every resize, and is gated on
+  // the same freshness flag so it can't come back behind this.
+  if Assigned(FTrendArrow) then
+    FTrendArrow.Visible := false;
   // A dark slate rather than pure black: the stale card has to sit on top of
   // it and still read as a raised surface.
   setColorMode(STALE_BG_COLOR);
