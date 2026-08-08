@@ -47,6 +47,7 @@ API_TANDEM_USA = 'Tandem t:connect (USA)';
 API_TANDEM_EU = 'Tandem t:connect (EU)';
 API_CARELINK_US = 'CareLink Follower (USA)';
 API_CARELINK_EU = 'CareLink Follower (EU/Other)';
+API_LLU = 'FreeStyle Libre (LibreLinkUp)';
 API_XDRIP = 'xDrip';
 
 {$ifdef DEBUG}
