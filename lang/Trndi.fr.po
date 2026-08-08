@@ -3102,6 +3102,13 @@ msgctxt "uconf.rs_import_title"
 msgid "Import Settings"
 msgstr "Importer les paramètres"
 
+#: uconf.rs_llu
+msgid ""
+"This backend is in alpha stage, it may not work as intended!\n"
+"Sign in with your LibreLinkUp (follower) account, not the LibreLink account on the phone wearing the sensor.\n"
+"Sharing must already be set up and the invitation accepted — see the LibreLinkUp guide."
+msgstr ""
+
 #: uconf.rs_min_minutes
 #, object-pascal-format
 msgid "When calculating time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."

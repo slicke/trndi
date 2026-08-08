@@ -27,6 +27,8 @@ Username/password login is not permitted by Medtronic, instead a browser _must_ 
 Instead of a password, CareLink requires some [extra work](/guides/CareLink.md).
 
 ## FreeStyle Libre _(LibreLinkUp)_
+This is an alpha driver — it may not work as intended.
+
 This reads Abbott's FreeStyle Libre sensors through LibreLinkUp, Abbott's follower service. Trndi signs in as a follower, so sharing has to be set up first: the person wearing the sensor invites the follower account from the LibreLink app, and the invitation must be accepted once in LibreLinkUp.
 
 Log in with the follower account's email and password. The region is resolved automatically — Abbott's login tells Trndi which of its regional servers the account belongs to. See the [setup guide](/guides/LibreLinkUp.md).

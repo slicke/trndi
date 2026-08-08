@@ -271,6 +271,9 @@ resourcestring
   sErrLLURateLimited = 'LibreLinkUp is rate-limiting this account; waiting before the next request.';
   sErrLLUBadResponse = 'Unsupported LibreLinkUp response format';
   sErrLLUHttp = 'LibreLinkUp request failed (HTTP %d)';
+  sLLUManyPatients = 'This LibreLinkUp account follows more than one person; Trndi is showing the first.';
+  sLLUNoReadings = 'No CGM readings found in specified time range';
+  sLLUReadingCount = 'Retrieved %d CGM readings';
   sParamUserName = 'LibreLinkUp Email';
   sParamPassword = 'LibreLinkUp Password';
   sParamDesc =
@@ -691,7 +694,7 @@ end;
  ------------------------------------------------------------------------------}
 function LibreLinkUp.Authenticate: boolean;
 var
-  redirectHost: string;
+  redirectHost, retryHost: string;
 begin
   lastErr := '';
 
@@ -710,7 +713,10 @@ begin
   if Result or (redirectHost = '') then
     Exit;
 
-  Result := Login(redirectHost, redirectHost);
+  // Login clears its out parameter on entry, so the retry host has to live in
+  // its own variable — passing redirectHost as both would blank the URL.
+  retryHost := redirectHost;
+  Result := Login(retryHost, redirectHost);
 end;
 
 {------------------------------------------------------------------------------
@@ -812,7 +818,7 @@ begin
       log(Format('LibreLinkUp.SelectPatient: following %s (%s) of %d',
         [FPatientName, FPatientId, arr.Count]));
       if arr.Count > 1 then
-        notice('This LibreLinkUp account follows more than one person; Trndi is showing the first.');
+        notice(sLLUManyPatients);
 
       Result := true;
     finally
@@ -1244,9 +1250,9 @@ begin
     end;
 
     if Length(Result) = 0 then
-      res := 'No CGM readings found in specified time range'
+      res := sLLUNoReadings
     else
-      res := 'Retrieved ' + IntToStr(Length(Result)) + ' CGM readings';
+      res := Format(sLLUReadingCount, [Length(Result)]);
   except
     on E: Exception do
     begin
