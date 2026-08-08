@@ -1,5 +1,8 @@
 # LibreLinkUp setup (FreeStyle Libre)
 
+> **This backend is in alpha.** It may not work as intended, and Abbott can
+> change the service without notice. Please report what you find.
+
 Trndi reads FreeStyle Libre data through **LibreLinkUp**, Abbott's follower
 service. LibreLinkUp is the app a parent or partner uses to watch someone
 else's sensor — Trndi signs in as that follower and reads the share.

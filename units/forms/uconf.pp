@@ -730,7 +730,7 @@ RS_CARELINK =
   'This backend is experimental!'+sLineBreak+'It needs token data captured from a one-time browser login — see the CareLink guide.'+sLineBreak+'Use a Care Partner (follower) account. Data may lag behind the pump.';
 
 RS_LLU =
-  'Sign in with your LibreLinkUp (follower) account, not the LibreLink account on the phone wearing the sensor.'+sLineBreak+'Sharing must already be set up and the invitation accepted — see the LibreLinkUp guide.';
+  'This backend is in alpha stage, it may not work as intended!'+sLineBreak+'Sign in with your LibreLinkUp (follower) account, not the LibreLink account on the phone wearing the sensor.'+sLineBreak+'Sharing must already be set up and the invitation accepted — see the LibreLinkUp guide.';
 
 RS_DEBUG_WARN =
   'This is a debug backend. It''s used for testing purposes only!'+sLineBreak+'No data will be sent to any remote server.';
@@ -1417,7 +1417,7 @@ procedure WarnUnstableAPI;
     API_LLU:
     begin
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := info + RS_LLU;
+      lSysWarnInfo.Caption := warn + RS_LLU;
     end;
     end;
     {$ifdef DEBUG}
