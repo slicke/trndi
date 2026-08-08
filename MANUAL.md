@@ -30,6 +30,7 @@ Trndi can connect to:
 - **xDrip** - An Android app that can share data over your local WiFi
 - **Tandem Source** - Tandem Diabetes management app (_NOTE: Source has a lag! This is not Trndi's fault._)
 - **CareLink** - Medtronic's official data sharing service (requires a one-time browser login)
+- **FreeStyle Libre** - via LibreLinkUp, Abbott's follower service (sharing must be set up in the LibreLink app first)
 
 ---
 
@@ -203,6 +204,7 @@ Trndi can't get readings from your data source.
 - **Check**: Your NightScout URL is correct
 - **Check**: Your Dexcom/xDrip credentials are correct
 - **Check**: For CareLink, the stored token may have expired — redo the browser login (see the [CareLink guide](guides/CareLink.md))
+- **Check**: For FreeStyle Libre, the sharing invitation must have been accepted in the LibreLinkUp app, and Abbott may be waiting for you to accept its terms (see the [LibreLinkUp guide](guides/LibreLinkUp.md))
 
 ### The colors don't match my preferences
 You might need to set your own thresholds:

@@ -34,7 +34,7 @@ uses
   Classes, SysUtils, trndi.api,
   trndi.api.nightscout, trndi.api.nightscout3,
   trndi.api.dexcom, trndi.api.dexcomNew,
-  trndi.api.tandem, trndi.api.carelink, trndi.api.xdrip
+  trndi.api.tandem, trndi.api.carelink, trndi.api.librelinkup, trndi.api.xdrip
 {$ifdef DEBUG}
   , trndi.api.debug, trndi.api.debug_missing, trndi.api.debug_perfect,
   trndi.api.debug_custom, trndi.api.debug_edge, trndi.api.debug_firstmissing,
@@ -71,6 +71,7 @@ const
   (code: 'API_TANDEM_EU'; name: API_TANDEM_EU; cls: TandemEU),
   (code: 'API_CARELINK_US'; name: API_CARELINK_US; cls: CareLinkUS),
   (code: 'API_CARELINK_EU'; name: API_CARELINK_EU; cls: CareLinkEU),
+  (code: 'API_LLU'; name: API_LLU; cls: LibreLinkUp),
   (code: 'API_XDRIP'; name: API_XDRIP; cls: xDrip)
 {$ifdef DEBUG}
   ,
@@ -223,7 +224,7 @@ begin
   'API_NS', 'API_NS3':
     if Copy(addr, 1, 4) <> 'http' then
       Result := bceAddress;
-  'API_TANDEM_USA', 'API_TANDEM_EU':
+  'API_TANDEM_USA', 'API_TANDEM_EU', 'API_LLU':
     if Pos('@', addr) = 0 then
       Result := bceEmail
     else if Length(pass) < 5 then
