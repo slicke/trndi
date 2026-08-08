@@ -26,6 +26,13 @@ Username/password login is not permitted by Medtronic, instead a browser _must_ 
 
 Instead of a password, CareLink requires some [extra work](/guides/CareLink.md).
 
+## FreeStyle Libre _(LibreLinkUp)_
+This reads Abbott's FreeStyle Libre sensors through LibreLinkUp, Abbott's follower service. Trndi signs in as a follower, so sharing has to be set up first: the person wearing the sensor invites the follower account from the LibreLink app, and the invitation must be accepted once in LibreLinkUp.
+
+Log in with the follower account's email and password. The region is resolved automatically — Abbott's login tells Trndi which of its regional servers the account belongs to. See the [setup guide](/guides/LibreLinkUp.md).
+
+LibreLinkUp only publishes five trend arrows, so the double-arrow states never appear on a Libre reading, and values outside the sensor's 40–500 mg/dL range arrive as flags rather than numbers and display as HIGH/LOW.
+
 ## xDrip
 Trndi can connect to xDrip over Wifi. This allows it to show readings from your phone, without any middleman.
 

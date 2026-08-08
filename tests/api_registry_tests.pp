@@ -172,6 +172,9 @@ begin
   Check('Dexcom ok', bceNone, 'API_DEX_USA', 'user', '12345');
   Check('CareLink needs token blob', bceToken, 'API_CARELINK_US', 'carelink', 'notjson');
   Check('CareLink ok', bceNone, 'API_CARELINK_US', 'carelink', '  {"token":1}');
+  Check('LibreLinkUp needs email', bceEmail, 'API_LLU', 'follower', '12345');
+  Check('LibreLinkUp needs password', bcePassword, 'API_LLU', 'a@b.c', '1234');
+  Check('LibreLinkUp ok', bceNone, 'API_LLU', 'a@b.c', '12345');
   Check('xDrip has no rule', bceNone, 'API_XDRIP', '', '');
   Check('unknown has no rule', bceNone, 'bogus', '', '');
 end;
