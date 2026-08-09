@@ -1024,6 +1024,11 @@ begin
       if SecondsBetween(Now, last_popup) > 2 then
       begin
         last_popup := now;
+        // The gesture became a menu, not a window move: drop the pending drag
+        // so the finger sliding over the menu doesn't drag the window along,
+        // and so the release doesn't trigger a relayout behind it.
+        DraggingWin := false;
+        DragStarted := false;
         if ((not native.HasTouchScreen) or semiTouchMode) then
         begin
           sleep(100);
