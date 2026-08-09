@@ -1008,6 +1008,42 @@ begin
   tSwap.Enabled := true;
 end;
 
+// Size the touch menu to cover the window. The panel aligns itself with
+// alTop/alClient/alBottom, so only the fixed bands need explicit sizes: the two
+// full-width buttons take a fifth of the height each, and the remainder splits
+// into two equal rows of finger-sized buttons.
+procedure TfBG.LayoutTouchMenu;
+var
+  bandHeight, colWidth: integer;
+begin
+  pnTouchMenu.SetBounds(0, 0, Width, Height);
+  // Set before the per-button Font.Size assignments below: those flip
+  // ParentFont off, freezing whatever colour was inherited at that point.
+  pnTouchMenu.Font.Color := clBlack;
+
+  bandHeight := Height div 5;
+  bTouchSettings.Height := bandHeight;
+  bMenuPanelClose.Height := bandHeight;
+
+  // pnTouchContents (alClient) gets what is left; row 1 takes half of it and
+  // row 2, being alClient itself, absorbs the rest.
+  pnTouchRow1.Height := (Height - (2 * bandHeight)) div 2;
+
+  // The last button on each row is alClient and takes the leftover width.
+  colWidth := Width div 3;
+  bTouchFull.Width := colWidth;
+  bTouchRefresh.Width := colWidth;
+  bTouchExit.Width := Width div 2;
+
+  bTouchSettings.Font.Size := lDiff.Font.Size;
+  bTouchFull.Font.Size := lDiff.Font.Size;
+  bTouchRefresh.Font.Size := lDiff.Font.Size;
+  bTouchHistory.Font.Size := lDiff.Font.Size;
+  bTouchExit.Font.Size := lDiff.Font.Size;
+  bTouchMenu.Font.Size := lDiff.Font.Size;
+  bMenuPanelClose.Font.Size := lDiff.Font.Size;
+end;
+
 // Handle a touch screen's long touch
 procedure TfBG.tTouchTimer(Sender: TObject);
 var
@@ -1037,18 +1073,7 @@ begin
         end
         else
         begin
-          pnTouchMenu.Width := Width;
-          pnTouchMenu.Height := Height;
-          pnTouchMenu.top := 0;
-          pnTouchMenu.left := 0;
-          pnTouchMenu.Font.Color := clBlack;
-          bTouchFull.width := width div 3;
-          bTouchSettings.height := height div 4;
-          bMenuPanelClose.height := height div 4;
-          bTouchFull.font.size := lDiff.Font.size;
-          bTouchSettings.font.size := lDiff.Font.size;
-          bMenuPanelClose.font.size := lDiff.Font.size;
-          bTouchMenu.font.size := lDiff.Font.size;
+          LayoutTouchMenu;
           pnTouchMenu.Show;
           pnTouchMenu.BringToFront;
           bMenuPanelClose.SetFocus;
