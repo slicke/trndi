@@ -1439,9 +1439,10 @@ const
   INITIAL_FONT_SIZE_RATIO = 0.5;
   TEXT_PADDING = 4;
   CORNER_RADIUS = 6;
+  TREND_SUPERSAMPLE = 4;
 var
   AppIcon, TempIcon: TIcon;
-  Bitmap: Graphics.TBitmap;
+  Bitmap, TrendMask: Graphics.TBitmap;
   BadgeText: string;
   TextWidth, TextHeight: integer;
   BadgeRect, TrendRect: Classes.TRect;
@@ -1538,6 +1539,168 @@ procedure FixBadgeAlpha(const R: Classes.TRect; ARadius: integer);
     end;
   end;
 
+  // Render the trend as a solid arrowhead instead of the source glyph. At badge
+  // size a shafted character ("→", "↑") loses almost all of its ink to the thin
+  // stem, so the head — the part that carries the direction — ends up only a
+  // couple of pixels wide. A bare triangle spends the whole area on the head and
+  // stays readable when the taskbar scales the icon down.
+  //
+  // The mask is drawn TREND_SUPERSAMPLE times oversized and in black/white only;
+  // BlendTrendMask averages it down into coverage, which antialiases edges that
+  // GDI would otherwise leave jagged at these sizes. Returns False for trends
+  // with no arrow form ("?", "X") — those keep the text path.
+function BuildTrendMask(const Trend: string; ASize: integer;
+  out AMask: Graphics.TBitmap): boolean;
+  const
+    // UTF-8 byte sequences for the arrows in BG_TREND_ARROWS_UTF, spelled out so
+    // the match never depends on this unit's source encoding.
+    ARR_UP = #$E2#$86#$91;                 // U+2191
+    ARR_UPRIGHT = #$E2#$86#$97;            // U+2197
+    ARR_RIGHT = #$E2#$86#$92;              // U+2192
+    ARR_DOWNRIGHT = #$E2#$86#$98;          // U+2198
+    ARR_DOWN = #$E2#$86#$93;               // U+2193
+    DIAG = 0.7071;
+  var
+    dx, dy, cx, cy, span, len, back, wid, b: double;
+    offs: array[0..1] of double;
+    pts: array[0..2] of TPoint;
+    i, n, dim: integer;
+  begin
+    Result := false;
+    AMask := nil;
+    dx := 0;
+    dy := 0;
+    n := 1;
+    // n = 2 marks the doubled trends, drawn as two stacked heads.
+    if Trend = ARR_UP + ARR_UP then
+    begin
+      dy := -1;
+      n := 2;
+    end
+    else if Trend = ARR_DOWN + ARR_DOWN then
+    begin
+      dy := 1;
+      n := 2;
+    end
+    else if Trend = ARR_UP then
+      dy := -1
+    else if Trend = ARR_DOWN then
+      dy := 1
+    else if Trend = ARR_RIGHT then
+      dx := 1
+    else if Trend = ARR_UPRIGHT then
+    begin
+      dx := DIAG;
+      dy := -DIAG;
+    end
+    else if Trend = ARR_DOWNRIGHT then
+    begin
+      dx := DIAG;
+      dy := DIAG;
+    end
+    else
+      Exit;
+
+    dim := ASize * TREND_SUPERSAMPLE;
+    if dim < TREND_SUPERSAMPLE then
+      Exit;
+
+    span := dim;
+    cx := dim / 2;
+    cy := dim / 2;
+    // Proportions matter more than they look: the head must be longer than it
+    // is wide, or the two base corners end up sharper than the tip and the eye
+    // reads the arrow as pointing at a corner instead — badly wrong for the
+    // 45-degree trends, where the corners land on the cardinal axes.
+    if n = 2 then
+    begin
+      // Two heads stacked along the direction, spanning -0.34..+0.34 of the
+      // badge with a gap between them so they don't merge into one blob.
+      len := 0.21 * span;
+      back := 0.10 * span;
+      wid := 0.24 * span;
+      offs[0] := 0.12 * span;
+      offs[1] := -0.24 * span;
+    end
+    else
+    begin
+      len := 0.34 * span;
+      back := 0.21 * span;
+      wid := 0.26 * span;
+      offs[0] := 0;
+    end;
+
+    // pf32bit like the icon bitmap, so the blend below can assume 4-byte pixels
+    // rather than depend on how the widgetset expands a 24-bit DIB.
+    AMask := Graphics.TBitmap.Create;
+    AMask.PixelFormat := pf32bit;
+    AMask.SetSize(dim, dim);
+    AMask.Canvas.Brush.Style := bsSolid;
+    AMask.Canvas.Brush.Color := clBlack;
+    AMask.Canvas.FillRect(0, 0, dim, dim);
+    AMask.Canvas.Brush.Color := clWhite;
+    AMask.Canvas.Pen.Color := clWhite;
+
+    for i := 0 to n - 1 do
+    begin
+      b := offs[i] - back;
+      // Tip on the direction axis, base corners offset along the perpendicular
+      // (-dy, dx).
+      pts[0].X := Round(cx + dx * (offs[i] + len));
+      pts[0].Y := Round(cy + dy * (offs[i] + len));
+      pts[1].X := Round(cx + dx * b - dy * wid);
+      pts[1].Y := Round(cy + dy * b + dx * wid);
+      pts[2].X := Round(cx + dx * b + dy * wid);
+      pts[2].Y := Round(cy + dy * b - dx * wid);
+      AMask.Canvas.Polygon(pts);
+    end;
+
+    Result := true;
+  end;
+
+  // Composite the oversampled arrow mask onto the icon bitmap. Runs after all
+  // canvas drawing (and after FixBadgeAlpha) because it writes pixels directly;
+  // any further canvas op would discard the result. Alpha is left alone — the
+  // arrow only covers pixels FixBadgeAlpha has already made opaque.
+procedure BlendTrendMask(const R: Classes.TRect; AMask: Graphics.TBitmap;
+AColor: TColor);
+  var
+    px, py, sx, sy, acc, size, rc: integer;
+    cov: double;
+    dst, src: PByte;
+    cr, cg, cb: integer;
+  begin
+    GdiFlush;
+    size := R.Right - R.Left;
+    rc := ColorToRGB(AColor);
+    cr := GetRValue(rc);
+    cg := GetGValue(rc);
+    cb := GetBValue(rc);
+
+    for py := 0 to size - 1 do
+    begin
+      dst := PByte(Bitmap.ScanLine[R.Top + py]);
+      for px := 0 to size - 1 do
+      begin
+        acc := 0;
+        for sy := 0 to TREND_SUPERSAMPLE - 1 do
+        begin
+          src := PByte(AMask.ScanLine[py * TREND_SUPERSAMPLE + sy]);
+          for sx := 0 to TREND_SUPERSAMPLE - 1 do
+            Inc(acc, (src + (px * TREND_SUPERSAMPLE + sx) * 4)^);
+        end;
+        if acc = 0 then
+          Continue;
+        cov := acc / (TREND_SUPERSAMPLE * TREND_SUPERSAMPLE * 255);
+        src := dst + (R.Left + px) * 4;
+        // BGRA order.
+        src^ := Round(src^ + (cb - src^) * cov);
+        (src + 1)^ := Round((src + 1)^ + (cg - (src + 1)^) * cov);
+        (src + 2)^ := Round((src + 2)^ + (cr - (src + 2)^) * cov);
+      end;
+    end;
+  end;
+
 begin
   TrndiDLog(Format('SetBadge: Value="%s" BadgeColor=%d ratio=%.3f min_font=%d',
     [Value, integer(BadgeColor), badge_size_ratio, min_font_size]));
@@ -1556,6 +1719,7 @@ begin
   AppIcon := TIcon.Create;
   TempIcon := TIcon.Create;
   Bitmap := Graphics.TBitmap.Create;
+  TrendMask := nil;
   try
     if Value = '' then
     begin
@@ -1718,32 +1882,39 @@ begin
           TrendRadius * 2, TrendRadius * 2);
       end;
 
-      Bitmap.Canvas.Font.Color := TextColor;
-      FontSize := Round(TrendSize * INITIAL_FONT_SIZE_RATIO);
-      if FontSize < 5 then
-        FontSize := 5;
-      Bitmap.Canvas.Font.Size := FontSize;
-      TextWidth := Bitmap.Canvas.TextWidth(FBadgeTrend);
-      TextHeight := Bitmap.Canvas.TextHeight(FBadgeTrend);
-      while (TextWidth > (TrendSize - 2)) and (FontSize > 5) do
+      // Arrows are painted as shaft-less arrowheads after the alpha pass; only
+      // the non-directional trends ("?", "X") still go out as text.
+      if not BuildTrendMask(FBadgeTrend, TrendSize, TrendMask) then
       begin
-        Dec(FontSize);
+        Bitmap.Canvas.Font.Color := TextColor;
+        FontSize := Round(TrendSize * INITIAL_FONT_SIZE_RATIO);
+        if FontSize < 5 then
+          FontSize := 5;
         Bitmap.Canvas.Font.Size := FontSize;
         TextWidth := Bitmap.Canvas.TextWidth(FBadgeTrend);
         TextHeight := Bitmap.Canvas.TextHeight(FBadgeTrend);
-      end;
+        while (TextWidth > (TrendSize - 2)) and (FontSize > 5) do
+        begin
+          Dec(FontSize);
+          Bitmap.Canvas.Font.Size := FontSize;
+          TextWidth := Bitmap.Canvas.TextWidth(FBadgeTrend);
+          TextHeight := Bitmap.Canvas.TextHeight(FBadgeTrend);
+        end;
 
-      Bitmap.Canvas.Brush.Style := bsClear;
-      Bitmap.Canvas.TextOut(
-        TrendRect.Left + ((TrendRect.Right - TrendRect.Left) - TextWidth) div 2,
-        TrendRect.Top + ((TrendRect.Bottom - TrendRect.Top) - TextHeight) div 2,
-        FBadgeTrend
-        );
+        Bitmap.Canvas.Brush.Style := bsClear;
+        Bitmap.Canvas.TextOut(
+          TrendRect.Left + ((TrendRect.Right - TrendRect.Left) - TextWidth) div 2,
+          TrendRect.Top + ((TrendRect.Bottom - TrendRect.Top) - TextHeight) div 2,
+          FBadgeTrend
+          );
+      end;
     end;
 
     FixBadgeAlpha(BadgeRect, Radius);
     if FBadgeTrend <> '' then
       FixBadgeAlpha(TrendRect, TrendRadius);
+    if TrendMask <> nil then
+      BlendTrendMask(TrendRect, TrendMask, TextColor);
 
     // Assign the composed bitmap to the app icon and notify the window.
     TempIcon.Assign(Bitmap);
@@ -1777,6 +1948,7 @@ begin
         Application.Icon.Handle);
     end;
   finally
+    TrendMask.Free;
     Bitmap.Free;
     AppIcon.Free;
     TempIcon.Free;
