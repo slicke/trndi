@@ -292,6 +292,9 @@ TfBG = class(TForm)
   bTouchSettings: TButton;
   bMenuPanelClose: TButton;
   bTouchFull: TButton;
+  bTouchRefresh: TButton;
+  bTouchHistory: TButton;
+  bTouchExit: TButton;
   lPredict: TLabel;
   miGuidelines: TMenuItem;
   miBasalRate: TMenuItem;
@@ -301,6 +304,8 @@ TfBG = class(TForm)
   miDNS: TMenuItem;
   miPredict: TMenuItem;
   pnTouchContents: TPanel;
+  pnTouchRow1: TPanel;
+  pnTouchRow2: TPanel;
   pnTouchMenu: TPanel;
   pnWarnlast: TLabel;
   lRef: TLabel;
@@ -388,11 +393,8 @@ TfBG = class(TForm)
       dot-count changes to keep everything visually aligned.
      }
   procedure AdjustGraph;
-  procedure bMenuPanelCloseClick({%H-}Sender: TObject);
   procedure bSettingsClick({%H-}Sender: TObject);
-  procedure bTouchFullClick({%H-}Sender: TObject);
-  procedure bTouchMenuClick({%H-}Sender: TObject);
-  procedure bTouchSettingsClick({%H-}Sender: TObject);
+  procedure pnTouchButtonClick({%H-}Sender: TObject);
   procedure pnTouchButtonMouseDown({%H-}Sender: TObject; {%H-}Button: TMouseButton;
     {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: Integer);
   procedure fbReadingsDblClick({%H-}Sender: TObject);
@@ -516,6 +518,8 @@ TfBG = class(TForm)
 {$I ../../tests/inc/umain_fbg.inc}
   {$endif}
 private
+  procedure LayoutTouchMenu;
+  procedure TouchMenuAction(Sender: TObject);
   function AlertsSnoozed: boolean;
   function GetSensorBadgeText: string;
   procedure HideConnectionBadge;
@@ -1704,37 +1708,49 @@ begin
   StopFlashing;
 end;
 
-procedure TfBG.bMenuPanelCloseClick(Sender: TObject);
-begin
-  if TouchMenuMouseDownFired then begin TouchMenuMouseDownFired := false; Exit; end;
-  pnTouchMenu.Hide;
-end;
 procedure TfBG.bSettingsClick(Sender: TObject);
 begin
   ShowMessage(RS_RIGHT_CLICK);
   miSettings.Click;
 end;
 
-procedure TfBG.bTouchFullClick(Sender: TObject);
-begin
-  if TouchMenuMouseDownFired then begin TouchMenuMouseDownFired := false; Exit; end;
-  miFullScreen.Click;
-  pnTouchMenu.Hide;
-end;
-
-procedure TfBG.bTouchMenuClick(Sender: TObject);
+// The action bound to each pnTouchMenu button, defined in exactly one place so
+// the OnMouseDown and OnClick entry points below can never drift apart.
+// Actions that take over the screen hide the panel first, so the user is not
+// left tapping through a full-screen overlay afterwards.
+procedure TfBG.TouchMenuAction(Sender: TObject);
 var
   p: TPoint;
 begin
-  if TouchMenuMouseDownFired then begin TouchMenuMouseDownFired := false; Exit; end;
-  p := Mouse.CursorPos;
-  pmSettings.PopUp(p.X, p.Y)
-end;
-
-procedure TfBG.bTouchSettingsClick(Sender: TObject);
-begin
-  if TouchMenuMouseDownFired then begin TouchMenuMouseDownFired := false; Exit; end;
-  miSettings.Click;
+  if Sender = bMenuPanelClose then
+    pnTouchMenu.Hide
+  else if Sender = bTouchSettings then
+    miSettings.Click
+  else if Sender = bTouchFull then
+  begin
+    miFullScreen.Click;
+    pnTouchMenu.Hide;
+  end
+  else if Sender = bTouchRefresh then
+  begin
+    pnTouchMenu.Hide;
+    miForce.Click;
+  end
+  else if Sender = bTouchHistory then
+  begin
+    pnTouchMenu.Hide;
+    miHistory.Click;
+  end
+  else if Sender = bTouchExit then
+  begin
+    pnTouchMenu.Hide;
+    miExit.Click;
+  end
+  else if Sender = bTouchMenu then
+  begin
+    p := Mouse.CursorPos;
+    pmSettings.PopUp(p.X, p.Y);
+  end;
 end;
 
 // Single OnMouseDown handler shared by all pnTouchMenu buttons.
@@ -1743,25 +1759,18 @@ end;
 // the release point to still be inside the button hit rect.
 procedure TfBG.pnTouchButtonMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
-var
-  p: TPoint;
 begin
   if Button <> mbLeft then Exit;
   TouchMenuMouseDownFired := true;
-  if Sender = bMenuPanelClose then
-    pnTouchMenu.Hide
-  else if Sender = bTouchFull then
-  begin
-    miFullScreen.Click;
-    pnTouchMenu.Hide;
-  end
-  else if Sender = bTouchMenu then
-  begin
-    p := Mouse.CursorPos;
-    pmSettings.PopUp(p.X, p.Y);
-  end
-  else if Sender = bTouchSettings then
-    miSettings.Click;
+  TouchMenuAction(Sender);
+end;
+
+// Fallback path for pointer devices, where OnMouseDown has already run the
+// action; the flag swallows this second delivery.
+procedure TfBG.pnTouchButtonClick(Sender: TObject);
+begin
+  if TouchMenuMouseDownFired then begin TouchMenuMouseDownFired := false; Exit; end;
+  TouchMenuAction(Sender);
 end;
 procedure TfBG.FormResize(Sender: TObject);
 var

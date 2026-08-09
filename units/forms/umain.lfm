@@ -262,10 +262,10 @@ object fBG: TfBG
   end
   object pnTouchMenu: TPanel
     Left = 16
-    Height = 160
+    Height = 260
     Top = 48
     Width = 240
-    ClientHeight = 160
+    ClientHeight = 260
     ClientWidth = 240
     ParentBackground = False
     TabOrder = 6
@@ -278,51 +278,106 @@ object fBG: TfBG
       Align = alTop
       Caption = '⚙ Settings'
       TabOrder = 0
-      OnClick = bTouchSettingsClick
+      OnClick = pnTouchButtonClick
       OnMouseDown = pnTouchButtonMouseDown
     end
     object bMenuPanelClose: TButton
       Left = 1
       Height = 25
-      Top = 134
+      Top = 234
       Width = 238
       Align = alBottom
       Caption = '✖ Close'
       TabOrder = 1
-      OnClick = bMenuPanelCloseClick
+      OnClick = pnTouchButtonClick
       OnMouseDown = pnTouchButtonMouseDown
     end
     object pnTouchContents: TPanel
       Left = 1
-      Height = 78
+      Height = 178
       Top = 56
       Width = 238
       Align = alClient
-      ClientHeight = 78
+      ClientHeight = 178
       ClientWidth = 238
       ParentBackground = False
       TabOrder = 2
-      object bTouchMenu: TButton
-        Left = 88
-        Height = 76
-        Top = 1
-        Width = 149
-        Align = alClient
-        Caption = '☰ Menu'
-        TabOrder = 0
-        OnClick = bTouchMenuClick
-        OnMouseDown = pnTouchButtonMouseDown
-      end
-      object bTouchFull: TButton
+      object pnTouchRow1: TPanel
         Left = 1
-        Height = 76
+        Height = 88
         Top = 1
-        Width = 87
-        Align = alLeft
-        Caption = '⇱ Full screen'
+        Width = 236
+        Align = alTop
+        ClientHeight = 88
+        ClientWidth = 236
+        ParentBackground = False
+        TabOrder = 0
+        object bTouchFull: TButton
+          Left = 1
+          Height = 86
+          Top = 1
+          Width = 78
+          Align = alLeft
+          Caption = '⇱ Full screen'
+          TabOrder = 0
+          OnClick = pnTouchButtonClick
+          OnMouseDown = pnTouchButtonMouseDown
+        end
+        object bTouchRefresh: TButton
+          Left = 79
+          Height = 86
+          Top = 1
+          Width = 78
+          Align = alLeft
+          Caption = '↻ Refresh'
+          TabOrder = 1
+          OnClick = pnTouchButtonClick
+          OnMouseDown = pnTouchButtonMouseDown
+        end
+        object bTouchHistory: TButton
+          Left = 157
+          Height = 86
+          Top = 1
+          Width = 78
+          Align = alClient
+          Caption = '📈 History'
+          TabOrder = 2
+          OnClick = pnTouchButtonClick
+          OnMouseDown = pnTouchButtonMouseDown
+        end
+      end
+      object pnTouchRow2: TPanel
+        Left = 1
+        Height = 88
+        Top = 89
+        Width = 236
+        Align = alClient
+        ClientHeight = 88
+        ClientWidth = 236
+        ParentBackground = False
         TabOrder = 1
-        OnClick = bTouchFullClick
-        OnMouseDown = pnTouchButtonMouseDown
+        object bTouchExit: TButton
+          Left = 1
+          Height = 86
+          Top = 1
+          Width = 118
+          Align = alLeft
+          Caption = '⏻ Exit Trndi'
+          TabOrder = 0
+          OnClick = pnTouchButtonClick
+          OnMouseDown = pnTouchButtonMouseDown
+        end
+        object bTouchMenu: TButton
+          Left = 119
+          Height = 86
+          Top = 1
+          Width = 116
+          Align = alClient
+          Caption = '☰ Menu'
+          TabOrder = 1
+          OnClick = pnTouchButtonClick
+          OnMouseDown = pnTouchButtonMouseDown
+        end
       end
     end
   end
