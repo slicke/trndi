@@ -705,6 +705,62 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
         <Filename Value="units\misc\razer\chroma\razer.chroma.factory.pp"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.carelink.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_faultysensor.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_intermittentmissing.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_latemissing.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_lowsoon.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_perfect.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_secondmissing.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_sensorexpiry.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.debug_slow.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.dexcom_helpers.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.dexcom_time.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.librelinkup.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.registry.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="units\trndi\api\trndi.api.tandem.pp"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

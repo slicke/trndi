@@ -1039,7 +1039,7 @@ msgstr "Högt över"
 
 #: tfconf.lhiover2.caption
 msgid "Maximum minutes to count time in range on (depending on source data availability):"
-msgstr "Max minuter att räkna tid-i-målområde på (beror på tillgänglig data):"
+msgstr "Max minuter att räkna tid-i-målområde på (beror på tillgängliga data):"
 
 #: tfconf.lhiover3.caption
 msgctxt "tfconf.lhiover3.caption"
@@ -1352,6 +1352,52 @@ msgstr ""
 "kring medicinsk användning.\n"
 "Se https://github.com/slicke/trndi/blob/main/DISCLAIMER.md"
 
+#: trndi.api.carelink.serrcarelinkbadcreds
+msgid "Could not read the CareLink token data. It must be the JSON captured at login (access_token/refresh_token etc)."
+msgstr "Kunde inte läsa in CareLink-tokendatan. Det måste vara JSON som fångats vid login (access_token/refresh_token etc)."
+
+#: trndi.api.carelink.serrcarelinkdiscover
+msgid "Could not resolve the CareLink endpoints from Medtronic's discovery service."
+msgstr "Kunde inte lösa ut CareLink-slutpunkterna från Medtronics upptäcktstjänst."
+
+#: trndi.api.carelink.serrcarelinknocreds
+msgid "No CareLink token data found. Paste the captured login data (JSON) as the credential — see the CareLink guide."
+msgstr "Ingen CareLink-tokendata hittades. Klistra in logindatan (JSON) som åtkomstdata — se CareLink-guiden."
+
+#: trndi.api.carelink.serrcarelinkrefresh
+msgid "CareLink token refresh failed. The saved login expires while Trndi is not running — sometimes overnight — so you may need to capture a fresh login."
+msgstr "CareLink nyckeluppdatering misslyckades. Den sparade logindatan går ut när Trndi inte körs — ibland över natten — så du kan behöva logga in igen."
+
+#: trndi.api.carelink.sparamdesc
+msgid ""
+"Medtronic CareLink follower connection.\n"
+"\n"
+"Medtronic requires a one-time login in your web browser (with CAPTCHA); Trndi then keeps the session alive automatically.\n"
+"Paste the captured token data (JSON) as the credential.\n"
+"\n"
+"Use a Care Partner (follower) account, not the patient account.\n"
+"See guides/CareLink.md for a step-by-step walkthrough."
+msgstr ""
+"Medtronic CareLink-följaranslutning.\n"
+"\n"
+"Medtronic kräver att du loggar in en gång med en webbläsare (med CAPTCHA); Trndi kan sedan hålla igång anslutningen automatiskt.\n"
+"Klistra in den fångade token/nyckeldatan (JSON) som åtkomstdata.\n"
+"\n"
+"Använd ett Care Partner (följar)-konto, inte patientens konto.\n"
+"Se guides/CareLink.md för en steg-för-steg-guide."
+
+#: trndi.api.carelink.sparamdeschtml
+msgid "<b>Medtronic CareLink</b> follower connection.<br><br>Medtronic requires a <u>one-time login in your web browser</u> (with CAPTCHA); Trndi then keeps the session alive automatically.<br>Paste the captured token data (JSON) as the credential.<br><br>Use a <u>Care Partner</u> (follower) account, not the patient account.<br>See the CareLink guide for a step-by-step walkthrough."
+msgstr "<b>Medtronic CareLink</b>-följaranslutning.<br><br>Medtronic kräver att du loggar in <u>en gång med din webbläsare</u> (med CAPTCHA); Trndi kan sedan hålla anslutningen igång automatiskt.<br>Klistra in den fångade nyckel/token-datan (JSON) som åtkomstinfo.<br><br>Använd ett <u>Care Partner</u> (följar)-konto, inte patientens konto.<br>Se CareLink-guiden för en steg-för-steg-guide."
+
+#: trndi.api.carelink.sparampassword
+msgid "CareLink Token Data (JSON)"
+msgstr "CareLink åtkomst/token-data (JSON)"
+
+#: trndi.api.carelink.sparamusername
+msgid "CareLink Username (may be left empty)"
+msgstr "CareLink-användarnamn (kan lämnas tom)"
+
 #: trndi.api.dexcom.serrdexlogin
 msgctxt "trndi.api.dexcom.serrdexlogin"
 msgid "Login error: Could not establish a valid session"
@@ -1448,6 +1494,99 @@ msgstr "Region (\"usa\", \"japan\"/\"jp\", eller tom)"
 msgid "Dexcom Account Username"
 msgstr "Användarnamn, Dexcom-konto"
 
+#: trndi.api.librelinkup.serrllubadcredentials
+msgid "LibreLinkUp rejected the email or password."
+msgstr "LibreLinkUp nekade mejlen eller lösenordet."
+
+#: trndi.api.librelinkup.serrllubadresponse
+msgid "Unsupported LibreLinkUp response format"
+msgstr "Okänt svarsformat från LibreLinkUp"
+
+#: trndi.api.librelinkup.serrlluhttp
+#, object-pascal-format
+msgid "LibreLinkUp request failed (HTTP %d)"
+msgstr "LibreLinkUp misslyckades med förfrågan (HTTP %d)"
+
+#: trndi.api.librelinkup.serrllunoemail
+msgid "No LibreLinkUp email address given."
+msgstr "Ingen LibreLInkUp-mejladress har angivits."
+
+#: trndi.api.librelinkup.serrllunopassword
+msgid "No LibreLinkUp password given."
+msgstr "Inget LibreLinkUp-lösenord angavs."
+
+#: trndi.api.librelinkup.serrllunopatients
+msgid "No shared readings found. The person wearing the sensor must invite this account in the LibreLink app, and the invitation must be accepted."
+msgstr "Inga delade avläsningar hittades. Personen som bär sensorn måste bjuda in detta konto i LibreLink-appen och inbjudan måste accepteras."
+
+#: trndi.api.librelinkup.serrllunotauthenticated
+msgid "Not authenticated. Call Connect first."
+msgstr "Inte autensierad. Anropa Anslut först."
+
+#: trndi.api.librelinkup.serrlluprivacy
+msgid "LibreLinkUp needs you to accept its privacy policy. Open the LibreLinkUp app or LibreView website, accept it, then try again."
+msgstr "LibreLinkUp kräver att du accepterar sekretesspolicyn. Öppna LibreLinkUp-appen eller LibreView-hemsidan, acceptera den och försök sedan igen."
+
+#: trndi.api.librelinkup.serrlluratelimited
+msgid "LibreLinkUp is rate-limiting this account; waiting before the next request."
+msgstr "LibreLinkUp begränsar för tillfället detta konto; väntar innan nästa förfrågan görs."
+
+#: trndi.api.librelinkup.serrlluterms
+msgid "LibreLinkUp needs you to accept its terms of use. Open the LibreLinkUp app or LibreView website, accept them, then try again."
+msgstr "LibreLinkUp kräver att du accepterar dess licensavtal. Öppna LibreLinkUp-appen, eller LibreView-hemsidan och accptera det, försök sedan igen."
+
+#: trndi.api.librelinkup.serrlluunknownregion
+#, object-pascal-format
+msgid "LibreLinkUp redirected this account to an unknown region (%s)."
+msgstr "LibreLinkUp skickade vidare detta konto till en okänd region (%s)."
+
+#: trndi.api.librelinkup.serrlluverifyemail
+msgid "LibreLinkUp needs you to verify your email address. Check your inbox, verify the account, then try again."
+msgstr "LibreLinkUp kräver att du verifierar din e-postadress. Öppna din inkorg, verifiera kontot och försök sedan igen."
+
+#: trndi.api.librelinkup.sllumanypatients
+msgid "This LibreLinkUp account follows more than one person; Trndi is showing the first."
+msgstr "Detta LibreLinkUp-konto följer fler än en person; Trndi visar den första."
+
+#: trndi.api.librelinkup.sllunoreadings
+msgid "No CGM readings found in specified time range"
+msgstr "Inga CGM.avlösningar hittades i det angivna tidsspannet"
+
+#: trndi.api.librelinkup.sllureadingcount
+#, object-pascal-format
+msgid "Retrieved %d CGM readings"
+msgstr "Tog emot %d CGM-avläsningar"
+
+#: trndi.api.librelinkup.sparamdesc
+msgid ""
+"Abbott FreeStyle Libre, via LibreLinkUp.\n"
+"\n"
+"Use the LibreLinkUp follower account — the one that accepted the sharing invitation — not the LibreLink account on the phone wearing the sensor.\n"
+"\n"
+"Sharing must already be set up: in the LibreLink app the sensor wearer invites this email, and the invitation has to be accepted in LibreLinkUp once before Trndi can read anything.\n"
+"\n"
+"Your region is detected automatically."
+msgstr ""
+"Abbott FreeStyle Libre, via LibreLinkUp.\n"
+"\n"
+"Använd ett LibreLinkUp-följarkonto — det som accepterat delningsinbjudan — inte LibreLink-kontot på telefonen som bär sensorn.\n"
+"\n"
+"Delning måste ha ställts in redan: i LibreLink-appen ska sensorbäraren bjuda in denna e-postadress och inbjudan måste accepteras i LibreLinkUp en gång, innan Trndi kan läsa av värden.\n"
+"\n"
+"Din region räknas ut automatiskt."
+
+#: trndi.api.librelinkup.sparamdeschtml
+msgid "<b>Abbott FreeStyle Libre</b>, via LibreLinkUp.<br><br>Use the <u>LibreLinkUp follower account</u> — the one that accepted the sharing invitation — not the LibreLink account on the phone wearing the sensor.<br><br>Sharing must already be set up: in the LibreLink app the sensor wearer invites this email, and the invitation has to be accepted in LibreLinkUp once before Trndi can read anything.<br><br>Your region is detected automatically."
+msgstr "<b>Abbott FreeStyle Libre</b>, via LibreLinkUp.<br><br>Använd <u>LibreLinkUp-följarkontot</u> — det som accepterade delningsinbjudan — inte LibreLink-kontot för den som bär sensorn.<br><br>Delning måste ha ställts in redan: i LibreLink-appen bjuder sensorbäraren in denna e-postadress och inbjudan måste accepteras i LibreLinkUp en gång, innan Trndi kan ta emot avläsningar.<br><br>Din region beräknas automatiskt."
+
+#: trndi.api.librelinkup.sparampassword
+msgid "LibreLinkUp Password"
+msgstr "LibreLinkUp-lösenord"
+
+#: trndi.api.librelinkup.sparamusername
+msgid "LibreLinkUp Email"
+msgstr "LibreLinkUp-mejl"
+
 #: trndi.api.nightscout.sparamdesc
 msgctxt "trndi.api.nightscout.sparamdesc"
 msgid ""
@@ -1539,6 +1678,49 @@ msgstr "Auth-token"
 msgctxt "trndi.api.nightscout3.sparamusername"
 msgid "NightScout URL"
 msgstr "NightScout-adress"
+
+#: trndi.api.tandem.serrtandemlogin
+msgctxt "trndi.api.tandem.serrtandemlogin"
+msgid "Login error: Could not establish a valid session"
+msgstr "Inloggningsfel: Kunde inte etablera en giltig session"
+
+#: trndi.api.tandem.serrtandemnodevice
+msgid "No pump device found or selected"
+msgstr "Ingen pumpenhet hittades eller vald"
+
+#: trndi.api.tandem.serrtandempass
+msgid "Invalid Tandem t:connect credentials"
+msgstr "Ogiltiga Tandem t:connect-uppgifter"
+
+#: trndi.api.tandem.sparamdesc
+msgid ""
+"Tandem t:connect region selection:\n"
+"\n"
+"Choose the server based on your account region:\n"
+"• Tandem (USA): for US accounts\n"
+"• Tandem (EU): for European accounts\n"
+"\n"
+"Your credentials are your Tandem t:connect account email and password."
+msgstr ""
+"Tandem t:connect-regionval:\n"
+"\n"
+"Välj servern där du registrerat ditt konto:\n"
+"• Tandem (USA): för amerikanska konton\n"
+"• Tandem (EU): för europeiska konton\n"
+"\n"
+"Dina åtkomstdetaljer är ditt Tandem t:connect-kontos mejl och lösenord."
+
+#: trndi.api.tandem.sparamdeschtml
+msgid "<b>Tandem t:connect</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Tandem (USA): for US accounts<br>• Tandem (EU): for European accounts<br><br>Your credentials are your Tandem t:connect account email and password."
+msgstr "<b>Tandem t:connect</b> regionval:<br><br>Välj den server där du registrerat ditt konto, din <u>kontoregion</u>:<br>• Tandem (USA): för amerikanska konton<br>• Tandem (EU): för europeiska konton<br><br>Dina åtkomstdetaljer är ditt Tandem t:connect-kontos mejl och lösenord."
+
+#: trndi.api.tandem.sparampassword
+msgid "Tandem Password"
+msgstr "Tandem-lösenord"
+
+#: trndi.api.tandem.sparamusername
+msgid "Tandem Email"
+msgstr "Tandem-mejl"
 
 #: trndi.api.xdrip.sparamdesc
 msgctxt "trndi.api.xdrip.sparamdesc"
@@ -1835,7 +2017,7 @@ msgstr "Tvinga uppdatering av avläsning?"
 #, object-pascal-format
 msgctxt "trndi.strings.rs_force_refresh_cached"
 msgid "Last update was %d seconds ago. Wait %d more seconds for fresh data, or force refresh now?"
-msgstr "Senaste uppdateringen var %d sekunder sedan. Vänta %d sekunder för att få färsk data, eller tvinga en uppdatering?"
+msgstr "Senaste uppdateringen var %d sekunder sedan. Vänta %d sekunder för att få färska data, eller tvinga en uppdatering?"
 
 #: trndi.strings.rs_force_refresh_detail
 msgctxt "trndi.strings.rs_force_refresh_detail"
@@ -2088,7 +2270,7 @@ msgstr "Kontoval"
 
 #: trndi.strings.rs_nodata_error
 msgid "No data, error(?):"
-msgstr "Ingen data, fel(?):"
+msgstr "Inga data, fel(?):"
 
 #: trndi.strings.rs_nodata_none
 msgid "<none>"
@@ -2113,7 +2295,7 @@ msgstr ""
 
 #: trndi.strings.rs_no_boot_reading
 msgid "No recent data available!"
-msgstr "Ingen färsk data finns att tillgå!"
+msgstr "Inga färska data finns att tillgå!"
 
 #: trndi.strings.rs_no_internet
 msgid "Your internet connection is not working, Trndi cannot fetch readings!"
@@ -2442,7 +2624,7 @@ msgstr "Anslutning förlorad — %s"
 #: trndi.strings.rs_stale_no_data
 #, object-pascal-format
 msgid "No data for %s"
-msgstr "Ingen data på %s"
+msgstr "Inga data på %s"
 
 #: trndi.strings.rs_stale_retry_in
 #, object-pascal-format
@@ -3110,7 +3292,7 @@ msgstr ""
 #: uconf.rs_min_minutes
 #, object-pascal-format
 msgid "When calculating time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes."
-msgstr "När tid-i-målområdet beräknas, gör det för detta antal minuter. Om numret är högre än tillgänglig data, visas maxtiden - vilket just nu är %d minuter."
+msgstr "När tid-i-målområdet beräknas, gör det för detta antal minuter. Om numret är högre än tillgängliga data, visas maxtiden - vilket just nu är %d minuter."
 
 #: uconf.rs_multi_user_help
 msgid ""
@@ -3487,7 +3669,7 @@ msgstr "Spara avläsningar som CSV"
 
 #: uhistorygraph.rs_history_graph_empty
 msgid "No history data to plot"
-msgstr "Ingen historisk data att rita ut"
+msgstr "Inga historiska data att rita ut"
 
 #: uhistorygraph.rs_history_graph_help
 msgid "Click a dot to see the full reading details"
@@ -3739,4 +3921,3 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
-

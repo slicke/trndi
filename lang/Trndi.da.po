@@ -1322,6 +1322,45 @@ msgid ""
 "See https://github.com/slicke/trndi/LICENSE.md"
 msgstr ""
 
+#: trndi.api.carelink.serrcarelinkbadcreds
+msgid "Could not read the CareLink token data. It must be the JSON captured at login (access_token/refresh_token etc)."
+msgstr ""
+
+#: trndi.api.carelink.serrcarelinkdiscover
+msgid "Could not resolve the CareLink endpoints from Medtronic's discovery service."
+msgstr ""
+
+#: trndi.api.carelink.serrcarelinknocreds
+msgid "No CareLink token data found. Paste the captured login data (JSON) as the credential — see the CareLink guide."
+msgstr ""
+
+#: trndi.api.carelink.serrcarelinkrefresh
+msgid "CareLink token refresh failed. The saved login expires while Trndi is not running — sometimes overnight — so you may need to capture a fresh login."
+msgstr ""
+
+#: trndi.api.carelink.sparamdesc
+msgid ""
+"Medtronic CareLink follower connection.\n"
+"\n"
+"Medtronic requires a one-time login in your web browser (with CAPTCHA); Trndi then keeps the session alive automatically.\n"
+"Paste the captured token data (JSON) as the credential.\n"
+"\n"
+"Use a Care Partner (follower) account, not the patient account.\n"
+"See guides/CareLink.md for a step-by-step walkthrough."
+msgstr ""
+
+#: trndi.api.carelink.sparamdeschtml
+msgid "<b>Medtronic CareLink</b> follower connection.<br><br>Medtronic requires a <u>one-time login in your web browser</u> (with CAPTCHA); Trndi then keeps the session alive automatically.<br>Paste the captured token data (JSON) as the credential.<br><br>Use a <u>Care Partner</u> (follower) account, not the patient account.<br>See the CareLink guide for a step-by-step walkthrough."
+msgstr ""
+
+#: trndi.api.carelink.sparampassword
+msgid "CareLink Token Data (JSON)"
+msgstr ""
+
+#: trndi.api.carelink.sparamusername
+msgid "CareLink Username (may be left empty)"
+msgstr ""
+
 #: trndi.api.dexcom.serrdexlogin
 msgctxt "trndi.api.dexcom.serrdexlogin"
 msgid "Login error: Could not establish a valid session"
@@ -1397,6 +1436,92 @@ msgstr "Region (\"usa\", \"japan\"/\"jp\", eller tom)"
 msgid "Dexcom Account Username"
 msgstr "Dexcom-kontobrugernavn"
 
+#: trndi.api.librelinkup.serrllubadcredentials
+msgid "LibreLinkUp rejected the email or password."
+msgstr ""
+
+#: trndi.api.librelinkup.serrllubadresponse
+msgid "Unsupported LibreLinkUp response format"
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluhttp
+#, object-pascal-format
+msgid "LibreLinkUp request failed (HTTP %d)"
+msgstr ""
+
+#: trndi.api.librelinkup.serrllunoemail
+msgid "No LibreLinkUp email address given."
+msgstr ""
+
+#: trndi.api.librelinkup.serrllunopassword
+msgid "No LibreLinkUp password given."
+msgstr ""
+
+#: trndi.api.librelinkup.serrllunopatients
+msgid "No shared readings found. The person wearing the sensor must invite this account in the LibreLink app, and the invitation must be accepted."
+msgstr ""
+
+#: trndi.api.librelinkup.serrllunotauthenticated
+msgid "Not authenticated. Call Connect first."
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluprivacy
+msgid "LibreLinkUp needs you to accept its privacy policy. Open the LibreLinkUp app or LibreView website, accept it, then try again."
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluratelimited
+msgid "LibreLinkUp is rate-limiting this account; waiting before the next request."
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluterms
+msgid "LibreLinkUp needs you to accept its terms of use. Open the LibreLinkUp app or LibreView website, accept them, then try again."
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluunknownregion
+#, object-pascal-format
+msgid "LibreLinkUp redirected this account to an unknown region (%s)."
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluverifyemail
+msgid "LibreLinkUp needs you to verify your email address. Check your inbox, verify the account, then try again."
+msgstr ""
+
+#: trndi.api.librelinkup.sllumanypatients
+msgid "This LibreLinkUp account follows more than one person; Trndi is showing the first."
+msgstr ""
+
+#: trndi.api.librelinkup.sllunoreadings
+msgid "No CGM readings found in specified time range"
+msgstr ""
+
+#: trndi.api.librelinkup.sllureadingcount
+#, object-pascal-format
+msgid "Retrieved %d CGM readings"
+msgstr ""
+
+#: trndi.api.librelinkup.sparamdesc
+msgid ""
+"Abbott FreeStyle Libre, via LibreLinkUp.\n"
+"\n"
+"Use the LibreLinkUp follower account — the one that accepted the sharing invitation — not the LibreLink account on the phone wearing the sensor.\n"
+"\n"
+"Sharing must already be set up: in the LibreLink app the sensor wearer invites this email, and the invitation has to be accepted in LibreLinkUp once before Trndi can read anything.\n"
+"\n"
+"Your region is detected automatically."
+msgstr ""
+
+#: trndi.api.librelinkup.sparamdeschtml
+msgid "<b>Abbott FreeStyle Libre</b>, via LibreLinkUp.<br><br>Use the <u>LibreLinkUp follower account</u> — the one that accepted the sharing invitation — not the LibreLink account on the phone wearing the sensor.<br><br>Sharing must already be set up: in the LibreLink app the sensor wearer invites this email, and the invitation has to be accepted in LibreLinkUp once before Trndi can read anything.<br><br>Your region is detected automatically."
+msgstr ""
+
+#: trndi.api.librelinkup.sparampassword
+msgid "LibreLinkUp Password"
+msgstr ""
+
+#: trndi.api.librelinkup.sparamusername
+msgid "LibreLinkUp Email"
+msgstr ""
+
 #: trndi.api.nightscout.sparamdesc
 msgid ""
 "NightScout v2 setup (use FULL access token):\n"
@@ -1458,6 +1583,43 @@ msgstr "Auth-token"
 msgctxt "trndi.api.nightscout3.sparamusername"
 msgid "NightScout URL"
 msgstr "NightScout-adresse"
+
+#: trndi.api.tandem.serrtandemlogin
+#, fuzzy
+msgctxt "trndi.api.tandem.serrtandemlogin"
+msgid "Login error: Could not establish a valid session"
+msgstr "Loginfejl: Kunne ikke oprette en gyldig session"
+
+#: trndi.api.tandem.serrtandemnodevice
+msgid "No pump device found or selected"
+msgstr ""
+
+#: trndi.api.tandem.serrtandempass
+msgid "Invalid Tandem t:connect credentials"
+msgstr ""
+
+#: trndi.api.tandem.sparamdesc
+msgid ""
+"Tandem t:connect region selection:\n"
+"\n"
+"Choose the server based on your account region:\n"
+"• Tandem (USA): for US accounts\n"
+"• Tandem (EU): for European accounts\n"
+"\n"
+"Your credentials are your Tandem t:connect account email and password."
+msgstr ""
+
+#: trndi.api.tandem.sparamdeschtml
+msgid "<b>Tandem t:connect</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Tandem (USA): for US accounts<br>• Tandem (EU): for European accounts<br><br>Your credentials are your Tandem t:connect account email and password."
+msgstr ""
+
+#: trndi.api.tandem.sparampassword
+msgid "Tandem Password"
+msgstr ""
+
+#: trndi.api.tandem.sparamusername
+msgid "Tandem Email"
+msgstr ""
 
 #: trndi.api.xdrip.sparamdesc
 msgid ""
