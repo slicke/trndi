@@ -69,6 +69,12 @@ You may add these keys to the JSON blob to override defaults:
 | `token_url` | Override the OAuth2 refresh endpoint |
 | `data_url` | Override the data endpoint |
 
+## Multiple patients
+
+If the care partner account follows several patients, Trndi shows the first one the server returns and says so once in a notice. Set `patientId` in the token data (see the table above) to pin a different one.
+
+There is no picker in the settings UI, and that is a deliberate choice rather than an omission: a Trndi window shows one person at a time, so the cleaner way to watch two people is a separate care partner account per patient, added under **Settings → Accounts** and run as its own window (see *Multi-User Mode* in [MANUAL.md](../MANUAL.md)). Each window then keeps its own thresholds and alarm settings. The `patientId` override exists for the case where one account already follows several patients and re-inviting is not practical.
+
 ## What Trndi shows
 
 - Sensor glucose values (about 24 h of history from each fetch)

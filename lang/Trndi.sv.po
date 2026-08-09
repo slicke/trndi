@@ -1352,6 +1352,11 @@ msgstr ""
 "kring medicinsk användning.\n"
 "Se https://github.com/slicke/trndi/blob/main/DISCLAIMER.md"
 
+#: trndi.api.carelink.scarelinkmanypatients
+#, object-pascal-format
+msgid "This CareLink account follows %d patients; Trndi is showing %s. Set \"patientId\" in the token data, or use a separate care partner account, to watch someone else."
+msgstr "Detta CareLink-konto följer %d patienter; Trndi visar %s. Ange \"patientId\" i token-datan, eller använd ett separat vårdpartnerkonto, för att se någon annan."
+
 #: trndi.api.carelink.serrcarelinkbadcreds
 msgid "Could not read the CareLink token data. It must be the JSON captured at login (access_token/refresh_token etc)."
 msgstr "Kunde inte läsa in CareLink-tokendatan. Det måste vara JSON som fångats vid login (access_token/refresh_token etc)."
@@ -1545,8 +1550,9 @@ msgid "LibreLinkUp needs you to verify your email address. Check your inbox, ver
 msgstr "LibreLinkUp kräver att du verifierar din e-postadress. Öppna din inkorg, verifiera kontot och försök sedan igen."
 
 #: trndi.api.librelinkup.sllumanypatients
-msgid "This LibreLinkUp account follows more than one person; Trndi is showing the first."
-msgstr "Detta LibreLinkUp-konto följer fler än en person; Trndi visar den första."
+#, object-pascal-format
+msgid "This LibreLinkUp account follows %d people; Trndi is showing %s. Use a separate follower account to watch someone else."
+msgstr "Detta LibreLinkUp-konto följer %d personer; Trndi visar %s. Använd ett separat följarkonto för att se någon annan."
 
 #: trndi.api.librelinkup.sllunoreadings
 msgid "No CGM readings found in specified time range"
@@ -3921,3 +3927,4 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
+
