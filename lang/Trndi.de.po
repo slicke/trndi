@@ -1322,6 +1322,11 @@ msgid ""
 "See https://github.com/slicke/trndi/LICENSE.md"
 msgstr ""
 
+#: trndi.api.carelink.scarelinkmanypatients
+#, object-pascal-format
+msgid "This CareLink account follows %d patients; Trndi is showing %s. Set \"patientId\" in the token data, or use a separate care partner account, to watch someone else."
+msgstr ""
+
 #: trndi.api.carelink.serrcarelinkbadcreds
 msgid "Could not read the CareLink token data. It must be the JSON captured at login (access_token/refresh_token etc)."
 msgstr ""
@@ -1487,7 +1492,8 @@ msgid "LibreLinkUp needs you to verify your email address. Check your inbox, ver
 msgstr ""
 
 #: trndi.api.librelinkup.sllumanypatients
-msgid "This LibreLinkUp account follows more than one person; Trndi is showing the first."
+#, object-pascal-format
+msgid "This LibreLinkUp account follows %d people; Trndi is showing %s. Use a separate follower account to watch someone else."
 msgstr ""
 
 #: trndi.api.librelinkup.sllunoreadings

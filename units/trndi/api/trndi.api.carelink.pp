@@ -280,6 +280,7 @@ resourcestring
   sErrCareLinkBadCreds = 'Could not read the CareLink token data. It must be the JSON captured at login (access_token/refresh_token etc).';
   sErrCareLinkRefresh = 'CareLink token refresh failed. The saved login expires while Trndi is not running — sometimes overnight — so you may need to capture a fresh login.';
   sErrCareLinkDiscover = 'Could not resolve the CareLink endpoints from Medtronic''s discovery service.';
+  sCareLinkManyPatients = 'This CareLink account follows %d patients; Trndi is showing %s. Set "patientId" in the token data, or use a separate care partner account, to watch someone else.';
   sParamUserName = 'CareLink Username (may be left empty)';
   sParamPassword = 'CareLink Token Data (JSON)';
   sParamDesc =
@@ -1048,6 +1049,12 @@ begin
       if not (jsonData is TJSONArray) then
         Exit;
       arr := TJSONArray(jsonData);
+      // Only reached when the blob carried no patientId (see the guard at the
+      // top). Taking the first patient is deliberate rather than a stand-in
+      // for a settings picker: a window shows one person at a time, so the
+      // supported route for a second patient is a second care partner account
+      // run as its own Trndi user, with patientId as the override for accounts
+      // that already follow several. See guides/CareLink.md.
       if (arr.Count > 0) and (arr[0] is TJSONObject) then
       begin
         entry := TJSONObject(arr[0]);
@@ -1057,7 +1064,7 @@ begin
         log('CareLink.SelectPatient: following patient=' + FPatientId +
           ' of ' + IntToStr(arr.Count));
         if arr.Count > 1 then
-          notice('Multiple followed patients found; using the first. Set "patientId" in the token data to pick another.');
+          notice(Format(sCareLinkManyPatients, [arr.Count, FPatientId]));
       end;
     finally
       jsonData.Free;

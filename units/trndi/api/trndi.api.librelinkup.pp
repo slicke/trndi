@@ -271,7 +271,7 @@ resourcestring
   sErrLLURateLimited = 'LibreLinkUp is rate-limiting this account; waiting before the next request.';
   sErrLLUBadResponse = 'Unsupported LibreLinkUp response format';
   sErrLLUHttp = 'LibreLinkUp request failed (HTTP %d)';
-  sLLUManyPatients = 'This LibreLinkUp account follows more than one person; Trndi is showing the first.';
+  sLLUManyPatients = 'This LibreLinkUp account follows %d people; Trndi is showing %s. Use a separate follower account to watch someone else.';
   sLLUNoReadings = 'No CGM readings found in specified time range';
   sLLUReadingCount = 'Retrieved %d CGM readings';
   sParamUserName = 'LibreLinkUp Email';
@@ -802,6 +802,13 @@ begin
         Exit;
       end;
 
+      // Taking the first share is deliberate, not a placeholder for a picker.
+      // A window shows one person at a time, so the supported way to follow a
+      // second person is a second LibreLinkUp account run as its own Trndi
+      // user -- that also keeps thresholds and alarms separate, which a picker
+      // on one account could not. See guides/LibreLinkUp.md ("Multiple
+      // people"). The notice below tells the user when the choice was made for
+      // them.
       entry := TJSONObject(arr[0]);
       FPatientId := entry.Get('patientId', '');
       if FPatientId = '' then
@@ -817,8 +824,13 @@ begin
 
       log(Format('LibreLinkUp.SelectPatient: following %s (%s) of %d',
         [FPatientName, FPatientId, arr.Count]));
+      // Name who was picked: the user is being told a choice was made for
+      // them, and without the name they cannot tell whether it was the right
+      // person -- nor act on the separate-account advice. Falls back to the id
+      // when Abbott sends a share with no name on it.
       if arr.Count > 1 then
-        notice(sLLUManyPatients);
+        notice(Format(sLLUManyPatients, [arr.Count,
+          IfThen(FPatientName <> '', FPatientName, FPatientId)]));
 
       Result := true;
     finally

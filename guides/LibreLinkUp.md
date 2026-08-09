@@ -78,9 +78,30 @@ fetch.
 ## Multiple people
 
 If the LibreLinkUp account follows more than one person, Trndi reads the first
-share and says so once in a notice. There is currently no picker — Trndi shows
-one value at a time, and a second follower account is the way to watch a
-second person.
+share and names that person in a notice on every connect.
+
+Abbott does not document the order shares come back in, so Trndi cannot promise
+"the first" means the same person every time. That is why the notice names who
+was picked rather than just warning that several exist — on an account with
+more than one share, it is worth a glance at startup.
+
+There is no picker, and that is deliberate rather than something missing. A
+Trndi window shows one person's value at a time, so the choice is really
+"which account does this window sign in as" — and Abbott's sharing model
+already answers that. Give each person their own follower account:
+
+1. Create a second LibreLinkUp account with a different email address.
+2. From **that person's** LibreLink app, invite the new address (**Connected
+   Apps** → **LibreLinkUp** → **Add Connection**), then sign in to the
+   LibreLinkUp app with it and accept the invitation.
+3. Add each follower account as its own entry under **Settings → Accounts**,
+   and run one Trndi window per person — see *Multi-User Mode* in
+   [MANUAL.md](../MANUAL.md).
+
+Each window then keeps its own thresholds, units and alarm settings, which a
+single-account picker could not do. The trade-off is that the sensor wearer has
+to send one invitation per follower account; if that is not practical, watch
+the notice on connect to confirm which person Trndi picked.
 
 ---
 
