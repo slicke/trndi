@@ -59,8 +59,13 @@ sysutils,
 {$IFDEF DEBUG}
 trndi.log,
 {$ENDIF}
-trndi.api.dexcom, umain, uconf, ufloat, slicke.ux.alert,
-buildinfo, razer.chroma.factory
+trndi.api.dexcom, trndi.api.carelink, trndi.api.debug_faultysensor,
+trndi.api.debug_intermittentmissing, trndi.api.debug_latemissing,
+trndi.api.debug_lowsoon, trndi.api.debug_perfect, trndi.api.debug_secondmissing,
+trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.dexcom_helpers,
+trndi.api.dexcom_time, trndi.api.librelinkup, trndi.api.registry,
+trndi.api.tandem, umain, uconf, ufloat, slicke.ux.alert, buildinfo,
+razer.chroma.factory
 { you can add units after this };
 
 {$R *.res}
