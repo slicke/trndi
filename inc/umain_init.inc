@@ -953,7 +953,8 @@ begin
     else
     if PredictShortSize > 3 then
       PredictShortSize := 3;
-    lPredict.Visible := PredictGlucoseReading;
+    // Hidden in dot mode — the predictions are drawn on the trend instead.
+    lPredict.Visible := PredictGlucoseReading and not PredictDotMode;
   end;
 
   // Final initialization and first reading. The fetch is dispatched to a

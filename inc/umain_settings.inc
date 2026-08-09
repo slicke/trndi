@@ -139,7 +139,10 @@ begin
   else
   if PredictShortSize > 3 then
     PredictShortSize := 3;
-  lPredict.Visible := PredictGlucoseReading;
+  // Dot mode draws the predictions on the trend, so the text label must stay
+  // hidden — it still carries the placeholder/last text caption, which would
+  // otherwise reappear in the lower right until the next forced refresh.
+  lPredict.Visible := PredictGlucoseReading and not PredictDotMode;
 
   DATA_FRESHNESS_THRESHOLD_MINUTES :=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
