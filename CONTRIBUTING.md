@@ -119,7 +119,7 @@ Rule of thumb: if the helper’s behavior wouldn’t be obvious from the name an
 API implementations live under `units/trndi/api/` and subclass `TrndiAPI`.
 
 **Required methods:**
-- `constructor create(user, pass, extra: string)`
+- `constructor create(user, pass: string); override` (the only form the registry calls; drivers may add their own non-virtual overloads for e.g. a region)
 - `function connect: boolean` (establishes connectivity)
 - `function getReadings(minNum, maxNum: integer; extras: string; out res: string): BGResults`
 

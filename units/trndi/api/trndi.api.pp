@@ -219,7 +219,13 @@ const
     out res: string; noCache: boolean): BGResults; virtual; abstract;
 
     {** Construct a new API object.
-        Subclasses may interpret @code(user), @code(pass), and @code(extra) as needed.
+        Subclasses may interpret @code(user) and @code(pass) as needed.
+
+        This is the only constructor the registry calls (through
+        @link(TrndiAPIClass)), so it is the one every backend must support.
+        Several drivers add their own overloads for a third value -- a region
+        string on Dexcom and Tandem, a region enum on CareLink -- but those are
+        subclass-specific and are not reachable through the metaclass.
 
         Base class behavior:
         - Sets @code(timezone) from @code(GetLocalTimeOffset).
@@ -228,7 +234,6 @@ const
 
         @param(user   Implementation-defined (e.g., base URL))
         @param(pass   Implementation-defined (e.g., password or token))
-        @param(extra  Implementation-defined extra parameter)
      }
   constructor Create(user, pass: string); virtual;
 
