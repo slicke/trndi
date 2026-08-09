@@ -1131,6 +1131,7 @@ privacyMode: boolean = false;
 
   // Handle dragging on window
 DraggingWin: boolean;
+DragStarted: boolean; // set once the pointer left the drag slop radius
 PX, PY: integer;
 
 {$ifdef X_LINUXBSD}
@@ -1324,9 +1325,22 @@ begin
 end;
 
 procedure TfBG.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
+const
+  // A finger resting on a touch panel keeps emitting motion events a few
+  // pixels around the contact point. Below this radius the gesture is still a
+  // press-and-hold, not a window drag - without the slop the jitter cancelled
+  // tTouch and the long-press menu never opened on touch screens.
+  DRAG_SLOP = 12;
 begin
   if DraggingWin then
   begin
+    if not DragStarted then
+    begin
+      if (Abs(X - PX) < DRAG_SLOP) and (Abs(Y - PY) < DRAG_SLOP) then
+        Exit;
+      DragStarted := true;
+    end;
+
     SetBounds(Left + (X - PX), Top + (Y - PY), Width, Height);
     tTouch.Enabled := false; // Dont popup stuff while moving
     // Use the resize timer with a very short interval for smooth panel scaling during drag
@@ -2015,6 +2029,7 @@ begin
     {$endif}
 
     DraggingWin := true;
+    DragStarted := false;
     if not hasTouch then
       Exit;
   end;
@@ -2044,8 +2059,13 @@ begin
     // Restore normal timer interval
     tResize.Interval := 500; // Back to normal interval from form design
     // Trigger a full resize operation now that dragging is complete
-    // This ensures all UI elements are properly scaled for the final window size
-    FormResize(Self);
+    // This ensures all UI elements are properly scaled for the final window size.
+    // Only after a real drag - relaying out on every tap made the labels blink.
+    if DragStarted then
+    begin
+      DragStarted := false;
+      FormResize(Self);
+    end;
   end;
 end;
 
