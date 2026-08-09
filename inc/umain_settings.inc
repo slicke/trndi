@@ -226,7 +226,7 @@ begin
   // without waiting for the next reading.
   if (not firstboot) and (not lastReading.empty) then
   begin
-    if native.GetBoolSetting('badge.trend', false) then
+    if native.GetBoolSetting('badge.trend', true) then
       native.badgeTrend := lastReading.trend.Img
     else
       native.badgeTrend := '';
@@ -398,7 +398,9 @@ procedure LoadUserSettings(f: TfConf);
       cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', false);
       // Trend arrow in the taskbar icon (Windows) / dock badge (macOS)
       {$if defined(X_WIN) or defined(X_MAC)}
-      cbBadgeTrend.Checked := GetBoolSetting('badge.trend', false);
+      // Keep this default in step with the two read sites in umain_settings /
+      // umain_glucose, or the checkbox will disagree with what the badge shows.
+      cbBadgeTrend.Checked := GetBoolSetting('badge.trend', true);
       {$else}
       cbBadgeTrend.Visible := false;
       {$endif}

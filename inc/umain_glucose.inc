@@ -507,7 +507,7 @@ begin
 
   // Optional trend arrow next to the reading (Windows taskbar icon /
   // macOS dock badge)
-  if native.GetBoolSetting('badge.trend', false) then
+  if native.GetBoolSetting('badge.trend', true) then
     native.badgeTrend := lastReading.trend.Img
   else
     native.badgeTrend := '';
