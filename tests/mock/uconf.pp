@@ -78,6 +78,10 @@ type
     // Stored 'remote.type' that no longer resolves; a property on the real form
     // (see uconf), a plain field here.
     UnknownBackend: string;
+    // 'remote.creds' as it stood when the dialog loaded, so the save path can
+    // skip writing a blob the user never edited (see uconf). Property there,
+    // plain field here.
+    LoadedCreds: string;
 
     eAddr: TEdit;
     ePass: TEdit;
