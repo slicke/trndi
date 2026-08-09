@@ -147,7 +147,8 @@ private
   procedure SortPointsByTime;
     {** UpdateExtents: Recompute min/max values and times used to map
       value/time to device coordinates. Adds a small padding to avoid
-      degenerate spans. }
+      degenerate spans. The time axis always runs up to the current time, so
+      stale data reads as a gap on the right rather than reaching the edge. }
   procedure UpdateExtents;
     {** DrawAxesAndGrid: Draws a simple XY-grid and labels for the value
       (left) and time (bottom) axes. Uses the plot extents from
@@ -1083,8 +1084,9 @@ end;
 
 {** ApplyRangeFilter: Rebuild the working point list in FPoints from FAllPoints
   using FSelectedRangeMinutes as the active filter. When the range is set,
-  the routine drops readings older than the computed cutoff based on the most
-  recent reading timestamp; when the range is zero, all points are kept.
+  the routine drops readings older than the computed cutoff, counted back from
+  the current time (or from the newest reading when that is later, e.g. an
+  uploader whose clock runs ahead); when the range is zero, all points are kept.
   FHoveredPoint is reset so hover state never points at an index that may no
   longer exist after filtering. }
 procedure TfHistoryGraph.ApplyRangeFilter;
@@ -1100,6 +1102,14 @@ begin
   for i := 1 to High(FAllPoints) do
     if FAllPoints[i].Reading.date > maxStamp then
       maxStamp := FAllPoints[i].Reading.date;
+
+  // Same reasoning as UpdateExtents: the window the user picked is a wall-clock
+  // one. Counting it back from the newest reading silently slides it into the
+  // past during an outage — "last 3 hours" would show 15:00-18:00 an hour after
+  // the data stopped at 18:00. Anchoring on Now can leave the selection empty
+  // when nothing arrived inside it, which is the honest answer.
+  if maxStamp < Now then
+    maxStamp := Now;
 
   if FSelectedRangeMinutes > 0 then
     cutoff := IncMinute(maxStamp, -FSelectedRangeMinutes)
@@ -1471,6 +1481,16 @@ begin
     if FPredictions[i].Value > FMaxValue then
       FMaxValue := FPredictions[i].Value;
   end;
+
+  // The time axis has to end at the wall clock, not at the data. Taking
+  // FMaxTime from the newest reading pins that reading to the right edge of
+  // the plot for the whole of an outage, so an hour-old trace is drawn exactly
+  // like a live one — the graph keeps claiming to reach "now" when it doesn't.
+  // Extending to Now leaves the gap visible as empty axis on the right.
+  // Predictions are future-dated and already folded in above, so this only
+  // ever widens the span when the data itself has fallen behind.
+  if FMaxTime < Now then
+    FMaxTime := Now;
 
   if IsZero(FMaxTime - FMinTime) then
     FMaxTime := FMaxTime + EncodeTime(0, 5, 0, 0);
