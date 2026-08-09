@@ -573,6 +573,9 @@ private
   {** Stored 'remote.type' that no longer resolves to a registered backend;
       empty otherwise. See the UnknownBackend property. }
   FUnknownBackend: string;
+  {** 'remote.creds' as it stood when the dialog loaded. See the LoadedCreds
+      property. }
+  FLoadedCreds: string;
   procedure LoadProxySettingsIntoUI;
   procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
@@ -613,6 +616,13 @@ public
       explains the situation and the save path preserves the stored value
       until a real backend is picked. }
   property UnknownBackend: string read FUnknownBackend write FUnknownBackend;
+  {** The credential blob as it stood when the dialog loaded, so the save path
+      can tell an edit apart from a value the backend rotated underneath it.
+      Backends that refresh tokens (CareLink) write 'remote.creds' from the
+      fetch thread, which keeps running while this dialog is modal — saving the
+      field unconditionally would put the stale blob back and, because those
+      refresh tokens are single-use, kill the stored login. }
+  property LoadedCreds: string read FLoadedCreds write FLoadedCreds;
   property OnReloadExtensions: TNotifyEvent read FOnReloadExtensions
     write FOnReloadExtensions;
 end;

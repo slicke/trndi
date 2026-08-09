@@ -309,6 +309,9 @@ procedure LoadUserSettings(f: TfConf);
       f.cbSysChange(f);
       eAddr.Text := GetSetting('remote.target');
       ePass.Text := GetSetting('remote.creds');
+      // Remember what was loaded so the save path can tell a user edit apart
+      // from a token the backend rotated while this dialog was open.
+      f.LoadedCreds := ePass.Text;
       rbUnit.ItemIndex := IfThen(GetSetting('unit', 'mmol') = 'mmol', 0, 1);
       case GetIntSetting('ux.dot_count', NUM_DOTS) of
       6:  f.rbTrendWindow.ItemIndex := 0;
@@ -654,7 +657,13 @@ procedure SaveUserSettings(f: TfConf);
       if cbSys.ItemIndex >= 0 then
         SetSetting('remote.type', BackendCode(cbSys.Text), false);
       SetSetting('remote.target', eAddr.Text, false);
-      SetSetting('remote.creds', ePass.Text, false);
+      // Only write credentials the user actually edited. tMain keeps firing
+      // while this dialog is modal, so a backend that rotates tokens (CareLink)
+      // can have written a fresh blob to 'remote.creds' since the load —
+      // writing the field back unconditionally would restore the spent one and
+      // leave the stored login dead.
+      if ePass.Text <> f.LoadedCreds then
+        SetSetting('remote.creds', ePass.Text, false);
 
       langCode := ExtractLangCode(cbLang.Items[cbLang.ItemIndex]);
 
@@ -870,11 +879,10 @@ var
   distro: string;
   {$endif}
   needsRestart: boolean;
-  origAPI, origTarget, origCreds: string;
+  origAPI, origTarget: string;
 begin
   origAPI := native.GetSetting('remote.type');
   origTarget := native.GetSetting('remote.target');
-  origCreds := native.GetSetting('remote.creds');
 
   fConf := TfConf.Create(Self);
   try
@@ -950,9 +958,13 @@ begin
 
     SaveUserSettings(fConf);
 
+    // Credentials are asked of the dialog rather than diffed against the store:
+    // a token rotated on the fetch thread while this was open changes the
+    // stored blob without the user having touched anything, and that must not
+    // read as "settings changed, restart to apply".
     needsRestart := (origAPI <> native.GetSetting('remote.type')) or
       (origTarget <> native.GetSetting('remote.target')) or
-      (origCreds <> native.GetSetting('remote.creds'));
+      (fConf.ePass.Text <> fConf.LoadedCreds);
 
     if firstboot then
       exit;
