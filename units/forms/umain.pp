@@ -284,6 +284,29 @@ DOT_TEXT_MIN_CONTRAST = 4.5;
   // white; the darker side retains (1 - this) of each channel, which lands the
   // two roughly the same visual distance from the untouched color.
 DOT_TONE_SHIFT = 0.55;
+  // How much more colour the other half of a range's palette pair has to keep,
+  // after both have been lifted clear of the background, before dcmAuto draws
+  // the dot in it instead. A margin rather than a plain comparison: swapping
+  // the colour a reading was given is only worth it when the gain is something
+  // the eye can actually see, and on a dark window the two halves often come
+  // out within a few percent of each other.
+DOT_PAIR_CHROMA_MARGIN = 1.15;
+  // How far apart, as a straight-line RGB distance, a dot has to be from the
+  // color of the big reading before dcmAuto accepts it. The reading is
+  // DarkenColor(background, 0.5) and DOT_MIN_CONTRAST lands a lifted dot at
+  // almost exactly that lightness, so a dot whose range is the one the window
+  // is currently showing arrives on top of the reading in both lightness *and*
+  // hue and disappears into the digits. Measured cases: a dot that vanished sat
+  // 2-27 away, one that read cleanly 66-116. 40 separates them with room on
+  // both sides.
+DOT_VALUE_SEPARATION = 40;
+  // Background floor dcmAuto falls back to when nothing clears DOT_MIN_CONTRAST
+  // without landing on the reading. Below the WCAG 3:1 the dots normally hold,
+  // and deliberately so: a dot that is only just distinct from the window but
+  // unmistakably distinct from the digits drawn across it is easier to find
+  // than one that scores 3:1 and is the same color as the reading it overlaps.
+  // Anything fainter than this is genuinely hard to see, so it is not taken.
+DOT_FAINT_CONTRAST = 1.6;
   // The blanket darkening every dot got before the per-dot contrast pass
   // existed. Kept only so dcmClassic reproduces it exactly — see the note in
   // DotDisplayColor about why it cannot separate a dot from its background.
@@ -310,15 +333,8 @@ TDotInfo = record
   Visible: boolean;
 end;
 
-{** How a trend dot's drawn color is derived from the range color of the
-    reading behind it. Persisted as `ux.dot_color_mode`; the ordinals are the
-    item order of rgDots in the settings dialog, so never reorder them. }
-TDotColorMode = (
-  dcmClassic,                 // Flat darkening, background not considered
-  dcmAuto,                    // Lift off the background just enough (default)
-  dcmLighter,                 // Tint toward white, then apply the contrast floor
-  dcmDarker                   // Shade toward black, then apply the contrast floor
-  );
+// TDotColorMode and DOT_COLOR_MODE_DEFAULT live in trndi.types, where uconf can
+// see them too. The modes themselves are implemented in DotDisplayColor.
 
 TfBG = class(TForm)
   apMain: TApplicationProperties;
@@ -1082,7 +1098,7 @@ PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
 PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
 PredictShortMinutes: integer = 10; // Prediction horizon (5, 10, or 15 minutes)
 PredictDotMode: boolean = false; // Render predictions as hollow dots on the trend instead of the lPredict label
-DotColorMode: TDotColorMode = dcmAuto; // ux.dot_color_mode — cached here because DotPaint runs per dot, per paint
+DotColorMode: TDotColorMode = DOT_COLOR_MODE_DEFAULT; // ux.dot_color_mode — cached here because DotPaint runs per dot, per paint
 RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the actual rate of change instead of the 8-direction glyph
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings

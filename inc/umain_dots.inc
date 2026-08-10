@@ -290,9 +290,16 @@ begin
     // final (see the note there). fBG.Color is the reference even inside a
     // range band: the bands composite at a low alpha and only ever darken, so
     // a dot cleared against the untinted color is cleared against the band too.
-    dotColor := DotDisplayColor(L.Font.Color, fBG.Color, DotColorMode);
+    dotColor := DotDisplayColor(L.Font.Color, DotBandPartner(L.Font.Color),
+      fBG.Color, lVal.Font.Color, DotColorMode);
     if S = DOT_PREDICT then
     begin
+      // A × and a ? are strokes, not discs, and nothing rims them — so the one
+      // mode that leaves the fill unlifted has to lift it here or the forecast
+      // mark disappears on the window its own range owns.
+      if DotColorMode = dcmOutline then
+        dotColor := EnsureContrast(dotColor, fBG.Color, DOT_MIN_CONTRAST);
+
       // When the engine reports low confidence in its forecast, draw a ?
       // instead of the × so the uncertainty is visible at a glance. Clicking
       // the dot shows the exact confidence percentage.
@@ -335,14 +342,44 @@ begin
       // Classic keeps its own rim rule (a plain black/white pick off the dot's
       // lightness): the mode exists to reproduce the old look, and the
       // background-directed step is part of what changed.
-      ringWidth := Max(2, d div 12);
+      // Outline mode already rims every dot, so a rim is no longer what marks
+      // the newest reading — a heavier one is. Same pole, so the field of dots
+      // still reads as one set.
+      if DotColorMode = dcmOutline then
+        ringWidth := Max(2, d div 7)
+      else
+        ringWidth := Max(2, d div 12);
+      if DotColorMode = dcmOutline then
+        ringColor := DotOutlineColor(fBG.Color)
+      else
       if DotColorMode = dcmClassic then
         ringColor := GetTextColorForBackground(dotColor)
+      else
+      if DotColorMode = dcmMono then
+      begin
+        // Stepping away from the background is what the branch below does, and
+        // in this mode the dot is already standing there. The only tone left
+        // that the disc cannot swallow is the other pole.
+        if dotColor = clBlack then
+          ringColor := clWhite
+        else
+          ringColor := clBlack;
+      end
       else
       if IsLightColor(fBG.Color) then
         ringColor := DarkenColor(dotColor, 0.45)
       else
         ringColor := LightenColor(dotColor, 0.55);
+    end
+    else
+    if DotColorMode = dcmOutline then
+    begin
+      // The rim is the whole visibility budget in this mode: the fill is the
+      // untouched range color and may be the window's own color exactly. Thin,
+      // because it has to sit inside dots that get small on a dense trend
+      // without eating the color it exists to protect.
+      ringWidth := Max(1, d div 14);
+      ringColor := DotOutlineColor(fBG.Color);
     end
     else
     begin
@@ -376,8 +413,8 @@ begin
       Font.Name := fontn;
     Font.Size := L.Font.Size;
     Font.Color := EnsureContrast(
-      DotDisplayColor(L.Font.Color, fBG.Color, DotColorMode), fBG.Color,
-      DOT_TEXT_MIN_CONTRAST);
+      DotDisplayColor(L.Font.Color, DotBandPartner(L.Font.Color), fBG.Color,
+      lVal.Font.Color, DotColorMode), fBG.Color, DOT_TEXT_MIN_CONTRAST);
     TextOut(0, 0, S);
   end;
 end;

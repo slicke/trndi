@@ -863,6 +863,8 @@ RS_DOTS_CLASSIC = 'Classic';
 RS_DOTS_AUTO = 'Adapt to background';
 RS_DOTS_LIGHTER = 'Lighter';
 RS_DOTS_DARKER = 'Darker';
+RS_DOTS_MONO = 'Black or white only';
+RS_DOTS_OUTLINE = 'True colors, outlined';
 
 RS_EXT_RESET_BTN = 'Reset permissions';
 RS_EXT_CHOOSE = 'Choose an extension for more info';
@@ -1063,11 +1065,14 @@ begin
   rgDots.Items.BeginUpdate;
   try
     rgDots.Items.Clear;
-    // Order must match TDotColorMode (umain.pp): classic, auto, lighter, darker.
+    // Order must match TDotColorMode (trndi.types): classic, auto, lighter,
+    // darker, mono, outline. New modes go on the end — the index is stored.
     rgDots.Items.Add(RS_DOTS_CLASSIC);
     rgDots.Items.Add(RS_DOTS_AUTO);
     rgDots.Items.Add(RS_DOTS_LIGHTER);
     rgDots.Items.Add(RS_DOTS_DARKER);
+    rgDots.Items.Add(RS_DOTS_MONO);
+    rgDots.Items.Add(RS_DOTS_OUTLINE);
   finally
     rgDots.Items.EndUpdate;
   end;
@@ -2307,9 +2312,8 @@ begin
   cl_lo_txt_cust.ButtonColor := theme.ColorRangeLowText;
 
   // The dot coloring lives on this page and is derived from the palette above,
-  // so the reset covers it too. 1 = dcmAuto, the shipped default; uconf cannot
-  // name umain's TDotColorMode without a circular unit reference.
-  rgDots.ItemIndex := 1;
+  // so the reset covers it too.
+  rgDots.ItemIndex := Ord(DOT_COLOR_MODE_DEFAULT);
 end;
 
 procedure TfConf.btUserSaveClick(Sender: TObject);

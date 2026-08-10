@@ -64,6 +64,23 @@ TTrndiCredentialsChanged = procedure(const newCreds: string) of object;
 
 TMediaControllerAct = (mcaPlay, mcaPause, mcaURL);
 
+  {** How a trend dot's drawn color is derived from the range color of the
+      reading behind it. Persisted as `ux.dot_color_mode`; the ordinals are the
+      item order of rgDots in the settings dialog, so never reorder them and
+      always append.
+
+      Lives here rather than in umain because the settings dialog has to name
+      the default too, and uconf cannot see umain without a circular reference.
+      The behaviour of each mode is in DotDisplayColor (inc/umain_helpers.inc). }
+TDotColorMode = (
+  dcmClassic,                 // Flat darkening, background not considered
+  dcmAuto,                    // Lift off the background just enough
+  dcmLighter,                 // Tint toward white, then apply the contrast floor
+  dcmDarker,                  // Shade toward black, then apply the contrast floor
+  dcmMono,                    // Plain black or white, whichever the window takes
+  dcmOutline                  // Untouched range color, made visible by a rim
+  );
+
   {** Unit that can exist or not}
 MaybeInt = record
   value: integer;  //< The value
@@ -217,6 +234,15 @@ end;
 
 operator = (const a, b: BGReading): boolean;
 operator = (const a, b: MaybeInt): boolean;
+
+const
+  {** Dot coloring used until the user picks one. Classic is the look Trndi had
+      before the mode existed, so an upgrade changes nothing on screen and the
+      other five are opt-in. Note what that means: a dot whose reading is in the
+      same range as the current one is drawn in a flat darkening of the window's
+      own color and is close to invisible — see DotDisplayColor. Every read of
+      `ux.dot_color_mode` falls back to this, and so does the dialog's reset. }
+DOT_COLOR_MODE_DEFAULT = dcmClassic;
 
 implementation
 

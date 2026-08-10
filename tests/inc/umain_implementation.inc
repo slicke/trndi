@@ -81,8 +81,24 @@ begin
   Result := DotColorModeFromSetting(Value);
 end;
 
-function TfBG.DotDisplayColorForTests(Identity, Background: TColor;
-  Mode: TDotColorMode): TColor;
+function TfBG.DotDisplayColorForTests(Identity, Partner, Background,
+  ValueColor: TColor; Mode: TDotColorMode): TColor;
 begin
-  Result := DotDisplayColor(Identity, Background, Mode);
+  Result := DotDisplayColor(Identity, Partner, Background, ValueColor, Mode);
+end;
+
+function TfBG.DotBandPartnerForTests(Identity: TColor): TColor;
+begin
+  Result := DotBandPartner(Identity);
+end;
+
+function TfBG.DotSeparatedFromValueForTests(Candidate, Background,
+  ValueColor: TColor): boolean;
+begin
+  Result := DotSeparatedFromValue(Candidate, Background, ValueColor);
+end;
+
+function TfBG.DotOutlineColorForTests(Background: TColor): TColor;
+begin
+  Result := DotOutlineColor(Background);
 end;

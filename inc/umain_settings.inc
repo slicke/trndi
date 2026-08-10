@@ -119,7 +119,7 @@ begin
   // dots are re-placed and repainted further down, so a changed mode shows
   // without waiting for the next reading.
   DotColorMode := DotColorModeFromSetting(
-    native.GetIntSetting('ux.dot_color_mode', Ord(dcmAuto)));
+    native.GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT)));
 
   tir_bg := native.GetColorSetting('ux.tir_color', tir_bg);
   tir_custom_bg := native.GetColorSetting('ux.tir_color_custom', tir_custom_bg);
@@ -404,7 +404,7 @@ procedure LoadUserSettings(f: TfConf);
       cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', false);
       // ItemIndex order is the TDotColorMode order — see the type's note.
       rgDots.ItemIndex := Ord(DotColorModeFromSetting(
-        GetIntSetting('ux.dot_color_mode', Ord(dcmAuto))));
+        GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT))));
       // Trend arrow in the taskbar icon (Windows) / dock badge (macOS)
       {$if defined(X_WIN) or defined(X_MAC)}
       // Keep this default in step with the two read sites in umain_settings /

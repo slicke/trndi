@@ -31,6 +31,8 @@ function DarkenColor(originalColor: TColor; factor: double = 0.8): TColor;
 function LightenColor(originalColor: TColor; factor: double = 0.8): TColor;
 function RelativeLuminance(color: TColor): double;
 function IsLightColor(bgColor: TColor): boolean;
+function ColorChroma(color: TColor): integer;
+function ColorDistance(colorA, colorB: TColor): integer;
 function ContrastRatio(colorA, colorB: TColor): double;
 function EnsureContrast(foreground, background: TColor;
   minRatio: double = 3.0): TColor;
@@ -118,6 +120,42 @@ function IsLightColor(bgColor: TColor): boolean;
 begin
   // If L > 0.179 black is more suitable than white
   Result := RelativeLuminance(bgColor) > 0.179;
+end;
+
+// How much colour a colour carries, in channel units: 0 for any grey, 255 for
+// a pure hue at full brightness.
+//
+// Deliberately not HSV saturation. That measure is scale-invariant — it divides
+// the spread by the brightest channel — so a near-black maroon scores higher
+// than a bright pink, and a dark olive scores as high as a vivid orange. For
+// judging which of two colours will still look like a colour once it has been
+// darkened, the undivided spread is the honest number.
+function ColorChroma(color: TColor): integer;
+var
+  c: TColor;
+begin
+  c := ColorToRGB(color);
+  Result := Max(GetRValue(c), Max(GetGValue(c), GetBValue(c))) -
+    Min(GetRValue(c), Min(GetGValue(c), GetBValue(c)));
+end;
+
+// Straight-line distance between two colours in RGB space, 0 (identical) .. 441
+// (black to white). Order of the arguments does not matter.
+//
+// Companion to ContrastRatio rather than a replacement for it: contrast answers
+// "can this be made out against that", which is a question about luminance
+// alone, so two colours of the same lightness in different hues score 1.0 no
+// matter how obviously different they look. This answers the other question —
+// "would anyone take these for the same colour" — which is what matters when
+// something is drawn on top of something else that is already legible.
+function ColorDistance(colorA, colorB: TColor): integer;
+var
+  a, b: TColor;
+begin
+  a := ColorToRGB(colorA);
+  b := ColorToRGB(colorB);
+  Result := Round(Sqrt(Sqr(GetRValue(a) - GetRValue(b)) +
+    Sqr(GetGValue(a) - GetGValue(b)) + Sqr(GetBValue(a) - GetBValue(b))));
 end;
 
 // WCAG contrast ratio, 1.0 (identical) .. 21.0 (black on white). Order of the
