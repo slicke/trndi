@@ -70,3 +70,9 @@ API_DEBUG: array of string = (API_D_DEBUG, API_D_MISSING, API_D_PERFECT, API_D_C
 {$endif}
 
 MILLIS_PER_MINUTE = 60000; // Milliseconds in a minute
+
+// Hint popups ("what does this part of the window do?"). The master switch,
+// and the CSV of hints the user dismissed with the dialog's "Don't show again"
+// button - see the Hints section in inc/umain_helpers.inc.
+HINTS_ENABLED_KEY = 'ux.hints';
+HINTS_HIDDEN_KEY = 'ux.hints.hidden';

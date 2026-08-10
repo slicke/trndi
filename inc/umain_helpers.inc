@@ -293,6 +293,64 @@ begin
     SlickeMessage(sdsOnForm, title, str, uxmtInformation, fBG);
 end;
 
+{------------------------------------------------------------------------------
+  Hints
+  ----------------------
+  Informational popups explaining what a part of the window does, each of which
+  the user can silence for good with the dialog's "Don't show again" button.
+
+  Two levels of suppression, both settable from the Customization tab: the
+  master 'ux.hints' switch, and the list of individually dismissed hints. The
+  master switch deliberately does not clear that list - turning hints back on
+  restores the ones that were never dismissed, and nothing more.
+
+  The dismissed hints are one CSV setting rather than a key each, so "show
+  hidden explanations" in the settings dialog is a single delete and needs no
+  registry of every hint name that has ever existed.
+ ------------------------------------------------------------------------------}
+function HintDismissed(const key: string): boolean;
+var
+  hidden: TStringArray;
+  seen: string;
+begin
+  Result := false;
+  if not native.TryGetCSVSetting(HINTS_HIDDEN_KEY, hidden) then
+    Exit;
+  for seen in hidden do
+    if seen = key then
+      Exit(true);
+end;
+
+procedure DismissHint(const key: string);
+var
+  hidden: TStringArray;
+begin
+  if not native.TryGetCSVSetting(HINTS_HIDDEN_KEY, hidden) then
+    hidden := [];
+  Insert(key, hidden, Length(hidden));
+  native.SetCSVSetting(HINTS_HIDDEN_KEY, hidden);
+end;
+
+procedure ShowOnce(const key, title, str: string);
+begin
+  if not native.GetBoolSetting(HINTS_ENABLED_KEY, true) then
+    Exit;
+  if HintDismissed(key) then
+    Exit;
+
+  // Modal, unlike the ShowMessage overloads above. Those reach SlickeMessage,
+  // whose touch path draws a modeless overlay on the form and returns before
+  // the user has touched anything, so a button result could never come back.
+  if SlickeDialog(sdsAuto, title, str,
+    [[mbOK, mbSlickeNever], [mbSlickeNever, mbOK]], uxmtInformation) = mrSlickeNever then
+    DismissHint(key);
+end;
+
+procedure ShowOnce(const key, str: string);
+begin
+  ShowOnce(key, sSuccTitle, str);
+end;
+
 // Helper function to get validated position setting
 function TfBG.GetValidatedPosition: TrndiPos;
 var

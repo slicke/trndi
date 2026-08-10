@@ -44,6 +44,10 @@ msgstr "Standard"
 msgid "Minimize"
 msgstr "Minimieren"
 
+#: slicke.ux.alert.smbslickenever
+msgid "Don't show again"
+msgstr "Nicht mehr anzeigen"
+
 #: slicke.ux.alert.smbslickeopenfile
 msgid "Open File"
 msgstr "Datei öffnen"
@@ -3095,6 +3099,18 @@ msgstr "Dies zeigt alle Prognosepfeile an; standardmäßig zeigt Trndi nur aufw�
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Zeigt, ob Trndi einen Touchscreen erkannt hat"
+
+#: uconf.rs_hints_enable
+msgid "Explain parts of the window when they are clicked"
+msgstr "Fensterbereiche beim Anklicken erklären"
+
+#: uconf.rs_hints_reset
+msgid "The explanations you hid will be shown again."
+msgstr "Die ausgeblendeten Erklärungen werden wieder angezeigt."
+
+#: uconf.rs_hints_reset_btn
+msgid "Show hidden explanations"
+msgstr "Ausgeblendete Erklärungen anzeigen"
 
 #: uconf.rs_import_empty
 msgid "The selected file is empty."

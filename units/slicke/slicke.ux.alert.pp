@@ -81,6 +81,7 @@ smbSlickeAgree      = 'Agree';
 smbSlickeRead       = 'Read...';
 smbSlickeDefault    = 'Default';
 smbSlickeSnooze     = 'Snooze';
+smbSlickeNever      = 'Don''t show again';
 
 sKey   = 'Key';
 sValue = 'Value';
@@ -157,6 +158,17 @@ mbUXNoToAll   = mbNoToAll;
 mbUXYesToAll  = mbYesToAll;
 mbUXHelp      = mbHelp;
 mbUXClose     = mbClose;
+
+  {**
+    @name Custom button results
+    @desc
+    Modal results for the buttons that have no Lazarus equivalent. Buttons
+    without an entry of their own share @code(mrSlickeCustom), so a dialog can
+    only tell two custom buttons apart when at least one of them is listed
+    here — @seealso(UXButtonToModalResult).
+  }
+mrSlickeCustom = TModalResult(110);
+mrSlickeNever  = TModalResult(111);
 
   {**
     @name System constants
@@ -272,6 +284,8 @@ TSlickeDialogSize = (sdsNormal = 0, sdsBig = 1, sdsAuto = 3, sdsOnForm = 4, sdsM
   }
 TSlickeMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
   mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze,
+  {** Dismisses the dialog and asks not to see it again; returns @code(mrSlickeNever). }
+  mbSlickeNever,
   {** Not a button: "no explicit default" sentinel for the @code(ADefault) parameter. }
   mbSlickeNone);
 
@@ -828,6 +842,7 @@ var
 langs : ButtonLangs = (smbYes, smbUXNo, smbUXOK, smbUXCancel, smbUXAbort, smbUXRetry, smbUXIgnore,
   smbUXAll, smbUXNoToAll, smbUXYesToAll, smbUXHelp, smbUXClose,
   smbSlickeOpenFile, smbSlickeMinimize, smbSlickeAgree, smbSlickeRead, smbSlickeDefault, smbSlickeSnooze,
+  smbSlickeNever,
   '');   // mbSlickeNone is a sentinel, never rendered
   {** When @true, dialogs created by this unit (@link(SlickeDialog), @link(SlickeList),
       @link(SlickeInput), etc.) get their own taskbar button. Defaults to @false,
@@ -2076,9 +2091,13 @@ begin
     Result := mrYesToAll;
   mbClose:
     Result := mrClose;
+  mbSlickeNever:
+    // Has a result of its own so it stays distinguishable from the other
+    // custom buttons when a dialog shows two of them at once.
+    Result := mrSlickeNever;
   else
     // fallback / custom button
-    Result := TModalResult(110);
+    Result := mrSlickeCustom;
   end;
 end;
 
@@ -4603,6 +4622,14 @@ begin
   begin
     modalRes := GetModalResult(target.Components[i]);
     if modalRes = mrNone then
+      Continue;
+
+    // "Don't show again" is never what a key press means: Esc is a plain
+    // dismissal and Enter is the affirmative, neither of which should silence
+    // the dialog for good. Skipping it here also keeps it out of ct, so a
+    // [OK, Don't show again] dialog still counts as single-button and Esc
+    // closes it the way the same dialog did before the button was added.
+    if modalRes = mrSlickeNever then
       Continue;
 
     if firstBtn < 0 then

@@ -18,7 +18,7 @@ type
   SlickeUXImage = LongInt;
 
   TSlickeMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
-    mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze, mbSlickeNone);
+    mbAll, mbNoToAll, mbYesToAll, mbHelp, mbClose, mbSlickeOpenFile, mbSlickeMinimize, mbSlickeAgree, mbSlickeRead, mbSlickeDefault, mbSlickeSnooze, mbSlickeNever, mbSlickeNone);
   // Ordered list, mirroring the real unit: button order is preserved.
   TSlickeMsgDlgBtns = array of TSlickeMsgDlgBtn;
   // One row per platform convention: [[win/kde], [mac/gnome]].
@@ -39,6 +39,8 @@ const
   mrCancel = 2;
   mrNo = 3;
   mrYes = 6;
+  mrSlickeCustom = 110;
+  mrSlickeNever = 111;
   sSuccTitle  = 'Information';
   uxclWhite = $00FFFFFF;
   uxclRed = $000000FF;

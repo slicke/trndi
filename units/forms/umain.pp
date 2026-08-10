@@ -1717,7 +1717,7 @@ end;
 
 procedure TfBG.bSettingsClick(Sender: TObject);
 begin
-  ShowMessage(RS_RIGHT_CLICK);
+  ShowOnce('settings.rightclick', RS_RIGHT_CLICK);
   miSettings.Click;
 end;
 
