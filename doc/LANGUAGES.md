@@ -119,7 +119,13 @@ never writes to `lang/`.
 Design-time placeholders (the `?` help buttons, captions still equal to their component
 name, numeric mock-ups) are counted but not listed; pass `LANG_ALL=1` / `-all` to see
 them. The `.po` half needs `msgfmt` from gettext, which Windows does not ship — without
-it the target still does the `.pot` audit and says it skipped the rest.
+it the target still does the `.pot` audit and says it skipped the rest. If you installed
+Poedit it already has one, just not on `PATH`; point the session at it and rerun:
+
+```powershell
+$env:PATH = "C:\Program Files\Poedit\GettextTools\bin;$env:PATH"
+.\make.ps1 lang-check
+```
 
 To validate a single catalog by hand:
 
