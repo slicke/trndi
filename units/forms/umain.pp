@@ -270,6 +270,13 @@ STALE_DOT_BLEND = 0.42;
   // contrast) asks for 3:1; going higher drives every dot toward a muddy dark
   // tone and costs the color separation *between* the bands.
 DOT_MIN_CONTRAST = 3.0;
+  // Floor for the reading a dot shows when it is clicked open. Higher than the
+  // one above: that buys a *shape* enough separation to be picked out, this is
+  // a number the user has to read, and WCAG 1.4.3 asks 4.5:1 for text. What
+  // argued against 4.5 for the dots — every band driven into the same muddy
+  // tone — does not apply here, since only one dot is expanded at a time and
+  // the background still carries the band.
+DOT_TEXT_MIN_CONTRAST = 4.5;
   // How far the Lighter and Darker dot modes move a dot off its range color
   // before the contrast floor above is applied. Large enough to read as a
   // deliberate tint rather than a rendering artefact, small enough that the

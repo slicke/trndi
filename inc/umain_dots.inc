@@ -358,12 +358,26 @@ begin
   // Width/Height are set in ResizeDot — never resize the control inside its
   // own OnPaint. On macOS Cocoa, doing so re-enters paint with a stale DC and
   // crashes inside TCocoaGDIUtil.checkDC.
+  //
+  // The color has to be set here. TGraphicControl seeds Canvas.Font from the
+  // control's Font, and that carries the dot's *identity* color — the range
+  // color, which is the window background's own color whenever the reading
+  // falls in the band the window is currently showing. A high reading clicked
+  // open on a high background was drawn in the background color exactly.
+  //
+  // Run the mode's transform first so a clicked dot keeps the look the user
+  // picked, then apply the text floor on top: whichever mode is active, a
+  // number the user asked to see has to be readable. That includes Classic,
+  // which leaves the dot *marker* unguarded on purpose.
   with L.Canvas do
   begin
     Brush.Style := bsClear;
     if FontTXTInList(fontn) then
       Font.Name := fontn;
     Font.Size := L.Font.Size;
+    Font.Color := EnsureContrast(
+      DotDisplayColor(L.Font.Color, fBG.Color, DotColorMode), fBG.Color,
+      DOT_TEXT_MIN_CONTRAST);
     TextOut(0, 0, S);
   end;
 end;
