@@ -23,6 +23,7 @@ This file applies to the Trndi repository root and its subdirectories.
 - Avoid unrelated refactors or formatting-only edits.
 - Update documentation when behavior or workflow changes.
 - When behavior changes, update the relevant user-facing docs too, such as README.md, MANUAL.md, or guides/.
+- New user-facing text must reach `lang/`. Captions belong on the component in the form designer, but an agent editing an `.lfm` as text cannot write the matching `.lrj` — and `lazbuild` never regenerates it — so a caption added that way stays untranslatable. Either assign it from a `resourcestring` (the `.rsj` is rebuilt every `lazbuild`), or say plainly that the form needs to be opened and saved in the Lazarus IDE before the string can be translated. See [doc/LANGUAGES.md](doc/LANGUAGES.md).
 - Avoid editing generated outputs or build artifacts unless you are intentionally regenerating them.
 - Follow the repo documentation standard in CONTRIBUTING.md: use PasDoc comments for public APIs in interfaces and banner-style comments in implementations.
 - All files must include the standard Trndi header (GPLv3 license and Medical Disclaimer), **except the `slicke.*` units** — see the carve-out below. When creating or modifying a file without a header, ensure the following is present at the top:

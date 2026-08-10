@@ -48,6 +48,10 @@ CARELINK_ASSET_SRCS = tools/carelink-login/carelink-login.mjs tools/carelink-log
 # Formatter config for FPC's ptop, generated from JCFSettings.xml (see 'make ptop').
 JCF_SETTINGS = JCFSettings.xml
 PTOP_CFG     = ptop.cfg
+# Translation catalogs. 'lang-check' audits these; no target ever writes to lang/
+# — see the comment on lang-check for why generating them is deliberately manual.
+POT          = lang/Trndi.pot
+MSGFMT      ?= msgfmt
 # BUILD_MODE is a short hint (Release/Debug) for backward compatibility
 # BUILD_MODE_NAME is the actual project build-mode name as seen in Trndi.lpi
 BUILD_MODE ?= Release
@@ -148,7 +152,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets ide-libs ptop
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets ide-libs ptop lang-check
 
 all: release
 
@@ -172,6 +176,7 @@ help:
 	@echo "  assets     Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
 	@echo "  check-assets  Fail if a committed .lrs is out of sync with its sources (CI guard)"
 	@echo "  ptop       Regenerate $(PTOP_CFG) from $(JCF_SETTINGS) (formatter config for ptop)"
+	@echo "  lang-check Audit lang/: list resource strings missing from $(POT) and validate every .po (read-only; needs gettext for the .po half)"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
 	@echo "  dist       Create a minimal tarball in $(OUTDIR)"
 	@echo "  run        Build (if needed) and run the built binary (use RUN_ARGS to pass args)"
@@ -314,6 +319,63 @@ ptop:
 	@perl scripts/jcf-to-ptop.pl -o $(PTOP_CFG)
 	@echo "Wrote $(PTOP_CFG). Indent and line length are ptop command-line options, not"
 	@echo "config keys, so run it as: ptop $$(perl scripts/jcf-to-ptop.pl --args) -c $(PTOP_CFG) <in> <out>"
+
+# Audit the translation catalogs: report resource strings that never reached
+# $(POT), then validate every .po. Read-only by design.
+#
+# There is deliberately no target that *writes* lang/. Lazarus' updatepofiles
+# rebuilds the .pot as exactly the union of the resource files handed to it and
+# prunes everything else — from the .pot and from every .po. The .rsj set a
+# checkout has depends on which platform and which build mode last ran, so
+# generating from a local build would silently delete other platforms' strings
+# (a Linux-only build here lacks trndi.native.win and trndi.api.librelinkup).
+# doc/LANGUAGES.md has the manual recipe and the file list it needs.
+lang-check:
+	@set -e; \
+	tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' EXIT; \
+	{ find lib -name '*.rsj' 2>/dev/null; find units/forms -name '*.lrj' 2>/dev/null; } \
+	  | xargs -r grep -ho '"name":"[^"]*","sourcebytes":\[[^]]*\],"value":"[^"]*"' 2>/dev/null \
+	  | sed 's/"name":"//; s/","sourcebytes":\[[^]]*\],"value":"/\t/; s/"$$//' \
+	  | sort -u > "$$tmp/pairs"; \
+	cut -f1 "$$tmp/pairs" | sort -u > "$$tmp/have"; \
+	sed -n 's/^#: //p' $(POT) | sort -u > "$$tmp/pot"; \
+	if [ ! -s "$$tmp/have" ]; then \
+	  echo "No .rsj/.lrj found — build first ('make'), or the audit has nothing to compare."; \
+	  exit 0; \
+	fi; \
+	echo "Resource strings in this checkout: $$(wc -l < "$$tmp/have")   entries in $(POT): $$(wc -l < "$$tmp/pot")"; \
+	grep -Fxv -f "$$tmp/pot" "$$tmp/have" > "$$tmp/miss" || true; \
+	awk -F'\t' 'NR==FNR{m[$$0];next} $$1 in m' "$$tmp/miss" "$$tmp/pairs" > "$$tmp/mp"; \
+	echo; \
+	awk -F'\t' -v all="$(LANG_ALL)" ' \
+	  { \
+	    n = split($$1, p, "."); comp = (n >= 2) ? p[n-1] : ""; \
+	    ph = ($$2 == "?") || ($$2 == "Trndi") \
+	      || ($$2 ~ /^[0-9]+%?$$/) \
+	      || ($$2 ~ /^[[:punct:]]+$$/) \
+	      || ($$2 ~ /^(\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])+$$/) \
+	      || (tolower($$2) == comp); \
+	    if (ph && all == "") { skipped++; next } \
+	    if (!shown++) print "Missing from $(POT) — untranslatable until added:"; \
+	    printf "  %-44s = \"%s\"\n", $$1, $$2; \
+	  } \
+	  END { \
+	    if (!shown) print "All resource strings built here are present in $(POT)."; \
+	    if (skipped) printf "\n(%d design-time placeholders skipped: \"?\" help buttons, unedited\n component names, numeric mock-ups. LANG_ALL=1 lists them. The real fix is\n Localized=False on those properties in the Lazarus object inspector.)\n", skipped; \
+	  } \
+	' "$$tmp/mp"; \
+	echo; \
+	if ! command -v $(MSGFMT) >/dev/null 2>&1; then \
+	  echo "$(MSGFMT) not found — skipping .po validation (install gettext to enable)."; \
+	  exit 0; \
+	fi; \
+	rc=0; \
+	for po in lang/Trndi.*.po; do \
+	  [ -e "$$po" ] || continue; \
+	  printf '%-22s ' "$$(basename "$$po")"; \
+	  $(MSGFMT) --check-format --check-header --statistics -o /dev/null "$$po" || rc=1; \
+	done; \
+	exit $$rc
 
 list-modes:
 	@echo "Available build modes in $(LPI):"

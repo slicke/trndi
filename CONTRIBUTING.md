@@ -54,6 +54,31 @@ This keeps `main` stable and integrates new features smoothly.
 - **Type safety:** Use explicit type conversions and avoid implicit ones that may lose data.
 - **Testing:** Add tests for new features and ensure existing tests pass. Use the Makefile targets for running tests.
 
+## Translations
+
+Trndi ships six languages in `lang/`. If your change adds or edits user-facing text,
+the string has to reach `lang/Trndi.pot` or it can never be translated.
+
+- **Set component captions in the form designer.** Saving the form writes both the
+  `.lfm` and the `.lrj` the catalogs are built from, so designer-authored captions are
+  translatable as-is. Text generated in code (messages, errors, `Format` strings) is a
+  `resourcestring`.
+- **If you edit an `.lfm` by hand, open the form in the IDE once and save it** —
+  `lazbuild` never regenerates the `.lrj`, so a hand-added caption stays untranslated
+  until it does. `TStrings` properties (`Items` of a radio group, combo box or list
+  box) are never extracted from an `.lfm` at all and must be filled from code; see
+  `TfConf.ApplyCaptionsFromResources` in `units/forms/uconf.pp`.
+- **`lazbuild` does not refresh the catalogs.** Merge new strings with Lazarus's
+  `tools/updatepofiles`, or add the handful of entries by hand. If you use the tool,
+  pass every `.rsj` **and** every `.lrj` — it prunes the catalogs down to whatever set
+  you give it, so an incomplete list silently deletes translations.
+- **Check with `make lang-check`** (`.\make.ps1 lang-check` on Windows). It lists
+  resource strings that never reached `lang/Trndi.pot` and reports per-catalog
+  translation counts. Read-only; there is deliberately no target that writes `lang/`.
+
+Full recipe, including the `updatepofiles` invocation and its pitfalls, is in
+[doc/LANGUAGES.md](doc/LANGUAGES.md). Translators submitting a `.po` only need that file.
+
 ## Documentation Guidelines (PasDoc)
 
 We use PasDoc comments for public APIs. Please use:
