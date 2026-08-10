@@ -554,7 +554,9 @@ begin
   lAgo.Left := 0;
   lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   lAgo.Transparent := true;
-  ScaleLbl(lAgo, taLeftJustify, tlCenter, true, IfThen(pnNextProgress.Visible, 10, 0));
+  // Leave the clock clear of the enabled left-side progress bar at every form width.
+  ScaleLbl(lAgo, taLeftJustify, tlCenter, true,
+    IfThen(pnNextProgress.Visible, pnNextProgress.Width + 2, 0));
   lAgo.BringToFront;
 
   lArrow.Height := ClientHeight;
