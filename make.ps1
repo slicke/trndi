@@ -317,6 +317,82 @@ switch ($firstArg) {
         Write-Host "and pascal.format.indent / pascal.format.wrapLineLength to match the flags above." -ForegroundColor DarkGray
         exit 0
     }
+    "lang-check" {
+        # Audit lang/: which resource strings never reached the .pot, and how
+        # complete each catalog is. Read-only. Mirrors 'make lang-check'.
+        #
+        # There is deliberately no target that *writes* lang/. updatepofiles
+        # rebuilds the .pot as the union of the resource files handed to it and
+        # prunes everything else, from the .pot and from every .po -- and the
+        # .rsj set present depends on which platform and build mode last ran.
+        # See doc/LANGUAGES.md for the manual recipe.
+        $pot = 'lang\Trndi.pot'
+        if (-not (Test-Path $pot)) { Write-Error "$pot not found."; exit 1 }
+
+        $res = @(Get-ChildItem -Recurse -Filter *.rsj lib -ErrorAction SilentlyContinue) +
+               @(Get-ChildItem units\forms -Filter *.lrj -ErrorAction SilentlyContinue)
+        if (-not $res) {
+            Write-Host "No .rsj/.lrj found - build first (.\make.ps1), or the audit has nothing to compare."
+            exit 0
+        }
+
+        # .rsj/.lrj are one JSON object per line; name is already the
+        # 'unit.lowercaseident' key the .pot references with '#: '.
+        $rx = '"name":"([^"]*)","sourcebytes":\[[^\]]*\],"value":"([^"]*)"'
+        $pairs = @{}
+        foreach ($f in $res) {
+            foreach ($m in [regex]::Matches((Get-Content -Raw $f.FullName), $rx)) {
+                $pairs[$m.Groups[1].Value] = $m.Groups[2].Value
+            }
+        }
+        $inPot = [System.Collections.Generic.HashSet[string]]::new()
+        foreach ($m in [regex]::Matches((Get-Content -Raw $pot), '(?m)^#: (.+)$')) {
+            [void]$inPot.Add($m.Groups[1].Value.Trim())
+        }
+        Write-Host ("Resource strings in this checkout: {0}   entries in {1}: {2}" -f $pairs.Count, $pot, $inPot.Count)
+        Write-Host ""
+
+        $all = $args -contains '-all' -or $env:LANG_ALL
+        $skipped = 0; $shown = 0
+        foreach ($k in ($pairs.Keys | Where-Object { -not $inPot.Contains($_) } | Sort-Object)) {
+            $v = $pairs[$k]
+            $comp = ($k -split '\.')[-2]
+            # Designer defaults that were never edited: '?' help buttons, the app
+            # name, numeric mock-ups, pure punctuation/escapes, and captions still
+            # equal to the component's own name.
+            $ph = ($v -eq '?') -or ($v -eq 'Trndi') -or ($v -match '^[0-9]+%?$') -or
+                  ($v -match '^[\p{P}\p{S}]+$') -or ($v -match '^(\\u[0-9A-Fa-f]{4})+$') -or
+                  ($comp -and ($v.ToLowerInvariant() -eq $comp))
+            if ($ph -and -not $all) { $skipped++; continue }
+            if ($shown -eq 0) { Write-Host "Missing from $pot - untranslatable until added:" -ForegroundColor Yellow }
+            $shown++
+            Write-Host ("  {0,-44} = ""{1}""" -f $k, $v)
+        }
+        if ($shown -eq 0) { Write-Host "All resource strings built here are present in $pot." -ForegroundColor Green }
+        if ($skipped) {
+            Write-Host ""
+            Write-Host "($skipped design-time placeholders skipped: ""?"" help buttons, unedited" -ForegroundColor DarkGray
+            Write-Host " component names, numeric mock-ups. Pass -all to list them. The real fix is" -ForegroundColor DarkGray
+            Write-Host " Localized=False on those properties in the Lazarus object inspector.)" -ForegroundColor DarkGray
+        }
+
+        # gettext is not standard on Windows; the .po half is best-effort.
+        Write-Host ""
+        $msgfmt = Get-Command msgfmt -ErrorAction SilentlyContinue
+        if (-not $msgfmt) {
+            Write-Host "msgfmt not found - skipping .po validation (install gettext, or run 'make lang-check' under WSL)." -ForegroundColor DarkGray
+            exit 0
+        }
+        $rc = 0
+        $null_out = Join-Path $env:TEMP 'trndi-msgfmt.mo'
+        foreach ($po in Get-ChildItem lang -Filter 'Trndi.*.po') {
+            Write-Host ("{0,-22} " -f $po.Name) -NoNewline
+            & $msgfmt.Source --check-format --check-header --statistics -o $null_out $po.FullName
+            if ($LASTEXITCODE -ne 0) { $rc = 1 }
+        }
+        Remove-Item $null_out -ErrorAction SilentlyContinue
+        exit $rc
+    }
     "help" {
         Write-Host "Trndi make.ps1" -ForegroundColor Cyan
         Write-Host "  ./make.ps1 [target] (no target -> release)" -ForegroundColor Cyan
@@ -332,6 +408,8 @@ switch ($firstArg) {
         Write-Host "  list-modules     Show Pascal 'unit' modules found under units/ as a tree"
         Write-Host "  assets           Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
         Write-Host "  ptop             Regenerate ptop.cfg from JCFSettings.xml (formatter config for ptop; needs perl)"
+        Write-Host "  lang-check       Audit lang/: resource strings missing from Trndi.pot, plus per-catalog stats"
+        Write-Host "                   (read-only; -all lists design-time placeholders; .po validation needs gettext)"
         Write-Host "  clean            Remove build artifacts (*.o, *.ppu, executables, ...); use -n or --dry-run to preview"
         Write-Host "  help             Show this help"
         Write-Host "Notes:" -ForegroundColor Cyan
