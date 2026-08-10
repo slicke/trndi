@@ -981,14 +981,15 @@ procedure TfConf.lAckClick(Sender: TObject);
 const
   txt = 'Trndi makes use of the following 3rd party libraries:' + sHTMLLineBreak +
     'macOS native code libraries by <i>Phil Hess</i>.'#10 + sHTMLLineBreak +
-    'Windows DirectX headers by <i>CMC Development Team</i>.'#10 + sHTMLLineBreak + sHTMLLineBreak +
-    'Extensions use the JavaScript engine <i>QuickJS</i> by <i>Fabrice Bellard</i> and <i>Charlie Gordo</i>.'#10 + sHTMLLineBreak +
+    'Windows DirectX headers by <i>CMC Development Team</i>.'#10 + sHTMLLineBreak +
+    'Linux/BSD network code uses <i>libPasCURL</i> by <i>Ivan Semenkov</i>.'#10 + sHTMLLineBreak + sHTMLLineBreak +
+    'Extensions use the JavaScript engine <i>QuickJS</i> by <i>Fabrice Bellard</i> and <i>Charlie Gordon</i>.'#10 + sHTMLLineBreak +
     'The engine is built from the <i>quickjs-ng</i> fork, maintained by <i>Ben Noordhuis</i>, <i>Saúl Ibarra Corretgé</i> and contributors.' + sHTMLLineBreak + sHTMLLineBreak +
 
     'Haiku specific: OpenSSL' + sHTMLLineBreak +
     'Linux/BSD specific: Qt6 and libCurl (usually with OpenSSL)' + sHTMLLineBreak + sHTMLLineBreak +
 
-    'While Trndi has been built ground-up, it''s "Dexcom New" driver has been inspired by the Python library <i>pydexcom</i> and the Tandem driver by <i>tconnectsync</i>, aswell as the <i>NightScout</i> project for Nightscout-related drivers.' + sHTMLLineBreak + sHTMLLineBreak +
+    'While Trndi has been built ground-up, its "Dexcom New" driver has been inspired by the Python library <i>pydexcom</i>, the Tandem driver by <i>tconnectsync</i>, LibreLinkUp by <i>pylibrelinkup</i> and CareLink by <i>carelink-python-client</i>. Trndi integrates the API of the <i>NightScout</i> project for Nightscout-related drivers.' + sHTMLLineBreak + sHTMLLineBreak +
     'Built in <b>Object Pascal</b>, using the <b>Lazarus</b> component library (LCL) and <b>FreePascal</b>.' + sHTMLLineBreak + sHTMLLineBreak +
     'Follow Trndi on Discord and Github! Contributions of code and translations are very welcome!';
 begin
