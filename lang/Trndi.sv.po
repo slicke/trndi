@@ -3133,31 +3133,31 @@ msgstr ""
 
 #: uconf.rs_dots_auto
 msgid "Adapt to background"
-msgstr ""
+msgstr "Anpassa till bakgrund"
 
 #: uconf.rs_dots_caption
 msgid "Trend dot coloring"
-msgstr ""
+msgstr "Trendpunktsfärg"
 
 #: uconf.rs_dots_classic
 msgid "Classic"
-msgstr ""
+msgstr "Klassisk"
 
 #: uconf.rs_dots_darker
 msgid "Darker"
-msgstr ""
+msgstr "Mörkare"
 
 #: uconf.rs_dots_lighter
 msgid "Lighter"
-msgstr ""
+msgstr "Ljusare"
 
 #: uconf.rs_dots_mono
 msgid "Black or white only"
-msgstr ""
+msgstr "Endast svart eller vitt"
 
 #: uconf.rs_dots_outline
 msgid "True colors, outlined"
-msgstr ""
+msgstr "Riktiga färger, med kontur"
 
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
@@ -3971,4 +3971,3 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
-
