@@ -29,7 +29,11 @@ LCLIntf;
 // Color utility functions
 function DarkenColor(originalColor: TColor; factor: double = 0.8): TColor;
 function LightenColor(originalColor: TColor; factor: double = 0.8): TColor;
+function RelativeLuminance(color: TColor): double;
 function IsLightColor(bgColor: TColor): boolean;
+function ContrastRatio(colorA, colorB: TColor): double;
+function EnsureContrast(foreground, background: TColor;
+  minRatio: double = 3.0): TColor;
 function BlendColors(foreground, background: TColor; alpha: double = 0.5): TColor;
 
 // System information functions  
@@ -85,41 +89,127 @@ begin
   Result := RGB(r, g, b);
 end;
 
-function IsLightColor(bgColor: TColor): boolean;
+// WCAG relative luminance (0 = black, 1 = white). Shared by IsLightColor and
+// ContrastRatio so the gamma math lives in exactly one place.
+function RelativeLuminance(color: TColor): double;
 var
-  R, G, B: byte;
-  r2, g2, b2: double;
-  L: double;
+  rgb: array[0..2] of double;
+  c: TColor;
+  i: integer;
 begin
-  // Get RBG
-  R := GetRValue(bgColor);
-  G := GetGValue(bgColor);
-  B := GetBValue(bgColor);
-
-  // Convert to 0-1
-  r2 := R / 255.0;
-  g2 := G / 255.0;
-  b2 := B / 255.0;
+  // ColorToRGB first: a system color (clWindow, clBtnFace) carries an index,
+  // not channel bytes, and would otherwise decode as garbage.
+  c := ColorToRGB(color);
+  rgb[0] := GetRValue(c) / 255.0;
+  rgb[1] := GetGValue(c) / 255.0;
+  rgb[2] := GetBValue(c) / 255.0;
 
   // Correct gamma
-  if r2 <= 0.04045 then
-    r2 := r2 / 12.92
-  else
-    r2 := Power((r2 + 0.055) / 1.055, 2.4);
-  if g2 <= 0.04045 then
-    g2 := g2 / 12.92
-  else
-    g2 := Power((g2 + 0.055) / 1.055, 2.4);
-  if b2 <= 0.04045 then
-    b2 := b2 / 12.92
-  else
-    b2 := Power((b2 + 0.055) / 1.055, 2.4);
+  for i := 0 to 2 do
+    if rgb[i] <= 0.04045 then
+      rgb[i] := rgb[i] / 12.92
+    else
+      rgb[i] := Power((rgb[i] + 0.055) / 1.055, 2.4);
 
-  // Calculate luminance
-  L := 0.2126 * r2 + 0.7152 * g2 + 0.0722 * b2;
+  Result := 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+end;
 
+function IsLightColor(bgColor: TColor): boolean;
+begin
   // If L > 0.179 black is more suitable than white
-  Result := (L > 0.179);
+  Result := RelativeLuminance(bgColor) > 0.179;
+end;
+
+// WCAG contrast ratio, 1.0 (identical) .. 21.0 (black on white). Order of the
+// arguments does not matter.
+function ContrastRatio(colorA, colorB: TColor): double;
+var
+  lighter, darker, tmp: double;
+begin
+  lighter := RelativeLuminance(colorA);
+  darker := RelativeLuminance(colorB);
+  if darker > lighter then
+  begin
+    tmp := lighter;
+    lighter := darker;
+    darker := tmp;
+  end;
+  Result := (lighter + 0.05) / (darker + 0.05);
+end;
+
+// Lift a foreground color away from the background it will be drawn on until
+// it reaches minRatio, and no further — the point is legibility without
+// throwing away the color's identity. Blending toward pure black or pure white
+// scales all three channels together, so the hue survives the adjustment.
+//
+// The pole is picked to move away from the background (darken on a light
+// background, lighten on a dark one); the opposite pole is tried as a fallback
+// because a mid-tone background caps how much contrast one direction can yield.
+// If neither reaches the target, the most separated candidate found is
+// returned rather than failing back to the original.
+function EnsureContrast(foreground, background: TColor;
+  minRatio: double = 3.0): TColor;
+const
+  // 5% steps. Fine enough that the result sits just past the target instead of
+  // overshooting into a needlessly washed-out or muddy tone.
+  STEPS = 20;
+var
+  poles: array[0..1] of TColor;
+  candidate, best: TColor;
+  ratio, bestRatio, bgLum: double;
+  pole, i: integer;
+
+  // The background is fixed for the whole search, so hold its luminance rather
+  // than re-running the gamma curve on it for all 40 candidates.
+  function RatioAgainstBg(color: TColor): double;
+  var
+    lum: double;
+  begin
+    lum := RelativeLuminance(color);
+    if lum > bgLum then
+      Result := (lum + 0.05) / (bgLum + 0.05)
+    else
+      Result := (bgLum + 0.05) / (lum + 0.05);
+  end;
+
+begin
+  Result := foreground;
+  if minRatio <= 1.0 then
+    Exit;
+
+  bgLum := RelativeLuminance(background);
+  bestRatio := RatioAgainstBg(foreground);
+  if bestRatio >= minRatio then
+    Exit;
+
+  // IsLightColor's threshold, applied to the luminance already in hand.
+  if bgLum > 0.179 then
+  begin
+    poles[0] := clBlack;
+    poles[1] := clWhite;
+  end
+  else
+  begin
+    poles[0] := clWhite;
+    poles[1] := clBlack;
+  end;
+
+  best := foreground;
+  for pole := 0 to 1 do
+    for i := 1 to STEPS do
+    begin
+      candidate := BlendColors(poles[pole], foreground, i / STEPS);
+      ratio := RatioAgainstBg(candidate);
+      if ratio > bestRatio then
+      begin
+        bestRatio := ratio;
+        best := candidate;
+      end;
+      if ratio >= minRatio then
+        Exit(candidate);
+    end;
+
+  Result := best;
 end;
 
 function BlendColors(foreground, background: TColor; alpha: double = 0.5): TColor;
