@@ -2961,6 +2961,26 @@ msgid ""
 "- The window's borders can be hidden (may depend on operating system)"
 msgstr ""
 
+#: uconf.rs_dots_auto
+msgid "Adapt to background"
+msgstr ""
+
+#: uconf.rs_dots_caption
+msgid "Trend dot coloring"
+msgstr ""
+
+#: uconf.rs_dots_classic
+msgid "Classic"
+msgstr ""
+
+#: uconf.rs_dots_darker
+msgid "Darker"
+msgstr ""
+
+#: uconf.rs_dots_lighter
+msgid "Lighter"
+msgstr ""
+
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
 msgstr "Bidragyder: "

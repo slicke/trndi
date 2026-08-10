@@ -1313,6 +1313,35 @@ object fConf: TfConf
             Caption = 'Low'
             Layout = blGlyphRight
           end
+          object rgDots: TRadioGroup
+            Left = 5
+            Height = 90
+            Top = 110
+            Width = 619
+            Align = alTop
+            AutoFill = True
+            BorderSpacing.Around = 5
+            Caption = 'Trend dot coloring'
+            ChildSizing.LeftRightSpacing = 6
+            ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+            ChildSizing.EnlargeVertical = crsHomogenousChildResize
+            ChildSizing.ShrinkHorizontal = crsScaleChilds
+            ChildSizing.ShrinkVertical = crsScaleChilds
+            ChildSizing.Layout = cclLeftToRightThenTopToBottom
+            ChildSizing.ControlsPerLine = 2
+            ClientHeight = 70
+            ClientWidth = 615
+            Columns = 2
+            ItemIndex = 1
+            Items.Strings = (
+              'Classic'
+              'Adapt to background'
+              'Lighter'
+              'Darker'
+            )
+            ParentBackground = False
+            TabOrder = 0
+          end
           object Label22: TLabel
             Left = 0
             Height = 15

@@ -273,6 +273,11 @@ begin
     bg_rel_color_lo_txt := clBlack;
   end;
 
+  // How the trend dots derive their color from the range colors above. Read
+  // once and cached: DotPaint runs per dot on every paint pass.
+  DotColorMode := DotColorModeFromSetting(
+    native.GetIntSetting('ux.dot_color_mode', Ord(dcmAuto)));
+
   // Color title bar (on Windows?)
   titlecolor := native.GetBoolSetting('ux.title_color', true);
 

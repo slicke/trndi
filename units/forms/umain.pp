@@ -270,6 +270,17 @@ STALE_DOT_BLEND = 0.42;
   // contrast) asks for 3:1; going higher drives every dot toward a muddy dark
   // tone and costs the color separation *between* the bands.
 DOT_MIN_CONTRAST = 3.0;
+  // How far the Lighter and Darker dot modes move a dot off its range color
+  // before the contrast floor above is applied. Large enough to read as a
+  // deliberate tint rather than a rendering artefact, small enough that the
+  // band's hue is still recognisable. Expressed as the fraction of the way to
+  // white; the darker side retains (1 - this) of each channel, which lands the
+  // two roughly the same visual distance from the untouched color.
+DOT_TONE_SHIFT = 0.55;
+  // The blanket darkening every dot got before the per-dot contrast pass
+  // existed. Kept only so dcmClassic reproduces it exactly — see the note in
+  // DotDisplayColor about why it cannot separate a dot from its background.
+DOT_CLASSIC_DARKEN = -0.8;
 
 type
   { TfBG }
@@ -291,6 +302,16 @@ TDotInfo = record
   Height: integer;
   Visible: boolean;
 end;
+
+{** How a trend dot's drawn color is derived from the range color of the
+    reading behind it. Persisted as `ux.dot_color_mode`; the ordinals are the
+    item order of rgDots in the settings dialog, so never reorder them. }
+TDotColorMode = (
+  dcmClassic,                 // Flat darkening, background not considered
+  dcmAuto,                    // Lift off the background just enough (default)
+  dcmLighter,                 // Tint toward white, then apply the contrast floor
+  dcmDarker                   // Shade toward black, then apply the contrast floor
+  );
 
 TfBG = class(TForm)
   apMain: TApplicationProperties;
@@ -1054,6 +1075,7 @@ PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
 PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
 PredictShortMinutes: integer = 10; // Prediction horizon (5, 10, or 15 minutes)
 PredictDotMode: boolean = false; // Render predictions as hollow dots on the trend instead of the lPredict label
+DotColorMode: TDotColorMode = dcmAuto; // ux.dot_color_mode — cached here because DotPaint runs per dot, per paint
 RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the actual rate of change instead of the 8-direction glyph
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings

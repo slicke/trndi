@@ -413,6 +413,7 @@ TfConf = class(TForm)
   cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
   rbTrendWindow: TRadioGroup;
+  rgDots: TRadioGroup;
   seTIR: TSpinEdit;
   seTTSRate: TSpinEdit;
   spDeltaMax: TSpinEdit;
@@ -854,6 +855,15 @@ RS_TREND_120 = '120 min (24 dots)';
 RS_TREND_180 = '180 min (36 dots)';
 RS_TREND_250 = '250 min (50 dots)';
 
+{ Trend dot coloring options, here for the same reason as the trend window
+  ones above. Order is significant: the ItemIndex is stored as
+  ux.dot_color_mode and read back as umain's TDotColorMode. }
+RS_DOTS_CAPTION = 'Trend dot coloring';
+RS_DOTS_CLASSIC = 'Classic';
+RS_DOTS_AUTO = 'Adapt to background';
+RS_DOTS_LIGHTER = 'Lighter';
+RS_DOTS_DARKER = 'Darker';
+
 RS_EXT_RESET_BTN = 'Reset permissions';
 RS_EXT_CHOOSE = 'Choose an extension for more info';
 RS_EXT_VERSION = 'Version %s';
@@ -1047,6 +1057,22 @@ begin
   // load overwrites it.
   if (keep >= 0) and (keep < rbTrendWindow.Items.Count) then
     rbTrendWindow.ItemIndex := keep;
+
+  rgDots.Caption := RS_DOTS_CAPTION;
+  keep := rgDots.ItemIndex;
+  rgDots.Items.BeginUpdate;
+  try
+    rgDots.Items.Clear;
+    // Order must match TDotColorMode (umain.pp): classic, auto, lighter, darker.
+    rgDots.Items.Add(RS_DOTS_CLASSIC);
+    rgDots.Items.Add(RS_DOTS_AUTO);
+    rgDots.Items.Add(RS_DOTS_LIGHTER);
+    rgDots.Items.Add(RS_DOTS_DARKER);
+  finally
+    rgDots.Items.EndUpdate;
+  end;
+  if (keep >= 0) and (keep < rgDots.Items.Count) then
+    rgDots.ItemIndex := keep;
 end;
 
 procedure TfConf.ClearExtensionInfo;
@@ -2279,6 +2305,11 @@ begin
 
   cl_hi_txt_cust.ButtonColor := theme.ColorRangeHighText;
   cl_lo_txt_cust.ButtonColor := theme.ColorRangeLowText;
+
+  // The dot coloring lives on this page and is derived from the palette above,
+  // so the reset covers it too. 1 = dcmAuto, the shipped default; uconf cannot
+  // name umain's TDotColorMode without a circular unit reference.
+  rgDots.ItemIndex := 1;
 end;
 
 procedure TfConf.btUserSaveClick(Sender: TObject);

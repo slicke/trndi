@@ -171,6 +171,51 @@ begin
     (((ActiveDots - SlotIndex) mod Stride) = 0);
 end;
 
+// Decode a stored ux.dot_color_mode into the enum, falling back to the default
+// for anything out of range (an older profile, a hand-edited settings store).
+// Pure helper operating on plain data for unit tests
+function DotColorModeFromSetting(Value: integer): TDotColorMode;
+begin
+  if (Value < Ord(Low(TDotColorMode))) or (Value > Ord(High(TDotColorMode))) then
+    Result := dcmAuto
+  else
+    Result := TDotColorMode(Value);
+end;
+
+// Map a dot's identity color — the range color DetermineColorForReading picked
+// for the reading — to the color it is actually drawn in, per the user's dot
+// coloring mode. Called from DotPaint, where the background is final.
+//
+// Every mode except dcmClassic ends at EnsureContrast, so the dot is never
+// allowed to sink into the background: Lighter and Darker say which way the
+// user wants the dot pushed, not that it may become invisible if pushed toward
+// the background's own tone.
+//
+// dcmClassic is the pre-contrast behaviour, deliberately unguarded. The flat
+// step it takes is applied to a color drawn from the same palette that colors
+// the background, so a reading in the same band as the current one is close to
+// invisible — that is what the mode reproduces, and why it is not the default.
+//
+// Pure helper operating on plain data for unit tests
+function DotDisplayColor(Identity, Background: TColor;
+  Mode: TDotColorMode): TColor;
+begin
+  case Mode of
+  dcmClassic:
+    Result := LightenColor(Identity, DOT_CLASSIC_DARKEN);
+  dcmLighter:
+    Result := EnsureContrast(LightenColor(Identity, DOT_TONE_SHIFT), Background,
+      DOT_MIN_CONTRAST);
+  dcmDarker:
+    // DarkenColor's factor is the fraction of each channel *kept*, so the
+    // complement of the shift is what makes the two directions symmetric.
+    Result := EnsureContrast(DarkenColor(Identity, 1.0 - DOT_TONE_SHIFT),
+      Background, DOT_MIN_CONTRAST);
+  else
+    Result := EnsureContrast(Identity, Background, DOT_MIN_CONTRAST);
+  end;
+end;
+
 
 
 function TfBG.dotsInView: integer;

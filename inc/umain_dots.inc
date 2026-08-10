@@ -290,7 +290,7 @@ begin
     // final (see the note there). fBG.Color is the reference even inside a
     // range band: the bands composite at a low alpha and only ever darken, so
     // a dot cleared against the untinted color is cleared against the band too.
-    dotColor := EnsureContrast(L.Font.Color, fBG.Color, DOT_MIN_CONTRAST);
+    dotColor := DotDisplayColor(L.Font.Color, fBG.Color, DotColorMode);
     if S = DOT_PREDICT then
     begin
       // When the engine reports low confidence in its forecast, draw a ?
@@ -331,7 +331,14 @@ begin
       // background) rather than from the dot's own lightness: a ring lightened
       // off an already-dark dot lands back on a light background and the rim
       // dissolves into it.
+      //
+      // Classic keeps its own rim rule (a plain black/white pick off the dot's
+      // lightness): the mode exists to reproduce the old look, and the
+      // background-directed step is part of what changed.
       ringWidth := Max(2, d div 12);
+      if DotColorMode = dcmClassic then
+        ringColor := GetTextColorForBackground(dotColor)
+      else
       if IsLightColor(fBG.Color) then
         ringColor := DarkenColor(dotColor, 0.45)
       else
