@@ -1879,7 +1879,12 @@ begin
       Result := bg_rel_color_hi;
   end;
 
-  Result := LightenColor(Result, -0.8);
+  // No blanket darkening here any more: the result is the dot's *identity*
+  // color, and DotPaint lifts it to DOT_MIN_CONTRAST against whatever
+  // background it actually lands on. That has to happen at paint time — the
+  // dots are colored from PlaceTrendDots, which runs before
+  // UpdateUIBasedOnGlucose picks the new background, so fBG.Color is still the
+  // previous reading's color at this point.
 
   // While data is stale the trace is a record, not a live plot. Fade it toward
   // the stale background so the dots read as history — at full saturation a red

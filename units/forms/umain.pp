@@ -263,6 +263,13 @@ STALE_BG_COLOR = TColor($001F1916); // RGB(22, 25, 31)
   // hi/lo banding is still readable, but a red history dot can no longer be
   // mistaken for a live hypo/hyper at a glance.
 STALE_DOT_BLEND = 0.42;
+  // Contrast a trend dot has to keep against the window background. The dots
+  // are colored from the same palette that colors the background, so a reading
+  // in the same band as the current one comes out all but invisible on its own
+  // — a high dot on the high background measured 1.2:1. WCAG 1.4.11 (non-text
+  // contrast) asks for 3:1; going higher drives every dot toward a muddy dark
+  // tone and costs the color separation *between* the bands.
+DOT_MIN_CONTRAST = 3.0;
 
 type
   { TfBG }

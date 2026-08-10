@@ -285,7 +285,12 @@ begin
     if d < 2 then
       Exit;
 
-    dotColor := L.Font.Color;
+    // DetermineColorForReading stored the dot's range color; separating it from
+    // the background is this side's job, because only here is the background
+    // final (see the note there). fBG.Color is the reference even inside a
+    // range band: the bands composite at a low alpha and only ever darken, so
+    // a dot cleared against the untinted color is cleared against the band too.
+    dotColor := EnsureContrast(L.Font.Color, fBG.Color, DOT_MIN_CONTRAST);
     if S = DOT_PREDICT then
     begin
       // When the engine reports low confidence in its forecast, draw a ?
@@ -321,9 +326,16 @@ begin
     if S = DOT_FRESH then
     begin
       // Rim the newest reading in a contrasting tone of its range color; a
-      // same-color ring over a solid disc would be invisible.
+      // same-color ring over a solid disc would be invisible. The step is taken
+      // in the same direction the dot itself was pushed (away from the
+      // background) rather than from the dot's own lightness: a ring lightened
+      // off an already-dark dot lands back on a light background and the rim
+      // dissolves into it.
       ringWidth := Max(2, d div 12);
-      ringColor := GetTextColorForBackground(dotColor);
+      if IsLightColor(fBG.Color) then
+        ringColor := DarkenColor(dotColor, 0.45)
+      else
+        ringColor := LightenColor(dotColor, 0.55);
     end
     else
     begin

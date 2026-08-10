@@ -104,7 +104,9 @@ If you enable "full arrow set" in settings, you get more precise information:
 Those small dots you see across the screen show your recent readings over time:
 - **Rightmost dot** = Most recent reading (that's now!)
 - **Dots to the left** = Your readings going back in time
-- **Dot color** = Same as your current reading (green/red/yellow)
+- **Dot color** = The range that *that* reading fell in (green/red/yellow), shaded
+  as needed so it still stands out against the background colour of the moment —
+  otherwise a high dot would vanish into a high (yellow) background
 
 **How to use them**: Click on any dot to see the actual number for that reading.
 
