@@ -1315,7 +1315,7 @@ object fConf: TfConf
           end
           object rgDots: TRadioGroup
             Left = 5
-            Height = 90
+            Height = 115
             Top = 110
             Width = 619
             Align = alTop
@@ -1329,15 +1329,17 @@ object fConf: TfConf
             ChildSizing.ShrinkVertical = crsScaleChilds
             ChildSizing.Layout = cclLeftToRightThenTopToBottom
             ChildSizing.ControlsPerLine = 2
-            ClientHeight = 70
+            ClientHeight = 95
             ClientWidth = 615
             Columns = 2
-            ItemIndex = 1
+            ItemIndex = 0
             Items.Strings = (
               'Classic'
               'Adapt to background'
               'Lighter'
               'Darker'
+              'Black or white only'
+              'True colors, outlined'
             )
             ParentBackground = False
             TabOrder = 0

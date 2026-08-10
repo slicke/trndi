@@ -65,6 +65,11 @@ type
     procedure TestDotColorModeFromSettingClamps;
     procedure TestDotDisplayColorClearsBackground;
     procedure TestDotDisplayColorClassicIsUnguarded;
+    procedure TestDotBandPartnerMapsRanges;
+    procedure TestDotDisplayColorPrefersColorfulHalf;
+    procedure TestDotDisplayColorAvoidsReadingColor;
+    procedure TestDotDisplayColorMonoIgnoresRange;
+    procedure TestDotDisplayColorOutlineKeepsRangeColor;
 
     // Startup / shutdown tests
     procedure TestFormCreateStartsTimers;
@@ -469,10 +474,16 @@ begin
         g.DotColorModeFromSettingForTests(1) = dcmAuto);
       AssertTrue('3 decodes to Darker',
         g.DotColorModeFromSettingForTests(3) = dcmDarker);
+      AssertTrue('4 is monochrome',
+        g.DotColorModeFromSettingForTests(4) = dcmMono);
+      AssertTrue('5 is outlined',
+        g.DotColorModeFromSettingForTests(5) = dcmOutline);
+      // Against the constant, not a value: which mode is the default is a
+      // decision that may change, that it survives a bad stored value is not.
       AssertTrue('A negative value falls back to the default',
-        g.DotColorModeFromSettingForTests(-1) = dcmAuto);
+        g.DotColorModeFromSettingForTests(-1) = DOT_COLOR_MODE_DEFAULT);
       AssertTrue('A too-large value falls back to the default',
-        g.DotColorModeFromSettingForTests(99) = dcmAuto);
+        g.DotColorModeFromSettingForTests(99) = DOT_COLOR_MODE_DEFAULT);
     finally
       g.Free;
       fBG := nil;
@@ -505,9 +516,14 @@ begin
     g := TfBG.Create;
     try
       fBG := g;
-      for mode := dcmAuto to dcmDarker do
+      // dcmOutline is excluded on purpose — it is the one mode whose fill
+      // carries no contrast at all, because DotPaint rims it instead.
+      for mode := dcmAuto to dcmMono do
       begin
-        drawn := g.DotDisplayColorForTests(IDENTITY, IDENTITY, mode);
+        // clWhite stands in for the reading color: far from every candidate
+        // here, so the contrast floor is the only thing under test.
+        drawn := g.DotDisplayColorForTests(IDENTITY, clNone, IDENTITY, clWhite,
+          mode);
         AssertTrue(Format('Mode %d must clear the contrast floor on its own ' +
           'band (got %.2f:1)', [Ord(mode), ContrastRatio(drawn, IDENTITY)]),
           ContrastRatio(drawn, IDENTITY) >= DOT_MIN_CONTRAST - 0.001);
@@ -516,11 +532,11 @@ begin
       // The tint modes must actually go the way they say on a background that
       // leaves room in both directions.
       AssertTrue('Lighter tints away from the identity color',
-        RelativeLuminance(g.DotDisplayColorForTests(IDENTITY, clBlack, dcmLighter)) >
-        RelativeLuminance(IDENTITY));
+        RelativeLuminance(g.DotDisplayColorForTests(IDENTITY, clNone, clBlack,
+        clWhite, dcmLighter)) > RelativeLuminance(IDENTITY));
       AssertTrue('Darker shades away from the identity color',
-        RelativeLuminance(g.DotDisplayColorForTests(IDENTITY, clWhite, dcmDarker)) <
-        RelativeLuminance(IDENTITY));
+        RelativeLuminance(g.DotDisplayColorForTests(IDENTITY, clNone, clWhite,
+        clBlack, dcmDarker)) < RelativeLuminance(IDENTITY));
     finally
       g.Free;
       fBG := nil;
@@ -551,12 +567,290 @@ begin
     g := TfBG.Create;
     try
       fBG := g;
-      drawn := g.DotDisplayColorForTests(IDENTITY, IDENTITY, dcmClassic);
+      drawn := g.DotDisplayColorForTests(IDENTITY, clNone, IDENTITY, clWhite,
+        dcmClassic);
       AssertEquals('Classic is the old flat darkening, background ignored',
         LightenColor(IDENTITY, DOT_CLASSIC_DARKEN), drawn);
       AssertTrue('Classic stays below the floor on its own band — the reason ' +
         'it is not the default',
         ContrastRatio(drawn, IDENTITY) < DOT_MIN_CONTRAST);
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// The pair lookup has to hit every range, and — just as importantly — miss
+// everything else: a stale or high-contrast dot must keep the color it was
+// deliberately given.
+procedure TUmainTests.TestDotBandPartnerMapsRanges;
+var
+  g: TfBG;
+  n: TrndiNative;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      AssertEquals('High pairs with the high text color',
+        bg_color_hi_txt, g.DotBandPartnerForTests(bg_color_hi));
+      AssertEquals('Low pairs with the low text color',
+        bg_color_lo_txt, g.DotBandPartnerForTests(bg_color_lo));
+      // In-range dots are colored from the text half, so this one is inverted.
+      AssertEquals('In-range pairs with the in-range background',
+        bg_color_ok, g.DotBandPartnerForTests(bg_color_ok_txt));
+      AssertEquals('Personal high pairs with its text color',
+        bg_rel_color_hi_txt, g.DotBandPartnerForTests(bg_rel_color_hi));
+      AssertEquals('Personal low pairs with its text color',
+        bg_rel_color_lo_txt, g.DotBandPartnerForTests(bg_rel_color_lo));
+      AssertEquals('A color from no range has no partner',
+        clNone, g.DotBandPartnerForTests(TColor($00123456)));
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// Auto draws whichever half of the range's pair keeps more colour once it has
+// been lifted clear of the background. That is what keeps the ranges apart on a
+// light window, where the lift can only darken and would otherwise land them
+// all in the same muddy tone.
+procedure TUmainTests.TestDotDisplayColorPrefersColorfulHalf;
+const
+  PALE = TColor($00F2FFF2);                       // Classic in-range text
+  VIVID = TColor($0000DC84);                      // Classic in-range background
+  BACKGROUND = TColor($0007DAFF);                 // Classic high background
+  // Classic personal-low: a vivid pink paired with a near-black maroon. The
+  // maroon is the more *saturated* of the two by the scale-invariant measure,
+  // which is why that measure must not be the one deciding.
+  PINK = TColor($00A859EE);
+  MAROON = TColor($002D074E);
+  // Classic high on the near-black stale window: both halves come out within a
+  // couple of percent of each other, and the dot should keep its own colour.
+  AMBER = TColor($0007DAFF);
+  AMBER_TEXT = TColor($000052FB);
+  STALE = TColor($001F1916);
+var
+  g: TfBG;
+  n: TrndiNative;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      AssertTrue('The fixture pair must actually differ in chroma',
+        ColorChroma(VIVID) > ColorChroma(PALE));
+
+      // clWhite for the reading color throughout: none of the candidates below
+      // is anywhere near it, so the chroma comparison is what decides and
+      // nothing else.
+      AssertEquals('A washed-out identity gives way to its colourful partner',
+        EnsureContrast(VIVID, BACKGROUND, DOT_MIN_CONTRAST),
+        g.DotDisplayColorForTests(PALE, VIVID, BACKGROUND, clWhite, dcmAuto));
+      AssertEquals('A colourful identity keeps its own colour',
+        EnsureContrast(VIVID, BACKGROUND, DOT_MIN_CONTRAST),
+        g.DotDisplayColorForTests(VIVID, PALE, BACKGROUND, clWhite, dcmAuto));
+      AssertEquals('No partner (stale, high contrast) means no substitution',
+        EnsureContrast(PALE, BACKGROUND, DOT_MIN_CONTRAST),
+        g.DotDisplayColorForTests(PALE, clNone, BACKGROUND, clWhite, dcmAuto));
+
+      // Judged before the lift these two go the wrong way: the maroon reads as
+      // the more saturated half, and on the dark window the amber's partner
+      // wins by a hair and swaps a colour for no visible gain.
+      AssertEquals('A near-black partner does not displace a vivid identity',
+        EnsureContrast(PINK, BACKGROUND, DOT_MIN_CONTRAST),
+        g.DotDisplayColorForTests(PINK, MAROON, BACKGROUND, clWhite, dcmAuto));
+      AssertEquals('A marginal gain is not worth swapping the colour for',
+        EnsureContrast(AMBER, STALE, DOT_MIN_CONTRAST),
+        g.DotDisplayColorForTests(AMBER, AMBER_TEXT, STALE, clWhite, dcmAuto));
+
+      // The pair is an Auto-only device — the tint modes stay literal about
+      // the color the reading was given.
+      AssertEquals('Lighter ignores the partner',
+        g.DotDisplayColorForTests(PALE, clNone, BACKGROUND, clWhite, dcmLighter),
+        g.DotDisplayColorForTests(PALE, VIVID, BACKGROUND, clWhite, dcmLighter));
+      AssertEquals('Classic ignores the partner',
+        g.DotDisplayColorForTests(PALE, clNone, BACKGROUND, clWhite, dcmClassic),
+        g.DotDisplayColorForTests(PALE, VIVID, BACKGROUND, clWhite, dcmClassic));
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// On the window a range owns, the contrast floor lands both halves of that
+// range's pair on the reading the window is showing — same lightness, same hue
+// — and the dots disappear into the digits. Auto has to fall back to the
+// untouched palette color there, and must not disturb the ranges that already
+// read cleanly across the reading.
+procedure TUmainTests.TestDotDisplayColorAvoidsReadingColor;
+const
+  OK_TEXT = TColor($00F2FFF2);      // Classic in-range text (near-white)
+  OK_BG = TColor($0000DC84);        // Classic in-range background
+  HIGH_BG = TColor($0007DAFF);      // Classic high background
+  HIGH_TEXT = TColor($000052FB);    // Classic high text (red-orange)
+var
+  g: TfBG;
+  n: TrndiNative;
+  okValue, highValue, collides: TColor;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      // What UpdateUIColors draws the reading in on a light window.
+      okValue := DarkenColor(OK_BG, 0.5);
+      highValue := DarkenColor(HIGH_BG, 0.5);
+
+      // The fixture only means anything if the lifted color really does land
+      // on the reading — that is the whole failure being guarded against.
+      collides := EnsureContrast(OK_BG, OK_BG, DOT_MIN_CONTRAST);
+      AssertTrue(Format('Fixture: the lifted in-range half must collide with ' +
+        'the reading (distance %d)', [ColorDistance(collides, okValue)]),
+        ColorDistance(collides, okValue) < DOT_VALUE_SEPARATION);
+
+      AssertEquals('An in-range dot on the in-range window falls back to the ' +
+        'untouched text color rather than sinking into the reading',
+        OK_TEXT, g.DotDisplayColorForTests(OK_TEXT, OK_BG, OK_BG, okValue,
+        dcmAuto));
+      // Why the fallback skips the first candidate here: the in-range pair's
+      // other half *is* the window.
+      AssertFalse('The background half is never an escape from the reading',
+        g.DotSeparatedFromValueForTests(OK_BG, OK_BG, okValue));
+
+      // A high dot on the high window shares the reading's lightness but not
+      // its hue, so it reads fine and keeps the lifted color it already had.
+      AssertEquals('A dot that already reads over the reading is left alone',
+        EnsureContrast(HIGH_TEXT, HIGH_BG, DOT_MIN_CONTRAST),
+        g.DotDisplayColorForTests(HIGH_BG, HIGH_TEXT, HIGH_BG, highValue,
+        dcmAuto));
+
+      // The fallback is Auto's, like the pair it draws from.
+      AssertEquals('Darker stays literal about the color it was given',
+        g.DotDisplayColorForTests(OK_TEXT, clNone, OK_BG, okValue, dcmDarker),
+        g.DotDisplayColorForTests(OK_TEXT, OK_BG, OK_BG, okValue, dcmDarker));
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// Monochrome is the one mode that throws the range color away, so what has to
+// be pinned is that it throws *all* of it away and takes its pole from the
+// window alone — the point of the mode is that it cannot be surprised by a
+// palette.
+procedure TUmainTests.TestDotDisplayColorMonoIgnoresRange;
+const
+  OK_TEXT = TColor($00F2FFF2);
+  OK_BG = TColor($0000DC84);        // Classic in-range background, a light one
+  STALE = TColor($001F1916);        // The stale window, near black
+var
+  g: TfBG;
+  n: TrndiNative;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      AssertEquals('A light window takes black dots',
+        clBlack, g.DotDisplayColorForTests(OK_TEXT, OK_BG, OK_BG,
+        DarkenColor(OK_BG, 0.5), dcmMono));
+      AssertEquals('A dark window takes white dots',
+        clWhite, g.DotDisplayColorForTests(OK_TEXT, OK_BG, STALE,
+        LightenColor(STALE, 0.3), dcmMono));
+      // Same window, every other range: the mode is background-only.
+      AssertEquals('The range color has no say',
+        g.DotDisplayColorForTests(bg_color_hi, bg_color_hi_txt, OK_BG,
+        DarkenColor(OK_BG, 0.5), dcmMono),
+        g.DotDisplayColorForTests(bg_color_lo, clNone, OK_BG,
+        DarkenColor(OK_BG, 0.5), dcmMono));
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// Outline is the only mode that hands a dot's visibility to the rim instead of
+// the fill, which is what lets it keep a range's hue — a high dot stays amber
+// rather than darkening to olive or turning into the red-orange half of the
+// pair. So what has to hold is that the fill is never touched, on any window,
+// and that the rim it depends on is always the pole opposite that window.
+procedure TUmainTests.TestDotDisplayColorOutlineKeepsRangeColor;
+const
+  HIGH_BG = TColor($0007DAFF);      // Classic high background, amber
+  HIGH_TEXT = TColor($000052FB);    // Its pair half, a red-orange
+  OK_BG = TColor($0000DC84);        // A light window
+  STALE = TColor($001F1916);        // A dark one
+  WINDOWS: array[0..3] of TColor = (OK_BG, HIGH_BG, STALE, clWhite);
+var
+  g: TfBG;
+  n: TrndiNative;
+  i: integer;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      for i := 0 to High(WINDOWS) do
+        AssertEquals(Format('The fill is the range color untouched on $%.6x',
+          [WINDOWS[i]]), HIGH_BG,
+          g.DotDisplayColorForTests(HIGH_BG, HIGH_TEXT, WINDOWS[i],
+          DarkenColor(WINDOWS[i], 0.5), dcmOutline));
+
+      // Including on its own window, where every other mode has to move it.
+      AssertEquals('Not even on the window the range owns', HIGH_BG,
+        g.DotDisplayColorForTests(HIGH_BG, HIGH_TEXT, HIGH_BG,
+        DarkenColor(HIGH_BG, 0.5), dcmOutline));
+
+      AssertEquals('A light window is rimmed in black',
+        clBlack, g.DotOutlineColorForTests(HIGH_BG));
+      AssertEquals('A dark window is rimmed in white',
+        clWhite, g.DotOutlineColorForTests(STALE));
     finally
       g.Free;
       fBG := nil;

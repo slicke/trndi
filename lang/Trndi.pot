@@ -2977,6 +2977,14 @@ msgstr ""
 msgid "Lighter"
 msgstr ""
 
+#: uconf.rs_dots_mono
+msgid "Black or white only"
+msgstr ""
+
+#: uconf.rs_dots_outline
+msgid "True colors, outlined"
+msgstr ""
+
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
 msgstr ""

@@ -104,20 +104,42 @@ If you enable "full arrow set" in settings, you get more precise information:
 Those small dots you see across the screen show your recent readings over time:
 - **Rightmost dot** = Most recent reading (that's now!)
 - **Dots to the left** = Your readings going back in time
-- **Dot color** = The range that *that* reading fell in (green/red/yellow), shaded
-  as needed so it still stands out against the background colour of the moment —
-  otherwise a high dot would vanish into a high (yellow) background
+- **Dot color** = The range that *that* reading fell in (green/red/yellow),
+  darkened. Note that out of the box a dot is *not* adjusted to the background
+  colour of the moment, so a high dot on a high (yellow) background is hard to
+  pick out — if that bothers you, the setting below changes it
 
 **How to use them**: Click on any dot to see the actual number for that reading.
 
 **Changing how the dots are coloured**: *Settings → Colors → Backgrounds → Trend
 dot coloring*:
-- **Adapt to background** (default) — each dot keeps its own range colour and is
-  lifted off the background only as far as it has to be to stay visible
-- **Classic** — the flat darkening Trndi used before, background not taken into
-  account; a dot in the same range as the current reading is hard to see
+- **Classic** (default) — the look Trndi has always had: a flat darkening of the
+  range colour, with the background not taken into account. A dot in the same
+  range as the current reading is hard to see. Every mode below fixes that in a
+  different way
+- **True colors, outlined** — every dot keeps the exact colour you gave its
+  range, and gets a thin black or white rim to make it visible instead. This
+  is the only mode where a high dot is still the orange you picked no matter what
+  the window is showing: the others have to darken or swap the colour to get it
+  clear of the background, and there is no such thing as a dark bright orange.
+  The newest reading is marked with a heavier rim rather than by having one
+- **Adapt to background** — each dot is lifted off the background only
+  as far as it has to be to stay visible. Every range has two colours in your
+  palette (its background and the text that sits on it), and the dot is drawn in
+  whichever of the two keeps more colour after that lift — so on a high (yellow)
+  window a high dot turns deep red-orange and an in-range dot green, instead of
+  both fading to the same murky tone. Dots belonging to the range the window is
+  *currently* showing get the palette colour untouched instead, because the
+  lifted version lands on the big reading and disappears into the digits: on an
+  in-range window the in-range dots are near-white, on a low window the low dots
+  are near-white, on a high window the high dots are red-orange
 - **Lighter** / **Darker** — a deliberate tint toward white or black, still with
   the visibility floor applied so a dot cannot disappear into the background
+- **Black or white only** — no range colours at all: every dot is plain black on
+  a light window and plain white on a dark one. You can still tell the ranges
+  apart, from how high each dot sits and from the coloured bands behind them.
+  Pick this if the coloured dots look busy to you, or if the colours aren't
+  something you can rely on
 
 **In a narrow window**: If the window gets too small to fit every dot, Trndi thins
 them out and draws only every second (or third, …) one, so they never smear

@@ -44,5 +44,9 @@
   function TrendDotStrideForTests(AClientWidth, AColumnCount: integer): integer;
   function TrendDotVisibleInStrideForTests(SlotIndex, ActiveDots, Stride: integer): boolean;
   function DotColorModeFromSettingForTests(Value: integer): TDotColorMode;
-  function DotDisplayColorForTests(Identity, Background: TColor;
-    Mode: TDotColorMode): TColor;
+  function DotDisplayColorForTests(Identity, Partner, Background,
+    ValueColor: TColor; Mode: TDotColorMode): TColor;
+  function DotBandPartnerForTests(Identity: TColor): TColor;
+  function DotSeparatedFromValueForTests(Candidate, Background,
+    ValueColor: TColor): boolean;
+  function DotOutlineColorForTests(Background: TColor): TColor;

@@ -177,28 +177,119 @@ end;
 function DotColorModeFromSetting(Value: integer): TDotColorMode;
 begin
   if (Value < Ord(Low(TDotColorMode))) or (Value > Ord(High(TDotColorMode))) then
-    Result := dcmAuto
+    Result := DOT_COLOR_MODE_DEFAULT
   else
     Result := TDotColorMode(Value);
 end;
 
+// The other half of the theme pair a dot's identity color came from. Every
+// range ships two colors chosen to work together — a background and the text
+// that sits on it — and DetermineColorForReading picks one of the two per
+// range. dcmAuto uses the pair to keep the dot colorful (see DotDisplayColor).
+//
+// clNone when the identity is neither: a stale dot has been faded toward
+// STALE_BG_COLOR and a high-contrast dot is a grey, and both are meant to look
+// exactly as they do — matching them to a range would undo that on purpose.
+function DotBandPartner(Identity: TColor): TColor;
+begin
+  if Identity = bg_color_hi then
+    Result := bg_color_hi_txt
+  else
+  if Identity = bg_color_lo then
+    Result := bg_color_lo_txt
+  else
+  // In-range dots are colored from the *text* half of the pair, so the
+  // partner is the background half — the other four are the other way around.
+  if Identity = bg_color_ok_txt then
+    Result := bg_color_ok
+  else
+  if Identity = bg_rel_color_hi then
+    Result := bg_rel_color_hi_txt
+  else
+  if Identity = bg_rel_color_lo then
+    Result := bg_rel_color_lo_txt
+  else
+    Result := clNone;
+end;
+
+// The rim dcmOutline draws around every dot. Keyed to the window rather than to
+// the dot, and a pole rather than a step off either: the rim's only job is to
+// hold a line between the two, and it has to do it for a dot of any color,
+// including one that is the window's color exactly.
+// Pure helper operating on plain data for unit tests
+function DotOutlineColor(Background: TColor): TColor;
+begin
+  if IsLightColor(Background) then
+    Result := clBlack
+  else
+    Result := clWhite;
+end;
+
+// Whether a dot drawn in Candidate would be told apart both from the window
+// behind it and from the reading printed across it. See DOT_VALUE_SEPARATION
+// and DOT_FAINT_CONTRAST for why the two use different measures and why the
+// background floor here is the relaxed one.
+// Pure helper operating on plain data for unit tests
+function DotSeparatedFromValue(Candidate, Background, ValueColor: TColor): boolean;
+begin
+  Result := (ColorDistance(Candidate, ValueColor) >= DOT_VALUE_SEPARATION) and
+    (ContrastRatio(Candidate, Background) >= DOT_FAINT_CONTRAST);
+end;
+
 // Map a dot's identity color — the range color DetermineColorForReading picked
 // for the reading — to the color it is actually drawn in, per the user's dot
-// coloring mode. Called from DotPaint, where the background is final.
+// coloring mode. Partner is DotBandPartner(Identity), or clNone when the dot
+// belongs to no range. Called from DotPaint, where the background is final.
 //
 // Every mode except dcmClassic ends at EnsureContrast, so the dot is never
 // allowed to sink into the background: Lighter and Darker say which way the
 // user wants the dot pushed, not that it may become invisible if pushed toward
 // the background's own tone.
 //
+// dcmAuto may draw the dot in the other half of its range's pair.
+// EnsureContrast can only travel the black-white axis, so on a light
+// background — a high or in-range window — it darkens every dot, and amber,
+// tan, pink and near-white all arrive in the same muddy zone: the ranges stop
+// being distinguishable from each other, which is most of what the dots are
+// for. The pair is the way out that stays inside the user's own palette. Each
+// range's two colors are far apart by construction (one is legible on the
+// other), so where one collapses the other usually has room left.
+//
+// Both halves are lifted first and the winner is the one that keeps more
+// chroma, because which half survives depends entirely on the background:
+// against the Classic high window the high text color darkens to a deep
+// red-orange while the high background goes olive, but against the near-black
+// stale window the same text color has to be lightened into a washed mauve and
+// the untouched original is the better dot. Judging the candidates before the
+// lift gets both of those backwards.
+//
+// The margin keeps the swap from firing on a coin-flip: the dot should keep
+// the color the reading was actually given unless trading it away buys
+// something visible.
+//
+// The lift alone is not enough when the dot's range is the one the window is
+// showing, because then both halves start from the background's own palette
+// entry and the contrast floor drops them right onto the big reading (see
+// DOT_VALUE_SEPARATION). ValueColor is what that reading is drawn in, and when
+// the winner collides with it the two palette halves are tried untouched
+// before the runner-up: on the window its own range owns, the untouched half
+// is the one the palette author already made legible against that exact
+// background — near-white in range, red-orange on a high window — so it is
+// both the most separated and the most obviously "that range" of the four.
+//
+
 // dcmClassic is the pre-contrast behaviour, deliberately unguarded. The flat
 // step it takes is applied to a color drawn from the same palette that colors
-// the background, so a reading in the same band as the current one is close to
+// the background, so a reading in the same range as the current one is close to
 // invisible — that is what the mode reproduces, and why it is not the default.
 //
 // Pure helper operating on plain data for unit tests
-function DotDisplayColor(Identity, Background: TColor;
+function DotDisplayColor(Identity, Partner, Background, ValueColor: TColor;
   Mode: TDotColorMode): TColor;
+var
+  fromPartner, runnerUp: TColor;
+  fallbacks: array[0..2] of TColor;
+  i: integer;
 begin
   case Mode of
   dcmClassic:
@@ -211,8 +302,56 @@ begin
     // complement of the shift is what makes the two directions symmetric.
     Result := EnsureContrast(DarkenColor(Identity, 1.0 - DOT_TONE_SHIFT),
       Background, DOT_MIN_CONTRAST);
+  dcmMono:
+    // The one mode that drops the range color: the dot says where the reading
+    // was, the band behind it and the dot's own height say which range it fell
+    // in. No contrast pass — a pole is already as far from the background as
+    // anything can get, and from the reading too, which is always a mid-tone
+    // derived from that same background.
+    if IsLightColor(Background) then
+      Result := clBlack
+    else
+      Result := clWhite;
+  dcmOutline:
+    // The exact color the range was given, whatever the window is doing. The
+    // fill carries no visibility burden here because DotPaint rims every dot
+    // in this mode, which is what makes it the only mode that can keep a
+    // range's hue: a high dot stays amber instead of darkening to olive or
+    // giving way to the red-orange half of the pair, neither of which reads as
+    // "high" to someone who set high to orange.
+    Result := Identity;
   else
+  begin
     Result := EnsureContrast(Identity, Background, DOT_MIN_CONTRAST);
+    if Partner = clNone then
+      Exit;
+
+    fromPartner := EnsureContrast(Partner, Background, DOT_MIN_CONTRAST);
+    runnerUp := fromPartner;
+    if ColorChroma(fromPartner) >
+      Round(ColorChroma(Result) * DOT_PAIR_CHROMA_MARGIN) then
+    begin
+      runnerUp := Result;
+      Result := fromPartner;
+    end;
+
+    if ColorDistance(Result, ValueColor) >= DOT_VALUE_SEPARATION then
+      Exit;
+
+    fallbacks[0] := Partner;
+    fallbacks[1] := Identity;
+    fallbacks[2] := runnerUp;
+    for i := 0 to High(fallbacks) do
+      if DotSeparatedFromValue(fallbacks[i], Background, ValueColor) then
+      begin
+        Result := fallbacks[i];
+        Exit;
+      end;
+    // Nothing in the pair clears the reading: keep the winner rather than
+    // reaching outside the palette. A dot that shares the reading's color is
+    // still on the background it was lifted off, so it is not invisible — and
+    // Lighter or Darker are there for a user who wants it pushed further.
+  end;
   end;
 end;
 
