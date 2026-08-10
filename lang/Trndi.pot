@@ -34,6 +34,10 @@ msgstr ""
 msgid "Minimize"
 msgstr ""
 
+#: slicke.ux.alert.smbslickenever
+msgid "Don't show again"
+msgstr ""
+
 #: slicke.ux.alert.smbslickeopenfile
 msgid "Open File"
 msgstr ""
@@ -3089,6 +3093,18 @@ msgstr ""
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
+msgstr ""
+
+#: uconf.rs_hints_enable
+msgid "Explain parts of the window when they are clicked"
+msgstr ""
+
+#: uconf.rs_hints_reset
+msgid "The explanations you hid will be shown again."
+msgstr ""
+
+#: uconf.rs_hints_reset_btn
+msgid "Show hidden explanations"
 msgstr ""
 
 #: uconf.rs_import_empty

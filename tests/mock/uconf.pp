@@ -149,6 +149,7 @@ type
     cbUserColor: TColorButton;
     cbPos: TComboBox;
     cbSize: TCheckBox;
+    cbHints: TCheckBox;
     cbFlash: TCheckGroup;
     cbRangeColor: TCheckBox;
     cbClock: TCheckBox;
@@ -357,6 +358,7 @@ begin
   cbUserColor := TColorButton.Create(nil);
   cbPos := TComboBox.Create(nil);
   cbSize := TCheckBox.Create(nil);
+  cbHints := TCheckBox.Create(nil);
   // Compatibility mocks: group and common checkboxes referenced by umain includes
   cbFlash := TCheckGroup.Create(nil);
   cbFlash.Items.Add('Hi');
@@ -467,6 +469,7 @@ begin
   cbFlashPerfect.Free;
   cbFlashLow.Free;
   cbFlashHi.Free;
+  cbHints.Free;
   cbSize.Free;
   cbPos.Free;
   cbUserColor.Free;

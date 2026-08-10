@@ -113,6 +113,7 @@ TfConf = class(TForm)
   bUseURLHelp: TButton;
   bThreasholdLinesHelp: TButton;
   bBadgeFlashHelp: TButton;
+  bResetHints: TButton;
   bPrivacyHelp: TButton;
   bPredictHelp: TButton;
   bTest: TButton;
@@ -230,6 +231,7 @@ TfConf = class(TForm)
   Panel3: TPanel;
   PanelProxyActions: TPanel;
   pDecimal: TPanel;
+  pHints: TPanel;
   pnDeltaMax: TPanel;
   pnFontButtons: TPanel;
   pnMisc: TPanel;
@@ -252,6 +254,7 @@ TfConf = class(TForm)
   cbPaintHiLoRange: TCheckBox;
   cbPaintLines: TCheckBox;
   cbPos: TComboBox;
+  cbHints: TCheckBox;
   cbSize: TCheckBox;
   cbSys: TComboBox;
   cbTIR: TCheckBox;
@@ -458,6 +461,7 @@ TfConf = class(TForm)
   procedure bAddClick({%H-}Sender: TObject);
   procedure bBadgeFlashHelpClick({%H-}Sender: TObject);
   procedure bColorGraphHelpClick({%H-}Sender: TObject);
+  procedure bResetHintsClick({%H-}Sender: TObject);
   procedure bCommonClick({%H-}Sender: TObject);
   procedure bCustomRangeHelpClick({%H-}Sender: TObject);
   procedure bExtOpenClick({%H-}Sender: TObject);
@@ -631,6 +635,9 @@ var
 tnative: TrndiNative;
 
 resourcestring
+RS_HINTS_ENABLE = 'Explain parts of the window when they are clicked';
+RS_HINTS_RESET_BTN = 'Show hidden explanations';
+RS_HINTS_RESET = 'The explanations you hid will be shown again.';
 RS_ALERT_HYSTERESIS_MGDL = 'Clear margin (mg/dL)';
 RS_ALERT_HYSTERESIS_MMOL = 'Clear margin (mmol/L)';
 RS_MUST_PERSIST_HELP = 'An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately.';
@@ -1017,6 +1024,8 @@ var
   keep: integer;
 begin
   bExtResetPerms.Caption := RS_EXT_RESET_BTN;
+  cbHints.Caption := RS_HINTS_ENABLE;
+  bResetHints.Caption := RS_HINTS_RESET_BTN;
 
   keep := rbTrendWindow.ItemIndex;
   rbTrendWindow.Items.BeginUpdate;
@@ -1688,6 +1697,15 @@ end;
 procedure TfConf.bColorGraphHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_COLOR_BG);
+end;
+
+{ Forget every hint the user dismissed, so all of them explain themselves once
+  more. Deliberately separate from the master switch above it: that one hides
+  the hints without discarding which ones were already answered. }
+procedure TfConf.bResetHintsClick(Sender: TObject);
+begin
+  tnative.DeleteSetting(HINTS_HIDDEN_KEY);
+  ShowMessage(RS_HINTS_RESET);
 end;
 
 procedure TfConf.bCommonClick(Sender: TObject);

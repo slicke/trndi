@@ -42,12 +42,12 @@
 
 procedure TfBG.lDiffClick({%H-}Sender: TObject);
 begin
-  ShowMessage(RS_DIFF);
+  ShowOnce('diff', RS_DIFF);
 end;
 
 procedure TfBG.lPredictClick(Sender: TObject);
 begin
-  SHowMessage(RS_PREDICT);
+  ShowOnce('predict', RS_PREDICT);
 end;
 
 procedure TfBG.miBasalRateClick(Sender: TObject);

@@ -44,6 +44,10 @@ msgstr "Standard"
 msgid "Minimize"
 msgstr "Minimer"
 
+#: slicke.ux.alert.smbslickenever
+msgid "Don't show again"
+msgstr "Vis ikke igen"
+
 #: slicke.ux.alert.smbslickeopenfile
 msgid "Open File"
 msgstr "Åbn fil"
@@ -3095,6 +3099,18 @@ msgstr "Dette viser alle forudsigelsespile; som standard viser Trndi blot op, ne
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Viser om Trndi registrerede en touchskærm"
+
+#: uconf.rs_hints_enable
+msgid "Explain parts of the window when they are clicked"
+msgstr "Forklar dele af vinduet, når du klikker på dem"
+
+#: uconf.rs_hints_reset
+msgid "The explanations you hid will be shown again."
+msgstr "De forklaringer, du skjulte, vises igen."
+
+#: uconf.rs_hints_reset_btn
+msgid "Show hidden explanations"
+msgstr "Vis skjulte forklaringer"
 
 #: uconf.rs_import_empty
 msgid "The selected file is empty."

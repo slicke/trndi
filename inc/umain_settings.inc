@@ -501,6 +501,7 @@ procedure LoadUserSettings(f: TfConf);
         cbPos.ItemIndex := 0;
 
       cbSize.Checked := GetBoolSetting('size.main');
+      cbHints.Checked := GetBoolSetting(HINTS_ENABLED_KEY, true);
       cbFlash.Visible := false;
 
       cbRangeColor.Checked := native.GetBoolSetting('ux.range_color', true);
@@ -679,6 +680,7 @@ procedure SaveUserSettings(f: TfConf);
 
       native.SetSetting('position.main', cbPos.ItemIndex);
       native.setSetting('size.main', cbSize.Checked);
+      native.SetSetting(HINTS_ENABLED_KEY, cbHints.Checked);
       native.setSetting('alerts.notice.hilo', cbAlertHiLo.Checked);
       native.setSetting('alerts.notice.missing', cbAlertMissing.Checked);
 

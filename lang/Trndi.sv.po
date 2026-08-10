@@ -44,6 +44,10 @@ msgstr "Standard"
 msgid "Minimize"
 msgstr "Minimera"
 
+#: slicke.ux.alert.smbslickenever
+msgid "Don't show again"
+msgstr "Visa inte igen"
+
 #: slicke.ux.alert.smbslickeopenfile
 msgid "Open File"
 msgstr "Öppna fil"
@@ -2639,7 +2643,7 @@ msgstr "Försöker om %d s"
 
 #: trndi.strings.rs_stale_retry_now
 msgid "Retrying now…"
-msgstr "Försöker igen nu..."
+msgstr "Försöker igen nu…"
 
 #: trndi.strings.rs_stale_waiting
 msgid "Waiting for data"
@@ -3266,6 +3270,18 @@ msgstr "Detta kommer visa alla förutspåelsepilar, som standard visar Trndi bar
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Visar om Trndi upptäckt en pekskärm"
+
+#: uconf.rs_hints_enable
+msgid "Explain parts of the window when they are clicked"
+msgstr "Förklara delar av fönstret när du klickar på dem"
+
+#: uconf.rs_hints_reset
+msgid "The explanations you hid will be shown again."
+msgstr "Förklaringarna du dolde visas igen."
+
+#: uconf.rs_hints_reset_btn
+msgid "Show hidden explanations"
+msgstr "Visa dolda förklaringar"
 
 #: uconf.rs_import_empty
 msgid "The selected file is empty."

@@ -44,6 +44,10 @@ msgstr "Par défaut"
 msgid "Minimize"
 msgstr "Réduire"
 
+#: slicke.ux.alert.smbslickenever
+msgid "Don't show again"
+msgstr "Ne plus afficher"
+
 #: slicke.ux.alert.smbslickeopenfile
 msgid "Open File"
 msgstr "Ouvrir un fichier"
@@ -3251,6 +3255,18 @@ msgstr "Ceci affichera toutes les flèches de prédiction, par défaut Trndi aff
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Indique si Trndi a détecté un écran tactile"
+
+#: uconf.rs_hints_enable
+msgid "Explain parts of the window when they are clicked"
+msgstr "Expliquer les éléments de la fenêtre quand on clique dessus"
+
+#: uconf.rs_hints_reset
+msgid "The explanations you hid will be shown again."
+msgstr "Les explications que vous aviez masquées seront de nouveau affichées."
+
+#: uconf.rs_hints_reset_btn
+msgid "Show hidden explanations"
+msgstr "Afficher les explications masquées"
 
 #: uconf.rs_import_empty
 msgid "The selected file is empty."
