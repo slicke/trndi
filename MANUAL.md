@@ -110,6 +110,15 @@ Those small dots you see across the screen show your recent readings over time:
 
 **How to use them**: Click on any dot to see the actual number for that reading.
 
+**Changing how the dots are coloured**: *Settings → Colors → Backgrounds → Trend
+dot coloring*:
+- **Adapt to background** (default) — each dot keeps its own range colour and is
+  lifted off the background only as far as it has to be to stay visible
+- **Classic** — the flat darkening Trndi used before, background not taken into
+  account; a dot in the same range as the current reading is hard to see
+- **Lighter** / **Darker** — a deliberate tint toward white or black, still with
+  the visibility floor applied so a dot cannot disappear into the background
+
 **In a narrow window**: If the window gets too small to fit every dot, Trndi thins
 them out and draws only every second (or third, …) one, so they never smear
 together. The time span shown does not change — you still see the same history you

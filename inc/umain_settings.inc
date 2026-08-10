@@ -115,6 +115,12 @@ begin
     bg_rel_color_lo_txt := clBlack;
   end;
 
+  // See the note in umain_init.inc: cached rather than read in DotPaint. The
+  // dots are re-placed and repainted further down, so a changed mode shows
+  // without waiting for the next reading.
+  DotColorMode := DotColorModeFromSetting(
+    native.GetIntSetting('ux.dot_color_mode', Ord(dcmAuto)));
+
   tir_bg := native.GetColorSetting('ux.tir_color', tir_bg);
   tir_custom_bg := native.GetColorSetting('ux.tir_color_custom', tir_custom_bg);
   titlecolor := native.GetBoolSetting('ux.title_color', true);
@@ -396,6 +402,9 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictDots.Checked := GetBoolSetting('predictions.dots');
       cbRotatingArrow.Checked := GetBoolSetting('display.rotating_arrow');
       cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', false);
+      // ItemIndex order is the TDotColorMode order — see the type's note.
+      rgDots.ItemIndex := Ord(DotColorModeFromSetting(
+        GetIntSetting('ux.dot_color_mode', Ord(dcmAuto))));
       // Trend arrow in the taskbar icon (Windows) / dock badge (macOS)
       {$if defined(X_WIN) or defined(X_MAC)}
       // Keep this default in step with the two read sites in umain_settings /
@@ -802,6 +811,12 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('predictions.dots', cbPredictDots.Checked);
       SetSetting('display.rotating_arrow', cbRotatingArrow.Checked);
       SetSetting('ux.dot_fresh', cbDotFresh.Checked);
+      // A radio group with nothing selected would otherwise store -1, which
+      // DotColorModeFromSetting reads back as the default anyway - but leaving
+      // the stored value alone keeps the user's choice through a dialog that
+      // somehow opened unselected.
+      if f.rgDots.ItemIndex >= 0 then
+        SetSetting('ux.dot_color_mode', f.rgDots.ItemIndex);
       {$if defined(X_WIN) or defined(X_MAC)}
       SetSetting('badge.trend', cbBadgeTrend.Checked);
       {$endif}

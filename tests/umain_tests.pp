@@ -42,8 +42,8 @@ unit umain_tests;
 interface
 
 uses
-  fpcunit, testregistry, umain, SysUtils, StdCtrls, ExtCtrls, Classes, trndi.native, trndi.types,
-  trndi.funcs;
+  fpcunit, testregistry, umain, SysUtils, StdCtrls, ExtCtrls, Classes, Graphics,
+  trndi.native, trndi.types, trndi.funcs, trndi.shared;
 
 type
   TUmainTests = class(TTestCase)
@@ -60,6 +60,11 @@ type
     procedure TestTrendDotStrideNarrowWindow;
     procedure TestTrendDotStrideDegenerateWidth;
     procedure TestTrendDotVisibleAnchorsOnNewest;
+
+    // Trend-dot coloring modes
+    procedure TestDotColorModeFromSettingClamps;
+    procedure TestDotDisplayColorClearsBackground;
+    procedure TestDotDisplayColorClassicIsUnguarded;
 
     // Startup / shutdown tests
     procedure TestFormCreateStartsTimers;
@@ -432,6 +437,126 @@ begin
       for i := 1 to 36 do
         AssertTrue('Stride 1 renders every slot',
           g.TrendDotVisibleInStrideForTests(i, 36, 1));
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// An unknown stored mode (older profile, hand-edited settings) must land on
+// the default rather than an arbitrary enum value.
+procedure TUmainTests.TestDotColorModeFromSettingClamps;
+var
+  g: TfBG;
+  n: TrndiNative;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      AssertTrue('0 decodes to Classic',
+        g.DotColorModeFromSettingForTests(0) = dcmClassic);
+      AssertTrue('1 decodes to Auto',
+        g.DotColorModeFromSettingForTests(1) = dcmAuto);
+      AssertTrue('3 decodes to Darker',
+        g.DotColorModeFromSettingForTests(3) = dcmDarker);
+      AssertTrue('A negative value falls back to the default',
+        g.DotColorModeFromSettingForTests(-1) = dcmAuto);
+      AssertTrue('A too-large value falls back to the default',
+        g.DotColorModeFromSettingForTests(99) = dcmAuto);
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// The case the contrast pass exists for: a dot whose reading falls in the same
+// range as the current one, so its color *is* the background color. Every mode
+// but Classic has to pull it clear, whichever direction the user asked for.
+procedure TUmainTests.TestDotDisplayColorClearsBackground;
+const
+  // Classic theme's high background (see trndi.theme), i.e. the worst case.
+  IDENTITY = TColor($0007DAFF);
+var
+  g: TfBG;
+  n: TrndiNative;
+  mode: TDotColorMode;
+  drawn: TColor;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      for mode := dcmAuto to dcmDarker do
+      begin
+        drawn := g.DotDisplayColorForTests(IDENTITY, IDENTITY, mode);
+        AssertTrue(Format('Mode %d must clear the contrast floor on its own ' +
+          'band (got %.2f:1)', [Ord(mode), ContrastRatio(drawn, IDENTITY)]),
+          ContrastRatio(drawn, IDENTITY) >= DOT_MIN_CONTRAST - 0.001);
+      end;
+
+      // The tint modes must actually go the way they say on a background that
+      // leaves room in both directions.
+      AssertTrue('Lighter tints away from the identity color',
+        RelativeLuminance(g.DotDisplayColorForTests(IDENTITY, clBlack, dcmLighter)) >
+        RelativeLuminance(IDENTITY));
+      AssertTrue('Darker shades away from the identity color',
+        RelativeLuminance(g.DotDisplayColorForTests(IDENTITY, clWhite, dcmDarker)) <
+        RelativeLuminance(IDENTITY));
+    finally
+      g.Free;
+      fBG := nil;
+    end;
+  finally
+    if Assigned(native) then
+    begin
+      native.Free;
+      native := nil;
+    end;
+  end;
+end;
+
+// Classic is the pre-contrast behaviour and is deliberately left unguarded —
+// that is the look it exists to reproduce. Pin it, so the mode cannot quietly
+// acquire the contrast floor and stop differing from Auto.
+procedure TUmainTests.TestDotDisplayColorClassicIsUnguarded;
+const
+  IDENTITY = TColor($0007DAFF);
+var
+  g: TfBG;
+  n: TrndiNative;
+  drawn: TColor;
+begin
+  n := TrndiNative.Create;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      drawn := g.DotDisplayColorForTests(IDENTITY, IDENTITY, dcmClassic);
+      AssertEquals('Classic is the old flat darkening, background ignored',
+        LightenColor(IDENTITY, DOT_CLASSIC_DARKEN), drawn);
+      AssertTrue('Classic stays below the floor on its own band — the reason ' +
+        'it is not the default',
+        ContrastRatio(drawn, IDENTITY) < DOT_MIN_CONTRAST);
     finally
       g.Free;
       fBG := nil;

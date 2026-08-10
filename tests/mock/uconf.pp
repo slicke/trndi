@@ -157,6 +157,7 @@ type
     cbOnTop: TCheckBox;
     cbNoBorders: TCheckBox;
     rbTrendWindow: TRadioGroup;
+    rgDots: TRadioGroup;
     cbFlashHi: TCheckBox;
     cbFlashLow: TCheckBox;
     cbFlashPerfect: TCheckBox;
@@ -370,6 +371,7 @@ begin
   cbOnTop := TCheckBox.Create(nil);
   cbNoBorders := TCheckBox.Create(nil);
   rbTrendWindow := TRadioGroup.Create(nil);
+  rgDots := TRadioGroup.Create(nil);
   cbFlashHi := TCheckBox.Create(nil);
   cbFlashLow := TCheckBox.Create(nil);
   cbFlashPerfect := TCheckBox.Create(nil);
@@ -459,6 +461,7 @@ begin
   cbAlertHiLo.Free;
   cbShowSensorExpiry.Free;
   cbConnectivityButton.Free;
+  rgDots.Free;
   rbTrendWindow.Free;
   cbNoBorders.Free;
   cbOnTop.Free;

@@ -75,3 +75,14 @@ function TfBG.TrendDotVisibleInStrideForTests(SlotIndex, ActiveDots, Stride: int
 begin
   Result := TrendDotVisibleInStride(SlotIndex, ActiveDots, Stride);
 end;
+
+function TfBG.DotColorModeFromSettingForTests(Value: integer): TDotColorMode;
+begin
+  Result := DotColorModeFromSetting(Value);
+end;
+
+function TfBG.DotDisplayColorForTests(Identity, Background: TColor;
+  Mode: TDotColorMode): TColor;
+begin
+  Result := DotDisplayColor(Identity, Background, Mode);
+end;
