@@ -80,5 +80,6 @@ This file applies to the Trndi repository root and its subdirectories.
 ## Validation
 - After code changes, run the narrowest relevant build or test target first.
 - Prefer `make test-noserver` for a quick local check when the embedded test server is not needed.
+- To check a language or RTL detail in isolation, run the snippet through `instantfpc` rather than adding a throwaway unit or project to the tree. It compiles and runs a plain `.pas` file directly, so nothing needs to be created or cleaned up. It cannot help with anything that needs an `.lfm` or a widgetset — use a real build mode there.
 - Do not widen validation beyond the touched area unless the first check fails or the change reaches adjacent build/test surfaces.
 - If a change touches build behavior, verify with the matching `make` target before widening scope.

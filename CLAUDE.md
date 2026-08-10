@@ -20,6 +20,16 @@ Windows (this machine — `lazbuild` is not on PATH; the scripts find it at `C:\
 $env:TRNDI_NO_TESTSERVER = '1'; .\make.ps1 test   # skip integration tests
 ```
 
+Two tools this machine has but not on PATH:
+
+- **gettext** — bundled with Poedit at `C:\Program Files\Poedit\GettextTools\bin` (`msgfmt`, `msgmerge`, `xgettext`, …). `.\make.ps1 lang-check` looks for `msgfmt` on PATH only, so it skips the `.po` half unless you prepend that directory to `$env:PATH` first.
+- **instantfpc** — `c:\lazarus\fpc\3.2.2\bin\x86_64-win64\instantfpc.exe` (plain `instantfpc` on Linux/WSL). Runs a `.pas` snippet straight from source, so small language/library checks need no `.lpi` and no temp project — but only for code that needs neither LFMs nor a widgetset. It invokes `fpc` by name, so put that same directory on `PATH` first or it exits with `fpc.exe not found in PATH`:
+
+  ```powershell
+  $env:PATH = "c:\lazarus\fpc\3.2.2\bin\x86_64-win64;$env:PATH"
+  instantfpc probe.pas
+  ```
+
 Linux/BSD/Haiku use `make` with the same target names (`make`, `make debug`, `make test`, `make test-noserver`, `make noext`, `make list-modes`); macOS uses `gmake`. On this Windows machine, Linux-side checks can be run through WSL (e.g. `wsl fpc`). Prefer the smallest relevant target; run `make help` before inventing commands.
 
 ### Tests
