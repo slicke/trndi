@@ -47,6 +47,7 @@ uses
   dexcom_trend_tests,
   tandem_trend_tests,
   tandem_fixture_tests,
+  api_tandem_treatment_tests,
   debug_intermit_test,
   debug_firstx_dexcom_test,
   debug_firstx_tandem_test,
