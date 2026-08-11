@@ -213,7 +213,10 @@ const
     '(function(){var t=Trndi,has=function(n){return typeof globalThis[n]==="function";};' +
     't.api={version:"2.0",extensionId:"';
   API_FACADE_SUFFIX: RawUtf8 =
-    '",permissions:["data","ui","timers"],capabilities:{storage:has("getSetting")&&has("setSetting"),network:has("fetch"),exec:has("runCMD")}};' +
+    { storage must probe the Trndi class, not globalThis: getSetting/setSetting are
+      registered via addClassFunctionIf onto the Trndi object. fetch/runCMD are
+      genuine globals (AddPromise writes to global scope), so has() is right there. }
+    '",permissions:["data","ui","timers"],capabilities:{storage:typeof t.getSetting==="function"&&typeof t.setSetting==="function",network:has("fetch"),exec:has("runCMD")}};' +
     't.permissions={has:function(n){return t.api.permissions.indexOf(String(n))>=0;},require:function(n){if(!this.has(n))throw new Error("Trndi permission not granted: "+n+". Add it to @perms and approve the extension.");return true;}};' +
     'if(t.api.capabilities.network)t.api.permissions.push("net");if(t.api.capabilities.exec)t.api.permissions.push("exec");if(t.api.capabilities.storage)t.api.permissions.push("settings");' +
     't.data={current:function(){return t.getCurrentReading();},readings:function(o){return t.getReadings(o&&o.limit||0);},limits:function(){return t.getLimits();},statistics:function(o){return t.getStatistics(o&&o.minutes);},predict:function(o){return {values:t.predictReadings(o&&o.count),confidence:t.predictionConfidence()};}};' +
@@ -221,7 +224,7 @@ const
     'if(t.api.capabilities.storage){var p="extval."+t.api.extensionId+".";t.storage={get:function(k){return t.getSetting(p+String(k));},set:function(k,v){t.setSetting(p+String(k),String(v));},remove:function(k){t.setSetting(p+String(k),"");}};}' +
     '})();';
 var
-  facade: RawUtf8;
+  facade, extId: RawUtf8;
 begin
   with TTrndiExtEngine.Instance do
   begin
@@ -270,8 +273,13 @@ begin
 
     // Install after all gated helpers so metadata reflects this extension's
     // actual grants, not merely what the manifest requested.
-    facade := API_FACADE_PREFIX + RawUtf8(CurrentRegistrationExtensionId) +
-      API_FACADE_SUFFIX;
+    // The id is spliced into a double-quoted JS string literal, so escape the
+    // two characters that could break out of it (ids come from file names, so
+    // backslashes and quotes are unlikely but not impossible).
+    extId := RawUtf8(CurrentRegistrationExtensionId);
+    extId := StringReplace(extId, '\', '\\', [rfReplaceAll]);
+    extId := StringReplace(extId, '"', '\"', [rfReplaceAll]);
+    facade := API_FACADE_PREFIX + extId + API_FACADE_SUFFIX;
     ExecuteInCurrent(facade, '<Trndi API facade>');
   end;
 end;
