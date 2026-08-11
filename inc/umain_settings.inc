@@ -939,6 +939,9 @@ begin
 
   fConf := TfConf.Create(Self);
   try
+    // The dialog hosts the dot-coloring preview strip but cannot render it —
+    // the color pipeline lives on this side (see TDotPreviewEvent in uconf).
+    fConf.OnDotPreview := @RenderDotModePreview;
     with native do
     begin
       fConf.cbSys.Items.Clear;

@@ -769,6 +769,16 @@ private
   procedure CreateTrendDots;
   procedure FreeTrendDotControls;
   procedure ApplyTrendDotCount(newCount: integer);
+    {** Ring color/width marking the freshest reading's dot, per dot-coloring
+        mode. Shared by DotPaint and the settings-dialog preview so the two
+        cannot drift apart. }
+  procedure FreshDotRing(AMode: TDotColorMode; ADotColor, ABackground: TColor;
+    ADiameter: integer; out ARingColor: TColor; out ARingWidth: integer);
+    {** Paint the sample strip under the settings dialog's dot-coloring options:
+        miniature Trndi windows with one dot per range band, run through the
+        same color pipeline as the live dots. Hooked up as uconf's OnDotPreview. }
+  procedure RenderDotModePreview(ACanvas: TCanvas; const ARect: TRect;
+    AModeIndex: integer; const ATheme: TTrndiTheme);
   procedure placeForm;
 
     {** Kick off an asynchronous fetch. The actual network call runs on a

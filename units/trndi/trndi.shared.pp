@@ -34,6 +34,8 @@ function IsLightColor(bgColor: TColor): boolean;
 function ColorChroma(color: TColor): integer;
 function ColorDistance(colorA, colorB: TColor): integer;
 function ContrastRatio(colorA, colorB: TColor): double;
+procedure ColorToOKLCh(color: TColor; out L, C, H: double);
+function OKLChToColor(L, C, H: double): TColor;
 function EnsureContrast(foreground, background: TColor;
   minRatio: double = 3.0): TColor;
 function BlendColors(foreground, background: TColor; alpha: double = 0.5): TColor;
@@ -175,15 +177,148 @@ begin
   Result := (lighter + 0.05) / (darker + 0.05);
 end;
 
+// ---- OKLab / OKLCh ---------------------------------------------------------
+// Björn Ottosson's OKLab, via its polar form OKLCh: L is perceptual lightness
+// (0..1), C is chroma (0 for grey, ~0.32 at the most saturated sRGB corner) and
+// H the hue angle in radians. Used by EnsureContrast so a lift can change how
+// *light* a color is without changing which color it is — blending toward a
+// pole in sRGB bleeds chroma along the way, which is what used to wash lifted
+// dots out on dark windows.
+
+// Linear-light cube root; the OKLab transform needs it and Power() faults on a
+// zero base, which black produces.
+function CubeRoot(x: double): double;
+begin
+  if x <= 0 then
+    Result := 0
+  else
+    Result := exp(ln(x) / 3.0);
+end;
+
+function SrgbToLinear(v: double): double;
+begin
+  if v <= 0.04045 then
+    Result := v / 12.92
+  else
+    Result := Power((v + 0.055) / 1.055, 2.4);
+end;
+
+function LinearToSrgb(v: double): double;
+begin
+  if v <= 0.0031308 then
+    Result := 12.92 * v
+  else
+    Result := 1.055 * Power(v, 1 / 2.4) - 0.055;
+end;
+
+procedure ColorToOKLCh(color: TColor; out L, C, H: double);
+var
+  c0: TColor;
+  r, g, b, lm, mm, sm, a, bb: double;
+begin
+  // ColorToRGB first — same reason as RelativeLuminance: system colors carry
+  // an index, not channel bytes.
+  c0 := ColorToRGB(color);
+  r := SrgbToLinear(GetRValue(c0) / 255.0);
+  g := SrgbToLinear(GetGValue(c0) / 255.0);
+  b := SrgbToLinear(GetBValue(c0) / 255.0);
+
+  lm := CubeRoot(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  mm := CubeRoot(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  sm := CubeRoot(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+
+  L  := 0.2104542553 * lm + 0.7936177850 * mm - 0.0040720468 * sm;
+  a  := 1.9779984951 * lm - 2.4285922050 * mm + 0.4505937099 * sm;
+  bb := 0.0259040371 * lm + 0.7827717662 * mm - 0.8086757660 * sm;
+
+  C := Sqrt(Sqr(a) + Sqr(bb));
+  H := ArcTan2(bb, a);
+end;
+
+// The inverse, into linear sRGB. Split out so the gamut probe below can test a
+// candidate without paying the transfer curve.
+procedure OKLabToLinear(L, a, b: double; out r, g, bl: double);
+var
+  lm, mm, sm: double;
+begin
+  lm := L + 0.3963377774 * a + 0.2158037573 * b;
+  mm := L - 0.1055613458 * a - 0.0638541728 * b;
+  sm := L - 0.0894841775 * a - 1.2914855480 * b;
+  lm := lm * lm * lm;
+  mm := mm * mm * mm;
+  sm := sm * sm * sm;
+
+  r  := +4.0767416621 * lm - 3.3077115913 * mm + 0.2309699292 * sm;
+  g  := -1.2684380046 * lm + 2.6097574011 * mm - 0.3413193965 * sm;
+  bl := -0.0041960863 * lm - 0.7034186147 * mm + 1.7076147010 * sm;
+end;
+
+// Realize an OKLCh color in sRGB, keeping as much of the requested chroma as
+// the gamut allows at that lightness: hue and lightness are honored exactly,
+// chroma is reduced only when the (L, C, H) point falls outside sRGB. At L 0
+// and 1 every hue's gamut closes to a point, so the extremes come out as pure
+// black and white — which is what keeps EnsureContrast's search able to reach
+// any contrast the old pole blend could.
+function OKLChToColor(L, C, H: double): TColor;
+const
+  GAMUT_EPS = 0.0005; // channel slack before a candidate counts as outside
+var
+  cosH, sinH, lo, hi, mid, r, g, b: double;
+  i: integer;
+
+  function InGamut(cc: double): boolean;
+  var
+    rr, gg, bb: double;
+  begin
+    OKLabToLinear(L, cc * cosH, cc * sinH, rr, gg, bb);
+    Result := (rr >= -GAMUT_EPS) and (rr <= 1 + GAMUT_EPS) and
+      (gg >= -GAMUT_EPS) and (gg <= 1 + GAMUT_EPS) and
+      (bb >= -GAMUT_EPS) and (bb <= 1 + GAMUT_EPS);
+  end;
+
+begin
+  if L <= 0 then Exit(clBlack);
+  if L >= 1 then Exit(clWhite);
+  cosH := Cos(H);
+  sinH := Sin(H);
+
+  if not InGamut(C) then
+  begin
+    // Largest in-gamut chroma at this L and H, by bisection. 0 is always in
+    // gamut (the grey axis), so the bracket is sound.
+    lo := 0;
+    hi := C;
+    for i := 1 to 12 do
+    begin
+      mid := (lo + hi) / 2;
+      if InGamut(mid) then
+        lo := mid
+      else
+        hi := mid;
+    end;
+    C := lo;
+  end;
+
+  OKLabToLinear(L, C * cosH, C * sinH, r, g, b);
+  Result := RGB(
+    Round(EnsureRange(LinearToSrgb(EnsureRange(r, 0, 1)), 0, 1) * 255),
+    Round(EnsureRange(LinearToSrgb(EnsureRange(g, 0, 1)), 0, 1) * 255),
+    Round(EnsureRange(LinearToSrgb(EnsureRange(b, 0, 1)), 0, 1) * 255));
+end;
+
 // Lift a foreground color away from the background it will be drawn on until
 // it reaches minRatio, and no further — the point is legibility without
-// throwing away the color's identity. Blending toward pure black or pure white
-// scales all three channels together, so the hue survives the adjustment.
+// throwing away the color's identity. The lift travels the OKLCh lightness
+// axis: hue is held exactly and chroma is kept as high as the gamut allows at
+// each stop, so an amber pushed toward white arrives as a *light* amber, not
+// the washed pastel the old sRGB pole blend produced. The path still ends at
+// pure black or white (the gamut closes there), so anything the pole blend
+// could reach, this reaches too.
 //
-// The pole is picked to move away from the background (darken on a light
-// background, lighten on a dark one); the opposite pole is tried as a fallback
-// because a mid-tone background caps how much contrast one direction can yield.
-// If neither reaches the target, the most separated candidate found is
+// The direction is picked to move away from the background (darken on a light
+// background, lighten on a dark one); the opposite direction is tried as a
+// fallback because a mid-tone background caps how much contrast one side can
+// yield. If neither reaches the target, the most separated candidate found is
 // returned rather than failing back to the original.
 function EnsureContrast(foreground, background: TColor;
   minRatio: double = 3.0): TColor;
@@ -192,9 +327,9 @@ const
   // overshooting into a needlessly washed-out or muddy tone.
   STEPS = 20;
 var
-  poles: array[0..1] of TColor;
+  poleL: array[0..1] of double;
   candidate, best: TColor;
-  ratio, bestRatio, bgLum: double;
+  ratio, bestRatio, bgLum, L0, C0, H0: double;
   pole, i: integer;
 
   // The background is fixed for the whole search, so hold its luminance rather
@@ -220,23 +355,25 @@ begin
   if bestRatio >= minRatio then
     Exit;
 
+  ColorToOKLCh(foreground, L0, C0, H0);
+
   // IsLightColor's threshold, applied to the luminance already in hand.
   if bgLum > 0.179 then
   begin
-    poles[0] := clBlack;
-    poles[1] := clWhite;
+    poleL[0] := 0.0;
+    poleL[1] := 1.0;
   end
   else
   begin
-    poles[0] := clWhite;
-    poles[1] := clBlack;
+    poleL[0] := 1.0;
+    poleL[1] := 0.0;
   end;
 
   best := foreground;
   for pole := 0 to 1 do
     for i := 1 to STEPS do
     begin
-      candidate := BlendColors(poles[pole], foreground, i / STEPS);
+      candidate := OKLChToColor(L0 + (poleL[pole] - L0) * (i / STEPS), C0, H0);
       ratio := RatioAgainstBg(candidate);
       if ratio > bestRatio then
       begin

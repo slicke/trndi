@@ -267,6 +267,53 @@ begin
   end;
 end;
 
+// Ring marking the newest reading's dot. Rim it in a contrasting tone of its
+// range color; a same-color ring over a solid disc would be invisible. The
+// step is taken in the same direction the dot itself was pushed (away from the
+// background) rather than from the dot's own lightness: a ring lightened off
+// an already-dark dot lands back on a light background and the rim dissolves
+// into it.
+//
+// Classic keeps its own rim rule (a plain black/white pick off the dot's
+// lightness): the mode exists to reproduce the old look, and the
+// background-directed step is part of what changed.
+// Outline mode already rims every dot, so a rim is no longer what marks the
+// newest reading — a heavier one is. Same pole, so the field of dots still
+// reads as one set.
+//
+// Extracted from DotPaint so the settings-dialog preview renders the fresh
+// marker through the same rule.
+procedure TfBG.FreshDotRing(AMode: TDotColorMode; ADotColor,
+  ABackground: TColor; ADiameter: integer; out ARingColor: TColor;
+  out ARingWidth: integer);
+begin
+  if AMode = dcmOutline then
+    ARingWidth := Max(2, ADiameter div 7)
+  else
+    ARingWidth := Max(2, ADiameter div 12);
+  if AMode = dcmOutline then
+    ARingColor := DotOutlineColor(ABackground)
+  else
+  if AMode = dcmClassic then
+    ARingColor := GetTextColorForBackground(ADotColor)
+  else
+  if AMode = dcmMono then
+  begin
+    // Stepping away from the background is what the branch below does, and in
+    // this mode the dot is already standing there. The only tone left that the
+    // disc cannot swallow is the other pole.
+    if ADotColor = clBlack then
+      ARingColor := clWhite
+    else
+      ARingColor := clBlack;
+  end
+  else
+  if IsLightColor(ABackground) then
+    ARingColor := DarkenColor(ADotColor, 0.45)
+  else
+    ARingColor := LightenColor(ADotColor, 0.55);
+end;
+
 procedure TfBG.DotPaint(Sender: TObject);
 var
   S, fontn: string;
@@ -331,46 +378,7 @@ begin
     end;
 
     if S = DOT_FRESH then
-    begin
-      // Rim the newest reading in a contrasting tone of its range color; a
-      // same-color ring over a solid disc would be invisible. The step is taken
-      // in the same direction the dot itself was pushed (away from the
-      // background) rather than from the dot's own lightness: a ring lightened
-      // off an already-dark dot lands back on a light background and the rim
-      // dissolves into it.
-      //
-      // Classic keeps its own rim rule (a plain black/white pick off the dot's
-      // lightness): the mode exists to reproduce the old look, and the
-      // background-directed step is part of what changed.
-      // Outline mode already rims every dot, so a rim is no longer what marks
-      // the newest reading — a heavier one is. Same pole, so the field of dots
-      // still reads as one set.
-      if DotColorMode = dcmOutline then
-        ringWidth := Max(2, d div 7)
-      else
-        ringWidth := Max(2, d div 12);
-      if DotColorMode = dcmOutline then
-        ringColor := DotOutlineColor(fBG.Color)
-      else
-      if DotColorMode = dcmClassic then
-        ringColor := GetTextColorForBackground(dotColor)
-      else
-      if DotColorMode = dcmMono then
-      begin
-        // Stepping away from the background is what the branch below does, and
-        // in this mode the dot is already standing there. The only tone left
-        // that the disc cannot swallow is the other pole.
-        if dotColor = clBlack then
-          ringColor := clWhite
-        else
-          ringColor := clBlack;
-      end
-      else
-      if IsLightColor(fBG.Color) then
-        ringColor := DarkenColor(dotColor, 0.45)
-      else
-        ringColor := LightenColor(dotColor, 0.55);
-    end
+      FreshDotRing(DotColorMode, dotColor, fBG.Color, d, ringColor, ringWidth)
     else
     if DotColorMode = dcmOutline then
     begin
@@ -416,6 +424,105 @@ begin
       DotDisplayColor(L.Font.Color, DotBandPartner(L.Font.Color), fBG.Color,
       lVal.Font.Color, DotColorMode), fBG.Color, DOT_TEXT_MIN_CONTRAST);
     TextOut(0, 0, S);
+  end;
+end;
+
+// The sample strip under the settings dialog's dot-coloring options: three
+// miniature Trndi windows (in-range, high, low), each with a rising trend that
+// visits every range band and a hero reading behind it. Every color runs
+// through the same pipeline as the live dots — DotDisplayColor, FreshDotRing,
+// DotOutlineColor — so the preview cannot drift from what the mode really
+// does. ATheme carries the dialog's current picker colors, which may be
+// unsaved; that is the point, the preview answers "what would this look like"
+// before the user commits.
+procedure TfBG.RenderDotModePreview(ACanvas: TCanvas; const ARect: TRect;
+  AModeIndex: integer; const ATheme: TTrndiTheme);
+const
+  // The digits exist to show dcmAuto's digit-avoidance, so any number works;
+  // no locale separator, to stay unit- and locale-neutral.
+  SAMPLE_VALUE = '123';
+  GAP = 4; // between window swatches
+  PAD = 6; // swatch-internal margin
+var
+  mode: TDotColorMode;
+  winBgs: array[0..2] of TColor;
+  idents, partners: array[0..4] of TColor;
+  i, j, d, x, y, ringWidth, swW, swH: integer;
+  sw: TRect;
+  valColor, dotColor, ringColor: TColor;
+begin
+  mode := DotColorModeFromSetting(AModeIndex);
+
+  // One miniature window per background the app actually paints with a trend
+  // on it: in-range, high, low.
+  winBgs[0] := ATheme.ColorOk;
+  winBgs[1] := ATheme.ColorHigh;
+  winBgs[2] := ATheme.ColorLow;
+
+  // Identity colors as DetermineColorForReading assigns them, low band to high
+  // band, with partners per DotBandPartner (in-range is the inverted pair —
+  // the text half is the identity).
+  idents[0] := ATheme.ColorLow;
+  partners[0] := ATheme.ColorLowText;
+  idents[1] := ATheme.ColorRangeLow;
+  partners[1] := ATheme.ColorRangeLowText;
+  idents[2] := ATheme.ColorOkText;
+  partners[2] := ATheme.ColorOk;
+  idents[3] := ATheme.ColorRangeHigh;
+  partners[3] := ATheme.ColorRangeHighText;
+  idents[4] := ATheme.ColorHigh;
+  partners[4] := ATheme.ColorHighText;
+
+  swW := (ARect.Width - 2 * GAP) div 3;
+  swH := ARect.Height;
+  if (swW < 2 * PAD + 8) or (swH < 2 * PAD + 8) then
+    Exit;
+  d := Max(MIN_DOT_DIAMETER_PX, Min(swH div 3, (swW - 2 * PAD) div 7));
+
+  for i := 0 to 2 do
+  begin
+    sw := Rect(ARect.Left + i * (swW + GAP), ARect.Top,
+      ARect.Left + i * (swW + GAP) + swW, ARect.Top + swH);
+    if i = 2 then // absorb the integer-division remainder
+      sw.Right := ARect.Right;
+    ACanvas.Brush.Style := bsSolid;
+    ACanvas.Brush.Color := winBgs[i];
+    ACanvas.FillRect(sw);
+
+    // The hero reading, colored as UpdateUIColors would color it on this
+    // window, so dcmAuto's digit-avoidance is part of what the preview shows.
+    valColor := GetTextColorForBackground(winBgs[i]);
+    ACanvas.Font.Color := valColor;
+    ACanvas.Font.Height := -(swH * 3 div 5);
+    ACanvas.Font.Style := [fsBold];
+    ACanvas.Brush.Style := bsClear;
+    ACanvas.TextOut(sw.Left + (sw.Width - ACanvas.TextWidth(SAMPLE_VALUE)) div 2,
+      sw.Top + (swH - ACanvas.TextHeight(SAMPLE_VALUE)) div 2, SAMPLE_VALUE);
+
+    // Oldest to newest, climbing through the bands; the newest dot carries the
+    // fresh ring like the live graph's does.
+    for j := 0 to 4 do
+    begin
+      dotColor := DotDisplayColor(idents[j], partners[j], winBgs[i], valColor,
+        mode);
+      if j = 4 then
+        FreshDotRing(mode, dotColor, winBgs[i], d, ringColor, ringWidth)
+      else
+      if mode = dcmOutline then
+      begin
+        // Same rim rule as DotPaint's non-fresh outline branch.
+        ringWidth := Max(1, d div 14);
+        ringColor := DotOutlineColor(winBgs[i]);
+      end
+      else
+      begin
+        ringWidth := 0;
+        ringColor := dotColor;
+      end;
+      x := sw.Left + PAD + j * (sw.Width - 2 * PAD - d) div 4;
+      y := sw.Top + PAD + (4 - j) * (swH - 2 * PAD - d) div 4;
+      DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
+    end;
   end;
 end;
 

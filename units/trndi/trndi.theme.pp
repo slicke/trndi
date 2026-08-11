@@ -69,6 +69,13 @@ function TrndiThemeModern: TTrndiTheme;
     uconf's color reset. Keep both flows on this function. }
 function TrndiThemeClassic: TTrndiTheme;
 
+{** Color-vision-deficiency-friendly palette. Lows are blues, highs are
+    yellow/orange — the blue–yellow axis survives both protan and deutan
+    vision — and adjacent bands also differ clearly in lightness, so the
+    banding still reads if hue is lost entirely. Every text half holds
+    WCAG AA (>= 4.5:1) on its background half. }
+function TrndiThemeAccessible: TTrndiTheme;
+
 implementation
 
 function TrndiThemeModern: TTrndiTheme;
@@ -103,6 +110,31 @@ begin
   Result.ColorRangeHighText := $001C6577;
   Result.ColorRangeLow      := $00A859EE;
   Result.ColorRangeLowText  := $002D074E;
+end;
+
+function TrndiThemeAccessible: TTrndiTheme;
+begin
+  // Hues drawn from the Okabe–Ito colorblind-safe set (vermillion darkened a
+  // step so white text clears AA on it). Cold-to-warm still maps low-to-high,
+  // and every *neighbouring* band differs clearly in background lightness
+  // (rel. luminance low 0.15, range-low 0.40, ok 0.26, range-high 0.74,
+  // high 0.15), so the banding survives even with hue lost entirely; the two
+  // 0.15 extremes are never adjacent and sit on the preserved blue–yellow axis.
+  // Hex literals are $00BBGGRR (Lazarus COLORREF byte order).
+  Result.ColorOk            := $00739E00; // Teal green   #009E73
+  Result.ColorOkText        := $001D2900; // Near-black green #00291D (4.6:1)
+
+  Result.ColorHigh          := $00004AB9; // Deep vermillion #B94A00
+  Result.ColorHighText      := $00FFFFFF; // White (5.2:1)
+
+  Result.ColorLow           := $00B27200; // Strong blue  #0072B2
+  Result.ColorLowText       := $00FFFFFF; // White (5.2:1)
+
+  Result.ColorRangeHigh     := $0042E4F0; // Yellow       #F0E442
+  Result.ColorRangeHighText := $00003540; // Dark olive   #403500 (9.2:1)
+
+  Result.ColorRangeLow      := $00E9B456; // Sky blue     #56B4E9
+  Result.ColorRangeLowText  := $00613A00; // Dark navy    #003A61 (5.1:1)
 end;
 
 end.

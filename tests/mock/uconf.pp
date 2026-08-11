@@ -42,7 +42,8 @@ unit uconf;
 interface
 
 uses
-  Classes, SysUtils, StdCtrls, ExtCtrls, Graphics, Spin, Forms, razer.chroma;
+  Classes, SysUtils, StdCtrls, ExtCtrls, Graphics, Spin, Forms, razer.chroma,
+  trndi.theme;
 
 const
   RS_DEFAULT_ACCOUNT = 'Default';
@@ -56,6 +57,11 @@ const
   RS_NEWVER_PR = 'This temporary Trndi build is now outdated, a newer stable version has been released: %s. Would you like to go to the downloads page?';
 
 type
+  // Dot preview renderer callback (see real uconf). The mock never paints, so
+  // the type only has to match for umain's assignment to compile.
+  TDotPreviewEvent = procedure(ACanvas: TCanvas; const ARect: TRect;
+    AModeIndex: integer; const ATheme: TTrndiTheme) of object;
+
   TfConf = class(TForm)
   public
     cbSys: TComboBox;
@@ -82,6 +88,9 @@ type
     // skip writing a blob the user never edited (see uconf). Property there,
     // plain field here.
     LoadedCreds: string;
+    // Dot preview renderer umain assigns before showing the dialog. Property
+    // on the real form, plain field here; the mock never invokes it.
+    OnDotPreview: TDotPreviewEvent;
 
     eAddr: TEdit;
     ePass: TEdit;

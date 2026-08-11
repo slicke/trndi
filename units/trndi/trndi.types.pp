@@ -241,7 +241,9 @@ const
       other five are opt-in. Note what that means: a dot whose reading is in the
       same range as the current one is drawn in a flat darkening of the window's
       own color and is close to invisible — see DotDisplayColor. Every read of
-      `ux.dot_color_mode` falls back to this, and so does the dialog's reset. }
+      `ux.dot_color_mode` falls back to this, and so does the dialog's reset.
+      New profiles are the exception: the setup wizard stores dcmAuto for them
+      (uwizard.SaveSettings), since a fresh profile has no old look to keep. }
 DOT_COLOR_MODE_DEFAULT = dcmClassic;
 
 implementation

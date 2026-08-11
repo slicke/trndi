@@ -66,12 +66,19 @@ unit uconf;
 interface
 
 uses
-Classes, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
+Classes, Types, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
 slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, trndi.theme, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
+
+  {** Renders the dot-coloring preview strip. Implemented by umain
+      (TfBG.RenderDotModePreview) — the dot color pipeline lives there, and
+      umain cannot be used from here without a circular reference, so the
+      dialog only hosts the paint surface and hands the rendering back. }
+TDotPreviewEvent = procedure(ACanvas: TCanvas; const ARect: TRect;
+  AModeIndex: integer; const ATheme: TTrndiTheme) of object;
 
   { TfConf }
 
@@ -238,6 +245,7 @@ TfConf = class(TForm)
   PanelProxyActions: TPanel;
   pDecimal: TPanel;
   pHints: TPanel;
+  pbDotPreview: TPaintBox;
   pnDeltaMax: TPanel;
   pnFontButtons: TPanel;
   pnMisc: TPanel;
@@ -267,6 +275,7 @@ TfConf = class(TForm)
   cbTirColorBgCustom: TRadioButton;
   cbTirColor: TRadioButton;
   cbTirColorCustom: TRadioButton;
+  cbColorPreset: TComboBox;
   cbTitleColor: TCheckBox;
   cbTouch: TCheckBox;
   cbUser: TColorButton;
@@ -509,6 +518,8 @@ TfConf = class(TForm)
   procedure bImportSettingsClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
   procedure btUserSaveClick(Sender: TObject);
+  procedure cbColorPresetChange(Sender: TObject);
+  procedure pbDotPreviewPaint(Sender: TObject);
   procedure bUseURLHelpClick(Sender: TObject);
   procedure Button1Click(Sender: TObject);
   procedure Button3Click(Sender: TObject);
@@ -588,6 +599,8 @@ private
   {** 'remote.creds' as it stood when the dialog loaded. See the LoadedCreds
       property. }
   FLoadedCreds: string;
+  {** Dot preview renderer injected by umain. See TDotPreviewEvent. }
+  FOnDotPreview: TDotPreviewEvent;
   procedure LoadProxySettingsIntoUI;
   procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
@@ -614,6 +627,16 @@ public
   {** Assign the captions the .po file cannot pick up from the .lfm.
       @seealso(ApplyCaptionsFromResources implementation notes) }
   procedure ApplyCaptionsFromResources;
+  {** Load a palette into the ten color pickers on the Colors tab. Nothing is
+      persisted here — the pickers are read back on dialog close like any
+      hand-picked color. }
+  procedure ApplyThemeToPickers(const theme: TTrndiTheme);
+  {** The ten picker colors gathered into the record the preview renderer
+      takes, so it previews what *would* be saved, not what currently is. }
+  function ThemeFromPickers: TTrndiTheme;
+  {** Repaint the dot preview; hooked to everything that changes what it
+      shows (mode radio, color pickers, presets, reset). }
+  procedure RefreshDotPreview({%H-}Sender: TObject);
   {** Blank the Extension Info panel; optional rows are hidden, not emptied,
       so the visible rows stay packed against the top of the panel. }
   procedure ClearExtensionInfo;
@@ -635,6 +658,10 @@ public
       field unconditionally would put the stale blob back and, because those
       refresh tokens are single-use, kill the stored login. }
   property LoadedCreds: string read FLoadedCreds write FLoadedCreds;
+  {** Renderer for the dot-coloring preview strip; umain assigns
+      TfBG.RenderDotModePreview here before showing the dialog. The strip
+      stays blank when unassigned. }
+  property OnDotPreview: TDotPreviewEvent read FOnDotPreview write FOnDotPreview;
   property OnReloadExtensions: TNotifyEvent read FOnReloadExtensions
     write FOnReloadExtensions;
 end;
@@ -873,6 +900,15 @@ RS_DOTS_DARKER = 'Darker';
 RS_DOTS_MONO = 'Black or white only';
 RS_DOTS_OUTLINE = 'True colors, outlined';
 
+{ Color preset picker on the Colors tab, here for the same reason as the
+  options above. Item 0 is a prompt, not a preset — the pickers may hold a
+  hand-tuned palette that matches no preset, so nothing is preselected. Order
+  must match cbColorPresetChange. }
+RS_THEME_PROMPT = 'Load color preset…';
+RS_THEME_CLASSIC = 'Classic';
+RS_THEME_MODERN = 'Modern';
+RS_THEME_ACCESSIBLE = 'Color-blind friendly';
+
 RS_EXT_RESET_BTN = 'Reset permissions';
 RS_EXT_CHOOSE = 'Choose an extension for more info';
 RS_EXT_VERSION = 'Version %s';
@@ -1085,6 +1121,19 @@ begin
   end;
   if (keep >= 0) and (keep < rgDots.Items.Count) then
     rgDots.ItemIndex := keep;
+
+  cbColorPreset.Items.BeginUpdate;
+  try
+    cbColorPreset.Items.Clear;
+    // Order must match cbColorPresetChange; index 0 is the prompt.
+    cbColorPreset.Items.Add(RS_THEME_PROMPT);
+    cbColorPreset.Items.Add(RS_THEME_CLASSIC);
+    cbColorPreset.Items.Add(RS_THEME_MODERN);
+    cbColorPreset.Items.Add(RS_THEME_ACCESSIBLE);
+  finally
+    cbColorPreset.Items.EndUpdate;
+  end;
+  cbColorPreset.ItemIndex := 0;
 end;
 
 procedure TfConf.ClearExtensionInfo;
@@ -2303,13 +2352,8 @@ begin
   end;
 end;
 
-procedure TfConf.btResetClick(Sender: TObject);
-var
-  theme: TTrndiTheme;
+procedure TfConf.ApplyThemeToPickers(const theme: TTrndiTheme);
 begin
-  // Same palette as the first-run defaults in umain — both come from trndi.theme.
-  theme := TrndiThemeClassic;
-
   cl_ok_bg.ButtonColor := theme.ColorOk;
   cl_hi_bg.ButtonColor := theme.ColorHigh;
   cl_lo_bg.ButtonColor := theme.ColorLow;
@@ -2324,9 +2368,66 @@ begin
   cl_hi_txt_cust.ButtonColor := theme.ColorRangeHighText;
   cl_lo_txt_cust.ButtonColor := theme.ColorRangeLowText;
 
+  RefreshDotPreview(nil);
+end;
+
+function TfConf.ThemeFromPickers: TTrndiTheme;
+begin
+  Result.ColorOk            := cl_ok_bg.ButtonColor;
+  Result.ColorHigh          := cl_hi_bg.ButtonColor;
+  Result.ColorLow           := cl_lo_bg.ButtonColor;
+
+  Result.ColorOkText        := cl_ok_txt.ButtonColor;
+  Result.ColorHighText      := cl_hi_txt.ButtonColor;
+  Result.ColorLowText       := cl_lo_txt.ButtonColor;
+
+  Result.ColorRangeHigh     := cl_hi_bg_cust.ButtonColor;
+  Result.ColorRangeLow      := cl_lo_bg_cust.ButtonColor;
+
+  Result.ColorRangeHighText := cl_hi_txt_cust.ButtonColor;
+  Result.ColorRangeLowText  := cl_lo_txt_cust.ButtonColor;
+end;
+
+procedure TfConf.RefreshDotPreview(Sender: TObject);
+begin
+  pbDotPreview.Invalidate;
+end;
+
+procedure TfConf.pbDotPreviewPaint(Sender: TObject);
+begin
+  if Assigned(FOnDotPreview) then
+    FOnDotPreview(pbDotPreview.Canvas,
+      Rect(0, 0, pbDotPreview.Width, pbDotPreview.Height),
+      rgDots.ItemIndex, ThemeFromPickers);
+end;
+
+procedure TfConf.btResetClick(Sender: TObject);
+begin
+  // Same palette as the first-run defaults in umain — both come from trndi.theme.
+  ApplyThemeToPickers(TrndiThemeClassic);
+
   // The dot coloring lives on this page and is derived from the palette above,
   // so the reset covers it too.
   rgDots.ItemIndex := Ord(DOT_COLOR_MODE_DEFAULT);
+
+  // The pickers no longer hold whatever preset was loaded last.
+  cbColorPreset.ItemIndex := 0;
+end;
+
+// Load the chosen preset into the pickers. Unlike the reset this leaves the
+// dot coloring mode alone — a palette choice and a rendering choice are
+// separate decisions.
+procedure TfConf.cbColorPresetChange(Sender: TObject);
+begin
+  // Order matches the items added in ApplyCaptionsFromResources.
+  case cbColorPreset.ItemIndex of
+  1:
+    ApplyThemeToPickers(TrndiThemeClassic);
+  2:
+    ApplyThemeToPickers(TrndiThemeModern);
+  3:
+    ApplyThemeToPickers(TrndiThemeAccessible);
+  end;
 end;
 
 procedure TfConf.btUserSaveClick(Sender: TObject);
@@ -2533,6 +2634,21 @@ var
   bottomclose: tbutton;
 begin
   ApplyCaptionsFromResources;
+
+  // Everything that changes what the dot preview shows repaints it. The mode
+  // radio and the ten pickers have no other handlers, so these are assigned
+  // here rather than spent on .lfm plumbing.
+  rgDots.OnClick := @RefreshDotPreview;
+  cl_ok_bg.OnColorChanged := @RefreshDotPreview;
+  cl_hi_bg.OnColorChanged := @RefreshDotPreview;
+  cl_lo_bg.OnColorChanged := @RefreshDotPreview;
+  cl_ok_txt.OnColorChanged := @RefreshDotPreview;
+  cl_hi_txt.OnColorChanged := @RefreshDotPreview;
+  cl_lo_txt.OnColorChanged := @RefreshDotPreview;
+  cl_hi_bg_cust.OnColorChanged := @RefreshDotPreview;
+  cl_lo_bg_cust.OnColorChanged := @RefreshDotPreview;
+  cl_hi_txt_cust.OnColorChanged := @RefreshDotPreview;
+  cl_lo_txt_cust.OnColorChanged := @RefreshDotPreview;
 
   // Base app version + build date + widgetset + target CPU
   lVersion.Caption := GetProductVersionMajorMinor('12.x');
