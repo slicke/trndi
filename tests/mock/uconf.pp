@@ -166,6 +166,7 @@ type
     cbFlashPerfect: TCheckBox;
     cbAlertHiLo: TCheckBox;
     cbAlertMissing: TCheckBox;
+    cbAlertReservoir: TCheckBox;
     spAlertDurHi: TSpinEdit;
     spAlertDurLo: TSpinEdit;
     spAlertDurUrg: TSpinEdit;

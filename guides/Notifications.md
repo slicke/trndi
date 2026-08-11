@@ -3,6 +3,24 @@ Trndi can show toasts (those small pop-ups near the clock) when you're high or l
 
 Enabling notifications is optional — you can use Trndi without them.
 
+## What Trndi notifies about
+- **High / low blood sugar** — `alerts.notice.hilo`, rate-limited by the alert engine's rules.
+- **Missing or stale readings** — `alerts.notice.missing`.
+- **Suspected sensor fault** — repeated large jumps between consecutive readings.
+- **Low pump reservoir** — `alerts.notice.reservoir`, on by default. One toast each
+  time the reservoir falls to 30, 25, 20, 15, 10 and 5 units. Only backends that
+  report a reservoir (Tandem Source, CareLink) can trigger it; the rest leave the
+  field at `DEVICE_STATUS_UNKNOWN` and are skipped, since a missing figure must
+  never read as an empty cartridge.
+
+  The ladder is evaluated after each successful fetch by `TfBG.CheckPumpReservoir`
+  (`inc/umain_alerts.inc`) on top of `ReservoirShouldNotify` in
+  `units/trndi/trndi.alert.engine.pp`. A step notifies once: it stays quiet until
+  either a lower step is reached or the level climbs clear of the fired step by
+  `RESERVOIR_REARM_MARGIN`, which is also what re-arms the ladder after a refill.
+  The latch is persisted as `alerts.reservoir.step`, so restarting Trndi on a low
+  cartridge does not repeat a warning that was already shown.
+
 ## How Trndi chooses a backend
 - Windows: Uses the built‑in WinRT toast API (`Windows.UI.Notifications.ToastNotificationManager`) via PowerShell — no third‑party module required.
 - macOS: Uses the built‑in user notification center — no setup required.
