@@ -91,6 +91,10 @@ type
     // Dot preview renderer umain assigns before showing the dialog. Property
     // on the real form, plain field here; the mock never invokes it.
     OnDotPreview: TDotPreviewEvent;
+    // Raised while umain fills the dialog, so OnChange handlers keep their
+    // explanation popups to themselves (see uconf). Property there, plain
+    // field here; nothing in the mock reacts to it.
+    SettingsLoading: boolean;
 
     eAddr: TEdit;
     ePass: TEdit;

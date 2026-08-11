@@ -583,6 +583,9 @@ TfConf = class(TForm)
   procedure closeClick(Sender: TObject);
 private
   FProxyLoading: boolean;
+  {** True while umain fills the dialog from the stored settings. See the
+      SettingsLoading property. }
+  FSettingsLoading: boolean;
   FTTSVoicesLoaded: boolean;
   FChromaListLoaded: boolean;
   {** Extensions folder stashed by DeferExtensionList; scanned on the
@@ -658,6 +661,12 @@ public
       field unconditionally would put the stale blob back and, because those
       refresh tokens are single-use, kill the stored login. }
   property LoadedCreds: string read FLoadedCreds write FLoadedCreds;
+  {** Set while the dialog is being filled from the stored settings. Assigning
+      a control's value fires its OnChange, and a handler that explains the
+      setting in a popup must stay quiet then - the user has not touched
+      anything yet, they only opened Settings. umain's ShowSettings raises and
+      lowers this around the load. }
+  property SettingsLoading: boolean read FSettingsLoading write FSettingsLoading;
   {** Renderer for the dot-coloring preview strip; umain assigns
       TfBG.RenderDotModePreview here before showing the dialog. The strip
       stays blank when unassigned. }
@@ -2539,7 +2548,9 @@ procedure TfConf.cbCustChange(Sender: TObject);
 begin
   fsHi.Enabled := cbCust.Checked;
   fsLo.Enabled := cbCust.Checked;
-  if (cbCust.Checked) and (cbSys.Text = 'NightScout') then
+  // Only when the user ticks the box, not when the stored state is loaded back
+  // in - see SettingsLoading. The mirror below still follows either way.
+  if (cbCust.Checked) and (not FSettingsLoading) and (cbSys.Text = API_NS) then
     ShowMessage(RS_OVERRIDE_NS);
   cbCust1.Checked := cbCust.Checked;
 end;
@@ -2548,7 +2559,8 @@ procedure TfConf.cbCustRangeChange(Sender: TObject);
 begin
   fsHiRange.Enabled := cbCustRange.Checked;
   fsLoRange.Enabled := cbCustRange.Checked;
-  if (cbCustRange.Checked) and (cbSys.Text = 'NightScout') then
+  // As in cbCustChange: the notice belongs to the user's click, not to the load.
+  if (cbCustRange.Checked) and (not FSettingsLoading) and (cbSys.Text = API_NS) then
     ShowMessage(RS_OVERRIDE_NS);
 end;
 
