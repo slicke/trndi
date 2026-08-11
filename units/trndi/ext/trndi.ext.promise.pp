@@ -274,6 +274,25 @@ begin
       FSuccess := false;
 end;
 
+{** Drain the runtime's pending job queue. This unit sits below the engine
+    (which owns the 50ms fallback pump), so it drains via the binding alone.
+    JS_ExecutePendingJob needs a real variable for its context out-param. }
+procedure DrainPendingJobs(ctx: JSContext);
+var
+  rt: JSRuntime;
+  runCtx: JSContext;
+begin
+  if (ctx = nil) or IsExtShuttingDown then
+    Exit;
+  rt := JS_GetRuntime(ctx);
+  if rt = nil then
+    Exit;
+  runCtx := ctx;
+  while JS_IsJobPending(rt) do
+    if JS_ExecutePendingJob(rt, @runCtx) <= 0 then
+      Break;
+end;
+
 {** Resolve/reject the promise from FSuccess/FResult and free the captured
     QuickJS values and parsed parameters. Main thread only. }
 procedure TJSAsyncTask.FinishPromise;
@@ -301,6 +320,11 @@ begin
     FContext^.Free(xres);
     FContext^.FreeInlined(PJSValue(@funcs[JprResolve]));
     FContext^.FreeInlined(PJSValue(@funcs[JprReject]));
+
+    // Settling the promise only queued its .then/.catch reactions; drain the
+    // job queue here (main thread) so the extension's continuation runs now
+    // instead of up to 50ms later at the engine's timer tick.
+    DrainPendingJobs(FContext);
   except
     // Silently ignore JS calls that fail during shutdown
     // This prevents crashes when the runtime is being destroyed

@@ -415,6 +415,21 @@ function JS_IsJobPending(rt: JSRuntime): ByteBool; cdecl; external QJSLIB;
 function JS_ExecutePendingJob(rt: JSRuntime; pctx: PJSContext): integer; cdecl;
   external QJSLIB;
 
+type
+  {** Interrupt hook, polled from the interpreter loop every few thousand
+      bytecodes. Return non-zero to abort the running script with an
+      InterruptError that try/catch cannot swallow. No JSValue crosses this
+      boundary, so it binds directly. }
+  TJSInterruptHandler = function(rt: JSRuntime; opaque: pointer): integer; cdecl;
+
+{** Install the interrupt hook; pass nil to remove it. }
+procedure JS_SetInterruptHandler(rt: JSRuntime; cb: TJSInterruptHandler;
+  opaque: pointer); cdecl; external QJSLIB;
+{** Cap the runtime's total heap in bytes. Once exceeded, JS allocations fail
+    with an out-of-memory exception instead of exhausting the process. }
+procedure JS_SetMemoryLimit(rt: JSRuntime; limit: NativeUInt); cdecl;
+  external QJSLIB;
+
 { ------------------------------------------------------------------ }
 { Shim imports. Every JSValue crosses by pointer - see unit header.   }
 { ------------------------------------------------------------------ }

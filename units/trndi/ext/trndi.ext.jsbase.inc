@@ -408,7 +408,8 @@ end;
 procedure PromiseRejectionTracker(ctx: JSContext; promise, reason: PJSValue;
 is_handled: integer; opaque: Pointer); cdecl;
 var
-  error_msg: RawUtf8;
+  error_msg, stack: RawUtf8;
+  st: JSValue;
   eng: TTrndiExtEngine;
 begin
   // The runtime calls this from inside a C frame, so nothing may unwind out of
@@ -439,6 +440,22 @@ begin
     try
       // Convert the JS 'reason' value to a string for display/logging
       error_msg := JSValueConstToUtf8(ctx, reason^);
+      // Errors carry a .stack property; append it so the report points at the
+      // rejecting line instead of just naming the error.
+      if reason^.IsObject then
+      begin
+        st := JS_GetPropertyStr(ctx, reason^, 'stack');
+        try
+          if not st.IsUndefined then
+          begin
+            stack := JS_ToUtf8(ctx, st);
+            if stack <> '' then
+              error_msg := error_msg + LineEnding + stack;
+          end;
+        finally
+          JS_FreeValue(ctx, st);
+        end;
+      end;
     except
       on E: Exception do
         error_msg := '[error retrieving message]';

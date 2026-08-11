@@ -212,6 +212,11 @@ private
     {** Rejections seen by PromiseRejectionTracker, reported (or cancelled)
         on the next job-pump tick. }
   FPendingRejections: array of TPendingRejection;
+    {** Watchdog state for EngineInterruptHandler, in GetTickCount64 ms:
+        when the interrupt hook last polled, and when the current
+        uninterrupted execution burst began. }
+  FLastJSCheck: QWord;
+  FJSBurstStart: QWord;
 
     {** Loaded per-extension contexts (Path B). Each user .js script lives in its own ctx. }
   FExtContexts: TExtContSlickeList;
@@ -230,6 +235,10 @@ private
     {** Dispose timers parked in FDeadTimers. Safe to call anytime; no-ops
         while a timer callback is running. }
   procedure DrainDeadTimers;
+
+    {** Drain the QuickJS job queue (Promise reactions/microtasks) right now
+        instead of waiting for the next OnJSTimer tick. }
+  procedure PumpJobs;
 
     {** Show a UX dialog and return the button pressed.
 
@@ -722,7 +731,9 @@ begin
       if PJSValue(@RetVal)^.IsException then
       begin
         err := '';
-        TimerInfo^.Context^.ErrorMessage(true, err, nil);
+        // DumpError, not ErrorMessage: it appends the JS stack trace, so the
+        // extension console shows where in the callback the throw happened.
+        TimerInfo^.Context^.DumpError(err);
         Engine.SetOutput('Timer callback error: ' + string(err));
       end;
     except on E: Exception do
@@ -731,6 +742,10 @@ begin
 
     // Release the call result; the callback/args stay owned by TimerInfo.
     TimerInfo^.Context^.FreeInlined(PJSValue(@RetVal));
+
+    // Run promise reactions the callback queued right away. FInTimerCallback
+    // is still raised, so a nested pump cannot free this timer beneath us.
+    Engine.PumpJobs;
 
     // If this is a setTimeout (one-shot), retire it. The JS callback may already
     // have cancelled us via clearTimeout, in which case we're no longer in the map.
@@ -1103,6 +1118,46 @@ end;
   Construction / destruction
 ******************************************************************************}
 
+const
+  {** Runaway-extension guards: a script may execute continuously for this
+      long before the watchdog aborts it, and the shared runtime heap is
+      capped so a leaking extension cannot exhaust the process. }
+  JS_WATCHDOG_MS = 10000;
+  {** A gap this long between interrupt polls means no JS was executing (or
+      it sat inside a native call, e.g. a modal dialog awaiting the user), so
+      the watchdog budget restarts rather than count host/user time. }
+  JS_WATCHDOG_GAP_MS = 500;
+  JS_MEMORY_LIMIT_BYTES = 64 shl 20; // 64 MB across all extension contexts
+
+{** Interrupt hook polled by quickjs-ng between bytecodes; returning 1 aborts
+    the running script with an uncatchable InterruptError. "Continuous
+    execution" is measured through poll gaps: while JS runs, polls arrive
+    every few thousand instructions, so a long gap means the engine was idle
+    or parked in a native call - either way the budget restarts. Runs on
+    whichever thread executes JS, which in Trndi is always the main thread. }
+function EngineInterruptHandler(rt: JSRuntime; opaque: pointer): integer; cdecl;
+var
+  eng: TTrndiExtEngine;
+  tick: QWord;
+begin
+  Result := 0;
+  eng := TTrndiExtEngine(opaque);
+  if eng = nil then
+    Exit;
+  tick := GetTickCount64;
+  if tick - eng.FLastJSCheck > JS_WATCHDOG_GAP_MS then
+    eng.FJSBurstStart := tick;
+  eng.FLastJSCheck := tick;
+  if tick - eng.FJSBurstStart > JS_WATCHDOG_MS then
+  begin
+    // Zeroing the poll timestamp restarts the burst at the next poll, so the
+    // next script (say, another extension in the same broadcast) gets a
+    // fresh budget instead of dying to this script's spent one.
+    eng.FLastJSCheck := 0;
+    Result := 1;
+  end;
+end;
+
 { Replacement for quickjs-libc's js_std_dump_error, which Trndi no longer links:
   the engine routes diagnostics through its own output rather than stderr. }
 procedure DumpJSError(ctx: JSContext);
@@ -1180,6 +1235,13 @@ begin
   JS_AddIntrinsicRegExp(FContext);
   JS_AddIntrinsicDate(FContext);
   JS_SetHostPromiseRejectionTracker(FRuntime, @PromiseRejectionTracker, nil);
+
+  // Runaway-extension guards: cap the shared heap and abort scripts that
+  // execute continuously past the watchdog budget (see EngineInterruptHandler).
+  FLastJSCheck := 0;
+  FJSBurstStart := 0;
+  JS_SetMemoryLimit(FRuntime, JS_MEMORY_LIMIT_BYTES);
+  JS_SetInterruptHandler(FRuntime, @EngineInterruptHandler, Self);
 
   // Initialize timer to pump pending JS jobs (Promises/microtasks)
   eventTimer := TFPTimer.Create(nil);
@@ -1818,9 +1880,13 @@ begin
     Inc(timeoutCounter);
   end;
 
-  // Unregister host promise rejection tracker to avoid callbacks during teardown
+  // Unregister host promise rejection tracker and the watchdog hook (its
+  // opaque pointer is this instance) to avoid callbacks during teardown
   if FRuntime <> nil then
+  begin
     JS_SetHostPromiseRejectionTracker(FRuntime, nil, nil);
+    JS_SetInterruptHandler(FRuntime, nil, nil);
+  end;
 
   // Normal shutdown path continues - application is not terminating
   // Drain pending jobs, if any, before freeing context/runtime
@@ -2322,11 +2388,11 @@ end;
 const
   JSIdentChars = ['A'..'Z', 'a'..'z', '0'..'9', '_', '$'];
 
-{** True when a failed eval looks like the bundled quickjspp parser rejecting
-    top-level await (it predates JS_EVAL_FLAG_ASYNC, so await is only legal
-    inside async functions). Checks for a SyntaxError plus the word 'await'
-    anywhere in the source; a false positive is harmless since the wrapped
-    retry just fails with an equivalent error. }
+{** True when a failed eval looks like the parser rejecting top-level await
+    (without JS_EVAL_FLAG_ASYNC, await is only legal inside async functions).
+    Checks for a SyntaxError plus the word 'await' anywhere in the source; a
+    false positive is harmless since the async-mode retry just fails with an
+    equivalent error. }
 function IsTopLevelAwaitError(const Script, Err: RawUtf8): boolean;
 var
   p: integer;
@@ -2342,77 +2408,6 @@ begin
       Exit(true);
     p := PosEx('await', Script, p + 1);
   end;
-end;
-
-{** Collect 'function name(' / 'async function name(' declarations and return
-    JS that copies each onto globalThis. The async-IIFE wrapper turns top-level
-    declarations into locals, but Pascal looks callbacks (clockView,
-    fetchCallback...) up as global properties, so they must be re-exported.
-    Nested functions matched by accident are filtered out at runtime by the
-    typeof guard: at the top of the body they are simply not in scope. }
-function BuildFunctionHoists(const Script: RawUtf8): RawUtf8;
-var
-  lines, seen: TStringList;
-  line, name: string;
-  i, p: integer;
-begin
-  Result := '';
-  lines := TStringList.Create;
-  seen := TStringList.Create;
-  try
-    seen.Sorted := true;
-    seen.Duplicates := dupIgnore;
-    lines.Text := string(Script);
-    for i := 0 to lines.Count - 1 do
-    begin
-      line := TrimLeft(lines[i]);
-      if Copy(line, 1, 6) = 'async ' then
-        line := TrimLeft(Copy(line, 7, MaxInt));
-      if (Copy(line, 1, 8) <> 'function') or (Length(line) < 9) or
-        not (line[9] in [' ', #9, '*']) then
-        Continue;
-      line := TrimLeft(Copy(line, 9, MaxInt));
-      if (line <> '') and (line[1] = '*') then // generator
-        line := TrimLeft(Copy(line, 2, MaxInt));
-      p := 1;
-      while (p <= Length(line)) and (line[p] in JSIdentChars) do
-        Inc(p);
-      name := Copy(line, 1, p - 1);
-      if (name = '') or (name[1] in ['0'..'9']) or
-        (Copy(TrimLeft(Copy(line, p, MaxInt)), 1, 1) <> '(') then
-        Continue; // anonymous or not a declaration
-      if seen.IndexOf(name) >= 0 then
-        Continue;
-      seen.Add(name);
-      Result := Result + RawUtf8('if(typeof ' + name +
-        '==="function")globalThis.' + name + '=' + name + ';');
-    end;
-  finally
-    seen.Free;
-    lines.Free;
-  end;
-end;
-
-{** Wrap a script that uses top-level await in an async IIFE so it parses.
-    The prefix shares the script's first line so error/stack line numbers are
-    unchanged. Function hoists run before the first await so name-based
-    callbacks are visible as soon as the extension loads, and a leading
-    'use strict' directive is re-emitted since the hoists would otherwise
-    push it out of the directive prologue. Rejections that escape the body
-    are logged to the extension console when one is registered. }
-function WrapTopLevelAwait(const Script: RawUtf8): RawUtf8;
-var
-  head: RawUtf8;
-begin
-  head := TrimLeft(Script);
-  if (Copy(head, 1, 12) = '"use strict"') or
-    (Copy(head, 1, 12) = '''use strict''') then
-    head := '"use strict";'
-  else
-    head := '';
-  Result := '(async()=>{' + head + BuildFunctionHoists(Script) + Script +
-    #10 + '})().catch(function(e){if(typeof console!=="undefined"&&console.log)' +
-    'console.log("Unhandled async error: "+e);});';
 end;
 
 {** Read the extension's file and evaluate it in its own context. Mirrors the
@@ -2448,13 +2443,18 @@ begin
   FOutput := '';
   EvalResult := ctx^.Eval(Script, ExtractFileName(Ext^.FileName),
     JS_EVAL_TYPE_GLOBAL, err);
-  // quickjspp has no top-level await; when the parse fails and the script
-  // uses await, retry it wrapped in an async IIFE (see WrapTopLevelAwait)
+  // When the parse fails and the script uses await, retry in async mode:
+  // quickjs-ng's JS_EVAL_FLAG_ASYNC allows top-level await while keeping
+  // top-level function/var declarations global, so name-based callbacks
+  // (clockView, ...) stay visible to Pascal. The eval then returns a promise;
+  // a rejection that escapes the top level is reported by the engine's
+  // unhandled-rejection tracker once the job queue drains. Non-await scripts
+  // keep the plain eval so their result value and semantics are unchanged.
   if EvalResult.IsException and IsTopLevelAwaitError(Script, err) then
   begin
     ctx^.Free(EvalResult);
-    EvalResult := ctx^.Eval(WrapTopLevelAwait(Script),
-      ExtractFileName(Ext^.FileName), JS_EVAL_TYPE_GLOBAL, err);
+    EvalResult := ctx^.Eval(Script, ExtractFileName(Ext^.FileName),
+      JS_EVAL_TYPE_GLOBAL or JS_EVAL_FLAG_ASYNC, err);
   end;
   if EvalResult.IsException then
   try
@@ -2474,6 +2474,10 @@ begin
     JS_FreeCString(ctx, ResultStr);
   end;
   ctx^.Free(EvalResult);
+
+  // Run whatever the script scheduled (top-level await continuations, .then
+  // chains) now rather than at the next timer tick.
+  PumpJobs;
 end;
 
 {******************************************************************************
@@ -2552,6 +2556,9 @@ begin
 
   // Release evaluation result
   FContext^.Free(EvalResult);
+
+  // Resolve any promise chains the script queued without timer latency.
+  PumpJobs;
 end;
 
 {** Evaluate a script in the current registration context. Unlike Execute this
@@ -2574,6 +2581,7 @@ begin
   if not Result then
     ExtError(sdsAuto, 'Error loading ' + Name, err);
   ctx^.Free(EvalResult);
+  PumpJobs;
 end;
 
 {** Call @code(FuncName) on @code(ctx) with string arguments. Returns the call
@@ -2644,11 +2652,13 @@ begin
         partial := CallStringArgsInContext(FExtContexts[i]^.Ctx, FuncName, Args);
         if partial <> '' then Result := partial;
       end;
-    Exit;
-  end;
+  end
+  else
+    // Legacy fallback: no extensions loaded.
+    Result := CallStringArgsInContext(FContext, FuncName, Args);
 
-  // Legacy fallback: no extensions loaded.
-  Result := CallStringArgsInContext(FContext, FuncName, Args);
+  // Promise reactions queued by the callbacks run now, not at the next tick.
+  PumpJobs;
 end;
 
 {** Call @code(FuncName) on @code(ctx) with integer arguments. }
@@ -2717,10 +2727,11 @@ begin
         partial := CallIntArgsInContext(FExtContexts[i]^.Ctx, FuncName, Args);
         if partial <> '' then Result := partial;
       end;
-    Exit;
-  end;
+  end
+  else
+    Result := CallIntArgsInContext(FContext, FuncName, Args);
 
-  Result := CallIntArgsInContext(FContext, FuncName, Args);
+  PumpJobs;
 end;
 
 {** Marshal one Pascal open-array-of-const element into a JS value bound to
@@ -2852,10 +2863,11 @@ begin
         partial := CallVarRecArgsInContext(FExtContexts[i]^.Ctx, FuncName, Args);
         if partial <> '' then Result := partial;
       end;
-    Exit;
-  end;
+  end
+  else
+    Result := CallVarRecArgsInContext(FContext, FuncName, Args);
 
-  Result := CallVarRecArgsInContext(FContext, FuncName, Args);
+  PumpJobs;
 end;
 
 {** Build a JS Array value from an array of const. }
@@ -3067,6 +3079,8 @@ begin
     ctx^.FreeInlined(PJSValue(@RetVal));
     ctx^.FreeInlined(PJSValue(@FuncObj));
     ctx^.FreeInlined(PJSValue(@GlobalObj));
+    // Promise reactions queued by the call run now, not at the next tick.
+    PumpJobs;
   end;
 end;
 
@@ -3074,13 +3088,29 @@ end;
   Runtime jobs processing and discovery
 ******************************************************************************}
 
-{** Pump the QuickJS job queue (Promises/microtasks) on each timer tick.
+{** Drain pending Promise jobs immediately. Called after each entry into JS
+    (eval, broadcast call, timer callback) so promise chains resolve right
+    away instead of waiting for the next 50ms OnJSTimer tick; the timer stays
+    on as the safety net for jobs queued outside those paths. Rejection
+    reporting stays in OnJSTimer: FlushPendingRejections opens modal dialogs,
+    which must not appear beneath an arbitrary JS call frame.
     JS_ExecutePendingJob writes the context that handled the job into its
     second arg, so we feed it a local — passing &FContext would overwrite the
     admin context with whichever ext ctx ran the job. }
-procedure TTrndiExtEngine.OnJSTimer(Sender: TObject);
+procedure TTrndiExtEngine.PumpJobs;
 var
   runCtx: JSContext;
+begin
+  if IsExtShuttingDown or (FRuntime = nil) then
+    Exit;
+  runCtx := FContext;
+  while JS_IsJobPending(FRuntime) do
+    if JS_ExecutePendingJob(FRuntime, @runCtx) <= 0 then
+      Break;
+end;
+
+{** Pump the QuickJS job queue (Promises/microtasks) on each timer tick. }
+procedure TTrndiExtEngine.OnJSTimer(Sender: TObject);
 begin
   if IsExtShuttingDown or (FRuntime = nil) then
     Exit;
@@ -3088,10 +3118,7 @@ begin
   // Dispose timers retired since the last tick (never while one is firing).
   DrainDeadTimers;
 
-  runCtx := FContext;
-  while JS_IsJobPending(FRuntime) do
-    if JS_ExecutePendingJob(FRuntime, @runCtx) <= 0 then
-      Break;
+  PumpJobs;
 
   // Rejections that survived a full job-queue drain are genuinely unhandled.
   FlushPendingRejections;
