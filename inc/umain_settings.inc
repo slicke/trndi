@@ -35,6 +35,10 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-11): The alert-hysteresis spinners now load
+   before the mmol/L unit conversion runs, matching the save path's mg/dL
+   premise; loading after it showed the stored mg/dL figure as mmol and
+   inflated it ~18-fold on the next save. *)
 (* Settings dialog and instant-apply configuration for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -369,6 +373,16 @@ procedure LoadUserSettings(f: TfConf);
       fsLoRange.Value := rangeLo;
       fsHiRange.Value := rangeHi;
 
+      // Stored in mg/dL, like every other glucose figure. These must be
+      // loaded BEFORE the rbUnitClick call below: that is what converts the
+      // spinners to mmol/L for a mmol user, and the save path multiplies by
+      // toMGDL on the same premise. Loading them after the conversion (as
+      // this once did) showed the raw mg/dL figure as if it were mmol and
+      // inflated the stored value ~18-fold on the next save.
+      fsAlertHystHi.Value  := native.GetFloatSetting('alerts.hysteresis.high', 5);
+      fsAlertHystLo.Value  := native.GetFloatSetting('alerts.hysteresis.low', 5);
+      fsAlertHystUrg.Value := native.GetFloatSetting('alerts.hysteresis.urgent', 5);
+
       fsDiffScale.Value := GetFloatSetting('ux.labels.ldiff.scale', 1);
       fsPredictScale.Value := GetFloatSetting('ux.labels.lpredict.scale', 1);
 
@@ -534,12 +548,11 @@ procedure LoadUserSettings(f: TfConf);
       cbAlertSensor.Checked := native.getBoolSetting('alerts.notice.sensor', true);
       cbAlertBattery.Checked := native.getBoolSetting('alerts.notice.battery', true);
 
+      // Minutes, not glucose: no unit conversion, so these can load here.
+      // The hysteresis spinners load earlier, before the mmol conversion.
       spAlertDurHi.Value   := native.GetIntSetting('alerts.duration.high', 10);
       spAlertDurLo.Value   := native.GetIntSetting('alerts.duration.low', 5);
       spAlertDurUrg.Value  := native.GetIntSetting('alerts.duration.urgent', 0);
-      fsAlertHystHi.Value  := native.GetFloatSetting('alerts.hysteresis.high', 5);
-      fsAlertHystLo.Value  := native.GetFloatSetting('alerts.hysteresis.low', 5);
-      fsAlertHystUrg.Value := native.GetFloatSetting('alerts.hysteresis.urgent', 5);
     end;
   end;
 

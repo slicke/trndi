@@ -826,9 +826,15 @@ private
       a new reading or manual refresh.
    }
   procedure FinalizeUIUpdate;
-  procedure HandleHighGlucose(const {%H-}reading: BGReading);
-  procedure HandleLowGlucose(const {%H-}reading: BGReading);
-  procedure HandleNormalGlucose(const reading: BGReading);
+  procedure HandleHighGlucose(const {%H-}reading: BGReading; const fired: TAlertKindSet);
+  procedure HandleLowGlucose(const {%H-}reading: BGReading; const fired: TAlertKindSet);
+  procedure HandleNormalGlucose(const reading: BGReading; const fired: TAlertKindSet);
+  {** Alert side-effects (toast, media, Chroma) for a fired high/low level
+      rule. Split out of the Handle* color handlers so the engine's verdict —
+      which, with hysteresis, can fire while the displayed color is already
+      back to normal — is honored no matter which band the router picked. }
+  procedure RaiseHighLevelAlert;
+  procedure RaiseLowLevelAlert;
   procedure ApplyChromaAlertAction(const ActionSettingKey: string;
     const DefaultAction: string; const AColor: TRGBColor);
   procedure UpdateOffRangePanel(const Value: double);
