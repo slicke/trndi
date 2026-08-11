@@ -137,6 +137,9 @@ TfConf = class(TForm)
   cbAlternate: TCheckBox;
   cbAutoStart: TCheckBox;
   cbBadgeTrend: TCheckBox;
+  cbBolusOverlay: TCheckBox;
+  cbBolusOverlayAuto: TCheckBox;
+  cbCarbOverlay: TCheckBox;
   cbChromaNormal: TCheckBox;
   cbChromaHigh: TComboBox;
   cbChromaLow: TComboBox;
@@ -160,6 +163,9 @@ TfConf = class(TForm)
   cbTTSVoice: TComboBox;
   cgNotifications: TCheckGroup;
   cbAlertHiLo: TCheckBox;
+  cbAlertReservoir: TCheckBox;
+  cbAlertSensor: TCheckBox;
+  cbAlertBattery: TCheckBox;
   cbFlashLow: TCheckBox;
   cbFlashPerfect: TCheckBox;
   cbMultiTouch: TCheckBox;
@@ -450,6 +456,7 @@ TfConf = class(TForm)
   procedure bDisplayAdvancedHelpClick(Sender: TObject);
   procedure bDisplayGeneralHelpClick(Sender: TObject);
   procedure bDisplayWindowHelpClick(Sender: TObject);
+  procedure cbBolusOverlayChange(Sender: TObject);
   procedure bFullArrowSetHelpClick(Sender: TObject);
   procedure bRotatingArrowHelpClick(Sender: TObject);
   procedure bPredScaleHelpClick(Sender: TObject);
@@ -1636,6 +1643,12 @@ end;
 procedure TfConf.bDisplayWindowHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_DISPLAY_WINDOW_HELP);
+end;
+
+// The automatic-doses box only means anything while the overlay is on.
+procedure TfConf.cbBolusOverlayChange(Sender: TObject);
+begin
+  cbBolusOverlayAuto.Enabled := cbBolusOverlay.Checked;
 end;
 
 procedure TfConf.bFullArrowSetHelpClick(Sender: TObject);

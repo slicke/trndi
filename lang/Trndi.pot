@@ -378,12 +378,24 @@ msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr ""
 
+#: tfconf.cbalertbattery.caption
+msgid "Alert me when the pump battery is running low (pump backends)"
+msgstr ""
+
 #: tfconf.cbalerthilo.caption
 msgid "Alert me when blood sugar is high/low"
 msgstr ""
 
 #: tfconf.cbalertmissing.caption
 msgid "Alert me when readings are missing / not fresh"
+msgstr ""
+
+#: tfconf.cbalertreservoir.caption
+msgid "Alert me when the pump's insulin is running low (pump backends)"
+msgstr ""
+
+#: tfconf.cbalertsensor.caption
+msgid "Alert me when the sensor is about to expire (CareLink)"
 msgstr ""
 
 #: tfconf.cbalternate.caption
@@ -396,6 +408,18 @@ msgstr ""
 
 #: tfconf.cbbadgetrend.caption
 msgid "Show trend arrow in taskbar/dock"
+msgstr ""
+
+#: tfconf.cbbolusoverlay.caption
+msgid "Show insulin doses on the history graph"
+msgstr ""
+
+#: tfconf.cbbolusoverlayauto.caption
+msgid "Include automatic doses from the pump"
+msgstr ""
+
+#: tfconf.cbcarboverlay.caption
+msgid "Show carbohydrates on the history graph"
 msgstr ""
 
 #: tfconf.cbchroma.caption
@@ -1704,6 +1728,37 @@ msgstr ""
 
 #: trndi.strings.rs_attention_missing_desc
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
+msgstr ""
+
+#: trndi.strings.rs_attention_pump_battery
+msgid "Pump battery low"
+msgstr ""
+
+#: trndi.strings.rs_attention_pump_battery_desc
+#, object-pascal-format
+msgid "The pump battery is down to about %d%%."
+msgstr ""
+
+#: trndi.strings.rs_attention_reservoir
+msgid "Insulin running low"
+msgstr ""
+
+#: trndi.strings.rs_attention_reservoir_desc
+#, object-pascal-format
+msgid "About %s units of insulin left in the pump reservoir."
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry
+msgid "Sensor expiring"
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry_desc
+#, object-pascal-format
+msgid "About %d hours of sensor life left."
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry_desc_one
+msgid "Less than an hour of sensor life left."
 msgstr ""
 
 #: trndi.strings.rs_attention_sensor_fault
@@ -3553,6 +3608,18 @@ msgstr ""
 
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_bolus
+msgid "Bolus"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_bolus_auto
+msgid "Automatic insulin"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_carbs
+msgid "Carbohydrates"
 msgstr ""
 
 #: uhistorygraph.rs_history_graph_key_high

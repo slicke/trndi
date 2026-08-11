@@ -403,6 +403,126 @@ begin
   native.SetSetting('alerts.state', FAlertEngine.SerializeState);
 end;
 
+{------------------------------------------------------------------------------
+  CheckPumpReservoir
+  ------------------
+  Raise one toast per reservoir step (30/25/20/15/10/5 U) as a pump backend's
+  cartridge empties. Only the pump-aware backends (Tandem, CareLink) report a
+  reservoir at all; everything else leaves the field at DEVICE_STATUS_UNKNOWN
+  and is skipped here, since a missing figure must never read as an empty one.
+
+  getDeviceStatus answers from the last fetch's cached payload, so this is
+  cheap enough to call after every successful fetch. The step latch is
+  persisted, so restarting Trndi on a low cartridge does not re-notify.
+ ------------------------------------------------------------------------------}
+procedure TfBG.CheckPumpReservoir;
+var
+  status: TCGMDeviceStatus;
+  before: integer;
+begin
+  if not Assigned(api) or not Assigned(native) then
+    Exit;
+  if not native.GetBoolSetting('alerts.notice.reservoir', true) then
+    Exit;
+  if not api.getDeviceStatus(status) then
+    Exit;
+
+  before := FReservoirStep;
+  if ReservoirShouldNotify(status.reservoirUnits, FReservoirStep) then
+  begin
+    TrndiDLog(Format('CheckPumpReservoir: %.1fU left, notifying at step %dU',
+      [status.reservoirUnits, FReservoirStep]));
+    native.attention(RS_ATTENTION_RESERVOIR,
+      Format(RS_ATTENTION_RESERVOIR_DESC,
+      [FormatFloat('0.#', status.reservoirUnits)]));
+  end;
+
+  if FReservoirStep <> before then
+    native.SetSetting('alerts.reservoir.step', FReservoirStep);
+end;
+
+{------------------------------------------------------------------------------
+  CheckSensorExpiry
+  -----------------
+  Raise one toast per sensor-expiry step (24/8/4/2/1 h) as a session runs out.
+  Only CareLink reports remaining sensor life; the Tandem payload carries none
+  (its CGM events have no session age), so it and every plain CGM backend leave
+  the field at DEVICE_STATUS_UNKNOWN and are skipped here — the same rule the
+  reservoir follows, that a missing figure never reads as an empty one.
+
+  sensorDurationHours counts down, confirmed against the CareLink app. Reading
+  it the other way would announce a fresh sensor as an expiring one, so a
+  backend that ever reports elapsed hours instead must convert before filling
+  the field rather than being handled here.
+ ------------------------------------------------------------------------------}
+procedure TfBG.CheckSensorExpiry;
+var
+  status: TCGMDeviceStatus;
+  before: integer;
+begin
+  if not Assigned(api) or not Assigned(native) then
+    Exit;
+  if not native.GetBoolSetting('alerts.notice.sensor', true) then
+    Exit;
+  if not api.getDeviceStatus(status) then
+    Exit;
+
+  before := FSensorExpiryStep;
+  if SensorExpiryShouldNotify(status.sensorDurationHours, FSensorExpiryStep) then
+  begin
+    TrndiDLog(Format('CheckSensorExpiry: %dh left, notifying at step %dh',
+      [status.sensorDurationHours, FSensorExpiryStep]));
+    if status.sensorDurationHours <= 1 then
+      native.attention(RS_ATTENTION_SENSOR_EXPIRY,
+        RS_ATTENTION_SENSOR_EXPIRY_DESC_ONE)
+    else
+      native.attention(RS_ATTENTION_SENSOR_EXPIRY,
+        Format(RS_ATTENTION_SENSOR_EXPIRY_DESC, [status.sensorDurationHours]));
+  end;
+
+  if FSensorExpiryStep <> before then
+    native.SetSetting('alerts.sensor.step', FSensorExpiryStep);
+end;
+
+{------------------------------------------------------------------------------
+  CheckPumpBattery
+  ----------------
+  Raise one toast per pump-battery step (20/15/10/5/2 %) as the battery runs
+  down. Both pump backends fill pumpBatteryPercent — Tandem from the `ibc`
+  property its status and battery events carry, CareLink from
+  pumpBatteryLevelPercent — and every other backend leaves it at
+  DEVICE_STATUS_UNKNOWN and is skipped here, on the rule the reservoir and
+  sensor ladders follow: a missing figure is not a flat battery.
+
+  Unlike a cartridge, a battery goes back up as a matter of routine, which is
+  what the wider PUMP_BATTERY_REARM_MARGIN is for — a pump on the charger over
+  a coffee must not re-arm a step it has already announced.
+ ------------------------------------------------------------------------------}
+procedure TfBG.CheckPumpBattery;
+var
+  status: TCGMDeviceStatus;
+  before: integer;
+begin
+  if not Assigned(api) or not Assigned(native) then
+    Exit;
+  if not native.GetBoolSetting('alerts.notice.battery', true) then
+    Exit;
+  if not api.getDeviceStatus(status) then
+    Exit;
+
+  before := FPumpBatteryStep;
+  if PumpBatteryShouldNotify(status.pumpBatteryPercent, FPumpBatteryStep) then
+  begin
+    TrndiDLog(Format('CheckPumpBattery: %d%% left, notifying at step %d%%',
+      [status.pumpBatteryPercent, FPumpBatteryStep]));
+    native.attention(RS_ATTENTION_PUMP_BATTERY,
+      Format(RS_ATTENTION_PUMP_BATTERY_DESC, [status.pumpBatteryPercent]));
+  end;
+
+  if FPumpBatteryStep <> before then
+    native.SetSetting('alerts.battery.step', FPumpBatteryStep);
+end;
+
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
 begin
   FAlertEngine.SnoozeActive(Minutes);

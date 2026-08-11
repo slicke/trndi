@@ -147,7 +147,255 @@ type
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
   end;
 
+const
+  {** Pump reservoir levels, in insulin units, that each get one notification as
+    the cartridge runs down. Must stay in descending order —
+    @link(ReservoirWarnStep) walks it front to back. }
+  RESERVOIR_WARN_STEPS: array[0..5] of integer = (30, 25, 20, 15, 10, 5);
+
+  {** How far above a fired step the level must climb before that step re-arms.
+    Keeps a reading hovering on a boundary from notifying twice. }
+  RESERVOIR_REARM_MARGIN = 2;
+
+{** Lowest step in @link(RESERVOIR_WARN_STEPS) the reservoir has fallen to.
+  Returns 0 when the level is still above every step, or when @param(AUnits) is
+  negative (@code(DEVICE_STATUS_UNKNOWN) — the backend reported nothing). }
+function ReservoirWarnStep(const AUnits: double): integer;
+
+{** One-notification-per-step decision for the reservoir ladder. Unlike the
+  rules above this is a pure function over a caller-held latch, because the
+  ladder has six thresholds rather than one and no time component: a step fires
+  as the level first falls to it and stays quiet until either a lower step is
+  reached or the cartridge is refilled past @link(RESERVOIR_REARM_MARGIN).
+
+  A negative @param(AUnits) leaves the latch untouched, so a fetch that carries
+  no reservoir figure neither fires nor re-arms anything.
+  @param(ALastStep In/out latch: the step last notified, 0 = none armed. Persist
+    it across restarts so a restart at a low level does not re-notify.)
+  @returns(True when the caller should raise a notification) }
+function ReservoirShouldNotify(const AUnits: double;
+  var ALastStep: integer): boolean;
+
+const
+  {** Hours of sensor life remaining that each get one notification as the
+    session runs out. Must stay in descending order —
+    @link(SensorExpiryWarnStep) walks it front to back. }
+  SENSOR_EXPIRY_WARN_STEPS: array[0..4] of integer = (24, 8, 4, 2, 1);
+
+  {** How far above a fired step the remaining life must climb before that step
+    re-arms. A sensor change jumps the figure back to a full session, so this
+    only has to be large enough that a backend nudging its own estimate upward
+    by an hour is not mistaken for a new sensor. }
+  SENSOR_EXPIRY_REARM_MARGIN = 2;
+
+{** Lowest step in @link(SENSOR_EXPIRY_WARN_STEPS) the sensor's remaining life
+  has fallen to. Returns 0 when more life is left than any step covers, or when
+  @param(AHours) is negative (@code(DEVICE_STATUS_UNKNOWN) — the backend
+  reported nothing). }
+function SensorExpiryWarnStep(const AHours: integer): integer;
+
+{** One-notification-per-step decision for the sensor-expiry ladder, with the
+  same latch contract as @link(ReservoirShouldNotify): a step fires as the
+  remaining life first falls to it, and stays quiet until either a lower step is
+  reached or a sensor change lifts the figure clear of the fired step by
+  @link(SENSOR_EXPIRY_REARM_MARGIN).
+
+  Only backends that report remaining sensor life (CareLink) reach this; a
+  negative @param(AHours) leaves the latch untouched, so a fetch carrying no
+  figure neither fires nor re-arms anything.
+  @param(ALastStep In/out latch: the step last notified, 0 = none armed. Persist
+    it across restarts so a restart late in a session does not re-notify.)
+  @returns(True when the caller should raise a notification) }
+function SensorExpiryShouldNotify(const AHours: integer;
+  var ALastStep: integer): boolean;
+
+const
+  {** Pump battery levels, in percent, that each get one notification as the
+    battery runs down. Must stay in descending order —
+    @link(PumpBatteryWarnStep) walks it front to back. }
+  PUMP_BATTERY_WARN_STEPS: array[0..4] of integer = (20, 15, 10, 5, 2);
+
+  {** How far above a fired step the level must climb before that step re-arms.
+    Wider than the reservoir's margin because a battery, unlike a cartridge,
+    routinely goes back up: a t:slim on the charger for a few minutes must not
+    re-arm the ladder, while a real charge or a fresh cell does. }
+  PUMP_BATTERY_REARM_MARGIN = 5;
+
+{** Lowest step in @link(PUMP_BATTERY_WARN_STEPS) the pump battery has fallen
+  to. Returns 0 when the battery is still above every step, or when
+  @param(APercent) is negative (@code(DEVICE_STATUS_UNKNOWN) — the backend
+  reported nothing). }
+function PumpBatteryWarnStep(const APercent: integer): integer;
+
+{** One-notification-per-step decision for the pump-battery ladder, with the
+  same latch contract as @link(ReservoirShouldNotify): a step fires as the
+  level first falls to it and stays quiet until either a lower step is reached
+  or a charge lifts the level clear of the fired step by
+  @link(PUMP_BATTERY_REARM_MARGIN).
+
+  Only backends that report a pump battery (Tandem, CareLink) reach this; a
+  negative @param(APercent) leaves the latch untouched, so a fetch carrying no
+  figure neither fires nor re-arms anything.
+  @param(ALastStep In/out latch: the step last notified, 0 = none armed. Persist
+    it across restarts so a restart on a low battery does not re-notify.)
+  @returns(True when the caller should raise a notification) }
+function PumpBatteryShouldNotify(const APercent: integer;
+  var ALastStep: integer): boolean;
+
 implementation
+
+//------------------------------------------------------------------------------
+// Reservoir ladder
+//------------------------------------------------------------------------------
+
+function ReservoirWarnStep(const AUnits: double): integer;
+var
+  i: integer;
+begin
+  Result := 0;
+  if AUnits < 0 then
+    Exit;
+  // Descending list, so the last step the level satisfies is the lowest one.
+  for i := Low(RESERVOIR_WARN_STEPS) to High(RESERVOIR_WARN_STEPS) do
+    if AUnits <= RESERVOIR_WARN_STEPS[i] then
+      Result := RESERVOIR_WARN_STEPS[i];
+end;
+
+function ReservoirShouldNotify(const AUnits: double;
+  var ALastStep: integer): boolean;
+var
+  step: integer;
+begin
+  Result := false;
+  if AUnits < 0 then
+    Exit;
+
+  step := ReservoirWarnStep(AUnits);
+
+  // Above the whole ladder: refilled (or never low). Re-arm every step.
+  if step = 0 then
+  begin
+    ALastStep := 0;
+    Exit;
+  end;
+
+  // First low reading of a cartridge fires its current step only — a pump
+  // already down at 8U notifies once, not once per step it skipped past.
+  if (ALastStep = 0) or (step < ALastStep) then
+  begin
+    ALastStep := step;
+    Result := true;
+    Exit;
+  end;
+
+  // Climbed back into a higher band: re-arm only once clear of the fired step
+  // by the margin, so jitter around a boundary cannot fire it a second time.
+  if (step > ALastStep) and (AUnits >= ALastStep + RESERVOIR_REARM_MARGIN) then
+    ALastStep := step;
+end;
+
+//------------------------------------------------------------------------------
+// Sensor expiry ladder
+//------------------------------------------------------------------------------
+
+function SensorExpiryWarnStep(const AHours: integer): integer;
+var
+  i: integer;
+begin
+  Result := 0;
+  if AHours < 0 then
+    Exit;
+  // Descending list, so the last step the figure satisfies is the lowest one.
+  for i := Low(SENSOR_EXPIRY_WARN_STEPS) to High(SENSOR_EXPIRY_WARN_STEPS) do
+    if AHours <= SENSOR_EXPIRY_WARN_STEPS[i] then
+      Result := SENSOR_EXPIRY_WARN_STEPS[i];
+end;
+
+function SensorExpiryShouldNotify(const AHours: integer;
+  var ALastStep: integer): boolean;
+var
+  step: integer;
+begin
+  Result := false;
+  if AHours < 0 then
+    Exit;
+
+  step := SensorExpiryWarnStep(AHours);
+
+  // More life left than the ladder covers: a fresh session, or one still far
+  // from its end. Re-arm every step.
+  if step = 0 then
+  begin
+    ALastStep := 0;
+    Exit;
+  end;
+
+  // First reading inside the ladder fires that step only — a session picked up
+  // with 3 hours left notifies once, not once per step it was never watched
+  // across. An expired sensor (0 hours) lands on the lowest step.
+  if (ALastStep = 0) or (step < ALastStep) then
+  begin
+    ALastStep := step;
+    Result := true;
+    Exit;
+  end;
+
+  // Back into a higher band: a sensor change, once clear of the fired step by
+  // the margin. Re-arms the ladder for the new session without needing the
+  // backend to report the change itself.
+  if (step > ALastStep) and (AHours >= ALastStep + SENSOR_EXPIRY_REARM_MARGIN) then
+    ALastStep := step;
+end;
+
+//------------------------------------------------------------------------------
+// Pump battery ladder
+//------------------------------------------------------------------------------
+
+function PumpBatteryWarnStep(const APercent: integer): integer;
+var
+  i: integer;
+begin
+  Result := 0;
+  if APercent < 0 then
+    Exit;
+  // Descending list, so the last step the level satisfies is the lowest one.
+  for i := Low(PUMP_BATTERY_WARN_STEPS) to High(PUMP_BATTERY_WARN_STEPS) do
+    if APercent <= PUMP_BATTERY_WARN_STEPS[i] then
+      Result := PUMP_BATTERY_WARN_STEPS[i];
+end;
+
+function PumpBatteryShouldNotify(const APercent: integer;
+  var ALastStep: integer): boolean;
+var
+  step: integer;
+begin
+  Result := false;
+  if APercent < 0 then
+    Exit;
+
+  step := PumpBatteryWarnStep(APercent);
+
+  // Above the whole ladder: charged, or never low. Re-arm every step.
+  if step = 0 then
+  begin
+    ALastStep := 0;
+    Exit;
+  end;
+
+  // First low reading fires its current step only — a pump already down at 3%
+  // notifies once, not once per step it was never watched across.
+  if (ALastStep = 0) or (step < ALastStep) then
+  begin
+    ALastStep := step;
+    Result := true;
+    Exit;
+  end;
+
+  // Climbed back into a higher band: a charge or a new cell, once clear of the
+  // fired step by the margin. A pump briefly on the charger stays latched.
+  if (step > ALastStep) and (APercent >= ALastStep + PUMP_BATTERY_REARM_MARGIN) then
+    ALastStep := step;
+end;
 
 constructor TAlertEngine.Create;
 var

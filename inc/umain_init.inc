@@ -853,6 +853,16 @@ begin
     FAlertEngine.DeserializeState(native.GetSetting('alerts.state', ''));
     FAlertEngine.OnStateChanged := @PersistAlertState;
 
+    // Reservoir ladder latch: restoring it keeps a restart on a low cartridge
+    // from repeating a step that was already announced.
+    FReservoirStep := native.GetIntSetting('alerts.reservoir.step', 0);
+    // Same for the sensor-expiry ladder, so a restart four hours from the end
+    // of a session does not repeat the step it already announced.
+    FSensorExpiryStep := native.GetIntSetting('alerts.sensor.step', 0);
+    // And for the battery ladder, so a restart on a nearly flat pump does not
+    // repeat the step it already announced.
+    FPumpBatteryStep := native.GetIntSetting('alerts.battery.step', 0);
+
     api.APIEmitter := @APIReceiver;
     api.OnCredentialsChanged := @APICredentialsChanged;
     // A failed Connect at boot (e.g. an expired CareLink token) lands the
@@ -940,6 +950,9 @@ begin
     PredictShortMode := GetBoolSetting('predictions.short', false);
     PredictDotMode := GetBoolSetting('predictions.dots', false);
     RotatingArrow := GetBoolSetting('display.rotating_arrow', false);
+    ShowBolusOverlay := GetBoolSetting('display.bolus_overlay', false);
+    ShowAutoBolusOverlay := GetBoolSetting('display.bolus_overlay.auto', false);
+    ShowCarbOverlay := GetBoolSetting('display.carb_overlay', false);
     PredictShortFullArrows := GetBoolSetting('predictions.short.fullarrows', false);
     PredictShortShowValue := GetBoolSetting('predictions.short.showvalue', false);
     // Prefer user-scoped minutes only; do not fall back to global

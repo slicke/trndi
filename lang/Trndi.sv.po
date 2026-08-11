@@ -412,6 +412,18 @@ msgstr "Starta med systemet"
 msgid "Show trend arrow in taskbar/dock"
 msgstr "Visa trenden i aktivitetsfältet/dockan"
 
+#: tfconf.cbbolusoverlay.caption
+msgid "Show insulin doses on the history graph"
+msgstr "Visa insulindoser i historikgrafen"
+
+#: tfconf.cbbolusoverlayauto.caption
+msgid "Include automatic doses from the pump"
+msgstr "Inkludera automatiska doser från pumpen"
+
+#: tfconf.cbcarboverlay.caption
+msgid "Show carbohydrates on the history graph"
+msgstr "Visa kolhydrater i historikgrafen"
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr "Slå på Razer Chroma-integrationen"
@@ -3755,6 +3767,18 @@ msgstr "%s vid %s"
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
 msgstr "Basal"
+
+#: uhistorygraph.rs_history_graph_key_bolus
+msgid "Bolus"
+msgstr "Bolus"
+
+#: uhistorygraph.rs_history_graph_key_bolus_auto
+msgid "Automatic insulin"
+msgstr "Automatiskt insulin"
+
+#: uhistorygraph.rs_history_graph_key_carbs
+msgid "Carbohydrates"
+msgstr "Kolhydrater"
 
 #: uhistorygraph.rs_history_graph_key_high
 msgctxt "uhistorygraph.rs_history_graph_key_high"

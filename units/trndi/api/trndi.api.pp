@@ -48,6 +48,91 @@ end;
 
 TBasalProfile = array of TBasalEntry;
 
+  {** A single insulin delivery reported by a pump-aware backend.
+
+      Covers both what the user asked for and what the pump decided on its own:
+      an automated system delivers a stream of small corrections that are
+      boluses in the data even though nobody pressed a button. Consumers that
+      show these to a user should keep the two apart — @code(automatic)
+      deliveries are numerous and tiny, and mixing them into the manual ones
+      makes a meal bolus impossible to pick out. }
+TBolusEntry = record
+    {** When the pump delivered it, in local time }
+  time: TDateTime;
+    {** Units of insulin delivered }
+  units: single;
+    {** True for pump-initiated delivery (SmartGuard auto-basal, auto
+        correction); False when the user requested it }
+  automatic: boolean;
+    {** Carbohydrates entered with the bolus in grams, or 0 when none/unknown }
+  carbs: single;
+    {** Backend's own label for the delivery, e.g. 'MEAL'; '' when unknown }
+  kind: string;
+end;
+
+  {** Insulin deliveries over a time window, newest last. }
+TBolusList = array of TBolusEntry;
+
+  {** Carbohydrates the user told the pump about.
+
+      A backend may report the same meal twice — once as a dedicated carb
+      record and once as the carb figure attached to the bolus that covered it.
+      Backends are responsible for reconciling that before returning entries,
+      so a consumer can take this list at face value. }
+TCarbEntry = record
+    {** When the carbs were entered, in local time }
+  time: TDateTime;
+    {** Carbohydrates in grams }
+  grams: single;
+    {** Backend's own label for the entry, e.g. 'MEAL'; '' when unknown }
+  kind: string;
+end;
+
+  {** Carbohydrate entries over a time window, newest last. }
+TCarbList = array of TCarbEntry;
+
+  {** Sentinel for the numeric @code(TCGMDeviceStatus) fields: the backend did
+      not report that figure. Every consumer must treat it as "unknown" rather
+      than as a low reading — a missing reservoir level is not an empty one. }
+const
+DEVICE_STATUS_UNKNOWN = -1;
+
+type
+  {** Sensor and pump housekeeping reported by a backend alongside the glucose
+      readings: how much sensor life and insulin is left, battery levels, and
+      the backend's own fault text.
+
+      Pump-aware follower backends (CareLink) can fill most of it; plain CGM
+      backends fill little or none. Fields a backend cannot supply keep their
+      "unknown" sentinel, so consumers must check before displaying. Numeric
+      fields use @code(DEVICE_STATUS_UNKNOWN); text fields use the empty
+      string; @code(sensorOK) defaults to True so a backend that reports no
+      fault information never appears to be faulting. }
+TCGMDeviceStatus = record
+    {** Sensor life *remaining*, in hours; <0 unknown. CareLink's
+        sensorDurationHours counts down, confirmed against the figure its own
+        app shows. A backend whose payload reports elapsed session time instead
+        must convert before filling this, since consumers treat a small value
+        as a sensor about to expire. }
+  sensorDurationHours: integer;
+    {** Backend's own sensor state text, e.g. 'NO_ERROR_MESSAGE'; '' unknown }
+  sensorState: string;
+    {** False only when the backend actively reports a sensor fault }
+  sensorOK: boolean;
+    {** Pump reservoir remaining, 0..100 }
+  reservoirPercent: integer;
+    {** Insulin units remaining in the reservoir; <0 unknown }
+  reservoirUnits: single;
+    {** Pump battery, 0..100 }
+  pumpBatteryPercent: integer;
+    {** CGM transmitter battery, 0..100 }
+  transmitterBatteryPercent: integer;
+    {** True when the backend reports insulin delivery as suspended }
+  pumpSuspended: boolean;
+    {** Backend's own system status text; '' when none or unknown }
+  statusMessage: string;
+end;
+
   {** Unit for storing glucose values }
 glucose = single;
 
@@ -411,6 +496,56 @@ const
 }
   function getBasalProfile(out profile: TBasalProfile): boolean; virtual;
 
+  {** Fetch sensor and pump housekeeping (sensor life, reservoir, batteries,
+      fault text) reported alongside the readings.
+
+      Base implementation clears @code(AStatus) to all-unknown and returns
+      False. Backends whose payload carries this information should override.
+      A True result does not promise every field is populated — check each
+      against @code(DEVICE_STATUS_UNKNOWN) / '' before using it.
+
+      Implementations should answer from data cached by the last fetch rather
+      than issuing a request, so callers can poll it cheaply.
+      @param(AStatus Out parameter receiving the status)
+      @returns(True if the backend reported any of it; False otherwise) }
+  function getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean; virtual;
+
+  {** Reset a @code(TCGMDeviceStatus) to "nothing reported". Call before
+      filling one so unset fields carry the documented sentinels. }
+  class procedure clearDeviceStatus(out AStatus: TCGMDeviceStatus);
+
+  {** Fetch insulin deliveries the backend reported alongside the readings.
+
+      Base implementation empties @code(ABoluses) and returns False. Backends
+      whose payload carries delivery records should override.
+
+      Like @code(getDeviceStatus), implementations should answer from data
+      cached by the last fetch rather than issuing a request. The window is
+      therefore whatever the last fetch covered, which need not span the
+      readings a caller happens to be showing — an empty stretch means "not
+      reported", never "no insulin given".
+      @param(ABoluses Out parameter receiving the deliveries, newest last)
+      @returns(True if the backend reported any; False otherwise) }
+  function getBoluses(out ABoluses: TBolusList): boolean; virtual;
+
+  {** Report whether this backend can supply insulin deliveries at all.
+      Default: False. Lets callers skip the overlay entirely rather than
+      distinguish "none delivered" from "backend cannot say". }
+  function supportsBoluses: boolean; virtual;
+
+  {** Fetch carbohydrate entries the backend reported alongside the readings.
+
+      Base implementation empties @code(ACarbs) and returns False. Answers from
+      cached data on the same terms as @code(getBoluses), including its warning
+      that an empty stretch means "not reported" rather than "nothing eaten".
+      @param(ACarbs Out parameter receiving the entries, newest last)
+      @returns(True if the backend reported any; False otherwise) }
+  function getCarbs(out ACarbs: TCarbList): boolean; virtual;
+
+  {** Report whether this backend can supply carbohydrate entries at all.
+      Default: False. }
+  function supportsCarbs: boolean; virtual;
+
   {** Notify the owner that this backend's stored credentials changed
       (e.g. a rotated OAuth2 refresh token) and must be re-persisted.
       No-op when no handler is attached.
@@ -745,6 +880,64 @@ end;
 function TrndiAPI.getBasalProfile(out profile: TBasalProfile): boolean;
 begin
   SetLength(profile, 0);
+  Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  Default implementation: no insulin delivery data.
+------------------------------------------------------------------------------}
+function TrndiAPI.getBoluses(out ABoluses: TBolusList): boolean;
+begin
+  SetLength(ABoluses, 0);
+  Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  Whether this backend can supply insulin deliveries at all.
+------------------------------------------------------------------------------}
+function TrndiAPI.supportsBoluses: boolean;
+begin
+  Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  Default implementation: no carbohydrate data.
+------------------------------------------------------------------------------}
+function TrndiAPI.getCarbs(out ACarbs: TCarbList): boolean;
+begin
+  SetLength(ACarbs, 0);
+  Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  Whether this backend can supply carbohydrate entries at all.
+------------------------------------------------------------------------------}
+function TrndiAPI.supportsCarbs: boolean;
+begin
+  Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  Reset a device-status record to "nothing reported". sensorOK starts True so a
+  backend that reports no fault information never looks like it is faulting.
+------------------------------------------------------------------------------}
+class procedure TrndiAPI.clearDeviceStatus(out AStatus: TCGMDeviceStatus);
+begin
+  AStatus := Default(TCGMDeviceStatus);
+  AStatus.sensorDurationHours       := DEVICE_STATUS_UNKNOWN;
+  AStatus.reservoirPercent          := DEVICE_STATUS_UNKNOWN;
+  AStatus.reservoirUnits            := DEVICE_STATUS_UNKNOWN;
+  AStatus.pumpBatteryPercent        := DEVICE_STATUS_UNKNOWN;
+  AStatus.transmitterBatteryPercent := DEVICE_STATUS_UNKNOWN;
+  AStatus.sensorOK                  := true;
+end;
+
+{------------------------------------------------------------------------------
+  Default implementation: no sensor/pump status support.
+------------------------------------------------------------------------------}
+function TrndiAPI.getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean;
+begin
+  clearDeviceStatus(AStatus);
   Result := false;
 end;
 

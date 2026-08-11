@@ -131,6 +131,11 @@ private
   FBasalProfile: TBasalProfile; // Optional basal profile to draw as overlay
   FShowBasal: boolean; // Whether to render basal overlay
   FMaxBasal: single; // Maximum basal rate for scaling (U/hr)
+  FBoluses: TBolusList; // Optional insulin deliveries to draw as overlay
+  FShowBolus: boolean; // Whether to render bolus overlay
+  FShowAutoBolus: boolean; // Whether automatic micro-deliveries are included
+  FCarbs: TCarbList; // Optional carbohydrate entries to draw as overlay
+  FShowCarbs: boolean; // Whether to render carbohydrate overlay
   FPredictions: array of TGraphPoint; // Predicted future readings
   FInvTimeSpan: double; // 1 / (FMaxTime - FMinTime); 0 if degenerate
   FInvValueSpan: double; // 1 / (FMaxValue - FMinValue); 0 if degenerate
@@ -161,6 +166,16 @@ private
       area strip at the bottom of the plot. Values are scaled to
       `FMaxBasal` and clipped to the plot range. }
   procedure DrawBasalOverlay(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawBolusOverlay: Renders insulin deliveries as stems rising from the
+      bottom axis, scaled against the largest delivery in view. Automatic
+      micro-deliveries are drawn thinner and paler than deliveries the user
+      asked for, and only the manual ones are labelled. }
+  procedure DrawBolusOverlay(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawCarbOverlay: Renders carbohydrate entries as discs in a fixed lane
+      just above the bottom axis, sized by amount and labelled in grams. Kept
+      to its own lane so it reads as a separate quantity from the insulin
+      stems it is drawn over. }
+  procedure DrawCarbOverlay(ACanvas: TCanvas; const PlotRect: TRect);
     {** DrawPolyline: Connects the chronological points with a thin
       line to indicate trend (optional visual aid). }
   procedure DrawPolyline(ACanvas: TCanvas; const PlotRect: TRect);
@@ -232,6 +247,22 @@ public
   procedure SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
     {** Enable or disable basal overlay rendering. }
   procedure SetBasalOverlayEnabled(aEnabled: boolean);
+    {** SetBoluses: Provide the insulin deliveries to draw as stems along the
+      bottom axis. Pass an empty array to hide the overlay. Entries outside the
+      visible time range are ignored rather than clamped to the edge. }
+  procedure SetBoluses(const Boluses: TBolusList);
+    {** Enable or disable bolus overlay rendering.
+      @param(aEnabled Draw the overlay at all)
+      @param(aIncludeAutomatic Also draw pump-initiated micro-deliveries. On an
+        automated pump these arrive every few minutes and crowd out the
+        deliveries the user actually asked for, so they are off by default.) }
+  procedure SetBolusOverlayEnabled(aEnabled: boolean;
+    aIncludeAutomatic: boolean = false);
+    {** SetCarbs: Provide the carbohydrate entries to draw along the bottom
+      axis. Pass an empty array to hide the overlay. }
+  procedure SetCarbs(const Carbs: TCarbList);
+    {** Enable or disable carbohydrate overlay rendering. }
+  procedure SetCarbOverlayEnabled(aEnabled: boolean);
     {** SetPredictions: Supply predicted future readings to overlay on the graph
       as a dashed continuation past the last real reading. Pass an empty array
       to hide the overlay. }
@@ -275,6 +306,9 @@ RS_HISTORY_GRAPH_KEY_HIGH = 'High';
 RS_HISTORY_GRAPH_KEY_LOW = 'Low';
 RS_HISTORY_GRAPH_KEY_UNKNOWN = 'Unknown';
 RS_HISTORY_GRAPH_KEY_BASAL = 'Basal';
+RS_HISTORY_GRAPH_KEY_BOLUS = 'Bolus';
+RS_HISTORY_GRAPH_KEY_BOLUS_AUTO = 'Automatic insulin';
+RS_HISTORY_GRAPH_KEY_CARBS = 'Carbohydrates';
 RS_HISTORY_GRAPH_SAVE_TITLE = 'Save graph as PNG';
 RS_HISTORY_GRAPH_SAVE_SUCCESS = 'Graph saved successfully';
 RS_HISTORY_GRAPH_SAVE_ERROR = 'Failed to save graph: %s';
@@ -299,6 +333,24 @@ GRAPH_MARGIN_TOP = 40;
 GRAPH_MARGIN_RIGHT = 220;
 GRAPH_MARGIN_BOTTOM = 120;
 GRAPH_DIVISIONS = 5;
+
+  // Treatment overlay colours. Named because each is used twice — once to draw
+  // and once for the legend chip — and a legend that disagrees with the chart
+  // is worse than no legend.
+function BolusColor: TColor; inline;
+begin
+  Result := RGBToColor(96, 76, 195);
+end;
+
+function AutoBolusColor: TColor; inline;
+begin
+  Result := RGBToColor(176, 168, 224);
+end;
+
+function CarbColor: TColor; inline;
+begin
+  Result := RGBToColor(226, 145, 42);
+end;
 
 function DefaultHistoryGraphPalette: THistoryGraphPalette; inline;
 begin
@@ -587,6 +639,215 @@ begin
   ACanvas.Brush.Style := bsClear;
 end;
 
+{ Insulin deliveries as stems rising from the bottom axis.
+
+  The two kinds are drawn differently on purpose. A delivery the user asked for
+  is a single event worth finding on the chart; an automated pump's corrections
+  are a continuous drip of hundredths of a unit, and drawing them alike would
+  bury the meal bolus among a hundred hairlines. Automatic deliveries are
+  therefore thin, pale and unlabelled, and are only drawn at all when the
+  caller asks for them.
+
+  Heights are scaled against the largest delivery in view rather than a fixed
+  ceiling, so the overlay stays readable whether the window holds a 12 U meal
+  bolus or nothing but 0.05 U corrections. That means stem height is only
+  meaningful relative to the other stems on screen — hence the labels. }
+procedure TfHistoryGraph.DrawBolusOverlay(ACanvas: TCanvas; const PlotRect: TRect);
+const
+  MIN_STEM = 3;      // Keeps the smallest dose from vanishing into the axis
+  LABEL_GAP = 4;     // Clear space between two labels before one is dropped
+var
+  i, x, h, stemHeight, plotHeight: integer;
+  maxUnits: single;
+  labelText: string;
+  labelWidth, labelX, labelY, lastLabelRight: integer;
+  manualColor, autoColor: TColor;
+
+  function Visible(const AEntry: TBolusEntry): boolean;
+  begin
+    Result := (AEntry.units > 0) and
+      (AEntry.time >= FMinTime) and (AEntry.time <= FMaxTime) and
+      (FShowAutoBolus or (not AEntry.automatic));
+  end;
+
+begin
+  if (not FShowBolus) or (Length(FBoluses) = 0) then
+    Exit;
+
+  plotHeight := PlotRect.Bottom - PlotRect.Top;
+  if plotHeight <= 0 then
+    Exit;
+
+  // A third of the plot at most: tall enough to compare doses, short enough to
+  // leave the glucose curve — the actual subject of the chart — unobscured.
+  stemHeight := Min(Max(30, plotHeight div 5), plotHeight div 3);
+
+  maxUnits := 0;
+  for i := 0 to High(FBoluses) do
+    if Visible(FBoluses[i]) and (FBoluses[i].units > maxUnits) then
+      maxUnits := FBoluses[i].units;
+
+  // Nothing in range, or every entry filtered out.
+  if maxUnits <= 0 then
+    Exit;
+
+  manualColor := BolusColor;
+  autoColor := AutoBolusColor;
+
+  ACanvas.Brush.Style := bsSolid;
+  ACanvas.Pen.Style := psClear;
+
+  // Automatic first so a manual stem sharing a pixel column stays on top.
+  for i := 0 to High(FBoluses) do
+  begin
+    if (not Visible(FBoluses[i])) or (not FBoluses[i].automatic) then
+      Continue;
+    x := TimeToX(FBoluses[i].time, PlotRect);
+    h := Max(MIN_STEM, Round((FBoluses[i].units / maxUnits) * stemHeight));
+    ACanvas.Brush.Color := autoColor;
+    ACanvas.Rectangle(x, PlotRect.Bottom - h, x + 1, PlotRect.Bottom);
+  end;
+
+  for i := 0 to High(FBoluses) do
+  begin
+    if (not Visible(FBoluses[i])) or FBoluses[i].automatic then
+      Continue;
+    x := TimeToX(FBoluses[i].time, PlotRect);
+    h := Max(MIN_STEM, Round((FBoluses[i].units / maxUnits) * stemHeight));
+    ACanvas.Brush.Color := manualColor;
+    ACanvas.Rectangle(x - 1, PlotRect.Bottom - h, x + 2, PlotRect.Bottom);
+  end;
+
+  // Labels last, in a second pass, so no stem can be drawn over one.
+  ACanvas.Pen.Style := psSolid;
+  ACanvas.Brush.Style := bsClear;
+  ACanvas.Font.Color := manualColor;
+  lastLabelRight := Low(integer);
+
+  for i := 0 to High(FBoluses) do
+  begin
+    if (not Visible(FBoluses[i])) or FBoluses[i].automatic then
+      Continue;
+
+    labelText := Format('%.2fU', [FBoluses[i].units]);
+    labelWidth := ACanvas.TextWidth(labelText);
+    x := TimeToX(FBoluses[i].time, PlotRect);
+    labelX := x - (labelWidth div 2);
+
+    // Drop a label rather than overprint the one before it; the stem is still
+    // drawn, so a dose is never hidden — only its number is.
+    if labelX < (lastLabelRight + LABEL_GAP) then
+      Continue;
+    lastLabelRight := labelX + labelWidth;
+
+    h := Max(MIN_STEM, Round((FBoluses[i].units / maxUnits) * stemHeight));
+    labelY := PlotRect.Bottom - h - ACanvas.TextHeight(labelText) - 2;
+    if labelY < PlotRect.Top then
+      labelY := PlotRect.Top;
+    ACanvas.TextOut(labelX, labelY, labelText);
+  end;
+
+  ACanvas.Font.Color := clBlack;
+  ACanvas.Brush.Style := bsClear;
+end;
+
+{ Carbohydrates as discs in a fixed lane just above the bottom axis.
+
+  Grams and units are different quantities and must not share a scale, so carbs
+  get their own visual language: a disc at a constant height rather than a stem
+  of variable height. The radius still varies with the amount, enough to tell a
+  snack from a meal at a glance, but the number on the label is what counts.
+
+  The lane deliberately sits over the base of the insulin stems. A meal and the
+  bolus that covered it happen at the same moment, and letting the two overlap
+  is what shows they belong together; the disc is outlined so it stays legible
+  against a stem behind it. }
+procedure TfHistoryGraph.DrawCarbOverlay(ACanvas: TCanvas; const PlotRect: TRect);
+const
+  LANE_HEIGHT = 12;  // Disc centre above the bottom axis
+  MIN_RADIUS = 4;
+  MAX_RADIUS = 9;
+  LABEL_GAP = 4;
+var
+  i, x, y, radius, plotHeight: integer;
+  maxGrams: single;
+  labelText: string;
+  labelWidth, labelX, labelY, lastLabelRight: integer;
+
+  function Visible(const AEntry: TCarbEntry): boolean;
+  begin
+    Result := (AEntry.grams > 0) and
+      (AEntry.time >= FMinTime) and (AEntry.time <= FMaxTime);
+  end;
+
+begin
+  if (not FShowCarbs) or (Length(FCarbs) = 0) then
+    Exit;
+
+  plotHeight := PlotRect.Bottom - PlotRect.Top;
+  if plotHeight <= 0 then
+    Exit;
+
+  maxGrams := 0;
+  for i := 0 to High(FCarbs) do
+    if Visible(FCarbs[i]) and (FCarbs[i].grams > maxGrams) then
+      maxGrams := FCarbs[i].grams;
+
+  if maxGrams <= 0 then
+    Exit;
+
+  y := PlotRect.Bottom - LANE_HEIGHT;
+
+  ACanvas.Brush.Style := bsSolid;
+  ACanvas.Brush.Color := CarbColor;
+  ACanvas.Pen.Style := psSolid;
+  ACanvas.Pen.Color := clWhite;
+  ACanvas.Pen.Width := 1;
+
+  for i := 0 to High(FCarbs) do
+  begin
+    if not Visible(FCarbs[i]) then
+      Continue;
+    x := TimeToX(FCarbs[i].time, PlotRect);
+    radius := MIN_RADIUS +
+      Round((FCarbs[i].grams / maxGrams) * (MAX_RADIUS - MIN_RADIUS));
+    ACanvas.Ellipse(x - radius, y - radius, x + radius, y + radius);
+  end;
+
+  // Labels in a second pass so no disc can be drawn over one.
+  ACanvas.Brush.Style := bsClear;
+  ACanvas.Font.Color := CarbColor;
+  lastLabelRight := Low(integer);
+
+  for i := 0 to High(FCarbs) do
+  begin
+    if not Visible(FCarbs[i]) then
+      Continue;
+
+    labelText := Format('%.0fg', [FCarbs[i].grams]);
+    labelWidth := ACanvas.TextWidth(labelText);
+    x := TimeToX(FCarbs[i].time, PlotRect);
+    labelX := x - (labelWidth div 2);
+
+    // Drop the number rather than overprint the one before it; the disc still
+    // marks the meal.
+    if labelX < (lastLabelRight + LABEL_GAP) then
+      Continue;
+    lastLabelRight := labelX + labelWidth;
+
+    radius := MIN_RADIUS +
+      Round((FCarbs[i].grams / maxGrams) * (MAX_RADIUS - MIN_RADIUS));
+    labelY := y - radius - ACanvas.TextHeight(labelText) - 1;
+    if labelY < PlotRect.Top then
+      labelY := PlotRect.Top;
+    ACanvas.TextOut(labelX, labelY, labelText);
+  end;
+
+  ACanvas.Font.Color := clBlack;
+  ACanvas.Pen.Color := clBlack;
+  ACanvas.Brush.Style := bsClear;
+end;
+
 procedure TfHistoryGraph.DrawLegend(ACanvas: TCanvas; const PlotRect: TRect);
 const
   INFO_PADDING = 6;
@@ -691,6 +952,15 @@ procedure DrawKeyPanel;
     entries := 4;
     if hasRange then
       Inc(entries, 3);
+    // The treatment keys only earn their space when the overlay is actually on.
+    if FShowBolus and (Length(FBoluses) > 0) then
+    begin
+      Inc(entries);
+      if FShowAutoBolus then
+        Inc(entries);
+    end;
+    if FShowCarbs and (Length(FCarbs) > 0) then
+      Inc(entries);
 
     // Determine unit string
     if FUnit = mmol then
@@ -747,6 +1017,14 @@ procedure DrawKeyPanel;
     DrawKeyEntry(hiStr, LevelColor(BGHigh));
     DrawKeyEntry(loStr, LevelColor(BGLOW));
     DrawKeyEntry(RS_HISTORY_GRAPH_KEY_BASAL, RGBToColor(120,170,255));
+    if FShowBolus and (Length(FBoluses) > 0) then
+    begin
+      DrawKeyEntry(RS_HISTORY_GRAPH_KEY_BOLUS, BolusColor);
+      if FShowAutoBolus then
+        DrawKeyEntry(RS_HISTORY_GRAPH_KEY_BOLUS_AUTO, AutoBolusColor);
+    end;
+    if FShowCarbs and (Length(FCarbs) > 0) then
+      DrawKeyEntry(RS_HISTORY_GRAPH_KEY_CARBS, CarbColor);
     DrawKeyEntry(RS_HISTORY_GRAPH_KEY_UNKNOWN, FPalette.Unknown);
   end;
 
@@ -812,6 +1090,8 @@ begin
   DrawAxesAndGrid(ABmp.Canvas, PlotRect);
   DrawThresholdLines(ABmp.Canvas, PlotRect);
   DrawBasalOverlay(ABmp.Canvas, PlotRect);
+  DrawBolusOverlay(ABmp.Canvas, PlotRect);
+  DrawCarbOverlay(ABmp.Canvas, PlotRect);
   DrawPolyline(ABmp.Canvas, PlotRect);
   DrawPoints(ABmp.Canvas, PlotRect);
   DrawPredictionOverlay(ABmp.Canvas, PlotRect);
@@ -1208,6 +1488,36 @@ end;
 procedure TfHistoryGraph.SetBasalOverlayEnabled(aEnabled: boolean);
 begin
   FShowBasal := aEnabled;
+  InvalidateBackground;
+  Invalidate;
+end;
+
+procedure TfHistoryGraph.SetBoluses(const Boluses: TBolusList);
+begin
+  FBoluses := Copy(Boluses);
+  InvalidateBackground;
+  Invalidate;
+end;
+
+procedure TfHistoryGraph.SetBolusOverlayEnabled(aEnabled: boolean;
+aIncludeAutomatic: boolean = false);
+begin
+  FShowBolus := aEnabled;
+  FShowAutoBolus := aIncludeAutomatic;
+  InvalidateBackground;
+  Invalidate;
+end;
+
+procedure TfHistoryGraph.SetCarbs(const Carbs: TCarbList);
+begin
+  FCarbs := Copy(Carbs);
+  InvalidateBackground;
+  Invalidate;
+end;
+
+procedure TfHistoryGraph.SetCarbOverlayEnabled(aEnabled: boolean);
+begin
+  FShowCarbs := aEnabled;
   InvalidateBackground;
   Invalidate;
 end;

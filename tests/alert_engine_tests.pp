@@ -107,6 +107,29 @@ type
     procedure EmptyStateIsNoOp;
     // Notification
     procedure OnStateChangedFiresOnViolation;
+    // Reservoir ladder
+    procedure ReservoirStepIsLowestOneReached;
+    procedure ReservoirAboveLadderStaysQuiet;
+    procedure ReservoirFiresOncePerStepOnTheWayDown;
+    procedure ReservoirStartingLowFiresOnlyCurrentStep;
+    procedure ReservoirBoundaryJitterDoesNotRefire;
+    procedure ReservoirRefillRearmsTheLadder;
+    procedure ReservoirUnknownLevelLeavesLatchAlone;
+    // Sensor expiry ladder
+    procedure SensorExpiryStepIsLowestOneReached;
+    procedure SensorExpiryEarlyInSessionStaysQuiet;
+    procedure SensorExpiryFiresOncePerStepTowardsTheEnd;
+    procedure SensorExpiryStartingLateFiresOnlyCurrentStep;
+    procedure SensorExpiryChangeRearmsTheLadder;
+    procedure SensorExpiryUnknownLifeLeavesLatchAlone;
+    // Pump battery ladder
+    procedure PumpBatteryStepIsLowestOneReached;
+    procedure PumpBatteryWellChargedStaysQuiet;
+    procedure PumpBatteryFiresOncePerStepGoingDown;
+    procedure PumpBatteryStartingLowFiresOnlyCurrentStep;
+    procedure PumpBatteryChargeRearmsTheLadder;
+    procedure PumpBatteryBriefTopUpDoesNotRefire;
+    procedure PumpBatteryUnknownLevelLeavesLatchAlone;
   end;
 
 implementation
@@ -648,6 +671,367 @@ begin
   FChangeCount := 0;
   FEngine.ResumeAll;
   AssertTrue('ResumeAll notifies the caller', FChangeCount > 0);
+end;
+
+// ---------------------------------------------------------------------------
+// Reservoir ladder
+//
+// ReservoirShouldNotify is a pure function over a caller-held latch, so these
+// drive it the way umain does: one call per fetch, feeding back the same latch.
+// ---------------------------------------------------------------------------
+
+procedure TAlertEngineTests.ReservoirStepIsLowestOneReached;
+begin
+  AssertEquals('above the ladder', 0, ReservoirWarnStep(120));
+  AssertEquals('just above the top step', 0, ReservoirWarnStep(30.1));
+  AssertEquals('exactly on the top step', 30, ReservoirWarnStep(30));
+  AssertEquals('between steps takes the lower one', 25, ReservoirWarnStep(22));
+  AssertEquals('empty cartridge', 5, ReservoirWarnStep(0));
+  AssertEquals('not reported is not a low level', 0, ReservoirWarnStep(-1));
+end;
+
+procedure TAlertEngineTests.ReservoirAboveLadderStaysQuiet;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertFalse('a full cartridge must not notify',
+    ReservoirShouldNotify(180, latch));
+  AssertEquals('and must not arm a step', 0, latch);
+end;
+
+procedure TAlertEngineTests.ReservoirFiresOncePerStepOnTheWayDown;
+var
+  latch, fires: integer;
+begin
+  latch := 0;
+  fires := 0;
+
+  // 31U is still above the ladder; every subsequent value crosses one step.
+  if ReservoirShouldNotify(31, latch) then Inc(fires);
+  AssertEquals('31U is above every step', 0, fires);
+
+  if ReservoirShouldNotify(29.4, latch) then Inc(fires);
+  AssertEquals('first step fires', 1, fires);
+  AssertEquals('latched at 30U', 30, latch);
+
+  // Two more fetches inside the same band stay silent.
+  if ReservoirShouldNotify(28, latch) then Inc(fires);
+  if ReservoirShouldNotify(26, latch) then Inc(fires);
+  AssertEquals('no repeat within a step', 1, fires);
+
+  if ReservoirShouldNotify(24.5, latch) then Inc(fires);
+  if ReservoirShouldNotify(19, latch) then Inc(fires);
+  if ReservoirShouldNotify(14, latch) then Inc(fires);
+  if ReservoirShouldNotify(9.5, latch) then Inc(fires);
+  if ReservoirShouldNotify(4.2, latch) then Inc(fires);
+  AssertEquals('one notification per step', 6, fires);
+  AssertEquals('latched at the bottom step', 5, latch);
+
+  // Below the last step there is nothing left to announce.
+  if ReservoirShouldNotify(0.4, latch) then Inc(fires);
+  AssertEquals('running dry does not re-announce', 6, fires);
+end;
+
+procedure TAlertEngineTests.ReservoirStartingLowFiresOnlyCurrentStep;
+var
+  latch: integer;
+begin
+  // First fetch of the session already reads low (fresh install, or a backend
+  // that only just started reporting). It must announce once, not six times.
+  latch := 0;
+  AssertTrue('a first low reading notifies',
+    ReservoirShouldNotify(8, latch));
+  AssertEquals('at the step it is actually in', 10, latch);
+
+  AssertFalse('and not again for the steps it skipped',
+    ReservoirShouldNotify(7, latch));
+end;
+
+procedure TAlertEngineTests.ReservoirBoundaryJitterDoesNotRefire;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertTrue('drop to the 25U step notifies', ReservoirShouldNotify(25, latch));
+
+  // A reading wobbling either side of the boundary is not a refill.
+  AssertFalse('rise back over the boundary is quiet',
+    ReservoirShouldNotify(25.6, latch));
+  AssertEquals('and does not re-arm the step', 25, latch);
+  AssertFalse('falling back through it stays quiet',
+    ReservoirShouldNotify(24.8, latch));
+  AssertEquals('latch unchanged', 25, latch);
+end;
+
+procedure TAlertEngineTests.ReservoirRefillRearmsTheLadder;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertTrue('down at 5U', ReservoirShouldNotify(4, latch));
+  AssertEquals('latched at the bottom step', 5, latch);
+
+  AssertFalse('a refill itself is not an alert',
+    ReservoirShouldNotify(280, latch));
+  AssertEquals('refill clears the ladder', 0, latch);
+
+  AssertTrue('the new cartridge alerts from the top again',
+    ReservoirShouldNotify(30, latch));
+
+  // A partial top-up only re-arms once clear of the fired step by the margin.
+  latch := 10;
+  AssertFalse('1U above the fired step is still the same excursion',
+    ReservoirShouldNotify(11, latch));
+  AssertEquals('so the step stays latched', 10, latch);
+  AssertFalse('clearing the margin re-arms without alerting',
+    ReservoirShouldNotify(13, latch));
+  AssertEquals('now sitting in the 15U band', 15, latch);
+  AssertTrue('and 10U can fire again', ReservoirShouldNotify(9, latch));
+end;
+
+procedure TAlertEngineTests.ReservoirUnknownLevelLeavesLatchAlone;
+var
+  latch: integer;
+begin
+  // DEVICE_STATUS_UNKNOWN: a backend that reports no reservoir must neither
+  // fire nor re-arm — a missing figure is not an empty cartridge.
+  latch := 10;
+  AssertFalse('unknown never notifies', ReservoirShouldNotify(-1, latch));
+  AssertEquals('and never disturbs the latch', 10, latch);
+end;
+
+// ---------------------------------------------------------------------------
+// Sensor expiry ladder
+//
+// Same latch contract as the reservoir, over remaining sensor life in hours.
+// CareLink's sensorDurationHours counts down, so these feed a falling figure.
+// ---------------------------------------------------------------------------
+
+procedure TAlertEngineTests.SensorExpiryStepIsLowestOneReached;
+begin
+  AssertEquals('a fresh 7-day sensor', 0, SensorExpiryWarnStep(168));
+  AssertEquals('just above the top step', 0, SensorExpiryWarnStep(25));
+  AssertEquals('exactly on the top step', 24, SensorExpiryWarnStep(24));
+  AssertEquals('between steps takes the lower one', 8, SensorExpiryWarnStep(6));
+  AssertEquals('an expired sensor', 1, SensorExpiryWarnStep(0));
+  AssertEquals('not reported is not an expiring sensor',
+    0, SensorExpiryWarnStep(-1));
+end;
+
+procedure TAlertEngineTests.SensorExpiryEarlyInSessionStaysQuiet;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertFalse('a sensor days from the end must not notify',
+    SensorExpiryShouldNotify(96, latch));
+  AssertEquals('and must not arm a step', 0, latch);
+end;
+
+procedure TAlertEngineTests.SensorExpiryFiresOncePerStepTowardsTheEnd;
+var
+  latch, fires: integer;
+begin
+  latch := 0;
+  fires := 0;
+
+  // 25h is still outside the ladder; every subsequent value crosses one step.
+  if SensorExpiryShouldNotify(25, latch) then Inc(fires);
+  AssertEquals('25h is above every step', 0, fires);
+
+  if SensorExpiryShouldNotify(24, latch) then Inc(fires);
+  AssertEquals('the 24h step fires', 1, fires);
+  AssertEquals('latched at 24h', 24, latch);
+
+  // Fetches within the same band — several hours of them — stay silent.
+  if SensorExpiryShouldNotify(20, latch) then Inc(fires);
+  if SensorExpiryShouldNotify(12, latch) then Inc(fires);
+  AssertEquals('no repeat within a step', 1, fires);
+
+  if SensorExpiryShouldNotify(8, latch) then Inc(fires);
+  if SensorExpiryShouldNotify(4, latch) then Inc(fires);
+  if SensorExpiryShouldNotify(2, latch) then Inc(fires);
+  if SensorExpiryShouldNotify(1, latch) then Inc(fires);
+  AssertEquals('one notification per step', 5, fires);
+  AssertEquals('latched at the bottom step', 1, latch);
+
+  // Past the last step the sensor is out; there is nothing left to announce.
+  if SensorExpiryShouldNotify(0, latch) then Inc(fires);
+  AssertEquals('expiry itself does not re-announce', 5, fires);
+end;
+
+procedure TAlertEngineTests.SensorExpiryStartingLateFiresOnlyCurrentStep;
+var
+  latch: integer;
+begin
+  // Trndi opened with three hours of sensor life left: announce once, at the
+  // step the session is actually in, not once per step it never watched.
+  latch := 0;
+  AssertTrue('a first late reading notifies',
+    SensorExpiryShouldNotify(3, latch));
+  AssertEquals('at the step it is actually in', 4, latch);
+
+  AssertFalse('and not again for the steps it skipped',
+    SensorExpiryShouldNotify(3, latch));
+end;
+
+procedure TAlertEngineTests.SensorExpiryChangeRearmsTheLadder;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertTrue('down to the last hours', SensorExpiryShouldNotify(2, latch));
+  AssertEquals('latched at the 2h step', 2, latch);
+
+  AssertFalse('a sensor change is not itself an alert',
+    SensorExpiryShouldNotify(168, latch));
+  AssertEquals('the new session clears the ladder', 0, latch);
+
+  AssertTrue('and alerts from the top again',
+    SensorExpiryShouldNotify(24, latch));
+
+  // A backend nudging its estimate up by an hour is not a sensor change.
+  latch := 4;
+  AssertFalse('1h above the fired step is the same session',
+    SensorExpiryShouldNotify(5, latch));
+  AssertEquals('so the step stays latched', 4, latch);
+  AssertFalse('clearing the margin re-arms without alerting',
+    SensorExpiryShouldNotify(7, latch));
+  AssertEquals('now sitting in the 8h band', 8, latch);
+  AssertTrue('and 4h can fire again', SensorExpiryShouldNotify(4, latch));
+end;
+
+procedure TAlertEngineTests.SensorExpiryUnknownLifeLeavesLatchAlone;
+var
+  latch: integer;
+begin
+  // DEVICE_STATUS_UNKNOWN: Tandem and the plain CGM backends report no sensor
+  // life at all, and must neither fire nor re-arm.
+  latch := 4;
+  AssertFalse('unknown never notifies', SensorExpiryShouldNotify(-1, latch));
+  AssertEquals('and never disturbs the latch', 4, latch);
+end;
+
+// ---------------------------------------------------------------------------
+// Pump battery ladder
+//
+// Same latch contract again, over pump battery percent. Both pump backends
+// fill it (Tandem's `ibc`, CareLink's pumpBatteryLevelPercent). The wrinkle
+// this ladder has and the other two do not is that the figure routinely goes
+// back up, so the re-arm margin carries more weight here.
+// ---------------------------------------------------------------------------
+
+procedure TAlertEngineTests.PumpBatteryStepIsLowestOneReached;
+begin
+  AssertEquals('a full battery', 0, PumpBatteryWarnStep(100));
+  AssertEquals('just above the top step', 0, PumpBatteryWarnStep(21));
+  AssertEquals('exactly on the top step', 20, PumpBatteryWarnStep(20));
+  AssertEquals('between steps takes the lower one', 15, PumpBatteryWarnStep(12));
+  AssertEquals('a flat battery', 2, PumpBatteryWarnStep(0));
+  AssertEquals('not reported is not a flat battery',
+    0, PumpBatteryWarnStep(-1));
+end;
+
+procedure TAlertEngineTests.PumpBatteryWellChargedStaysQuiet;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertFalse('most of a charge left must not notify',
+    PumpBatteryShouldNotify(64, latch));
+  AssertEquals('and must not arm a step', 0, latch);
+end;
+
+procedure TAlertEngineTests.PumpBatteryFiresOncePerStepGoingDown;
+var
+  latch, fires: integer;
+begin
+  latch := 0;
+  fires := 0;
+
+  // 21% is still outside the ladder; every subsequent value crosses one step.
+  if PumpBatteryShouldNotify(21, latch) then Inc(fires);
+  AssertEquals('21% is above every step', 0, fires);
+
+  if PumpBatteryShouldNotify(20, latch) then Inc(fires);
+  AssertEquals('the 20% step fires', 1, fires);
+  AssertEquals('latched at 20%', 20, latch);
+
+  // Fetches within the same band stay silent.
+  if PumpBatteryShouldNotify(19, latch) then Inc(fires);
+  if PumpBatteryShouldNotify(16, latch) then Inc(fires);
+  AssertEquals('no repeat within a step', 1, fires);
+
+  if PumpBatteryShouldNotify(15, latch) then Inc(fires);
+  if PumpBatteryShouldNotify(10, latch) then Inc(fires);
+  if PumpBatteryShouldNotify(5, latch) then Inc(fires);
+  if PumpBatteryShouldNotify(2, latch) then Inc(fires);
+  AssertEquals('one notification per step', 5, fires);
+  AssertEquals('latched at the bottom step', 2, latch);
+
+  // Below the last step the pump is about to die; there is nothing left to add.
+  if PumpBatteryShouldNotify(0, latch) then Inc(fires);
+  AssertEquals('running flat does not re-announce', 5, fires);
+end;
+
+procedure TAlertEngineTests.PumpBatteryStartingLowFiresOnlyCurrentStep;
+var
+  latch: integer;
+begin
+  // Trndi opened on a pump already at 7%: announce once, at the step it is
+  // actually in, not once per step it never watched crossed.
+  latch := 0;
+  AssertTrue('a first low reading notifies', PumpBatteryShouldNotify(7, latch));
+  AssertEquals('at the step it is actually in', 10, latch);
+
+  AssertFalse('and not again for the steps it skipped',
+    PumpBatteryShouldNotify(7, latch));
+end;
+
+procedure TAlertEngineTests.PumpBatteryChargeRearmsTheLadder;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertTrue('down to the last few percent',
+    PumpBatteryShouldNotify(5, latch));
+  AssertEquals('latched at the 5% step', 5, latch);
+
+  AssertFalse('a charge is not itself an alert',
+    PumpBatteryShouldNotify(100, latch));
+  AssertEquals('a full battery clears the ladder', 0, latch);
+
+  AssertTrue('and alerts from the top again',
+    PumpBatteryShouldNotify(20, latch));
+end;
+
+procedure TAlertEngineTests.PumpBatteryBriefTopUpDoesNotRefire;
+var
+  latch: integer;
+begin
+  // A t:slim goes on the charger far more casually than a cartridge is filled,
+  // so a few percent gained must not re-arm a step already announced.
+  latch := 10;
+  AssertFalse('4 points above the fired step is a top-up',
+    PumpBatteryShouldNotify(14, latch));
+  AssertEquals('so the step stays latched', 10, latch);
+
+  AssertFalse('clearing the margin re-arms without alerting',
+    PumpBatteryShouldNotify(16, latch));
+  AssertEquals('now sitting in the 20% band', 20, latch);
+  AssertTrue('and 10% can fire again', PumpBatteryShouldNotify(10, latch));
+end;
+
+procedure TAlertEngineTests.PumpBatteryUnknownLevelLeavesLatchAlone;
+var
+  latch: integer;
+begin
+  // DEVICE_STATUS_UNKNOWN: the plain CGM backends report no pump battery at
+  // all, and must neither fire nor re-arm.
+  latch := 10;
+  AssertFalse('unknown never notifies', PumpBatteryShouldNotify(-1, latch));
+  AssertEquals('and never disturbs the latch', 10, latch);
 end;
 
 initialization

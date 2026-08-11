@@ -3,6 +3,63 @@ Trndi can show toasts (those small pop-ups near the clock) when you're high or l
 
 Enabling notifications is optional — you can use Trndi without them.
 
+## What Trndi notifies about
+- **High / low blood sugar** — `alerts.notice.hilo`, rate-limited by the alert engine's rules.
+- **Missing or stale readings** — `alerts.notice.missing`.
+- **Suspected sensor fault** — repeated large jumps between consecutive readings.
+- **Low pump reservoir** — `alerts.notice.reservoir`, on by default. One toast each
+  time the reservoir falls to 30, 25, 20, 15, 10 and 5 units. Only backends that
+  report a reservoir (Tandem Source, CareLink, and Nightscout v3 where a
+  `devicestatus` record carries `pump.reservoir`) can trigger it; the rest leave
+  the field at `DEVICE_STATUS_UNKNOWN` and are skipped, since a missing figure
+  must never read as an empty cartridge.
+
+  The ladder is evaluated after each successful fetch by `TfBG.CheckPumpReservoir`
+  (`inc/umain_alerts.inc`) on top of `ReservoirShouldNotify` in
+  `units/trndi/trndi.alert.engine.pp`. A step notifies once: it stays quiet until
+  either a lower step is reached or the level climbs clear of the fired step by
+  `RESERVOIR_REARM_MARGIN`, which is also what re-arms the ladder after a refill.
+  The latch is persisted as `alerts.reservoir.step`, so restarting Trndi on a low
+  cartridge does not repeat a warning that was already shown.
+- **Sensor about to expire** — `alerts.notice.sensor`, on by default. One toast each
+  time the remaining sensor life falls to 24, 8, 4, 2 and 1 hours. CareLink fills
+  `sensorDurationHours` from its own countdown, and Nightscout v3 fills it where
+  a `devicestatus` record states when the session ends (xDrip+/xdrip-js write
+  one). A sensor *start* is never turned into a remaining life: session length
+  varies by sensor, so the arithmetic would be a guess that announces a fresh
+  sensor as an expiring one. Tandem's CGM events carry no session age and the
+  other plain CGM backends report none either, so they leave the field at
+  `DEVICE_STATUS_UNKNOWN` and are skipped.
+
+  Same shape as the reservoir ladder: `TfBG.CheckSensorExpiry`
+  (`inc/umain_alerts.inc`) over `SensorExpiryShouldNotify`, latch persisted as
+  `alerts.sensor.step`, and a sensor change re-arms the ladder once the figure is
+  clear of the fired step by `SENSOR_EXPIRY_REARM_MARGIN` — no sensor-change event
+  is needed from the payload. `sensorDurationHours` counts **down** (remaining
+  life), confirmed against the CareLink app; a backend that reports elapsed time
+  instead must convert before filling the field, or a fresh sensor would be
+  announced as an expiring one.
+- **Low pump battery** — `alerts.notice.battery`, on by default. One toast each
+  time the pump battery falls to 20, 15, 10, 5 and 2 percent. Both pump backends
+  fill `pumpBatteryPercent` — Tandem from the `ibc` property on its status and
+  battery events, CareLink from `pumpBatteryLevelPercent` — as does Nightscout v3
+  from `pump.battery.percent`, and the remaining backends leave it at
+  `DEVICE_STATUS_UNKNOWN` and are skipped. Nightscout's `uploader.battery` is
+  deliberately not read: that is the phone doing the uploading, and a flat phone
+  on a site with no pump would otherwise fire this ladder every day.
+
+  Same shape again: `TfBG.CheckPumpBattery` (`inc/umain_alerts.inc`) over
+  `PumpBatteryShouldNotify`, latch persisted as `alerts.battery.step`. The one
+  difference from the other two ladders is `PUMP_BATTERY_REARM_MARGIN`, which is
+  wider (5 points) because a battery goes back up as a matter of routine where a
+  cartridge does not: a t:slim on the charger for a few minutes must not re-arm a
+  step it has already announced, while a real charge or a fresh cell does.
+
+  How fine-grained CareLink's percentage is has **not** been confirmed against a
+  live account — if it turns out to report in coarse buckets (25/50/75/100), only
+  the lowest step is reachable there and the warning arrives late. Tandem's `ibc`
+  is verified fine-grained (values like 80, 45, 35 in a live fetch).
+
 ## How Trndi chooses a backend
 - Windows: Uses the built‑in WinRT toast API (`Windows.UI.Notifications.ToastNotificationManager`) via PowerShell — no third‑party module required.
 - macOS: Uses the built‑in user notification center — no setup required.

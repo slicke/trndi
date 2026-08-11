@@ -129,6 +129,9 @@ begin
   PredictShortMode := native.GetBoolSetting('predictions.short', false);
   PredictDotMode := native.GetBoolSetting('predictions.dots', false);
   RotatingArrow := native.GetBoolSetting('display.rotating_arrow', false);
+  ShowBolusOverlay := native.GetBoolSetting('display.bolus_overlay', false);
+  ShowAutoBolusOverlay := native.GetBoolSetting('display.bolus_overlay.auto', false);
+  ShowCarbOverlay := native.GetBoolSetting('display.carb_overlay', false);
   PredictShortFullArrows := native.GetBoolSetting('predictions.short.fullarrows', false);
   PredictShortShowValue := native.GetBoolSetting('predictions.short.showvalue', false);
   minutesStr := '';
@@ -401,6 +404,12 @@ procedure LoadUserSettings(f: TfConf);
       cbPredictShort.Checked := GetBoolSetting('predictions.short');
       cbPredictDots.Checked := GetBoolSetting('predictions.dots');
       cbRotatingArrow.Checked := GetBoolSetting('display.rotating_arrow');
+      cbBolusOverlay.Checked := GetBoolSetting('display.bolus_overlay');
+      cbBolusOverlayAuto.Checked := GetBoolSetting('display.bolus_overlay.auto');
+      // The dependent box follows the parent from the moment the dialog opens,
+      // not only when the user touches it.
+      cbBolusOverlayAuto.Enabled := cbBolusOverlay.Checked;
+      cbCarbOverlay.Checked := GetBoolSetting('display.carb_overlay');
       cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', false);
       // ItemIndex order is the TDotColorMode order — see the type's note.
       rgDots.ItemIndex := Ord(DotColorModeFromSetting(
@@ -521,6 +530,9 @@ procedure LoadUserSettings(f: TfConf);
 
       cbAlertHiLo.Checked := native.getBoolSetting('alerts.notice.hilo', true);
       cbAlertMissing.Checked := native.getBoolSetting('alerts.notice.missing', true);
+      cbAlertReservoir.Checked := native.getBoolSetting('alerts.notice.reservoir', true);
+      cbAlertSensor.Checked := native.getBoolSetting('alerts.notice.sensor', true);
+      cbAlertBattery.Checked := native.getBoolSetting('alerts.notice.battery', true);
 
       spAlertDurHi.Value   := native.GetIntSetting('alerts.duration.high', 10);
       spAlertDurLo.Value   := native.GetIntSetting('alerts.duration.low', 5);
@@ -692,6 +704,9 @@ procedure SaveUserSettings(f: TfConf);
       native.SetSetting(HINTS_ENABLED_KEY, cbHints.Checked);
       native.setSetting('alerts.notice.hilo', cbAlertHiLo.Checked);
       native.setSetting('alerts.notice.missing', cbAlertMissing.Checked);
+      native.setSetting('alerts.notice.reservoir', cbAlertReservoir.Checked);
+      native.setSetting('alerts.notice.sensor', cbAlertSensor.Checked);
+      native.setSetting('alerts.notice.battery', cbAlertBattery.Checked);
 
       native.SetSetting('alerts.duration.high',     spAlertDurHi.Value);
       native.SetSetting('alerts.duration.low',      spAlertDurLo.Value);
@@ -810,6 +825,9 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('predictions.short', cbPredictShort.Checked);
       SetSetting('predictions.dots', cbPredictDots.Checked);
       SetSetting('display.rotating_arrow', cbRotatingArrow.Checked);
+      SetSetting('display.bolus_overlay', cbBolusOverlay.Checked);
+      SetSetting('display.bolus_overlay.auto', cbBolusOverlayAuto.Checked);
+      SetSetting('display.carb_overlay', cbCarbOverlay.Checked);
       SetSetting('ux.dot_fresh', cbDotFresh.Checked);
       // A radio group with nothing selected would otherwise store -1, which
       // DotColorModeFromSetting reads back as the default anyway - but leaving

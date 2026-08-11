@@ -109,6 +109,9 @@ type
     cbPredictions: TCheckBox;
     cbPredictDots: TCheckBox;
     cbRotatingArrow: TCheckBox;
+    cbBolusOverlay: TCheckBox;
+    cbBolusOverlayAuto: TCheckBox;
+    cbCarbOverlay: TCheckBox;
     cbDotFresh: TCheckBox;
     cbWebAPI: TCheckBox;
     cbAutoStart: TCheckBox;
@@ -163,6 +166,9 @@ type
     cbFlashPerfect: TCheckBox;
     cbAlertHiLo: TCheckBox;
     cbAlertMissing: TCheckBox;
+    cbAlertReservoir: TCheckBox;
+    cbAlertSensor: TCheckBox;
+    cbAlertBattery: TCheckBox;
     spAlertDurHi: TSpinEdit;
     spAlertDurLo: TSpinEdit;
     spAlertDurUrg: TSpinEdit;

@@ -1671,12 +1671,12 @@ object fConf: TfConf
         end
         object GroupBox11: TGroupBox
           Left = 0
-          Height = 144
+          Height = 201
           Top = 55
           Width = 633
           Align = alTop
           Caption = 'General'
-          ClientHeight = 124
+          ClientHeight = 181
           ClientWidth = 629
           TabOrder = 1
           object cbProgress: TCheckBox
@@ -1745,11 +1745,36 @@ object fConf: TfConf
             TabOrder = 3
             OnClick = bDisplayGeneralHelpClick
           end
+          object cbBolusOverlay: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 116
+            Width = 283
+            Caption = 'Show insulin doses on the history graph'
+            TabOrder = 8
+            OnChange = cbBolusOverlayChange
+          end
+          object cbBolusOverlayAuto: TCheckBox
+            Left = 32
+            Height = 19
+            Top = 135
+            Width = 283
+            Caption = 'Include automatic doses from the pump'
+            TabOrder = 9
+          end
+          object cbCarbOverlay: TCheckBox
+            Left = 16
+            Height = 19
+            Top = 154
+            Width = 283
+            Caption = 'Show carbohydrates on the history graph'
+            TabOrder = 10
+          end
         end
         object GroupBox12: TGroupBox
           Left = 0
           Height = 57
-          Top = 199
+          Top = 256
           Width = 633
           Align = alTop
           Caption = 'Advanced'
@@ -2426,7 +2451,7 @@ object fConf: TfConf
       end
       object cgNotifications: TCheckGroup
         Left = 0
-        Height = 83
+        Height = 159
         Top = 299
         Width = 637
         Align = alTop
@@ -2441,7 +2466,7 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 1
-        ClientHeight = 63
+        ClientHeight = 139
         ClientWidth = 633
         ParentBackground = False
         TabOrder = 5
@@ -2460,6 +2485,30 @@ object fConf: TfConf
           Width = 621
           Caption = 'Alert me when readings are missing / not fresh'
           TabOrder = 1
+        end
+        object cbAlertReservoir: TCheckBox
+          Left = 6
+          Height = 25
+          Top = 57
+          Width = 621
+          Caption = 'Alert me when the pump''s insulin is running low (pump backends)'
+          TabOrder = 2
+        end
+        object cbAlertSensor: TCheckBox
+          Left = 6
+          Height = 25
+          Top = 82
+          Width = 621
+          Caption = 'Alert me when the sensor is about to expire (CareLink)'
+          TabOrder = 3
+        end
+        object cbAlertBattery: TCheckBox
+          Left = 6
+          Height = 25
+          Top = 107
+          Width = 621
+          Caption = 'Alert me when the pump battery is running low (pump backends)'
+          TabOrder = 4
         end
       end
       object bNotificationHelp: TButton
