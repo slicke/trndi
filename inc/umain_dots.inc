@@ -435,6 +435,42 @@ end;
 // does. ATheme carries the dialog's current picker colors, which may be
 // unsaved; that is the point, the preview answers "what would this look like"
 // before the user commits.
+// Identity/partner colors per range band (0 = low .. 4 = high), exactly as
+// DetermineColorForReading assigns them, with partners per DotBandPartner —
+// in-range is the inverted pair, the text half is the identity. Shared by
+// both settings-dialog previews so they cannot disagree.
+procedure PreviewBandColors(const ATheme: TTrndiTheme; ABand: integer;
+  out AIdent, APartner: TColor);
+begin
+  case ABand of
+  0:
+  begin
+    AIdent := ATheme.ColorLow;
+    APartner := ATheme.ColorLowText;
+  end;
+  1:
+  begin
+    AIdent := ATheme.ColorRangeLow;
+    APartner := ATheme.ColorRangeLowText;
+  end;
+  2:
+  begin
+    AIdent := ATheme.ColorOkText;
+    APartner := ATheme.ColorOk;
+  end;
+  3:
+  begin
+    AIdent := ATheme.ColorRangeHigh;
+    APartner := ATheme.ColorRangeHighText;
+  end;
+  else
+  begin
+    AIdent := ATheme.ColorHigh;
+    APartner := ATheme.ColorHighText;
+  end;
+  end;
+end;
+
 procedure TfBG.RenderDotModePreview(ACanvas: TCanvas; const ARect: TRect;
   AModeIndex: integer; const ATheme: TTrndiTheme);
 const
@@ -446,10 +482,9 @@ const
 var
   mode: TDotColorMode;
   winBgs: array[0..2] of TColor;
-  idents, partners: array[0..4] of TColor;
   i, j, d, x, y, ringWidth, swW, swH: integer;
   sw: TRect;
-  valColor, dotColor, ringColor: TColor;
+  valColor, dotColor, ringColor, ident, partner: TColor;
 begin
   mode := DotColorModeFromSetting(AModeIndex);
 
@@ -458,20 +493,6 @@ begin
   winBgs[0] := ATheme.ColorOk;
   winBgs[1] := ATheme.ColorHigh;
   winBgs[2] := ATheme.ColorLow;
-
-  // Identity colors as DetermineColorForReading assigns them, low band to high
-  // band, with partners per DotBandPartner (in-range is the inverted pair —
-  // the text half is the identity).
-  idents[0] := ATheme.ColorLow;
-  partners[0] := ATheme.ColorLowText;
-  idents[1] := ATheme.ColorRangeLow;
-  partners[1] := ATheme.ColorRangeLowText;
-  idents[2] := ATheme.ColorOkText;
-  partners[2] := ATheme.ColorOk;
-  idents[3] := ATheme.ColorRangeHigh;
-  partners[3] := ATheme.ColorRangeHighText;
-  idents[4] := ATheme.ColorHigh;
-  partners[4] := ATheme.ColorHighText;
 
   swW := (ARect.Width - 2 * GAP) div 3;
   swH := ARect.Height;
@@ -503,8 +524,8 @@ begin
     // fresh ring like the live graph's does.
     for j := 0 to 4 do
     begin
-      dotColor := DotDisplayColor(idents[j], partners[j], winBgs[i], valColor,
-        mode);
+      PreviewBandColors(ATheme, j, ident, partner);
+      dotColor := DotDisplayColor(ident, partner, winBgs[i], valColor, mode);
       if j = 4 then
         FreshDotRing(mode, dotColor, winBgs[i], d, ringColor, ringWidth)
       else
@@ -524,6 +545,198 @@ begin
       DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
     end;
   end;
+end;
+
+// The Display tab's miniature main window: one full mock of the live screen —
+// ago text, TIR, trend dots, reading, arrow and delta — drawn with the fonts
+// being picked in the dialog and the colors currently in the pickers, in the
+// range state the dialog's switcher selects. Every color comes from the same
+// functions the live UI uses (UpdateUIColors' rules, DotDisplayColor,
+// FreshDotRing), so the preview cannot drift from what saving would produce.
+// The captions are read from the live labels, so the mock shows the user's
+// actual current reading rather than canned data.
+procedure TfBG.RenderDisplayPreview(ACanvas: TCanvas; const ARect: TRect;
+  AModeIndex: integer; const ATheme: TTrndiTheme;
+  const AData: TDisplayPreviewData; out AZones: TDisplayPreviewZones);
+const
+  PAD = 6;
+  DOT_COUNT = 10; // matches the default trend window
+  clGoodGreen = $00005900; // keep in sync with UpdateUIColors
+var
+  mode: TDotColorMode;
+  bg, valColor, subColor, arrowColor, tirColor: TColor;
+  dotColor, ringColor, ident, partner: TColor;
+  valText, arrowText, agoText, diffText, tirText: string;
+  w, h, i, d, x, y, tw, th, ringWidth, r: integer;
+
+function HasDigit(const s: string): boolean;
+  var
+    c: char;
+  begin
+    Result := false;
+    for c in s do
+      if c in ['0'..'9'] then
+        exit(true);
+  end;
+
+  // The dialog's separator field applies to the reading on save; showing it
+  // in the mock is the point of previewing.
+function SwapSep(const s: string): string;
+  begin
+    Result := s;
+    if AData.DecimalSep <> '' then
+    begin
+      Result := StringReplace(Result, ',', AData.DecimalSep, [rfReplaceAll]);
+      Result := StringReplace(Result, '.', AData.DecimalSep, [rfReplaceAll]);
+    end;
+  end;
+
+procedure SetPreviewFont(const AName: string; AHeight: integer;
+  const AStyle: TFontStyles);
+  begin
+    if AName <> '' then
+      ACanvas.Font.Name := AName
+    else
+      ACanvas.Font.Name := 'default';
+    ACanvas.Font.Height := -AHeight;
+    ACanvas.Font.Style := AStyle;
+  end;
+
+begin
+  AZones.ValRect := Rect(0, 0, 0, 0);
+  AZones.ArrowRect := Rect(0, 0, 0, 0);
+  AZones.AgoRect := Rect(0, 0, 0, 0);
+
+  w := ARect.Width;
+  h := ARect.Height;
+  if (w < 40) or (h < 30) then
+    Exit;
+
+  mode := DotColorModeFromSetting(AModeIndex);
+
+  case AData.State of
+  1:
+    bg := ATheme.ColorHigh;
+  2:
+    bg := ATheme.ColorLow;
+  else
+    bg := ATheme.ColorOk;
+  end;
+
+  // The same rules UpdateUIColors applies to the live labels.
+  valColor := GetTextColorForBackground(bg);
+  subColor := GetTextColorForBackground(bg, 0.6, 0.4);
+  arrowColor := LightenColor(bg, 0.5);
+
+  // Live captions, with fallbacks for the states that have none (first run,
+  // rotating-arrow overlay active).
+  valText := lVal.Caption;
+  if not HasDigit(valText) then
+    valText := '5.5';
+  valText := SwapSep(valText);
+  arrowText := lArrow.Caption;
+  if (arrowText = '') or (arrowText = 'lArrow') then
+    arrowText := '→';
+  agoText := lAgo.Caption;
+  if (agoText = '') or (agoText = 'lAgo') then
+    agoText := '10 min';
+  diffText := lDiff.Caption;
+  if (diffText = '') or (diffText = 'lDiff') then
+    diffText := '+0.0';
+  diffText := SwapSep(diffText);
+  tirText := lTir.Caption;
+
+  ACanvas.Brush.Style := bsSolid;
+  ACanvas.Brush.Color := bg;
+  ACanvas.FillRect(ARect);
+  ACanvas.Brush.Style := bsClear;
+
+  // Ago readout, top-left like the live window.
+  SetPreviewFont(AData.AgoFont, Max(11, h div 9), []);
+  ACanvas.Font.Color := subColor;
+  ACanvas.TextOut(ARect.Left + PAD, ARect.Top + PAD div 2 + 2, agoText);
+
+  // TIR, top-right, with UpdateUIColors' good/bad tinting when the live
+  // label carries the percentage in its hint.
+  if tirText <> '' then
+  begin
+    tirColor := subColor;
+    if TryStrToInt(lTir.Hint, r) then
+      if r < bad_tir then
+        tirColor := GetAdjustedColorForBackground(clMaroon, bg, 0.6, 0.4, true)
+      else
+      if r >= good_tir then
+        tirColor := GetAdjustedColorForBackground(clGoodGreen, bg, 0.6, 0.4, true);
+    ACanvas.Font.Color := tirColor;
+    ACanvas.TextOut(ARect.Left + w - ACanvas.TextWidth(tirText) - PAD,
+      ARect.Top + PAD div 2 + 2, tirText);
+  end;
+
+  // Arrow before reading: the live window keeps lArrow behind lVal.
+  SetPreviewFont(AData.ArrowFont, (h * 3) div 10, [fsBold]);
+  ACanvas.Font.Color := arrowColor;
+  tw := ACanvas.TextWidth(arrowText);
+  th := ACanvas.TextHeight(arrowText);
+  ACanvas.TextOut(ARect.Left + (w - tw) div 2,
+    ARect.Top + (h * 72) div 100 - th div 2, arrowText);
+
+  // The hero reading.
+  SetPreviewFont(AData.ValFont, (h * 2) div 5, []);
+  ACanvas.Font.Color := valColor;
+  tw := ACanvas.TextWidth(valText);
+  th := ACanvas.TextHeight(valText);
+  ACanvas.TextOut(ARect.Left + (w - tw) div 2,
+    ARect.Top + (h * 45) div 100 - th div 2, valText);
+
+  // Delta, bottom edge, honoring the saved lDiff alignment.
+  SetPreviewFont('', Max(10, h div 11), []);
+  ACanvas.Font.Color := subColor;
+  tw := ACanvas.TextWidth(diffText);
+  th := ACanvas.TextHeight(diffText);
+  case lDiff.Alignment of
+  taLeftJustify:
+    x := ARect.Left + PAD;
+  taRightJustify:
+    x := ARect.Left + w - tw - PAD;
+  else
+    x := ARect.Left + (w - tw) div 2;
+  end;
+  ACanvas.TextOut(x, ARect.Top + h - th - 3, diffText);
+
+  // A rising trend visiting every range band, sized and slotted like the live
+  // dots (0.6 of the slot width, clamped), newest on the right carrying the
+  // fresh ring when the option previews it.
+  d := Max(MIN_DOT_DIAMETER_PX, Min(h div 8, (w * 6) div (DOT_COUNT * 10)));
+  for i := 0 to DOT_COUNT - 1 do
+  begin
+    PreviewBandColors(ATheme, i div 2, ident, partner);
+    dotColor := DotDisplayColor(ident, partner, bg, valColor, mode);
+    if (i = DOT_COUNT - 1) and AData.FreshRing then
+      FreshDotRing(mode, dotColor, bg, d, ringColor, ringWidth)
+    else
+    if mode = dcmOutline then
+    begin
+      // Same rim rule as DotPaint's non-fresh outline branch.
+      ringWidth := Max(1, d div 14);
+      ringColor := DotOutlineColor(bg);
+    end
+    else
+    begin
+      ringWidth := 0;
+      ringColor := dotColor;
+    end;
+    x := ARect.Left + Round((i + 0.5) * w / DOT_COUNT) - d div 2;
+    // Compress the climb into the upper ~3/4 so the delta row stays readable.
+    y := ARect.Top + PAD + (((DOT_COUNT - 1 - i) * (h - 2 * PAD - d))
+      div (DOT_COUNT - 1) * 3) div 4;
+    DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
+  end;
+
+  // Click targets for the dialog's font pickers: ago strip on top, reading
+  // band in the middle, arrow band below it.
+  AZones.AgoRect := Rect(0, 0, w div 2, h div 5);
+  AZones.ValRect := Rect(0, h div 5, w, (h * 3) div 5);
+  AZones.ArrowRect := Rect(0, (h * 3) div 5, w, (h * 9) div 10);
 end;
 
 procedure TfBG.BuildDotWindowMenu;

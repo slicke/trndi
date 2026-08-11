@@ -3311,6 +3311,28 @@ msgstr "Forudsigelseshorisonten er, hvor langt ind i fremtiden Trndi forudsiger 
 msgid "When predictions are enabled, this controls the size adjustment of the predictions"
 msgstr "Når forudsigelser er aktiveret, styrer dette størrelsesjusteringen af forudsigelserne"
 
+#: uconf.rs_preview_click_hint
+msgid "Click the reading, arrow or time to change its font"
+msgstr "Klik på aflæsningen, pilen eller tiden for at ændre skrifttypen"
+
+#: uconf.rs_preview_high
+msgctxt "uconf.rs_preview_high"
+msgid "High"
+msgstr "Høj"
+
+#: uconf.rs_preview_in_range
+msgctxt "uconf.rs_preview_in_range"
+msgid "In range"
+msgstr "I område"
+
+#: uconf.rs_preview_low
+msgctxt "uconf.rs_preview_low"
+msgid "Low"
+msgstr "Lav"
+
+#: uconf.rs_preview_state_hint
+msgid "Choose which glucose state the preview shows"
+msgstr "Vælg hvilken blodsukkertilstand forhåndsvisningen viser"
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "I privatlivstilstand er den faktiske blodglukoseværdi skjult. Trndi viser kun om værdien er god, høj eller lav."

@@ -62,6 +62,24 @@ type
   TDotPreviewEvent = procedure(ACanvas: TCanvas; const ARect: TRect;
     AModeIndex: integer; const ATheme: TTrndiTheme) of object;
 
+  // Display miniature renderer plumbing (see real uconf); same deal — the
+  // types only have to match for umain to compile.
+  TDisplayPreviewData = record
+    ValFont, ArrowFont, AgoFont: string;
+    State: integer;
+    FreshRing: boolean;
+    DecimalSep: string;
+  end;
+
+  TDisplayPreviewZones = record
+    ValRect, ArrowRect, AgoRect: TRect;
+  end;
+
+  TDisplayPreviewEvent = procedure(ACanvas: TCanvas; const ARect: TRect;
+    AModeIndex: integer; const ATheme: TTrndiTheme;
+    const AData: TDisplayPreviewData;
+    out AZones: TDisplayPreviewZones) of object;
+
   TfConf = class(TForm)
   public
     cbSys: TComboBox;
@@ -91,6 +109,13 @@ type
     // Dot preview renderer umain assigns before showing the dialog. Property
     // on the real form, plain field here; the mock never invokes it.
     OnDotPreview: TDotPreviewEvent;
+    // Display miniature renderer, same arrangement as OnDotPreview.
+    OnDisplayPreview: TDisplayPreviewEvent;
+    // Preview fonts umain seeds and reads back on save. Properties on the
+    // real form (owned TFont objects), plain fields here.
+    FontVal: TFont;
+    FontArrow: TFont;
+    FontAgo: TFont;
     // Raised while umain fills the dialog, so OnChange handlers keep their
     // explanation popups to themselves (see uconf). Property there, plain
     // field here; nothing in the mock reacts to it.
@@ -422,6 +447,9 @@ begin
   cbTirBarCustom := TColorButton.Create(nil);
 
   pnDisplay := TPanel.Create(nil);
+  FontVal := TFont.Create;
+  FontArrow := TFont.Create;
+  FontAgo := TFont.Create;
   cbTitleColor := TCheckBox.Create(nil);
   cbTirColor := TRadioButton.Create(nil);
   cbTirColorBg := TRadioButton.Create(nil);
@@ -455,6 +483,9 @@ begin
   cbTirColorBg.Free;
   cbTirColor.Free;
   cbTitleColor.Free;
+  FontAgo.Free;
+  FontArrow.Free;
+  FontVal.Free;
   pnDisplay.Free;
   cbTirBarCustom.Free;
   cbTirBar.Free;

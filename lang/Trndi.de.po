@@ -3311,6 +3311,28 @@ msgstr "Der Prognosehorizont gibt an, wie weit in die Zukunft Trndi Vorhersagen 
 msgid "When predictions are enabled, this controls the size adjustment of the predictions"
 msgstr "Bei aktivierten Prognosen steuert dies die Größenanpassung der Prognosen"
 
+#: uconf.rs_preview_click_hint
+msgid "Click the reading, arrow or time to change its font"
+msgstr "Klicken Sie auf Messwert, Pfeil oder Zeit, um die Schriftart zu ändern"
+
+#: uconf.rs_preview_high
+msgctxt "uconf.rs_preview_high"
+msgid "High"
+msgstr "Hoch"
+
+#: uconf.rs_preview_in_range
+msgctxt "uconf.rs_preview_in_range"
+msgid "In range"
+msgstr "Im Bereich"
+
+#: uconf.rs_preview_low
+msgctxt "uconf.rs_preview_low"
+msgid "Low"
+msgstr "Niedrig"
+
+#: uconf.rs_preview_state_hint
+msgid "Choose which glucose state the preview shows"
+msgstr "Wählen Sie, welchen Glukosezustand die Vorschau zeigt"
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "Im Datenschutzmodus ist der tatsächliche Blutzuckerwert verborgen. Trndi teilt dem Benutzer nur mit, ob er gut, hoch oder niedrig ist."

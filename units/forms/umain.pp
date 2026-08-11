@@ -779,6 +779,13 @@ private
         same color pipeline as the live dots. Hooked up as uconf's OnDotPreview. }
   procedure RenderDotModePreview(ACanvas: TCanvas; const ARect: TRect;
     AModeIndex: integer; const ATheme: TTrndiTheme);
+    {** Paint the settings dialog's Display-tab miniature: one full mock
+        main window (dots, reading, arrow, delta, ago, TIR) drawn through
+        the same color pipeline as the live UI. Hooked up as uconf's
+        OnDisplayPreview. }
+  procedure RenderDisplayPreview(ACanvas: TCanvas; const ARect: TRect;
+    AModeIndex: integer; const ATheme: TTrndiTheme;
+    const AData: TDisplayPreviewData; out AZones: TDisplayPreviewZones);
   procedure placeForm;
 
     {** Kick off an asynchronous fetch. The actual network call runs on a

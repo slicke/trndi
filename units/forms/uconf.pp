@@ -80,6 +80,31 @@ type
 TDotPreviewEvent = procedure(ACanvas: TCanvas; const ARect: TRect;
   AModeIndex: integer; const ATheme: TTrndiTheme) of object;
 
+  {** What the Display-tab miniature should draw, gathered by the dialog:
+      the fonts being picked and the knobs whose live controls sit here. The
+      captions themselves come from the live main window on the renderer's
+      side — umain owns them. }
+TDisplayPreviewData = record
+  ValFont, ArrowFont, AgoFont: string; // font names as currently picked
+  State: integer;                      // 0 = in range, 1 = high, 2 = low
+  FreshRing: boolean;                  // cbDotFresh as currently checked
+  DecimalSep: string;                  // edCommaSep as currently typed
+end;
+
+  {** Click targets the renderer reports back, so the dialog can map a click
+      on the miniature to the right font picker without knowing the layout. }
+TDisplayPreviewZones = record
+  ValRect, ArrowRect, AgoRect: TRect;
+end;
+
+  {** Renders the Display-tab miniature main window. Implemented by umain
+      (TfBG.RenderDisplayPreview) for the same reason as TDotPreviewEvent:
+      the color/text pipeline lives there, and drawing through it is what
+      keeps the preview from drifting from the real thing. }
+TDisplayPreviewEvent = procedure(ACanvas: TCanvas; const ARect: TRect;
+  AModeIndex: integer; const ATheme: TTrndiTheme;
+  const AData: TDisplayPreviewData; out AZones: TDisplayPreviewZones) of object;
+
   { TfConf }
 
 TfConf = class(TForm)
@@ -246,6 +271,8 @@ TfConf = class(TForm)
   pDecimal: TPanel;
   pHints: TPanel;
   pbDotPreview: TPaintBox;
+  pbDisplayPreview: TPaintBox;
+  cbPreviewState: TComboBox;
   pnDeltaMax: TPanel;
   pnFontButtons: TPanel;
   pnMisc: TPanel;
@@ -387,14 +414,10 @@ TfConf = class(TForm)
   Label6: TLabel;
   Label9: TLabel;
   lAck: TButton;
-  lAgo: TLabel;
-  lArrow: TLabel;
   lbUsers: TListBox;
   lHiOver: TLabel;
   lLicense: TButton;
   lLounder: TLabel;
-  lDiff: TLabel;
-  lVal: TLabel;
   lVersion: TLabel;
   lWarnPredict: TLabel;
   lWidgetset: TLabel;
@@ -520,6 +543,9 @@ TfConf = class(TForm)
   procedure btUserSaveClick(Sender: TObject);
   procedure cbColorPresetChange(Sender: TObject);
   procedure pbDotPreviewPaint(Sender: TObject);
+  procedure pbDisplayPreviewPaint(Sender: TObject);
+  procedure pbDisplayPreviewMouseDown(Sender: TObject; Button: TMouseButton;
+    {%H-}Shift: TShiftState; X, Y: integer);
   procedure bUseURLHelpClick(Sender: TObject);
   procedure Button1Click(Sender: TObject);
   procedure Button3Click(Sender: TObject);
@@ -565,7 +591,6 @@ TfConf = class(TForm)
   procedure lConfigPredictClick({%H-}Sender: TObject);
   procedure lLicenseClick({%H-}Sender: TObject);
   procedure lSysWarnInfoClick({%H-}Sender: TObject);
-  procedure lValClick({%H-}Sender: TObject);
   procedure pcColorsChange({%H-}Sender: TObject);
   procedure pcMainChange({%H-}Sender: TObject);
   procedure rbUnitClick({%H-}Sender: TObject);
@@ -576,7 +601,6 @@ TfConf = class(TForm)
   procedure tsAccessShow({%H-}Sender: TObject);
   procedure tsChromaShow({%H-}Sender: TObject);
   procedure tsCommonShow(Sender: TObject);
-  procedure tsDisplayShow(Sender: TObject);
   procedure tsExtShow({%H-}Sender: TObject);
   procedure tsProxyShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
@@ -604,6 +628,17 @@ private
   FLoadedCreds: string;
   {** Dot preview renderer injected by umain. See TDotPreviewEvent. }
   FOnDotPreview: TDotPreviewEvent;
+  {** Display preview renderer injected by umain. See TDisplayPreviewEvent. }
+  FOnDisplayPreview: TDisplayPreviewEvent;
+  {** The fonts being picked for the reading, arrow and "ago" readouts. The
+      Display miniature draws with these; only the names are persisted. }
+  FFontVal, FFontArrow, FFontAgo: TFont;
+  {** Click targets as the renderer last reported them; hit-tested in
+      pbDisplayPreviewMouseDown. }
+  FPreviewZones: TDisplayPreviewZones;
+  {** Open the shared font picker for one of the preview fonts and repaint
+      the miniature on OK. }
+  procedure PickDisplayFont(target: TFont; const title, sample: string);
   procedure LoadProxySettingsIntoUI;
   procedure SaveProxySettingsFromUI;
   procedure getAPILabels(out user, pass: string);
@@ -637,8 +672,9 @@ public
   {** The ten picker colors gathered into the record the preview renderer
       takes, so it previews what *would* be saved, not what currently is. }
   function ThemeFromPickers: TTrndiTheme;
-  {** Repaint the dot preview; hooked to everything that changes what it
-      shows (mode radio, color pickers, presets, reset). }
+  {** Repaint both previews (dot strip and Display miniature); hooked to
+      everything that changes what they show (mode radio, color pickers,
+      presets, reset, preview state, fonts). }
   procedure RefreshDotPreview({%H-}Sender: TObject);
   {** Blank the Extension Info panel; optional rows are hidden, not emptied,
       so the visible rows stay packed against the top of the panel. }
@@ -671,6 +707,17 @@ public
       TfBG.RenderDotModePreview here before showing the dialog. The strip
       stays blank when unassigned. }
   property OnDotPreview: TDotPreviewEvent read FOnDotPreview write FOnDotPreview;
+  {** Renderer for the Display-tab miniature main window; umain assigns
+      TfBG.RenderDisplayPreview here before showing the dialog. The box
+      stays blank when unassigned. }
+  property OnDisplayPreview: TDisplayPreviewEvent read FOnDisplayPreview
+    write FOnDisplayPreview;
+  {** The fonts the Display miniature previews, seeded by umain from the live
+      labels and read back on save. Assign via TFont.Assign/.Name — the
+      objects are owned by the dialog. }
+  property FontVal: TFont read FFontVal;
+  property FontArrow: TFont read FFontArrow;
+  property FontAgo: TFont read FFontAgo;
   property OnReloadExtensions: TNotifyEvent read FOnReloadExtensions
     write FOnReloadExtensions;
 end;
@@ -845,6 +892,14 @@ RS_SELECT_FONT_DESC = 'Choose a font to use';
 RS_SELECT_FONT_ARROW = 'Select a font for the arrow';
 RS_SELECT_FONT_READING = 'Select a font for the reading';
 RS_SELECT_FONT_TIME = 'Select a font for the time';
+
+// Display-tab preview state switcher; order must match TDisplayPreviewData.State
+RS_PREVIEW_IN_RANGE = 'In range';
+RS_PREVIEW_HIGH = 'High';
+RS_PREVIEW_LOW = 'Low';
+RS_PREVIEW_STATE_HINT = 'Choose which glucose state the preview shows';
+RS_PREVIEW_CLICK_HINT = 'Click the reading, arrow or time to change its font';
+
 RS_UPDATE_SNOOZE = 'You will be alerted again after %s';
 
 RS_MIN_MINUTES = 'When calculating time-in-range, do so over this amount of minutes. If the number is higher than the data available, the max time will be used - this is currently %d minutes.';
@@ -1143,6 +1198,24 @@ begin
     cbColorPreset.Items.EndUpdate;
   end;
   cbColorPreset.ItemIndex := 0;
+
+  keep := cbPreviewState.ItemIndex;
+  cbPreviewState.Items.BeginUpdate;
+  try
+    cbPreviewState.Items.Clear;
+    // Order must match TDisplayPreviewData.State: in range, high, low.
+    cbPreviewState.Items.Add(RS_PREVIEW_IN_RANGE);
+    cbPreviewState.Items.Add(RS_PREVIEW_HIGH);
+    cbPreviewState.Items.Add(RS_PREVIEW_LOW);
+  finally
+    cbPreviewState.Items.EndUpdate;
+  end;
+  if (keep >= 0) and (keep < cbPreviewState.Items.Count) then
+    cbPreviewState.ItemIndex := keep
+  else
+    cbPreviewState.ItemIndex := 0;
+  cbPreviewState.Hint := RS_PREVIEW_STATE_HINT;
+  pbDisplayPreview.Hint := RS_PREVIEW_CLICK_HINT;
 end;
 
 procedure TfConf.ClearExtensionInfo;
@@ -1579,6 +1652,8 @@ end;
 procedure TfConf.edCommaSepChange(Sender: TObject);
 begin
   edCommaSep1.Text := edCommaSep.Text;
+  // The Display miniature renders the reading with this separator.
+  RefreshDotPreview(nil);
 end;
 
 procedure TfConf.edNickChange(Sender: TObject);
@@ -1865,17 +1940,17 @@ end;
 
 procedure TfConf.bFontReadingClick(Sender: TObject);
 begin
-  lValClick(lVal);
+  PickDisplayFont(FFontVal, RS_SELECT_FONT_READING, '123');
 end;
 
 procedure TfConf.bFontArrowClick(Sender: TObject);
 begin
-  lValClick(lArrow);
+  PickDisplayFont(FFontArrow, RS_SELECT_FONT_ARROW, '→');
 end;
 
 procedure TfConf.bFontTimeClick(Sender: TObject);
 begin
-  lValClick(lAgo);
+  PickDisplayFont(FFontAgo, RS_SELECT_FONT_TIME, '10 min');
 end;
 
 procedure TfConf.bLanguageHelpClick(Sender: TObject);
@@ -2400,6 +2475,9 @@ end;
 procedure TfConf.RefreshDotPreview(Sender: TObject);
 begin
   pbDotPreview.Invalidate;
+  // The Display miniature draws with the same pickers and mode, so whatever
+  // repaints one repaints the other.
+  pbDisplayPreview.Invalidate;
 end;
 
 procedure TfConf.pbDotPreviewPaint(Sender: TObject);
@@ -2463,16 +2541,18 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Apply the display panel's font to preview labels.
+  Reset the preview fonts to the UI default.
 
-  This lets the user quickly see how the selected UI font looks on key
-  readouts (value, arrow, and "ago") without changing global styles.
+  pnDisplay carries the main window's default font (umain assigns it in
+  SetupUIElements), so resetting to its name is "back to stock". Only the
+  names are persisted, so only the names are reset.
 ------------------------------------------------------------------------------}
 procedure TfConf.bFontResetClick(Sender: TObject);
 begin
-  lVal.Font.Name := pnDisplay.Font.Name;
-  lArrow.Font.Name := pnDisplay.Font.Name;
-  lAgo.Font.Name := pnDisplay.Font.Name;
+  FFontVal.Name := pnDisplay.Font.Name;
+  FFontArrow.Name := pnDisplay.Font.Name;
+  FFontAgo.Name := pnDisplay.Font.Name;
+  RefreshDotPreview(nil);
 end;
 
 {------------------------------------------------------------------------------
@@ -2645,11 +2725,28 @@ var
   bottombar: tpanel;
   bottomclose: tbutton;
 begin
+  // The Display miniature previews these; umain seeds them from the live
+  // labels in SetupUIElements. Created before ApplyCaptionsFromResources so
+  // every later step can assume they exist.
+  FFontVal := TFont.Create;
+  FFontArrow := TFont.Create;
+  FFontAgo := TFont.Create;
+  FFontVal.Assign(pnDisplay.Font);
+  FFontArrow.Assign(pnDisplay.Font);
+  FFontAgo.Assign(pnDisplay.Font);
+
   ApplyCaptionsFromResources;
 
-  // Everything that changes what the dot preview shows repaints it. The mode
+  // Everything that changes what the previews show repaints them. The mode
   // radio and the ten pickers have no other handlers, so these are assigned
-  // here rather than spent on .lfm plumbing.
+  // here rather than spent on .lfm plumbing — as are the Display miniature's
+  // own events.
+  pbDisplayPreview.OnPaint := @pbDisplayPreviewPaint;
+  pbDisplayPreview.OnMouseDown := @pbDisplayPreviewMouseDown;
+  pbDisplayPreview.ShowHint := true;
+  cbPreviewState.OnChange := @RefreshDotPreview;
+  cbPreviewState.ShowHint := true;
+  cbDotFresh.OnChange := @RefreshDotPreview;
   rgDots.OnClick := @RefreshDotPreview;
   cl_ok_bg.OnColorChanged := @RefreshDotPreview;
   cl_hi_bg.OnColorChanged := @RefreshDotPreview;
@@ -2756,6 +2853,9 @@ procedure TfConf.FormDestroy(Sender: TObject);
 begin
   tnative.Free;
   FExtPaths.Free;
+  FFontVal.Free;
+  FFontArrow.Free;
+  FFontAgo.Free;
 end;
 
 procedure TfConf.FormResize(Sender: TObject);
@@ -2947,26 +3047,57 @@ begin
   end;
 end;
 
-procedure TfConf.lValClick(Sender: TObject);
+procedure TfConf.PickDisplayFont(target: TFont; const title, sample: string);
 var
   f: TFont;
   mr: TModalResult;
-  title: string;
 begin
-
-  case (sender as TLabel).Name of
-  'lArrow':
-    title := RS_SELECT_FONT_ARROW;
-  'lVal':
-    title := RS_SELECT_FONT_READING;
-  'lAgo':
-    title := RS_SELECT_FONT_TIME;
-  else
-    title := RS_SELECT_FONT_DESC;
+  f := slicke.ux.alert.SlickeFontPicker(sdsAuto, RS_SELECT_FONT, RS_SELECT_FONT,
+    title, target, sample, mr);
+  try
+    if mr = mrOK then
+      target.Assign(f);
+  finally
+    f.Free;
   end;
-  f := slicke.ux.alert.SlickeFontPicker(sdsAuto,RS_SELECT_FONT, RS_SELECT_FONT, title, (sender as TLabel).font, (sender as TLabel).caption, mr);
-  if mr = mrOK then
-    (Sender as TLabel).Font := f;
+  RefreshDotPreview(nil);
+end;
+
+procedure TfConf.pbDisplayPreviewPaint(Sender: TObject);
+var
+  data: TDisplayPreviewData;
+begin
+  if not Assigned(FOnDisplayPreview) then
+    Exit;
+  data.ValFont := FFontVal.Name;
+  data.ArrowFont := FFontArrow.Name;
+  data.AgoFont := FFontAgo.Name;
+  data.State := Max(0, cbPreviewState.ItemIndex);
+  data.FreshRing := cbDotFresh.Checked;
+  data.DecimalSep := edCommaSep.Text;
+  FOnDisplayPreview(pbDisplayPreview.Canvas,
+    Rect(0, 0, pbDisplayPreview.Width, pbDisplayPreview.Height),
+    rgDots.ItemIndex, ThemeFromPickers, data, FPreviewZones);
+end;
+
+// The miniature doubles as the font picker surface, like the labels it
+// replaced: the reading, arrow and "ago" text each open their own picker.
+procedure TfConf.pbDisplayPreviewMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: integer);
+var
+  p: TPoint;
+begin
+  if Button <> mbLeft then
+    Exit;
+  p := Point(X, Y);
+  if PtInRect(FPreviewZones.AgoRect, p) then
+    PickDisplayFont(FFontAgo, RS_SELECT_FONT_TIME, '10 min')
+  else
+  if PtInRect(FPreviewZones.ArrowRect, p) then
+    PickDisplayFont(FFontArrow, RS_SELECT_FONT_ARROW, '→')
+  else
+  if PtInRect(FPreviewZones.ValRect, p) then
+    PickDisplayFont(FFontVal, RS_SELECT_FONT_READING, '123');
 end;
 
 procedure TfConf.pcColorsChange(Sender: TObject);
@@ -3109,25 +3240,6 @@ procedure TfConf.tsCommonShow(Sender: TObject);
 begin
   fsHi1.Enabled := fsHi.Enabled;
   fsLo1.Enabled := fsLo.Enabled;
-end;
-
-procedure TfConf.tsDisplayShow(Sender: TObject);
-begin
-  if lVal.Font.color = lVal.Parent.Color then
-    lVal.Font.color := IfThen(lVal.Parent.Color = clBlack, clWhite, clBlack);
-
-  if lArrow.Font.color = lArrow.Parent.Color then
-    lArrow.Font.color := IfThen(lArrow.Parent.Color = clBlack, clWhite, clBlack);
-  if lArrow.Caption = '' then
-    lArrow.caption := '→';
-
-  if lAgo.Font.color = lAgo.Parent.Color then
-    lAgo.Font.color := IfThen(lAgo.Parent.Color = clBlack, clWhite, clBlack);
-
-  if lDiff.Font.color = lDiff.Parent.Color then
-    lDiff.Font.color := IfThen(lDiff.Parent.Color = clBlack, clWhite, clBlack);
-  if (lDiff.Caption = '') or (lDiff.Caption = 'lDiff') then
-    lDiff.Caption := '+0,0';
 end;
 
 procedure TfConf.LoadProxySettingsIntoUI;

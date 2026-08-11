@@ -1534,7 +1534,6 @@ object fConf: TfConf
       Caption = 'Display'
       ClientHeight = 562
       ClientWidth = 637
-      OnShow = tsDisplayShow
       object pnFontButtons: TPanel
         Left = 0
         Height = 35
@@ -1582,6 +1581,16 @@ object fConf: TfConf
           TabOrder = 3
           OnClick = bFontResetClick
         end
+        object cbPreviewState: TComboBox
+          Left = 378
+          Height = 23
+          Top = 5
+          Width = 120
+          Anchors = [akTop, akRight]
+          ItemHeight = 15
+          Style = csDropDownList
+          TabOrder = 4
+        end
       end
       object pnDisplay: TPanel
         Left = 8
@@ -1596,77 +1605,13 @@ object fConf: TfConf
         ClientWidth = 617
         ParentBackground = False
         TabOrder = 1
-        object lAgo: TLabel
-          Cursor = crHandPoint
-          Left = 8
-          Height = 20
-          Top = 6
-          Width = 168
-          AutoSize = False
-          Caption = '100 min'
-          Color = clWhite
-          Font.Color = clBlack
-          Font.Height = 16
-          OptimalFill = True
-          ParentColor = False
-          ParentFont = False
-          OnClick = lValClick
-        end
-        object lVal: TLabel
+        object pbDisplayPreview: TPaintBox
           Cursor = crHandPoint
           Left = 0
-          Height = 52
-          Top = 26
+          Height = 142
+          Top = 0
           Width = 617
           Align = alClient
-          Alignment = taCenter
-          AutoSize = False
-          BorderSpacing.Top = 26
-          Caption = '0,0'
-          Color = 21243
-          Font.Color = clBlack
-          Font.Height = 72
-          Layout = tlCenter
-          OptimalFill = True
-          ParentColor = False
-          ParentFont = False
-          OnClick = lValClick
-        end
-        object lArrow: TLabel
-          Cursor = crHandPoint
-          Left = 0
-          Height = 42
-          Top = 78
-          Width = 617
-          Align = alBottom
-          Alignment = taCenter
-          AutoSize = False
-          Caption = '->'
-          Color = clWhite
-          Font.Color = clBlack
-          Font.Height = 40
-          Layout = tlCenter
-          OptimalFill = True
-          ParentColor = False
-          ParentFont = False
-          OnClick = lValClick
-        end
-        object lDiff: TLabel
-          Left = 0
-          Height = 18
-          Top = 120
-          Width = 617
-          Align = alBottom
-          Alignment = taCenter
-          AutoSize = False
-          BorderSpacing.Bottom = 4
-          Caption = '+0,0'
-          Color = clWhite
-          Font.Color = clBlack
-          Font.Height = 14
-          OptimalFill = True
-          ParentColor = False
-          ParentFont = False
         end
       end
       object gbDisplayPrefs: TGroupBox
