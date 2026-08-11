@@ -2451,7 +2451,7 @@ object fConf: TfConf
       end
       object cgNotifications: TCheckGroup
         Left = 0
-        Height = 134
+        Height = 159
         Top = 299
         Width = 637
         Align = alTop
@@ -2466,7 +2466,7 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 1
-        ClientHeight = 114
+        ClientHeight = 139
         ClientWidth = 633
         ParentBackground = False
         TabOrder = 5
@@ -2501,6 +2501,14 @@ object fConf: TfConf
           Width = 621
           Caption = 'Alert me when the sensor is about to expire (CareLink)'
           TabOrder = 3
+        end
+        object cbAlertBattery: TCheckBox
+          Left = 6
+          Height = 25
+          Top = 107
+          Width = 621
+          Caption = 'Alert me when the pump battery is running low (pump backends)'
+          TabOrder = 4
         end
       end
       object bNotificationHelp: TButton

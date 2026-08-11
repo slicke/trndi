@@ -679,6 +679,7 @@ private
   FAlertEngine: TAlertEngine;
   FReservoirStep: integer; // Lowest reservoir step already notified (0 = none); persisted in alerts.reservoir.step
   FSensorExpiryStep: integer; // Lowest sensor-expiry step already notified (0 = none); persisted in alerts.sensor.step
+  FPumpBatteryStep: integer; // Lowest pump-battery step already notified (0 = none); persisted in alerts.battery.step
   procedure PersistAlertState(Sender: TObject);
   {** Notify once per reservoir step (30/25/20/15/10/5 U) as a pump backend's
       cartridge runs down. No-op for backends that report no reservoir. }
@@ -686,6 +687,9 @@ private
   {** Notify once per sensor-expiry step (24/8/4/2/1 h) as a session runs out.
       No-op for backends that report no sensor life. }
   procedure CheckSensorExpiry;
+  {** Notify once per pump-battery step (20/15/10/5/2 %) as the battery runs
+      down. No-op for backends that report no pump battery. }
+  procedure CheckPumpBattery;
   procedure tUpdateCheckTimer(Sender: TObject);
   procedure tBootFetchTimer(Sender: TObject);
   procedure tBootSpinnerTimer(Sender: TObject);

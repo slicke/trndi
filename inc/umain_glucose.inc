@@ -1223,6 +1223,7 @@ begin
   // Pump housekeeping rides along with the readings the fetch just cached.
   CheckPumpReservoir;
   CheckSensorExpiry;
+  CheckPumpBattery;
 
   TrndiDLog(Format('ApplyFetchedReadings: Got %d readings', [Length(bgs)]));
 

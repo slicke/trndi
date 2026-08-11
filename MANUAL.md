@@ -214,6 +214,20 @@ it — its CGM data carries no session age — and neither do the plain CGM sour
 hours are the backend's own estimate: treat them as a heads-up, and check the
 pump or CGM app for the real figure.
 
+### Pump Battery Warnings
+If your data source is a pump backend (Tandem Source or CareLink), Trndi shows a
+desktop notification as the pump battery runs down — once each as it passes 20,
+15, 10, 5 and 2 percent. Charging the pump, or fitting a fresh battery, arms the
+warnings again; briefly topping it up does not, so a few minutes on the charger
+will not replay a warning you have already seen.
+
+**Where to turn it off**: Right-click → Settings → Customization tab →
+Notifications → "Alert me when the pump battery is running low"
+
+Other backends do not report a pump battery at all, so nothing is shown for them.
+The percentage is the pump's own estimate — treat it as a heads-up and check the
+pump itself before you rely on it.
+
 ---
 
 ## Settings You Should Know

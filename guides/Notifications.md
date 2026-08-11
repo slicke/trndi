@@ -34,6 +34,23 @@ Enabling notifications is optional — you can use Trndi without them.
   life), confirmed against the CareLink app; a backend that reports elapsed time
   instead must convert before filling the field, or a fresh sensor would be
   announced as an expiring one.
+- **Low pump battery** — `alerts.notice.battery`, on by default. One toast each
+  time the pump battery falls to 20, 15, 10, 5 and 2 percent. Both pump backends
+  fill `pumpBatteryPercent` — Tandem from the `ibc` property on its status and
+  battery events, CareLink from `pumpBatteryLevelPercent` — and the plain CGM
+  backends leave it at `DEVICE_STATUS_UNKNOWN` and are skipped.
+
+  Same shape again: `TfBG.CheckPumpBattery` (`inc/umain_alerts.inc`) over
+  `PumpBatteryShouldNotify`, latch persisted as `alerts.battery.step`. The one
+  difference from the other two ladders is `PUMP_BATTERY_REARM_MARGIN`, which is
+  wider (5 points) because a battery goes back up as a matter of routine where a
+  cartridge does not: a t:slim on the charger for a few minutes must not re-arm a
+  step it has already announced, while a real charge or a fresh cell does.
+
+  How fine-grained CareLink's percentage is has **not** been confirmed against a
+  live account — if it turns out to report in coarse buckets (25/50/75/100), only
+  the lowest step is reachable there and the warning arrives late. Tandem's `ibc`
+  is verified fine-grained (values like 80, 45, 35 in a live fetch).
 
 ## How Trndi chooses a backend
 - Windows: Uses the built‑in WinRT toast API (`Windows.UI.Notifications.ToastNotificationManager`) via PowerShell — no third‑party module required.

@@ -859,6 +859,9 @@ begin
     // Same for the sensor-expiry ladder, so a restart four hours from the end
     // of a session does not repeat the step it already announced.
     FSensorExpiryStep := native.GetIntSetting('alerts.sensor.step', 0);
+    // And for the battery ladder, so a restart on a nearly flat pump does not
+    // repeat the step it already announced.
+    FPumpBatteryStep := native.GetIntSetting('alerts.battery.step', 0);
 
     api.APIEmitter := @APIReceiver;
     api.OnCredentialsChanged := @APICredentialsChanged;
