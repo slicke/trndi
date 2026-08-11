@@ -65,6 +65,7 @@ uses
   api_librelinkup_tests,
   api_nightscout_tests,
   api_nightscout3_tests,
+  api_nightscout3_treatment_tests,
   alert_engine_tests,
     system_media_controller_tests,
   ext_manifest_tests

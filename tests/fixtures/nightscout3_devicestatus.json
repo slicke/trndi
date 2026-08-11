@@ -1,0 +1,49 @@
+{
+  "status": 200,
+  "result": [
+    {
+      "_id": "ds-newest-uploader-only",
+      "device": "openaps://phone",
+      "created_at": "2026-08-11T09:55:00.000Z",
+      "uploader": { "battery": 12, "batteryVoltage": 3812 }
+    },
+    {
+      "_id": "ds-xdripjs",
+      "device": "connect://xdripjs",
+      "created_at": "2026-08-11T09:50:00.000Z",
+      "xdripjs": {
+        "state": 6,
+        "stateString": "OK",
+        "stateStringShort": "OK",
+        "txStatusString": "OK",
+        "voltagea": 305,
+        "voltageb": 233,
+        "sensor": {
+          "expires": "@SENSOR_EXPIRES@",
+          "started_at": "2026-08-05T06:00:00.000Z"
+        }
+      }
+    },
+    {
+      "_id": "ds-rig-recent",
+      "device": "openaps://rig",
+      "created_at": "2026-08-11T09:45:00.000Z",
+      "pump": {
+        "clock": "2026-08-11T11:45:00+02:00",
+        "reservoir": 42.5,
+        "battery": { "percent": 78, "voltage": 3.91 },
+        "status": { "status": "normal", "suspended": false, "bolusing": false }
+      }
+    },
+    {
+      "_id": "ds-rig-older",
+      "device": "openaps://rig",
+      "created_at": "2026-08-11T08:00:00.000Z",
+      "pump": {
+        "reservoir": 120,
+        "battery": { "percent": 95 },
+        "status": { "status": "suspended", "suspended": true }
+      }
+    }
+  ]
+}

@@ -49,6 +49,13 @@
  *   collection is unchanged, and a date$gt filter fetches only entries newer
  *   than the cached window when it did change. A periodic full refetch
  *   (cache TTL) still picks up backfilled or edited entries.
+ * - 2026-08-11: the metadata probe now also fills the sensor/pump status,
+ *   insulin-delivery and carbohydrate caches from the devicestatus and
+ *   treatments collections, so the history graph's treatment overlays and the
+ *   reservoir / sensor-expiry / pump-battery notifications work on Nightscout.
+ *   Timestamps parsed out of those collections are now converted to local
+ *   time; they were previously left in UTC and compared against a local Now,
+ *   which put the sensor-age suffix out by the machine's UTC offset.
  *)
 unit trndi.api.nightscout3;
 
@@ -101,6 +108,17 @@ private
   FSensorSuffix: string;
   FSensorSuffixAt: TDateTime; // Last probe time; 0 = never probed
 
+    // Sensor/pump housekeeping and treatments, filled by the same probe that
+    // refreshes FSensorSuffix. Each has a "valid" flag because the accessors
+    // must be able to say "the server reported nothing" — an empty bolus list
+    // read as "no insulin was given" would be a dangerous thing to show.
+  FDeviceStatus: TCGMDeviceStatus; // Newest value of each field across the probe
+  FDeviceStatusValid: boolean;     // True once a payload filled at least one field
+  FBoluses: TBolusList;            // Insulin deliveries, oldest first
+  FBolusesValid: boolean;          // True once a treatments payload was walked
+  FCarbs: TCarbList;               // Carbohydrate entries, oldest first
+  FCarbsValid: boolean;            // True once a treatments payload was walked
+
     // Readings-window cache backing two v3-only optimizations in getReadings:
     // a /lastModified probe that skips the entries fetch entirely when the
     // collection is unchanged, and a date$gt incremental fetch that only
@@ -136,8 +154,36 @@ public
     out res: string; noCache: boolean): BGResults; override;
   function supportsBasal: boolean; override;
   function getBasalProfile(out profile: TBasalProfile): boolean; override;
+
+    {** Sensor and pump housekeeping from the newest devicestatus records the
+        last metadata probe fetched. What a site reports depends entirely on
+        what uploads to it: an AAPS or Loop rig publishes reservoir, pump
+        battery and suspend state, an xDrip+ uploader publishes sensor session
+        detail, and a site fed only by a CGM bridge publishes none of it. Every
+        field is therefore checked against its "unknown" sentinel before use.
+     }
+  function getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean; override;
+
+    {** Insulin deliveries from the treatments the last metadata probe fetched.
+        Deliveries an uploader marked as loop-initiated (@code(isSMB),
+        @code(automatic), or an @code(SMB) event type) are flagged automatic,
+        so a looping site's constant micro-boluses can be kept off the graph
+        separately from the ones the user gave.
+     }
+  function getBoluses(out ABoluses: TBolusList): boolean; override;
+
+    {** True: Nightscout's treatments collection carries insulin deliveries. }
+  function supportsBoluses: boolean; override;
+
+    {** Carbohydrate entries from the treatments the last metadata probe
+        fetched. }
+  function getCarbs(out ACarbs: TCarbList): boolean; override;
+
+    {** True: Nightscout's treatments collection carries carbohydrate entries. }
+  function supportsCarbs: boolean; override;
+
     {** Test NightScout credentials
-    }   
+    }
   class function testConnection(user, pass: string; var res: string): maybebool; override;
     {** UI parameter label provider (override).
         1: NightScout URL
@@ -151,6 +197,31 @@ published
     // For parity with v2 unit; exposes the effective API base URL in use
   property remote: string read baseUrl;
 protected
+    {** Fill the sensor/pump status cache from a devicestatus payload.
+
+        A site can have several uploaders writing to the collection, and the
+        newest record is not necessarily the one carrying the field we want —
+        a phone uploading battery every five minutes will outrank the rig that
+        reports the reservoir. Each field is therefore taken from the newest
+        record that actually carries it, tracked with its own timestamp, rather
+        than from the newest record overall.
+
+        Protected rather than private so the tests can drive it from a fixture
+        payload instead of standing up a fake server for every field shape.
+        @param(AResponse Raw devicestatus response body) }
+  procedure ExtractDeviceStatus(const AResponse: string);
+
+    {** Fill the insulin-delivery and carbohydrate caches from a treatments
+        payload. Replaces whatever the previous probe left, so it must only run
+        on a payload that actually parsed.
+
+        A Nightscout treatment is one record that may carry insulin, carbs or
+        both, so — unlike CareLink, where a meal can appear twice — there is
+        nothing to reconcile: each record contributes at most one entry to each
+        list. Protected for the same reason as @link(ExtractDeviceStatus).
+        @param(AResponse Raw treatments response body) }
+  procedure ExtractTreatments(const AResponse: string);
+
     {** Get the value which represents the maximum reading for the backend
      }
   function getLimitHigh: integer; override;
@@ -188,6 +259,24 @@ const
   // entry (a date$gt fetch cannot see those), so this bounds their staleness.
   NS3_READINGS_CACHE_TTL_MIN = 10;
 
+  // How many devicestatus records the metadata probe asks for. More than one
+  // because a site can have several uploaders writing to the collection and
+  // each field is taken from the newest record that carries it; small because
+  // they arrive every few minutes, so ten covers well under an hour and there
+  // is no point reading further back for a "current" reservoir level.
+  NS3_DEVICESTATUS_LIMIT = 10;
+
+  // How many treatments the metadata probe asks for. This one figure has to
+  // serve two windows that pull in opposite directions: the overlays want the
+  // last day or so, while the sensor-age fallback wants to reach back to the
+  // last Sensor Start, which on a 10-day sensor can be hundreds of treatments
+  // ago. 200 covers a day comfortably for most people and reaches a sensor
+  // change for many; a looping site logging a micro-bolus every five minutes
+  // fills it in well under a day, and there the sensor-age fallback simply
+  // finds nothing — which is why the devicestatus expiry is the primary source
+  // for sensor life and this is only a fallback.
+  NS3_TREATMENTS_LIMIT = 200;
+
 var
   NS3NoCacheTokenSeq: LongInt = 0;
 
@@ -208,6 +297,16 @@ begin
   Result := IntToStr(GetTickCount64) + IntToStr(InterlockedIncrement(NS3NoCacheTokenSeq));
 end;
 
+{------------------------------------------------------------------------------
+  Read a Nightscout timestamp — ms or second epoch, or an ISO 8601 string — and
+  return it in *local* time.
+
+  Local, not UTC, because every consumer compares the result against Now or
+  plots it beside a reading whose date is already local. Nightscout writes
+  created_at in UTC, and FPC treats an ISO string with no zone designator as
+  UTC too, which is the right reading for this collection: uploaders that omit
+  the Z still mean UTC.
+ ------------------------------------------------------------------------------}
 function NS3TryDateTimeFromJsonValue(const value: TJSONData; out dt: TDateTime): boolean;
 var
   raw: string;
@@ -224,9 +323,9 @@ begin
       begin
         asNum := value.AsFloat;
         if asNum > 1.0e11 then
-          dt := UnixToDateTime(Trunc(asNum / 1000), True)
+          dt := UnixToDateTime(Trunc(asNum / 1000), False)
         else if asNum > 1.0e9 then
-          dt := UnixToDateTime(Trunc(asNum), True)
+          dt := UnixToDateTime(Trunc(asNum), False)
         else
           Exit;
         Result := true;
@@ -240,21 +339,18 @@ begin
         if TryStrToInt64(raw, epoch) then
         begin
           if epoch > 100000000000 then
-            dt := UnixToDateTime(epoch div 1000, True)
+            dt := UnixToDateTime(epoch div 1000, False)
           else if epoch > 1000000000 then
-            dt := UnixToDateTime(epoch, True)
+            dt := UnixToDateTime(epoch, False)
           else
             Exit;
           Result := true;
           Exit;
         end;
 
-        try
-          dt := ISO8601ToDate(raw);
-          Result := dt > 0;
-        except
-          Result := false;
-        end;
+        Result := TryISO8601ToDate(raw, dt, False) and (dt > 0);
+        if not Result then
+          dt := 0;
       end;
   end;
 end;
@@ -262,6 +358,111 @@ end;
 function NS3TryGetPathDate(const root: TJSONData; const path: string; out dt: TDateTime): boolean;
 begin
   Result := NS3TryDateTimeFromJsonValue(root.FindPath(path), dt);
+end;
+
+{------------------------------------------------------------------------------
+  Find the record array in a v3 response.
+
+  Three shapes are in circulation for the same collection: a bare array (v1 and
+  the ".json" endpoints), the v3 wrapper with the records under "result", and
+  the older nesting with them under "result" and then the collection's own name.
+  Any of them can come back depending on which endpoint the request fell through
+  to, so every caller that walks records goes through here.
+ ------------------------------------------------------------------------------}
+function NS3FindArrayNode(const root: TJSONData; const nestedName: string): TJSONData;
+var
+  node: TJSONData;
+begin
+  Result := nil;
+  if not Assigned(root) then
+    Exit;
+
+  if root.JSONType = jtArray then
+    Exit(root);
+  if root.JSONType <> jtObject then
+    Exit;
+
+  node := root.FindPath('result');
+  if Assigned(node) and (node.JSONType = jtArray) then
+    Exit(node);
+
+  if nestedName <> '' then
+  begin
+    node := root.FindPath('result.' + nestedName);
+    if Assigned(node) and (node.JSONType = jtArray) then
+      Exit(node);
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  When a devicestatus record says the sensor session ends.
+
+  The field names below are xDrip+/xdrip-js spellings that have all been seen
+  in the wild; Nightscout itself imposes no schema on the plugin sections of a
+  devicestatus record, so the list is a set of candidates rather than a spec.
+ ------------------------------------------------------------------------------}
+function NS3TryFindSensorExpiry(const node: TJSONData; out expiresAt: TDateTime): boolean;
+begin
+  Result := NS3TryGetPathDate(node, 'xdripjs.sensor.expires', expiresAt) or
+    NS3TryGetPathDate(node, 'xdripjs.sensor.expiresAt', expiresAt) or
+    NS3TryGetPathDate(node, 'xdripjs.sensor.expiry', expiresAt) or
+    NS3TryGetPathDate(node, 'xdripjs.sensor.expiration', expiresAt) or
+    NS3TryGetPathDate(node, 'xdripjs.sensor.expires_at', expiresAt) or
+    NS3TryGetPathDate(node, 'sensor.expiresAt', expiresAt) or
+    NS3TryGetPathDate(node, 'sensor.expiry', expiresAt);
+end;
+
+{------------------------------------------------------------------------------
+  When a devicestatus record says the sensor session started. Only good for an
+  age, never for an expiry: how long a session lasts depends on the sensor
+  (10 days for a G6, 14 for a Libre), and guessing it would turn a fresh sensor
+  into an expiry warning.
+ ------------------------------------------------------------------------------}
+function NS3TryFindSensorStart(const node: TJSONData; out startedAt: TDateTime): boolean;
+begin
+  Result := NS3TryGetPathDate(node, 'xdripjs.sensor.started_at', startedAt) or
+    NS3TryGetPathDate(node, 'xdripjs.sensor.startedAt', startedAt) or
+    NS3TryGetPathDate(node, 'xdripjs.sensor.startDate', startedAt) or
+    NS3TryGetPathDate(node, 'xdripjs.sessionStart', startedAt) or
+    NS3TryGetPathDate(node, 'xdripjs.session_start', startedAt) or
+    NS3TryGetPathDate(node, 'xdripjs.started_at', startedAt) or
+    NS3TryGetPathDate(node, 'sensor.started_at', startedAt);
+end;
+
+{------------------------------------------------------------------------------
+  When a record happened, in local time.
+
+  created_at is what Nightscout's own UI sorts treatments by; mills/date are the
+  ms-epoch forms different uploaders write instead. srvCreated is deliberately
+  last: it is when the server was told, which on a delayed upload is not when
+  the insulin went in.
+ ------------------------------------------------------------------------------}
+function NS3TryRecordTime(const node: TJSONData; out stamp: TDateTime): boolean;
+begin
+  Result := NS3TryGetPathDate(node, 'created_at', stamp) or
+    NS3TryGetPathDate(node, 'createdAt', stamp) or
+    NS3TryGetPathDate(node, 'mills', stamp) or
+    NS3TryGetPathDate(node, 'date', stamp) or
+    NS3TryGetPathDate(node, 'timestamp', stamp) or
+    NS3TryGetPathDate(node, 'sysTime', stamp) or
+    NS3TryGetPathDate(node, 'srvCreated', stamp);
+end;
+
+{------------------------------------------------------------------------------
+  Read a number from a path. A JSON null, an empty string or a field that is
+  simply absent all mean "not reported" and return False, so a field we cannot
+  read never becomes a dose, a meal or an empty reservoir.
+ ------------------------------------------------------------------------------}
+function NS3TryGetPathNumber(const node: TJSONData; const path: string;
+  out value: double): boolean;
+var
+  data: TJSONData;
+begin
+  value := 0;
+  data := node.FindPath(path);
+  Result := (data is TJSONNumber);
+  if Result then
+    value := data.AsFloat;
 end;
 
 function NS3ExtractSensorStatusSuffix(const devStatusResp: string): string;
@@ -299,13 +500,7 @@ begin
     if not Assigned(node) then
       Exit;
 
-    if NS3TryGetPathDate(node, 'xdripjs.sensor.expires', expiresAt) or
-      NS3TryGetPathDate(node, 'xdripjs.sensor.expiresAt', expiresAt) or
-      NS3TryGetPathDate(node, 'xdripjs.sensor.expiry', expiresAt) or
-      NS3TryGetPathDate(node, 'xdripjs.sensor.expiration', expiresAt) or
-      NS3TryGetPathDate(node, 'xdripjs.sensor.expires_at', expiresAt) or
-      NS3TryGetPathDate(node, 'sensor.expiresAt', expiresAt) or
-      NS3TryGetPathDate(node, 'sensor.expiry', expiresAt) then
+    if NS3TryFindSensorExpiry(node, expiresAt) then
     begin
       hoursLeft := Trunc((expiresAt - Now) * 24);
       if hoursLeft < 0 then
@@ -313,13 +508,7 @@ begin
       Exit(' (sensor ' + NS3FormatDurationHours(hoursLeft) + ' left)');
     end;
 
-    if NS3TryGetPathDate(node, 'xdripjs.sensor.started_at', startedAt) or
-      NS3TryGetPathDate(node, 'xdripjs.sensor.startedAt', startedAt) or
-      NS3TryGetPathDate(node, 'xdripjs.sensor.startDate', startedAt) or
-      NS3TryGetPathDate(node, 'xdripjs.sessionStart', startedAt) or
-      NS3TryGetPathDate(node, 'xdripjs.session_start', startedAt) or
-      NS3TryGetPathDate(node, 'xdripjs.started_at', startedAt) or
-      NS3TryGetPathDate(node, 'sensor.started_at', startedAt) then
+    if NS3TryFindSensorStart(node, startedAt) then
     begin
       ageHours := Trunc((Now - startedAt) * 24);
       if ageHours >= 0 then
@@ -350,19 +539,8 @@ begin
   end;
 
   try
-    arrNode := nil;
-    if js.JSONType = jtArray then
-      arrNode := js
-    else if js.JSONType = jtObject then
-    begin
-      if Assigned(js.FindPath('result')) and (js.FindPath('result').JSONType = jtArray) then
-        arrNode := js.FindPath('result')
-      else
-      if Assigned(js.FindPath('result.treatments')) and (js.FindPath('result.treatments').JSONType = jtArray) then
-        arrNode := js.FindPath('result.treatments');
-    end;
-
-    if (arrNode = nil) or (arrNode.JSONType <> jtArray) then
+    arrNode := NS3FindArrayNode(js, 'treatments');
+    if arrNode = nil then
       Exit;
 
     for i := 0 to arrNode.Count - 1 do
@@ -379,11 +557,7 @@ begin
         Continue;
 
       startedAt := 0;
-      if NS3TryGetPathDate(item, 'created_at', startedAt) or
-        NS3TryGetPathDate(item, 'createdAt', startedAt) or
-        NS3TryGetPathDate(item, 'timestamp', startedAt) or
-        NS3TryGetPathDate(item, 'date', startedAt) or
-        NS3TryGetPathDate(item, 'mills', startedAt) then
+      if NS3TryRecordTime(item, startedAt) then
       begin
         ageHours := Trunc((Now - startedAt) * 24);
         if ageHours >= 0 then
@@ -611,6 +785,15 @@ begin
   // Set UA and API base URL before inherited (so native is initialized correctly)
   ua := 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
   baseUrl := FSiteBase + NS3_URL_BASE;
+
+  // Nothing fetched yet: the accessors must report "not reported" rather than
+  // an empty delivery list, which would read as "no insulin given".
+  FDeviceStatusValid := false;
+  clearDeviceStatus(FDeviceStatus);
+  FBolusesValid := false;
+  SetLength(FBoluses, 0);
+  FCarbsValid := false;
+  SetLength(FCarbs, 0);
 
   inherited;
 end;
@@ -865,6 +1048,359 @@ begin
   end;
 end;
 
+(*******************************************************************************
+  Sensor/pump status and treatments
+
+  Nightscout is a store, not a device: what these two collections contain is
+  whatever somebody's uploader chose to write. An AAPS or Loop rig publishes a
+  reservoir level, a pump battery and a suspend flag; an xDrip+ uploader
+  publishes sensor session detail; a site fed only by a CGM bridge publishes
+  neither. Nothing is inferred from an absent field — every one of them keeps
+  its "unknown" sentinel, because a site that never reports a reservoir must
+  not look like a pump that has run dry.
+ ******************************************************************************)
+
+{------------------------------------------------------------------------------
+  Read a boolean that an uploader may have written as a JSON boolean or as the
+  string "true". Anything else, including absent, is False.
+ ------------------------------------------------------------------------------}
+function NS3PathIsTrue(const node: TJSONData; const path: string): boolean;
+var
+  data: TJSONData;
+begin
+  Result := false;
+  data := node.FindPath(path);
+  if not Assigned(data) then
+    Exit;
+
+  case data.JSONType of
+    jtBoolean:
+      Result := data.AsBoolean;
+    jtString:
+      Result := LowerCase(Trim(data.AsString)) = 'true';
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  Whether a treatment was given by a loop rather than by the user.
+
+  AAPS and Trio mark their super-micro-boluses with isSMB, Loop marks its
+  automatic corrections with `automatic`, and some uploaders use an SMB event
+  type instead. Any of the three is enough: the point of the flag is to let a
+  looping site's steady drip of micro-boluses be kept off the graph separately
+  from the doses the user gave, and one missed flag would put a hairline stem
+  among them.
+ ------------------------------------------------------------------------------}
+function NS3TreatmentIsAutomatic(const node: TJSONData; const kind: string): boolean;
+begin
+  Result := (kind = 'SMB') or (kind = 'SUPER MICRO BOLUS') or
+    NS3PathIsTrue(node, 'isSMB') or
+    NS3PathIsTrue(node, 'automatic') or
+    NS3PathIsTrue(node, 'isAutomatic');
+end;
+
+{------------------------------------------------------------------------------
+  Fill the sensor/pump status cache from a devicestatus payload.
+ ------------------------------------------------------------------------------}
+procedure NightScout3.ExtractDeviceStatus(const AResponse: string);
+var
+  js, arrNode: TJSONData;
+  i, filled, hours: integer;
+  stamp, expiresAt: TDateTime;
+  reservoirAt, batteryAt, suspendAt, sensorAt, statusAt: TDateTime;
+  num: double;
+  txt, lowered: string;
+
+  // The newest record that carries a field wins it. A record with no usable
+  // timestamp counts as the beginning of time, so it only fills a field that
+  // no timestamped record filled.
+  function Newer(const filledAt: TDateTime): boolean;
+  begin
+    Result := (filledAt = 0) or (stamp > filledAt);
+  end;
+
+  procedure ReadRecord(const item: TJSONData);
+  begin
+    if not Assigned(item) then
+      Exit;
+    if not NS3TryRecordTime(item, stamp) then
+      stamp := 0;
+
+    // Units left in the cartridge. Nightscout has no percentage counterpart,
+    // so reservoirPercent stays unknown.
+    if NS3TryGetPathNumber(item, 'pump.reservoir', num) and (num >= 0) and
+      Newer(reservoirAt) then
+    begin
+      FDeviceStatus.reservoirUnits := num;
+      reservoirAt := stamp;
+      Inc(filled);
+    end;
+
+    // The *pump's* battery. uploader.battery is deliberately ignored: that is
+    // the phone doing the uploading, and a flat phone is not a flat pump.
+    if NS3TryGetPathNumber(item, 'pump.battery.percent', num) and
+      (num >= 0) and (num <= 100) and Newer(batteryAt) then
+    begin
+      FDeviceStatus.pumpBatteryPercent := Round(num);
+      batteryAt := stamp;
+      Inc(filled);
+    end;
+
+    if Assigned(item.FindPath('pump.status.suspended')) and Newer(suspendAt) then
+    begin
+      FDeviceStatus.pumpSuspended := NS3PathIsTrue(item, 'pump.status.suspended');
+      suspendAt := stamp;
+      Inc(filled);
+    end;
+
+    if Assigned(item.FindPath('pump.status.status')) and Newer(statusAt) then
+    begin
+      txt := Trim(item.FindPath('pump.status.status').AsString);
+      FDeviceStatus.statusMessage := txt;
+      statusAt := stamp;
+      Inc(filled);
+
+      // Some uploaders report the suspend state only as this text. It is held
+      // to the same recency rule as the explicit flag rather than simply
+      // overwriting it, or an old record reading "suspended" would undo a
+      // newer one that says delivery has resumed.
+      if (LowerCase(txt) = 'suspended') and Newer(suspendAt) then
+      begin
+        FDeviceStatus.pumpSuspended := true;
+        suspendAt := stamp;
+      end;
+    end;
+
+    // Sensor life is only ever taken from an explicit expiry timestamp. A
+    // session start is an age, and turning an age into a remaining life needs
+    // the session length, which varies by sensor — guessing it would announce
+    // a fresh sensor as an expiring one.
+    if NS3TryFindSensorExpiry(item, expiresAt) and Newer(sensorAt) then
+    begin
+      hours := Trunc((expiresAt - Now) * 24);
+      if hours < 0 then
+        hours := 0;
+      FDeviceStatus.sensorDurationHours := hours;
+      sensorAt := stamp;
+      Inc(filled);
+
+      txt := '';
+      if Assigned(item.FindPath('xdripjs.stateString')) then
+        txt := Trim(item.FindPath('xdripjs.stateString').AsString)
+      else if Assigned(item.FindPath('xdripjs.stateStringShort')) then
+        txt := Trim(item.FindPath('xdripjs.stateStringShort').AsString);
+      FDeviceStatus.sensorState := txt;
+
+      // Only a state that names a failure counts as one. "Stopped" does not:
+      // a session the user ended is not a sensor that broke, and sensorOK
+      // defaults to True precisely so silence is never read as a fault.
+      lowered := LowerCase(txt);
+      if (Pos('fail', lowered) > 0) or (Pos('error', lowered) > 0) or
+        (Pos('expired', lowered) > 0) then
+        FDeviceStatus.sensorOK := false;
+    end;
+  end;
+
+begin
+  clearDeviceStatus(FDeviceStatus);
+  FDeviceStatusValid := false;
+  if Trim(AResponse) = '' then
+    Exit;
+
+  js := nil;
+  try
+    js := GetJSON(AResponse);
+  except
+    Exit;
+  end;
+
+  try
+    filled := 0;
+    reservoirAt := 0;
+    batteryAt := 0;
+    suspendAt := 0;
+    sensorAt := 0;
+    statusAt := 0;
+
+    arrNode := NS3FindArrayNode(js, 'devicestatus');
+    if Assigned(arrNode) then
+      for i := 0 to arrNode.Count - 1 do
+        ReadRecord(arrNode.Items[i])
+    else if js.JSONType = jtObject then
+      // A lone record, unwrapped: some deployments answer a one-item query
+      // with the object itself rather than an array of one.
+      ReadRecord(js);
+
+    // Transmitter battery is left unknown on purpose: what Nightscout carries
+    // for it is xdripjs's voltagea/voltageb in millivolts, and a percentage
+    // derived from those would be an invention of ours, not a device reading.
+    FDeviceStatusValid := filled > 0;
+  finally
+    js.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  Fill the insulin-delivery and carbohydrate caches from a treatments payload.
+ ------------------------------------------------------------------------------}
+procedure NightScout3.ExtractTreatments(const AResponse: string);
+var
+  js, arrNode, item: TJSONData;
+  i, j, bolusCount, carbCount: integer;
+  stamp: TDateTime;
+  insulin, grams: double;
+  kind: string;
+  swapBolus: TBolusEntry;
+  swapCarb: TCarbEntry;
+begin
+  SetLength(FBoluses, 0);
+  FBolusesValid := false;
+  SetLength(FCarbs, 0);
+  FCarbsValid := false;
+  if Trim(AResponse) = '' then
+    Exit;
+
+  js := nil;
+  try
+    js := GetJSON(AResponse);
+  except
+    Exit;
+  end;
+
+  try
+    arrNode := NS3FindArrayNode(js, 'treatments');
+    if arrNode = nil then
+      Exit;
+
+    SetLength(FBoluses, arrNode.Count);
+    SetLength(FCarbs, arrNode.Count);
+    bolusCount := 0;
+    carbCount := 0;
+
+    for i := 0 to arrNode.Count - 1 do
+    begin
+      item := arrNode.Items[i];
+      if not Assigned(item) then
+        Continue;
+
+      // A record we cannot place on the timeline is no use to an overlay, and
+      // a dose plotted at the wrong time is worse than one not plotted at all.
+      if not NS3TryRecordTime(item, stamp) then
+        Continue;
+
+      kind := '';
+      if Assigned(item.FindPath('eventType')) then
+        kind := UpperCase(Trim(item.FindPath('eventType').AsString));
+
+      if not NS3TryGetPathNumber(item, 'carbs', grams) then
+        grams := 0;
+
+      // `insulin` is what was delivered. On a Combo Bolus it is the immediate
+      // part only; the extended remainder is delivered over the following hours
+      // and Nightscout records it as a rate, not as insulin that has gone in.
+      if NS3TryGetPathNumber(item, 'insulin', insulin) and (insulin > 0) then
+      begin
+        FBoluses[bolusCount] := Default(TBolusEntry);
+        FBoluses[bolusCount].time := stamp;
+        FBoluses[bolusCount].units := insulin;
+        FBoluses[bolusCount].kind := kind;
+        FBoluses[bolusCount].automatic := NS3TreatmentIsAutomatic(item, kind);
+        if grams > 0 then
+          FBoluses[bolusCount].carbs := grams;
+        Inc(bolusCount);
+      end;
+
+      // One record carries both figures, so a meal bolus contributes one entry
+      // to each list and there is no double-counting to reconcile the way
+      // CareLink's separate carb markers need.
+      if grams > 0 then
+      begin
+        FCarbs[carbCount] := Default(TCarbEntry);
+        FCarbs[carbCount].time := stamp;
+        FCarbs[carbCount].grams := grams;
+        FCarbs[carbCount].kind := kind;
+        Inc(carbCount);
+      end;
+    end;
+
+    SetLength(FBoluses, bolusCount);
+    SetLength(FCarbs, carbCount);
+
+    // Nightscout answers newest-first; the overlays want oldest-first. Insertion
+    // sort rather than a reverse, because the sort key is created_at while the
+    // server sorted on whatever the query asked for, and a delayed upload can
+    // leave the two disagreeing.
+    for i := 1 to High(FBoluses) do
+    begin
+      swapBolus := FBoluses[i];
+      j := i - 1;
+      while (j >= 0) and (FBoluses[j].time > swapBolus.time) do
+      begin
+        FBoluses[j + 1] := FBoluses[j];
+        Dec(j);
+      end;
+      FBoluses[j + 1] := swapBolus;
+    end;
+
+    for i := 1 to High(FCarbs) do
+    begin
+      swapCarb := FCarbs[i];
+      j := i - 1;
+      while (j >= 0) and (FCarbs[j].time > swapCarb.time) do
+      begin
+        FCarbs[j + 1] := FCarbs[j];
+        Dec(j);
+      end;
+      FCarbs[j + 1] := swapCarb;
+    end;
+
+    // Valid even when empty: the collection was read and had nothing in it,
+    // which is a different answer from never having been read.
+    FBolusesValid := true;
+    FCarbsValid := true;
+  finally
+    js.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  Accessors. Each reports "nothing was reported" as False rather than as an
+  empty list, so a caller can tell a quiet night from a collection it never
+  managed to read.
+ ------------------------------------------------------------------------------}
+function NightScout3.getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean;
+begin
+  if not FDeviceStatusValid then
+  begin
+    clearDeviceStatus(AStatus);
+    Exit(false);
+  end;
+  AStatus := FDeviceStatus;
+  Result := true;
+end;
+
+function NightScout3.getBoluses(out ABoluses: TBolusList): boolean;
+begin
+  ABoluses := Copy(FBoluses);
+  Result := FBolusesValid and (Length(ABoluses) > 0);
+end;
+
+function NightScout3.supportsBoluses: boolean;
+begin
+  Result := true;
+end;
+
+function NightScout3.getCarbs(out ACarbs: TCarbList): boolean;
+begin
+  ACarbs := Copy(FCarbs);
+  Result := FCarbsValid and (Length(ACarbs) > 0);
+end;
+
+function NightScout3.supportsCarbs: boolean;
+begin
+  Result := true;
+end;
+
 {------------------------------------------------------------------------------
   getReadings
   -----------
@@ -1103,54 +1639,57 @@ begin
     end;
   end;
 
-  // Optional metadata probe for sensor age/expiry hints. Served from a
-  // short-lived cache so a normal readings fetch costs one HTTP round trip
-  // instead of up to four (devicestatus + v1 fallback + treatments); forced
-  // (noCache) fetches always re-probe.
+  // Metadata probe: the sensor age/expiry hint appended to the device name, the
+  // sensor/pump status behind the reservoir, sensor-expiry and pump-battery
+  // notifications, and the treatments behind the history graph's insulin and
+  // carbohydrate overlays. All of it comes from two collections, so it is
+  // fetched together and served from a short-lived cache — a normal readings
+  // fetch then costs one HTTP round trip rather than three. Forced (noCache)
+  // fetches always re-probe.
   if (not noCache) and (FSensorSuffixAt <> 0) and
     (MinutesBetween(Now, FSensorSuffixAt) < NS3_SENSOR_SUFFIX_TTL_MIN) then
     sensorSuffix := FSensorSuffix
   else
   begin
     sensorSuffix := '';
+    // v3 pages on `limit`, v1 on `count`; each ignores the other's key, so
+    // sending both means one param list serves whichever endpoint answers.
+    // Several records rather than one because a site can have more than one
+    // uploader writing here, and the newest record is not necessarily the one
+    // carrying the pump — see ExtractDeviceStatus.
     if noCache then
-      SetLength(statusParams, 2)
+      SetLength(statusParams, 4)
     else
-      SetLength(statusParams, 1);
-    statusParams[0] := 'count=1';
+      SetLength(statusParams, 3);
+    statusParams[0] := 'count=' + IntToStr(NS3_DEVICESTATUS_LIMIT);
+    statusParams[1] := 'limit=' + IntToStr(NS3_DEVICESTATUS_LIMIT);
+    statusParams[2] := 'sort$desc=created_at';
     if noCache then
-      statusParams[1] := '_=' + NS3NextNoCacheToken;
+      statusParams[3] := '_=' + NS3NextNoCacheToken;
     try
       if not TryRequestV3(NS3_DEVICESTATUS, NS3_DEVICESTATUS_JSON, statusParams, devStatusResp) then
         devStatusResp := native.request(false, FSiteBase + '/api/v1/devicestatus.json',
           statusParams, '', BearerHeader, false {no prefix});
+      ExtractDeviceStatus(devStatusResp);
       sensorSuffix := NS3ExtractSensorStatusSuffix(devStatusResp);
+
+      if noCache then
+        SetLength(treatParams, 4)
+      else
+        SetLength(treatParams, 3);
+      treatParams[0] := 'limit=' + IntToStr(NS3_TREATMENTS_LIMIT);
+      treatParams[1] := 'count=' + IntToStr(NS3_TREATMENTS_LIMIT);
+      treatParams[2] := 'sort$desc=created_at';
+      if noCache then
+        treatParams[3] := '_=' + NS3NextNoCacheToken;
+      if not TryRequestV3(NS3_TREATMENTS, NS3_TREATMENTS_JSON, treatParams, treatmentsResp) then
+        treatmentsResp := native.request(false, FSiteBase + '/api/v1/treatments.json',
+          treatParams, '', BearerHeader, false {no prefix});
+      ExtractTreatments(treatmentsResp);
 
       // Fallback: derive age from latest Sensor Start/Change treatment events.
       if sensorSuffix = '' then
-      begin
-        if noCache then
-          SetLength(treatParams, 3)
-        else
-          SetLength(treatParams, 2);
-        treatParams[0] := 'limit=40';
-        treatParams[1] := 'sort$desc=created_at';
-        if noCache then
-          treatParams[2] := '_=' + NS3NextNoCacheToken;
-        if not TryRequestV3(NS3_TREATMENTS, NS3_TREATMENTS_JSON, treatParams, treatmentsResp) then
-        begin
-          if noCache then
-            SetLength(fbparams, 2)
-          else
-            SetLength(fbparams, 1);
-          fbparams[0] := 'count=40';
-          if noCache then
-            fbparams[1] := '_=' + NS3NextNoCacheToken;
-          treatmentsResp := native.request(false, FSiteBase + '/api/v1/treatments.json',
-            fbparams, '', BearerHeader, false {no prefix});
-        end;
         sensorSuffix := NS3ExtractSensorStatusSuffixFromTreatments(treatmentsResp);
-      end;
     except
       sensorSuffix := '';
     end;
