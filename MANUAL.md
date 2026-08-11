@@ -193,8 +193,8 @@ or CareLink), Trndi shows a desktop notification as the cartridge runs down —
 once each as it passes 30, 25, 20, 15, 10 and 5 units. Filling the pump arms the
 warnings again for the new cartridge.
 
-**Where to turn it off**: Right-click → Settings → Notifications → "Alert me when
-the pump's insulin is running low"
+**Where to turn it off**: Right-click → Settings → Customization tab →
+Notifications → "Alert me when the pump's insulin is running low"
 
 Other backends do not report insulin at all, so nothing is shown for them. Trndi
 is not a medical device — always verify the level on the pump itself.
