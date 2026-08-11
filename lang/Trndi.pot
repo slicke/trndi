@@ -386,6 +386,10 @@ msgstr ""
 msgid "Alert me when readings are missing / not fresh"
 msgstr ""
 
+#: tfconf.cbalertreservoir.caption
+msgid "Alert me when the pump's insulin is running low (pump backends)"
+msgstr ""
+
 #: tfconf.cbalternate.caption
 msgid "Alternate arrow and reading display"
 msgstr ""
@@ -1716,6 +1720,15 @@ msgstr ""
 
 #: trndi.strings.rs_attention_missing_desc
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
+msgstr ""
+
+#: trndi.strings.rs_attention_reservoir
+msgid "Insulin running low"
+msgstr ""
+
+#: trndi.strings.rs_attention_reservoir_desc
+#, object-pascal-format
+msgid "About %s units of insulin left in the pump reservoir."
 msgstr ""
 
 #: trndi.strings.rs_attention_sensor_fault

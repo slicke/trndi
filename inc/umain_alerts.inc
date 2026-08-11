@@ -403,6 +403,44 @@ begin
   native.SetSetting('alerts.state', FAlertEngine.SerializeState);
 end;
 
+{------------------------------------------------------------------------------
+  CheckPumpReservoir
+  ------------------
+  Raise one toast per reservoir step (30/25/20/15/10/5 U) as a pump backend's
+  cartridge empties. Only the pump-aware backends (Tandem, CareLink) report a
+  reservoir at all; everything else leaves the field at DEVICE_STATUS_UNKNOWN
+  and is skipped here, since a missing figure must never read as an empty one.
+
+  getDeviceStatus answers from the last fetch's cached payload, so this is
+  cheap enough to call after every successful fetch. The step latch is
+  persisted, so restarting Trndi on a low cartridge does not re-notify.
+ ------------------------------------------------------------------------------}
+procedure TfBG.CheckPumpReservoir;
+var
+  status: TCGMDeviceStatus;
+  before: integer;
+begin
+  if not Assigned(api) or not Assigned(native) then
+    Exit;
+  if not native.GetBoolSetting('alerts.notice.reservoir', true) then
+    Exit;
+  if not api.getDeviceStatus(status) then
+    Exit;
+
+  before := FReservoirStep;
+  if ReservoirShouldNotify(status.reservoirUnits, FReservoirStep) then
+  begin
+    TrndiDLog(Format('CheckPumpReservoir: %.1fU left, notifying at step %dU',
+      [status.reservoirUnits, FReservoirStep]));
+    native.attention(RS_ATTENTION_RESERVOIR,
+      Format(RS_ATTENTION_RESERVOIR_DESC,
+      [FormatFloat('0.#', status.reservoirUnits)]));
+  end;
+
+  if FReservoirStep <> before then
+    native.SetSetting('alerts.reservoir.step', FReservoirStep);
+end;
+
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
 begin
   FAlertEngine.SnoozeActive(Minutes);

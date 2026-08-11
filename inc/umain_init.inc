@@ -853,6 +853,10 @@ begin
     FAlertEngine.DeserializeState(native.GetSetting('alerts.state', ''));
     FAlertEngine.OnStateChanged := @PersistAlertState;
 
+    // Reservoir ladder latch: restoring it keeps a restart on a low cartridge
+    // from repeating a step that was already announced.
+    FReservoirStep := native.GetIntSetting('alerts.reservoir.step', 0);
+
     api.APIEmitter := @APIReceiver;
     api.OnCredentialsChanged := @APICredentialsChanged;
     // A failed Connect at boot (e.g. an expired CareLink token) lands the

@@ -2451,7 +2451,7 @@ object fConf: TfConf
       end
       object cgNotifications: TCheckGroup
         Left = 0
-        Height = 83
+        Height = 109
         Top = 299
         Width = 637
         Align = alTop
@@ -2466,7 +2466,7 @@ object fConf: TfConf
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
         ChildSizing.ControlsPerLine = 1
-        ClientHeight = 63
+        ClientHeight = 89
         ClientWidth = 633
         ParentBackground = False
         TabOrder = 5
@@ -2485,6 +2485,14 @@ object fConf: TfConf
           Width = 621
           Caption = 'Alert me when readings are missing / not fresh'
           TabOrder = 1
+        end
+        object cbAlertReservoir: TCheckBox
+          Left = 6
+          Height = 25
+          Top = 57
+          Width = 621
+          Caption = 'Alert me when the pump''s insulin is running low (pump backends)'
+          TabOrder = 2
         end
       end
       object bNotificationHelp: TButton
