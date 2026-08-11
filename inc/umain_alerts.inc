@@ -484,6 +484,45 @@ begin
     native.SetSetting('alerts.sensor.step', FSensorExpiryStep);
 end;
 
+{------------------------------------------------------------------------------
+  CheckPumpBattery
+  ----------------
+  Raise one toast per pump-battery step (20/15/10/5/2 %) as the battery runs
+  down. Both pump backends fill pumpBatteryPercent — Tandem from the `ibc`
+  property its status and battery events carry, CareLink from
+  pumpBatteryLevelPercent — and every other backend leaves it at
+  DEVICE_STATUS_UNKNOWN and is skipped here, on the rule the reservoir and
+  sensor ladders follow: a missing figure is not a flat battery.
+
+  Unlike a cartridge, a battery goes back up as a matter of routine, which is
+  what the wider PUMP_BATTERY_REARM_MARGIN is for — a pump on the charger over
+  a coffee must not re-arm a step it has already announced.
+ ------------------------------------------------------------------------------}
+procedure TfBG.CheckPumpBattery;
+var
+  status: TCGMDeviceStatus;
+  before: integer;
+begin
+  if not Assigned(api) or not Assigned(native) then
+    Exit;
+  if not native.GetBoolSetting('alerts.notice.battery', true) then
+    Exit;
+  if not api.getDeviceStatus(status) then
+    Exit;
+
+  before := FPumpBatteryStep;
+  if PumpBatteryShouldNotify(status.pumpBatteryPercent, FPumpBatteryStep) then
+  begin
+    TrndiDLog(Format('CheckPumpBattery: %d%% left, notifying at step %d%%',
+      [status.pumpBatteryPercent, FPumpBatteryStep]));
+    native.attention(RS_ATTENTION_PUMP_BATTERY,
+      Format(RS_ATTENTION_PUMP_BATTERY_DESC, [status.pumpBatteryPercent]));
+  end;
+
+  if FPumpBatteryStep <> before then
+    native.SetSetting('alerts.battery.step', FPumpBatteryStep);
+end;
+
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
 begin
   FAlertEngine.SnoozeActive(Minutes);

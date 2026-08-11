@@ -378,6 +378,10 @@ msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr ""
 
+#: tfconf.cbalertbattery.caption
+msgid "Alert me when the pump battery is running low (pump backends)"
+msgstr ""
+
 #: tfconf.cbalerthilo.caption
 msgid "Alert me when blood sugar is high/low"
 msgstr ""
@@ -1724,6 +1728,15 @@ msgstr ""
 
 #: trndi.strings.rs_attention_missing_desc
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
+msgstr ""
+
+#: trndi.strings.rs_attention_pump_battery
+msgid "Pump battery low"
+msgstr ""
+
+#: trndi.strings.rs_attention_pump_battery_desc
+#, object-pascal-format
+msgid "The pump battery is down to about %d%%."
 msgstr ""
 
 #: trndi.strings.rs_attention_reservoir

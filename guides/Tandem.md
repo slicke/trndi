@@ -36,7 +36,9 @@ The pump-logs payload the readings come from carries a good deal more than gluco
 - **Carbohydrates on the history graph** (Settings → Display → *Show carbohydrates on the history graph*), as discs in their own lane above the bottom axis, labelled in grams. These are the carbs you entered into the bolus calculator; Tandem has no separate meal entry, so unlike CareLink there is no double-counting to reconcile. Carbs entered for a bolus that was never delivered are not shown.
 - **Basal rate** (Menu → Basal rate), in U/hr. This is the rate Control-IQ last commanded, which on a looping pump is generally not your programmed profile rate.
 
-Read from the payload but not shown in the UI yet: reservoir level, pump battery, and whether delivery is suspended.
+The `ibc` property on the pump's status and battery events drives the pump-battery notifications (20/15/10/5/2 percent) described in [Notifications.md](Notifications.md). It is a true fine-grained percentage — a live fetch carries values like 80, 45 and 35 — with 255 meaning the pump could not read it.
+
+Read from the payload but not shown in the UI yet: reservoir level and whether delivery is suspended.
 
 Not available from this backend: sensor life (so the sensor-expiry notifications never fire here — the four CGM event codes carry no session age, and no sensor-start event has been seen in a fetch window), transmitter battery, and a basal *profile* (the graph's basal overlay needs a repeating daily schedule, and a single fetch window is not one).
 
