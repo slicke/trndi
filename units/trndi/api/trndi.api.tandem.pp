@@ -239,19 +239,32 @@ resourcestring
   sParamUserName = 'Tandem Email';
   sParamPassword = 'Tandem Password';
   sParamDesc =
+    '** BETA DRIVER - It may not work as intended; check the t:connect app '
+    + 'before acting on a reading! **' + LineEnding + LineEnding +
     'Tandem t:connect region selection:'#13#10''#13#10'' +
     'Choose the server based on your account region:' + LineEnding +
     '• Tandem (USA): for US accounts' + LineEnding +
     '• Tandem (EU): for European accounts' +
     LineEnding + LineEnding +
-    'Your credentials are your Tandem t:connect account email and password.';
+    'Your credentials are your Tandem t:connect account email and password.' +
+    LineEnding + LineEnding +
+    'Note: some accounts only get new readings from Tandem Source once an hour. '
+    + 'Trndi then keeps showing the last reading it received, and may report it as '
+    + 'outdated. This is a Tandem Source limitation, not a Trndi bug.';
   sParamDescHTML =
+    '<div style="background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;">'
+    + '⚠️ BETA DRIVER - It may not work as intended; check the t:connect app before acting on a reading! ⚠️'
+    + '</div>' +
     '<b>Tandem t:connect</b> region selection:<br><br>'+
     'Choose the server based on your <u>account region</u>:<br>' +
     '• Tandem (USA): for US accounts<br>' +
     '• Tandem (EU): for European accounts' +
     '<br><br>' +
-    'Your credentials are your Tandem t:connect account email and password.';
+    'Your credentials are your Tandem t:connect account email and password.' +
+    '<br><br>' +
+    '<b>Note:</b> some accounts only get new readings from Tandem Source <u>once an hour</u>. '
+    + 'Trndi then keeps showing the last reading it received, and may report it as '
+    + 'outdated. This is a Tandem Source limitation, not a Trndi bug.';
 
 {------------------------------------------------------------------------------
   getSystemName
