@@ -56,6 +56,14 @@
  *   Timestamps parsed out of those collections are now converted to local
  *   time; they were previously left in UTC and compared against a local Now,
  *   which put the sensor-age suffix out by the machine's UTC offset.
+ * - 2026-08-11: the sensor-age suffix probe now walks every fetched
+ *   devicestatus record instead of only the newest one, matching the
+ *   field extraction — on a multi-uploader site the newest record is
+ *   routinely a phone record carrying no sensor detail at all.
+ * - 2026-08-11: string fields in the devicestatus/treatments walks
+ *   (eventType, pump.status.status, xdripjs.stateString) are now read
+ *   null-tolerantly; a single record carrying a JSON null there aborted
+ *   the whole metadata probe for a full cache TTL.
  *)
 unit trndi.api.nightscout3;
 
@@ -465,11 +473,41 @@ begin
     value := data.AsFloat;
 end;
 
+{------------------------------------------------------------------------------
+  Read a string from a path. A JSON null, a non-string value or an absent
+  field all read as the empty string rather than raising: these collections
+  carry whatever an uploader wrote, and TJSONNull.AsString throws — which,
+  with the whole metadata probe wrapped in one try..except, would let a
+  single bad record silently cost the device status, both treatment overlays
+  and the sensor badge for an entire cache TTL.
+ ------------------------------------------------------------------------------}
+function NS3PathString(const node: TJSONData; const path: string): string;
+var
+  data: TJSONData;
+begin
+  Result := '';
+  data := node.FindPath(path);
+  if Assigned(data) and (data.JSONType = jtString) then
+    Result := data.AsString;
+end;
+
 function NS3ExtractSensorStatusSuffix(const devStatusResp: string): string;
 var
-  js, node: TJSONData;
+  js, arrNode, node: TJSONData;
+  i, count: integer;
   expiresAt, startedAt: TDateTime;
   hoursLeft, ageHours: integer;
+
+  // The record to inspect: an array element, or the payload itself when a
+  // one-item query came back as the lone record, unwrapped.
+  function RecordAt(const idx: integer): TJSONData;
+  begin
+    if Assigned(arrNode) then
+      Result := arrNode.Items[idx]
+    else
+      Result := js;
+  end;
+
 begin
   Result := '';
   if Trim(devStatusResp) = '' then
@@ -483,36 +521,47 @@ begin
   end;
 
   try
-    node := nil;
-    if js.JSONType = jtArray then
-    begin
-      if js.Count > 0 then
-        node := js.Items[0];
-    end
+    arrNode := NS3FindArrayNode(js, 'devicestatus');
+    if Assigned(arrNode) then
+      count := arrNode.Count
     else if js.JSONType = jtObject then
+      count := 1
+    else
+      count := 0;
+
+    // Every fetched record is walked, newest first, not just the newest one:
+    // a site can have several uploaders writing to the collection, and the
+    // newest record is routinely a phone with nothing on it but its battery —
+    // the same reason ExtractDeviceStatus takes each field from the newest
+    // record that carries it. An expiry anywhere beats a session start
+    // anywhere, since a start only ever yields an age.
+    for i := 0 to count - 1 do
     begin
-      if Assigned(js.FindPath('result[0]')) then
-        node := js.FindPath('result[0]')
-      else
-        node := js;
+      node := RecordAt(i);
+      if not Assigned(node) then
+        Continue;
+
+      if NS3TryFindSensorExpiry(node, expiresAt) then
+      begin
+        hoursLeft := Trunc((expiresAt - Now) * 24);
+        if hoursLeft < 0 then
+          Exit(' (sensor expired)');
+        Exit(' (sensor ' + NS3FormatDurationHours(hoursLeft) + ' left)');
+      end;
     end;
 
-    if not Assigned(node) then
-      Exit;
-
-    if NS3TryFindSensorExpiry(node, expiresAt) then
+    for i := 0 to count - 1 do
     begin
-      hoursLeft := Trunc((expiresAt - Now) * 24);
-      if hoursLeft < 0 then
-        Exit(' (sensor expired)');
-      Exit(' (sensor ' + NS3FormatDurationHours(hoursLeft) + ' left)');
-    end;
+      node := RecordAt(i);
+      if not Assigned(node) then
+        Continue;
 
-    if NS3TryFindSensorStart(node, startedAt) then
-    begin
-      ageHours := Trunc((Now - startedAt) * 24);
-      if ageHours >= 0 then
-        Exit(' (sensor age ' + NS3FormatDurationHours(ageHours) + ')');
+      if NS3TryFindSensorStart(node, startedAt) then
+      begin
+        ageHours := Trunc((Now - startedAt) * 24);
+        if ageHours >= 0 then
+          Exit(' (sensor age ' + NS3FormatDurationHours(ageHours) + ')');
+      end;
     end;
   finally
     js.Free;
@@ -549,10 +598,7 @@ begin
       if not Assigned(item) then
         Continue;
 
-      evtType := '';
-      if Assigned(item.FindPath('eventType')) then
-        evtType := item.FindPath('eventType').AsString;
-
+      evtType := NS3PathString(item, 'eventType');
       if (evtType <> 'Sensor Start') and (evtType <> 'Sensor Change') then
         Continue;
 
@@ -1153,9 +1199,12 @@ var
       Inc(filled);
     end;
 
-    if Assigned(item.FindPath('pump.status.status')) and Newer(statusAt) then
+    // A null or non-string status reads as '' — the text fields' own unknown
+    // sentinel — and does not claim the slot, so it cannot mask a real status
+    // in an older record.
+    txt := Trim(NS3PathString(item, 'pump.status.status'));
+    if (txt <> '') and Newer(statusAt) then
     begin
-      txt := Trim(item.FindPath('pump.status.status').AsString);
       FDeviceStatus.statusMessage := txt;
       statusAt := stamp;
       Inc(filled);
@@ -1184,11 +1233,9 @@ var
       sensorAt := stamp;
       Inc(filled);
 
-      txt := '';
-      if Assigned(item.FindPath('xdripjs.stateString')) then
-        txt := Trim(item.FindPath('xdripjs.stateString').AsString)
-      else if Assigned(item.FindPath('xdripjs.stateStringShort')) then
-        txt := Trim(item.FindPath('xdripjs.stateStringShort').AsString);
+      txt := Trim(NS3PathString(item, 'xdripjs.stateString'));
+      if txt = '' then
+        txt := Trim(NS3PathString(item, 'xdripjs.stateStringShort'));
       FDeviceStatus.sensorState := txt;
 
       // Only a state that names a failure counts as one. "Stopped" does not:
@@ -1288,9 +1335,7 @@ begin
       if not NS3TryRecordTime(item, stamp) then
         Continue;
 
-      kind := '';
-      if Assigned(item.FindPath('eventType')) then
-        kind := UpperCase(Trim(item.FindPath('eventType').AsString));
+      kind := UpperCase(Trim(NS3PathString(item, 'eventType')));
 
       if not NS3TryGetPathNumber(item, 'carbs', grams) then
         grams := 0;
