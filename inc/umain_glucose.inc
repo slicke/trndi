@@ -1220,6 +1220,9 @@ begin
 
   FAlertEngine.ResetMissing;
 
+  // Pump housekeeping rides along with the readings the fetch just cached.
+  CheckPumpReservoir;
+
   TrndiDLog(Format('ApplyFetchedReadings: Got %d readings', [Length(bgs)]));
 
   PlaceTrendDots(bgs);

@@ -107,6 +107,14 @@ type
     procedure EmptyStateIsNoOp;
     // Notification
     procedure OnStateChangedFiresOnViolation;
+    // Reservoir ladder
+    procedure ReservoirStepIsLowestOneReached;
+    procedure ReservoirAboveLadderStaysQuiet;
+    procedure ReservoirFiresOncePerStepOnTheWayDown;
+    procedure ReservoirStartingLowFiresOnlyCurrentStep;
+    procedure ReservoirBoundaryJitterDoesNotRefire;
+    procedure ReservoirRefillRearmsTheLadder;
+    procedure ReservoirUnknownLevelLeavesLatchAlone;
   end;
 
 implementation
@@ -648,6 +656,134 @@ begin
   FChangeCount := 0;
   FEngine.ResumeAll;
   AssertTrue('ResumeAll notifies the caller', FChangeCount > 0);
+end;
+
+// ---------------------------------------------------------------------------
+// Reservoir ladder
+//
+// ReservoirShouldNotify is a pure function over a caller-held latch, so these
+// drive it the way umain does: one call per fetch, feeding back the same latch.
+// ---------------------------------------------------------------------------
+
+procedure TAlertEngineTests.ReservoirStepIsLowestOneReached;
+begin
+  AssertEquals('above the ladder', 0, ReservoirWarnStep(120));
+  AssertEquals('just above the top step', 0, ReservoirWarnStep(30.1));
+  AssertEquals('exactly on the top step', 30, ReservoirWarnStep(30));
+  AssertEquals('between steps takes the lower one', 25, ReservoirWarnStep(22));
+  AssertEquals('empty cartridge', 5, ReservoirWarnStep(0));
+  AssertEquals('not reported is not a low level', 0, ReservoirWarnStep(-1));
+end;
+
+procedure TAlertEngineTests.ReservoirAboveLadderStaysQuiet;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertFalse('a full cartridge must not notify',
+    ReservoirShouldNotify(180, latch));
+  AssertEquals('and must not arm a step', 0, latch);
+end;
+
+procedure TAlertEngineTests.ReservoirFiresOncePerStepOnTheWayDown;
+var
+  latch, fires: integer;
+begin
+  latch := 0;
+  fires := 0;
+
+  // 31U is still above the ladder; every subsequent value crosses one step.
+  if ReservoirShouldNotify(31, latch) then Inc(fires);
+  AssertEquals('31U is above every step', 0, fires);
+
+  if ReservoirShouldNotify(29.4, latch) then Inc(fires);
+  AssertEquals('first step fires', 1, fires);
+  AssertEquals('latched at 30U', 30, latch);
+
+  // Two more fetches inside the same band stay silent.
+  if ReservoirShouldNotify(28, latch) then Inc(fires);
+  if ReservoirShouldNotify(26, latch) then Inc(fires);
+  AssertEquals('no repeat within a step', 1, fires);
+
+  if ReservoirShouldNotify(24.5, latch) then Inc(fires);
+  if ReservoirShouldNotify(19, latch) then Inc(fires);
+  if ReservoirShouldNotify(14, latch) then Inc(fires);
+  if ReservoirShouldNotify(9.5, latch) then Inc(fires);
+  if ReservoirShouldNotify(4.2, latch) then Inc(fires);
+  AssertEquals('one notification per step', 6, fires);
+  AssertEquals('latched at the bottom step', 5, latch);
+
+  // Below the last step there is nothing left to announce.
+  if ReservoirShouldNotify(0.4, latch) then Inc(fires);
+  AssertEquals('running dry does not re-announce', 6, fires);
+end;
+
+procedure TAlertEngineTests.ReservoirStartingLowFiresOnlyCurrentStep;
+var
+  latch: integer;
+begin
+  // First fetch of the session already reads low (fresh install, or a backend
+  // that only just started reporting). It must announce once, not six times.
+  latch := 0;
+  AssertTrue('a first low reading notifies',
+    ReservoirShouldNotify(8, latch));
+  AssertEquals('at the step it is actually in', 10, latch);
+
+  AssertFalse('and not again for the steps it skipped',
+    ReservoirShouldNotify(7, latch));
+end;
+
+procedure TAlertEngineTests.ReservoirBoundaryJitterDoesNotRefire;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertTrue('drop to the 25U step notifies', ReservoirShouldNotify(25, latch));
+
+  // A reading wobbling either side of the boundary is not a refill.
+  AssertFalse('rise back over the boundary is quiet',
+    ReservoirShouldNotify(25.6, latch));
+  AssertEquals('and does not re-arm the step', 25, latch);
+  AssertFalse('falling back through it stays quiet',
+    ReservoirShouldNotify(24.8, latch));
+  AssertEquals('latch unchanged', 25, latch);
+end;
+
+procedure TAlertEngineTests.ReservoirRefillRearmsTheLadder;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertTrue('down at 5U', ReservoirShouldNotify(4, latch));
+  AssertEquals('latched at the bottom step', 5, latch);
+
+  AssertFalse('a refill itself is not an alert',
+    ReservoirShouldNotify(280, latch));
+  AssertEquals('refill clears the ladder', 0, latch);
+
+  AssertTrue('the new cartridge alerts from the top again',
+    ReservoirShouldNotify(30, latch));
+
+  // A partial top-up only re-arms once clear of the fired step by the margin.
+  latch := 10;
+  AssertFalse('1U above the fired step is still the same excursion',
+    ReservoirShouldNotify(11, latch));
+  AssertEquals('so the step stays latched', 10, latch);
+  AssertFalse('clearing the margin re-arms without alerting',
+    ReservoirShouldNotify(13, latch));
+  AssertEquals('now sitting in the 15U band', 15, latch);
+  AssertTrue('and 10U can fire again', ReservoirShouldNotify(9, latch));
+end;
+
+procedure TAlertEngineTests.ReservoirUnknownLevelLeavesLatchAlone;
+var
+  latch: integer;
+begin
+  // DEVICE_STATUS_UNKNOWN: a backend that reports no reservoir must neither
+  // fire nor re-arm — a missing figure is not an empty cartridge.
+  latch := 10;
+  AssertFalse('unknown never notifies', ReservoirShouldNotify(-1, latch));
+  AssertEquals('and never disturbs the latch', 10, latch);
 end;
 
 initialization

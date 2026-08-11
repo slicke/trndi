@@ -147,7 +147,86 @@ type
     property OnStateChanged: TNotifyEvent read FOnStateChanged write FOnStateChanged;
   end;
 
+const
+  {** Pump reservoir levels, in insulin units, that each get one notification as
+    the cartridge runs down. Must stay in descending order —
+    @link(ReservoirWarnStep) walks it front to back. }
+  RESERVOIR_WARN_STEPS: array[0..5] of integer = (30, 25, 20, 15, 10, 5);
+
+  {** How far above a fired step the level must climb before that step re-arms.
+    Keeps a reading hovering on a boundary from notifying twice. }
+  RESERVOIR_REARM_MARGIN = 2;
+
+{** Lowest step in @link(RESERVOIR_WARN_STEPS) the reservoir has fallen to.
+  Returns 0 when the level is still above every step, or when @param(AUnits) is
+  negative (@code(DEVICE_STATUS_UNKNOWN) — the backend reported nothing). }
+function ReservoirWarnStep(const AUnits: double): integer;
+
+{** One-notification-per-step decision for the reservoir ladder. Unlike the
+  rules above this is a pure function over a caller-held latch, because the
+  ladder has six thresholds rather than one and no time component: a step fires
+  as the level first falls to it and stays quiet until either a lower step is
+  reached or the cartridge is refilled past @link(RESERVOIR_REARM_MARGIN).
+
+  A negative @param(AUnits) leaves the latch untouched, so a fetch that carries
+  no reservoir figure neither fires nor re-arms anything.
+  @param(ALastStep In/out latch: the step last notified, 0 = none armed. Persist
+    it across restarts so a restart at a low level does not re-notify.)
+  @returns(True when the caller should raise a notification) }
+function ReservoirShouldNotify(const AUnits: double;
+  var ALastStep: integer): boolean;
+
 implementation
+
+//------------------------------------------------------------------------------
+// Reservoir ladder
+//------------------------------------------------------------------------------
+
+function ReservoirWarnStep(const AUnits: double): integer;
+var
+  i: integer;
+begin
+  Result := 0;
+  if AUnits < 0 then
+    Exit;
+  // Descending list, so the last step the level satisfies is the lowest one.
+  for i := Low(RESERVOIR_WARN_STEPS) to High(RESERVOIR_WARN_STEPS) do
+    if AUnits <= RESERVOIR_WARN_STEPS[i] then
+      Result := RESERVOIR_WARN_STEPS[i];
+end;
+
+function ReservoirShouldNotify(const AUnits: double;
+  var ALastStep: integer): boolean;
+var
+  step: integer;
+begin
+  Result := false;
+  if AUnits < 0 then
+    Exit;
+
+  step := ReservoirWarnStep(AUnits);
+
+  // Above the whole ladder: refilled (or never low). Re-arm every step.
+  if step = 0 then
+  begin
+    ALastStep := 0;
+    Exit;
+  end;
+
+  // First low reading of a cartridge fires its current step only — a pump
+  // already down at 8U notifies once, not once per step it skipped past.
+  if (ALastStep = 0) or (step < ALastStep) then
+  begin
+    ALastStep := step;
+    Result := true;
+    Exit;
+  end;
+
+  // Climbed back into a higher band: re-arm only once clear of the fired step
+  // by the margin, so jitter around a boundary cannot fire it a second time.
+  if (step > ALastStep) and (AUnits >= ALastStep + RESERVOIR_REARM_MARGIN) then
+    ALastStep := step;
+end;
 
 constructor TAlertEngine.Create;
 var

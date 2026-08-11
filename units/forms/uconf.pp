@@ -163,6 +163,7 @@ TfConf = class(TForm)
   cbTTSVoice: TComboBox;
   cgNotifications: TCheckGroup;
   cbAlertHiLo: TCheckBox;
+  cbAlertReservoir: TCheckBox;
   cbFlashLow: TCheckBox;
   cbFlashPerfect: TCheckBox;
   cbMultiTouch: TCheckBox;
