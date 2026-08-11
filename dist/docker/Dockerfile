@@ -1,21 +1,29 @@
-# syntax=docker/dockerfile:1
-#
 # Reproduces the Linux build environment from .github/workflows/build.yml /
 # .github/actions/setup-lazarus for local development against Trndi's
 # `develop` branch. Supports both amd64 and arm64 (picking the matching CI
 # matrix entry's Lazarus/FPC packages for each). This is a dev convenience
 # image, not something CI itself uses.
 #
+# Engine-neutral: every command below works with `podman` or `docker` - swap the
+# leading word. Nothing here needs BuildKit-only Dockerfile syntax, so plain
+# Buildah (podman build) parses it as-is. On Windows/macOS podman needs its VM
+# up first: `podman machine start`.
+#
 # Build:
-#   docker build -t trndi-dev -f dist/docker/Dockerfile .
+#   podman build -t trndi-dev -f dist/docker/Dockerfile .
 #
 # Run (entrypoint clones/updates `develop`, builds it via the repo's own
 # Makefile, then hands off to a shell inside the checkout):
-#   docker run -it --rm trndi-dev
+#   podman run -it --rm trndi-dev
 #
 # Persist the checkout across runs with
 # a named volume, so repeat runs only need to fetch changed sources:
-#   docker run -it --rm -v trndi-checkout:/root/trndi trndi-dev
+#   podman run -it --rm -v trndi-checkout:/root/trndi trndi-dev
+#
+# To build your own working tree instead of a fresh clone, bind-mount it over
+# $TRNDI_DIR. Under rootless podman on an SELinux host add `:Z`, and add
+# `--userns=keep-id` if you care about the files staying owned by your user:
+#   podman run -it --rm -v .:/root/trndi:Z trndi-dev
 
 FROM ubuntu:26.04
 
