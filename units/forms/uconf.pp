@@ -57,6 +57,9 @@
  * - 2026-07-19: Settings export/import strings made translatable, overwrite
  *   prompt on export, empty-file guard on import; multi-user name validation
  *   no longer accepts [\]^_` characters; removed unused CodepointHex.
+ * - 2026-08-12: On Windows the dark-mode call moved from FormCreate to a
+ *   DoShow override so opening Settings no longer builds the window's
+ *   control tree twice (self.Handle in FormCreate forced early creation).
  *)
 
 unit uconf;
@@ -647,6 +650,12 @@ private
   {** Show/hide the browser-login button and username field for the current
       backend, based on selectedAPIClass.supportsWebLogin. }
   procedure updateWebLoginUI;
+{$ifdef X_WIN}
+protected
+  {** Applies dark mode. Deferred from FormCreate on Windows because it needs
+      the window handle — see the implementation note. }
+  procedure DoShow; override;
+{$endif}
 public
   chroma: TRazerChromaBase;
   {** Saved TTS voice selection, applied by EnsureTTSVoices once the voice
@@ -2715,6 +2724,26 @@ begin
   // close. If you want immediate preview, close the settings dialog.
 end;
 
+{$ifdef X_WIN}
+{------------------------------------------------------------------------------
+  DoShow (Windows)
+  ----------------
+  Apply dark mode here rather than in FormCreate: setDarkMode needs the
+  window handle, and asking for self.Handle in FormCreate forced the whole
+  16-tab control tree to materialize inside TfConf.Create — only to be torn
+  down and rebuilt when ShowModal's PopupParent assignment recreated the
+  window. That roughly doubled the time to open Settings and made every
+  settings load poke live Win32 controls. At DoShow the handle has just been
+  created for the actual show, so the cost is paid once.
+ ------------------------------------------------------------------------------}
+procedure TfConf.DoShow;
+begin
+  if tnative.isDarkMode then
+    tnative.setDarkMode(self.Handle);
+  inherited DoShow;
+end;
+{$endif}
+
 procedure TfConf.FormCreate(Sender: TObject);
 var
   {$ifdef LCLGtk2}
@@ -2797,12 +2826,12 @@ begin
   {$endif}
   tnative := TrndiNative.Create;
   tnative.noFree := true;
+  // On Windows the dark-mode call needs self.Handle and is deferred to
+  // DoShow — see the note there. Elsewhere it is handle-free and cheap.
+  {$ifndef X_WIN}
   if tnative.isDarkMode then
-    tnative.setDarkMode
-  {$ifdef X_WIN}
-    (self.Handle)
+    tnative.setDarkMode;
   {$endif}
-  ;
 
   // TTS voice enumeration (SAPI/Cocoa) is deferred to the Accessibility tab's
   // OnShow — it is too slow to run every time the dialog opens.
