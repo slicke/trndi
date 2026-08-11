@@ -277,6 +277,8 @@ resourcestring
   sParamUserName = 'LibreLinkUp Email';
   sParamPassword = 'LibreLinkUp Password';
   sParamDesc =
+    '** ALPHA DRIVER - It may not work as intended; check the LibreLink app ' +
+    'before acting on a reading! **' + LineEnding + LineEnding +
     'Abbott FreeStyle Libre, via LibreLinkUp.' + LineEnding + LineEnding +
     'Use the LibreLinkUp follower account — the one that accepted the sharing ' +
     'invitation — not the LibreLink account on the phone wearing the sensor.' + LineEnding + LineEnding +
@@ -285,6 +287,9 @@ resourcestring
     'once before Trndi can read anything.' + LineEnding + LineEnding +
     'Your region is detected automatically.';
   sParamDescHTML =
+    '<div style="background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;">' +
+    '⚠️ ALPHA DRIVER - It may not work as intended; check the LibreLink app before acting on a reading! ⚠️' +
+    '</div>' +
     '<b>Abbott FreeStyle Libre</b>, via LibreLinkUp.<br><br>' +
     'Use the <u>LibreLinkUp follower account</u> — the one that accepted the ' +
     'sharing invitation — not the LibreLink account on the phone wearing the sensor.<br><br>' +

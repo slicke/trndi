@@ -284,6 +284,8 @@ resourcestring
   sParamUserName = 'CareLink Username (may be left empty)';
   sParamPassword = 'CareLink Token Data (JSON)';
   sParamDesc =
+    '** BETA DRIVER - It may not work as intended; check the CareLink app '
+    + 'before acting on a reading! **'#13#10#13#10 +
     'Medtronic CareLink follower connection.'#13#10#13#10 +
     'Medtronic requires a one-time login in your web browser (with CAPTCHA); ' +
     'Trndi then keeps the session alive automatically.' + LineEnding +
@@ -291,6 +293,9 @@ resourcestring
     'Use a Care Partner (follower) account, not the patient account.' + LineEnding +
     'See guides/CareLink.md for a step-by-step walkthrough.';
   sParamDescHTML =
+    '<div style="background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;">' +
+    '⚠️ BETA DRIVER - It may not work as intended; check the CareLink app before acting on a reading! ⚠️' +
+    '</div>' +
     '<b>Medtronic CareLink</b> follower connection.<br><br>' +
     'Medtronic requires a <u>one-time login in your web browser</u> (with CAPTCHA); ' +
     'Trndi then keeps the session alive automatically.<br>' +

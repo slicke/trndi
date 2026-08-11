@@ -742,10 +742,10 @@ RS_XDRIP =
   'Make sure you are on the same network as the xDrip app.'+sLineBreak+'Make sure that web access is turned on.';
 
 RS_TANDEM =
-  'This backend is in alpha stage, it may not work as intended!'+sLineBreak+'Please set your own thresholds in the Customization tab.';
+  'This backend is in a beta stage, it may not work as intended!'+sLineBreak+'Some accounts only get new readings from Tandem Source once an hour; Trndi may then report the reading as outdated.'+sLineBreak+'Please set your own thresholds in the Customization tab.';
 
 RS_CARELINK =
-  'This backend is experimental!'+sLineBreak+'It needs token data captured from a one-time browser login — see the CareLink guide.'+sLineBreak+'Use a Care Partner (follower) account. Data may lag behind the pump.';
+  'This backend is in a beta stage, it may not work as intended!'+sLineBreak+'Medtronic requires token data captured from a one-time browser login — that setup is permanent, see the CareLink guide.'+sLineBreak+'Use a Care Partner (follower) account. Data may lag behind the pump.';
 
 RS_LLU =
   'This backend is in alpha stage, it may not work as intended!'+sLineBreak+'Sign in with your LibreLinkUp (follower) account, not the LibreLink account on the phone wearing the sensor.'+sLineBreak+'Sharing must already be set up and the invitation accepted — see the LibreLinkUp guide.';

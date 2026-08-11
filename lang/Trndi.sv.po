@@ -1379,6 +1379,8 @@ msgstr "CareLink nyckeluppdatering misslyckades. Den sparade logindatan går ut 
 
 #: trndi.api.carelink.sparamdesc
 msgid ""
+"** BETA DRIVER - It may not work as intended; check the CareLink app before acting on a reading! **\n"
+"\n"
 "Medtronic CareLink follower connection.\n"
 "\n"
 "Medtronic requires a one-time login in your web browser (with CAPTCHA); Trndi then keeps the session alive automatically.\n"
@@ -1387,6 +1389,8 @@ msgid ""
 "Use a Care Partner (follower) account, not the patient account.\n"
 "See guides/CareLink.md for a step-by-step walkthrough."
 msgstr ""
+"** BETADRIVRUTIN - Den kanske inte fungerar som tänkt; kontrollera CareLink-appen innan du agerar på ett värde! **\n"
+"\n"
 "Medtronic CareLink-följaranslutning.\n"
 "\n"
 "Medtronic kräver att du loggar in en gång med en webbläsare (med CAPTCHA); Trndi kan sedan hålla igång anslutningen automatiskt.\n"
@@ -1396,8 +1400,8 @@ msgstr ""
 "Se guides/CareLink.md för en steg-för-steg-guide."
 
 #: trndi.api.carelink.sparamdeschtml
-msgid "<b>Medtronic CareLink</b> follower connection.<br><br>Medtronic requires a <u>one-time login in your web browser</u> (with CAPTCHA); Trndi then keeps the session alive automatically.<br>Paste the captured token data (JSON) as the credential.<br><br>Use a <u>Care Partner</u> (follower) account, not the patient account.<br>See the CareLink guide for a step-by-step walkthrough."
-msgstr "<b>Medtronic CareLink</b>-följaranslutning.<br><br>Medtronic kräver att du loggar in <u>en gång med din webbläsare</u> (med CAPTCHA); Trndi kan sedan hålla anslutningen igång automatiskt.<br>Klistra in den fångade nyckel/token-datan (JSON) som åtkomstinfo.<br><br>Använd ett <u>Care Partner</u> (följar)-konto, inte patientens konto.<br>Se CareLink-guiden för en steg-för-steg-guide."
+msgid "<div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ BETA DRIVER - It may not work as intended; check the CareLink app before acting on a reading! ⚠️</div><b>Medtronic CareLink</b> follower connection.<br><br>Medtronic requires a <u>one-time login in your web browser</u> (with CAPTCHA); Trndi then keeps the session alive automatically.<br>Paste the captured token data (JSON) as the credential.<br><br>Use a <u>Care Partner</u> (follower) account, not the patient account.<br>See the CareLink guide for a step-by-step walkthrough."
+msgstr "<div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ BETADRIVRUTIN - Den kanske inte fungerar som tänkt; kontrollera CareLink-appen innan du agerar på ett värde! ⚠️</div><b>Medtronic CareLink</b>-följaranslutning.<br><br>Medtronic kräver att du loggar in <u>en gång med din webbläsare</u> (med CAPTCHA); Trndi kan sedan hålla anslutningen igång automatiskt.<br>Klistra in den fångade nyckel/token-datan (JSON) som åtkomstinfo.<br><br>Använd ett <u>Care Partner</u> (följar)-konto, inte patientens konto.<br>Se CareLink-guiden för en steg-för-steg-guide."
 
 #: trndi.api.carelink.sparampassword
 msgid "CareLink Token Data (JSON)"
@@ -1569,6 +1573,8 @@ msgstr "Tog emot %d CGM-avläsningar"
 
 #: trndi.api.librelinkup.sparamdesc
 msgid ""
+"** ALPHA DRIVER - It may not work as intended; check the LibreLink app before acting on a reading! **\n"
+"\n"
 "Abbott FreeStyle Libre, via LibreLinkUp.\n"
 "\n"
 "Use the LibreLinkUp follower account — the one that accepted the sharing invitation — not the LibreLink account on the phone wearing the sensor.\n"
@@ -1577,6 +1583,8 @@ msgid ""
 "\n"
 "Your region is detected automatically."
 msgstr ""
+"** ALFADRIVRUTIN - Den kanske inte fungerar som tänkt; kontrollera LibreLink-appen innan du agerar på ett värde! **\n"
+"\n"
 "Abbott FreeStyle Libre, via LibreLinkUp.\n"
 "\n"
 "Använd ett LibreLinkUp-följarkonto — det som accepterat delningsinbjudan — inte LibreLink-kontot på telefonen som bär sensorn.\n"
@@ -1586,8 +1594,8 @@ msgstr ""
 "Din region räknas ut automatiskt."
 
 #: trndi.api.librelinkup.sparamdeschtml
-msgid "<b>Abbott FreeStyle Libre</b>, via LibreLinkUp.<br><br>Use the <u>LibreLinkUp follower account</u> — the one that accepted the sharing invitation — not the LibreLink account on the phone wearing the sensor.<br><br>Sharing must already be set up: in the LibreLink app the sensor wearer invites this email, and the invitation has to be accepted in LibreLinkUp once before Trndi can read anything.<br><br>Your region is detected automatically."
-msgstr "<b>Abbott FreeStyle Libre</b>, via LibreLinkUp.<br><br>Använd <u>LibreLinkUp-följarkontot</u> — det som accepterade delningsinbjudan — inte LibreLink-kontot för den som bär sensorn.<br><br>Delning måste ha ställts in redan: i LibreLink-appen bjuder sensorbäraren in denna e-postadress och inbjudan måste accepteras i LibreLinkUp en gång, innan Trndi kan ta emot avläsningar.<br><br>Din region beräknas automatiskt."
+msgid "<div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALPHA DRIVER - It may not work as intended; check the LibreLink app before acting on a reading! ⚠️</div><b>Abbott FreeStyle Libre</b>, via LibreLinkUp.<br><br>Use the <u>LibreLinkUp follower account</u> — the one that accepted the sharing invitation — not the LibreLink account on the phone wearing the sensor.<br><br>Sharing must already be set up: in the LibreLink app the sensor wearer invites this email, and the invitation has to be accepted in LibreLinkUp once before Trndi can read anything.<br><br>Your region is detected automatically."
+msgstr "<div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALFADRIVRUTIN - Den kanske inte fungerar som tänkt; kontrollera LibreLink-appen innan du agerar på ett värde! ⚠️</div><b>Abbott FreeStyle Libre</b>, via LibreLinkUp.<br><br>Använd <u>LibreLinkUp-följarkontot</u> — det som accepterade delningsinbjudan — inte LibreLink-kontot för den som bär sensorn.<br><br>Delning måste ha ställts in redan: i LibreLink-appen bjuder sensorbäraren in denna e-postadress och inbjudan måste accepteras i LibreLinkUp en gång, innan Trndi kan ta emot avläsningar.<br><br>Din region beräknas automatiskt."
 
 #: trndi.api.librelinkup.sparampassword
 msgid "LibreLinkUp Password"
@@ -1644,7 +1652,7 @@ msgstr "NightScout-adress"
 #: trndi.api.nightscout3.sparamdesc
 msgctxt "trndi.api.nightscout3.sparamdesc"
 msgid ""
-"** ALPHA DRIVER - Please use \"NightScout\" for daily use! **\n"
+"** BETA DRIVER - Please use \"NightScout\" for daily use! **\n"
 "NightScout v3 setup (use FULL access token):\n"
 "\n"
 "1) Open your NightScout site (e.g., https://your-site).\n"
@@ -1660,7 +1668,7 @@ msgid ""
 "Note: If you instead use the legacy API Secret, paste your API Secret value as-is.\n"
 "Note 2: Your access token should look like: trndi-abc123 (or whatever name you chose)"
 msgstr ""
-"** ALFADRIVRUTIN - Använd \"NightScout\" för dagligt bruk! **\n"
+"** BETADRIVRUTIN - Använd \"NightScout\" för dagligt bruk! **\n"
 "NightScout v3 inställning (använd HELA access token):\n"
 "\n"
 "1) Öppna din  NightScout-sajt (t ex, https://din-sajt).\n"
@@ -1677,8 +1685,8 @@ msgstr ""
 "OBS 2: Din åtkomstnyckel ska se ut som: trndi-abc123 (eller det namn du valt)"
 
 #: trndi.api.nightscout3.sparamdeschtml
-msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALPHA DRIVER - Please use \"NightScout\" for daily use! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Tip:</strong> Both <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> and <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> are accepted.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your access token should look like: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you chose).</p></div></div>"
-msgstr "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ ALFADRIVRUTIN- Vänligen välj \"NightScout\" för dagligt bruk! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3-inställning</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(använd HELA access token:et)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Öppna din NightScout-sajt (t. ex., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://din-sajt</code>).</li><li style=\"margin-bottom: 10px;\">Gå till <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">Om du använder Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Skapa ett token med minst <strong>READ</strong> scope.</li><li>Kopiera <strong>HELA</strong> access token:ets värde så som det visas.</li></ul></li><li style=\"margin-bottom: 10px;\">I Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adress:</strong> ange din NightScout-URL</li><li><strong>Autensiering:</strong> klistra in HELA access token:et.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Tips:</strong> Både <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> och <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> accepteras.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 OBS:</strong> Om du använder det föråldrade API Secret, klistra in din API Secret så som den visas.</p><p style=\"margin: 0;\"><strong>📝 OBS 2:</strong> Ditt access token ska se ut enligt följande: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (eller det namn du valt).</p></div></div>"
+msgid "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ BETA DRIVER - Please use \"NightScout\" for daily use! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3 Setup</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(use FULL access token)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Open your NightScout site (e.g., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://your-site</code>).</li><li style=\"margin-bottom: 10px;\">Go to <strong>Admin → Tokens</strong> — or <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">If you use Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Create a token with at least <strong>READ</strong> scope.</li><li>Copy the <strong>FULL</strong> access token value exactly as shown.</li></ul></li><li style=\"margin-bottom: 10px;\">In Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Address:</strong> enter your NightScout URL</li><li><strong>Auth:</strong> paste the FULL access token.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Tip:</strong> Both <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> and <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> are accepted.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 Note:</strong> If you instead use the legacy API Secret, paste your API Secret value as-is.</p><p style=\"margin: 0;\"><strong>📝 Note 2:</strong> Your access token should look like: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (or whatever name you chose).</p></div></div>"
+msgstr "<div style=\"font-family: Arial, sans-serif; line-height: 1.6;\"><div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ BETADRIVRUTIN- Vänligen välj \"NightScout\" för dagligt bruk! ⚠️</div><h2 style=\"margin-bottom: 10px;\">🌙 NightScout v3-inställning</h2><p style=\"color: #7f8c8d; font-style: italic; margin-bottom: 15px;\">(använd HELA access token:et)</p><ol style=\"padding-left: 20px;\"><li style=\"margin-bottom: 10px;\">Öppna din NightScout-sajt (t. ex., <code style=\"background: #6495ED; padding: 2px 6px; border-radius: 3px;\">https://din-sajt</code>).</li><li style=\"margin-bottom: 10px;\">Gå till <strong>Admin → Tokens</strong> — eller <strong>API Secret</strong>.</li><li style=\"margin-bottom: 10px;\">Om du använder Tokens:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li>Skapa ett token med minst <strong>READ</strong> scope.</li><li>Kopiera <strong>HELA</strong> access token:ets värde så som det visas.</li></ul></li><li style=\"margin-bottom: 10px;\">I Trndi:<ul style=\"margin-top: 5px; padding-left: 20px;\"><li><strong>Adress:</strong> ange din NightScout-URL</li><li><strong>Autensiering:</strong> klistra in HELA access token:et.</li></ul></li></ol><div style=\"border-left: 4px solid #0d6efd; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0;\"><strong>💡 Tips:</strong> Både <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">abc123</code> och <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">token=abc123</code> accepteras.</p></div><div style=\"border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px; border-radius: 4px;\"><p style=\"margin: 0 0 8px 0;\"><strong>📝 OBS:</strong> Om du använder det föråldrade API Secret, klistra in din API Secret så som den visas.</p><p style=\"margin: 0;\"><strong>📝 OBS 2:</strong> Ditt access token ska se ut enligt följande: <code style=\"background: #6F8FAF; padding: 2px 6px; border-radius: 3px;\">trndi-abc123</code> (eller det namn du valt).</p></div></div>"
 
 #: trndi.api.nightscout3.sparampassword
 msgid "Auth token"
@@ -1704,25 +1712,33 @@ msgstr "Ogiltiga Tandem t:connect-uppgifter"
 
 #: trndi.api.tandem.sparamdesc
 msgid ""
+"** BETA DRIVER - It may not work as intended; check the t:connect app before acting on a reading! **\n"
+"\n"
 "Tandem t:connect region selection:\n"
 "\n"
 "Choose the server based on your account region:\n"
 "• Tandem (USA): for US accounts\n"
 "• Tandem (EU): for European accounts\n"
 "\n"
-"Your credentials are your Tandem t:connect account email and password."
+"Your credentials are your Tandem t:connect account email and password.\n"
+"\n"
+"Note: some accounts only get new readings from Tandem Source once an hour. Trndi then keeps showing the last reading it received, and may report it as outdated. This is a Tandem Source limitation, not a Trndi bug."
 msgstr ""
+"** BETADRIVRUTIN - Den kanske inte fungerar som tänkt; kontrollera t:connect-appen innan du agerar på ett värde! **\n"
+"\n"
 "Tandem t:connect-regionval:\n"
 "\n"
 "Välj servern där du registrerat ditt konto:\n"
 "• Tandem (USA): för amerikanska konton\n"
 "• Tandem (EU): för europeiska konton\n"
 "\n"
-"Dina åtkomstdetaljer är ditt Tandem t:connect-kontos mejl och lösenord."
+"Dina åtkomstdetaljer är ditt Tandem t:connect-kontos mejl och lösenord.\n"
+"\n"
+"Obs: vissa konton får bara nya värden från Tandem Source en gång i timmen. Trndi visar då fortsatt det senaste värdet det fått, och kan rapportera det som föråldrat. Detta är en begränsning i Tandem Source, inte ett fel i Trndi."
 
 #: trndi.api.tandem.sparamdeschtml
-msgid "<b>Tandem t:connect</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Tandem (USA): for US accounts<br>• Tandem (EU): for European accounts<br><br>Your credentials are your Tandem t:connect account email and password."
-msgstr "<b>Tandem t:connect</b> regionval:<br><br>Välj den server där du registrerat ditt konto, din <u>kontoregion</u>:<br>• Tandem (USA): för amerikanska konton<br>• Tandem (EU): för europeiska konton<br><br>Dina åtkomstdetaljer är ditt Tandem t:connect-kontos mejl och lösenord."
+msgid "<div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ BETA DRIVER - It may not work as intended; check the t:connect app before acting on a reading! ⚠️</div><b>Tandem t:connect</b> region selection:<br><br>Choose the server based on your <u>account region</u>:<br>• Tandem (USA): for US accounts<br>• Tandem (EU): for European accounts<br><br>Your credentials are your Tandem t:connect account email and password.<br><br><b>Note:</b> some accounts only get new readings from Tandem Source <u>once an hour</u>. Trndi then keeps showing the last reading it received, and may report it as outdated. This is a Tandem Source limitation, not a Trndi bug."
+msgstr "<div style=\"background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;\">⚠️ BETADRIVRUTIN - Den kanske inte fungerar som tänkt; kontrollera t:connect-appen innan du agerar på ett värde! ⚠️</div><b>Tandem t:connect</b> regionval:<br><br>Välj den server där du registrerat ditt konto, din <u>kontoregion</u>:<br>• Tandem (USA): för amerikanska konton<br>• Tandem (EU): för europeiska konton<br><br>Dina åtkomstdetaljer är ditt Tandem t:connect-kontos mejl och lösenord.<br><br><b>Obs:</b> vissa konton får bara nya värden från Tandem Source <u>en gång i timmen</u>. Trndi visar då fortsatt det senaste värdet det fått, och kan rapportera det som föråldrat. Detta är en begränsning i Tandem Source, inte ett fel i Trndi."
 
 #: trndi.api.tandem.sparampassword
 msgid "Tandem Password"
@@ -3025,12 +3041,12 @@ msgstr ""
 
 #: uconf.rs_carelink
 msgid ""
-"This backend is experimental!\n"
-"It needs token data captured from a one-time browser login — see the CareLink guide.\n"
+"This backend is in a beta stage, it may not work as intended!\n"
+"Medtronic requires token data captured from a one-time browser login — that setup is permanent, see the CareLink guide.\n"
 "Use a Care Partner (follower) account. Data may lag behind the pump."
 msgstr ""
-"Denna källa är experimentelll!\n"
-"Den behöver en nyckel som anskaffas genom att logga in via webbläsaren — se CareLink-guiden.\n"
+"Denna källa är i ett betastadium, den kanske inte fungerar som tänkt!\n"
+"Medtronic kräver en nyckel som anskaffas genom att logga in via webbläsaren — den uppsättningen är permanent, se CareLink-guiden.\n"
 "Använd ett Care Partner- (följare) konto. Data kan lagga efter pumpen."
 
 #: uconf.rs_choose_system
@@ -3531,10 +3547,12 @@ msgstr "Endast en avläsning kommer visas, i form av en pil eller en förutspåe
 
 #: uconf.rs_tandem
 msgid ""
-"This backend is in alpha stage, it may not work as intended!\n"
+"This backend is in a beta stage, it may not work as intended!\n"
+"Some accounts only get new readings from Tandem Source once an hour; Trndi may then report the reading as outdated.\n"
 "Please set your own thresholds in the Customization tab."
 msgstr ""
-"Detta backend är i alfastadiet, det kanske inte funkar som tänkt!\n"
+"Detta backend är i ett betastadium, det kanske inte funkar som tänkt!\n"
+"Vissa konton får bara nya värden från Tandem Source en gång i timmen; Trndi kan då rapportera värdet som föråldrat.\n"
 "V.g sätt dina egna gränser under Personalisera-tabben."
 
 #: uconf.rs_test_fail

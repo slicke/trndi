@@ -1,6 +1,8 @@
-# Set up Tandem
+# Set up Tandem — Beta
 
-> Depending on your setup, some accounts only provide readings every 60 minutes ca. This is Tandem Source limitation, not a Trndi bug.
+> ⚠️ **Beta.** This backend may not work as intended; check the t:connect app before acting on a reading. As always: Trndi is not a medical device.
+
+> Depending on your setup, some accounts only provide readings every 60 minutes ca. This is a Tandem Source limitation, not a Trndi bug. When it happens, Trndi keeps showing the last reading it received, and may report it as outdated — that is the data being old, not the connection being broken.
 
 ## Preparations
 ### Setup Tandem Source
