@@ -181,6 +181,12 @@ begin
   Result := IntToStr(GetTickCount64) + IntToStr(InterlockedIncrement(NoCacheTokenSeq));
 end;
 
+// Every value here lands in *local* time, because ExtractSensorStatusSuffix
+// compares the result against a local Now. UnixToDateTime(..., False) and
+// TryISO8601ToDate(..., False) both convert from UTC to local; passing True
+// here (as this used to) left the result in UTC and put the sensor-age/expiry
+// suffix off by the machine's UTC offset. Mirrors NS3TryDateTimeFromJsonValue
+// in trndi.api.nightscout3, which never had the bug.
 function TryDateTimeFromJsonValue(const value: TJSONData; out dt: TDateTime): boolean;
 var
   raw: string;
@@ -198,9 +204,9 @@ begin
         asNum := value.AsFloat;
         // Heuristic: values above 1e11 are usually epoch milliseconds.
         if asNum > 1.0e11 then
-          dt := UnixToDateTime(Trunc(asNum / 1000), True)
+          dt := UnixToDateTime(Trunc(asNum / 1000), False)
         else if asNum > 1.0e9 then
-          dt := UnixToDateTime(Trunc(asNum), True)
+          dt := UnixToDateTime(Trunc(asNum), False)
         else
           Exit;
         Result := true;
@@ -214,21 +220,18 @@ begin
         if TryStrToInt64(raw, epoch) then
         begin
           if epoch > 100000000000 then
-            dt := UnixToDateTime(epoch div 1000, True)
+            dt := UnixToDateTime(epoch div 1000, False)
           else if epoch > 1000000000 then
-            dt := UnixToDateTime(epoch, True)
+            dt := UnixToDateTime(epoch, False)
           else
             Exit;
           Result := true;
           Exit;
         end;
 
-        try
-          dt := ISO8601ToDate(raw);
-          Result := dt > 0;
-        except
-          Result := false;
-        end;
+        Result := TryISO8601ToDate(raw, dt, False) and (dt > 0);
+        if not Result then
+          dt := 0;
       end;
   end;
 end;

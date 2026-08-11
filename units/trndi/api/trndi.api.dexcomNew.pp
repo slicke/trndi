@@ -740,8 +740,11 @@ begin
       Result := false;
       Exit;
     end;
-    // Parse server time using centralized helper (handles XML, /Date(ms)/, JSON ServerTime, ISO)
-    if not ParseDexcomTime(LTimeResponse, LServerDateTime) then
+    // Parse server time using centralized helper (handles XML, /Date(ms)/, JSON ServerTime, ISO).
+    // AsUTC=True: this feeds the signed timeDiff computation below, which
+    // compares against LocalTimeToUniversal(Now) and needs a UTC-valued result
+    // -- unlike the reading-timestamp callers of this helper, which want local.
+    if not ParseDexcomTime(LTimeResponse, LServerDateTime, true) then
     begin
       lastErr := 'Cannot parse Dexcom time/zone data';
       Result := false;
@@ -752,12 +755,12 @@ begin
     hdrs.Free;
   end;
 
-  // Compute time difference between server UTC and local UTC
-  timeDiff := SecondsBetween(LServerDateTime, LocalTimeToUniversal(Now));
-  if timeDiff < 0 then
-    timeDiff := 0;
-  // Store negative offset to match consumer logic elsewhere in the codebase
-  timeDiff := -1 * timeDiff;
+  // Compute time difference between server UTC and local UTC (signed: positive
+  // when the server clock is ahead of local). SecondsBetween returns an
+  // unsigned magnitude, which used to be forced negative regardless of which
+  // clock was actually ahead; a plain signed difference matches the timeDiff
+  // convention every other backend uses (e.g. NightScout.Connect).
+  timeDiff := Round((LServerDateTime - LocalTimeToUniversal(Now)) * 86400);
 
   Result := true;
 end;
@@ -1030,7 +1033,7 @@ end;
 class function DexcomNew.testConnection(user, pass: string; var res: string; extra: string): MaybeBool;
 var
   tn: TrndiNative;
-  base, body, resp, accountId, sessionId, timeResp, timeStr, nameBody, nameResp: string;
+  base, body, resp, accountId, sessionId, timeResp, timeStr, nameBody, nameResp, parseErr: string;
   js: TJSONData;
   useEmailAuth: boolean;
   LServerDateTime: TDateTime;
@@ -1071,14 +1074,14 @@ begin
     begin
         // Authenticate -> extract account id or error
         resp := tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body);
-        if not TryGetTokenOrError(resp, accountId, resp) then
+        if not TryGetTokenOrError(resp, accountId, parseErr) then
         begin
           // Fallback to legacy behavior: strip quotes if present
           accountId := StringReplace(resp, '"', '', [rfReplaceAll]);
           accountId := Trim(accountId);
           if accountId = '' then
           begin
-            res := 'An error occured with your email address: ' + resp;
+            res := 'An error occured with your email address: ' + parseErr;
             Exit;
           end;
         end;
@@ -1087,7 +1090,7 @@ begin
           [accountId, JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
 
         resp := tn.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], body);
-        if not TryGetTokenOrError(resp, sessionId, resp) then
+        if not TryGetTokenOrError(resp, sessionId, parseErr) then
         begin
           // Fallback to legacy behavior: strip quotes if present
           sessionId := StringReplace(resp, '"', '', [rfReplaceAll]);
@@ -1098,7 +1101,7 @@ begin
             nameBody := Format('{"accountName":"%s","password":"%s","applicationId":"%s"}',
               [JSONEscape(user), JSONEscape(pass), DEXCOM_APPLICATION_IDS[regionEnum]]);
             nameResp := tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], nameBody);
-            if not TryGetTokenOrError(nameResp, sessionId, nameResp) then
+            if not TryGetTokenOrError(nameResp, sessionId, parseErr) then
               sessionId := StringReplace(nameResp, '"', '', [rfReplaceAll]);
             sessionId := Trim(sessionId);
             if sessionId = '' then

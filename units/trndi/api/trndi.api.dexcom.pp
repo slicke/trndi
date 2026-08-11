@@ -478,9 +478,14 @@ begin
   begin
     // Example: {"ServerTime":"/Date(1610464324000)/"} or similar payload
     LTimeString := ExtractDelimited(2, LTimeResponse, ['(', ')']);
-    // LTimeString in ms; JSToDateTime expects milliseconds when correct=false path used
+    // LTimeString is ms since epoch, UTC. UnixToDateTime(..., True) keeps it as
+    // a UTC-valued TDateTime to match the XML branch above (ScanDateTime parses
+    // the server's UTC digits verbatim, with no local conversion) -- both feed
+    // the signed timeDiff computation below, which expects UTC on both sides.
+    // JSToDateTime(..., False) would convert to *local* time instead, which
+    // silently baked the machine's UTC offset into timeDiff on this branch.
     if TryStrToInt64(LTimeString, LTimeMs) then
-      LServerDateTime := JSToDateTime(LTimeMs, false)
+      LServerDateTime := UnixToDateTime(LTimeMs div 1000, True)
     else
       LTimeString := '';
   end;
@@ -493,12 +498,12 @@ begin
     Exit;
   end;
 
-  // Compute time difference between server UTC and local UTC
-  timeDiff := SecondsBetween(LServerDateTime, LocalTimeToUniversal(Now));
-  if timeDiff < 0 then
-    timeDiff := 0;
-  // Store negative offset to match consumer logic elsewhere in the codebase
-  timeDiff := -1 * timeDiff;
+  // Compute time difference between server UTC and local UTC (signed: positive
+  // when the server clock is ahead of local). SecondsBetween returns an
+  // unsigned magnitude, which used to be forced negative regardless of which
+  // clock was actually ahead; a plain signed difference matches the timeDiff
+  // convention every other backend uses (e.g. NightScout.Connect).
+  timeDiff := Round((LServerDateTime - LocalTimeToUniversal(Now)) * 86400);
 
   Result := true;
 end;

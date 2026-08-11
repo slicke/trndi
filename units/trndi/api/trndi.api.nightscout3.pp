@@ -1422,9 +1422,10 @@ var
   treatParams: array of string;
   oldBase: string;
   deltaField, rssiField, noiseField: TJSONData;
+  itemNode, sgvField, deviceField, directionField, prevSgvField: TJSONData;
   deltaValue: glucose;
   currentSgv, prevSgv: integer;
-  j: integer;
+  j, w: integer;
   tempReading: BGReading;
   rssiValue, noiseValue: maybeInt;
   authErr: string;
@@ -1699,17 +1700,33 @@ begin
 
   try
   SetLength(Result, arrNode.Count);
+  w := 0;
   for i := 0 to arrNode.Count - 1 do
-    with arrNode.FindPath(Format('[%d]', [i])) do
+  begin
+    // The v1 fallback endpoint returns mixed collection entries (cal, mbg, ...)
+    // alongside sgv ones; an entry lacking 'sgv' is not a glucose reading and
+    // must be skipped rather than treated as a zero-valued one.
+    itemNode := arrNode.FindPath(Format('[%d]', [i]));
+    if not Assigned(itemNode) then
+      Continue;
+    sgvField := itemNode.FindPath('sgv');
+    if not Assigned(sgvField) then
+      Continue;
+    currentSgv := sgvField.AsInteger;
+    if currentSgv <= 0 then
+      Continue;
+
+    with itemNode do
     begin
-      dev := FindPath('device').AsString;
+      deviceField := FindPath('device');
+      if Assigned(deviceField) then
+        dev := deviceField.AsString
+      else
+        dev := '';
       if sensorSuffix <> '' then
         dev := dev + sensorSuffix;
 
-      Result[i].Init(mgdl, Self.SystemName);
-
-      // Get current SGV value
-      currentSgv := FindPath('sgv').AsInteger;
+      Result[w].Init(mgdl, Self.SystemName);
 
       // Value and trend delta.
       // Some Nightscout entries may not include delta field
@@ -1720,7 +1737,11 @@ begin
       if i < arrNode.Count - 1 then
       begin
           // Get the previous (older) reading's SGV
-        prevSgv := arrNode.FindPath(Format('[%d].sgv', [i + 1])).AsInteger;
+        prevSgvField := arrNode.FindPath(Format('[%d].sgv', [i + 1]));
+        if Assigned(prevSgvField) then
+          prevSgv := prevSgvField.AsInteger
+        else
+          prevSgv := 0;
         deltaValue := single(currentSgv - prevSgv);
       end
       else
@@ -1754,18 +1775,22 @@ begin
         noiseValue.exists := false;
       end;
 
-      Result[i].update(currentSgv, deltaValue);
-      Result[i].updateEnv(dev, rssiValue, noiseValue);
+      Result[w].update(currentSgv, deltaValue);
+      Result[w].updateEnv(dev, rssiValue, noiseValue);
 
       // Trend mapping by name
-      s := FindPath('direction').AsString;
+      directionField := FindPath('direction');
+      if Assigned(directionField) then
+        s := directionField.AsString
+      else
+        s := '';
       // Default to not computable, then try to find a matching textual mapping
-      Result[i].trend := TdNotComputable;
+      Result[w].trend := TdNotComputable;
       for t := Low(BGTrend) to High(BGTrend) do
       begin
         if BG_TRENDS_STRING[t] = s then
         begin
-          Result[i].trend := t;
+          Result[w].trend := t;
           Break;
         end;
       end;
@@ -1800,24 +1825,24 @@ begin
           // If tz is zero (no calibration), convert to system local time using UnixToDateTime(ts, True).
           if tz <> 0 then
           begin
-            Result[i].date := JSToDateTime(LDateMs, True);
+            Result[w].date := JSToDateTime(LDateMs, True);
             LMethod := 'dateString';
           end
           else
           begin
-            Result[i].date := UnixToDateTime(ts, False); // system-local conversion (UseUTC=false gives local time on this platform)
+            Result[w].date := UnixToDateTime(ts, False); // system-local conversion (UseUTC=false gives local time on this platform)
             LMethod := 'dateString+local';
           end;
         end
         else if LUtcOffset <> 0 then
         begin
           // No dateString available: apply server-provided utcOffset to UTC epoch
-          Result[i].date := UnixToDateTime(ts, False) + (LUtcOffset / 1440); // minutes -> days
+          Result[w].date := UnixToDateTime(ts, False) + (LUtcOffset / 1440); // minutes -> days
           LMethod := 'utcOffset';
         end
         else
         begin
-          Result[i].date := JSToDateTime(LDateMs, True);
+          Result[w].date := JSToDateTime(LDateMs, True);
           LMethod := 'JSTo';
         end;
       end
@@ -1827,23 +1852,23 @@ begin
         ts2 := LDateMs div 1000;
         if LDateStr <> '' then
         begin
-          Result[i].date := UnixToDateTime(ts2, False);
+          Result[w].date := UnixToDateTime(ts2, False);
           LMethod := 'dateString';
         end
         else if Assigned(FindPath('utcOffset')) then
         begin
-          Result[i].date := UnixToDateTime(ts2, False) + (FindPath('utcOffset').AsInteger / 1440);
+          Result[w].date := UnixToDateTime(ts2, False) + (FindPath('utcOffset').AsInteger / 1440);
           LMethod := 'utcOffset';
         end
         else
         begin
-          Result[i].date := JSToDateTime(LDateMs, True);
+          Result[w].date := JSToDateTime(LDateMs, True);
           LMethod := 'JSTo';
         end;
       end
       else
       begin
-        Result[i].date := Now; // fallback
+        Result[w].date := Now; // fallback
         LMethod := 'Now';
       end;
 
@@ -1866,7 +1891,7 @@ begin
           // Use simple concatenation to avoid Format exceptions while debugging
           TrndiDLog('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) +
             ': dateMs=' + IntToStr(LDateMs) + ' dateString="' + LDateStr + '" utcOffset=' + IntToStr(LUtcOffset) + ' method=' + LMethod + ' tz=' + IntToStr(tz) +
-            ' computed=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', Result[i].date));
+            ' computed=' + FormatDateTime('yyyy-mm-dd hh:nn:ss', Result[w].date));
         except
           on E: Exception do
             TrndiDLog('[' + {$i %file%} + ':' + {$i %Line%} + '] NightScout entry ' + IntToStr(i) + ': diagnostic log failed: ' + E.Message);
@@ -1874,8 +1899,11 @@ begin
       end;
       {$endif}
 
-      Result[i].level := getLevel(Result[i].val);
+      Result[w].level := getLevel(Result[w].val);
     end;
+    Inc(w);
+  end;
+  SetLength(Result, w);
   finally
     js.Free;
   end;
