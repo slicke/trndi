@@ -8,6 +8,7 @@ Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
  - Ensures `OS=Windows_NT` environment variable is set for compatibility with the Makefile
  - Provides shortcuts (release, debug, noext, noext-debug, list-modules) that invoke `lazbuild` or enumerate units
+ - Build targets stage a runnable layout in `build/` (override with the `OUTDIR` environment variable), like the Makefile's OUTDIR
  - `list-modules` uses native PowerShell (no Perl dependency on Windows)
  - Unknown arguments are forwarded directly to `lazbuild`
 #>
@@ -76,13 +77,44 @@ function Copy-QuickJSLibs {
     }
 }
 
+# lazbuild writes Trndi.exe into the project directory (the .lpi target filename
+# is relative). Stage a runnable layout in build/ from there -- binary,
+# translations, and for extensions builds the QuickJS libraries -- so a Windows
+# build produces the same thing to package as the Makefile's OUTDIR does. The
+# copies in the project root stay: the Lazarus IDE builds and runs Trndi there
+# (see the 'ide-libs' target).
+function Publish-Build {
+    param([switch]$WithQuickJS)
+
+    $outDir = if ($env:OUTDIR) { $env:OUTDIR } else { Join-Path $PSScriptRoot 'build' }
+    $exe = Join-Path $PSScriptRoot 'Trndi.exe'
+    if (-not (Test-Path $exe)) {
+        Write-Warning "Trndi.exe not found in the project directory - nothing to stage in $outDir."
+        return
+    }
+
+    if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
+    Copy-Item $exe $outDir -Force
+    Write-Host "  copied Trndi.exe -> $outDir" -ForegroundColor DarkGray
+
+    $lang = Join-Path $PSScriptRoot 'lang'
+    if (Test-Path $lang) {
+        $outLang = Join-Path $outDir 'lang'
+        if (-not (Test-Path $outLang)) { New-Item -ItemType Directory -Path $outLang | Out-Null }
+        Copy-Item (Join-Path $lang '*') $outLang -Recurse -Force
+        Write-Host "  copied translations -> $outLang" -ForegroundColor DarkGray
+    }
+
+    if ($WithQuickJS) { Copy-QuickJSLibs $outDir }
+}
+
 switch ($firstArg) {
     "" {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
-        if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs }
+        if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
     "release" {
@@ -90,7 +122,7 @@ switch ($firstArg) {
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
-        if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs }
+        if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
     "debug" {
@@ -98,7 +130,7 @@ switch ($firstArg) {
         $mode = 'Extensions (Debug)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
-        if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs }
+        if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
     "ide-libs" {
@@ -116,6 +148,9 @@ switch ($firstArg) {
         $mode = 'No Ext (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        # No QuickJS staging: a No Ext build compiles without TrndiExt and never
+        # loads the engine.
+        if ($LASTEXITCODE -eq 0) { Publish-Build }
         exit $LASTEXITCODE
     }
     "noext-debug" {
@@ -123,6 +158,7 @@ switch ($firstArg) {
         $mode = 'No Ext (Debug)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        if ($LASTEXITCODE -eq 0) { Publish-Build }
         exit $LASTEXITCODE
     }
     "test" {
@@ -416,6 +452,8 @@ switch ($firstArg) {
         Write-Host "  Extra arguments after a target are forwarded to lazbuild (or the test runner for 'test')."
         Write-Host "  Unknown targets are forwarded to lazbuild as-is."
         Write-Host "  Set LAZBUILD to override the lazbuild location (default: C:\lazarus\lazbuild.exe or PATH)."
+        Write-Host "  Builds land in the project directory and are staged into build\ (binary + lang\, plus the"
+        Write-Host "  QuickJS libraries for extensions modes). Set OUTDIR to stage somewhere else."
         exit 0
     }
     default { }

@@ -33,7 +33,7 @@ See [externals/quickjs/README.md](/externals/quickjs/README.md#glibc-floor) for 
 
 #### Running from the Lazarus IDE
 
-`make`/`gmake` copy the executable *and* the QuickJS libraries into `build/`, but Lazarus itself builds and runs `Trndi` in the repo root — where those libraries are not. Extensions builds started from the IDE (Run > Run, F9) therefore fail to load the engine. The `ide-libs` target puts the pair for your platform there (picking the right `prebuilt/<cpu>-<os>/` directory and recreating the `.so` symlinks on Linux); run it once per checkout, and again whenever you refresh `externals/quickjs/prebuilt/`:
+`make`/`gmake`/`.\make.ps1` copy the executable *and* the QuickJS libraries into `build/`, but Lazarus itself builds and runs `Trndi` in the repo root — where those libraries are not. Extensions builds started from the IDE (Run > Run, F9) therefore fail to load the engine. The `ide-libs` target puts the pair for your platform there (picking the right `prebuilt/<cpu>-<os>/` directory and recreating the `.so` symlinks on Linux); run it once per checkout, and again whenever you refresh `externals/quickjs/prebuilt/`:
 
 ```sh
 make ide-libs        # gmake ide-libs on macOS, .\make.ps1 ide-libs on Windows
