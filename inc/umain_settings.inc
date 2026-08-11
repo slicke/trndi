@@ -956,11 +956,20 @@ begin
     if assigned(chroma) and chroma.Initialized then
       fConf.chroma := chroma;
 
-    LoadUserSettings(fConf);
-    LoadLanguageSettings(fConf);
-    SetupUIElements(fConf);
-    SetupExtensions(fConf);
-    SetupTouchAndNotifications(fConf);
+    // Filling the controls fires their OnChange handlers, and a few of those
+    // explain the setting in a popup. That explanation is meant for the user
+    // flipping the switch - firing it here greeted anyone with a stored
+    // override with a dialog every time they opened Settings.
+    fConf.SettingsLoading := true;
+    try
+      LoadUserSettings(fConf);
+      LoadLanguageSettings(fConf);
+      SetupUIElements(fConf);
+      SetupExtensions(fConf);
+      SetupTouchAndNotifications(fConf);
+    finally
+      fConf.SettingsLoading := false;
+    end;
 
     {$if defined(X_PC)}
     fConf.lOS.Caption := GetLinuxDistro(distro) + ' ' + distro;
