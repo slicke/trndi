@@ -82,6 +82,53 @@ begin
   end;
 end;
 
+// Hand the history graph whatever insulin deliveries the backend cached during
+// the last fetch. Opt-in: most backends cannot report any, and on a pump that
+// can, a user watching glucose may not want the treatment detail on screen.
+procedure TfBG.AutoEnableBolusOverlay;
+var
+  boluses: TBolusList;
+begin
+  if (api = nil) or (fHistoryGraph = nil) then
+    Exit;
+
+  // The graph form is reused between openings, so every path out of here must
+  // leave the overlay in the right state — switching the setting off, or to a
+  // backend that cannot report deliveries, has to clear the last lot rather
+  // than leave stale stems on a fresh chart.
+  if (not ShowBolusOverlay) or (not api.supportsBoluses) or
+    (not api.getBoluses(boluses)) then
+  begin
+    fHistoryGraph.SetBolusOverlayEnabled(false);
+    fHistoryGraph.SetBoluses(nil);
+    Exit;
+  end;
+
+  fHistoryGraph.SetBoluses(boluses);
+  fHistoryGraph.SetBolusOverlayEnabled(true, ShowAutoBolusOverlay);
+end;
+
+// Carbohydrates, on the same terms as the insulin overlay: opt-in, cached from
+// the last fetch, and cleared on every path that has nothing to show.
+procedure TfBG.AutoEnableCarbOverlay;
+var
+  carbs: TCarbList;
+begin
+  if (api = nil) or (fHistoryGraph = nil) then
+    Exit;
+
+  if (not ShowCarbOverlay) or (not api.supportsCarbs) or
+    (not api.getCarbs(carbs)) then
+  begin
+    fHistoryGraph.SetCarbOverlayEnabled(false);
+    fHistoryGraph.SetCarbs(nil);
+    Exit;
+  end;
+
+  fHistoryGraph.SetCarbs(carbs);
+  fHistoryGraph.SetCarbOverlayEnabled(true);
+end;
+
 procedure TfBG.AutoAddPredictionOverlay;
 var
   predictions: BGResults;
@@ -516,6 +563,8 @@ begin
   ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
     api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
   AutoEnableBasalOverlay;
+  AutoEnableBolusOverlay;
+  AutoEnableCarbOverlay;
   AutoAddPredictionOverlay;
 end;
 

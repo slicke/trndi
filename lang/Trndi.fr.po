@@ -408,6 +408,18 @@ msgstr "Démarrer avec le système"
 msgid "Show trend arrow in taskbar/dock"
 msgstr "Afficher la flèche de tendance dans la barre des tâches/dock"
 
+#: tfconf.cbbolusoverlay.caption
+msgid "Show insulin doses on the history graph"
+msgstr ""
+
+#: tfconf.cbbolusoverlayauto.caption
+msgid "Include automatic doses from the pump"
+msgstr ""
+
+#: tfconf.cbcarboverlay.caption
+msgid "Show carbohydrates on the history graph"
+msgstr ""
+
 #: tfconf.cbchroma.caption
 msgid "Enable Razer Chroma integration"
 msgstr "Activer l'intégration Razer Chroma"
@@ -3731,6 +3743,18 @@ msgstr "%s à %s"
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
 msgstr "Basal"
+
+#: uhistorygraph.rs_history_graph_key_bolus
+msgid "Bolus"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_bolus_auto
+msgid "Automatic insulin"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_key_carbs
+msgid "Carbohydrates"
+msgstr ""
 
 #: uhistorygraph.rs_history_graph_key_high
 msgctxt "uhistorygraph.rs_history_graph_key_high"

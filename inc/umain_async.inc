@@ -570,6 +570,8 @@ begin
     ShowHistoryGraph(FResults, un, CurrentHistoryGraphPalette,
       cgmHi, cgmLo, cgmRangeHi, cgmRangeLo);
     FOwner.AutoEnableBasalOverlay;
+    FOwner.AutoEnableBolusOverlay;
+    FOwner.AutoEnableCarbOverlay;
     if FMode = hfm24h then
       FOwner.AutoAddPredictionOverlay;
   finally
