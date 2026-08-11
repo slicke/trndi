@@ -60,6 +60,7 @@ uses
   api_dexcom_new_tests,
   api_xdrip_tests,
   api_carelink_tests,
+  api_carelink_treatment_tests,
   carelink_time_tests,
   api_librelinkup_tests,
   api_nightscout_tests,
