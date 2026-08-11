@@ -188,10 +188,10 @@ Can be configured in settings to:
 - Pause your music (Spotify/Deezer) to get your attention
 
 ### Low Insulin Warnings
-If your data source is a pump backend that reports the reservoir (Tandem Source
-or CareLink), Trndi shows a desktop notification as the cartridge runs down —
-once each as it passes 30, 25, 20, 15, 10 and 5 units. Filling the pump arms the
-warnings again for the new cartridge.
+If your data source reports the reservoir (Tandem Source, CareLink, or a
+Nightscout v3 site whose uploader publishes one), Trndi shows a desktop
+notification as the cartridge runs down — once each as it passes 30, 25, 20, 15,
+10 and 5 units. Filling the pump arms the warnings again for the new cartridge.
 
 **Where to turn it off**: Right-click → Settings → Customization tab →
 Notifications → "Alert me when the pump's insulin is running low"
@@ -200,33 +200,39 @@ Other backends do not report insulin at all, so nothing is shown for them. Trndi
 is not a medical device — always verify the level on the pump itself.
 
 ### Sensor Expiry Warnings
-On CareLink, Trndi shows a desktop notification as the sensor session runs out —
-once each at roughly 24, 8, 4, 2 and 1 hours of sensor life left, so a sensor
-change lands when it suits you rather than when the sensor decides. Changing the
-sensor arms the warnings again for the new session.
+On CareLink — and on a Nightscout v3 site whose uploader states when the session
+ends — Trndi shows a desktop notification as the sensor session runs out, once
+each at roughly 24, 8, 4, 2 and 1 hours of sensor life left, so a sensor change
+lands when it suits you rather than when the sensor decides. Changing the sensor
+arms the warnings again for the new session.
 
 **Where to turn it off**: Right-click → Settings → Customization tab →
 Notifications → "Alert me when the sensor is about to expire"
 
-Only CareLink reports how much sensor life is left. Tandem Source does not send
-it — its CGM data carries no session age — and neither do the plain CGM sources
-(Nightscout, Dexcom, LibreLinkUp, xDrip), so nothing is shown for those. The
-hours are the backend's own estimate: treat them as a heads-up, and check the
-pump or CGM app for the real figure.
+Tandem Source does not report sensor life — its CGM data carries no session age
+— and neither do the other plain CGM sources (Dexcom, LibreLinkUp, xDrip), so
+nothing is shown for those. A Nightscout site only qualifies if something writes
+an actual expiry time to it, as xDrip+ does; a sensor *start* on its own is not
+enough, since how long a session lasts depends on the sensor. The hours are the
+backend's own estimate: treat them as a heads-up, and check the pump or CGM app
+for the real figure.
 
 ### Pump Battery Warnings
-If your data source is a pump backend (Tandem Source or CareLink), Trndi shows a
-desktop notification as the pump battery runs down — once each as it passes 20,
-15, 10, 5 and 2 percent. Charging the pump, or fitting a fresh battery, arms the
-warnings again; briefly topping it up does not, so a few minutes on the charger
-will not replay a warning you have already seen.
+If your data source reports a pump battery (Tandem Source, CareLink, or a
+Nightscout v3 site whose uploader publishes one), Trndi shows a desktop
+notification as it runs down — once each as it passes 20, 15, 10, 5 and 2
+percent. Charging the pump, or fitting a fresh battery, arms the warnings again;
+briefly topping it up does not, so a few minutes on the charger will not replay a
+warning you have already seen.
 
 **Where to turn it off**: Right-click → Settings → Customization tab →
 Notifications → "Alert me when the pump battery is running low"
 
 Other backends do not report a pump battery at all, so nothing is shown for them.
-The percentage is the pump's own estimate — treat it as a heads-up and check the
-pump itself before you rely on it.
+On Nightscout this is the pump's battery only — the phone battery your uploader
+also publishes is ignored, since a flat phone is not a flat pump. The percentage
+is the pump's own estimate — treat it as a heads-up and check the pump itself
+before you rely on it.
 
 ---
 
