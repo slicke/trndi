@@ -469,6 +469,8 @@ TfBG = class(TForm)
   procedure lPredictClick({%H-}Sender: TObject);
   procedure miBasalRateClick({%H-}Sender: TObject);
   procedure AutoEnableBasalOverlay;
+  procedure AutoEnableBolusOverlay;
+  procedure AutoEnableCarbOverlay;
   procedure AutoAddPredictionOverlay;
   procedure miDNSClick({%H-}Sender: TObject);
   procedure miDotsInViewClick({%H-}Sender: TObject);
@@ -1098,6 +1100,9 @@ PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
 PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
 PredictShortMinutes: integer = 10; // Prediction horizon (5, 10, or 15 minutes)
 PredictDotMode: boolean = false; // Render predictions as hollow dots on the trend instead of the lPredict label
+ShowBolusOverlay: boolean = false; // Draw insulin deliveries on the history graph
+ShowAutoBolusOverlay: boolean = false; // Include the pump's own micro-deliveries in that overlay
+ShowCarbOverlay: boolean = false; // Draw carbohydrate entries on the history graph
 DotColorMode: TDotColorMode = DOT_COLOR_MODE_DEFAULT; // ux.dot_color_mode — cached here because DotPaint runs per dot, per paint
 RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the actual rate of change instead of the 8-direction glyph
 // Cache for dynamic prediction time updates

@@ -66,6 +66,11 @@ type
     procedure SaveAsCSV(Sender: TObject);
     procedure SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
     procedure SetBasalOverlayEnabled(aEnabled: boolean);
+    procedure SetBoluses(const Boluses: TBolusList);
+    procedure SetBolusOverlayEnabled(aEnabled: boolean;
+      aIncludeAutomatic: boolean = false);
+    procedure SetCarbs(const Carbs: TCarbList);
+    procedure SetCarbOverlayEnabled(aEnabled: boolean);
     procedure SetPredictions(const Predictions: BGResults);
   end;
 
@@ -122,6 +127,27 @@ begin
 end;
 
 procedure TfHistoryGraph.SetBasalOverlayEnabled(aEnabled: boolean);
+begin
+  // no-op for tests
+end;
+
+procedure TfHistoryGraph.SetBoluses(const Boluses: TBolusList);
+begin
+  // no-op for tests
+end;
+
+procedure TfHistoryGraph.SetBolusOverlayEnabled(aEnabled: boolean;
+aIncludeAutomatic: boolean);
+begin
+  // no-op for tests
+end;
+
+procedure TfHistoryGraph.SetCarbs(const Carbs: TCarbList);
+begin
+  // no-op for tests
+end;
+
+procedure TfHistoryGraph.SetCarbOverlayEnabled(aEnabled: boolean);
 begin
   // no-op for tests
 end;
