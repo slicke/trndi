@@ -88,6 +88,10 @@ type
     procedure TestGetValueReferenceIsOwned;
     procedure TestModuleLoaderReturnsModuleDef;
     procedure TestPromiseJobsRun;
+    procedure TestTopLevelAwaitPlainEvalIsSyntaxError;
+    procedure TestTopLevelAwaitRunsWithAsyncFlag;
+    procedure TestInterruptHandlerAbortsScript;
+    procedure TestMemoryLimitFailsAllocations;
   end;
 
 implementation
@@ -141,6 +145,17 @@ begin
     end;
   end;
   res^ := JS_NewInt32(ctx, LastNativeArgSum);
+end;
+
+var
+  { Number of times the interrupt hook was polled during a script run. }
+  InterruptPolls: integer;
+
+{ Interrupt hook that aborts at the very first poll. }
+function InterruptAlways(rt: JSRuntime; opaque: pointer): integer; cdecl;
+begin
+  Inc(InterruptPolls);
+  Result := 1;
 end;
 
 { ---------------------------------------------------------------------------
@@ -776,6 +791,108 @@ begin
   end;
 
   AssertEquals('then() should have run', '7', EvalToString('String(globalThis.done)'));
+end;
+
+procedure TQuickJSBindingTests.TestTopLevelAwaitPlainEvalIsSyntaxError;
+var
+  v: JSValue;
+  msg: RawUtf8;
+begin
+  // The engine only retries a script in async mode when the failed eval's
+  // error text contains 'SyntaxError' (IsTopLevelAwaitError in
+  // trndi.ext.engine); pin down that quickjs-ng still reports top-level
+  // await that way when JS_EVAL_FLAG_ASYNC is absent.
+  v := JS_Eval(FContext, 'const n = await Promise.resolve(5);', 'test.js',
+    JS_EVAL_TYPE_GLOBAL);
+  try
+    AssertTrue('plain eval should reject top-level await', JS_IsException(v));
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+  FContext^.DumpError(msg);
+  AssertTrue('error should stringify as a SyntaxError, got: ' + string(msg),
+    Pos('SyntaxError', string(msg)) > 0);
+end;
+
+procedure TQuickJSBindingTests.TestTopLevelAwaitRunsWithAsyncFlag;
+var
+  v: JSValue;
+  pumped: integer;
+  jobCtx: JSContext;
+begin
+  // The engine retries extension scripts with JS_EVAL_FLAG_ASYNC when the
+  // plain parse rejects top-level await. Verify the flag parses such a script,
+  // that the continuation after the await runs once jobs are pumped, and that
+  // top-level function declarations still land on the global object - the
+  // engine resolves callbacks (clockView, ...) by global name, which is what
+  // the retired async-IIFE source rewriter existed to preserve.
+  v := JS_Eval(FContext,
+    'globalThis.tla = 0;' +
+    'function namedCallback() { return 7; }' +
+    'const n = await Promise.resolve(5);' +
+    'globalThis.tla = n + namedCallback();',
+    'test.js', JS_EVAL_TYPE_GLOBAL or JS_EVAL_FLAG_ASYNC);
+  try
+    AssertFalse('async-mode eval threw', JS_IsException(v));
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+
+  pumped := 0;
+  jobCtx := FContext;
+  while JS_IsJobPending(FRuntime) and (pumped < 100) do
+  begin
+    AssertTrue('job raised', JS_ExecutePendingJob(FRuntime, @jobCtx) >= 0);
+    Inc(pumped);
+  end;
+
+  AssertEquals('await continuation should have run', '12',
+    EvalToString('String(globalThis.tla)'));
+  AssertEquals('function declaration should be global', 'function',
+    EvalToString('typeof namedCallback'));
+end;
+
+procedure TQuickJSBindingTests.TestInterruptHandlerAbortsScript;
+var
+  v: JSValue;
+begin
+  InterruptPolls := 0;
+  JS_SetInterruptHandler(FRuntime, @InterruptAlways, nil);
+  try
+    // Finite but long: a few hundred million iterations end on their own if
+    // the interrupt hook were broken, instead of hanging the runner forever.
+    v := JS_Eval(FContext, 'for (let i = 0; i < 2e8; i++);', 'test.js',
+      JS_EVAL_TYPE_GLOBAL);
+    try
+      AssertTrue('interrupt handler should have been polled', InterruptPolls > 0);
+      AssertTrue('script should abort with an exception', JS_IsException(v));
+    finally
+      JS_FreeValue(FContext, v);
+    end;
+  finally
+    JS_SetInterruptHandler(FRuntime, nil, nil);
+  end;
+  // Take the InterruptError off the context so TearDown frees a clean one.
+  JS_FreeValue(FContext, JS_GetException(FContext));
+end;
+
+procedure TQuickJSBindingTests.TestMemoryLimitFailsAllocations;
+var
+  v: JSValue;
+begin
+  JS_SetMemoryLimit(FRuntime, 1 shl 20); // 1 MB
+  // Bounded loop: if the cap were ignored this ends after ~160MB of work
+  // rather than hanging; with it in force allocation fails within a few
+  // dozen iterations. The runtime is per-test, so no need to lift the cap.
+  v := JS_Eval(FContext,
+    'var a = []; for (var i = 0; i < 20000; i++) a.push(new Array(1024).fill(i));',
+    'test.js', JS_EVAL_TYPE_GLOBAL);
+  try
+    AssertTrue('allocation should fail under the 1MB cap', JS_IsException(v));
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+  JS_FreeValue(FContext, JS_GetException(FContext));
 end;
 
 initialization

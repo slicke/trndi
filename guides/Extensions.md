@@ -132,8 +132,8 @@ copyright and no permissions, and any promptable function fails at runtime with
 
 # Async code and top-level await
 Extensions can use `await` directly at the top level of the script — when a
-script fails to parse because of it, Trndi automatically re-evaluates it inside
-an async wrapper:
+script fails to parse because of it, Trndi automatically re-evaluates it in
+the engine's native async mode:
 
 ```javascript
 /*
@@ -145,11 +145,22 @@ console.log("status: " + res.status);
 ```
 
 Top-level `function` declarations keep working as Trndi callbacks (like
-`clockView`) in wrapped scripts. Two caveats: callbacks assigned with
-`const`/`let` (e.g. `const clockView = () => ...`) must be written as
-`globalThis.clockView = () => ...` instead, and a rejection from top-level
-`await` is logged to the extension console rather than shown as a dialog —
-wrap risky awaits in `try`/`catch`.
+`clockView`). Two caveats: callbacks assigned with `const`/`let` (e.g.
+`const clockView = () => ...`) must be written as
+`globalThis.clockView = () => ...` instead, and a rejection escaping a
+top-level `await` is reported as an unhandled promise rejection — wrap risky
+awaits in `try`/`catch`.
+
+# Runtime limits
+To keep a buggy extension from freezing or exhausting Trndi, the engine
+enforces two guards:
+
+- A script (or callback) that executes continuously for more than **10
+  seconds** is aborted with an uncatchable `InterruptError`. Time spent
+  waiting — on `await`, timers, or a dialog you opened — does not count;
+  only busy loops do.
+- JavaScript heap use across all loaded extensions is capped at **64 MB**;
+  allocations beyond that fail with an out-of-memory error.
 
 # Permissions
 Each extension now runs in its own isolated JavaScript context with only the
