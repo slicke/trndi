@@ -56,6 +56,23 @@ procedure TrndiELog(const Msg: string); // Error log entry
 procedure TrndiWLog(const Msg: string); // Warning log entry
 procedure TrndiNetLog(const Msg: string); // Network log entry (debug only)
 
+{** Blank out credential values in a URL's query string so a request URL can be
+    logged in full without putting a live token in trndi.log.
+
+    Backends authenticate via the query string as well as via headers -- Dexcom
+    Share passes @code(sessionId), which grants read access to the account's
+    glucose data until it expires -- and trndi.log is exactly the file a user
+    attaches to a bug report. Parameter names and every non-secret value are
+    kept, since those (@code(minutes), @code(maxCount), ...) are the diagnostic
+    point of logging the URL at all.
+
+    Distinct from the nested @code(SafeUrlForLog) helpers in the native units,
+    which drop the query string wholesale; those log URLs whose parameters are
+    never interesting. Implemented with System-unit routines only, so it is
+    available in release builds too (where the log procedures are no-ops).
+    @param(AUrl URL to sanitise)
+    @returns(The URL with secret parameter values replaced by "<redacted>") }
+function TrndiSafeUrl(const AUrl: string): string;
 
 implementation
 
@@ -66,6 +83,89 @@ Classes, SysUtils
   , CocoaAll, nsutils.nshelpers
 {$endif}
 ;
+{$endif}
+
+{------------------------------------------------------------------------------
+  Redact credential values from a URL's query string. Defined outside the
+  DEBUG conditional (and written against the System unit only) so callers can
+  sanitise a URL regardless of build mode.
+ ------------------------------------------------------------------------------}
+function TrndiSafeUrl(const AUrl: string): string;
+const
+  // Matched as substrings, so 'token' also covers access_token/refresh_token
+  // and 'key' covers apikey/api_key. Over-redacting a harmless parameter costs
+  // nothing; missing a credential does not.
+  SECRET_MARKERS: array[0..8] of string = (
+    'session', 'token', 'secret', 'password', 'passwd',
+    'key', 'auth', 'signature', 'sig');
+  REDACTED = '<redacted>';
+var
+  qpos, cut, eq: integer;
+  query, part, acc, nm: string;
+
+  function AsciiLower(const S: string): string;
+  var
+    k: integer;
+  begin
+    Result := S;
+    for k := 1 to Length(Result) do
+      if (Result[k] >= 'A') and (Result[k] <= 'Z') then
+        Result[k] := Chr(Ord(Result[k]) + 32);
+  end;
+
+  function IsSecretName(const AName: string): boolean;
+  var
+    k: integer;
+    lowered: string;
+  begin
+    Result := false;
+    lowered := AsciiLower(AName);
+    for k := Low(SECRET_MARKERS) to High(SECRET_MARKERS) do
+      if Pos(SECRET_MARKERS[k], lowered) > 0 then
+        Exit(true);
+  end;
+
+begin
+  Result := AUrl;
+  qpos := Pos('?', Result);
+  if qpos <= 0 then
+    Exit;
+
+  query := Copy(Result, qpos + 1, Length(Result));
+  Result := Copy(Result, 1, qpos); // keep the '?'
+
+  acc := '';
+  while query <> '' do
+  begin
+    cut := Pos('&', query);
+    if cut > 0 then
+    begin
+      part := Copy(query, 1, cut - 1);
+      query := Copy(query, cut + 1, Length(query));
+    end
+    else
+    begin
+      part := query;
+      query := '';
+    end;
+
+    if acc <> '' then
+      acc := acc + '&';
+
+    eq := Pos('=', part);
+    if eq > 0 then
+    begin
+      nm := Copy(part, 1, eq - 1);
+      if IsSecretName(nm) then
+        part := nm + '=' + REDACTED;
+    end;
+    acc := acc + part;
+  end;
+
+  Result := Result + acc;
+end;
+
+{$ifdef DEBUG}
 
 const
   TimestampFmt = 'yyyy-mm-dd hh:nn:ss.zzz';

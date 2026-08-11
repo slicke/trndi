@@ -2362,7 +2362,7 @@ begin
     else
       methodLabel := 'GET';
     startTick := GetTickCount64;
-    TrndiDLog(Format('HTTP %s (curl): %s', [methodLabel, address]));
+    TrndiDLog(Format('HTTP %s (curl): %s', [methodLabel, TrndiSafeUrl(address)]));
     handle := curl_easy_init();
     if handle = nil then
     begin
