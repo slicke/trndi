@@ -44,7 +44,17 @@ interface
 uses
   SysUtils, dateutils, fpjson, jsonparser, StrUtils;
 
-function ParseDexcomTime(const S: string; out DT: TDateTime): boolean;
+{** Parse a Dexcom server-time response into a TDateTime.
+
+    @param(AsUTC When False (default), a bare millisecond epoch with no
+      OffsetMinutes is returned as *local* time -- the convention every
+      reading-timestamp caller wants. When True, it is returned as a UTC-valued
+      TDateTime instead, for callers (time-sync/clock-skew calibration) that
+      compare the result against another UTC value such as
+      @code(LocalTimeToUniversal(Now)). The XML and bare-ISO paths are always
+      UTC-valued regardless of AsUTC, since they parse the server's UTC digits
+      verbatim with no timezone conversion.) }
+function ParseDexcomTime(const S: string; out DT: TDateTime; AsUTC: boolean = False): boolean;
 
 implementation
 
@@ -84,7 +94,7 @@ begin
   end;
 end;
 
-function ParseDexcomTime(const S: string; out DT: TDateTime): boolean;
+function ParseDexcomTime(const S: string; out DT: TDateTime; AsUTC: boolean): boolean;
 var
   LTimeStr: string;
   i, j: integer;
@@ -115,13 +125,14 @@ var
 
   // Convert Unix ms to TDateTime. When OffsetMinutes was supplied alongside the
   // timestamp, interpret the result as the server's wall-clock time (UTC + offset);
-  // otherwise preserve the historical behavior of returning the user's local time.
+  // otherwise honor AsUTC (local time by default, matching the historical
+  // behavior reading-timestamp callers rely on).
   function MsToDT(Ms: int64): TDateTime;
   begin
     if HasOffset then
       Result := UnixToDateTime(Ms div 1000, True) + (OffsetMinutes / MinsPerDay)
     else
-      Result := UnixToDateTime(Ms div 1000, False);
+      Result := UnixToDateTime(Ms div 1000, AsUTC);
   end;
 
 begin

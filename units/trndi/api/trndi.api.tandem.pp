@@ -946,7 +946,8 @@ begin
   Result := False;
   cookieJar := TStringList.Create;
   customHeaders := TStringList.Create;
-  
+
+  try
   try
     log('Tandem.Connect: start');
     // Generate PKCE parameters
@@ -1134,8 +1135,6 @@ begin
         if FAccessToken = '' then
         begin
           lastErr := 'No access token received';
-          httpResponse.Headers.Free;
-          httpResponse.Cookies.Free;
           Exit;
         end;
         
@@ -1173,9 +1172,10 @@ begin
       Result := False;
     end;
   end;
-  
-  cookieJar.Free;
-  customHeaders.Free;
+  finally
+    cookieJar.Free;
+    customHeaders.Free;
+  end;
 end;
 
 (*******************************************************************************
