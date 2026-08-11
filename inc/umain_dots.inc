@@ -672,21 +672,24 @@ begin
       ARect.Top + PAD div 2 + 2, tirText);
   end;
 
-  // Arrow before reading: the live window keeps lArrow behind lVal.
-  SetPreviewFont(AData.ArrowFont, (h * 3) div 10, [fsBold]);
+  // Arrow before reading: on the live window lArrow spans the whole client
+  // area with the glyph centered (ScaleLbl fits it to the full window) and
+  // sits behind lVal — a big faint glyph under the number, not a row of its
+  // own. Mirror that: centered on the box, sized near its height.
+  SetPreviewFont(AData.ArrowFont, (h * 4) div 5, [fsBold]);
   ACanvas.Font.Color := arrowColor;
   tw := ACanvas.TextWidth(arrowText);
   th := ACanvas.TextHeight(arrowText);
   ACanvas.TextOut(ARect.Left + (w - tw) div 2,
-    ARect.Top + (h * 72) div 100 - th div 2, arrowText);
+    ARect.Top + (h - th) div 2, arrowText);
 
-  // The hero reading.
+  // The hero reading, centered on the window like the live lVal.
   SetPreviewFont(AData.ValFont, (h * 2) div 5, []);
   ACanvas.Font.Color := valColor;
   tw := ACanvas.TextWidth(valText);
   th := ACanvas.TextHeight(valText);
   ACanvas.TextOut(ARect.Left + (w - tw) div 2,
-    ARect.Top + (h * 45) div 100 - th div 2, valText);
+    ARect.Top + (h - th) div 2, valText);
 
   // Delta, bottom edge, honoring the saved lDiff alignment.
   SetPreviewFont('', Max(10, h div 11), []);
@@ -733,7 +736,9 @@ begin
   end;
 
   // Click targets for the dialog's font pickers: ago strip on top, reading
-  // band in the middle, arrow band below it.
+  // band in the middle, arrow band below it. The glyph and the number overlap
+  // visually (as on the live window), so the arrow's target is the lower part
+  // of the glyph, clear of the digits.
   AZones.AgoRect := Rect(0, 0, w div 2, h div 5);
   AZones.ValRect := Rect(0, h div 5, w, (h * 3) div 5);
   AZones.ArrowRect := Rect(0, (h * 3) div 5, w, (h * 9) div 10);
