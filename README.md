@@ -317,6 +317,7 @@ Windows (PowerShell):
   - `./make.ps1 debug`                     -> builds Debug via `lazbuild` (`-dDebug`)
   - `./make.ps1 noext`                     -> builds the "No Ext (Release)" mode
   - `./make.ps1 help`                      -> show usage
+- Like `make`, the build targets stage the result in `build/` (`Trndi.exe`, `lang/`, and the QuickJS DLLs for Extensions modes); set `OUTDIR` to stage elsewhere.
 
 macOS / (also usable on Windows if you prefer):
 
