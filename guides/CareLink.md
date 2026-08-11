@@ -91,7 +91,9 @@ There is no picker in the settings UI, and that is a deliberate choice rather th
 
 Sensor life drives the sensor-expiry notifications (24/8/4/2/1 hours left) described in [Notifications.md](Notifications.md); `sensorDurationHours` counts **down**, confirmed against the app's own figure.
 
-Parsed and available to the backend, but not shown in the UI yet: active insulin (IOB), and pump/transmitter battery.
+`pumpBatteryLevelPercent` drives the pump-battery notifications (20/15/10/5/2 percent) described in [Notifications.md](Notifications.md). How fine-grained that figure is has not been confirmed against a live account — the one captured payload reads 50, which a quarter-bucket scheme and a true percentage would both produce. If it is bucketed, only the lowest step is reachable here; worth checking against the pump display next time a battery runs down.
+
+Parsed and available to the backend, but not shown in the UI yet: active insulin (IOB), and transmitter battery (`gstBatteryLevel`, where 255 is the device's "no reading" marker rather than a full battery).
 
 ## For testers: fixtures we need
 

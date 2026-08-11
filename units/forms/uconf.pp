@@ -165,6 +165,7 @@ TfConf = class(TForm)
   cbAlertHiLo: TCheckBox;
   cbAlertReservoir: TCheckBox;
   cbAlertSensor: TCheckBox;
+  cbAlertBattery: TCheckBox;
   cbFlashLow: TCheckBox;
   cbFlashPerfect: TCheckBox;
   cbMultiTouch: TCheckBox;
