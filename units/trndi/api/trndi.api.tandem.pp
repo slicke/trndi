@@ -111,6 +111,14 @@ type
     FAccountId: string;     /// Account ID from JWT
     FCalcDiff: boolean;     /// If True, compute deltas between consecutive readings
 
+    FBoluses: TBolusList;   /// Insulin deliveries from the last fetch, oldest first
+    FBolusesValid: boolean; /// True once a payload has been walked
+    FCarbs: TCarbList;      /// Carbohydrate entries from the last fetch, oldest first
+    FCarbsValid: boolean;   /// True once a payload has been walked
+    FDeviceStatus: TCGMDeviceStatus; /// Pump housekeeping from the last fetch
+    FDeviceStatusValid: boolean;     /// True once a payload has filled it
+    FBasalRate: single;     /// Last rate the pump was commanded to run; <0 unknown
+
     {** Get region-specific URLs }
     function GetLoginApiUrl: string;
     function GetSourceUrl: string;
@@ -133,6 +141,11 @@ type
 
     {** Extract authorization code from redirect URL }
     function ExtractAuthCodeFromURL(const AURL: string): string;
+
+    {** Log what a pump-logs payload actually contains, for working out the
+        BFF's property names. Debug builds only, since @code(log) is a no-op
+        elsewhere. }
+    procedure LogEventCensus(AEvents: TJSONArray);
 
   public
     {** Create a Tandem API client.
@@ -188,6 +201,28 @@ type
     {** Test connection for Tandem Source API }
     class function testConnection(AEmail, APass: string; var ARes: string; AExtra: string): MaybeBool; overload;
 
+    {** Insulin deliveries the pump recorded over the window the last fetch
+        covered, assembled from the bolus event family. }
+    function getBoluses(out ABoluses: TBolusList): boolean; override;
+
+    {** True: the pump-logs payload carries insulin deliveries. }
+    function supportsBoluses: boolean; override;
+
+    {** Carbohydrates entered into the bolus calculator over the window the
+        last fetch covered. }
+    function getCarbs(out ACarbs: TCarbList): boolean; override;
+
+    {** True: the pump-logs payload carries carbohydrate entries. }
+    function supportsCarbs: boolean; override;
+
+    {** Reservoir, battery and suspend state as of the last event in the window
+        the last fetch covered. }
+    function getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean; override;
+
+    {** The last basal rate Control-IQ commanded, in U/hr. This is what the
+        pump was told to run, not the programmed profile rate. }
+    function getBasalRate: single; override;
+
   published
     {** The effective base URL used for API requests. }
     property Remote: string read baseUrl;
@@ -199,6 +234,15 @@ type
     property CalculateDiff: boolean read FCalcDiff;
 
   protected
+    {** Fill the bolus, carbohydrate, pump-status and basal caches from the
+        non-CGM events of a pump-logs payload. Replaces whatever the previous
+        fetch left, so it must only run on a payload that actually parsed.
+
+        Protected rather than private so the tests can drive it from a fixture
+        payload; reaching the real one would otherwise mean standing up the
+        whole OIDC flow against a fake server. }
+    procedure ExtractTreatments(AEvents: TJSONArray);
+
     {** Get the value which represents the maximum reading for the backend }
     function getLimitHigh: integer; override;
 
@@ -806,7 +850,17 @@ begin
   FPassword := APassword;
   FRegion := ARegion;
   FCalcDiff := ACalcDiff;
-  
+
+  // Nothing fetched yet: the accessors must report "not reported" rather than
+  // an empty delivery list, which would read as "no insulin given".
+  FBolusesValid := false;
+  SetLength(FBoluses, 0);
+  FCarbsValid := false;
+  SetLength(FCarbs, 0);
+  FDeviceStatusValid := false;
+  clearDeviceStatus(FDeviceStatus);
+  FBasalRate := -1;
+
   baseUrl := GetSourceUrl;
   
   // Parent ctor sets timezone, allocates native helper, and initializes thresholds
@@ -1124,6 +1178,650 @@ begin
   customHeaders.Free;
 end;
 
+(*******************************************************************************
+  Pump-logs event decoding
+
+  Event codes and their eventProperties names below were read off a live EU
+  account's payload (t:slim X2, Dexcom G7, Control-IQ) rather than guessed --
+  see LogEventCensus, which is what produced them.
+ ******************************************************************************)
+
+const
+  {** Bolus request part 1: carbohydrates, BG and the ratios used }
+  TANDEM_EV_BOLUS_REQUEST1 = 64;
+  {** Bolus request part 3: the food/correction/total split, in units }
+  TANDEM_EV_BOLUS_REQUEST3 = 66;
+  {** Bolus activated: delivery is starting }
+  TANDEM_EV_BOLUS_ACTIVATED = 55;
+  {** Bolus completed: carries what was actually delivered }
+  TANDEM_EV_BOLUS_COMPLETED = 20;
+  {** Bolus delivery record, twice per bolus }
+  TANDEM_EV_BOLUS_DELIVERY = 280;
+  {** Periodic pump state: reservoir, battery bars, IOB }
+  TANDEM_EV_PUMP_STATE = 9;
+  {** Battery detail, on charge start and end }
+  TANDEM_EV_BATTERY_A = 34;
+  TANDEM_EV_BATTERY_B = 35;
+  {** Periodic totals: last basal rate, daily total, battery }
+  TANDEM_EV_DAILY_STATE = 81;
+  {** Pump control-mode change; carries the suspend flag }
+  TANDEM_EV_CONTROL_MODE = 230;
+  {** Basal rate change, as a float U/hr }
+  TANDEM_EV_BASAL_CHANGE = 90;
+  {** Control-IQ rate command, in milliunits per hour }
+  TANDEM_EV_ALGORITHM_RATE = 279;
+
+  {** Control-IQ's temp-rate field when no temp rate is running }
+  TANDEM_RATE_UNSET = 65535;
+
+type
+  {** One bolus, assembled from the several events that describe it.
+
+      The pump splits a single delivery across up to six events sharing a
+      @code(bolusId), and none of them is complete on its own: the
+      carbohydrates appear only in the first request message, the
+      food/correction split only in the third, and what was actually delivered
+      only in the completion. They are collected here as the payload is walked
+      and turned into one entry at the end. }
+  TTandemBolusBuild = record
+    bolusId: int64;
+    requestTime, activateTime, completeTime: TDateTime;
+    hasRequest, hasActivate, hasComplete: boolean;
+    carbs: double;           // 64 carbAmount, grams
+    foodSize: double;        // 66 foodBolusSize, U
+    correctionSize: double;  // 66 correctionBolusSize, U
+    totalSize: double;       // 66 totalBolusSize, U
+    hasTotal: boolean;
+    activatedSize: double;   // 55 bolusSize, U
+    hasActivated: boolean;
+    delivered: double;       // 20 insulinDelivered, U
+    hasDelivered: boolean;
+    completionStatus: integer;
+    bolusType: integer;      // 64 bolusType
+    bolusSource: integer;    // 280 bolusSource
+    hasSource: boolean;
+  end;
+
+{------------------------------------------------------------------------------
+  eventProperties key lookup.
+
+  The BFF serializes the keys in camelCase, but matching is done on a lowercased
+  alphanumeric-only form so a change of casing or punctuation on Tandem's side
+  does not silently stop a field being read.
+ ------------------------------------------------------------------------------}
+function TandemNormalizePropName(const AName: string): string;
+var
+  ch: char;
+begin
+  Result := '';
+  for ch in LowerCase(AName) do
+    if ch in ['a'..'z', '0'..'9'] then
+      Result := Result + ch;
+end;
+
+function TandemFindProp(AProps: TJSONObject; const ANormName: string): TJSONData;
+var
+  k: integer;
+begin
+  Result := nil;
+  if AProps = nil then
+    Exit;
+  for k := 0 to AProps.Count - 1 do
+    if TandemNormalizePropName(AProps.Names[k]) = ANormName then
+      Exit(AProps.Items[k]);
+end;
+
+{------------------------------------------------------------------------------
+  Read a numeric eventProperty. Absent or non-numeric returns False rather than
+  a zero, so a field we cannot read never becomes a dose of nothing.
+ ------------------------------------------------------------------------------}
+function TandemPropNum(AProps: TJSONObject; const ANormName: string;
+  out AValue: double): boolean;
+var
+  data: TJSONData;
+begin
+  AValue := 0;
+  data := TandemFindProp(AProps, ANormName);
+  Result := data is TJSONNumber;
+  if Result then
+    AValue := data.AsFloat;
+end;
+
+function TandemPropInt(AProps: TJSONObject; const ANormName: string;
+  ADefault: integer): integer;
+var
+  value: double;
+begin
+  if TandemPropNum(AProps, ANormName, value) then
+    Result := Round(value)
+  else
+    Result := ADefault;
+end;
+
+{------------------------------------------------------------------------------
+  Parse a pumpDateTime, e.g. "2026-08-10T11:34:49".
+
+  This is the pump's own wall clock with no zone on it, and it is the same time
+  base that the CGM events' egvTimeStamp decodes to -- verified against a
+  payload where an event's egvTimeStamp and its pumpDateTime agreed to within
+  three seconds. Treatments and readings therefore land on one timeline with no
+  conversion between them, which is the whole point of preferring this field
+  over the estimatedDateTime sitting next to it.
+ ------------------------------------------------------------------------------}
+function ParseTandemPumpTime(const AValue: string; out ATime: TDateTime): boolean;
+var
+  y, mo, d, h, mi, s: integer;
+begin
+  Result := false;
+  ATime := 0;
+  if Length(AValue) < 19 then
+    Exit;
+  if not TryStrToInt(Copy(AValue, 1, 4), y) then Exit;
+  if not TryStrToInt(Copy(AValue, 6, 2), mo) then Exit;
+  if not TryStrToInt(Copy(AValue, 9, 2), d) then Exit;
+  if not TryStrToInt(Copy(AValue, 12, 2), h) then Exit;
+  if not TryStrToInt(Copy(AValue, 15, 2), mi) then Exit;
+  if not TryStrToInt(Copy(AValue, 18, 2), s) then Exit;
+  Result := TryEncodeDateTime(y, mo, d, h, mi, s, 0, ATime);
+end;
+
+{------------------------------------------------------------------------------
+  Census of a pump-logs payload: how many of each eventCode came back, and one
+  whole sample event per code.
+
+  The driver reads only the four CGM event codes. Everything else the eventIds
+  filter asks for -- boluses, carbohydrates, cartridge and battery events --
+  arrives and is dropped, because Tandem does not publish the BFF's property
+  names and we have never seen a real payload's non-CGM events. Guessing them
+  would mean putting invented insulin figures on the graph, so this dumps what
+  an account actually returns instead.
+
+  One sample per code, not all of them: the number of codes is bounded by the
+  eventIds filter we send, so the output is bounded too, and the second event
+  of a code says nothing the first did not.
+
+  The samples are raw event objects, so they carry that account's glucose,
+  insulin and carbohydrate figures. It stays on the user's own machine and only
+  in a debug build, but a log being sent on for diagnosis should be read first.
+ ------------------------------------------------------------------------------}
+procedure Tandem.LogEventCensus(AEvents: TJSONArray);
+const
+  // The filter we send names 55 codes; the cap is only there so a payload that
+  // ignores the filter cannot make this loop unbounded.
+  MAX_CODES = 96;
+  MAX_SAMPLE_CHARS = 1500;
+var
+  codes, counts: array of integer;
+  samples: array of string;
+  distinct, i, j, k, code, slot, swapInt: integer;
+  swapStr: string;
+  eventObj: TJSONObject;
+  summary: string;
+begin
+  if (AEvents = nil) or (AEvents.Count = 0) then
+    Exit;
+
+  SetLength(codes, MAX_CODES);
+  SetLength(counts, MAX_CODES);
+  SetLength(samples, MAX_CODES);
+  distinct := 0;
+
+  for i := 0 to AEvents.Count - 1 do
+  begin
+    if not (AEvents[i] is TJSONObject) then
+      Continue;
+    eventObj := TJSONObject(AEvents[i]);
+    code := eventObj.Get('eventCode', -1);
+
+    slot := -1;
+    for j := 0 to distinct - 1 do
+      if codes[j] = code then
+      begin
+        slot := j;
+        Break;
+      end;
+
+    if slot < 0 then
+    begin
+      // Past the cap we stop learning new codes but keep counting the known
+      // ones, so the summary still adds up against AEvents.Count.
+      if distinct >= MAX_CODES then
+        Continue;
+      slot := distinct;
+      codes[slot] := code;
+      counts[slot] := 0;
+      samples[slot] := eventObj.AsJSON;
+      if Length(samples[slot]) > MAX_SAMPLE_CHARS then
+        samples[slot] := Copy(samples[slot], 1, MAX_SAMPLE_CHARS) + ' ...[truncated]';
+      Inc(distinct);
+    end;
+    Inc(counts[slot]);
+  end;
+
+  // Ascending by code, so the same account read twice produces comparable logs
+  for i := 1 to distinct - 1 do
+  begin
+    swapInt := codes[i];
+    k := counts[i];
+    swapStr := samples[i];
+    j := i - 1;
+    while (j >= 0) and (codes[j] > swapInt) do
+    begin
+      codes[j + 1] := codes[j];
+      counts[j + 1] := counts[j];
+      samples[j + 1] := samples[j];
+      Dec(j);
+    end;
+    codes[j + 1] := swapInt;
+    counts[j + 1] := k;
+    samples[j + 1] := swapStr;
+  end;
+
+  summary := '';
+  for j := 0 to distinct - 1 do
+    summary := summary + Format(' %d=%d', [codes[j], counts[j]]);
+  log(Format('Tandem.EventCensus: %d events, %d distinct codes (code=count):%s',
+    [AEvents.Count, distinct, summary]));
+
+  for j := 0 to distinct - 1 do
+    log(Format('Tandem.EventCensus: code %d sample=%s', [codes[j], samples[j]]));
+end;
+
+{------------------------------------------------------------------------------
+  Build the bolus, carbohydrate, pump-status and basal caches from one payload.
+
+  Boluses are assembled by bolusId across the request, activation, delivery and
+  completion events, because the figures we want are spread over all of them.
+  What went in is taken from the completion's insulinDelivered in preference to
+  anything that was merely requested: an interrupted bolus delivers less than
+  it asked for, and the delivered figure is the one the glucose curve reflects.
+
+  Every bolus here is reported as manual. Control-IQ does deliver automatic
+  corrections, but the payload we have decoded does not yet say which field
+  distinguishes them -- bolusSource, bolusType and correctionBolusIncluded are
+  all candidates and we have seen only one value of each. Marking boluses
+  automatic on a guess would hide real ones behind an off-by-default setting,
+  whereas leaving them all visible is at worst untidy: Control-IQ corrects at
+  most hourly, so a Tandem overlay does not face the hundred-hairlines problem
+  that made the split necessary for SmartGuard. The raw values are logged per
+  bolus so the mapping can be settled from a payload that contains both kinds.
+
+  Carbohydrates come only from the bolus calculator's carbAmount. Tandem has no
+  standalone meal event, so unlike CareLink there is nothing to reconcile and
+  no double-counting to avoid.
+
+  Status and basal fields are taken from the most recent event that carries
+  them, which is why each is tracked with its own timestamp rather than simply
+  overwritten -- the payload is ordered in practice but the overlay must not
+  depend on that.
+ ------------------------------------------------------------------------------}
+procedure Tandem.ExtractTreatments(AEvents: TJSONArray);
+var
+  builds: array of TTandemBolusBuild;
+  buildCount, i, j, slot, code, intVal: integer;
+  eventObj, propsObj: TJSONObject;
+  stamp: TDateTime;
+  idVal, numVal: double;
+  bolusId: int64;
+  carbCount, skipped: integer;
+  swapBolus: TBolusEntry;
+  swapCarb: TCarbEntry;
+  reservoirAt, batteryAt, suspendAt, basalAt: TDateTime;
+  kindStr, sourceLog: string;
+
+  function FindBuild(AId: int64): integer;
+  var
+    k: integer;
+  begin
+    for k := 0 to buildCount - 1 do
+      if builds[k].bolusId = AId then
+        Exit(k);
+    if buildCount >= Length(builds) then
+      SetLength(builds, Length(builds) + 32);
+    builds[buildCount] := Default(TTandemBolusBuild);
+    builds[buildCount].bolusId := AId;
+    builds[buildCount].completionStatus := -1;
+    builds[buildCount].bolusType := -1;
+    Result := buildCount;
+    Inc(buildCount);
+  end;
+
+  // A percentage the pump could not read comes back as 255; treat anything
+  // outside 0..100 as absent rather than as a reading.
+  function AsPercent(AValue: double): integer;
+  begin
+    Result := Round(AValue);
+    if (Result < 0) or (Result > 100) then
+      Result := DEVICE_STATUS_UNKNOWN;
+  end;
+
+begin
+  SetLength(FBoluses, 0);
+  FBolusesValid := false;
+  SetLength(FCarbs, 0);
+  FCarbsValid := false;
+  clearDeviceStatus(FDeviceStatus);
+  FDeviceStatusValid := false;
+  FBasalRate := -1;
+
+  if (AEvents = nil) or (AEvents.Count = 0) then
+    Exit;
+
+  SetLength(builds, 64);
+  buildCount := 0;
+  reservoirAt := 0;
+  batteryAt := 0;
+  suspendAt := 0;
+  basalAt := 0;
+
+  for i := 0 to AEvents.Count - 1 do
+  begin
+    if not (AEvents[i] is TJSONObject) then
+      Continue;
+    eventObj := TJSONObject(AEvents[i]);
+    if not (eventObj.Find('eventProperties') is TJSONObject) then
+      Continue;
+    propsObj := TJSONObject(eventObj.Find('eventProperties'));
+    if not ParseTandemPumpTime(eventObj.Get('pumpDateTime', ''), stamp) then
+      Continue;
+
+    code := eventObj.Get('eventCode', -1);
+
+    case code of
+    TANDEM_EV_BOLUS_REQUEST1, TANDEM_EV_BOLUS_REQUEST3,
+    TANDEM_EV_BOLUS_ACTIVATED, TANDEM_EV_BOLUS_COMPLETED,
+    TANDEM_EV_BOLUS_DELIVERY:
+    begin
+      if not TandemPropNum(propsObj, 'bolusid', idVal) then
+        Continue;
+      bolusId := Round(idVal);
+      slot := FindBuild(bolusId);
+
+      case code of
+      TANDEM_EV_BOLUS_REQUEST1:
+      begin
+        builds[slot].requestTime := stamp;
+        builds[slot].hasRequest := true;
+        if TandemPropNum(propsObj, 'carbamount', numVal) and (numVal > 0) then
+          builds[slot].carbs := numVal;
+        builds[slot].bolusType := TandemPropInt(propsObj, 'bolustype', -1);
+      end;
+      TANDEM_EV_BOLUS_REQUEST3:
+      begin
+        if not builds[slot].hasRequest then
+        begin
+          builds[slot].requestTime := stamp;
+          builds[slot].hasRequest := true;
+        end;
+        TandemPropNum(propsObj, 'foodbolussize', builds[slot].foodSize);
+        TandemPropNum(propsObj, 'correctionbolussize', builds[slot].correctionSize);
+        builds[slot].hasTotal :=
+          TandemPropNum(propsObj, 'totalbolussize', builds[slot].totalSize);
+      end;
+      TANDEM_EV_BOLUS_ACTIVATED:
+      begin
+        builds[slot].activateTime := stamp;
+        builds[slot].hasActivate := true;
+        builds[slot].hasActivated :=
+          TandemPropNum(propsObj, 'bolussize', builds[slot].activatedSize);
+      end;
+      TANDEM_EV_BOLUS_COMPLETED:
+      begin
+        builds[slot].completeTime := stamp;
+        builds[slot].hasComplete := true;
+        builds[slot].hasDelivered :=
+          TandemPropNum(propsObj, 'insulindelivered', builds[slot].delivered);
+        builds[slot].completionStatus :=
+          TandemPropInt(propsObj, 'completionstatus', -1);
+      end;
+      TANDEM_EV_BOLUS_DELIVERY:
+        if not builds[slot].hasSource then
+        begin
+          builds[slot].bolusSource := TandemPropInt(propsObj, 'bolussource', -1);
+          builds[slot].hasSource := true;
+        end;
+      end;
+    end;
+
+    TANDEM_EV_PUMP_STATE:
+    begin
+      if stamp >= reservoirAt then
+      begin
+        // "insulin" is the reservoir remaining. Its companion iob in this
+        // event is scaled by 100 (109 for 1.09 U), so the scale here is worth
+        // checking against the pump display before this figure is shown to a
+        // user; it is logged below for exactly that reason.
+        if TandemPropNum(propsObj, 'insulin', numVal) and (numVal >= 0) then
+        begin
+          FDeviceStatus.reservoirUnits := numVal;
+          reservoirAt := stamp;
+        end;
+      end;
+      if (stamp >= batteryAt) and TandemPropNum(propsObj, 'ibc', numVal) then
+      begin
+        intVal := AsPercent(numVal);
+        if intVal <> DEVICE_STATUS_UNKNOWN then
+        begin
+          FDeviceStatus.pumpBatteryPercent := intVal;
+          batteryAt := stamp;
+        end;
+      end;
+    end;
+
+    TANDEM_EV_BATTERY_A, TANDEM_EV_BATTERY_B:
+      if (stamp >= batteryAt) and TandemPropNum(propsObj, 'ibc', numVal) then
+      begin
+        intVal := AsPercent(numVal);
+        if intVal <> DEVICE_STATUS_UNKNOWN then
+        begin
+          FDeviceStatus.pumpBatteryPercent := intVal;
+          batteryAt := stamp;
+        end;
+      end;
+
+    TANDEM_EV_CONTROL_MODE:
+      if stamp >= suspendAt then
+      begin
+        FDeviceStatus.pumpSuspended := TandemPropInt(propsObj, 'pumpsuspended', 0) <> 0;
+        suspendAt := stamp;
+      end;
+
+    TANDEM_EV_BASAL_CHANGE:
+      if (stamp >= basalAt) and
+        TandemPropNum(propsObj, 'commandedbasalrate', numVal) and (numVal >= 0) then
+      begin
+        FBasalRate := numVal;
+        basalAt := stamp;
+      end;
+
+    TANDEM_EV_ALGORITHM_RATE:
+      if (stamp >= basalAt) and
+        TandemPropNum(propsObj, 'commandedrate', numVal) and
+        (numVal >= 0) and (numVal <> TANDEM_RATE_UNSET) then
+      begin
+        // Milliunits per hour here, unlike the float U/hr of code 90.
+        FBasalRate := numVal / 1000;
+        basalAt := stamp;
+      end;
+
+    TANDEM_EV_DAILY_STATE:
+      if (stamp >= basalAt) and
+        TandemPropNum(propsObj, 'lastbasalrate', numVal) and (numVal >= 0) then
+      begin
+        FBasalRate := numVal;
+        basalAt := stamp;
+      end;
+    end;
+  end;
+
+  // Turn the assembled boluses into entries, dropping any that delivered
+  // nothing -- a record of no insulin given should not put a stem on a graph.
+  SetLength(FBoluses, buildCount);
+  SetLength(FCarbs, buildCount);
+  j := 0;
+  carbCount := 0;
+  skipped := 0;
+  sourceLog := '';
+
+  for i := 0 to buildCount - 1 do
+  begin
+    if builds[i].hasDelivered then
+      numVal := builds[i].delivered
+    else if builds[i].hasTotal then
+      numVal := builds[i].totalSize
+    else if builds[i].hasActivated then
+      numVal := builds[i].activatedSize
+    else
+    begin
+      Inc(skipped);
+      Continue;
+    end;
+
+    // Delivery start, not completion: an extended bolus finishes hours after
+    // the insulin began going in, and the start is where it belongs on a graph.
+    if builds[i].hasActivate then
+      stamp := builds[i].activateTime
+    else if builds[i].hasRequest then
+      stamp := builds[i].requestTime
+    else
+      stamp := builds[i].completeTime;
+
+    if builds[i].carbs > 0 then
+      kindStr := 'MEAL'
+    else if builds[i].correctionSize > 0 then
+      kindStr := 'CORRECTION'
+    else if builds[i].foodSize > 0 then
+      kindStr := 'FOOD'
+    else
+      kindStr := '';
+
+    if numVal > 0 then
+    begin
+      FBoluses[j] := Default(TBolusEntry);
+      FBoluses[j].time := stamp;
+      FBoluses[j].units := numVal;
+      FBoluses[j].carbs := builds[i].carbs;
+      FBoluses[j].kind := kindStr;
+      FBoluses[j].automatic := false;
+      Inc(j);
+    end
+    else
+      Inc(skipped);
+
+    if builds[i].carbs > 0 then
+    begin
+      FCarbs[carbCount] := Default(TCarbEntry);
+      FCarbs[carbCount].time := stamp;
+      FCarbs[carbCount].grams := builds[i].carbs;
+      FCarbs[carbCount].kind := kindStr;
+      Inc(carbCount);
+    end;
+
+    // Until the automatic/manual mapping is settled, every bolus reports the
+    // fields that might carry it.
+    if Length(sourceLog) < 400 then
+      sourceLog := sourceLog + Format(' [id=%d src=%d type=%d st=%d u=%.3f c=%.0f]',
+        [builds[i].bolusId, builds[i].bolusSource, builds[i].bolusType,
+         builds[i].completionStatus, numVal, builds[i].carbs]);
+  end;
+
+  SetLength(FBoluses, j);
+  SetLength(FCarbs, carbCount);
+  FBolusesValid := true;
+  FCarbsValid := true;
+  FDeviceStatusValid := (FDeviceStatus.reservoirUnits >= 0) or
+    (FDeviceStatus.pumpBatteryPercent <> DEVICE_STATUS_UNKNOWN) or
+    (suspendAt > 0);
+
+  // Oldest first: the overlay draws in array order and must not rely on the
+  // payload having arrived sorted.
+  for i := 1 to High(FBoluses) do
+  begin
+    swapBolus := FBoluses[i];
+    j := i - 1;
+    while (j >= 0) and (FBoluses[j].time > swapBolus.time) do
+    begin
+      FBoluses[j + 1] := FBoluses[j];
+      Dec(j);
+    end;
+    FBoluses[j + 1] := swapBolus;
+  end;
+
+  for i := 1 to High(FCarbs) do
+  begin
+    swapCarb := FCarbs[i];
+    j := i - 1;
+    while (j >= 0) and (FCarbs[j].time > swapCarb.time) do
+    begin
+      FCarbs[j + 1] := FCarbs[j];
+      Dec(j);
+    end;
+    FCarbs[j + 1] := swapCarb;
+  end;
+
+  log(Format('Tandem.ExtractTreatments: %d boluses, %d carb entries, %d skipped'
+    + ' (from %d bolus ids in %d events)',
+    [Length(FBoluses), carbCount, skipped, buildCount, AEvents.Count]));
+  if sourceLog <> '' then
+    log('Tandem.ExtractTreatments: bolus fields:' + sourceLog);
+  log(Format('Tandem.ExtractTreatments: reservoir=%.1fU battery=%d%% '
+    + 'suspended=%s basal=%.3fU/hr',
+    [FDeviceStatus.reservoirUnits, FDeviceStatus.pumpBatteryPercent,
+     BoolToStr(FDeviceStatus.pumpSuspended, true), FBasalRate]));
+end;
+
+{------------------------------------------------------------------------------
+  Treatment accessors. All answer from what the last fetch cached rather than
+  issuing a request, so the window they cover is whatever that fetch covered.
+ ------------------------------------------------------------------------------}
+function Tandem.getBoluses(out ABoluses: TBolusList): boolean;
+begin
+  ABoluses := Copy(FBoluses);
+  Result := FBolusesValid and (Length(ABoluses) > 0);
+end;
+
+function Tandem.supportsBoluses: boolean;
+begin
+  Result := true;
+end;
+
+function Tandem.getCarbs(out ACarbs: TCarbList): boolean;
+begin
+  ACarbs := Copy(FCarbs);
+  Result := FCarbsValid and (Length(ACarbs) > 0);
+end;
+
+function Tandem.supportsCarbs: boolean;
+begin
+  Result := true;
+end;
+
+function Tandem.getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean;
+begin
+  if not FDeviceStatusValid then
+  begin
+    clearDeviceStatus(AStatus);
+    Exit(false);
+  end;
+  AStatus := FDeviceStatus;
+  Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  The last rate Control-IQ commanded, in U/hr.
+
+  supportsBasal stays False: the graph's basal overlay wants a repeating daily
+  schedule, and while the payload does carry the programmed profileBasalRate
+  alongside each command, one payload only covers the window that was fetched
+  and cannot be read as a full day's schedule.
+ ------------------------------------------------------------------------------}
+function Tandem.getBasalRate: single;
+begin
+  if FBasalRate < 0 then
+    Exit(0);
+  Result := FBasalRate;
+end;
+
 {------------------------------------------------------------------------------
   Retrieve glucose readings from Tandem Source
 
@@ -1307,6 +2005,15 @@ var
         end;
 
         fetchOk := True;
+
+        // Debug builds only: report what the payload holds beyond the CGM
+        // events, which is how the property names below were established and
+        // how an unfamiliar payload announces itself.
+        LogEventCensus(eventsArr);
+
+        // Boluses, carbohydrates, reservoir/battery and the commanded basal
+        // rate all come out of the same payload the readings do.
+        ExtractTreatments(eventsArr);
 
         for i := 0 to eventsArr.Count - 1 do
         begin
