@@ -109,9 +109,11 @@ type
       string; @code(sensorOK) defaults to True so a backend that reports no
       fault information never appears to be faulting. }
 TCGMDeviceStatus = record
-    {** Sensor life in hours as reported by the backend. NOTE: whether this
-        counts up (elapsed) or down (remaining) is backend-specific and is
-        currently unconfirmed for CareLink — resolve before showing it. }
+    {** Sensor life *remaining*, in hours; <0 unknown. CareLink's
+        sensorDurationHours counts down, confirmed against the figure its own
+        app shows. A backend whose payload reports elapsed session time instead
+        must convert before filling this, since consumers treat a small value
+        as a sensor about to expire. }
   sensorDurationHours: integer;
     {** Backend's own sensor state text, e.g. 'NO_ERROR_MESSAGE'; '' unknown }
   sensorState: string;

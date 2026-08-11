@@ -678,10 +678,14 @@ private
   Chroma: TRazerChromaBase;
   FAlertEngine: TAlertEngine;
   FReservoirStep: integer; // Lowest reservoir step already notified (0 = none); persisted in alerts.reservoir.step
+  FSensorExpiryStep: integer; // Lowest sensor-expiry step already notified (0 = none); persisted in alerts.sensor.step
   procedure PersistAlertState(Sender: TObject);
   {** Notify once per reservoir step (30/25/20/15/10/5 U) as a pump backend's
       cartridge runs down. No-op for backends that report no reservoir. }
   procedure CheckPumpReservoir;
+  {** Notify once per sensor-expiry step (24/8/4/2/1 h) as a session runs out.
+      No-op for backends that report no sensor life. }
+  procedure CheckSensorExpiry;
   procedure tUpdateCheckTimer(Sender: TObject);
   procedure tBootFetchTimer(Sender: TObject);
   procedure tBootSpinnerTimer(Sender: TObject);

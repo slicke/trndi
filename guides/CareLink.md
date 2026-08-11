@@ -89,7 +89,9 @@ There is no picker in the settings UI, and that is a deliberate choice rather th
 
   A meal you bolused for is usually reported twice, once as a meal entry and once as the carb figure on the bolus. Trndi shows it once: meal entries win, and a bolus's carbs are only added when no meal entry sits within 15 minutes of it. Two genuinely separate snacks a quarter of an hour apart will therefore merge — that is the deliberate trade, since counting one meal twice is the worse mistake. The same "empty means unreported" caveat as insulin applies.
 
-Parsed and available to the backend, but not shown in the UI yet: active insulin (IOB), sensor life, reservoir level, and pump/transmitter battery.
+Sensor life drives the sensor-expiry notifications (24/8/4/2/1 hours left) described in [Notifications.md](Notifications.md); `sensorDurationHours` counts **down**, confirmed against the app's own figure.
+
+Parsed and available to the backend, but not shown in the UI yet: active insulin (IOB), and pump/transmitter battery.
 
 ## For testers: fixtures we need
 
@@ -100,7 +102,6 @@ Development of the parser runs against captured server responses. If you can hel
 3. **Token refresh response** (the reply to the OAuth2 refresh request)
 4. **`logindata.json` structure** with every secret replaced by `XXX` (field names matter, values don't)
 5. A data response where readings are **missing or delayed**, if you catch one
-6. **Does `sensorDurationHours` count up or down?** If you can note the value alongside what the CareLink app says the sensor has left, that settles it — we read the field but cannot yet display it, because we do not know which way it runs.
-7. **An `INSULIN` marker from a real bolus, and a `MEAL` marker from a real carb entry.** The bolus overlay reads `deliveredFastAmount` (falling back to `programmedFastAmount`) and treats `activationType: "AUTOCORRECTION"` as a pump-initiated dose; the carb overlay probes `amount`, `carbInput`, `carbs` and `mealAmount` in turn for the gram figure. Those field names come from the community CareLink clients rather than from a capture of our own. A payload containing a meal bolus would confirm them — check the log lines `CareLink.ExtractBoluses:` and `CareLink.ExtractCarbs:` and tell us whether the counts match what you actually entered, and whether any markers were skipped.
+6. **An `INSULIN` marker from a real bolus, and a `MEAL` marker from a real carb entry.** The bolus overlay reads `deliveredFastAmount` (falling back to `programmedFastAmount`) and treats `activationType: "AUTOCORRECTION"` as a pump-initiated dose; the carb overlay probes `amount`, `carbInput`, `carbs` and `mealAmount` in turn for the gram figure. Those field names come from the community CareLink clients rather than from a capture of our own. A payload containing a meal bolus would confirm them — check the log lines `CareLink.ExtractBoluses:` and `CareLink.ExtractCarbs:` and tell us whether the counts match what you actually entered, and whether any markers were skipped.
 
 Redact before sharing: replace tokens, account ids, names and serial numbers with placeholders — keep the JSON structure and timestamps intact. Drop them in a GitHub issue or on [Discord](https://discord.gg/QXACfpcW).

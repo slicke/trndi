@@ -49,14 +49,22 @@ uses
 type
   DebugSensorExpiryAPI = class(DebugAPI)
   protected
+    FFetch: integer; /// Fetches so far; indexes SENSOR_LIFE_SEQUENCE
     function getSystemName: string; override;
   public
     function getReadings(min, maxNum: integer; extras: string; out res: string;
       noCache: boolean): BGResults; override;
+    function getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean; override;
     class function ParamLabel(LabelName: APIParamLabel): string; override;
   end;
 
 implementation
+
+const
+  // Remaining sensor life handed out one entry per fetch, so a few refreshes
+  // walk the whole expiry ladder: outside it, every step in turn, then a sensor
+  // change that re-arms it. Wraps, so the run can be repeated without a restart.
+  SENSOR_LIFE_SEQUENCE: array[0..7] of integer = (26, 24, 20, 8, 4, 2, 1, 168);
 
 function DebugSensorExpiryAPI.getSystemName: string;
 begin
@@ -94,6 +102,25 @@ begin
     Result[i].level := getLevel(Result[i].val);
     Result[i].updateEnv(sensorText, rssi, noise);
   end;
+
+  Inc(FFetch);
+end;
+
+{------------------------------------------------------------------------------
+  Report a falling sensor life so the expiry notifications can be exercised
+  without waiting out a real session. Like the real backends this answers from
+  the last fetch rather than making a request of its own.
+ ------------------------------------------------------------------------------}
+function DebugSensorExpiryAPI.getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean;
+begin
+  clearDeviceStatus(AStatus);
+  if FFetch <= 0 then
+    Exit(false); // Nothing fetched yet, so nothing to report on
+
+  AStatus.sensorDurationHours :=
+    SENSOR_LIFE_SEQUENCE[(FFetch - 1) mod Length(SENSOR_LIFE_SEQUENCE)];
+  AStatus.sensorState := 'NO_ERROR_MESSAGE';
+  Result := true;
 end;
 
 class function DebugSensorExpiryAPI.ParamLabel(LabelName: APIParamLabel): string;
@@ -104,10 +131,10 @@ begin
   case LabelName of
   APLDesc:
     Result := Result + sLineBreak + sLineBreak +
-      'This debug backend always emits synthetic sensor metadata so the sensor expiry badge can be tested without backend support.';
+      'This debug backend always emits synthetic sensor metadata so the sensor expiry badge can be tested without backend support. Its reported sensor life also falls one step per refresh, walking the expiry notifications from 24 hours down to 1 and then through a sensor change.';
   APLDescHTML:
     Result := Result + sLineBreak + sLineBreak +
-      'This debug backend always emits synthetic <b>sensor metadata</b> so the sensor expiry badge can be tested without backend support.';
+      'This debug backend always emits synthetic <b>sensor metadata</b> so the sensor expiry badge can be tested without backend support. Its reported <b>sensor life</b> also falls one step per refresh, walking the expiry notifications from 24 hours down to 1 and then through a sensor change.';
   end;
 end;
 
