@@ -2540,7 +2540,8 @@ begin
     Exit;
   end;
 
-  TrndiDLog('Windows: Using direct connection (no proxy configured) to: ' + address);
+  TrndiDLog('Windows: Using direct connection (no proxy configured) to: ' +
+    TrndiSafeUrl(address));
   client := TWinHTTPClient.Create(useragent, true);
   try
     TryRequest(client, ResStr);
@@ -3112,7 +3113,7 @@ begin
 
   repeat
     startTick := GetTickCount64;
-    TrndiDLog(Format('HTTP %s (winhttp): %s', [methodLabel, currentUrl]));
+    TrndiDLog(Format('HTTP %s (winhttp): %s', [methodLabel, TrndiSafeUrl(currentUrl)]));
 
     if proxyHost <> '' then
     begin
