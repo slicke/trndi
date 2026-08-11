@@ -1,0 +1,60 @@
+{
+  "events": [
+    { "eventCode": 66, "pumpDateTime": "2026-08-10T20:00:00",
+      "eventProperties": { "bolusId": 1005, "foodBolusSize": 3.0, "correctionBolusSize": 0, "totalBolusSize": 3.0 } },
+    { "eventCode": 55, "pumpDateTime": "2026-08-10T20:00:20",
+      "eventProperties": { "bolusId": 1005, "selectedIob": 1, "iob": 0.4, "bolusSize": 3.0 } },
+
+    { "eventCode": 64, "pumpDateTime": "2026-08-10T08:00:00",
+      "eventProperties": { "bolusId": 1001, "bolusType": 1, "correctionBolusIncluded": 1, "carbAmount": 45, "bg": 150, "iob": 0.5, "carbRatio": 8 } },
+    { "eventCode": 66, "pumpDateTime": "2026-08-10T08:00:00",
+      "eventProperties": { "bolusId": 1001, "foodBolusSize": 5.625, "correctionBolusSize": 1.0, "totalBolusSize": 6.625 } },
+    { "eventCode": 280, "pumpDateTime": "2026-08-10T08:00:15",
+      "eventProperties": { "bolusId": 1001, "bolusDeliveryStatus": 1, "bolusSource": 7, "remoteId": 28, "requestedNow": 6625 } },
+    { "eventCode": 55, "pumpDateTime": "2026-08-10T08:00:15",
+      "eventProperties": { "bolusId": 1001, "selectedIob": 1, "iob": 0.5, "bolusSize": 6.625 } },
+    { "eventCode": 20, "pumpDateTime": "2026-08-10T08:02:30",
+      "eventProperties": { "bolusId": 1001, "completionStatus": 3, "iob": 6.9, "insulinDelivered": 6.625, "insulinRequested": 6.625 } },
+
+    { "eventCode": 64, "pumpDateTime": "2026-08-10T12:00:00",
+      "eventProperties": { "bolusId": 1002, "bolusType": 2, "correctionBolusIncluded": 1, "carbAmount": 0, "bg": 210, "iob": 1.1, "carbRatio": 0 } },
+    { "eventCode": 66, "pumpDateTime": "2026-08-10T12:00:00",
+      "eventProperties": { "bolusId": 1002, "foodBolusSize": 0, "correctionBolusSize": 2.0, "totalBolusSize": 2.0 } },
+    { "eventCode": 55, "pumpDateTime": "2026-08-10T12:00:10",
+      "eventProperties": { "bolusId": 1002, "selectedIob": 1, "iob": 1.1, "bolusSize": 2.0 } },
+    { "eventCode": 20, "pumpDateTime": "2026-08-10T12:01:00",
+      "eventProperties": { "bolusId": 1002, "completionStatus": 2, "iob": 1.85, "insulinDelivered": 0.75, "insulinRequested": 2.0 } },
+
+    { "eventCode": 64, "pumpDateTime": "2026-08-10T15:00:00",
+      "eventProperties": { "bolusId": 1003, "bolusType": 2, "carbAmount": 0, "bg": 190, "iob": 0.9, "carbRatio": 0 } },
+    { "eventCode": 66, "pumpDateTime": "2026-08-10T15:00:00",
+      "eventProperties": { "bolusId": 1003, "foodBolusSize": 0, "correctionBolusSize": 1.5, "totalBolusSize": 1.5 } },
+    { "eventCode": 20, "pumpDateTime": "2026-08-10T15:00:30",
+      "eventProperties": { "bolusId": 1003, "completionStatus": 1, "iob": 0.9, "insulinDelivered": 0, "insulinRequested": 1.5 } },
+
+    { "eventCode": 64, "pumpDateTime": "2026-08-10T18:00:00",
+      "eventProperties": { "bolusId": 1004, "bolusType": 1, "carbAmount": 30, "bg": 140, "iob": 0.2, "carbRatio": 8 } },
+
+    { "eventCode": 9, "pumpDateTime": "2026-08-10T05:00:00",
+      "eventProperties": { "ibc": 255, "abc": 255, "batteryBars": 255, "insulinBars": 255, "iob": 20, "insulin": 200 } },
+    { "eventCode": 9, "pumpDateTime": "2026-08-10T06:00:00",
+      "eventProperties": { "ibc": 80, "abc": 82, "batteryBars": 4, "insulinBars": 3, "iob": 50, "insulin": 120 } },
+    { "eventCode": 9, "pumpDateTime": "2026-08-10T21:00:00",
+      "eventProperties": { "ibc": 45, "abc": 55, "batteryBars": 3, "insulinBars": 1, "iob": 109, "insulin": 36 } },
+    { "eventCode": 34, "pumpDateTime": "2026-08-10T22:00:00",
+      "eventProperties": { "abc": 46, "ibc": 35, "fullChargeCapacity": 375, "remainingChargeCapacity": 171, "liPoMV": 3799 } },
+
+    { "eventCode": 230, "pumpDateTime": "2026-08-10T03:00:00",
+      "eventProperties": { "currentPcm": 2, "previousPcm": 3, "pumpSuspended": 0, "cgmAvailable": 1 } },
+    { "eventCode": 230, "pumpDateTime": "2026-08-10T23:00:00",
+      "eventProperties": { "currentPcm": 3, "previousPcm": 2, "pumpSuspended": 1, "cgmAvailable": 1 } },
+
+    { "eventCode": 90, "pumpDateTime": "2026-08-10T00:00:00",
+      "eventProperties": { "commandedBasalRate": 3.653, "featuresBitmask": [], "featureBitmaskIndex": [] } },
+    { "eventCode": 279, "pumpDateTime": "2026-08-10T23:30:00",
+      "eventProperties": { "commandedRateSource": 3, "commandedRate": 1250, "profileBasalRate": 850, "algorithmRate": 1250, "tempRate": 65535 } },
+
+    { "eventCode": 399, "pumpDateTime": "2026-08-10T12:34:56",
+      "eventProperties": { "glucoseValueStatus": 0, "currentGlucoseDisplayValue": 184, "egvTimeStamp": 587174418, "rate": 7, "rssi": -61 } }
+  ]
+}

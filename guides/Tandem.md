@@ -22,6 +22,35 @@ Open Trndi and open the settings (if they aren't alredy showing), by right-click
 
 Now close the window, then close Trndi (if it doesn't close itself) and start it again.
 
+# What Trndi reads from Tandem Source
+
+The pump-logs payload the readings come from carries a good deal more than glucose, and Trndi now reads some of it:
+
+- **Sensor glucose values** from the CGM the pump is paired with (Dexcom G6/G7, FreeStyle Libre 2/3)
+- **Insulin doses on the history graph**, if you turn them on (Settings → Display → *Show insulin doses on the history graph*). Doses appear as stems along the bottom of the graph, labelled in units.
+
+  A bolus is reported as what the pump actually delivered, not what was asked for, so an interrupted bolus shows the smaller real figure. Stem heights are relative to the largest dose on screen rather than a fixed scale — read the labels, not the heights. The graph only shows doses for the period the last fetch covered, so an empty stretch means "nothing was reported", never "no insulin was given".
+
+  Note that the second checkbox, for the pump's own automatic doses, does nothing on Tandem yet — see below.
+
+- **Carbohydrates on the history graph** (Settings → Display → *Show carbohydrates on the history graph*), as discs in their own lane above the bottom axis, labelled in grams. These are the carbs you entered into the bolus calculator; Tandem has no separate meal entry, so unlike CareLink there is no double-counting to reconcile. Carbs entered for a bolus that was never delivered are not shown.
+- **Basal rate** (Menu → Basal rate), in U/hr. This is the rate Control-IQ last commanded, which on a looping pump is generally not your programmed profile rate.
+
+Read from the payload but not shown in the UI yet: reservoir level, pump battery, and whether delivery is suspended.
+
+Not available from this backend: sensor life, transmitter battery, and a basal *profile* (the graph's basal overlay needs a repeating daily schedule, and a single fetch window is not one).
+
+## For testers
+
+Two things are unresolved, and a log from a debug build would settle both. Run a debug build, open the 24-hour history graph, then look in `trndi.log`:
+
+1. **Which field marks a Control-IQ automatic correction.** The `Tandem.ExtractTreatments: bolus fields:` line lists `src=` (`bolusSource`), `type=` (`bolusType`) and `st=` (`completionStatus`) for every bolus. If you can say which of those boluses you gave yourself and which Control-IQ gave you, the mapping falls out. Until then every Tandem bolus is shown as manual — deliberately, since filing a real bolus as automatic would hide it behind a setting that is off by default.
+2. **Whether the reservoir figure is right.** The same log block reports `reservoir=`. Compare it against what the pump display says at the time; the field sits next to one that is scaled by 100, so the scale is worth confirming before it is put on screen.
+
+The `Tandem.EventCensus:` lines in the same log list every event code the payload contained with one sample of each. That is what the field names above were derived from, and a payload from a different pump or CGM would tell us whether they hold generally.
+
+Redact before sharing: the samples contain your glucose, insulin and carbohydrate figures, plus account and device ids. Drop them in a GitHub issue or on [Discord](https://discord.gg/QXACfpcW).
+
 # Personal Settings
 ## Setting limits
 Personal limits and goals, such as "values over 10.5 are high", are not provided by the Tandem servers. 
