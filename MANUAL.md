@@ -112,11 +112,14 @@ Those small dots you see across the screen show your recent readings over time:
 **How to use them**: Click on any dot to see the actual number for that reading.
 
 **Changing how the dots are coloured**: *Settings → Colors → Backgrounds → Trend
-dot coloring*:
-- **Classic** (default) — the look Trndi has always had: a flat darkening of the
+dot coloring*. A preview strip under the options shows how the selected mode
+renders the dots on your own colours — on an in-range, a high and a low window —
+so you can compare them before saving:
+- **Classic** — the look Trndi has always had: a flat darkening of the
   range colour, with the background not taken into account. A dot in the same
   range as the current reading is hard to see. Every mode below fixes that in a
-  different way
+  different way. Existing installations stay on Classic so an upgrade changes
+  nothing; new profiles start on *Adapt to background*
 - **True colors, outlined** — every dot keeps the exact colour you gave its
   range, and gets a thin black or white rim to make it visible instead. This
   is the only mode where a high dot is still the orange you picked no matter what
@@ -140,6 +143,15 @@ dot coloring*:
   apart, from how high each dot sits and from the coloured bands behind them.
   Pick this if the coloured dots look busy to you, or if the colours aren't
   something you can rely on
+
+**Colour presets**: the *Load color preset…* dropdown on the Colors page fills
+the colour pickers with a ready-made palette — **Classic** (the default colours),
+**Modern** (a flat-design alternative) or **Color-blind friendly**. The last one
+uses colours chosen to stay distinguishable with red-green (and most other)
+colour vision deficiencies: lows are blues, highs are yellow/orange, and
+neighbouring ranges also differ in brightness so the bands remain readable even
+if the hues don't. Loading a preset only fills the pickers — nothing is saved
+until you close the dialog, and *Reset* still restores the Classic colours.
 
 **In a narrow window**: If the window gets too small to fit every dot, Trndi thins
 them out and draws only every second (or third, …) one, so they never smear

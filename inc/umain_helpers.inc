@@ -247,13 +247,15 @@ end;
 // the background's own tone.
 //
 // dcmAuto may draw the dot in the other half of its range's pair.
-// EnsureContrast can only travel the black-white axis, so on a light
-// background — a high or in-range window — it darkens every dot, and amber,
-// tan, pink and near-white all arrive in the same muddy zone: the ranges stop
-// being distinguishable from each other, which is most of what the dots are
-// for. The pair is the way out that stays inside the user's own palette. Each
-// range's two colors are far apart by construction (one is legible on the
-// other), so where one collapses the other usually has room left.
+// EnsureContrast travels the OKLCh lightness axis — hue held, chroma kept as
+// the gamut allows — but lightness is still the only lever it has, so on a
+// light background — a high or in-range window — it darkens every dot, and
+// light hues like amber, tan and near-white all arrive in the same dark olive
+// zone: the ranges stop being distinguishable from each other, which is most
+// of what the dots are for. The pair is the way out that stays inside the
+// user's own palette. Each range's two colors are far apart by construction
+// (one is legible on the other), so where one collapses the other usually has
+// room left.
 //
 // Both halves are lifted first and the winner is the one that keeps more
 // chroma, because which half survives depends entirely on the background:
@@ -281,7 +283,10 @@ end;
 // dcmClassic is the pre-contrast behaviour, deliberately unguarded. The flat
 // step it takes is applied to a color drawn from the same palette that colors
 // the background, so a reading in the same range as the current one is close to
-// invisible — that is what the mode reproduces, and why it is not the default.
+// invisible — that is what the mode reproduces. It stays the fallback for
+// profiles that predate the mode setting (see DOT_COLOR_MODE_DEFAULT) so an
+// upgrade changes nothing on screen; the setup wizard writes dcmAuto for new
+// profiles, which have no old look to preserve.
 //
 // Pure helper operating on plain data for unit tests
 function DotDisplayColor(Identity, Partner, Background, ValueColor: TColor;

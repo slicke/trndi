@@ -989,6 +989,11 @@ begin
     else if rbDots24.Checked then SetSetting('ux.dot_count', 24)
     else if rbDots36.Checked then SetSetting('ux.dot_count', 36)
     else                          SetSetting('ux.dot_count', 10);  // default
+    // A profile born here has no pre-mode look to preserve, so it gets the
+    // background-guarded dot coloring. Upgraded profiles never pass through
+    // the wizard and keep falling back to DOT_COLOR_MODE_DEFAULT (Classic),
+    // which is what their screens showed before the mode existed.
+    SetSetting('ux.dot_color_mode', Ord(dcmAuto));
   end;
 end;
 

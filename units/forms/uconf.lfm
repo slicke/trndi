@@ -1344,6 +1344,15 @@ object fConf: TfConf
             ParentBackground = False
             TabOrder = 0
           end
+          object pbDotPreview: TPaintBox
+            Left = 5
+            Height = 64
+            Top = 230
+            Width = 619
+            Align = alTop
+            BorderSpacing.Around = 5
+            OnPaint = pbDotPreviewPaint
+          end
           object Label22: TLabel
             Left = 0
             Height = 15
@@ -1507,6 +1516,17 @@ object fConf: TfConf
           Width = 339
           Caption = 'Color the title bar with glucose color (Windows/macOS only)'
           TabOrder = 1
+        end
+        object cbColorPreset: TComboBox
+          Left = 489
+          Height = 23
+          Top = 11
+          Width = 140
+          Anchors = [akTop, akRight]
+          ItemHeight = 15
+          Style = csDropDownList
+          TabOrder = 2
+          OnChange = cbColorPresetChange
         end
       end
     end
