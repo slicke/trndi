@@ -35,6 +35,11 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-11): The alert engine is now evaluated once
+   per update, before the threshold routing, so its hysteresis band and
+   min-duration persistence survive readings that dip just inside range;
+   routing an in-band reading to the "normal" handler used to reset the
+   engine and defeat both settings. *)
 (* Glucose update pipeline, data fetching, UI state and color logic for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -888,6 +893,7 @@ var
   reading: BGReading;
   txt: string;
   sensorFault: boolean;
+  fired: TAlertKindSet;
 begin
   txt := '';
 
@@ -896,13 +902,22 @@ begin
 
   reading := lastReading;
 
+  // One evaluation per update, made BEFORE the threshold routing below. The
+  // engine tracks violations across its hysteresis band, so a reading that
+  // slipped a hair back inside range must still reach it — routing such a
+  // reading straight to the "normal" handler used to reset the engine and
+  // defeat both the hysteresis and the min-duration settings (a BG bouncing
+  // on the high threshold restarted its persistence clock on every dip and
+  // could never fire). The exact thresholds still pick the display color.
+  fired := FAlertEngine.EvaluateLevel(reading.val);
+
   if reading.val >= api.cgmHi then
-    HandleHighGlucose(reading)
+    HandleHighGlucose(reading, fired)
   else
   if reading.val <= api.cgmLo then
-    HandleLowGlucose(reading)
+    HandleLowGlucose(reading, fired)
   else
-    HandleNormalGlucose(reading);
+    HandleNormalGlucose(reading, fired);
 
   sensorFault := IsSensorFaultSuspected(bgs);
   if sensorFault then
@@ -939,18 +954,11 @@ begin
   pnOffReading.font.color := GetTextColorForBackground(pnOffReading.Color, 0, 0.7);
 end;
 
-procedure TfBG.HandleHighGlucose(const reading: BGReading);
+procedure TfBG.RaiseHighLevelAlert;
 var
   url: string;
   defaultAction: string;
-  fired: TAlertKindSet;
 begin
-  setColorMode(bg_color_hi);
-
-  fired := FAlertEngine.EvaluateLevel(reading.val);
-  if not (akHigh in fired) then
-    Exit;
-
   if native.getBoolSetting('alerts.notice.hilo', true) then
     native.attention(ifthen(multi, multinick, RS_WARN_BG_HI_TITLE),
       Format(RS_WARN_BG_HI, [lVal.Caption]));
@@ -976,18 +984,11 @@ begin
     end;
 end;
 
-procedure TfBG.HandleLowGlucose(const reading: BGReading);
+procedure TfBG.RaiseLowLevelAlert;
 var
   url: string;
   defaultAction: string;
-  fired: TAlertKindSet;
 begin
-  SetColorMode(bg_color_lo);
-
-  fired := FAlertEngine.EvaluateLevel(reading.val);
-  if (fired * [akLow, akUrgentLow]) = [] then
-    Exit;
-
   if native.getBoolSetting('alerts.notice.hilo', true) then
     native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
       Format(RS_WARN_BG_LO, [lVal.Caption]));
@@ -1013,7 +1014,23 @@ begin
     end;
 end;
 
-procedure TfBG.HandleNormalGlucose(const reading: BGReading);
+procedure TfBG.HandleHighGlucose(const reading: BGReading; const fired: TAlertKindSet);
+begin
+  setColorMode(bg_color_hi);
+
+  if akHigh in fired then
+    RaiseHighLevelAlert;
+end;
+
+procedure TfBG.HandleLowGlucose(const reading: BGReading; const fired: TAlertKindSet);
+begin
+  SetColorMode(bg_color_lo);
+
+  if (fired * [akLow, akUrgentLow]) <> [] then
+    RaiseLowLevelAlert;
+end;
+
+procedure TfBG.HandleNormalGlucose(const reading: BGReading; const fired: TAlertKindSet);
 var
   formattedReading, url: string;
   parsedInt: integer;
@@ -1021,7 +1038,18 @@ var
   go: boolean = false;
 begin
   SetColorMode(bg_color_ok);
-  FAlertEngine.ResetLevelAlerts;
+
+  // The engine has already been evaluated for this reading (see
+  // UpdateUIBasedOnGlucose): an in-range value outside every hysteresis band
+  // cleared the level rules there, while one still inside a band kept its
+  // violation alive — and may even have fired, when a min-duration ran out on
+  // a reading hovering just under the threshold. Honor such a verdict rather
+  // than swallowing it, or the alert would be lost to the re-alert gate once
+  // the value crosses back over.
+  if akHigh in fired then
+    RaiseHighLevelAlert;
+  if (fired * [akLow, akUrgentLow]) <> [] then
+    RaiseLowLevelAlert;
 
   if un = mmol then
   begin
@@ -1051,9 +1079,12 @@ begin
       native.getURL(url, url);
   end;
 
-  if assigned(native) and assigned(chroma) then
-    if chroma.Initialized and native.GetBoolSetting('razer.enabled', false) and native.GetBoolSetting('razer.normal', false) then
-      Chroma.SetStaticAll(clRazerGreen);
+  // Skip the all-clear green when a level alert fired on this very reading —
+  // it would immediately overwrite the alert's own Chroma effect.
+  if (fired * ALERT_KIND_LEVEL) = [] then
+    if assigned(native) and assigned(chroma) then
+      if chroma.Initialized and native.GetBoolSetting('razer.enabled', false) and native.GetBoolSetting('razer.normal', false) then
+        Chroma.SetStaticAll(clRazerGreen);
 
   UpdateOffRangePanel(reading.val);
 end;
