@@ -139,15 +139,6 @@ type
     FCarbs: TCarbList;               /// Carbohydrate entries from the last fetch
     FCarbsValid: boolean;            /// True once a payload has been walked
 
-    {** Resolve the object carrying the payload's fields; some versions nest
-        everything under "patientData". Returns nil when the shape is wrong. }
-    function PayloadRoot(AData: TJSONData): TJSONObject;
-
-    {** Apply everything the display-message payload carries besides the
-        readings: account limits, server clock, device status, IOB and basal.
-        Called on every successful fetch, so later payloads win. }
-    procedure ApplyPayloadMetadata(const ARoot: TJSONObject);
-
     {** Map the account's high/low limits onto cgmHi/cgmLo. The payload
         carries a schedule; the entry in effect now is used. }
     procedure ApplyLimits(const ARoot: TJSONObject);
@@ -300,6 +291,22 @@ type
     property ActiveInsulinTime: TDateTime read FActiveInsulinAt;
 
   protected
+    {** Resolve the object carrying the payload's fields; some versions nest
+        everything under "patientData". Returns nil when the shape is wrong. }
+    function PayloadRoot(AData: TJSONData): TJSONObject;
+
+    {** Apply everything the display-message payload carries besides the
+        readings: account limits, server clock, device status, IOB, basal,
+        insulin deliveries and carbohydrates. Called on every successful fetch,
+        so later payloads win.
+
+        Protected rather than private so the tests can drive it from a captured
+        payload: reaching it through the real endpoint would mean standing up
+        the whole discovery and token-refresh flow against a fake server, and
+        what is worth testing is what the payload is turned into, not how it
+        was fetched. }
+    procedure ApplyPayloadMetadata(const ARoot: TJSONObject);
+
     {** Get the value which represents the maximum reading for the backend }
     function getLimitHigh: integer; override;
 

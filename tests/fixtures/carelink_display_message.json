@@ -1,0 +1,97 @@
+{
+  "lastSGTrend": "UP",
+  "currentServerTime": 1786809600000,
+  "lastMedicalDeviceDataUpdateServerTime": 1786809540000,
+  "medicalDeviceTimeAsString": "2026-08-10T22:00:00",
+  "bgUnits": "MGDL",
+  "timeFormat": "HR_24",
+
+  "activeInsulin": { "amount": 2.5, "datetime": "2026-08-10T21:55:00" },
+
+  "limits": [
+    { "timestamp": "2026-08-10T00:00:00", "highLimit": 250, "lowLimit": 70, "kind": "LIMITS", "index": 0 },
+    { "timestamp": "2026-08-10T07:00:00", "highLimit": 234, "lowLimit": 65, "kind": "LIMITS", "index": 1 }
+  ],
+
+  "sensorDurationHours": 126,
+  "sensorDurationMinutes": 7560,
+  "sensorState": "NO_ERROR_MESSAGE",
+  "sensorLifeText": "LS_DaysHoursGracePeriod",
+  "systemStatusMessage": "NO_ERROR_MESSAGE",
+  "calibStatus": "NO_ERROR_MESSAGE",
+  "reservoirLevelPercent": 5,
+  "reservoirRemainingUnits": 15.4,
+  "reservoirAmount": 15.4,
+  "pumpBatteryLevelPercent": 50,
+  "gstBatteryLevel": 255,
+  "conduitBatteryLevel": 84,
+  "pumpSuspended": false,
+  "pumpBannerState": [],
+  "therapyAlgorithmState": { "autoModeShieldState": "AUTO_BASAL", "plgmLgsState": "NO_STATE" },
+  "basal": null,
+
+  "markers": [
+    { "type": "AUTO_BASAL_DELIVERY", "index": 0, "version": 1,
+      "timestamp": "2026-08-10T20:05:00", "relativeOffset": 6900,
+      "data": { "dataValues": { "bolusAmount": "0.075" } } },
+    { "type": "AUTO_BASAL_DELIVERY", "index": 1, "version": 1,
+      "timestamp": "2026-08-10T20:10:00", "relativeOffset": 6600,
+      "data": { "dataValues": { "bolusAmount": "0.1" } } },
+
+    { "type": "INSULIN", "index": 2, "version": 1,
+      "timestamp": "2026-08-10T20:30:00", "relativeOffset": 5400,
+      "data": { "dataValues": {
+        "activationType": "RECOMMENDED",
+        "bolusType": "NORMAL_BOLUS",
+        "deliveredFastAmount": 6.2,
+        "programmedFastAmount": 6.2,
+        "carbInput": 45,
+        "bgInput": 168,
+        "foodEstimate": 5.6,
+        "correctionEstimate": 0.6,
+        "completionDateTime": "2026-08-10T20:31:12" } } },
+    { "type": "MEAL", "index": 3, "version": 1,
+      "timestamp": "2026-08-10T20:29:00", "relativeOffset": 5460,
+      "data": { "dataValues": { "amount": 45, "unit": "GRAMS" } } },
+
+    { "type": "INSULIN", "index": 4, "version": 1,
+      "timestamp": "2026-08-10T21:15:00", "relativeOffset": 2700,
+      "data": { "dataValues": {
+        "activationType": "AUTOCORRECTION",
+        "bolusType": "NORMAL_BOLUS",
+        "deliveredFastAmount": 1.25,
+        "programmedFastAmount": 1.25 } } },
+
+    { "type": "INSULIN", "index": 5, "version": 1,
+      "timestamp": "2026-08-10T21:20:00", "relativeOffset": 2400,
+      "data": { "dataValues": {
+        "activationType": "RECOMMENDED",
+        "bolusType": "NORMAL_BOLUS",
+        "deliveredFastAmount": 0,
+        "programmedFastAmount": 2.4 } } },
+
+    { "type": "MEAL", "index": 6, "version": 1,
+      "timestamp": "2026-08-10T21:40:00", "relativeOffset": 1200,
+      "data": { "dataValues": { "amount": 30, "unit": "GRAMS" } } },
+
+    { "type": "CALIBRATION", "index": 7, "version": 1,
+      "timestamp": "2026-08-10T18:00:00", "relativeOffset": 14400,
+      "data": { "dataValues": { "value": 132, "calibrationSuccess": true } } },
+    { "type": "AUTO_MODE_STATUS", "index": 8, "version": 1,
+      "timestamp": "2026-08-10T06:00:00", "relativeOffset": 57600,
+      "data": { "dataValues": { "autoModeReadyState": "READY" } } },
+
+    { "type": "AUTO_BASAL_DELIVERY", "index": 9, "version": 1,
+      "timestamp": "2026-08-10T19:00:00", "relativeOffset": 10800,
+      "data": { "dataValues": { "bolusAmount": "5.5" } } }
+  ],
+
+  "sgs": [
+    { "sg": 0,   "timestamp": "2026-08-10T21:30:00", "sensorState": "NO_ERROR_MESSAGE", "kind": "SG", "relativeOffset": 1800 },
+    { "sg": 30,  "timestamp": "2026-08-10T21:35:00", "sensorState": "NO_ERROR_MESSAGE", "kind": "SG", "relativeOffset": 1500 },
+    { "sg": 450, "timestamp": "2026-08-10T21:40:00", "sensorState": "NO_ERROR_MESSAGE", "kind": "SG", "relativeOffset": 1200 },
+    { "sg": 100, "timestamp": "2026-08-10T21:45:00", "sensorState": "NO_ERROR_MESSAGE", "kind": "SG", "relativeOffset": 900 },
+    { "sg": 110, "timestamp": "2026-08-10T21:50:00", "sensorState": "NO_ERROR_MESSAGE", "kind": "SG", "relativeOffset": 600 },
+    { "sg": 120, "timestamp": "2026-08-10T21:55:00", "sensorState": "NO_ERROR_MESSAGE", "kind": "SG", "relativeOffset": 300 }
+  ]
+}
