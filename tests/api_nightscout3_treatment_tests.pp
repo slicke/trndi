@@ -73,6 +73,7 @@ type
     procedure TestExpiredSensorReportsNoLifeLeft;
     procedure TestUploaderBatteryIsNotThePumpBattery;
     procedure TestUnreadablePayloadReportsNothing;
+    procedure TestNullStringFieldsAreTolerated;
     procedure TestNothingReportedBeforeAFetch;
   end;
 
@@ -319,6 +320,58 @@ begin
     FAPI.getDeviceStatus(status));
   AssertEquals('Reservoir is unknown again',
     DEVICE_STATUS_UNKNOWN, status.reservoirUnits, 0.0001);
+end;
+
+{------------------------------------------------------------------------------
+  These collections carry whatever an uploader wrote, and that includes JSON
+  nulls in fields that are normally strings. TJSONNull.AsString raises, so an
+  unguarded read used to abort the whole walk on the first such record —
+  losing the status, both overlays and the sensor badge for a full cache TTL.
+  A null must read as "not reported" for that field alone; everything else in
+  the payload, and everything else in the same record, still counts.
+ ------------------------------------------------------------------------------}
+procedure TNightscout3TreatmentTests.TestNullStringFieldsAreTolerated;
+var
+  status: TCGMDeviceStatus;
+  boluses: TBolusList;
+  carbs: TCarbList;
+  expiry: string;
+begin
+  expiry := FormatDateTime('yyyy-mm-dd"T"hh:nn:ss.zzz"Z"',
+    LocalTimeToUniversal(Now) + 5.5 / 24);
+
+  // Newest record: a null pump status text and a null sensor state, alongside
+  // fields that are perfectly good. An older record carries the real text.
+  TNightscout3Probe(FAPI).FeedStatus(
+    '[{"device":"rig","created_at":"2026-08-11T10:00:00.000Z",' +
+    '"pump":{"reservoir":33.5,"status":{"status":null}},' +
+    '"xdripjs":{"stateString":null,"sensor":{"expires":"' + expiry + '"}}},' +
+    '{"device":"rig","created_at":"2026-08-11T09:00:00.000Z",' +
+    '"pump":{"status":{"status":"normal"}}}]');
+
+  AssertTrue('Device status still reported', FAPI.getDeviceStatus(status));
+  AssertEquals('Reservoir read from the record with the null status',
+    33.5, status.reservoirUnits, 0.0001);
+  AssertEquals('Sensor life read despite the null state text',
+    5, status.sensorDurationHours);
+  AssertEquals('A null sensor state reads as not reported',
+    '', status.sensorState);
+  AssertTrue('A null state is not a fault', status.sensorOK);
+  AssertEquals('A null status text does not mask the older real one',
+    'normal', status.statusMessage);
+
+  TNightscout3Probe(FAPI).FeedTreatmentList(
+    '[{"eventType":null,"created_at":"2026-08-11T09:00:00.000Z","insulin":1.5},' +
+    '{"eventType":"Meal Bolus","created_at":"2026-08-11T08:00:00.000Z",' +
+    '"insulin":3.0,"carbs":30}]');
+
+  AssertTrue('Boluses still reported', FAPI.getBoluses(boluses));
+  AssertEquals('Both deliveries survive the null event type', 2, Length(boluses));
+  AssertEquals('The typed record keeps its kind', 'MEAL BOLUS', boluses[0].kind);
+  AssertEquals('The null-typed record reads as untyped', '', boluses[1].kind);
+  AssertEquals('Its insulin is still a delivery', 1.5, boluses[1].units, 0.0001);
+  AssertTrue('Carbs still reported', FAPI.getCarbs(carbs));
+  AssertEquals('The meal carbs survive too', 1, Length(carbs));
 end;
 
 {------------------------------------------------------------------------------
