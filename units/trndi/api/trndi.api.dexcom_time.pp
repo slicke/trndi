@@ -104,10 +104,24 @@ var
   HasOffset: boolean;
   UnixMs: int64;
 
-  // Extract ms either from "/Date(NNNN)/" or a bare numeric string.
+  // Extract ms from "/Date(NNNN)/", "/Date(NNNN+hhmm)/" or a bare numeric string.
+  //
+  // The .NET form may carry a timezone offset inside the parentheses: Dexcom's
+  // own DT field arrives as "Date(1786478432000+0000)" (confirmed against a live
+  // Share payload). The suffix is stripped rather than applied, because the
+  // millisecond value is a UTC epoch either way -- the offset only records which
+  // wall clock the server considered it -- and callers converting a reading
+  // timestamp want that instant rendered in local time, which adding the offset
+  // would shift. Only the server-time endpoint's separate "OffsetMinutes" field
+  // asks for wall-clock semantics, and MsToDT handles that via HasOffset.
+  //
+  // Before this, an offset suffix made TryStrToInt64 fail and ExtractUnixMs
+  // return False with no fallback, so ParseDexcomTime rejected the value
+  // outright -- despite both Dexcom drivers documenting the form as supported.
   function ExtractUnixMs(const Raw: string; out Ms: int64): boolean;
   var
-    a, b: integer;
+    a, b, k: integer;
+    inner: string;
   begin
     Result := False;
     a := Pos('(', Raw);
@@ -116,7 +130,16 @@ var
       b := PosEx(')', Raw, a + 1);
       if b > a then
       begin
-        Result := TryStrToInt64(Trim(Copy(Raw, a + 1, b - a - 1)), Ms);
+        inner := Trim(Copy(Raw, a + 1, b - a - 1));
+        // Scan from the right for the offset's sign. Starting at 2 leaves the
+        // leading '-' of a pre-1970 (negative) epoch alone.
+        for k := Length(inner) downto 2 do
+          if (inner[k] = '+') or (inner[k] = '-') then
+          begin
+            inner := Copy(inner, 1, k - 1);
+            Break;
+          end;
+        Result := TryStrToInt64(inner, Ms);
         Exit;
       end;
     end;

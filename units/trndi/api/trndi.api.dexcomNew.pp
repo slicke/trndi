@@ -45,6 +45,7 @@ uses
 Classes, SysUtils, Dialogs,
 // Trndi units
 trndi.types, trndi.api, trndi.native, trndi.native.base, trndi.funcs,
+{$ifdef debug} trndi.log,{$endif}
 // FPC units
 fpjson, jsonparser, dateutils, StrUtils;
 
@@ -371,6 +372,136 @@ begin
 
   OutErr := 'No token or error message found';
 end;
+
+{$ifdef DEBUG}
+(*******************************************************************************
+  Payload census (debug builds only)
+
+  Trndi decodes two Dexcom fields whose wire format has never been confirmed
+  against a real account, and both are guesses that cannot be settled by
+  reading the code:
+
+  - Trend. MapDexcomTrendToEnum tries a textual match first, then a numeric
+    one, and the numeric branch prefers a 0-based reading of the code even
+    though Dexcom Share is documented as 1-based. If real payloads send a
+    number, every arrow is one step off; if they send a string, the branch is
+    dead. The census logs the field's JSON *type* alongside its value, which
+    is what distinguishes the two cases.
+
+  - The SystemUtcTime response shape. Trndi has two different extractions of
+    the XML form in the tree (trndi.api.dexcom takes the 5th '>'/'<' delimited
+    token, dexcom_time takes the first), so at most one of them is right.
+
+  Unlike the DEBUG_LOG_ALERT-gated request tracing elsewhere in the drivers,
+  this is deliberately ungated and self-limiting: it fires on the first payload
+  that actually carries readings and then stays quiet for the rest of the
+  session. A user capturing a diagnostic should not have to find a menu item
+  first, and one representative sample answers both questions.
+
+  The dump contains that account's glucose readings. It stays on the user's own
+  machine and only in a debug build, but a log being sent on for diagnosis
+  should be read first. Session ids and passwords are never logged.
+ ******************************************************************************)
+var
+  DexcomNewCensusDone: boolean = false;
+
+function DexcomJSONTypeName(AType: TJSONType): string;
+begin
+  case AType of
+  jtNumber:
+    Result := 'number';
+  jtString:
+    Result := 'string';
+  jtBoolean:
+    Result := 'boolean';
+  jtNull:
+    Result := 'null';
+  jtArray:
+    Result := 'array';
+  jtObject:
+    Result := 'object';
+  else
+    Result := 'unknown';
+  end;
+end;
+
+{** Describe one field of a reading: present or not, the JSON type it arrived
+    as, and its literal value. The type is the part that matters -- see the
+    banner above. }
+function DexcomDescribeField(AItem: TJSONData; const AName: string): string;
+var
+  d: TJSONData;
+begin
+  if (AItem = nil) or (AItem.JSONType <> jtObject) then
+    Exit(AName + '=<not an object>');
+  d := TJSONObject(AItem).Find(AName);
+  if d = nil then
+    Exit(AName + '=<absent>');
+  Result := Format('%s=%s:%s', [AName, DexcomJSONTypeName(d.JSONType), d.AsJSON]);
+end;
+
+procedure LogDexcomPayloadCensus(const ARaw: string; AData: TJSONData);
+const
+  MAX_RAW_CHARS = 2000;
+  MAX_ENTRIES = 5;
+var
+  i: integer;
+  item, trendData: TJSONData;
+  raw, trendRaw, line: string;
+  parsedTime: TDateTime;
+begin
+  if DexcomNewCensusDone then
+    Exit;
+  if (AData = nil) or (AData.JSONType <> jtArray) or (AData.Count = 0) then
+    Exit;
+  DexcomNewCensusDone := true;
+
+  raw := ARaw;
+  if Length(raw) > MAX_RAW_CHARS then
+    raw := Copy(raw, 1, MAX_RAW_CHARS) + ' ...[truncated]';
+  TrndiDLog(Format('DexcomNew.Census: %d entries; raw payload: %s',
+    [AData.Count, raw]));
+
+  for i := 0 to AData.Count - 1 do
+  begin
+    if i >= MAX_ENTRIES then
+    begin
+      TrndiDLog(Format('DexcomNew.Census: ...%d further entries not shown',
+        [AData.Count - MAX_ENTRIES]));
+      Break;
+    end;
+
+    item := AData.Items[i];
+    line := Format('DexcomNew.Census: entry[%d] %s | %s | %s | %s | %s',
+      [i,
+       DexcomDescribeField(item, 'Value'),
+       DexcomDescribeField(item, 'Trend'),
+       DexcomDescribeField(item, 'ST'),
+       DexcomDescribeField(item, 'WT'),
+       DexcomDescribeField(item, 'DT')]);
+
+    // What the driver actually decodes the guessed fields into, so the log
+    // shows the mapping rather than only the input to it.
+    trendRaw := '';
+    if (item <> nil) and (item.JSONType = jtObject) then
+    begin
+      trendData := TJSONObject(item).Find('Trend');
+      if trendData <> nil then
+        trendRaw := trendData.AsString;
+    end;
+    line := line + Format(' -> trend=%s', [MapDexcomTrendToEnum(trendRaw).Text]);
+
+    if (item <> nil) and (item.JSONType = jtObject) and
+      ParseDexcomTime(TJSONObject(item).Get('ST', ''), parsedTime) then
+      line := line + Format(' ST->%s',
+        [FormatDateTime('yyyy-mm-dd hh:nn:ss', parsedTime)])
+    else
+      line := line + ' ST->unparsed';
+
+    TrndiDLog(line);
+  end;
+end;
+{$endif}
 
 resourcestring
 sDexNewErrPass = 'Incorrect username or password combination';
@@ -734,6 +865,12 @@ begin
     LHTTPRespTime := native.RequestExWait(false, DEXCOM_TIME_ENDPOINT, [], '', nil, true, 10, hdrs, true);
     LTimeResponse := LHTTPRespTime.Body;
     FreeResponse(LHTTPRespTime);
+    // Verbatim, because the two XML extractions in the tree disagree about
+    // which delimited token holds the timestamp -- see the census banner.
+    {$ifdef DEBUG}
+    TrndiDLog('DexcomNew.Connect: SystemUtcTime raw response: ' +
+      Copy(LTimeResponse, 1, 500));
+    {$endif}
     if not LHTTPRespTime.Success then
     begin
       lastErr := 'Cannot fetch Dexcom time: ' + LHTTPRespTime.ErrorMessage;
@@ -750,6 +887,11 @@ begin
       Result := false;
       Exit;
     end;
+    {$ifdef DEBUG}
+    TrndiDLog(Format('DexcomNew.Connect: SystemUtcTime parsed (UTC)=%s localUTC=%s',
+      [FormatDateTime('yyyy-mm-dd hh:nn:ss', LServerDateTime),
+       FormatDateTime('yyyy-mm-dd hh:nn:ss', LocalTimeToUniversal(Now))]));
+    {$endif}
   finally
     FreeResponse(LHTTPRespTime);
     hdrs.Free;
@@ -941,6 +1083,12 @@ begin
     SetLength(Result, 0);
     Exit;
   end;
+
+  // One-shot diagnostic: records the wire format of the fields Trndi currently
+  // has to guess at. Self-limiting, so this costs one log burst per session.
+  {$ifdef DEBUG}
+  LogDexcomPayloadCensus(LGlucoseJSON, LData);
+  {$endif}
 
   try
     // Set result length to match JSON count
