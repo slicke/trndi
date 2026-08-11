@@ -167,6 +167,7 @@ type
     cbAlertHiLo: TCheckBox;
     cbAlertMissing: TCheckBox;
     cbAlertReservoir: TCheckBox;
+    cbAlertSensor: TCheckBox;
     spAlertDurHi: TSpinEdit;
     spAlertDurLo: TSpinEdit;
     spAlertDurUrg: TSpinEdit;

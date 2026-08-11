@@ -199,6 +199,21 @@ Notifications → "Alert me when the pump's insulin is running low"
 Other backends do not report insulin at all, so nothing is shown for them. Trndi
 is not a medical device — always verify the level on the pump itself.
 
+### Sensor Expiry Warnings
+On CareLink, Trndi shows a desktop notification as the sensor session runs out —
+once each at roughly 24, 8, 4, 2 and 1 hours of sensor life left, so a sensor
+change lands when it suits you rather than when the sensor decides. Changing the
+sensor arms the warnings again for the new session.
+
+**Where to turn it off**: Right-click → Settings → Customization tab →
+Notifications → "Alert me when the sensor is about to expire"
+
+Only CareLink reports how much sensor life is left. Tandem Source does not send
+it — its CGM data carries no session age — and neither do the plain CGM sources
+(Nightscout, Dexcom, LibreLinkUp, xDrip), so nothing is shown for those. The
+hours are the backend's own estimate: treat them as a heads-up, and check the
+pump or CGM app for the real figure.
+
 ---
 
 ## Settings You Should Know

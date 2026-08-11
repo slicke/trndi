@@ -176,6 +176,39 @@ function ReservoirWarnStep(const AUnits: double): integer;
 function ReservoirShouldNotify(const AUnits: double;
   var ALastStep: integer): boolean;
 
+const
+  {** Hours of sensor life remaining that each get one notification as the
+    session runs out. Must stay in descending order —
+    @link(SensorExpiryWarnStep) walks it front to back. }
+  SENSOR_EXPIRY_WARN_STEPS: array[0..4] of integer = (24, 8, 4, 2, 1);
+
+  {** How far above a fired step the remaining life must climb before that step
+    re-arms. A sensor change jumps the figure back to a full session, so this
+    only has to be large enough that a backend nudging its own estimate upward
+    by an hour is not mistaken for a new sensor. }
+  SENSOR_EXPIRY_REARM_MARGIN = 2;
+
+{** Lowest step in @link(SENSOR_EXPIRY_WARN_STEPS) the sensor's remaining life
+  has fallen to. Returns 0 when more life is left than any step covers, or when
+  @param(AHours) is negative (@code(DEVICE_STATUS_UNKNOWN) — the backend
+  reported nothing). }
+function SensorExpiryWarnStep(const AHours: integer): integer;
+
+{** One-notification-per-step decision for the sensor-expiry ladder, with the
+  same latch contract as @link(ReservoirShouldNotify): a step fires as the
+  remaining life first falls to it, and stays quiet until either a lower step is
+  reached or a sensor change lifts the figure clear of the fired step by
+  @link(SENSOR_EXPIRY_REARM_MARGIN).
+
+  Only backends that report remaining sensor life (CareLink) reach this; a
+  negative @param(AHours) leaves the latch untouched, so a fetch carrying no
+  figure neither fires nor re-arms anything.
+  @param(ALastStep In/out latch: the step last notified, 0 = none armed. Persist
+    it across restarts so a restart late in a session does not re-notify.)
+  @returns(True when the caller should raise a notification) }
+function SensorExpiryShouldNotify(const AHours: integer;
+  var ALastStep: integer): boolean;
+
 implementation
 
 //------------------------------------------------------------------------------
@@ -225,6 +258,59 @@ begin
   // Climbed back into a higher band: re-arm only once clear of the fired step
   // by the margin, so jitter around a boundary cannot fire it a second time.
   if (step > ALastStep) and (AUnits >= ALastStep + RESERVOIR_REARM_MARGIN) then
+    ALastStep := step;
+end;
+
+//------------------------------------------------------------------------------
+// Sensor expiry ladder
+//------------------------------------------------------------------------------
+
+function SensorExpiryWarnStep(const AHours: integer): integer;
+var
+  i: integer;
+begin
+  Result := 0;
+  if AHours < 0 then
+    Exit;
+  // Descending list, so the last step the figure satisfies is the lowest one.
+  for i := Low(SENSOR_EXPIRY_WARN_STEPS) to High(SENSOR_EXPIRY_WARN_STEPS) do
+    if AHours <= SENSOR_EXPIRY_WARN_STEPS[i] then
+      Result := SENSOR_EXPIRY_WARN_STEPS[i];
+end;
+
+function SensorExpiryShouldNotify(const AHours: integer;
+  var ALastStep: integer): boolean;
+var
+  step: integer;
+begin
+  Result := false;
+  if AHours < 0 then
+    Exit;
+
+  step := SensorExpiryWarnStep(AHours);
+
+  // More life left than the ladder covers: a fresh session, or one still far
+  // from its end. Re-arm every step.
+  if step = 0 then
+  begin
+    ALastStep := 0;
+    Exit;
+  end;
+
+  // First reading inside the ladder fires that step only — a session picked up
+  // with 3 hours left notifies once, not once per step it was never watched
+  // across. An expired sensor (0 hours) lands on the lowest step.
+  if (ALastStep = 0) or (step < ALastStep) then
+  begin
+    ALastStep := step;
+    Result := true;
+    Exit;
+  end;
+
+  // Back into a higher band: a sensor change, once clear of the fired step by
+  // the margin. Re-arms the ladder for the new session without needing the
+  // backend to report the change itself.
+  if (step > ALastStep) and (AHours >= ALastStep + SENSOR_EXPIRY_REARM_MARGIN) then
     ALastStep := step;
 end;
 

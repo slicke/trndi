@@ -390,6 +390,10 @@ msgstr ""
 msgid "Alert me when the pump's insulin is running low (pump backends)"
 msgstr ""
 
+#: tfconf.cbalertsensor.caption
+msgid "Alert me when the sensor is about to expire (CareLink)"
+msgstr ""
+
 #: tfconf.cbalternate.caption
 msgid "Alternate arrow and reading display"
 msgstr ""
@@ -1729,6 +1733,19 @@ msgstr ""
 #: trndi.strings.rs_attention_reservoir_desc
 #, object-pascal-format
 msgid "About %s units of insulin left in the pump reservoir."
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry
+msgid "Sensor expiring"
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry_desc
+#, object-pascal-format
+msgid "About %d hours of sensor life left."
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry_desc_one
+msgid "Less than an hour of sensor life left."
 msgstr ""
 
 #: trndi.strings.rs_attention_sensor_fault

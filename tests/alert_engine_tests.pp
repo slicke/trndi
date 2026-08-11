@@ -115,6 +115,13 @@ type
     procedure ReservoirBoundaryJitterDoesNotRefire;
     procedure ReservoirRefillRearmsTheLadder;
     procedure ReservoirUnknownLevelLeavesLatchAlone;
+    // Sensor expiry ladder
+    procedure SensorExpiryStepIsLowestOneReached;
+    procedure SensorExpiryEarlyInSessionStaysQuiet;
+    procedure SensorExpiryFiresOncePerStepTowardsTheEnd;
+    procedure SensorExpiryStartingLateFiresOnlyCurrentStep;
+    procedure SensorExpiryChangeRearmsTheLadder;
+    procedure SensorExpiryUnknownLifeLeavesLatchAlone;
   end;
 
 implementation
@@ -784,6 +791,118 @@ begin
   latch := 10;
   AssertFalse('unknown never notifies', ReservoirShouldNotify(-1, latch));
   AssertEquals('and never disturbs the latch', 10, latch);
+end;
+
+// ---------------------------------------------------------------------------
+// Sensor expiry ladder
+//
+// Same latch contract as the reservoir, over remaining sensor life in hours.
+// CareLink's sensorDurationHours counts down, so these feed a falling figure.
+// ---------------------------------------------------------------------------
+
+procedure TAlertEngineTests.SensorExpiryStepIsLowestOneReached;
+begin
+  AssertEquals('a fresh 7-day sensor', 0, SensorExpiryWarnStep(168));
+  AssertEquals('just above the top step', 0, SensorExpiryWarnStep(25));
+  AssertEquals('exactly on the top step', 24, SensorExpiryWarnStep(24));
+  AssertEquals('between steps takes the lower one', 8, SensorExpiryWarnStep(6));
+  AssertEquals('an expired sensor', 1, SensorExpiryWarnStep(0));
+  AssertEquals('not reported is not an expiring sensor',
+    0, SensorExpiryWarnStep(-1));
+end;
+
+procedure TAlertEngineTests.SensorExpiryEarlyInSessionStaysQuiet;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertFalse('a sensor days from the end must not notify',
+    SensorExpiryShouldNotify(96, latch));
+  AssertEquals('and must not arm a step', 0, latch);
+end;
+
+procedure TAlertEngineTests.SensorExpiryFiresOncePerStepTowardsTheEnd;
+var
+  latch, fires: integer;
+begin
+  latch := 0;
+  fires := 0;
+
+  // 25h is still outside the ladder; every subsequent value crosses one step.
+  if SensorExpiryShouldNotify(25, latch) then Inc(fires);
+  AssertEquals('25h is above every step', 0, fires);
+
+  if SensorExpiryShouldNotify(24, latch) then Inc(fires);
+  AssertEquals('the 24h step fires', 1, fires);
+  AssertEquals('latched at 24h', 24, latch);
+
+  // Fetches within the same band — several hours of them — stay silent.
+  if SensorExpiryShouldNotify(20, latch) then Inc(fires);
+  if SensorExpiryShouldNotify(12, latch) then Inc(fires);
+  AssertEquals('no repeat within a step', 1, fires);
+
+  if SensorExpiryShouldNotify(8, latch) then Inc(fires);
+  if SensorExpiryShouldNotify(4, latch) then Inc(fires);
+  if SensorExpiryShouldNotify(2, latch) then Inc(fires);
+  if SensorExpiryShouldNotify(1, latch) then Inc(fires);
+  AssertEquals('one notification per step', 5, fires);
+  AssertEquals('latched at the bottom step', 1, latch);
+
+  // Past the last step the sensor is out; there is nothing left to announce.
+  if SensorExpiryShouldNotify(0, latch) then Inc(fires);
+  AssertEquals('expiry itself does not re-announce', 5, fires);
+end;
+
+procedure TAlertEngineTests.SensorExpiryStartingLateFiresOnlyCurrentStep;
+var
+  latch: integer;
+begin
+  // Trndi opened with three hours of sensor life left: announce once, at the
+  // step the session is actually in, not once per step it never watched.
+  latch := 0;
+  AssertTrue('a first late reading notifies',
+    SensorExpiryShouldNotify(3, latch));
+  AssertEquals('at the step it is actually in', 4, latch);
+
+  AssertFalse('and not again for the steps it skipped',
+    SensorExpiryShouldNotify(3, latch));
+end;
+
+procedure TAlertEngineTests.SensorExpiryChangeRearmsTheLadder;
+var
+  latch: integer;
+begin
+  latch := 0;
+  AssertTrue('down to the last hours', SensorExpiryShouldNotify(2, latch));
+  AssertEquals('latched at the 2h step', 2, latch);
+
+  AssertFalse('a sensor change is not itself an alert',
+    SensorExpiryShouldNotify(168, latch));
+  AssertEquals('the new session clears the ladder', 0, latch);
+
+  AssertTrue('and alerts from the top again',
+    SensorExpiryShouldNotify(24, latch));
+
+  // A backend nudging its estimate up by an hour is not a sensor change.
+  latch := 4;
+  AssertFalse('1h above the fired step is the same session',
+    SensorExpiryShouldNotify(5, latch));
+  AssertEquals('so the step stays latched', 4, latch);
+  AssertFalse('clearing the margin re-arms without alerting',
+    SensorExpiryShouldNotify(7, latch));
+  AssertEquals('now sitting in the 8h band', 8, latch);
+  AssertTrue('and 4h can fire again', SensorExpiryShouldNotify(4, latch));
+end;
+
+procedure TAlertEngineTests.SensorExpiryUnknownLifeLeavesLatchAlone;
+var
+  latch: integer;
+begin
+  // DEVICE_STATUS_UNKNOWN: Tandem and the plain CGM backends report no sensor
+  // life at all, and must neither fire nor re-arm.
+  latch := 4;
+  AssertFalse('unknown never notifies', SensorExpiryShouldNotify(-1, latch));
+  AssertEquals('and never disturbs the latch', 4, latch);
 end;
 
 initialization
