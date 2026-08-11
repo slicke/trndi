@@ -79,15 +79,28 @@ There is no picker in the settings UI, and that is a deliberate choice rather th
 
 - Sensor glucose values (about 24 h of history from each fetch)
 - The pump's own trend arrow for the latest reading
-- Active insulin (IOB) is parsed and available to extensions/future UI
+- **Your own high/low limits.** Trndi reads the limits set on the account and uses them as its high/low thresholds, so alerts and colouring follow what the CareLink app shows rather than generic defaults. The limits are a schedule; the block in force at the time of the fetch is the one applied.
+- **Basal rate** (Menu → Basal rate). On a SmartGuard pump there is no fixed rate — it micro-boluses every five minutes — so this reports what was actually delivered over the last hour, in U/hr.
+- **Insulin doses on the history graph**, if you turn them on (Settings → Display → *Show insulin doses on the history graph*). Doses appear as stems along the bottom of the graph, labelled with the number of units. A second checkbox adds the pump's own automatic doses; they are off by default because on a SmartGuard pump they arrive every few minutes and crowd out the boluses you actually gave.
+
+  Stem heights are relative to the largest dose currently on screen, not to a fixed scale — read the labels, not the heights. The graph only shows doses for the period the pump last reported, so an empty stretch means "nothing was reported", never "no insulin was given".
+
+- **Carbohydrates on the history graph** (Settings → Display → *Show carbohydrates on the history graph*), as orange discs in their own lane just above the bottom axis, labelled in grams. Grams and insulin units are different quantities, so carbs deliberately do not share the insulin scale — the disc grows with the amount, but the number is what to read.
+
+  A meal you bolused for is usually reported twice, once as a meal entry and once as the carb figure on the bolus. Trndi shows it once: meal entries win, and a bolus's carbs are only added when no meal entry sits within 15 minutes of it. Two genuinely separate snacks a quarter of an hour apart will therefore merge — that is the deliberate trade, since counting one meal twice is the worse mistake. The same "empty means unreported" caveat as insulin applies.
+
+Parsed and available to the backend, but not shown in the UI yet: active insulin (IOB), sensor life, reservoir level, and pump/transmitter battery.
 
 ## For testers: fixtures we need
 
 Development of the parser runs against captured server responses. If you can help, capture these as raw JSON (browser dev tools → Network tab, or the python client's debug output), with your **region** (US/EU) and **pump model** noted:
 
-1. **Data response** from the display-message endpoint (the big payload with the `sgs` array) — ideally three captures: a normal day, during sensor warm-up, and right after a sensor change
-2. **Token refresh response** (the reply to the OAuth2 refresh request)
-3. **`logindata.json` structure** with every secret replaced by `XXX` (field names matter, values don't)
-4. A data response where readings are **missing or delayed**, if you catch one
+1. **A manual-mode (non-SmartGuard) pump's data response.** This is the big one. On the auto-mode pump we have, `"basal"` comes back `null` and the delivery lives in the `markers` list instead; we have never seen what a manual-mode pump puts in `basal`, so that path is unimplemented.
+2. **A response captured during sensor warm-up or right after a sensor change**, to confirm how gaps and sensor state are reported.
+3. **Token refresh response** (the reply to the OAuth2 refresh request)
+4. **`logindata.json` structure** with every secret replaced by `XXX` (field names matter, values don't)
+5. A data response where readings are **missing or delayed**, if you catch one
+6. **Does `sensorDurationHours` count up or down?** If you can note the value alongside what the CareLink app says the sensor has left, that settles it — we read the field but cannot yet display it, because we do not know which way it runs.
+7. **An `INSULIN` marker from a real bolus, and a `MEAL` marker from a real carb entry.** The bolus overlay reads `deliveredFastAmount` (falling back to `programmedFastAmount`) and treats `activationType: "AUTOCORRECTION"` as a pump-initiated dose; the carb overlay probes `amount`, `carbInput`, `carbs` and `mealAmount` in turn for the gram figure. Those field names come from the community CareLink clients rather than from a capture of our own. A payload containing a meal bolus would confirm them — check the log lines `CareLink.ExtractBoluses:` and `CareLink.ExtractCarbs:` and tell us whether the counts match what you actually entered, and whether any markers were skipped.
 
 Redact before sharing: replace tokens, account ids, names and serial numbers with placeholders — keep the JSON structure and timestamps intact. Drop them in a GitHub issue or on [Discord](https://discord.gg/QXACfpcW).

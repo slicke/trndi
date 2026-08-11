@@ -129,6 +129,52 @@ type
     FActiveInsulin: single;       /// Last reported IOB in units; -1 = unknown
     FActiveInsulinAt: TDateTime;  /// Timestamp of the IOB report
 
+    FDeviceStatus: TCGMDeviceStatus; /// Sensor/pump status from the last fetch
+    FDeviceStatusValid: boolean;     /// True once a payload has filled it
+    FBasalRate: single;              /// Auto-basal U/hr from the last fetch; -1 unknown
+
+    FBoluses: TBolusList;            /// Insulin deliveries from the last fetch
+    FBolusesValid: boolean;          /// True once a payload has been walked
+
+    FCarbs: TCarbList;               /// Carbohydrate entries from the last fetch
+    FCarbsValid: boolean;            /// True once a payload has been walked
+
+    {** Resolve the object carrying the payload's fields; some versions nest
+        everything under "patientData". Returns nil when the shape is wrong. }
+    function PayloadRoot(AData: TJSONData): TJSONObject;
+
+    {** Apply everything the display-message payload carries besides the
+        readings: account limits, server clock, device status, IOB and basal.
+        Called on every successful fetch, so later payloads win. }
+    procedure ApplyPayloadMetadata(const ARoot: TJSONObject);
+
+    {** Map the account's high/low limits onto cgmHi/cgmLo. The payload
+        carries a schedule; the entry in effect now is used. }
+    procedure ApplyLimits(const ARoot: TJSONObject);
+
+    {** Set timeDiff from currentServerTime (a true UTC epoch in ms). }
+    procedure ApplyServerTime(const ARoot: TJSONObject);
+
+    {** Fill FDeviceStatus from the sensor/pump housekeeping fields. }
+    procedure ApplyDeviceStatus(const ARoot: TJSONObject);
+
+    {** Read activeInsulin (IOB) into FActiveInsulin/FActiveInsulinAt. }
+    procedure ApplyActiveInsulin(const ARoot: TJSONObject);
+
+    {** Derive the delivered basal rate in U/hr by summing the last hour of
+        AUTO_BASAL_DELIVERY markers. Returns -1 when the payload carries no
+        auto-basal data. }
+    function ComputeAutoBasalRate(const ARoot: TJSONObject): single;
+
+    {** Collect every insulin delivery in the markers list into FBoluses,
+        oldest first. }
+    procedure ExtractBoluses(const ARoot: TJSONObject);
+
+    {** Collect carbohydrate entries into FCarbs, oldest first. Reads FBoluses,
+        so it must run after ExtractBoluses. }
+    procedure ExtractCarbs(const ARoot: TJSONObject);
+
+
     {** Load token data from the credential blob. Sets lastErr on failure. }
     function ParseCredentials: boolean;
 
@@ -191,6 +237,35 @@ type
         @returns(Array of @code(BGReading); may be empty if none/failed) }
     function GetReadings(AMinutes, AMaxCount: integer; AExtras: string;
       out ARes: string; noCache: boolean): BGResults; override;
+
+    {** Delivered basal rate in U/hr, from the last fetch.
+
+        SmartGuard pumps have no fixed rate — they micro-bolus every five
+        minutes — so this is the sum of the last hour of AUTO_BASAL_DELIVERY
+        markers, i.e. what was actually delivered rather than a programmed
+        setting. Answers from cached data; returns 0 (the base class's
+        "unavailable") before the first fetch or on a payload without
+        auto-basal data. }
+    function getBasalRate: single; override;
+
+    {** Sensor/pump housekeeping from the last fetch. Cached; no request. }
+    function getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean; override;
+
+    {** Insulin deliveries from the last fetch, oldest first. Cached; no
+        request. Covers the window the payload's markers list covers, which is
+        shorter than the reading history. }
+    function getBoluses(out ABoluses: TBolusList): boolean; override;
+
+    {** True — the payload's markers list carries insulin deliveries. }
+    function supportsBoluses: boolean; override;
+
+    {** Carbohydrate entries from the last fetch, oldest first. Cached; no
+        request. Carbs reported both as a meal marker and on the bolus that
+        covered them are already reconciled into one entry. }
+    function getCarbs(out ACarbs: TCarbList): boolean; override;
+
+    {** True — the payload's markers list carries carbohydrate entries. }
+    function supportsCarbs: boolean; override;
 
     {** UI parameter label provider (override). }
     class function ParamLabel(LabelName: APIParamLabel): string; override;
@@ -323,6 +398,40 @@ begin
   else
     Result := TdPlaceholder;
   end;
+end;
+
+{------------------------------------------------------------------------------
+  Read a numeric field out of a marker's dataValues.
+
+  The payload is inconsistent about this: the same kind of quantity arrives as
+  a JSON number in one marker type and as a quoted string in another. Strings
+  are always dot-decimal, so the caller supplies format settings fixed to '.'
+  rather than letting a comma-decimal system locale mangle them.
+
+  Returns False when the key is absent or unusable, so callers can probe
+  several spellings and skip a marker they cannot read instead of recording a
+  zero that would look like a real measurement.
+ ------------------------------------------------------------------------------}
+function CareLinkMarkerAmount(const AObj: TJSONObject; const AKey: string;
+  const AFmt: TFormatSettings; out AValue: double): boolean;
+var
+  d: TJSONData;
+begin
+  Result := false;
+  AValue := 0;
+  if AObj = nil then
+    Exit;
+  d := AObj.Find(AKey);
+  if d = nil then
+    Exit;
+  if d is TJSONNumber then
+  begin
+    AValue := d.AsFloat;
+    Result := true;
+  end
+  else
+  if d.JSONType = jtString then
+    Result := TryStrToFloat(d.AsString, AValue, AFmt);
 end;
 
 {------------------------------------------------------------------------------
@@ -812,10 +921,17 @@ class function CareLink.WriteAssets(const AFolder: string): boolean;
 begin
   if not ForceDirectories(AFolder) then
     Exit(false);
-  ExtractCareLinkAsset('carelink-login', 'MJS', AFolder, 'carelink-login.mjs');
-  ExtractCareLinkAsset('package', 'JSON', AFolder, 'package.json');
-  ExtractCareLinkAsset('package-lock', 'JSON', AFolder, 'package-lock.json');
-  Result := true;
+  // Callers fall back to the bundle next to the executable on a False result,
+  // so a locked or read-only target must return False rather than escape as an
+  // exception — that fallback is unreachable if this raises.
+  try
+    ExtractCareLinkAsset('carelink-login', 'MJS', AFolder, 'carelink-login.mjs');
+    ExtractCareLinkAsset('package', 'JSON', AFolder, 'package.json');
+    ExtractCareLinkAsset('package-lock', 'JSON', AFolder, 'package-lock.json');
+    Result := true;
+  except
+    Result := false;
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -1172,6 +1288,11 @@ begin
       FreeResponse(httpResponse);
     end;
   end;
+
+  // Reached only by falling off the end of the loop — a token refresh on the
+  // final attempt leaves no attempt to use it. Callers surface lastErr, so it
+  // must not be left holding an unrelated (or empty) message.
+  lastErr := Format('Failed to get CareLink data after %d attempts', [MAX_ATTEMPTS]);
 end;
 
 {------------------------------------------------------------------------------
@@ -1185,6 +1306,13 @@ begin
   FRawCreds := ACreds;
   FRegion := ARegion;
   FActiveInsulin := -1;
+  FBasalRate := -1;
+  FDeviceStatusValid := false;
+  clearDeviceStatus(FDeviceStatus);
+  FBolusesValid := false;
+  SetLength(FBoluses, 0);
+  FCarbsValid := false;
+  SetLength(FCarbs, 0);
 
   baseUrl := CARELINK_DISCOVERY_URL; // replaced by baseUrlCumulus after discovery
 
@@ -1215,6 +1343,7 @@ end;
 function CareLink.Connect: boolean;
 var
   body: string;
+  jsonData: TJSONData;
 begin
   Result := false;
   log('CareLink.Connect: start');
@@ -1239,7 +1368,605 @@ begin
   if not FetchDisplayMessage(body) then
     Exit;
 
+  // The probe payload also carries the account's limits, the server clock and
+  // the device status, so the session starts with real thresholds instead of
+  // the base class's placeholder ones. A malformed body here is not fatal —
+  // the session is already proven — so failures only cost the metadata.
+  try
+    jsonData := GetJSON(body);
+    try
+      ApplyPayloadMetadata(PayloadRoot(jsonData));
+    finally
+      jsonData.Free;
+    end;
+  except
+    on E: Exception do
+      log('CareLink.Connect: could not read payload metadata: ' + E.Message);
+  end;
+
   log('CareLink.Connect: session established');
+  Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  Resolve the object carrying the payload's fields. Some payload versions nest
+  everything under "patientData".
+ ------------------------------------------------------------------------------}
+function CareLink.PayloadRoot(AData: TJSONData): TJSONObject;
+begin
+  Result := nil;
+  if not (AData is TJSONObject) then
+    Exit;
+  Result := TJSONObject(AData);
+  if Result.Find('patientData') is TJSONObject then
+    Result := TJSONObject(Result.Find('patientData'));
+end;
+
+{------------------------------------------------------------------------------
+  Map the account's own high/low limits onto Trndi's thresholds.
+
+  The payload carries a schedule: an array of blocks, each stamped with the
+  moment it takes effect, so the entry in force now is the newest one not in
+  the future. Values are mg/dL like the sg readings, regardless of the
+  account's bgUnits display preference.
+ ------------------------------------------------------------------------------}
+procedure CareLink.ApplyLimits(const ARoot: TJSONObject);
+var
+  arr: TJSONArray;
+  entry, best: TJSONObject;
+  i, hi, lo: integer;
+  ts, bestTs: TDateTime;
+begin
+  if not (ARoot.Find('limits') is TJSONArray) then
+    Exit;
+  arr := TJSONArray(ARoot.Find('limits'));
+
+  best := nil;
+  bestTs := 0;
+  for i := 0 to arr.Count - 1 do
+  begin
+    if not (arr[i] is TJSONObject) then
+      Continue;
+    entry := TJSONObject(arr[i]);
+    if not ParseCareLinkTime(entry.Get('timestamp', ''), ts) then
+      ts := 0;  // undated entries lose to any dated one
+    if (ts <= Now) and ((best = nil) or (ts >= bestTs)) then
+    begin
+      best := entry;
+      bestTs := ts;
+    end;
+  end;
+
+  // Every block stamped in the future (clock skew): fall back to the last,
+  // which is the newest given the payload's ascending order.
+  if (best = nil) and (arr.Count > 0) and (arr[arr.Count - 1] is TJSONObject) then
+    best := TJSONObject(arr[arr.Count - 1]);
+  if best = nil then
+    Exit;
+
+  hi := best.Get('highLimit', 0);
+  lo := best.Get('lowLimit', 0);
+
+  // Keep the safe defaults rather than trusting a nonsensical pair — a bad
+  // threshold silently disables the user's high/low alerts.
+  if (hi <= 0) or (lo <= 0) or (hi <= lo) then
+  begin
+    log(Format('CareLink.ApplyLimits: ignoring implausible limits hi=%d lo=%d',
+      [hi, lo]));
+    Exit;
+  end;
+
+  cgmHi := hi;
+  cgmLo := lo;
+  log(Format('CareLink.ApplyLimits: hi=%d lo=%d mg/dL (from %d blocks)',
+    [hi, lo, arr.Count]));
+end;
+
+{------------------------------------------------------------------------------
+  Set timeDiff from currentServerTime.
+
+  currentServerTime is a true UTC epoch in milliseconds. Note that the
+  neighbouring medicalDeviceTime is NOT — it is the pump's local wall clock
+  stuffed into an epoch field, so it reads as the UTC offset ahead of the
+  server. Only currentServerTime is usable here.
+ ------------------------------------------------------------------------------}
+procedure CareLink.ApplyServerTime(const ARoot: TJSONObject);
+var
+  serverMs: int64;
+begin
+  serverMs := ARoot.Get('currentServerTime', int64(0));
+  if serverMs <= 0 then
+    Exit;
+
+  timeDiff := (serverMs div 1000) - DateTimeToUnix(LocalTimeToUniversal(Now));
+  log(Format('CareLink.ApplyServerTime: timeDiff=%ds', [timeDiff]));
+end;
+
+{------------------------------------------------------------------------------
+  Fill the sensor/pump housekeeping record from the payload.
+ ------------------------------------------------------------------------------}
+procedure CareLink.ApplyDeviceStatus(const ARoot: TJSONObject);
+var
+  state: string;
+begin
+  clearDeviceStatus(FDeviceStatus);
+
+  FDeviceStatus.sensorDurationHours :=
+    ARoot.Get('sensorDurationHours', DEVICE_STATUS_UNKNOWN);
+  FDeviceStatus.reservoirPercent :=
+    ARoot.Get('reservoirLevelPercent', DEVICE_STATUS_UNKNOWN);
+  FDeviceStatus.reservoirUnits :=
+    ARoot.Get('reservoirRemainingUnits', double(DEVICE_STATUS_UNKNOWN));
+  FDeviceStatus.pumpBatteryPercent :=
+    ARoot.Get('pumpBatteryLevelPercent', DEVICE_STATUS_UNKNOWN);
+  FDeviceStatus.pumpSuspended := ARoot.Get('pumpSuspended', false);
+
+  // gstBatteryLevel is the CGM transmitter; 255 is the device's "no reading"
+  // marker rather than a full battery.
+  FDeviceStatus.transmitterBatteryPercent :=
+    ARoot.Get('gstBatteryLevel', DEVICE_STATUS_UNKNOWN);
+  if FDeviceStatus.transmitterBatteryPercent > 100 then
+    FDeviceStatus.transmitterBatteryPercent := DEVICE_STATUS_UNKNOWN;
+
+  state := ARoot.Get('sensorState', '');
+  FDeviceStatus.sensorState := state;
+  // Only an explicit non-OK state counts as a fault; an absent field must not
+  // make a healthy sensor look broken.
+  FDeviceStatus.sensorOK := (state = '') or (UpperCase(state) = 'NO_ERROR_MESSAGE');
+
+  state := ARoot.Get('systemStatusMessage', '');
+  if UpperCase(state) <> 'NO_ERROR_MESSAGE' then
+    FDeviceStatus.statusMessage := state;
+
+  FDeviceStatusValid := true;
+end;
+
+{------------------------------------------------------------------------------
+  Read activeInsulin (IOB). Older payload variants reported a bare number.
+ ------------------------------------------------------------------------------}
+procedure CareLink.ApplyActiveInsulin(const ARoot: TJSONObject);
+var
+  propData: TJSONData;
+  stamp: TDateTime;
+begin
+  FActiveInsulin := -1;
+  FActiveInsulinAt := 0;
+
+  propData := ARoot.Find('activeInsulin');
+  if propData is TJSONObject then
+  begin
+    FActiveInsulin := TJSONObject(propData).Get('amount', -1.0);
+    if ParseCareLinkTime(TJSONObject(propData).Get('datetime', ''), stamp) then
+      FActiveInsulinAt := stamp;
+  end
+  else
+  if propData is TJSONNumber then
+    FActiveInsulin := propData.AsFloat;
+end;
+
+{------------------------------------------------------------------------------
+  Derive the delivered basal rate from the markers list.
+
+  SmartGuard pumps deliver auto-basal as a micro-bolus every five minutes
+  rather than running a programmed rate, so "basal" is null and the real
+  figure is the sum of the last hour of AUTO_BASAL_DELIVERY amounts (already
+  U/hr, being a full hour's worth). Manual-mode pumps are expected to populate
+  the "basal" object instead; its shape is unknown, so that path is left to
+  whoever captures one.
+ ------------------------------------------------------------------------------}
+function CareLink.ComputeAutoBasalRate(const ARoot: TJSONObject): single;
+const
+  WINDOW_MIN = 60;
+var
+  arr: TJSONArray;
+  entry, dataObj, valuesObj: TJSONObject;
+  i, counted: integer;
+  cutoff, stamp: TDateTime;
+  total, amount: double;
+  fs: TFormatSettings;
+begin
+  Result := -1;
+  if not (ARoot.Find('markers') is TJSONArray) then
+    Exit;
+  arr := TJSONArray(ARoot.Find('markers'));
+
+  cutoff := IncMinute(Now, -WINDOW_MIN);
+  total := 0;
+  counted := 0;
+
+  // bolusAmount is a string in this payload and always dot-decimal, so it must
+  // not be read through a comma-decimal system locale.
+  fs := DefaultFormatSettings;
+  fs.DecimalSeparator := '.';
+
+  for i := 0 to arr.Count - 1 do
+  begin
+    if not (arr[i] is TJSONObject) then
+      Continue;
+    entry := TJSONObject(arr[i]);
+    if UpperCase(entry.Get('type', '')) <> 'AUTO_BASAL_DELIVERY' then
+      Continue;
+    if not ParseCareLinkTime(entry.Get('timestamp', ''), stamp) then
+      Continue;
+    if stamp < cutoff then
+      Continue;
+
+    if not (entry.Find('data') is TJSONObject) then
+      Continue;
+    dataObj := TJSONObject(entry.Find('data'));
+    if not (dataObj.Find('dataValues') is TJSONObject) then
+      Continue;
+    valuesObj := TJSONObject(dataObj.Find('dataValues'));
+
+    if TryStrToFloat(valuesObj.Get('bolusAmount', ''), amount, fs) then
+    begin
+      total := total + amount;
+      Inc(counted);
+    end;
+  end;
+
+  if counted = 0 then
+    Exit;
+
+  Result := total;
+  log(Format('CareLink.ComputeAutoBasalRate: %.3f U/hr from %d markers',
+    [total, counted]));
+end;
+
+{------------------------------------------------------------------------------
+  Collect the markers list's insulin deliveries.
+
+  Two marker types carry insulin. AUTO_BASAL_DELIVERY is the SmartGuard
+  micro-bolus and is confirmed against a live 780G payload. INSULIN is the
+  user- or pump-requested bolus; its field names follow the shape the community
+  CareLink clients use, but we have not yet seen one in a capture, so every
+  field is probed rather than assumed and an unusable marker is skipped instead
+  of contributing a zero. MEAL markers are carbohydrate entries, not insulin,
+  and are deliberately not deliveries — they are attached to the bolus they
+  accompany only when the pump reports the carbs on the bolus itself.
+
+  Marker types we do not recognise are counted into the summary log line, which
+  is how the next unfamiliar payload announces itself.
+ ------------------------------------------------------------------------------}
+procedure CareLink.ExtractBoluses(const ARoot: TJSONObject);
+var
+  arr: TJSONArray;
+  entry, dataObj, valuesObj: TJSONObject;
+  i, j, count, autoCount, skipped: integer;
+  stamp: TDateTime;
+  amount, carbAmount: double;
+  fs: TFormatSettings;
+  kindStr: string;
+  swap: TBolusEntry;
+
+  function MarkerAmount(const AObj: TJSONObject; const AKey: string;
+    out AValue: double): boolean;
+  begin
+    Result := CareLinkMarkerAmount(AObj, AKey, fs, AValue);
+  end;
+
+begin
+  SetLength(FBoluses, 0);
+  FBolusesValid := false;
+  if not (ARoot.Find('markers') is TJSONArray) then
+    Exit;
+  arr := TJSONArray(ARoot.Find('markers'));
+
+  // Delivery amounts are dot-decimal regardless of the user's locale.
+  fs := DefaultFormatSettings;
+  fs.DecimalSeparator := '.';
+
+  SetLength(FBoluses, arr.Count);
+  count := 0;
+  autoCount := 0;
+  skipped := 0;
+
+  for i := 0 to arr.Count - 1 do
+  begin
+    if not (arr[i] is TJSONObject) then
+      Continue;
+    entry := TJSONObject(arr[i]);
+    kindStr := UpperCase(entry.Get('type', ''));
+
+    if (kindStr <> 'AUTO_BASAL_DELIVERY') and (kindStr <> 'INSULIN') then
+      Continue;
+
+    if not ParseCareLinkTime(entry.Get('timestamp', ''), stamp) then
+    begin
+      Inc(skipped);
+      Continue;
+    end;
+
+    valuesObj := nil;
+    if entry.Find('data') is TJSONObject then
+    begin
+      dataObj := TJSONObject(entry.Find('data'));
+      if dataObj.Find('dataValues') is TJSONObject then
+        valuesObj := TJSONObject(dataObj.Find('dataValues'))
+      else
+        valuesObj := dataObj;
+    end;
+    if valuesObj = nil then
+    begin
+      Inc(skipped);
+      Continue;
+    end;
+
+    FBoluses[count] := Default(TBolusEntry);
+    FBoluses[count].time := stamp;
+    FBoluses[count].kind := kindStr;
+
+    if kindStr = 'AUTO_BASAL_DELIVERY' then
+    begin
+      if not MarkerAmount(valuesObj, 'bolusAmount', amount) then
+      begin
+        Inc(skipped);
+        Continue;
+      end;
+      FBoluses[count].automatic := true;
+      Inc(autoCount);
+    end
+    else
+    begin
+      // Prefer what actually went in over what was programmed: an interrupted
+      // bolus delivers less than it was asked for, and the delivered figure is
+      // the one that matches the glucose curve.
+      if not MarkerAmount(valuesObj, 'deliveredFastAmount', amount) then
+        if not MarkerAmount(valuesObj, 'programmedFastAmount', amount) then
+          if not MarkerAmount(valuesObj, 'bolusAmount', amount) then
+          begin
+            Inc(skipped);
+            Continue;
+          end;
+
+      // The pump's own corrections arrive as INSULIN markers too; only the
+      // activation type separates them from a bolus the user asked for.
+      kindStr := UpperCase(valuesObj.Get('activationType', ''));
+      FBoluses[count].automatic := (kindStr = 'AUTOCORRECTION') or
+        (kindStr = 'AUTO_CORRECTION');
+      if kindStr <> '' then
+        FBoluses[count].kind := kindStr;
+      if FBoluses[count].automatic then
+        Inc(autoCount);
+
+      if MarkerAmount(valuesObj, 'carbInput', carbAmount) and (carbAmount > 0) then
+        FBoluses[count].carbs := carbAmount;
+    end;
+
+    // A zero delivery is a record of nothing happening; drawing it would put a
+    // marker on the graph for insulin that was never given.
+    if amount <= 0 then
+    begin
+      Inc(skipped);
+      Continue;
+    end;
+
+    FBoluses[count].units := amount;
+    Inc(count);
+  end;
+
+  SetLength(FBoluses, count);
+  FBolusesValid := true;
+
+  // Oldest first. The payload has arrived in order so far, but the overlay
+  // draws in array order and must not depend on that holding.
+  for i := 1 to High(FBoluses) do
+  begin
+    swap := FBoluses[i];
+    j := i - 1;
+    while (j >= 0) and (FBoluses[j].time > swap.time) do
+    begin
+      FBoluses[j + 1] := FBoluses[j];
+      Dec(j);
+    end;
+    FBoluses[j + 1] := swap;
+  end;
+
+  log(Format('CareLink.ExtractBoluses: %d deliveries (%d automatic, %d manual)'
+    + ', %d markers skipped, %d markers total',
+    [count, autoCount, count - autoCount, skipped, arr.Count]));
+end;
+
+{------------------------------------------------------------------------------
+  Collect carbohydrate entries.
+
+  Carbs reach us by two routes: a dedicated MEAL marker, and the carb figure
+  attached to the INSULIN marker of the bolus that covered the meal. A meal the
+  user bolused for normally produces both, so taking them at face value would
+  draw every meal twice.
+
+  MEAL markers are therefore the source of record, and a bolus's carbs are only
+  added when no meal marker sits near it in time — which covers a pump that
+  reports carbs on the bolus alone. The matching window is deliberately loose:
+  entering carbs and confirming the bolus are separate actions a minute or two
+  apart, and double-counting a meal is a worse error than merging two genuinely
+  separate snacks eaten within a quarter of an hour.
+
+  The gram field's spelling is probed rather than assumed — see ExtractBoluses
+  for why — and a MEAL marker whose amount we cannot read is counted into the
+  summary log line instead of becoming a 0 g entry.
+ ------------------------------------------------------------------------------}
+procedure CareLink.ExtractCarbs(const ARoot: TJSONObject);
+const
+  // Plausible spellings of the gram field, best-known first.
+  GRAM_KEYS: array[0..3] of string = ('amount', 'carbInput', 'carbs', 'mealAmount');
+  MEAL_MATCH_MIN = 15;
+var
+  arr: TJSONArray;
+  entry, dataObj, valuesObj: TJSONObject;
+  i, j, k, count, mealCount, skipped: integer;
+  stamp: TDateTime;
+  grams: double;
+  fs: TFormatSettings;
+  swap: TCarbEntry;
+  matched, gotGrams: boolean;
+begin
+  SetLength(FCarbs, 0);
+  FCarbsValid := false;
+  if not (ARoot.Find('markers') is TJSONArray) then
+    Exit;
+  arr := TJSONArray(ARoot.Find('markers'));
+
+  fs := DefaultFormatSettings;
+  fs.DecimalSeparator := '.';
+
+  SetLength(FCarbs, arr.Count + Length(FBoluses));
+  count := 0;
+  skipped := 0;
+
+  for i := 0 to arr.Count - 1 do
+  begin
+    if not (arr[i] is TJSONObject) then
+      Continue;
+    entry := TJSONObject(arr[i]);
+    if UpperCase(entry.Get('type', '')) <> 'MEAL' then
+      Continue;
+
+    if not ParseCareLinkTime(entry.Get('timestamp', ''), stamp) then
+    begin
+      Inc(skipped);
+      Continue;
+    end;
+
+    valuesObj := nil;
+    if entry.Find('data') is TJSONObject then
+    begin
+      dataObj := TJSONObject(entry.Find('data'));
+      if dataObj.Find('dataValues') is TJSONObject then
+        valuesObj := TJSONObject(dataObj.Find('dataValues'))
+      else
+        valuesObj := dataObj;
+    end;
+
+    gotGrams := false;
+    for k := Low(GRAM_KEYS) to High(GRAM_KEYS) do
+      if CareLinkMarkerAmount(valuesObj, GRAM_KEYS[k], fs, grams) then
+      begin
+        gotGrams := true;
+        Break;
+      end;
+
+    if (not gotGrams) or (grams <= 0) then
+    begin
+      Inc(skipped);
+      Continue;
+    end;
+
+    FCarbs[count] := Default(TCarbEntry);
+    FCarbs[count].time := stamp;
+    FCarbs[count].grams := grams;
+    FCarbs[count].kind := 'MEAL';
+    Inc(count);
+  end;
+
+  mealCount := count;
+
+  // Fall back to the bolus's own carb figure only where no meal marker claims
+  // the same moment.
+  for i := 0 to High(FBoluses) do
+  begin
+    if FBoluses[i].carbs <= 0 then
+      Continue;
+
+    matched := false;
+    for j := 0 to mealCount - 1 do
+      if Abs(MinutesBetween(FCarbs[j].time, FBoluses[i].time)) <= MEAL_MATCH_MIN then
+      begin
+        matched := true;
+        Break;
+      end;
+    if matched then
+      Continue;
+
+    FCarbs[count] := Default(TCarbEntry);
+    FCarbs[count].time := FBoluses[i].time;
+    FCarbs[count].grams := FBoluses[i].carbs;
+    FCarbs[count].kind := FBoluses[i].kind;
+    Inc(count);
+  end;
+
+  SetLength(FCarbs, count);
+  FCarbsValid := true;
+
+  // Oldest first, as for boluses: the overlay draws in array order.
+  for i := 1 to High(FCarbs) do
+  begin
+    swap := FCarbs[i];
+    j := i - 1;
+    while (j >= 0) and (FCarbs[j].time > swap.time) do
+    begin
+      FCarbs[j + 1] := FCarbs[j];
+      Dec(j);
+    end;
+    FCarbs[j + 1] := swap;
+  end;
+
+  log(Format('CareLink.ExtractCarbs: %d entries (%d meal markers, %d from '
+    + 'boluses), %d meal markers skipped',
+    [count, mealCount, count - mealCount, skipped]));
+end;
+
+{------------------------------------------------------------------------------
+  Apply everything the payload says apart from the readings themselves.
+ ------------------------------------------------------------------------------}
+procedure CareLink.ApplyPayloadMetadata(const ARoot: TJSONObject);
+begin
+  if ARoot = nil then
+    Exit;
+  ApplyLimits(ARoot);
+  ApplyServerTime(ARoot);
+  ApplyDeviceStatus(ARoot);
+  ApplyActiveInsulin(ARoot);
+  FBasalRate := ComputeAutoBasalRate(ARoot);
+  ExtractBoluses(ARoot);
+  // Reads the boluses it just collected, so the order here matters.
+  ExtractCarbs(ARoot);
+end;
+
+{------------------------------------------------------------------------------
+  Cached accessors. Both answer from the last fetch rather than issuing a
+  request: readings are refreshed every few minutes anyway, and each data call
+  costs a token use.
+ ------------------------------------------------------------------------------}
+function CareLink.getBasalRate: single;
+begin
+  // The base class documents 0 as "unavailable"; our own sentinel is -1.
+  if FBasalRate < 0 then
+    Result := 0
+  else
+    Result := FBasalRate;
+end;
+
+function CareLink.getDeviceStatus(out AStatus: TCGMDeviceStatus): boolean;
+begin
+  if not FDeviceStatusValid then
+  begin
+    clearDeviceStatus(AStatus);
+    Exit(false);
+  end;
+  AStatus := FDeviceStatus;
+  Result := true;
+end;
+
+function CareLink.getBoluses(out ABoluses: TBolusList): boolean;
+begin
+  ABoluses := Copy(FBoluses);
+  Result := FBolusesValid and (Length(ABoluses) > 0);
+end;
+
+function CareLink.supportsBoluses: boolean;
+begin
+  Result := true;
+end;
+
+function CareLink.getCarbs(out ACarbs: TCarbList): boolean;
+begin
+  ACarbs := Copy(FCarbs);
+  Result := FCarbsValid and (Length(ACarbs) > 0);
+end;
+
+function CareLink.supportsCarbs: boolean;
+begin
   Result := true;
 end;
 
@@ -1257,7 +1984,6 @@ var
   jsonData: TJSONData;
   root, entry: TJSONObject;
   sgsArr: TJSONArray;
-  propData: TJSONData;
   i, count, resultIdx: integer;
   sgValue, bgValue: integer;
   dtStr, serverTrend: string;
@@ -1333,31 +2059,17 @@ begin
     end;
 
     try
-      if not (jsonData is TJSONObject) then
+      root := PayloadRoot(jsonData);
+      if root = nil then
       begin
         lastErr := 'Unsupported CareLink response format';
         ARes := lastErr;
         Exit;
       end;
 
-      root := TJSONObject(jsonData);
-      // Some payload versions nest the readings under "patientData"
-      if root.Find('patientData') is TJSONObject then
-        root := TJSONObject(root.Find('patientData'));
-
-      // Active insulin (IOB) — parsed and exposed even though the main UI
-      // does not display it yet
-      FActiveInsulin := -1;
-      FActiveInsulinAt := 0;
-      propData := root.Find('activeInsulin');
-      if propData is TJSONObject then
-      begin
-        FActiveInsulin := TJSONObject(propData).Get('amount', -1.0);
-        if ParseCareLinkTime(TJSONObject(propData).Get('datetime', ''), entryTime) then
-          FActiveInsulinAt := entryTime;
-      end
-      else if propData is TJSONNumber then
-        FActiveInsulin := propData.AsFloat;
+      // Thresholds, server clock, device status, IOB and basal all come from
+      // this same payload; refresh them before touching the readings.
+      ApplyPayloadMetadata(root);
 
       serverTrend := root.Get('lastSGTrend', '');
 

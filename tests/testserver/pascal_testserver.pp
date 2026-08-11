@@ -746,9 +746,43 @@ begin
         Exit;
       end;
       clBase := Now;
+      // Shaped after a live 780G capture: naive local timestamps, a limits
+      // schedule (mg/dL regardless of the account's bgUnits), a UTC-epoch
+      // currentServerTime in ms, auto-basal markers instead of a "basal"
+      // object, and the sensor/pump housekeeping fields.
       entries := Format(
         '{"lastSGTrend":"UP",' +
+        '"currentServerTime":%d,' +
         '"activeInsulin":{"amount":2.5,"datetime":"%s"},' +
+        '"limits":[' +
+        '{"timestamp":"%s","highLimit":250,"lowLimit":70,"kind":"LIMITS"},' +
+        '{"timestamp":"%s","highLimit":234,"lowLimit":65,"kind":"LIMITS"},' +
+        '{"timestamp":"%s","highLimit":999,"lowLimit":1,"kind":"LIMITS"}],' +
+        '"sensorDurationHours":126,"sensorState":"NO_ERROR_MESSAGE",' +
+        '"systemStatusMessage":"NO_ERROR_MESSAGE","reservoirLevelPercent":5,' +
+        '"reservoirRemainingUnits":15.4,"pumpBatteryLevelPercent":50,' +
+        '"gstBatteryLevel":255,"pumpSuspended":false,"basal":null,' +
+        '"markers":[' +
+        '{"type":"AUTO_BASAL_DELIVERY","timestamp":"%s",' +
+        '"data":{"dataValues":{"bolusAmount":"0.075"}}},' +
+        '{"type":"AUTO_BASAL_DELIVERY","timestamp":"%s",' +
+        '"data":{"dataValues":{"bolusAmount":"0.1"}}},' +
+        '{"type":"MEAL","timestamp":"%s",' +
+        '"data":{"dataValues":{"amount":30}}},' +
+        '{"type":"AUTO_BASAL_DELIVERY","timestamp":"%s",' +
+        '"data":{"dataValues":{"bolusAmount":"5.5"}}},' +
+        '{"type":"INSULIN","timestamp":"%s",' +
+        '"data":{"dataValues":{"deliveredFastAmount":6.2,' +
+        '"programmedFastAmount":6.2,"carbInput":45,' +
+        '"activationType":"RECOMMENDED"}}},' +
+        '{"type":"INSULIN","timestamp":"%s",' +
+        '"data":{"dataValues":{"deliveredFastAmount":1.25,' +
+        '"activationType":"AUTOCORRECTION"}}},' +
+        '{"type":"INSULIN","timestamp":"%s",' +
+        '"data":{"dataValues":{"deliveredFastAmount":0,' +
+        '"programmedFastAmount":0,"activationType":"RECOMMENDED"}}},' +
+        '{"type":"MEAL","timestamp":"%s",' +
+        '"data":{"dataValues":{"amount":45}}}],' +
         '"sgs":[' +
         '{"sg":0,"timestamp":"%s"},' +    // gap slot: must be skipped
         '{"sg":30,"timestamp":"%s"},' +   // below 40: clamped to 39
@@ -756,7 +790,26 @@ begin
         '{"sg":100,"timestamp":"%s"},' +
         '{"sg":110,"timestamp":"%s"},' +
         '{"sg":120,"timestamp":"%s"}]}',
-        [CareLinkLocalStamp(0, clBase),
+        [DateTimeToUnix(LocalTimeToUniversal(clBase)) * Int64(1000),
+         CareLinkLocalStamp(0, clBase),
+         // Limit blocks: an older one, the one in force, and a future block
+         // that must be ignored in favour of the current one.
+         CareLinkLocalStamp(600, clBase), CareLinkLocalStamp(300, clBase),
+         CareLinkLocalStamp(-600, clBase),
+         // Two auto-basal markers inside the 1h window (0.075 + 0.1), a
+         // non-basal marker that must not be counted, and an auto-basal
+         // marker outside the window that must not be counted either.
+         CareLinkLocalStamp(30, clBase), CareLinkLocalStamp(10, clBase),
+         CareLinkLocalStamp(20, clBase), CareLinkLocalStamp(180, clBase),
+         // Insulin markers for the bolus overlay: one the user asked for (with
+         // carbs), one the pump decided on its own, and a zero delivery that
+         // must not become a stem on the graph.
+         CareLinkLocalStamp(90, clBase), CareLinkLocalStamp(45, clBase),
+         CareLinkLocalStamp(40, clBase),
+         // A meal marker at the same time as that 45 g bolus: the two describe
+         // one meal and must not be drawn as two. The 30 g marker above has no
+         // bolus and stands alone.
+         CareLinkLocalStamp(90, clBase),
          CareLinkLocalStamp(25, clBase), CareLinkLocalStamp(20, clBase),
          CareLinkLocalStamp(15, clBase), CareLinkLocalStamp(10, clBase),
          CareLinkLocalStamp(5, clBase), CareLinkLocalStamp(0, clBase)]);

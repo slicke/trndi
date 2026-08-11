@@ -940,6 +940,9 @@ begin
     PredictShortMode := GetBoolSetting('predictions.short', false);
     PredictDotMode := GetBoolSetting('predictions.dots', false);
     RotatingArrow := GetBoolSetting('display.rotating_arrow', false);
+    ShowBolusOverlay := GetBoolSetting('display.bolus_overlay', false);
+    ShowAutoBolusOverlay := GetBoolSetting('display.bolus_overlay.auto', false);
+    ShowCarbOverlay := GetBoolSetting('display.carb_overlay', false);
     PredictShortFullArrows := GetBoolSetting('predictions.short.fullarrows', false);
     PredictShortShowValue := GetBoolSetting('predictions.short.showvalue', false);
     // Prefer user-scoped minutes only; do not fall back to global

@@ -109,6 +109,9 @@ type
     cbPredictions: TCheckBox;
     cbPredictDots: TCheckBox;
     cbRotatingArrow: TCheckBox;
+    cbBolusOverlay: TCheckBox;
+    cbBolusOverlayAuto: TCheckBox;
+    cbCarbOverlay: TCheckBox;
     cbDotFresh: TCheckBox;
     cbWebAPI: TCheckBox;
     cbAutoStart: TCheckBox;
