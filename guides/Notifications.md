@@ -9,9 +9,10 @@ Enabling notifications is optional — you can use Trndi without them.
 - **Suspected sensor fault** — repeated large jumps between consecutive readings.
 - **Low pump reservoir** — `alerts.notice.reservoir`, on by default. One toast each
   time the reservoir falls to 30, 25, 20, 15, 10 and 5 units. Only backends that
-  report a reservoir (Tandem Source, CareLink) can trigger it; the rest leave the
-  field at `DEVICE_STATUS_UNKNOWN` and are skipped, since a missing figure must
-  never read as an empty cartridge.
+  report a reservoir (Tandem Source, CareLink, and Nightscout v3 where a
+  `devicestatus` record carries `pump.reservoir`) can trigger it; the rest leave
+  the field at `DEVICE_STATUS_UNKNOWN` and are skipped, since a missing figure
+  must never read as an empty cartridge.
 
   The ladder is evaluated after each successful fetch by `TfBG.CheckPumpReservoir`
   (`inc/umain_alerts.inc`) on top of `ReservoirShouldNotify` in
@@ -21,9 +22,13 @@ Enabling notifications is optional — you can use Trndi without them.
   The latch is persisted as `alerts.reservoir.step`, so restarting Trndi on a low
   cartridge does not repeat a warning that was already shown.
 - **Sensor about to expire** — `alerts.notice.sensor`, on by default. One toast each
-  time the remaining sensor life falls to 24, 8, 4, 2 and 1 hours. Only CareLink
-  fills `sensorDurationHours`; Tandem's CGM events carry no session age and the
-  plain CGM backends report none either, so they leave the field at
+  time the remaining sensor life falls to 24, 8, 4, 2 and 1 hours. CareLink fills
+  `sensorDurationHours` from its own countdown, and Nightscout v3 fills it where
+  a `devicestatus` record states when the session ends (xDrip+/xdrip-js write
+  one). A sensor *start* is never turned into a remaining life: session length
+  varies by sensor, so the arithmetic would be a guess that announces a fresh
+  sensor as an expiring one. Tandem's CGM events carry no session age and the
+  other plain CGM backends report none either, so they leave the field at
   `DEVICE_STATUS_UNKNOWN` and are skipped.
 
   Same shape as the reservoir ladder: `TfBG.CheckSensorExpiry`
@@ -37,8 +42,11 @@ Enabling notifications is optional — you can use Trndi without them.
 - **Low pump battery** — `alerts.notice.battery`, on by default. One toast each
   time the pump battery falls to 20, 15, 10, 5 and 2 percent. Both pump backends
   fill `pumpBatteryPercent` — Tandem from the `ibc` property on its status and
-  battery events, CareLink from `pumpBatteryLevelPercent` — and the plain CGM
-  backends leave it at `DEVICE_STATUS_UNKNOWN` and are skipped.
+  battery events, CareLink from `pumpBatteryLevelPercent` — as does Nightscout v3
+  from `pump.battery.percent`, and the remaining backends leave it at
+  `DEVICE_STATUS_UNKNOWN` and are skipped. Nightscout's `uploader.battery` is
+  deliberately not read: that is the phone doing the uploading, and a flat phone
+  on a site with no pump would otherwise fire this ladder every day.
 
   Same shape again: `TfBG.CheckPumpBattery` (`inc/umain_alerts.inc`) over
   `PumpBatteryShouldNotify`, latch persisted as `alerts.battery.step`. The one

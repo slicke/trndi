@@ -10,6 +10,25 @@ This is a beta driver — it may not work as intended. Use plain _NightScout_ if
 
 Connects to your NightScout server, using the more modern _version 3_ API. However, this API does not support all features Trndi requires, which results in Trndi mixing requests to the version 1 and 3 APIs, depending on what data it needs.
 
+### What Trndi reads from Nightscout v3
+
+Beyond the glucose entries, this driver reads the `treatments` and `devicestatus` collections. Nightscout is a store rather than a device, so what comes back is whatever your uploader chose to write — a looping rig (AAPS, Loop, Trio) publishes a good deal, a site fed only by a CGM bridge publishes almost none of it, and nothing is inferred from a field that isn't there.
+
+From `treatments`:
+
+- **Insulin doses on the history graph**, if you turn them on (Settings → Display → *Show insulin doses on the history graph*). Anything a treatment records as `insulin` counts as a dose. Doses your loop gave itself — marked `isSMB`, `automatic`, or with an SMB event type — are filed as automatic and stay hidden unless you also tick the second checkbox, because a rig micro-bolusing every five minutes otherwise buries the boluses you gave yourself.
+- **Carbohydrates on the history graph** (Settings → Display → *Show carbohydrates on the history graph*). A Nightscout treatment carries insulin and carbs on the same record, so a meal bolus contributes one dose and one meal, with no double-counting to reconcile.
+- **Sensor age**, as a fallback, from the latest _Sensor Start_ / _Sensor Change_ event.
+
+From `devicestatus`:
+
+- **Reservoir level** (`pump.reservoir`), **pump battery** (`pump.battery.percent`) and **suspend state**, which drive the low-insulin and pump-battery notifications described in [Notifications.md](/guides/Notifications.md).
+- **Sensor life remaining**, but only where a record states an actual expiry time (xDrip+/xdrip-js write one). A sensor _start_ is not enough: how long a session lasts depends on the sensor, and guessing it would announce a fresh sensor as an expiring one.
+
+`uploader.battery` is deliberately ignored — that is the phone doing the uploading, and a flat phone is not a flat pump. Transmitter battery is left unreported for the same kind of reason: what Nightscout carries is a voltage, and a percentage derived from it would be Trndi's invention rather than a device reading.
+
+Both collections are fetched together and cached for ten minutes, so a normal refresh still costs a single request. An empty stretch on the graph therefore means "nothing was reported for that period", never "no insulin was given".
+
 ## Dexcom _(USA/Outside USA)_
 This is Trndi's original implementation of Dexcom. It is still updated when needed, and a very viable choice for stability.
 

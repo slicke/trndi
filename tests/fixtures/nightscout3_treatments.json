@@ -1,0 +1,65 @@
+[
+  {
+    "_id": "t-smb",
+    "eventType": "Correction Bolus",
+    "insulin": 0.15,
+    "isSMB": true,
+    "created_at": "2026-08-11T09:50:00.000Z",
+    "enteredBy": "AndroidAPS"
+  },
+  {
+    "_id": "t-loop-bolus",
+    "eventType": "Bolus",
+    "insulin": 2.5,
+    "automatic": true,
+    "mills": 1786438800000,
+    "enteredBy": "loop://iPhone"
+  },
+  {
+    "_id": "t-meal",
+    "eventType": "Meal Bolus",
+    "insulin": 6.2,
+    "carbs": 45,
+    "created_at": "2026-08-11T08:30:00.000Z",
+    "enteredBy": "Trndi user"
+  },
+  {
+    "_id": "t-carbs-only",
+    "eventType": "Carb Correction",
+    "carbs": 15,
+    "created_at": "2026-08-11T07:15:00.000Z"
+  },
+  {
+    "_id": "t-temp-basal",
+    "eventType": "Temp Basal",
+    "rate": 0.85,
+    "duration": 30,
+    "created_at": "2026-08-11T07:00:00.000Z"
+  },
+  {
+    "_id": "t-nulls",
+    "eventType": "Correction Bolus",
+    "insulin": null,
+    "carbs": null,
+    "created_at": "2026-08-11T06:30:00.000Z"
+  },
+  {
+    "_id": "t-zeroes",
+    "eventType": "Meal Bolus",
+    "insulin": 0,
+    "carbs": 0,
+    "created_at": "2026-08-11T05:00:00.000Z"
+  },
+  {
+    "_id": "t-sensor-start",
+    "eventType": "Sensor Start",
+    "created_at": "2026-08-05T06:00:00.000Z"
+  },
+  {
+    "_id": "t-no-timestamp",
+    "eventType": "Snack Bolus",
+    "insulin": 1.4,
+    "carbs": 12,
+    "notes": "carries no usable timestamp of any kind"
+  }
+]
