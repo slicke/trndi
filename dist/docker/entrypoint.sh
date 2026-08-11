@@ -12,7 +12,8 @@ echo "==> Trndi dev container: $(uname -m), lazbuild: $(command -v lazbuild || e
 if ! command -v lazbuild >/dev/null 2>&1; then
   echo "==> lazbuild is missing from this image - it was built before the" >&2
   echo "    architecture fix, or from a cached layer. Rebuild with:" >&2
-  echo "      docker build --no-cache -t trndi-dev -f dist/docker/Dockerfile ." >&2
+  echo "      podman build --no-cache -t trndi-dev -f dist/docker/Dockerfile ." >&2
+  echo "    (or the same command with docker)" >&2
   exec "$@"
 fi
 

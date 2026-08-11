@@ -1,0 +1,15 @@
+# Build context filter for dist/docker/Dockerfile.
+# Read by `docker build` and, when no .containerignore exists, by
+# `podman build`/buildah too - so this one file covers both engines.
+#
+# The image copies exactly one file (dist/docker/entrypoint.sh) and clones the
+# sources itself at run time, so everything else - .git alone is ~180 MB, plus
+# build/, lib/ and tools/node_modules - is pure upload cost. Exclude the tree
+# and re-admit that single file, one directory level at a time (the safe form:
+# a `!` pattern cannot resurrect a file whose parent directory is excluded).
+*
+!dist
+dist/*
+!dist/docker
+dist/docker/*
+!dist/docker/entrypoint.sh
