@@ -398,7 +398,7 @@ end;
 resourcestring
 sParamUsername = 'NightScout URL';
 sParamPassword = 'Auth token';
-sParamDesc = '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13#10 +
+sParamDesc = '** BETA DRIVER - Please use "NightScout" for daily use! **' + #13#10 +
   'NightScout v3 setup (use FULL access token):' + #13#10#13#10 +
   '1) Open your NightScout site (e.g., https://your-site).' + #13#10 +
   '2) Go to Admin -> Tokens — or API Secret.' + #13#10 +
@@ -412,7 +412,7 @@ sParamDesc = '** ALPHA DRIVER - Please use "NightScout" for daily use! **' + #13
 sParamDescHTML =
   '<div style="font-family: Arial, sans-serif; line-height: 1.6;">' +
   '<div style="background: #dc3545; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; text-align: center; border: 2px solid #c82333;">' +
-  '⚠️ ALPHA DRIVER - Please use "NightScout" for daily use! ⚠️' +
+  '⚠️ BETA DRIVER - Please use "NightScout" for daily use! ⚠️' +
   '</div>' +
   '<h2 style="margin-bottom: 10px;">🌙 NightScout v3 Setup</h2>' +
   '<p style="color: #7f8c8d; font-style: italic; margin-bottom: 15px;">(use FULL access token)</p>' +

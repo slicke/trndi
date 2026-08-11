@@ -6,6 +6,8 @@ Trndi provides several backends, which can be confusing. Herein the different ch
 Connects to your NightScout server, using the stable _version 1_ API.
 
 ## NightScout v3
+This is a beta driver — it may not work as intended. Use plain _NightScout_ if you want the stable option.
+
 Connects to your NightScout server, using the more modern _version 3_ API. However, this API does not support all features Trndi requires, which results in Trndi mixing requests to the version 1 and 3 APIs, depending on what data it needs.
 
 ## Dexcom _(USA/Outside USA)_
@@ -16,12 +18,16 @@ This is a complete re-write of the Dexcom driver with some more modern concepts.
 This backend also supports Japan, as a result. New features are primarily added to this driver.
 
 ## Tandem t:connect _(USA/EU)_
+This is a beta driver — it may not work as intended.
+
 This is Tandem's backend which gets data from Tandem Source. See the [setup guide](/guides/Tandem.md) for details.
 
-Unfortunately, a bug in Tandem Source results in some individuals only getting readings once per hour. This is not a Trndi bug.
+Unfortunately, a bug in Tandem Source results in some individuals only getting readings once per hour. This is not a Trndi bug. When it happens, Trndi keeps showing the last reading it received and may report it as outdated.
 
 ## CareLink Follower _(USA/EU/Other)_
-This is used for Medtronic's CareLink system. It's an experimental driver, which is a bit complicated to set up.
+This is a beta driver — it may not work as intended. It is also a bit complicated to set up.
+
+This is used for Medtronic's CareLink system.
 Username/password login is not permitted by Medtronic, instead a browser _must_ be used and a CAPTCHA _must_ be solved.
 
 Instead of a password, CareLink requires some [extra work](/guides/CareLink.md).

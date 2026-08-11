@@ -1,8 +1,8 @@
-# Medtronic CareLink (Follower) — Experimental
+# Medtronic CareLink (Follower) — Beta
 
 Trndi can show CGM data from Medtronic pumps/sensors via the **CareLink follower API** — the same data the CareLink Connect phone app shows.
 
-> ⚠️ **Experimental.** This backend is under active development and needs testers. Data may lag behind the pump (it arrives when the patient's phone uploads, typically every ~5 minutes). As always: Trndi is not a medical device.
+> ⚠️ **Beta.** This backend is under active development and needs testers. Data may lag behind the pump (it arrives when the patient's phone uploads, typically every ~5 minutes). The browser-capture login below is not a temporary rough edge — Medtronic's CAPTCHA means setup stays this way. As always: Trndi is not a medical device.
 
 ## How it works (and why setup is different)
 
