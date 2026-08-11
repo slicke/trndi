@@ -65,9 +65,20 @@ VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=alefrag
 If your Ubuntu installation complains about -lgcc, consider making a symlink:
 ```sudo ln -s /usr/lib/gcc/x86_64-linux-gnu/11/libgcc.a /usr/lib/libgcc.a```
 
-### Docker
-`dist/docker/Dockerfile` builds a Linux dev container that mirrors CI's Linux jobs (Lazarus/FPC + Qt6 from `.github/actions/setup-lazarus`), on amd64 and arm64 alike. On `docker run` its entrypoint clones (or updates) the `develop` branch, builds it via `make release` — Extensions on both architectures, linking the committed QuickJS libraries — then drops you into a shell in the checkout. Set `TRNDI_BUILD_TARGET=noext-release` to build without the engine:
+### Podman / Docker
+`dist/docker/Dockerfile` builds a Linux dev container that mirrors CI's Linux jobs (Lazarus/FPC + Qt6 from `.github/actions/setup-lazarus`), on amd64 and arm64 alike. At run time its entrypoint clones (or updates) the `develop` branch, builds it via `make release` — Extensions on both architectures, linking the committed QuickJS libraries — then drops you into a shell in the checkout. Set `TRNDI_BUILD_TARGET=noext-release` to build without the engine.
+
+The file uses no BuildKit-only syntax, so the same commands work under either engine — replace `podman` with `docker` if that is what you have:
 ```
-docker build -t trndi-dev -f dist/docker/Dockerfile .
-docker run -it --rm trndi-dev
+podman build -t trndi-dev -f dist/docker/Dockerfile .
+podman run -it --rm trndi-dev
 ```
+Keep the checkout (and its build artifacts) between runs with a named volume, so repeat runs only fetch changed sources:
+```
+podman run -it --rm -v trndi-checkout:/root/trndi trndi-dev
+```
+
+Podman notes:
+* On Windows and macOS podman runs the containers inside a VM, which must be up first: `podman machine start`. The default machine gets 2 GiB of RAM; if `lazbuild` is killed mid-compile, give it more — `podman machine stop && podman machine set --memory 4096 && podman machine start`.
+* To compile your working tree instead of a fresh clone, mount it over `$TRNDI_DIR`: `podman run -it --rm -v .:/root/trndi:Z trndi-dev`. The `:Z` is needed on SELinux hosts (Fedora, RHEL) and harmless elsewhere; add `--userns=keep-id` to keep the produced files owned by your user rather than by root.
+* Rootless podman is enough — nothing in the image needs `--privileged` or host devices.
