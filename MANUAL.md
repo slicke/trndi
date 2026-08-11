@@ -342,7 +342,12 @@ Look for:
 
 ### Making It Yours
 - **Change colors**: Settings → Colors tab
-- **Change fonts**: Settings → Display tab
+- **Change fonts**: Settings → Display tab. The miniature window at the top is
+  a live mock of the main screen — it shows your current reading with the
+  fonts, colors and dot mode you are picking (before you save), and the
+  dropdown next to the font buttons switches it between the in-range, high
+  and low looks. Click the reading, arrow or time in the miniature to change
+  that item's font
 - **Add JavaScript extensions**: See the Extensions guide for advanced features
 - **Keyboard shortcuts**: Settings → General tab
 

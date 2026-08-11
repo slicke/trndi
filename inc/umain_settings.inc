@@ -586,18 +586,12 @@ procedure SetupUIElements(f: TfConf);
     begin
       f.Invalidate;
 
-      lVal.Font.Name := Self.lVal.Font.Name;
-      lArrow.Font.Name := Self.lArrow.Font.Name;
-      lAgo.Font.Name := Self.lAgo.Font.Name;
-      lVal.Font.Color := Self.lVal.Font.Color;
-      lArrow.Font.Color := Self.lArrow.Font.Color;
-      lAgo.Font.Color := Self.lAgo.Font.Color;
-      lVal.Caption := Self.lVal.Caption;
-      lArrow.Caption := Self.lArrow.Caption;
-      lAgo.Caption := Self.lAgo.Caption;
-      lDiff.Font.Name := Self.lDiff.Font.Name;
-      lDiff.Font.Color := Self.lDiff.Font.Color;
-      lDiff.Caption := Self.lDiff.Caption;
+      // Seed the Display miniature's fonts from the live labels; the captions
+      // are read straight off those labels by RenderDisplayPreview. pnDisplay
+      // keeps the default UI font so the dialog's font reset knows "stock".
+      f.FontVal.Assign(Self.lVal.Font);
+      f.FontArrow.Assign(Self.lArrow.Font);
+      f.FontAgo.Assign(Self.lAgo.Font);
       pnDisplay.Color := Self.Color;
       pnDisplay.Font := fBG.Font;
 
@@ -681,9 +675,9 @@ procedure SaveUserSettings(f: TfConf);
   begin
     with f, native do
     begin
-      SetSetting('font.val', lVal.Font.Name);
-      SetSetting('font.arrow', lArrow.Font.Name);
-      SetSetting('font.ago', lAgo.Font.Name);
+      SetSetting('font.val', f.FontVal.Name);
+      SetSetting('font.arrow', f.FontArrow.Name);
+      SetSetting('font.ago', f.FontAgo.Name);
 
       if cbMoveDIffRight.Checked then
         SetAlignmentSetting('ux.labels.ldiff.alignment', taRightJustify)
@@ -939,9 +933,11 @@ begin
 
   fConf := TfConf.Create(Self);
   try
-    // The dialog hosts the dot-coloring preview strip but cannot render it —
-    // the color pipeline lives on this side (see TDotPreviewEvent in uconf).
+    // The dialog hosts the preview surfaces but cannot render them — the
+    // color pipeline lives on this side (see TDotPreviewEvent and
+    // TDisplayPreviewEvent in uconf).
     fConf.OnDotPreview := @RenderDotModePreview;
+    fConf.OnDisplayPreview := @RenderDisplayPreview;
     with native do
     begin
       fConf.cbSys.Items.Clear;
