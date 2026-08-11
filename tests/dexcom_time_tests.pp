@@ -50,8 +50,10 @@ type
   published
     procedure ParsesXmlSystemTime;
     procedure ParsesDateMs;
+    procedure ParsesDateMsWithOffsetSuffix;
     procedure ParsesJsonServerTimeDateMs;
     procedure ParsesJsonServerTimeNumericMs;
+    procedure ParsesJsonDateTimeKey;
     procedure ParsesIsoZ;
     procedure RejectsInvalid;
   end;
@@ -79,12 +81,41 @@ begin
   AssertTrue(Abs(dt - expected) < ONE_SECOND);
 end;
 
+// Dexcom's DT field carries the offset inside the parentheses, e.g.
+// "Date(1786478432000+0000)". The suffix is informational: the millisecond
+// value is a UTC epoch, so the result must equal the plain form's.
+procedure TDexcomTimeParsingTests.ParsesDateMsWithOffsetSuffix;
+var
+  dt, expected: TDateTime;
+begin
+  AssertTrue(ParseDexcomTime('Date(1610464324000+0000)', dt));
+  expected := UnixToDateTime(1610464324, False);
+  AssertTrue(Abs(dt - expected) < ONE_SECOND);
+
+  // A non-zero offset must not shift the instant either
+  AssertTrue(ParseDexcomTime('/Date(1610464324000-0500)/', dt));
+  AssertTrue(Abs(dt - expected) < ONE_SECOND);
+end;
+
 procedure TDexcomTimeParsingTests.ParsesJsonServerTimeDateMs;
 var
   dt, expected: TDateTime;
 begin
   AssertTrue(ParseDexcomTime('{"ServerTime":"/Date(1610464324000)/"}', dt));
   expected := UnixToDateTime(1610464324, False);
+  AssertTrue(Abs(dt - expected) < ONE_SECOND);
+end;
+
+// The live SystemUtcTime response uses "DateTime", not "ServerTime", and pairs
+// it with OffsetMinutes -- which means wall-clock semantics, so with offset 0
+// the result is UTC rather than local.
+procedure TDexcomTimeParsingTests.ParsesJsonDateTimeKey;
+var
+  dt, expected: TDateTime;
+begin
+  AssertTrue(ParseDexcomTime(
+    '{"DateTime":"\/Date(1610464324000)\/","OffsetMinutes":0}', dt));
+  expected := UnixToDateTime(1610464324, True);
   AssertTrue(Abs(dt - expected) < ONE_SECOND);
 end;
 
