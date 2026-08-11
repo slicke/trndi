@@ -20,6 +20,20 @@ Enabling notifications is optional — you can use Trndi without them.
   `RESERVOIR_REARM_MARGIN`, which is also what re-arms the ladder after a refill.
   The latch is persisted as `alerts.reservoir.step`, so restarting Trndi on a low
   cartridge does not repeat a warning that was already shown.
+- **Sensor about to expire** — `alerts.notice.sensor`, on by default. One toast each
+  time the remaining sensor life falls to 24, 8, 4, 2 and 1 hours. Only CareLink
+  fills `sensorDurationHours`; Tandem's CGM events carry no session age and the
+  plain CGM backends report none either, so they leave the field at
+  `DEVICE_STATUS_UNKNOWN` and are skipped.
+
+  Same shape as the reservoir ladder: `TfBG.CheckSensorExpiry`
+  (`inc/umain_alerts.inc`) over `SensorExpiryShouldNotify`, latch persisted as
+  `alerts.sensor.step`, and a sensor change re-arms the ladder once the figure is
+  clear of the fired step by `SENSOR_EXPIRY_REARM_MARGIN` — no sensor-change event
+  is needed from the payload. `sensorDurationHours` counts **down** (remaining
+  life), confirmed against the CareLink app; a backend that reports elapsed time
+  instead must convert before filling the field, or a fresh sensor would be
+  announced as an expiring one.
 
 ## How Trndi chooses a backend
 - Windows: Uses the built‑in WinRT toast API (`Windows.UI.Notifications.ToastNotificationManager`) via PowerShell — no third‑party module required.

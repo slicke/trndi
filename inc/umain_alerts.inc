@@ -441,6 +441,49 @@ begin
     native.SetSetting('alerts.reservoir.step', FReservoirStep);
 end;
 
+{------------------------------------------------------------------------------
+  CheckSensorExpiry
+  -----------------
+  Raise one toast per sensor-expiry step (24/8/4/2/1 h) as a session runs out.
+  Only CareLink reports remaining sensor life; the Tandem payload carries none
+  (its CGM events have no session age), so it and every plain CGM backend leave
+  the field at DEVICE_STATUS_UNKNOWN and are skipped here — the same rule the
+  reservoir follows, that a missing figure never reads as an empty one.
+
+  sensorDurationHours counts down, confirmed against the CareLink app. Reading
+  it the other way would announce a fresh sensor as an expiring one, so a
+  backend that ever reports elapsed hours instead must convert before filling
+  the field rather than being handled here.
+ ------------------------------------------------------------------------------}
+procedure TfBG.CheckSensorExpiry;
+var
+  status: TCGMDeviceStatus;
+  before: integer;
+begin
+  if not Assigned(api) or not Assigned(native) then
+    Exit;
+  if not native.GetBoolSetting('alerts.notice.sensor', true) then
+    Exit;
+  if not api.getDeviceStatus(status) then
+    Exit;
+
+  before := FSensorExpiryStep;
+  if SensorExpiryShouldNotify(status.sensorDurationHours, FSensorExpiryStep) then
+  begin
+    TrndiDLog(Format('CheckSensorExpiry: %dh left, notifying at step %dh',
+      [status.sensorDurationHours, FSensorExpiryStep]));
+    if status.sensorDurationHours <= 1 then
+      native.attention(RS_ATTENTION_SENSOR_EXPIRY,
+        RS_ATTENTION_SENSOR_EXPIRY_DESC_ONE)
+    else
+      native.attention(RS_ATTENTION_SENSOR_EXPIRY,
+        Format(RS_ATTENTION_SENSOR_EXPIRY_DESC, [status.sensorDurationHours]));
+  end;
+
+  if FSensorExpiryStep <> before then
+    native.SetSetting('alerts.sensor.step', FSensorExpiryStep);
+end;
+
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
 begin
   FAlertEngine.SnoozeActive(Minutes);

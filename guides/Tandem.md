@@ -38,7 +38,7 @@ The pump-logs payload the readings come from carries a good deal more than gluco
 
 Read from the payload but not shown in the UI yet: reservoir level, pump battery, and whether delivery is suspended.
 
-Not available from this backend: sensor life, transmitter battery, and a basal *profile* (the graph's basal overlay needs a repeating daily schedule, and a single fetch window is not one).
+Not available from this backend: sensor life (so the sensor-expiry notifications never fire here — the four CGM event codes carry no session age, and no sensor-start event has been seen in a fetch window), transmitter battery, and a basal *profile* (the graph's basal overlay needs a repeating daily schedule, and a single fetch window is not one).
 
 ## For testers
 

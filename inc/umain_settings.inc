@@ -531,6 +531,7 @@ procedure LoadUserSettings(f: TfConf);
       cbAlertHiLo.Checked := native.getBoolSetting('alerts.notice.hilo', true);
       cbAlertMissing.Checked := native.getBoolSetting('alerts.notice.missing', true);
       cbAlertReservoir.Checked := native.getBoolSetting('alerts.notice.reservoir', true);
+      cbAlertSensor.Checked := native.getBoolSetting('alerts.notice.sensor', true);
 
       spAlertDurHi.Value   := native.GetIntSetting('alerts.duration.high', 10);
       spAlertDurLo.Value   := native.GetIntSetting('alerts.duration.low', 5);
@@ -703,6 +704,7 @@ procedure SaveUserSettings(f: TfConf);
       native.setSetting('alerts.notice.hilo', cbAlertHiLo.Checked);
       native.setSetting('alerts.notice.missing', cbAlertMissing.Checked);
       native.setSetting('alerts.notice.reservoir', cbAlertReservoir.Checked);
+      native.setSetting('alerts.notice.sensor', cbAlertSensor.Checked);
 
       native.SetSetting('alerts.duration.high',     spAlertDurHi.Value);
       native.SetSetting('alerts.duration.low',      spAlertDurLo.Value);

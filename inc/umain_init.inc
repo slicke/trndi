@@ -856,6 +856,9 @@ begin
     // Reservoir ladder latch: restoring it keeps a restart on a low cartridge
     // from repeating a step that was already announced.
     FReservoirStep := native.GetIntSetting('alerts.reservoir.step', 0);
+    // Same for the sensor-expiry ladder, so a restart four hours from the end
+    // of a session does not repeat the step it already announced.
+    FSensorExpiryStep := native.GetIntSetting('alerts.sensor.step', 0);
 
     api.APIEmitter := @APIReceiver;
     api.OnCredentialsChanged := @APICredentialsChanged;
