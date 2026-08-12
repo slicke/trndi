@@ -74,6 +74,7 @@ type
     procedure TestUploaderBatteryIsNotThePumpBattery;
     procedure TestUnreadablePayloadReportsNothing;
     procedure TestNullStringFieldsAreTolerated;
+    procedure TestSensorStateReadWithoutAnExpiry;
     procedure TestNothingReportedBeforeAFetch;
   end;
 
@@ -372,6 +373,47 @@ begin
   AssertEquals('Its insulin is still a delivery', 1.5, boluses[1].units, 0.0001);
   AssertTrue('Carbs still reported', FAPI.getCarbs(carbs));
   AssertEquals('The meal carbs survive too', 1, Length(carbs));
+end;
+
+{------------------------------------------------------------------------------
+  A failed sensor is reported by the state text alone. None of the expiry
+  spellings the driver looks for is part of any schema — Nightscout imposes
+  none on the plugin sections — so a rig that says the session broke without
+  saying when it would have ended must still be read as a fault, and a later
+  record carrying an expiry and no state must not suppress that state.
+ ------------------------------------------------------------------------------}
+procedure TNightscout3TreatmentTests.TestSensorStateReadWithoutAnExpiry;
+var
+  status: TCGMDeviceStatus;
+  expiry: string;
+begin
+  // A state and nothing else: no expiry anywhere in the payload.
+  TNightscout3Probe(FAPI).FeedStatus(
+    '[{"device":"rig","created_at":"2026-08-11T10:00:00.000Z",' +
+    '"xdripjs":{"stateString":"Sensor Failed"}}]');
+
+  AssertTrue('A state alone is a device status', FAPI.getDeviceStatus(status));
+  AssertEquals('Sensor state read without an expiry',
+    'Sensor Failed', status.sensorState);
+  AssertFalse('A failed state is a fault', status.sensorOK);
+  AssertEquals('Sensor life stays unknown without an expiry',
+    DEVICE_STATUS_UNKNOWN, status.sensorDurationHours);
+
+  // Newest record: an expiry and no state. The state belongs to the older
+  // record and the expiry to the newer one, and both must survive.
+  expiry := FormatDateTime('yyyy-mm-dd"T"hh:nn:ss.zzz"Z"',
+    LocalTimeToUniversal(Now) + 3.5 / 24);
+  TNightscout3Probe(FAPI).FeedStatus(
+    '[{"device":"rig","created_at":"2026-08-11T10:00:00.000Z",' +
+    '"xdripjs":{"sensor":{"expires":"' + expiry + '"}}},' +
+    '{"device":"rig","created_at":"2026-08-11T09:00:00.000Z",' +
+    '"xdripjs":{"stateStringShort":"SF"}}]');
+
+  AssertTrue('Device status reported', FAPI.getDeviceStatus(status));
+  AssertEquals('Sensor life from the record that carries it',
+    3, status.sensorDurationHours);
+  AssertEquals('The short state survives a newer expiry-only record',
+    'SF', status.sensorState);
 end;
 
 {------------------------------------------------------------------------------

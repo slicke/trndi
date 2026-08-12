@@ -67,6 +67,13 @@
  *   (eventType, pump.status.status, xdripjs.stateString) are now read
  *   null-tolerantly; a single record carrying a JSON null there aborted
  *   the whole metadata probe for a full cache TTL.
+ * - 2026-08-12: the sensor state (xdripjs.stateString) is now read from every
+ *   record rather than only from one that also carries a session expiry, and
+ *   tracked in its own recency slot. A rig reporting a failed sensor without
+ *   an expiry — no expiry field is part of any schema — used to be ignored.
+ * - 2026-08-12: the sensor-expiry suffix floors the remaining hours instead of
+ *   truncating them, so the hour after a session ends reads "sensor expired"
+ *   rather than "0h left". Matches the v1 driver this was ported from.
  *)
 unit trndi.api.nightscout3;
 
@@ -76,7 +83,7 @@ interface
 
 uses
 Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs, {$ifdef debug} trndi.log,{$endif}
-fpjson, jsonparser, jsonscanner, dateutils, StrUtils;
+fpjson, jsonparser, jsonscanner, dateutils, StrUtils, Math;
 
 const
   {** Base path for Nightscout v3 API endpoints (appended to the provided base URL). }
@@ -560,7 +567,11 @@ begin
 
       if NS3TryFindSensorExpiry(node, expiresAt) then
       begin
-        hoursLeft := Trunc((expiresAt - Now) * 24);
+        // Floor, not Trunc: truncation rounds toward zero, so a session that
+        // ended within the last hour came back as 0 and read as "0h left" —
+        // the one hour where saying it is over matters most. Above zero the
+        // two agree, so the duration shown for a live sensor is unchanged.
+        hoursLeft := Floor((expiresAt - Now) * 24);
         if hoursLeft < 0 then
           Exit(' (sensor expired)');
         Exit(' (sensor ' + NS3FormatDurationHours(hoursLeft) + ' left)');
@@ -1170,7 +1181,7 @@ var
   js, arrNode: TJSONData;
   i, filled, hours: integer;
   stamp, expiresAt: TDateTime;
-  reservoirAt, batteryAt, suspendAt, sensorAt, statusAt: TDateTime;
+  reservoirAt, batteryAt, suspendAt, sensorAt, sensorStateAt, statusAt: TDateTime;
   num: double;
   txt, lowered: string;
 
@@ -1249,15 +1260,33 @@ var
       FDeviceStatus.sensorDurationHours := hours;
       sensorAt := stamp;
       Inc(filled);
+    end;
 
-      txt := Trim(NS3PathString(item, 'xdripjs.stateString'));
-      if txt = '' then
-        txt := Trim(NS3PathString(item, 'xdripjs.stateStringShort'));
-      FDeviceStatus.sensorState := txt;
+    // The session state stands on its own, outside the expiry branch above:
+    // xdrip-js writes stateString on every record it uploads, while every
+    // expiry spelling is optional, so a rig that says the sensor failed but
+    // never says when the session ends must still be read. It gets its own
+    // recency slot rather than sharing sensorAt, or a newer record carrying an
+    // expiry and no state would suppress the state the ladder needs. As with
+    // the pump status text, '' is the unknown sentinel and does not claim the
+    // slot, so a null state cannot mask a real one in an older record.
+    txt := Trim(NS3PathString(item, 'xdripjs.stateString'));
+    if txt = '' then
+      txt := Trim(NS3PathString(item, 'xdripjs.stateStringShort'));
+    if txt <> '' then
+    begin
+      if Newer(sensorStateAt) then
+      begin
+        FDeviceStatus.sensorState := txt;
+        sensorStateAt := stamp;
+        Inc(filled);
+      end;
 
       // Only a state that names a failure counts as one. "Stopped" does not:
       // a session the user ended is not a sensor that broke, and sensorOK
-      // defaults to True precisely so silence is never read as a fault.
+      // defaults to True precisely so silence is never read as a fault. Held
+      // outside the recency slot on purpose — a fault any record reports is a
+      // fault, even if a record with a newer timestamp won the state text.
       lowered := LowerCase(txt);
       if (Pos('fail', lowered) > 0) or (Pos('error', lowered) > 0) or
         (Pos('expired', lowered) > 0) then
@@ -1284,6 +1313,7 @@ begin
     batteryAt := 0;
     suspendAt := 0;
     sensorAt := 0;
+    sensorStateAt := 0;
     statusAt := 0;
 
     arrNode := NS3FindArrayNode(js, 'devicestatus');
@@ -1786,11 +1816,15 @@ begin
     // The v1 fallback endpoint returns mixed collection entries (cal, mbg, ...)
     // alongside sgv ones; an entry lacking 'sgv' is not a glucose reading and
     // must be skipped rather than treated as a zero-valued one.
-    itemNode := arrNode.FindPath(Format('[%d]', [i]));
+    itemNode := arrNode.Items[i];
     if not Assigned(itemNode) then
       Continue;
+    // A JSON null or any other non-number is skipped for the same reason a
+    // missing field is: it is not a reading. AsInteger raises on both, and the
+    // only guard around this loop is a finally, so one such entry would cost
+    // the whole fetch its readings rather than just its own.
     sgvField := itemNode.FindPath('sgv');
-    if not Assigned(sgvField) then
+    if not (sgvField is TJSONNumber) then
       Continue;
     currentSgv := sgvField.AsInteger;
     if currentSgv <= 0 then
@@ -1817,8 +1851,8 @@ begin
       if i < arrNode.Count - 1 then
       begin
           // Get the previous (older) reading's SGV
-        prevSgvField := arrNode.FindPath(Format('[%d].sgv', [i + 1]));
-        if Assigned(prevSgvField) then
+        prevSgvField := arrNode.Items[i + 1].FindPath('sgv');
+        if prevSgvField is TJSONNumber then
           prevSgv := prevSgvField.AsInteger
         else
           prevSgv := 0;

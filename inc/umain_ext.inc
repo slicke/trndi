@@ -238,7 +238,7 @@ const
     't.on=function(n,f){n=String(n);var g=t.events[n];if(!g)throw new Error("Trndi.on: unknown event \""+n+"\"; valid: "+Object.keys(t.events).join(", "));if(typeof f!=="function")throw new TypeError("Trndi.on: listener must be a function");' +
     'if(!ls[n]){ls[n]=[];var prev=globalThis[g];globalThis[g]=function(){var a=arguments,out,i,r;if(typeof prev==="function")out=prev.apply(this,a);for(i=0;i<ls[n].length;i++){try{r=ls[n][i].apply(null,a);if(r!==undefined)out=r;}catch(e){try{console.push("[Trndi.on "+n+"] "+e);}catch(_e){}}}return out;};}' +
     'ls[n].push(f);return f;};' +
-    't.off=function(n,f){var a=ls[String(n)];if(a){var i=a.indexOf(f);if(i>=0)a.splice(i,1);}};' +
+    't.off=function(n,f){n=String(n);if(!t.events[n])throw new Error("Trndi.off: unknown event \""+n+"\"; valid: "+Object.keys(t.events).join(", "));var a=ls[n];if(a){var i=a.indexOf(f);if(i>=0)a.splice(i,1);}};' +
     'if(t.api.capabilities.network){var f=globalThis.fetch;t.net={fetch:function(url,init){t.permissions.require("net");return f(url,init);}};delete globalThis.fetch;delete globalThis.httpRequest;}' +
     'if(t.api.capabilities.storage){var p="extval."+t.api.extensionId+".";t.storage={get:function(k){return t.getSetting(p+String(k));},set:function(k,v){t.setSetting(p+String(k),String(v));},remove:function(k){t.setSetting(p+String(k),"");},' +
     { JSON convenience on top of the string backend; getJSON falls back to
