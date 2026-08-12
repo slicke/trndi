@@ -284,6 +284,14 @@ RS_UX_RSSI = '📻 RSSI (Signal Strength): %d%%';
 RS_UX_NOISE = '𐩘 Noise: %d';
 RS_UX_DEVICE = '💻 Device: %s';
 RS_UX_SENSOR_EXPIRY = '⏱️ Sensor: %s';
+RS_UX_SENSOR_LEFT_DH = 'about %dd %dh left';
+RS_UX_SENSOR_LEFT_H = 'about %dh left';
+RS_UX_SENSOR_LEFT_ONE = 'less than an hour left';
+RS_UX_RESERVOIR = '💉 Reservoir: about %s U left';
+RS_UX_RESERVOIR_PERCENT = '💉 Reservoir: about %d%% left';
+RS_UX_PUMP_BATTERY = '🔋 Pump battery: %d%%';
+RS_UX_TRANSMITTER_BATTERY = '📡 Transmitter battery: %d%%';
+RS_UX_PUMP_SUSPENDED = '⏸️ Insulin delivery is suspended';
 RS_UX_API = '⚙️ Trndi API Interface: %s';
 RS_UX_TRANSMITTER_INFO = 'Transmitter information';
 

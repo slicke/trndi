@@ -2711,10 +2711,33 @@ msgstr ""
 msgid "Prediction here: %s at %.2d:%.2d"
 msgstr ""
 
+#: trndi.strings.rs_ux_pump_battery
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_pump_battery"
+msgid "🔋 Pump battery: %d%%"
+msgstr ""
+
+#: trndi.strings.rs_ux_pump_suspended
+msgctxt "trndi.strings.rs_ux_pump_suspended"
+msgid "⏸️ Insulin delivery is suspended"
+msgstr ""
+
 #: trndi.strings.rs_ux_reading_here
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_reading_here"
 msgid "Reading here: %s at %.2d:%.2d"
+msgstr ""
+
+#: trndi.strings.rs_ux_reservoir
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_reservoir"
+msgid "💉 Reservoir: about %s U left"
+msgstr ""
+
+#: trndi.strings.rs_ux_reservoir_percent
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_reservoir_percent"
+msgid "💉 Reservoir: about %d%% left"
 msgstr ""
 
 #: trndi.strings.rs_ux_rssi
@@ -2727,6 +2750,29 @@ msgstr ""
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_sensor_expiry"
 msgid "⏱️ Sensor: %s"
+msgstr ""
+
+#: trndi.strings.rs_ux_sensor_left_dh
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_sensor_left_dh"
+msgid "about %dd %dh left"
+msgstr ""
+
+#: trndi.strings.rs_ux_sensor_left_h
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_sensor_left_h"
+msgid "about %dh left"
+msgstr ""
+
+#: trndi.strings.rs_ux_sensor_left_one
+msgctxt "trndi.strings.rs_ux_sensor_left_one"
+msgid "less than an hour left"
+msgstr ""
+
+#: trndi.strings.rs_ux_transmitter_battery
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_transmitter_battery"
+msgid "📡 Transmitter battery: %d%%"
 msgstr ""
 
 #: trndi.strings.rs_ux_transmitter_info
