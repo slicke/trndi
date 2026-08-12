@@ -168,7 +168,11 @@ begin
         // context this same function calls again on the next reading.
         if JS_IsException(retVal) then
           DumpJSError(ctx)
-        else
+        // A callback without a return statement hands back undefined; grabbing
+        // its C-string turned that into the literal text 'undefined', which the
+        // clockView path then painted on the reading label. No value = no
+        // contribution to the result.
+        else if not (JS_IsUndefined(retVal) or JS_IsNull(retVal)) then
         begin
           cstr := JS_ToCString(ctx, retVal);
           if cstr <> nil then
@@ -219,9 +223,27 @@ const
     '",permissions:["data","ui","timers"],capabilities:{storage:typeof t.getSetting==="function"&&typeof t.setSetting==="function",network:has("fetch"),exec:has("runCMD")}};' +
     't.permissions={has:function(n){return t.api.permissions.indexOf(String(n))>=0;},require:function(n){if(!this.has(n))throw new Error("Trndi permission not granted: "+n+". Add it to @perms and approve the extension.");return true;}};' +
     'if(t.api.capabilities.network)t.api.permissions.push("net");if(t.api.capabilities.exec)t.api.permissions.push("exec");if(t.api.capabilities.storage)t.api.permissions.push("settings");' +
-    't.data={current:function(){return t.getCurrentReading();},readings:function(o){return t.getReadings(o&&o.limit||0);},limits:function(){return t.getLimits();},statistics:function(o){return t.getStatistics(o&&o.minutes);},predict:function(o){return {values:t.predictReadings(o&&o.count),confidence:t.predictionConfidence()};}};' +
+    { readings: minutes filtering runs facade-side on timestamp_ms so the
+      native getReadings keeps its single count-cap parameter. }
+    't.data={current:function(){return t.getCurrentReading();},readings:function(o){var r=t.getReadings(o&&o.limit||0);if(o&&o.minutes>0){var c=Date.now()-o.minutes*60000;r=r.filter(function(x){return x.timestamp_ms>=c;});}return r;},limits:function(){return t.getLimits();},statistics:function(o){return t.getStatistics(o&&o.minutes);},predict:function(o){return {values:t.predictReadings(o&&o.count),confidence:t.predictionConfidence()};}};' +
+    { Event-listener API over the magic callback globals. Trndi.on installs a
+      per-event dispatcher that chains any already-declared global (function
+      declarations are hoisted, so script-defined callbacks are seen), lets
+      several listeners coexist, and returns the last non-undefined listener
+      result so clockView/uxClick return-value semantics keep working. The
+      dispatcher is only installed for events actually subscribed to, so a
+      mere Trndi.on("reading",...) doesn't make Pascal-side broadcasts think
+      unrelated callbacks exist. }
+    't.events={reading:"updateCallback",fetch:"fetchCallback",clock:"clockView",dot:"dotClicked",uxclick:"uxClick",unload:"unloadCallback"};var ls={};' +
+    't.on=function(n,f){n=String(n);var g=t.events[n];if(!g)throw new Error("Trndi.on: unknown event \""+n+"\"; valid: "+Object.keys(t.events).join(", "));if(typeof f!=="function")throw new TypeError("Trndi.on: listener must be a function");' +
+    'if(!ls[n]){ls[n]=[];var prev=globalThis[g];globalThis[g]=function(){var a=arguments,out,i,r;if(typeof prev==="function")out=prev.apply(this,a);for(i=0;i<ls[n].length;i++){try{r=ls[n][i].apply(null,a);if(r!==undefined)out=r;}catch(e){try{console.push("[Trndi.on "+n+"] "+e);}catch(_e){}}}return out;};}' +
+    'ls[n].push(f);return f;};' +
+    't.off=function(n,f){var a=ls[String(n)];if(a){var i=a.indexOf(f);if(i>=0)a.splice(i,1);}};' +
     'if(t.api.capabilities.network){var f=globalThis.fetch;t.net={fetch:function(url,init){t.permissions.require("net");return f(url,init);}};delete globalThis.fetch;delete globalThis.httpRequest;}' +
-    'if(t.api.capabilities.storage){var p="extval."+t.api.extensionId+".";t.storage={get:function(k){return t.getSetting(p+String(k));},set:function(k,v){t.setSetting(p+String(k),String(v));},remove:function(k){t.setSetting(p+String(k),"");}};}' +
+    'if(t.api.capabilities.storage){var p="extval."+t.api.extensionId+".";t.storage={get:function(k){return t.getSetting(p+String(k));},set:function(k,v){t.setSetting(p+String(k),String(v));},remove:function(k){t.setSetting(p+String(k),"");},' +
+    { JSON convenience on top of the string backend; getJSON falls back to
+      dflt (or null) on missing keys and unparsable values alike. }
+    'getJSON:function(k,dflt){var v=this.get(k);if(v===false||v==="")return dflt===undefined?null:dflt;try{return JSON.parse(v);}catch(e){return dflt===undefined?null:dflt;}},setJSON:function(k,v){this.set(k,JSON.stringify(v));}};}' +
     '})();';
 var
   facade, extId: RawUtf8;
@@ -256,7 +278,7 @@ begin
     addClassFunctionIf(epUI, 'htmlDlg',          @JSHTMLDlg,         -1);
     addClassFunctionIf(epUI, 'htmlYesNo',        @JSHTMLYesNo,       -1);
     addClassFunctionIf(epUI, 'setClockInterval', @JSvar_ClockInterval,1);
-    addClassFunctionIf(epUI, 'attention',        @JSAttention,        1);
+    addClassFunctionIf(epUI, 'attention',        @JSAttention,       -1);
 
     // Settings group (promptable). Both reads and writes go through here because
     // settings keys (incl. extval.*) carry user-private data.

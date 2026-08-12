@@ -76,7 +76,25 @@ Trndi.storage.set("count", previous + 1);
 
 `Trndi.storage` is available only when `Trndi.api.capabilities.storage` is
 true. Storage currently uses the same string settings backend as the legacy
-`getSetting`/`setSetting` methods; values are not automatically JSON encoded.
+`getSetting`/`setSetting` methods; `get`/`set` values are not automatically
+JSON encoded. For structured state use the JSON wrappers:
+
+```javascript
+const state = Trndi.storage.getJSON("state", { runs: 0 }); // default on missing/corrupt
+state.runs += 1;
+Trndi.storage.setJSON("state", state);
+```
+
+## Events
+
+Register listeners for Trndi's callbacks with `Trndi.on(event, fn)` /
+`Trndi.off(event, fn)` instead of (or alongside) the classic named globals —
+see [Extensions Functions](Extensions_functions.md#trndion--trndioff):
+
+```javascript
+Trndi.on("reading", () => console.push("new reading!"));
+Trndi.on("unload", () => Trndi.storage.setJSON("state", state));
+```
 
 The v2 facade is the supported public API. Its implementation currently uses
 the established bridge methods internally, but legacy global network shortcuts

@@ -415,8 +415,9 @@ begin
   // Same text pipeline as the alternating clock below, so a clockView
   // extension styles the overlay and the flash alike.
   {$ifdef TrndiExt}
+  // Also fall back when clockView exists but returned no text (undefined/'')
   clockText := callFuncWithBGReadings('clockView', [DateTimeToStr(Now)], ex);
-  if not ex then
+  if (not ex) or (clockText = '') then
     clockText := FormatDateTime(FormatSettings.ShortTimeFormat, Now);
   {$else}
   clockText := FormatDateTime(FormatSettings.ShortTimeFormat, Now);
@@ -468,7 +469,10 @@ begin
     {$ifdef TrndiExt}
     clockText := '';
     clockText := callFuncWithBGReadings('clockView', [DateTimeToStr(Now)], ex);
-    if ex = false then
+    // Fall back when no extension handles clockView, and also when a handler
+    // exists but returned no text (undefined/'') — otherwise the label went
+    // blank (or showed 'undefined' before callFuncWithBGReadings filtered it).
+    if (ex = false) or (clockText = '') then
       lval.caption := FormatDateTime(FormatSettings.ShortTimeFormat, Now)
     else
       lval.caption := clockText;
