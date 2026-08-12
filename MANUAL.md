@@ -274,6 +274,13 @@ If you need to monitor multiple people (like family members), you can:
 2. Start Trndi multiple times - each window picks a different person
 3. Each person can have different settings and data sources
 > NOTE: On macOS, to start multiple instances of Trndi you need to run ```open -n -a "Trndi"```, in a Terminal. the _-n_ parameter allows for multiple instances.
+
+### Kiosk Mode (dedicated displays)
+Running Trndi on a wall display or bedside screen (like a Raspberry Pi)? Start
+it with the `--kiosk` command-line flag. Trndi then goes fullscreen by itself,
+keeps the computer and screen awake while it runs, and skips the update popup.
+See the [display guide](guides/Display.md) for a full walkthrough.
+> On macOS, run ```open -a Trndi --args --kiosk``` — the `--args` part passes the flag on to Trndi.
 ---
 
 ## Troubleshooting Common Questions

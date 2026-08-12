@@ -39,7 +39,8 @@ interface
 uses
   Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
   nsutils.nshelpers, nsutils.cocoahelpers, IniFiles, dialogs, StrUtils, Forms,
-  ctypes, trndi.native.base;
+  ctypes, trndi.native.base,
+  Process; // TProcess field (kiosk keep-awake caffeinate child)
 
 type
   {!
@@ -50,7 +51,15 @@ type
   private
     // Set once we've reset the Dock icon back to the app bundle's .icns.
     FDockIconReset: boolean;
+    // Kiosk keep-awake: the power assertion lives exactly as long as this
+    // `caffeinate -d -i` child, so it can never outlive the process.
+    FCaffeinateProc: TProcess;
   public
+    {** Release the keep-awake child if kiosk mode never disabled it. }
+    destructor Destroy; override;
+    {** Keep the system and display awake (kiosk mode) by holding a
+        @code(caffeinate -d -i) child process; disable kills it. }
+    procedure SetKeepAwake(Enable: boolean); override;
     {** Show a visual notification on macOS.
       Prefer native NSUserNotificationCenter (app-attributed), fall back to base AppleScript impl. }
     procedure attention(topic, message: string); override;
@@ -352,6 +361,45 @@ end;
     EnsureUNCenterSetup; without it macOS suppresses notifications while
     the app is frontmost.
  ------------------------------------------------------------------------------}
+
+{------------------------------------------------------------------------------
+  SetKeepAwake
+  ------------
+  Hold a `caffeinate -d -i` child while enabled: -d asserts the display awake,
+  -i idle sleep. The assertion's lifetime is the child's lifetime, so however
+  Trndi ends — including a crash — the system never stays wedged awake.
+  caffeinate ships with macOS at a fixed path; no availability probing needed.
+------------------------------------------------------------------------------}
+procedure TTrndiNativeMac.SetKeepAwake(Enable: boolean);
+begin
+  if Enable then
+  begin
+    if Assigned(FCaffeinateProc) then
+      Exit;
+    FCaffeinateProc := TProcess.Create(nil);
+    FCaffeinateProc.Executable := '/usr/bin/caffeinate';
+    FCaffeinateProc.Parameters.Add('-d');
+    FCaffeinateProc.Parameters.Add('-i');
+    try
+      FCaffeinateProc.Execute;
+    except
+      FreeAndNil(FCaffeinateProc); // best-effort: leave power management alone
+    end;
+  end
+  else if Assigned(FCaffeinateProc) then
+  begin
+    FCaffeinateProc.Terminate(0);
+    FCaffeinateProc.WaitOnExit; // reap; exits immediately after the kill
+    FreeAndNil(FCaffeinateProc);
+  end;
+end;
+
+destructor TTrndiNativeMac.Destroy;
+begin
+  // Release the keep-awake child if kiosk mode never disabled it.
+  SetKeepAwake(false);
+  inherited Destroy;
+end;
 
 procedure TTrndiNativeMac.attention(topic, message: string);
 

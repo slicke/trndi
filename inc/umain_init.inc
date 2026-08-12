@@ -634,7 +634,7 @@ var
   fil: boolean;
   userlocale: TFormatSettings;
   minutesStr: string;
-  minutesVal: integer;
+  minutesVal, paramIx: integer;
   fWizard: TfWizard;
   {$ifdef DEBUG}
   miDebugUXMsg, miDebugLog, miDebugLoadText, miDebugLogAPI: TMenuItem;
@@ -642,6 +642,18 @@ var
 begin
   TrndiDLog(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
+
+  // --kiosk: dedicated-display mode (RPi wall display, bedside screen).
+  // FormShow schedules the actual activation: fullscreen, keep-awake, and no
+  // update popup. Everything else (setup wizard, menus) behaves as normal so
+  // a kiosk can still be configured on first boot. Parsed by hand rather
+  // than via Application.HasOption so the test build's Forms mock suffices.
+  FKioskMode := false;
+  for paramIx := 1 to ParamCount do
+    if ParamStr(paramIx) = '--kiosk' then
+      FKioskMode := true;
+  if FKioskMode then
+    TrndiDLog('Kiosk mode requested via --kiosk');
 
   InitCriticalSection(FReadingsLock);
 

@@ -381,6 +381,13 @@ class var touchOverride: TTrndiBool;
         @param(Enable) True to enable, False to disable.
         @returns True when the requested state has been applied. }
   class function SetAutoStart(Enable: boolean): boolean; virtual;
+    {** Keep the system and display awake while enabled (kiosk mode): inhibit
+        idle sleep, screen blanking and the screensaver as far as the platform
+        allows. Best-effort — a platform that cannot inhibit simply stays a
+        no-op, and callers must not rely on it having worked. Pass False to
+        release; platform overrides also release on Destroy so an inhibition
+        never outlives the process. }
+  procedure SetKeepAwake(Enable: boolean); virtual;
     // Lifecycle and UI
   destructor Destroy; override;
     {** Optional startup hook; platform units may override. }
@@ -1749,6 +1756,18 @@ end;
 class function TTrndiNativeBase.SetAutoStart(Enable: boolean): boolean;
 begin
   Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  SetKeepAwake (base)
+  -------------------
+  Default: cannot inhibit sleep on this platform; deliberately a no-op rather
+  than an error so kiosk mode still runs (the display just follows the OS
+  power settings).
+------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.SetKeepAwake({%H-}Enable: boolean);
+begin
+  // No platform inhibition available in the base implementation.
 end;
 
 {------------------------------------------------------------------------------
