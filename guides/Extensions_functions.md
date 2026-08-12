@@ -65,6 +65,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [runCMD](#runcmd)
    - [setLimits](#setlimits)
  - [Callbacks](#callbacks)
+   - [Trndi.on / Trndi.off](#trndion--trndioff)
    - [updateCallback](#updatecallback)
    - [fetchCallback](#fetchcallback)
    - [dotClicked](#dotclicked)
@@ -88,12 +89,14 @@ to the functions documented below:
 | Preferred method | Existing method | Permission |
 | --- | --- | --- |
 | `Trndi.data.current()` | `Trndi.getCurrentReading()` | `data` |
-| `Trndi.data.readings({ limit })` | `Trndi.getReadings(limit)` | `data` |
+| `Trndi.data.readings({ limit, minutes })` | `Trndi.getReadings(limit)` (+ facade-side time filter) | `data` |
 | `Trndi.data.limits()` | `Trndi.getLimits()` | `data` |
 | `Trndi.data.statistics({ minutes })` | `Trndi.getStatistics(minutes)` | `data` |
 | `Trndi.data.predict({ count })` | `Trndi.predictReadings(count)` + `predictionConfidence()` | `data` |
+| `Trndi.on(event, fn)` / `Trndi.off(event, fn)` | the [callback](#callbacks) globals (`updateCallback`, ...) | follows the callback |
 | `Trndi.net.fetch(url, init)` | v2 network API | `net` |
 | `Trndi.storage.get/set/remove(key)` | namespaced `getSetting` / `setSetting` | `settings` |
+| `Trndi.storage.getJSON/setJSON(key)` | JSON wrappers over the same storage | `settings` |
 
 Use `Trndi.api.permissions`, `Trndi.permissions.has(name)`, and
 `Trndi.permissions.require(name)` to make optional permissions explicit. The
@@ -258,7 +261,8 @@ if (reading === false) {
 - `delta_mgdl`: Change since last reading in mg/dL (integer)
 - `delta_mmol`: Change since last reading in mmol/L (float)
 - `direction`: Trend arrow (↑, ↗, →, ↘, ↓)
-- `timestamp`: TDateTime timestamp
+- `timestamp`: TDateTime timestamp (Pascal date format — prefer `timestamp_ms`)
+- `timestamp_ms`: Unix epoch in milliseconds; `new Date(reading.timestamp_ms)` works directly
 - `age_seconds`: Age of reading in seconds
 
 **Example:**
@@ -284,10 +288,17 @@ has the same shape as [getCurrentReading](#getcurrentreading).
 ```javascript
 const readings = Trndi.getReadings();     // everything in memory
 const lastSix = Trndi.getReadings(6);     // at most 6 readings (~30 min)
+
+// v2 facade: filter by time window instead of count
+const lastHour = Trndi.data.readings({ minutes: 60 });
 ```
 
 **Parameters:**
 - `count` (optional integer): maximum number of readings to return. Omitted or `<= 0` returns all cached readings.
+
+The v2 form `Trndi.data.readings({ limit, minutes })` additionally drops
+readings older than `minutes` (filtered on `timestamp_ms`); both options are
+optional and combine.
 
 **Returns:** Array of reading objects (may be empty). See [getCurrentReading](#getcurrentreading) for the object properties.
 
@@ -461,9 +472,11 @@ Trndi.sayText('High sugar!')
 ```
 
 ### attention
-Displays a system notification
+Displays a system notification. With one argument it is the message; with two,
+the first is the notification title.
 ```javascript
 Trndi.attention("Hello there!")
+Trndi.attention("Glucose alert", "Trending low — check your CGM")
 ```
 
 <a name="overridemins"></a>
@@ -527,7 +540,8 @@ const predictions = Trndi.predictReadings(5);
 - `[0]`: Predicted value in current unit (mg/dL or mmol/L)
 - `[1]`: Predicted value in mg/dL
 - `[2]`: Predicted value in mmol/L  
-- `[3]`: Predicted timestamp (TDateTime)
+- `[3]`: Predicted timestamp (TDateTime, Pascal date format)
+- `[4]`: Predicted timestamp as Unix epoch milliseconds (`new Date(pred[4])`)
 
 **Example:**
 ```javascript
@@ -889,6 +903,50 @@ _Use floats for mmol/L and integers for mg/dL!_
 
 ## Callbacks
 > _NOTE:_ Simply add a function, named the same as a callback below, to have it triggered
+
+### Trndi.on / Trndi.off
+#### Listener-style alternative to the named callback globals
+Instead of defining one magic global per callback, you can register any number
+of listeners. Each event maps to one of the callback globals below and the
+listener receives exactly the same arguments:
+
+| Event | Equivalent global |
+| --- | --- |
+| `"reading"` | [`updateCallback`](#updatecallback) |
+| `"fetch"` | [`fetchCallback`](#fetchcallback) |
+| `"clock"` | [`clockView`](#clockview) |
+| `"dot"` | [`dotClicked`](#dotclicked) |
+| `"uxclick"` | [`uxClick`](#uxclick) |
+| `"unload"` | [`unloadCallback`](#unloadcallback) |
+
+```javascript
+Trndi.on("reading", () => {
+  const r = Trndi.data.current();
+  if (r !== false && r.delta_mmol < -0.3) console.push("dropping...");
+});
+
+const clockListener = Trndi.on("clock", () => "Hi!"); // shown instead of the clock
+Trndi.off("clock", clockListener);                    // unregister again
+```
+
+**Parameters:**
+- `event` (string): one of the names above (unknown names throw an `Error`)
+- `listener` (function): called with the same arguments as the equivalent global
+
+**Returns:** `Trndi.on` returns the listener (handy for `Trndi.off`); `Trndi.off` returns nothing.
+
+**Notes:**
+- Both styles can coexist: a plain `function updateCallback() {...}` declared in
+  your script keeps running, before the listeners.
+- For events whose return value matters (`clock` must return the text to show,
+  `uxclick` returns `false` to suppress Trndi's own dialog), the last listener
+  that returns something other than `undefined` wins.
+- A listener that throws is logged to the `console.push` buffer and does not
+  stop the remaining listeners.
+- Don't assign `globalThis.updateCallback = ...` *after* calling `Trndi.on` for
+  the same event — that replaces the dispatcher and your listeners stop firing.
+- The event names are also discoverable at runtime via `Trndi.events`.
+
 ### updateCallback
 #### This function is called when the main loop updates the reading
 ```updateCallback(reading_system, reading_mgdl, reading_mmol, time)```
@@ -928,6 +986,8 @@ function clockView(glucose, time){
   return "Hello"; // Shows Hello instead of the clock every 20 seconds
 }
 ```
+Returning `undefined` (no return statement) or an empty string makes Trndi
+fall back to the normal clock for that flash.
 
 ### unloadCallback
 #### Called before your extension is unloaded

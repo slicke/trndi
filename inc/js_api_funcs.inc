@@ -146,6 +146,11 @@ begin
   jsVal.From64(SecondsBetween(Now, reading.date));
   JS_SetPropertyStr(ctx, obj, 'age_seconds', jsVal.Raw);
 
+  // timestamp_ms: Unix epoch in milliseconds. Feeds new Date(...) directly,
+  // unlike the raw TDateTime float in `timestamp` (kept for compatibility).
+  jsVal.From64(DateTimeToUnix(reading.date, false) * 1000);
+  JS_SetPropertyStr(ctx, obj, 'timestamp_ms', jsVal.Raw);
+
   Result := obj;
 end;
 
@@ -549,6 +554,9 @@ begin
     JS_SetPropertyUint32(ctx, prediction, 2, value.Raw);
     value.FromFloat(predictions[i].date);
     JS_SetPropertyUint32(ctx, prediction, 3, value.Raw);
+    // [4]: Unix epoch ms, JS-Date-friendly counterpart of the TDateTime in [3]
+    value.From64(DateTimeToUnix(predictions[i].date, false) * 1000);
+    JS_SetPropertyUint32(ctx, prediction, 4, value.Raw);
     JS_SetPropertyUint32(ctx, arr, i, prediction);
   end;
   res^ := arr;

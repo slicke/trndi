@@ -81,18 +81,27 @@ begin
   TTrndiExtEngine.Instance.CallFunction('uxCallback', [comp, val]);
 end;
 
-//Post a notification
+//Post a notification: attention(message) or attention(title, message)
 procedure JSAttention(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
 var
-  s: string;
+  title, s: string;
 begin
   res^ := JS_UNDEFINED;
   if argc < 1 then
     Exit;
-  s := ctx^.ToUtf8(argv^[0]);
+  if argc >= 2 then
+  begin
+    title := ctx^.ToUtf8(argv^[0]);
+    s := ctx^.ToUtf8(argv^[1]);
+  end
+  else
+  begin
+    title := 'Trndi - Extension Message';
+    s := ctx^.ToUtf8(argv^[0]);
+  end;
 
-  native.attention('Trndi - Extension Message', s);
+  native.attention(title, s);
 end;
 
 // Display an HTML message dialog
