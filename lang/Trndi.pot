@@ -313,6 +313,11 @@ msgstr ""
 msgid "Reload"
 msgstr ""
 
+#: tfconf.bextresetperms.caption
+msgctxt "tfconf.bextresetperms.caption"
+msgid "Reset permissions"
+msgstr ""
+
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
 msgstr ""
@@ -342,6 +347,11 @@ msgstr ""
 
 #: tfconf.bremove.caption
 msgid "- Remove"
+msgstr ""
+
+#: tfconf.bresethints.caption
+msgctxt "tfconf.bresethints.caption"
+msgid "Show hidden explanations"
 msgstr ""
 
 #: tfconf.btest.caption
@@ -441,7 +451,7 @@ msgid "Make units green when reading is normal *"
 msgstr ""
 
 #: tfconf.cbclock.caption
-msgid "Show clock for 5 sec every 20 sec"
+msgid "Show clock for 5 sec every 20 sec (shows in top in fullscreen/KIosk Mode)"
 msgstr ""
 
 #: tfconf.cbconnectivitybutton.caption
@@ -485,6 +495,11 @@ msgstr ""
 
 #: tfconf.cbhcontrast.caption
 msgid "High Contrast"
+msgstr ""
+
+#: tfconf.cbhints.caption
+msgctxt "tfconf.cbhints.caption"
+msgid "Explain parts of the window when they are clicked"
 msgstr ""
 
 #: tfconf.cbmediadisable.caption
@@ -977,10 +992,6 @@ msgstr ""
 msgid "Libraries"
 msgstr ""
 
-#: tfconf.lago.caption
-msgid "100 min"
-msgstr ""
-
 #: tfconf.lalertdurrow.caption
 msgid "Must persist (minutes)"
 msgstr ""
@@ -1020,17 +1031,9 @@ msgstr ""
 msgid "Glucose Predictions Settings"
 msgstr ""
 
-#: tfconf.ldiff.caption
-msgid "+0,0"
-msgstr ""
-
 #: tfconf.lext.caption
 msgctxt "tfconf.lext.caption"
 msgid "Plugin Folder"
-msgstr ""
-
-#: tfconf.lextcopyright.caption
-msgid "for more info"
 msgstr ""
 
 #: tfconf.lextcount.caption
@@ -1161,6 +1164,11 @@ msgstr ""
 
 #: tfconf.rbunit.caption
 msgid "Display Unit"
+msgstr ""
+
+#: tfconf.rgdots.caption
+msgctxt "tfconf.rgdots.caption"
+msgid "Trend dot coloring"
 msgstr ""
 
 #: tfconf.tsaccess.caption
@@ -3071,10 +3079,12 @@ msgid "Adapt to background"
 msgstr ""
 
 #: uconf.rs_dots_caption
+msgctxt "uconf.rs_dots_caption"
 msgid "Trend dot coloring"
 msgstr ""
 
 #: uconf.rs_dots_classic
+msgctxt "uconf.rs_dots_classic"
 msgid "Classic"
 msgstr ""
 
@@ -3204,6 +3214,7 @@ msgid "Requests: "
 msgstr ""
 
 #: uconf.rs_ext_reset_btn
+msgctxt "uconf.rs_ext_reset_btn"
 msgid "Reset permissions"
 msgstr ""
 
@@ -3233,6 +3244,7 @@ msgid "Shows if Trndi detected a touch screen"
 msgstr ""
 
 #: uconf.rs_hints_enable
+msgctxt "uconf.rs_hints_enable"
 msgid "Explain parts of the window when they are clicked"
 msgstr ""
 
@@ -3241,6 +3253,7 @@ msgid "The explanations you hid will be shown again."
 msgstr ""
 
 #: uconf.rs_hints_reset_btn
+msgctxt "uconf.rs_hints_reset_btn"
 msgid "Show hidden explanations"
 msgstr ""
 
@@ -3416,6 +3429,7 @@ msgstr ""
 #: uconf.rs_preview_state_hint
 msgid "Choose which glucose state the preview shows"
 msgstr ""
+
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr ""
@@ -3489,6 +3503,23 @@ msgstr ""
 
 #: uconf.rs_test_unsupported
 msgid "Sorry! Trndi does not (yet) support connection testing for this service!"
+msgstr ""
+
+#: uconf.rs_theme_accessible
+msgid "Color-blind friendly"
+msgstr ""
+
+#: uconf.rs_theme_classic
+msgctxt "uconf.rs_theme_classic"
+msgid "Classic"
+msgstr ""
+
+#: uconf.rs_theme_modern
+msgid "Modern"
+msgstr ""
+
+#: uconf.rs_theme_prompt
+msgid "Load color preset…"
 msgstr ""
 
 #: uconf.rs_threashold_lines_help
@@ -3705,6 +3736,7 @@ msgid "Predicted"
 msgstr ""
 
 #: uhistorygraph.rs_history_graph_key_range
+msgctxt "uhistorygraph.rs_history_graph_key_range"
 msgid "In range"
 msgstr ""
 
