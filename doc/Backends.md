@@ -29,6 +29,10 @@ From `devicestatus`:
 
 Both collections are fetched together and cached for ten minutes, so a normal refresh still costs a single request. An empty stretch on the graph therefore means "nothing was reported for that period", never "no insulin was given".
 
+### Faster pickup of late readings
+
+This driver can ask the server "has anything changed?" as a single tiny request (`/lastModified`). Trndi uses that to poll roughly every 20 seconds whenever a reading is running late, so a delayed upload appears within seconds instead of minutes. Other backends wait out the normal retry interval (about two minutes), since a retry there costs a full fetch. If readings stay missing for more than half an hour, Trndi treats it as a real gap and falls back to the normal cadence.
+
 ## Dexcom _(USA/Outside USA)_
 This is Trndi's original implementation of Dexcom. It is still updated when needed, and a very viable choice for stability.
 

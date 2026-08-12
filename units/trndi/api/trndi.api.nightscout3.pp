@@ -53,6 +53,9 @@
  *   insulin-delivery and carbohydrate caches from the devicestatus and
  *   treatments collections, so the history graph's treatment overlays and the
  *   reservoir / sensor-expiry / pump-battery notifications work on Nightscout.
+ * - 2026-08-12: added supportsRapidPolling, reporting when the /lastModified
+ *   probe makes an unchanged poll a single small GET, so the UI can retry on
+ *   a tight cadence while a reading is overdue.
  *   Timestamps parsed out of those collections are now converted to local
  *   time; they were previously left in UTC and compared against a local Now,
  *   which put the sensor-age suffix out by the machine's UTC offset.
@@ -189,6 +192,11 @@ public
 
     {** True: Nightscout's treatments collection carries carbohydrate entries. }
   function supportsCarbs: boolean; override;
+
+    {** True while an unchanged poll costs a single /lastModified GET: the
+        readings-window cache is warm and the server's entries stamp is known.
+        The UI uses this to retry on a tight cadence when a reading is late. }
+  function supportsRapidPolling: boolean; override;
 
     {** Test NightScout credentials
     }
@@ -1444,6 +1452,24 @@ end;
 function NightScout3.supportsCarbs: boolean;
 begin
   Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  supportsRapidPolling
+  --------------------
+  True only while an unchanged getReadings really is one small GET: the server
+  answers /lastModified usably, the readings-window cache holds a v3 window,
+  and the entries stamp has been learned (that takes until the second fetch —
+  the first full fetch stores the window with an unknown stamp). The TTL is
+  deliberately not checked: a rapid poll that lands after the TTL lapses does
+  one full refetch, re-anchors FCacheFullAt, and the polls after it are cheap
+  again — amortized, the cadence stays a probe loop with one full fetch per
+  TTL window.
+------------------------------------------------------------------------------}
+function NightScout3.supportsRapidPolling: boolean;
+begin
+  Result := (not FLastModifiedUnsupported) and (FCacheFullAt <> 0) and
+    (Length(FCache) > 0) and (FCacheLastModified <> 0);
 end;
 
 {------------------------------------------------------------------------------

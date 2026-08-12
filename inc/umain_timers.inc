@@ -838,7 +838,23 @@ end;
 
 // Update remote on timer
 procedure TfBG.tMainTimer(Sender: TObject);
+var
+  wantMs: int64;
 begin
+  // Re-tune the repeating cadence from the newest reading's age on every tick.
+  // SetNextUpdateTimer only runs on the fresh path (ApplyFetchedReadings bails
+  // before it when data is stale), so without this the rapid-poll cadence
+  // could neither engage during an outage nor stand down once the outage has
+  // outgrown RAPID_POLL_MAX_OVERDUE_MS — the timer would just repeat whatever
+  // interval was programmed last. Assigning Interval mid-tick restarts the
+  // countdown from now, which is exactly the schedule FNextFetchAt records.
+  if Length(bgs) > 0 then
+  begin
+    wantMs := NextFetchIntervalMs(lastReading.date);
+    if tMain.Interval <> wantMs then
+      tMain.Interval := wantMs;
+  end;
+
   // tMain repeats, so the next attempt is one interval out from here. Recorded
   // for the stale card's countdown (a TTimer exposes no "time remaining");
   // SetNextUpdateTimer overwrites it with the resynced time if data lands.
