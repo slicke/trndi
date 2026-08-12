@@ -1584,17 +1584,13 @@ begin
       bmp := TBitmap.Create;
       try
         bmp.SetSize(ClientWidth, ClientHeight);
-        bmp.Canvas.Brush.Color := Color;
-        bmp.Canvas.FillRect(Rect(0, 0, ClientWidth, ClientHeight));
 
+        // The same static render Paint caches in FBackground, so the export is
+        // what is on screen minus the hover overlay. Repeating the individual
+        // draw calls here is what let the bolus and carb overlays fall out of
+        // exported images while they were visible in the window.
         plotRect := GetPlotRect;
-        DrawAxesAndGrid(bmp.Canvas, plotRect);
-        DrawThresholdLines(bmp.Canvas, plotRect);
-        DrawBasalOverlay(bmp.Canvas, plotRect);
-        DrawPolyline(bmp.Canvas, plotRect);
-        DrawPoints(bmp.Canvas, plotRect);
-        DrawPredictionOverlay(bmp.Canvas, plotRect);
-        DrawLegend(bmp.Canvas, plotRect);
+        RenderBackground(bmp, plotRect);
 
         intfImg := TLazIntfImage.Create(0, 0);
         try

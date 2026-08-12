@@ -445,6 +445,34 @@ function tq_abi_version: integer; cdecl; external TQLIB;
     Raises an exception on mismatch; call once during engine startup. }
 procedure CheckQuickJSAbi;
 
+const
+  {** Drain budget for @link(JS_DrainPendingJobs), in jobs and in milliseconds
+      of wall clock. A promise reaction may queue further reactions, so a chain
+      that re-queues itself keeps @link(JS_IsJobPending) true forever; draining
+      such a queue to exhaustion never returns and holds the calling thread
+      until the interrupt handler aborts the script. Both bounds sit orders of
+      magnitude above what a real chain needs, so ordinary work drains in one
+      pass and only a runaway is ever cut short. }
+JS_PUMP_MAX_JOBS = 4096;
+JS_PUMP_MAX_MS = 50;
+
+  {** How often @link(JS_DrainPendingJobs) consults the wall clock, in jobs.
+      Reading it per job would cost more than the jobs themselves. }
+JS_PUMP_CLOCK_EVERY = 64;
+
+{** Run pending Promise jobs (microtasks) until the queue empties, a job fails,
+    or the budget above is spent.
+
+    Returns True when the queue is empty on exit, False when the budget stopped
+    the drain with jobs still queued -- the caller is then expected to come back
+    later (a timer tick) rather than loop here. Nothing is lost by stopping: the
+    remaining jobs stay queued in the runtime.
+
+    @code(ctx) is the context to attribute jobs to; the runtime writes back the
+    context that actually ran each job, so a local copy is passed and the
+    caller's variable is left alone. }
+function JS_DrainPendingJobs(rt: JSRuntime; ctx: JSContext): boolean;
+
 {** Evaluate source text. The caller owns the returned value. }
 function JS_Eval(ctx: JSContext; const src, filename: RawUtf8; flags: integer): JSValue;
 {** Invoke a callable value. }
@@ -756,6 +784,35 @@ begin
   if tq_abi_version <> TQ_EXPECTED_ABI then
     raise Exception.CreateFmt('QuickJS shim ABI %d, expected %d',
       [tq_abi_version, TQ_EXPECTED_ABI]);
+end;
+
+function JS_DrainPendingJobs(rt: JSRuntime; ctx: JSContext): boolean;
+var
+  runCtx: JSContext;
+  jobs: integer;
+  startedAt: QWord;
+begin
+  Result := true;
+  if rt = nil then
+    Exit;
+  runCtx := ctx;
+  jobs := 0;
+  startedAt := GetTickCount64;
+  while JS_IsJobPending(rt) do
+  begin
+    // 0 means the queue turned out to be empty, <0 that the job threw; either
+    // way the drain is over, and both have always ended it here.
+    if JS_ExecutePendingJob(rt, @runCtx) <= 0 then
+      Break;
+    Inc(jobs);
+    if (jobs >= JS_PUMP_MAX_JOBS) or
+      ((jobs mod JS_PUMP_CLOCK_EVERY = 0) and
+      (GetTickCount64 - startedAt >= JS_PUMP_MAX_MS)) then
+      // Landing exactly on the budget with an empty queue is a full drain, so
+      // ask rather than assume: a false "truncated" would cost the caller a
+      // round trip for nothing.
+      Exit(not JS_IsJobPending(rt));
+  end;
 end;
 
 { ================================================================== }

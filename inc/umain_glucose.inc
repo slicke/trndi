@@ -360,7 +360,12 @@ function TfBG.NextFetchIntervalMs(const LastReadingTime: TDateTime): int64;
 var
   ageMs: int64;
 begin
-  ageMs := SecondsBetween(LastReadingTime, Now) * 1000;
+  // Signed on purpose: SecondsBetween is Abs()-based, which turns a future-dated
+  // reading (uploader clock ahead of ours) into a large positive "age" and can
+  // trip the rapid-poll branch below on a reading that is not overdue at all.
+  // Subtracting directly keeps the sign, so a future timestamp falls through to
+  // the full-cadence path instead.
+  ageMs := Round((Now - LastReadingTime) * MSecsPerDay);
 
   // A reading is overdue once it is older than the CGM cadence. Backends that
   // can answer "anything new?" cheaply (NS3's /lastModified probe) get a tight
