@@ -8,7 +8,7 @@
 
 ## Shows your CGM data on Desktops and displays
 
-### Supports _Nightscout - Dexcom - Tandem Source - CareLink - xDrip_
+### Supports _Nightscout - Dexcom - FreeStyle Libre - Tandem Source - CareLink - xDrip_
 
 ## <b> 🪟 Windows - 🍎 macOS - 🐧 Linux - 🥧 RaspberryPi and ARM Linux
 
@@ -58,7 +58,7 @@
 ### Introduction
 > __NEW__: Join us on [Discord](https://discord.gg/QXACfpcW)
 
-Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_, _Tandem Source_, _Medtronic CareLink_ and _Dexcom Share_ at the moment.
+Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_, _Tandem Source_, _Medtronic CareLink_, _FreeStyle Libre_ (via LibreLinkUp) and _Dexcom Share_ at the moment.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
 > Note that due to a bug in Tandem Source, a few users might not recieve readings as often as they should. Tandem is supposedly working on solving this!
 
@@ -66,7 +66,7 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * __Natively__ runs on your computer without needing installation
 * Runs out-of-the-box! Does not depend on other software to be installed _(on [Linux](#Linux-support), this may depend on your distro)_
 * Supports __multiple languages__
-* Runs on your __Raspberry Pi__ and other arm computers, optionally as a full-screen display
+* Runs on your __Raspberry Pi__ and other arm computers, optionally as a full-screen display — start with `--kiosk` for a dedicated always-on screen (fullscreen + keeps the system awake, see the [Display guide](guides/Display.md))
 * Works on __touch-screen__ devices, such as a RaspberryPi with screen
 * Supports modern ___JavaScript__ extensions, _among other things, there are official extensions for:_
 * * IFTTT
@@ -251,10 +251,11 @@ make noext
 
 # Setup
 Right click or click/hold the reading (or "Setup" text) and choose settings to access settings.
-* For NightScout, settings will be fetched from your server and auto-applied
+* For NightScout, settings will be fetched from your server and auto-applied. See the __[Nightscout setup guide](guides/Nightscout.md)__ for which of the two drivers to pick, and what each one reads from your site.
 * For Dexcom, see the __[Dexcom setup guide](guides/Dexcom.md)__. The backend does not support all features, but this can be fixed with some manual work.
 * For Tandem, see the __[Tandem setup guide](guides/Tandem.md)__. The backend does not support all features, but this can be fixed with some manual work.
 * For CareLink (Medtronic), see the __[CareLink setup guide](guides/CareLink.md)__. A one-time browser login is required; Trndi then keeps the session alive automatically.
+* For FreeStyle Libre, see the __[LibreLinkUp setup guide](guides/LibreLinkUp.md)__. Trndi signs in as a LibreLinkUp follower, so sharing must be set up first.
 * For xDrip, you need to turn on the local web server and use that IP/password
 * For other backends, feel free to contribute a api driver. See [API Drivers](guides/API.md)
 * For HTTP API access, see the __[Web API documentation](doc/WebAPI.md)__ to expose glucose data to other applications
@@ -316,6 +317,7 @@ Windows (PowerShell):
   - `./make.ps1 debug`                     -> builds Debug via `lazbuild` (`-dDebug`)
   - `./make.ps1 noext`                     -> builds the "No Ext (Release)" mode
   - `./make.ps1 help`                      -> show usage
+- Like `make`, the build targets stage the result in `build/` (`Trndi.exe`, `lang/`, and the QuickJS DLLs for Extensions modes); set `OUTDIR` to stage elsewhere.
 
 macOS / (also usable on Windows if you prefer):
 
