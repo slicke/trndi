@@ -43,11 +43,13 @@ exclude:
   - "*.trc"
   - "*.log"
 
-# Include files that would normally be excluded
+# Include files that would normally be excluded.
+# Guides, docs and translation catalogs are NOT copied here — they live in the
+# main repo, every link on the page points at GitHub, and the copies only ever
+# drifted out of date. doc/ stays for the images alone: index.html uses them,
+# and Trndi's About dialog hotlinks https://trndi.app/doc/img/trndi-logo.png.
 include:
   - doc/
-  - guides/
-  - lang/
 
 plugins:
   - jekyll-sitemap
