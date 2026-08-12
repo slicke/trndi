@@ -37,8 +37,17 @@ uses
 Classes, SysUtils, trndi.ext.quickjs, strutils, fgl,
 Forms, Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 
+type
+  {** Resolves the extension id that owns a JS context. Wired up by
+      @code(TTrndiExtEngine) so buffered console entries can be attributed
+      to the extension that pushed them (the buffer is shared engine-wide). }
+TExtIdLookup = function(ctx: JSContext): string of object;
+
 var
 ConsoleBuffer: TStringList;
+  {** Set by the engine at startup and cleared on teardown; nil means no
+      attribution (entries are buffered unprefixed, as before). }
+ConsoleExtIdLookup: TExtIdLookup;
 
 (*
   Resource strings (can be translated if needed):
@@ -1027,6 +1036,21 @@ begin
   res^ := JS_UNDEFINED;
 end;
 
+{------------------------------------------------------------------------------
+  ConsoleAttribution
+  The console buffer is shared by every extension, so tag each buffered entry
+  with the id of the context that pushed it. Empty for the admin/template
+  context (or before the engine wires up the lookup) — no prefix then.
+-------------------------------------------------------------------------------}
+function ConsoleAttribution(ctx: JSContext): string;
+begin
+  Result := '';
+  if Assigned(ConsoleExtIdLookup) then
+    Result := ConsoleExtIdLookup(ctx);
+  if Result <> '' then
+    Result := '[' + Result + '] ';
+end;
+
 procedure JSConsolePush(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
 var
@@ -1054,8 +1078,8 @@ begin
   
   if ConsoleBuffer = nil then
     ConsoleBuffer := TStringList.Create;
-  
-  ConsoleBuffer.Add(fullMsg);
+
+  ConsoleBuffer.Add(ConsoleAttribution(ctx) + fullMsg);
 
   // Return undefined
   res^ := JS_UNDEFINED;
@@ -1093,7 +1117,7 @@ begin
 
   if ConsoleBuffer = nil then
     ConsoleBuffer := TStringList.Create;
-  ConsoleBuffer.Add('[' + level + '] ' + fullMsg);
+  ConsoleBuffer.Add(ConsoleAttribution(ctx) + '[' + level + '] ' + fullMsg);
 
   Result := JS_UNDEFINED;
 end;
@@ -1225,6 +1249,7 @@ end;
 
 initialization
 ConsoleBuffer := nil;
+ConsoleExtIdLookup := nil;
 
 finalization
 if ConsoleBuffer <> nil then

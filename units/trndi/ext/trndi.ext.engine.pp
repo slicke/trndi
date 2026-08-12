@@ -592,6 +592,11 @@ public
   function ExtensionCount: integer;
   function ExtensionAt(idx: integer): PExtContextInfo;
 
+    {** Id of the extension owning @code(ctx), or '' for the admin/template
+        context. Wired into @code(ConsoleExtIdLookup) so the shared console
+        buffer can attribute entries to their extension. }
+  function ExtensionIdForContext(ctx: JSContext): string;
+
     {** Tear down every per-extension context: cancel JS timers, drain pending
         jobs, free each @code(JSContext) and clear the registry. The shared
         runtime stays alive so a fresh @code(LoadExtensions) can repopulate
@@ -1267,6 +1272,9 @@ begin
   FCurrentRegCtx := nil;
   FCurrentRegPerms := [];
 
+  // Let the shared console buffer attribute entries to their extension
+  ConsoleExtIdLookup := @ExtensionIdForContext;
+
   // Register baseline engine-internal functions into FContext (admin/template).
   // Per-extension contexts will re-run this gated to their grants in NewExtensionContext.
   RegisterEngineBaselineForCurrent;
@@ -1806,6 +1814,10 @@ var
   globalObj, timersObj: JSValueRaw;
   i: integer;
 begin
+  // Detach the console-attribution hook before anything else so no buffered
+  // log can call back into a dying engine (runs on both shutdown paths)
+  ConsoleExtIdLookup := nil;
+
   // ULTRA-EARLY EXIT: If application is terminating or global shutdown flag is set,
   // skip ALL cleanup operations and let OS handle memory deallocation
   if Application.Terminated or IsGlobalShutdown then
@@ -2163,6 +2175,18 @@ begin
   if (not Assigned(FExtContexts)) or (idx < 0) or (idx >= FExtContexts.Count) then
     Exit(nil);
   Result := FExtContexts[idx];
+end;
+
+function TTrndiExtEngine.ExtensionIdForContext(ctx: JSContext): string;
+var
+  i: integer;
+begin
+  Result := '';
+  if (ctx = nil) or (not Assigned(FExtContexts)) then
+    Exit;
+  for i := 0 to FExtContexts.Count - 1 do
+    if (FExtContexts[i] <> nil) and (FExtContexts[i]^.Ctx = ctx) then
+      Exit(FExtContexts[i]^.ExtId);
 end;
 
 procedure TTrndiExtEngine.NotifyUnloadAll;
