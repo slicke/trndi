@@ -68,6 +68,12 @@ Shows how old the reading is (e.g., "3 min ago"). If this number gets large (lik
 Once data is stale, this line is replaced by a status card along the bottom of
 the window — see [Why is my reading dimmed](#why-is-my-reading-dimmed-with-a-card-at-the-bottom).
 
+**Tip**: Click the "ago" text to see device details — which sensor/device sent the
+reading, signal strength and noise (when reported), and how much sensor life is
+left. Pump-connected sources (like Tandem or CareLink) also show reservoir
+insulin, pump and transmitter battery, and whether insulin delivery is suspended.
+Values a source doesn't report are simply left out.
+
 ---
 
 ## Arrows and What They Mean

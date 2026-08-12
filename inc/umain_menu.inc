@@ -393,6 +393,8 @@ var
   displayMsg, dm, deviceStr, expiryStr, lowerSensor: string;
   s: system.utf8char;
   i, pOpen, pClose: integer;
+  status: TCGMDeviceStatus;
+  hasStatus: boolean;
 begin
   dm := '';
   if firstboot then
@@ -428,9 +430,44 @@ begin
       expiryStr := Trim(Copy(expiryStr, Length('sensor ') + 1, MaxInt));
   end;
 
+  // Prefer the structured figure from the backend's device status over the
+  // text scraped from the device name above; the scrape stays as a fallback
+  // for backends that only embed expiry there. getDeviceStatus answers from
+  // the last fetch's cached payload, so this is a cheap read, and fields the
+  // backend cannot supply keep their "unknown" sentinels — a missing figure
+  // is never shown (the same rule the alert ladders follow).
+  hasStatus := Assigned(api) and api.getDeviceStatus(status);
+  if hasStatus and (status.sensorDurationHours >= 0) then
+    if status.sensorDurationHours >= 24 then
+      expiryStr := Format(RS_UX_SENSOR_LEFT_DH,
+        [status.sensorDurationHours div 24, status.sensorDurationHours mod 24])
+    else if status.sensorDurationHours >= 1 then
+      expiryStr := Format(RS_UX_SENSOR_LEFT_H, [status.sensorDurationHours])
+    else
+      expiryStr := RS_UX_SENSOR_LEFT_ONE;
+
   displayMsg += sHTMLLineBreak + Format(RS_UX_DEVICE, [deviceStr]);
   if expiryStr <> '' then
     displayMsg += sHTMLLineBreak + Format(RS_UX_SENSOR_EXPIRY, [expiryStr]);
+
+  // Pump housekeeping, when the backend reports any (pump-aware followers do)
+  if hasStatus then
+  begin
+    if status.reservoirUnits >= 0 then
+      displayMsg += sHTMLLineBreak + Format(RS_UX_RESERVOIR,
+        [FormatFloat('0.#', status.reservoirUnits)])
+    else if status.reservoirPercent >= 0 then
+      displayMsg += sHTMLLineBreak + Format(RS_UX_RESERVOIR_PERCENT,
+        [status.reservoirPercent]);
+    if status.pumpBatteryPercent >= 0 then
+      displayMsg += sHTMLLineBreak + Format(RS_UX_PUMP_BATTERY,
+        [status.pumpBatteryPercent]);
+    if status.transmitterBatteryPercent >= 0 then
+      displayMsg += sHTMLLineBreak + Format(RS_UX_TRANSMITTER_BATTERY,
+        [status.transmitterBatteryPercent]);
+    if status.pumpSuspended then
+      displayMsg += sHTMLLineBreak + RS_UX_PUMP_SUSPENDED;
+  end;
 
   displayMsg += sHTMLLineBreak + Format(RS_UX_API, [api.systemName]);
 
