@@ -324,6 +324,11 @@ msgstr "Vis mappe"
 msgid "Reload"
 msgstr "Genindlæs"
 
+#: tfconf.bextresetperms.caption
+msgctxt "tfconf.bextresetperms.caption"
+msgid "Reset permissions"
+msgstr ""
+
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
 msgstr "Pileskrift..."
@@ -354,6 +359,12 @@ msgstr "Hent CareLink-token…"
 #: tfconf.bremove.caption
 msgid "- Remove"
 msgstr "- Fjern"
+
+#: tfconf.bresethints.caption
+#, fuzzy
+msgctxt "tfconf.bresethints.caption"
+msgid "Show hidden explanations"
+msgstr "Vis skjulte forklaringer"
 
 #: tfconf.btest.caption
 msgid "Test"
@@ -388,6 +399,10 @@ msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr "Indstillinger"
 
+#: tfconf.cbalertbattery.caption
+msgid "Alert me when the pump battery is running low (pump backends)"
+msgstr ""
+
 #: tfconf.cbalerthilo.caption
 msgid "Alert me when blood sugar is high/low"
 msgstr "Advar mig når blodsukkeret er højt/lavt"
@@ -395,6 +410,14 @@ msgstr "Advar mig når blodsukkeret er højt/lavt"
 #: tfconf.cbalertmissing.caption
 msgid "Alert me when readings are missing / not fresh"
 msgstr "Advar mig når aflæsninger mangler / ikke er friske"
+
+#: tfconf.cbalertreservoir.caption
+msgid "Alert me when the pump's insulin is running low (pump backends)"
+msgstr ""
+
+#: tfconf.cbalertsensor.caption
+msgid "Alert me when the sensor is about to expire (CareLink)"
+msgstr ""
 
 #: tfconf.cbalternate.caption
 msgid "Alternate arrow and reading display"
@@ -439,7 +462,9 @@ msgid "Make units green when reading is normal *"
 msgstr "Gør enheder grønne ved normalt blodsukkerniveau *"
 
 #: tfconf.cbclock.caption
-msgid "Show clock for 5 sec every 20 sec"
+#, fuzzy
+#| msgid "Show clock for 5 sec every 20 sec"
+msgid "Show clock for 5 sec every 20 sec (shows in top in fullscreen/KIosk Mode)"
 msgstr "Vis ur i 5 sek. hvert 20. sekund"
 
 #: tfconf.cbconnectivitybutton.caption
@@ -484,6 +509,12 @@ msgstr "Blink ved perfekt aflæsning (5,5mmol/L / 100mg/dL)"
 #: tfconf.cbhcontrast.caption
 msgid "High Contrast"
 msgstr "Høj kontrast"
+
+#: tfconf.cbhints.caption
+#, fuzzy
+msgctxt "tfconf.cbhints.caption"
+msgid "Explain parts of the window when they are clicked"
+msgstr "Forklar dele af vinduet, når du klikker på dem"
 
 #: tfconf.cbmediadisable.caption
 msgid "Disable the entire media system"
@@ -978,10 +1009,6 @@ msgstr "Proxybruger:"
 msgid "Libraries"
 msgstr "Biblioteker"
 
-#: tfconf.lago.caption
-msgid "100 min"
-msgstr "100 min"
-
 #: tfconf.lalertdurrow.caption
 msgid "Must persist (minutes)"
 msgstr "Skal vedvare (minutter)"
@@ -1021,17 +1048,9 @@ msgstr "Ved lav:"
 msgid "Glucose Predictions Settings"
 msgstr "Indstillinger for glukoseforudsigelse"
 
-#: tfconf.ldiff.caption
-msgid "+0,0"
-msgstr ""
-
 #: tfconf.lext.caption
 msgid "Plugin Folder"
 msgstr "Plugin-mappe"
-
-#: tfconf.lextcopyright.caption
-msgid "for more info"
-msgstr "for mere info"
 
 #: tfconf.lextcount.caption
 msgid "Extensions count:"
@@ -1162,6 +1181,11 @@ msgstr "Trendvindue"
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Visningsenhed"
+
+#: tfconf.rgdots.caption
+msgctxt "tfconf.rgdots.caption"
+msgid "Trend dot coloring"
+msgstr ""
 
 #: tfconf.tsaccess.caption
 msgid "Accessibility"
@@ -1727,6 +1751,37 @@ msgstr "Forældede aflæsninger!"
 #: trndi.strings.rs_attention_missing_desc
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
 msgstr "Aflæsningerne er ikke friske, har din telefon mistet forbindelsen til sensoren?"
+
+#: trndi.strings.rs_attention_pump_battery
+msgid "Pump battery low"
+msgstr ""
+
+#: trndi.strings.rs_attention_pump_battery_desc
+#, object-pascal-format
+msgid "The pump battery is down to about %d%%."
+msgstr ""
+
+#: trndi.strings.rs_attention_reservoir
+msgid "Insulin running low"
+msgstr ""
+
+#: trndi.strings.rs_attention_reservoir_desc
+#, object-pascal-format
+msgid "About %s units of insulin left in the pump reservoir."
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry
+msgid "Sensor expiring"
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry_desc
+#, object-pascal-format
+msgid "About %d hours of sensor life left."
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry_desc_one
+msgid "Less than an hour of sensor life left."
+msgstr ""
 
 #: trndi.strings.rs_attention_sensor_fault
 msgid "Possible sensor fault"
@@ -2672,11 +2727,30 @@ msgstr "𐩘 Støj: %d"
 msgid "Prediction here: %s at %.2d:%.2d"
 msgstr "Forudsigelse her: %s kl. %.2d:%.2d"
 
+#: trndi.strings.rs_ux_pump_battery
+#, object-pascal-format
+msgid "🔋 Pump battery: %d%%"
+msgstr ""
+
+#: trndi.strings.rs_ux_pump_suspended
+msgid "⏸️ Insulin delivery is suspended"
+msgstr ""
+
 #: trndi.strings.rs_ux_reading_here
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_reading_here"
 msgid "Reading here: %s at %.2d:%.2d"
 msgstr "Aflæsning her: %s kl. %.2d:%.2d"
+
+#: trndi.strings.rs_ux_reservoir
+#, object-pascal-format
+msgid "💉 Reservoir: about %s U left"
+msgstr ""
+
+#: trndi.strings.rs_ux_reservoir_percent
+#, object-pascal-format
+msgid "💉 Reservoir: about %d%% left"
+msgstr ""
 
 #: trndi.strings.rs_ux_rssi
 #, object-pascal-format
@@ -2689,6 +2763,25 @@ msgstr "📻 RSSI (signalstyrke): %d%%"
 msgctxt "trndi.strings.rs_ux_sensor_expiry"
 msgid "⏱️ Sensor: %s"
 msgstr "⏱️ Sensor: %s"
+
+#: trndi.strings.rs_ux_sensor_left_dh
+#, object-pascal-format
+msgid "about %dd %dh left"
+msgstr ""
+
+#: trndi.strings.rs_ux_sensor_left_h
+#, object-pascal-format
+msgid "about %dh left"
+msgstr ""
+
+#: trndi.strings.rs_ux_sensor_left_one
+msgid "less than an hour left"
+msgstr ""
+
+#: trndi.strings.rs_ux_transmitter_battery
+#, object-pascal-format
+msgid "📡 Transmitter battery: %d%%"
+msgstr ""
 
 #: trndi.strings.rs_ux_transmitter_info
 msgctxt "trndi.strings.rs_ux_transmitter_info"
@@ -2986,10 +3079,12 @@ msgid "Adapt to background"
 msgstr ""
 
 #: uconf.rs_dots_caption
+msgctxt "uconf.rs_dots_caption"
 msgid "Trend dot coloring"
 msgstr ""
 
 #: uconf.rs_dots_classic
+msgctxt "uconf.rs_dots_classic"
 msgid "Classic"
 msgstr ""
 
@@ -3120,6 +3215,7 @@ msgid "Requests: "
 msgstr "Anmodninger: "
 
 #: uconf.rs_ext_reset_btn
+msgctxt "uconf.rs_ext_reset_btn"
 msgid "Reset permissions"
 msgstr ""
 
@@ -3149,6 +3245,7 @@ msgid "Shows if Trndi detected a touch screen"
 msgstr "Viser om Trndi registrerede en touchskærm"
 
 #: uconf.rs_hints_enable
+msgctxt "uconf.rs_hints_enable"
 msgid "Explain parts of the window when they are clicked"
 msgstr "Forklar dele af vinduet, når du klikker på dem"
 
@@ -3157,6 +3254,7 @@ msgid "The explanations you hid will be shown again."
 msgstr "De forklaringer, du skjulte, vises igen."
 
 #: uconf.rs_hints_reset_btn
+msgctxt "uconf.rs_hints_reset_btn"
 msgid "Show hidden explanations"
 msgstr "Vis skjulte forklaringer"
 
@@ -3333,6 +3431,7 @@ msgstr "Lav"
 #: uconf.rs_preview_state_hint
 msgid "Choose which glucose state the preview shows"
 msgstr "Vælg hvilken blodsukkertilstand forhåndsvisningen viser"
+
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "I privatlivstilstand er den faktiske blodglukoseværdi skjult. Trndi viser kun om værdien er god, høj eller lav."
@@ -3407,6 +3506,23 @@ msgstr "Forbundet!"
 #: uconf.rs_test_unsupported
 msgid "Sorry! Trndi does not (yet) support connection testing for this service!"
 msgstr "Beklager! Trndi understøtter (endnu) ikke forbindelsestest for denne tjeneste!"
+
+#: uconf.rs_theme_accessible
+msgid "Color-blind friendly"
+msgstr ""
+
+#: uconf.rs_theme_classic
+msgctxt "uconf.rs_theme_classic"
+msgid "Classic"
+msgstr ""
+
+#: uconf.rs_theme_modern
+msgid "Modern"
+msgstr ""
+
+#: uconf.rs_theme_prompt
+msgid "Load color preset…"
+msgstr ""
 
 #: uconf.rs_threashold_lines_help
 msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
@@ -3622,6 +3738,7 @@ msgid "Predicted"
 msgstr "Forudsagt"
 
 #: uhistorygraph.rs_history_graph_key_range
+msgctxt "uhistorygraph.rs_history_graph_key_range"
 msgid "In range"
 msgstr "I område"
 

@@ -323,6 +323,11 @@ msgstr "Afficher le dossier"
 msgid "Reload"
 msgstr "Recharger"
 
+#: tfconf.bextresetperms.caption
+msgctxt "tfconf.bextresetperms.caption"
+msgid "Reset permissions"
+msgstr ""
+
 #: tfconf.bfontarrow.caption
 msgid "Arrow font..."
 msgstr "Police de la flèche..."
@@ -353,6 +358,12 @@ msgstr "Obtenir un jeton CareLink…"
 #: tfconf.bremove.caption
 msgid "- Remove"
 msgstr "- Supprimer"
+
+#: tfconf.bresethints.caption
+#, fuzzy
+msgctxt "tfconf.bresethints.caption"
+msgid "Show hidden explanations"
+msgstr "Afficher les explications masquées"
 
 #: tfconf.btest.caption
 msgid "Test"
@@ -388,6 +399,10 @@ msgctxt "tfconf.caption"
 msgid "Settings"
 msgstr "Paramètres"
 
+#: tfconf.cbalertbattery.caption
+msgid "Alert me when the pump battery is running low (pump backends)"
+msgstr ""
+
 #: tfconf.cbalerthilo.caption
 msgid "Alert me when blood sugar is high/low"
 msgstr "M'alerter en cas de glycémie haute/basse"
@@ -395,6 +410,14 @@ msgstr "M'alerter en cas de glycémie haute/basse"
 #: tfconf.cbalertmissing.caption
 msgid "Alert me when readings are missing / not fresh"
 msgstr "M'alerter lorsque les lectures manquent / ne sont plus récentes"
+
+#: tfconf.cbalertreservoir.caption
+msgid "Alert me when the pump's insulin is running low (pump backends)"
+msgstr ""
+
+#: tfconf.cbalertsensor.caption
+msgid "Alert me when the sensor is about to expire (CareLink)"
+msgstr ""
 
 #: tfconf.cbalternate.caption
 msgid "Alternate arrow and reading display"
@@ -439,7 +462,9 @@ msgid "Make units green when reading is normal *"
 msgstr "Faire passer les unités au vert quand la lecture est normale *"
 
 #: tfconf.cbclock.caption
-msgid "Show clock for 5 sec every 20 sec"
+#, fuzzy
+#| msgid "Show clock for 5 sec every 20 sec"
+msgid "Show clock for 5 sec every 20 sec (shows in top in fullscreen/KIosk Mode)"
 msgstr "Afficher l'horloge 5 s toutes les 20 s"
 
 #: tfconf.cbconnectivitybutton.caption
@@ -484,6 +509,12 @@ msgstr "Clignoter en cas de lecture parfaite (5,5 mmol/L / 100 mg/dL)"
 #: tfconf.cbhcontrast.caption
 msgid "High Contrast"
 msgstr "Contraste élevé"
+
+#: tfconf.cbhints.caption
+#, fuzzy
+msgctxt "tfconf.cbhints.caption"
+msgid "Explain parts of the window when they are clicked"
+msgstr "Expliquer les éléments de la fenêtre quand on clique dessus"
 
 #: tfconf.cbmediadisable.caption
 msgid "Disable the entire media system"
@@ -977,10 +1008,6 @@ msgstr "Utilisateur du proxy :"
 msgid "Libraries"
 msgstr "Bibliothèques"
 
-#: tfconf.lago.caption
-msgid "100 min"
-msgstr "100 min"
-
 #: tfconf.lalertdurrow.caption
 msgid "Must persist (minutes)"
 msgstr "Doit persister (minutes)"
@@ -1020,18 +1047,10 @@ msgstr "En cas de bas :"
 msgid "Glucose Predictions Settings"
 msgstr "Paramètres des prédictions de glycémie"
 
-#: tfconf.ldiff.caption
-msgid "+0,0"
-msgstr "+0,0"
-
 #: tfconf.lext.caption
 msgctxt "tfconf.lext.caption"
 msgid "Plugin Folder"
 msgstr "Dossier des extensions"
-
-#: tfconf.lextcopyright.caption
-msgid "for more info"
-msgstr "pour plus d'informations"
 
 #: tfconf.lextcount.caption
 msgid "Extensions count:"
@@ -1169,6 +1188,11 @@ msgstr "Fenêtre de tendance"
 #: tfconf.rbunit.caption
 msgid "Display Unit"
 msgstr "Unité d'affichage"
+
+#: tfconf.rgdots.caption
+msgctxt "tfconf.rgdots.caption"
+msgid "Trend dot coloring"
+msgstr ""
 
 #: tfconf.tsaccess.caption
 msgid "Accessibility"
@@ -1828,6 +1852,37 @@ msgstr "Lectures obsolètes !"
 #: trndi.strings.rs_attention_missing_desc
 msgid "Readings are not fresh, have your phone lost connection to the sensor?"
 msgstr "Les lectures ne sont plus récentes, votre téléphone a-t-il perdu la connexion avec le capteur ?"
+
+#: trndi.strings.rs_attention_pump_battery
+msgid "Pump battery low"
+msgstr ""
+
+#: trndi.strings.rs_attention_pump_battery_desc
+#, object-pascal-format
+msgid "The pump battery is down to about %d%%."
+msgstr ""
+
+#: trndi.strings.rs_attention_reservoir
+msgid "Insulin running low"
+msgstr ""
+
+#: trndi.strings.rs_attention_reservoir_desc
+#, object-pascal-format
+msgid "About %s units of insulin left in the pump reservoir."
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry
+msgid "Sensor expiring"
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry_desc
+#, object-pascal-format
+msgid "About %d hours of sensor life left."
+msgstr ""
+
+#: trndi.strings.rs_attention_sensor_expiry_desc_one
+msgid "Less than an hour of sensor life left."
+msgstr ""
 
 #: trndi.strings.rs_attention_sensor_fault
 msgid "Possible sensor fault"
@@ -2806,11 +2861,30 @@ msgstr "𐩘 Bruit : %d"
 msgid "Prediction here: %s at %.2d:%.2d"
 msgstr "Prédiction ici : %s à %.2d:%.2d"
 
+#: trndi.strings.rs_ux_pump_battery
+#, object-pascal-format
+msgid "🔋 Pump battery: %d%%"
+msgstr ""
+
+#: trndi.strings.rs_ux_pump_suspended
+msgid "⏸️ Insulin delivery is suspended"
+msgstr ""
+
 #: trndi.strings.rs_ux_reading_here
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_reading_here"
 msgid "Reading here: %s at %.2d:%.2d"
 msgstr "Lecture ici : %s à %.2d:%.2d"
+
+#: trndi.strings.rs_ux_reservoir
+#, object-pascal-format
+msgid "💉 Reservoir: about %s U left"
+msgstr ""
+
+#: trndi.strings.rs_ux_reservoir_percent
+#, object-pascal-format
+msgid "💉 Reservoir: about %d%% left"
+msgstr ""
 
 #: trndi.strings.rs_ux_rssi
 #, object-pascal-format
@@ -2823,6 +2897,25 @@ msgstr "📻 RSSI (force du signal) : %d%%"
 msgctxt "trndi.strings.rs_ux_sensor_expiry"
 msgid "⏱️ Sensor: %s"
 msgstr "⏱️ Capteur : %s"
+
+#: trndi.strings.rs_ux_sensor_left_dh
+#, object-pascal-format
+msgid "about %dd %dh left"
+msgstr ""
+
+#: trndi.strings.rs_ux_sensor_left_h
+#, object-pascal-format
+msgid "about %dh left"
+msgstr ""
+
+#: trndi.strings.rs_ux_sensor_left_one
+msgid "less than an hour left"
+msgstr ""
+
+#: trndi.strings.rs_ux_transmitter_battery
+#, object-pascal-format
+msgid "📡 Transmitter battery: %d%%"
+msgstr ""
 
 #: trndi.strings.rs_ux_transmitter_info
 msgctxt "trndi.strings.rs_ux_transmitter_info"
@@ -3143,10 +3236,12 @@ msgid "Adapt to background"
 msgstr ""
 
 #: uconf.rs_dots_caption
+msgctxt "uconf.rs_dots_caption"
 msgid "Trend dot coloring"
 msgstr ""
 
 #: uconf.rs_dots_classic
+msgctxt "uconf.rs_dots_classic"
 msgid "Classic"
 msgstr ""
 
@@ -3276,6 +3371,7 @@ msgid "Requests: "
 msgstr "Requêtes : "
 
 #: uconf.rs_ext_reset_btn
+msgctxt "uconf.rs_ext_reset_btn"
 msgid "Reset permissions"
 msgstr ""
 
@@ -3305,6 +3401,7 @@ msgid "Shows if Trndi detected a touch screen"
 msgstr "Indique si Trndi a détecté un écran tactile"
 
 #: uconf.rs_hints_enable
+msgctxt "uconf.rs_hints_enable"
 msgid "Explain parts of the window when they are clicked"
 msgstr "Expliquer les éléments de la fenêtre quand on clique dessus"
 
@@ -3313,6 +3410,7 @@ msgid "The explanations you hid will be shown again."
 msgstr "Les explications que vous aviez masquées seront de nouveau affichées."
 
 #: uconf.rs_hints_reset_btn
+msgctxt "uconf.rs_hints_reset_btn"
 msgid "Show hidden explanations"
 msgstr "Afficher les explications masquées"
 
@@ -3497,6 +3595,7 @@ msgstr "Bas"
 #: uconf.rs_preview_state_hint
 msgid "Choose which glucose state the preview shows"
 msgstr "Choisissez l'état de glycémie affiché par l'aperçu"
+
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "En mode privé, la valeur réelle de glycémie est masquée. Trndi indiquera seulement à l'utilisateur si elle est bonne, haute ou basse."
@@ -3574,6 +3673,23 @@ msgstr "Connexion réussie !"
 #: uconf.rs_test_unsupported
 msgid "Sorry! Trndi does not (yet) support connection testing for this service!"
 msgstr "Désolé ! Trndi ne prend pas (encore) en charge le test de connexion pour ce service !"
+
+#: uconf.rs_theme_accessible
+msgid "Color-blind friendly"
+msgstr ""
+
+#: uconf.rs_theme_classic
+msgctxt "uconf.rs_theme_classic"
+msgid "Classic"
+msgstr ""
+
+#: uconf.rs_theme_modern
+msgid "Modern"
+msgstr ""
+
+#: uconf.rs_theme_prompt
+msgid "Load color preset…"
+msgstr ""
 
 #: uconf.rs_threashold_lines_help
 msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
@@ -3793,6 +3909,7 @@ msgid "Predicted"
 msgstr "Prédit"
 
 #: uhistorygraph.rs_history_graph_key_range
+msgctxt "uhistorygraph.rs_history_graph_key_range"
 msgid "In range"
 msgstr "Dans la cible"
 

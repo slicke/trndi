@@ -18,12 +18,12 @@ object fConf: TfConf
     Height = 590
     Top = 11
     Width = 645
-    ActivePage = tsColors
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 2
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -1656,8 +1656,8 @@ object fConf: TfConf
             Left = 16
             Height = 19
             Top = 21
-            Width = 191
-            Caption = 'Show clock for 5 sec every 20 sec'
+            Width = 403
+            Caption = 'Show clock for 5 sec every 20 sec (shows in top in fullscreen/KIosk Mode)'
             TabOrder = 1
           end
           object cbAlternate: TCheckBox
@@ -1714,7 +1714,7 @@ object fConf: TfConf
             Left = 16
             Height = 19
             Top = 116
-            Width = 283
+            Width = 228
             Caption = 'Show insulin doses on the history graph'
             TabOrder = 8
             OnChange = cbBolusOverlayChange
@@ -1723,7 +1723,7 @@ object fConf: TfConf
             Left = 32
             Height = 19
             Top = 135
-            Width = 283
+            Width = 231
             Caption = 'Include automatic doses from the pump'
             TabOrder = 9
           end
@@ -1731,7 +1731,7 @@ object fConf: TfConf
             Left = 16
             Height = 19
             Top = 154
-            Width = 283
+            Width = 235
             Caption = 'Show carbohydrates on the history graph'
             TabOrder = 10
           end
@@ -1739,7 +1739,7 @@ object fConf: TfConf
         object GroupBox12: TGroupBox
           Left = 0
           Height = 57
-          Top = 256
+          Top = 345
           Width = 633
           Align = alTop
           Caption = 'Advanced'
@@ -2313,7 +2313,7 @@ object fConf: TfConf
       object Label6: TLabel
         Left = 10
         Height = 15
-        Top = 392
+        Top = 507
         Width = 617
         Align = alTop
         BorderSpacing.Around = 10
@@ -2332,7 +2332,7 @@ object fConf: TfConf
       object pHints: TPanel
         Left = 0
         Height = 29
-        Top = 190
+        Top = 195
         Width = 637
         Align = alTop
         BevelOuter = bvNone
@@ -2344,7 +2344,7 @@ object fConf: TfConf
           Left = 10
           Height = 19
           Top = 5
-          Width = 450
+          Width = 280
           Caption = 'Explain parts of the window when they are clicked'
           TabOrder = 0
         end
@@ -2362,7 +2362,7 @@ object fConf: TfConf
       object cbFlash: TCheckGroup
         Left = 0
         Height = 94
-        Top = 195
+        Top = 234
         Width = 637
         Align = alTop
         AutoFill = True
@@ -2417,7 +2417,7 @@ object fConf: TfConf
       object cgNotifications: TCheckGroup
         Left = 0
         Height = 159
-        Top = 299
+        Top = 338
         Width = 637
         Align = alTop
         AutoFill = True
@@ -2437,7 +2437,7 @@ object fConf: TfConf
         TabOrder = 5
         object cbAlertHiLo: TCheckBox
           Left = 6
-          Height = 26
+          Height = 25
           Top = 6
           Width = 621
           Caption = 'Alert me when blood sugar is high/low'
@@ -2445,8 +2445,8 @@ object fConf: TfConf
         end
         object cbAlertMissing: TCheckBox
           Left = 6
-          Height = 25
-          Top = 32
+          Height = 26
+          Top = 31
           Width = 621
           Caption = 'Alert me when readings are missing / not fresh'
           TabOrder = 1
@@ -2461,7 +2461,7 @@ object fConf: TfConf
         end
         object cbAlertSensor: TCheckBox
           Left = 6
-          Height = 25
+          Height = 26
           Top = 82
           Width = 621
           Caption = 'Alert me when the sensor is about to expire (CareLink)'
@@ -2470,7 +2470,7 @@ object fConf: TfConf
         object cbAlertBattery: TCheckBox
           Left = 6
           Height = 25
-          Top = 107
+          Top = 108
           Width = 621
           Caption = 'Alert me when the pump battery is running low (pump backends)'
           TabOrder = 4
@@ -2488,7 +2488,7 @@ object fConf: TfConf
       object Panel19: TPanel
         Left = 0
         Height = 36
-        Top = 417
+        Top = 532
         Width = 637
         Align = alTop
         BevelOuter = bvNone
@@ -4107,19 +4107,19 @@ object fConf: TfConf
         Left = 10
         Height = 467
         Top = 30
-        Width = 327
+        Width = 337
         Align = alClient
         BorderSpacing.Around = 10
         Caption = 'Available Extensions'
         ClientHeight = 447
-        ClientWidth = 323
+        ClientWidth = 333
         ParentBackground = False
         TabOrder = 0
         object lbExtensions: TCheckListBox
           Left = 5
           Height = 437
           Top = 5
-          Width = 313
+          Width = 323
           Align = alClient
           BorderSpacing.Around = 5
           ItemHeight = 0
@@ -4155,7 +4155,7 @@ object fConf: TfConf
         end
         object lExtVersion: TLabel
           Left = 6
-          Height = 15
+          Height = 1
           Top = 27
           Width = 254
           Align = alTop
@@ -4166,8 +4166,8 @@ object fConf: TfConf
         end
         object lExtCopyright: TLabel
           Left = 6
-          Height = 15
-          Top = 48
+          Height = 1
+          Top = 34
           Width = 254
           Align = alTop
           BorderSpacing.Left = 6
@@ -4177,8 +4177,8 @@ object fConf: TfConf
         end
         object lExtDesc: TLabel
           Left = 6
-          Height = 15
-          Top = 69
+          Height = 1
+          Top = 41
           Width = 254
           Align = alTop
           BorderSpacing.Left = 6
@@ -4189,8 +4189,8 @@ object fConf: TfConf
         object lExtHomepage: TLabel
           Cursor = crHandPoint
           Left = 6
-          Height = 15
-          Top = 90
+          Height = 1
+          Top = 48
           Width = 254
           Align = alTop
           BorderSpacing.Left = 6
@@ -4203,8 +4203,8 @@ object fConf: TfConf
         end
         object lExtLicense: TLabel
           Left = 6
-          Height = 15
-          Top = 111
+          Height = 1
+          Top = 55
           Width = 254
           Align = alTop
           BorderSpacing.Left = 6
@@ -4214,8 +4214,8 @@ object fConf: TfConf
         end
         object lExtPerms: TLabel
           Left = 6
-          Height = 15
-          Top = 132
+          Height = 1
+          Top = 62
           Width = 254
           Align = alTop
           BorderSpacing.Left = 6
@@ -4225,8 +4225,8 @@ object fConf: TfConf
         end
         object bExtResetPerms: TButton
           Left = 6
-          Height = 26
-          Top = 415
+          Height = 25
+          Top = 416
           Width = 254
           Align = alBottom
           AutoSize = True
