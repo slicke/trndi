@@ -58,6 +58,7 @@ published
   procedure TestNightscout3GetReadingsRespectsMax;
   procedure TestNightscout3RefreshesExpiredTokenDuringPolling;
   procedure TestNightscout3ServesCachedWindowWhenUnchanged;
+  procedure TestNightscout3RapidPollingTracksCache;
   procedure TestNightscout3;
 end;
 
@@ -219,6 +220,51 @@ begin
         second[0].date = third[0].date);
       AssertTrue('Cached fetch returns the same newest value',
         second[0].val = third[0].val);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+procedure TAPINightscout3Tester.TestNightscout3RapidPollingTracksCache;
+var
+  api: TrndiAPI;
+  res: string;
+  readings: BGResults;
+  BaseURL: string;
+begin
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestNightscout3RapidPollingTracksCache: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
+
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
+
+  try
+    api := NightScout3.create(BaseURL, 'test22');
+    try
+      // supportsRapidPolling promises "an unchanged poll is one small GET
+      // right now", so it must track the readings-window cache's lifecycle:
+      // off with a cold cache, off while the entries stamp is unknown (the
+      // first full fetch stores the window without one), on from the fetch
+      // that learns the stamp via the /lastModified probe.
+      AssertFalse('No rapid polling before any fetch', api.supportsRapidPolling);
+      AssertTrue('Nightscout3 connects to local fake server', api.connect);
+      AssertFalse('No rapid polling before the cache is warm', api.supportsRapidPolling);
+
+      readings := api.getReadings(30, 5, '', res, false);
+      AssertTrue('First fetch returns readings', Length(readings) > 0);
+      AssertFalse('No rapid polling until the entries stamp is learned',
+        api.supportsRapidPolling);
+
+      readings := api.getReadings(30, 5, '', res, false);
+      AssertTrue('Second fetch returns readings', Length(readings) > 0);
+      AssertTrue('Rapid polling reported once the stamp is known',
+        api.supportsRapidPolling);
     finally
       api.Free;
     end;

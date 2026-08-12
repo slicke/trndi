@@ -47,6 +47,18 @@ This variant also returns the raw response via `res`.
 
 If these three functions are provided, the API driver will work.
 
+### Optional: cheap-poll signal
+```pascal
+function supportsRapidPolling: boolean; virtual;
+```
+Override to return True while an *unchanged* `getReadings` call is cheap — a
+single lightweight request rather than a full fetch (NightScout v3 does this
+with a `/lastModified` probe over its readings-window cache). When True, the
+main window retries on a tight cadence (about every 20 seconds) whenever a
+reading is overdue, so a late upload lands within seconds. Only return True
+while the cheapness actually holds at that moment; the default is False and
+keeps the normal retry interval.
+
 # Native
 `TrndiNative` provides platform-specific features under a common API. It’s often used for HTTP(S) so requests run via native APIs (WinHTTP, NS, etc.) instead of third-party libs.
 

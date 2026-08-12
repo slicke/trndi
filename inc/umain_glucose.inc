@@ -356,19 +356,33 @@ begin
   UpdateFloatingWindow;
 end;
 
-procedure TfBG.SetNextUpdateTimer(const LastReadingTime: TDateTime);
+function TfBG.NextFetchIntervalMs(const LastReadingTime: TDateTime): int64;
 var
-  secondsSinceLast: int64;
-  intervalMs: int64;
+  ageMs: int64;
+begin
+  ageMs := SecondsBetween(LastReadingTime, Now) * 1000;
+
+  // A reading is overdue once it is older than the CGM cadence. Backends that
+  // can answer "anything new?" cheaply (NS3's /lastModified probe) get a tight
+  // retry loop so a late upload lands within seconds instead of waiting out
+  // the MIN_REFRESH_INTERVAL_MS clamp below. Past RAPID_POLL_MAX_OVERDUE_MS
+  // the outage is a gap (sensor warm-up, phone out of range), not a late
+  // upload, and the normal cadence takes back over.
+  if (ageMs >= BG_REFRESH) and (ageMs < RAPID_POLL_MAX_OVERDUE_MS) and
+    Assigned(api) and api.supportsRapidPolling then
+    Exit(RAPID_POLL_INTERVAL_MS);
+
+  Result := min(BG_REFRESH, BG_REFRESH - ageMs);
+  Result := max(MIN_REFRESH_INTERVAL_MS, Result);
+  Result := Result + REFRESH_RESYNC_BUFFER_MS;
+end;
+
+procedure TfBG.SetNextUpdateTimer(const LastReadingTime: TDateTime);
 begin
   if firstboot then
     exit;
   tMain.Enabled := false;
-  secondsSinceLast := SecondsBetween(LastReadingTime, now);
-  intervalMs := min(BG_REFRESH, BG_REFRESH - (secondsSinceLast * 1000));
-  intervalMs := max(MIN_REFRESH_INTERVAL_MS, intervalMs);
-
-  tMain.Interval := intervalMs + REFRESH_RESYNC_BUFFER_MS;
+  tMain.Interval := NextFetchIntervalMs(LastReadingTime);
   tMain.Enabled := true;
   // TTimer has no "time remaining", so remember when this one is due; the stale
   // card counts down to it.

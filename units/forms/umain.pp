@@ -832,6 +832,10 @@ private
       based on recency and backend requirements.
    }
   procedure SetNextUpdateTimer(const LastReadingTime: TDateTime);
+  {** The tMain cadence policy: milliseconds until the next fetch attempt,
+      given the age of the newest reading. Shared by SetNextUpdateTimer (fresh
+      path) and tMainTimer (which must re-apply it while data is stale). }
+  function NextFetchIntervalMs(const LastReadingTime: TDateTime): int64;
   function FinalizeReadingUpdate(const Boot: boolean): boolean;
   function IsSensorFaultSuspected(const Readings: array of BGReading): boolean;
   {** Apply visual changes following the latest readings, such as redraws and
@@ -1245,6 +1249,13 @@ implementation
 const
 MIN_REFRESH_INTERVAL_MS = 120000; // 2 minutes
 REFRESH_RESYNC_BUFFER_MS = 15000; // Additional buffer to allow backend sync
+// Tight retry cadence used while a reading is overdue and the backend says an
+// unchanged poll is cheap (api.supportsRapidPolling) — a late upload then
+// lands within seconds instead of waiting out MIN_REFRESH_INTERVAL_MS.
+RAPID_POLL_INTERVAL_MS = 20000; // 20 seconds
+// Once the newest reading is this old the outage is a gap, not a late upload;
+// rapid mode stands down and the normal retry clamp takes over.
+RAPID_POLL_MAX_OVERDUE_MS = 1800000; // 30 minutes
 DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
 // Below this confidence the prediction dots draw a ? instead of the × marker
 PREDICTION_UNCERTAIN_BELOW = 0.3;

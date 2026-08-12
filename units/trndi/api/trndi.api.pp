@@ -546,6 +546,18 @@ const
       Default: False. }
   function supportsCarbs: boolean; virtual;
 
+  {** Report whether an unchanged @code(getReadings) poll is currently cheap —
+      a single lightweight request rather than a full fetch (e.g. NightScout
+      v3's /lastModified probe answering from its readings-window cache).
+
+      When True, the UI may retry on a tight cadence (tens of seconds) while a
+      reading is overdue, so a late upload lands within seconds instead of
+      waiting out the normal retry interval. Return True only while that
+      cheapness actually holds right now — the answer may change over a
+      session (cache warm-up, server support probed at runtime).
+      Default: False. }
+  function supportsRapidPolling: boolean; virtual;
+
   {** Notify the owner that this backend's stored credentials changed
       (e.g. a rotated OAuth2 refresh token) and must be re-persisted.
       No-op when no handler is attached.
@@ -913,6 +925,15 @@ end;
   Whether this backend can supply carbohydrate entries at all.
 ------------------------------------------------------------------------------}
 function TrndiAPI.supportsCarbs: boolean;
+begin
+  Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  Default implementation: assume every poll costs a full fetch, so the UI
+  sticks to the normal retry cadence.
+------------------------------------------------------------------------------}
+function TrndiAPI.supportsRapidPolling: boolean;
 begin
   Result := false;
 end;
