@@ -2549,6 +2549,40 @@ msgstr "Le capteur est peut-être défectueux : plusieurs sauts brusques de lect
 msgid "Adjust: %.2f / Scale: %.2fx"
 msgstr "Ajustement : %.2f / Échelle : %.2fx"
 
+#: trndi.strings.rs_service_basal_age
+#, object-pascal-format
+msgid "Recorded %s (%d min ago)"
+msgstr ""
+
+#: trndi.strings.rs_service_basal_commanded
+#, object-pascal-format
+msgid "Commanded: %s"
+msgstr ""
+
+#: trndi.strings.rs_service_basal_none
+msgid "not reported"
+msgstr ""
+
+#: trndi.strings.rs_service_basal_programmed
+#, object-pascal-format
+msgid "Programmed: %s"
+msgstr ""
+
+#: trndi.strings.rs_service_basal_rate
+#, object-pascal-format
+msgid "%s U/hr"
+msgstr ""
+
+#: trndi.strings.rs_service_basal_single
+#, object-pascal-format
+msgid "Basal: %s"
+msgstr ""
+
+#: trndi.strings.rs_service_basal_source
+#, object-pascal-format
+msgid "Source: %s"
+msgstr ""
+
 #: trndi.strings.rs_service_dot_adjust
 msgid "Dot Adjustment"
 msgstr "Ajustement des points"

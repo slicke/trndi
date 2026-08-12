@@ -251,7 +251,7 @@ make noext
 
 # Setup
 Right click or click/hold the reading (or "Setup" text) and choose settings to access settings.
-* For NightScout, settings will be fetched from your server and auto-applied
+* For NightScout, settings will be fetched from your server and auto-applied. See the __[Nightscout setup guide](guides/Nightscout.md)__ for which of the two drivers to pick, and what each one reads from your site.
 * For Dexcom, see the __[Dexcom setup guide](guides/Dexcom.md)__. The backend does not support all features, but this can be fixed with some manual work.
 * For Tandem, see the __[Tandem setup guide](guides/Tandem.md)__. The backend does not support all features, but this can be fixed with some manual work.
 * For CareLink (Medtronic), see the __[CareLink setup guide](guides/CareLink.md)__. A one-time browser login is required; Trndi then keeps the session alive automatically.

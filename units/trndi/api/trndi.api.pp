@@ -133,6 +133,28 @@ TCGMDeviceStatus = record
   statusMessage: string;
 end;
 
+  {** What a backend can say about the basal rate in force, beyond the single
+      figure @code(getBasalRate) returns.
+
+      A looping pump reports two rates and they routinely disagree: the rate
+      the algorithm last commanded, and the rate the programmed profile has in
+      force. Neither one is "the" basal rate, and showing one without saying
+      which it is — or how old it is — is what makes a stale command sit on
+      screen while the profile has already moved to the next segment.
+
+      Rates are U/hr; a negative one means the backend did not report it. }
+TBasalStatus = record
+    {** Rate the pump was last told to run; <0 unknown }
+  commanded: single;
+    {** Rate the programmed basal profile has in force; <0 unknown }
+  programmed: single;
+    {** When the reporting event was recorded, in local time; 0 unknown }
+  time: TDateTime;
+    {** Backend's own label for where the figures came from, e.g. an event
+        code; '' when the backend cannot say }
+  source: string;
+end;
+
   {** Unit for storing glucose values }
 glucose = single;
 
@@ -486,6 +508,22 @@ const
         @returns(Current basal rate in U/hr, or 0 if unavailable)
      }
   function getBasalRate: single; virtual;
+
+    {** Fetch the basal rate in force with the context @code(getBasalRate)
+        cannot carry: the programmed rate beside the commanded one, when the
+        figures were recorded, and where they came from.
+
+        Base implementation reports whatever @code(getBasalRate) returns as the
+        commanded rate and nothing else. Backends whose payload distinguishes
+        the two rates should override.
+        @param(AStatus Out parameter receiving the rates)
+        @returns(True if the backend reported either rate; False otherwise) }
+  function getBasalStatus(out AStatus: TBasalStatus): boolean; virtual;
+
+    {** Reset a @code(TBasalStatus) to "nothing reported". Call before filling
+        one so unreported rates stay negative rather than reading as zero. }
+  class procedure clearBasalStatus(out AStatus: TBasalStatus);
+
   {** Report whether this backend supports fetching basal rates.
       Default: False. Backends that implement reliable basal retrieval
       (e.g., NightScout v3) should override to return True. }
@@ -1432,6 +1470,30 @@ function TrndiAPI.getBasalRate: single;
 begin
   result := 0; // Base implementation returns 0
   // Subclasses may override to fetch basal rate from their data source
+end;
+
+{------------------------------------------------------------------------------
+  Basal detail, from the one figure the base class has.
+
+  getBasalRate reports 0 for "nothing to report", so a zero here cannot be
+  passed on as a commanded rate of zero -- that would read as a suspended pump.
+------------------------------------------------------------------------------}
+class procedure TrndiAPI.clearBasalStatus(out AStatus: TBasalStatus);
+begin
+  AStatus := Default(TBasalStatus);
+  AStatus.commanded := -1;
+  AStatus.programmed := -1;
+end;
+
+function TrndiAPI.getBasalStatus(out AStatus: TBasalStatus): boolean;
+var
+  rate: single;
+begin
+  clearBasalStatus(AStatus);
+  rate := getBasalRate;
+  result := rate > 0;
+  if result then
+    AStatus.commanded := rate;
 end;
 
 function TrndiAPI.getAPIUrl: string;

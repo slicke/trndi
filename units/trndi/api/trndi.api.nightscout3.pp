@@ -164,6 +164,15 @@ public
   function getReadings(minNum, maxNum: integer; extras: string;
     out res: string; noCache: boolean): BGResults; override;
   function supportsBasal: boolean; override;
+
+    {** The basal schedule from the site's default profile, as programmed.
+
+        It is the profile in force *now*: profile.json's store keyed by
+        defaultProfile, with no regard for when the caller means to draw it.
+        Nothing that departs from the schedule is in it -- temporary rates,
+        suspends, a profile switched during the window, and every adjustment a
+        closed loop made -- so a consumer drawing it over history is showing
+        what was scheduled, not what was delivered. }
   function getBasalProfile(out profile: TBasalProfile): boolean; override;
 
     {** Sensor and pump housekeeping from the newest devicestatus records the

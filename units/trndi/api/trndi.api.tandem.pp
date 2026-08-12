@@ -118,6 +118,10 @@ type
     FDeviceStatus: TCGMDeviceStatus; /// Pump housekeeping from the last fetch
     FDeviceStatusValid: boolean;     /// True once a payload has filled it
     FBasalRate: single;     /// Last rate the pump was commanded to run; <0 unknown
+    FBasalAt: TDateTime;    /// When that command was recorded; 0 unknown
+    FBasalSource: integer;  /// eventCode the commanded rate came from; <0 unknown
+    FProfileRate: single;   /// Programmed profile rate beside it; <0 unknown
+    FProfileRateAt: TDateTime; /// When the profile rate was recorded; 0 unknown
 
     {** Get region-specific URLs }
     function GetLoginApiUrl: string;
@@ -146,6 +150,10 @@ type
         BFF's property names. Debug builds only, since @code(log) is a no-op
         elsewhere. }
     procedure LogEventCensus(AEvents: TJSONArray);
+
+    {** Forget both basal rates, so a payload that carries neither cannot leave
+        the previous fetch's figures reading as current. }
+    procedure clearBasalCache;
 
   public
     {** Create a Tandem API client.
@@ -222,6 +230,11 @@ type
     {** The last basal rate Control-IQ commanded, in U/hr. This is what the
         pump was told to run, not the programmed profile rate. }
     function getBasalRate: single; override;
+
+    {** Both rates the pump-logs payload reports -- what Control-IQ commanded
+        and the programmed profile rate beside it -- with the time and event
+        code they came from. }
+    function getBasalStatus(out AStatus: TBasalStatus): boolean; override;
 
   published
     {** The effective base URL used for API requests. }
@@ -859,7 +872,7 @@ begin
   SetLength(FCarbs, 0);
   FDeviceStatusValid := false;
   clearDeviceStatus(FDeviceStatus);
-  FBasalRate := -1;
+  clearBasalCache;
 
   baseUrl := GetSourceUrl;
   
@@ -1466,7 +1479,7 @@ var
   carbCount, skipped: integer;
   swapBolus: TBolusEntry;
   swapCarb: TCarbEntry;
-  reservoirAt, batteryAt, suspendAt, basalAt: TDateTime;
+  reservoirAt, batteryAt, suspendAt, basalAt, profileAt: TDateTime;
   kindStr, sourceLog: string;
 
   function FindBuild(AId: int64): integer;
@@ -1502,7 +1515,7 @@ begin
   FCarbsValid := false;
   clearDeviceStatus(FDeviceStatus);
   FDeviceStatusValid := false;
-  FBasalRate := -1;
+  clearBasalCache;
 
   if (AEvents = nil) or (AEvents.Count = 0) then
     Exit;
@@ -1513,6 +1526,7 @@ begin
   batteryAt := 0;
   suspendAt := 0;
   basalAt := 0;
+  profileAt := 0;
 
   for i := 0 to AEvents.Count - 1 do
   begin
@@ -1631,28 +1645,47 @@ begin
         TandemPropNum(propsObj, 'commandedbasalrate', numVal) and (numVal >= 0) then
       begin
         FBasalRate := numVal;
+        FBasalSource := code;
         basalAt := stamp;
       end;
 
     TANDEM_EV_ALGORITHM_RATE:
+    begin
       if (stamp >= basalAt) and
         TandemPropNum(propsObj, 'commandedrate', numVal) and
         (numVal >= 0) and (numVal <> TANDEM_RATE_UNSET) then
       begin
         // Milliunits per hour here, unlike the float U/hr of code 90.
         FBasalRate := numVal / 1000;
+        FBasalSource := code;
         basalAt := stamp;
       end;
+      // The programmed rate rides along in the same event, in the same units.
+      // It is tracked separately because only this event carries it: the
+      // commanded rate can come from a newer code 90 or 81 without the profile
+      // rate being restated, and the two must not be reported as one figure.
+      if (stamp >= profileAt) and
+        TandemPropNum(propsObj, 'profilebasalrate', numVal) and
+        (numVal >= 0) and (numVal <> TANDEM_RATE_UNSET) then
+      begin
+        FProfileRate := numVal / 1000;
+        profileAt := stamp;
+      end;
+    end;
 
     TANDEM_EV_DAILY_STATE:
       if (stamp >= basalAt) and
         TandemPropNum(propsObj, 'lastbasalrate', numVal) and (numVal >= 0) then
       begin
         FBasalRate := numVal;
+        FBasalSource := code;
         basalAt := stamp;
       end;
     end;
   end;
+
+  FBasalAt := basalAt;
+  FProfileRateAt := profileAt;
 
   // Turn the assembled boluses into entries, dropping any that delivered
   // nothing -- a record of no insulin given should not put a stem on a graph.
@@ -1820,6 +1853,48 @@ begin
   if FBasalRate < 0 then
     Exit(0);
   Result := FBasalRate;
+end;
+
+procedure Tandem.clearBasalCache;
+begin
+  FBasalRate := -1;
+  FBasalAt := 0;
+  FBasalSource := -1;
+  FProfileRate := -1;
+  FProfileRateAt := 0;
+end;
+
+{------------------------------------------------------------------------------
+  Both rates, and where they came from.
+
+  The commanded rate on its own is what a looping pump was last told to run,
+  which is not the rate the user set and can be hours old once Control-IQ stops
+  commanding -- the payload carries the programmed rate too, so report both and
+  let the caller show which is which.
+ ------------------------------------------------------------------------------}
+function Tandem.getBasalStatus(out AStatus: TBasalStatus): boolean;
+begin
+  clearBasalStatus(AStatus);
+
+  if FBasalRate >= 0 then
+  begin
+    AStatus.commanded := FBasalRate;
+    AStatus.time := FBasalAt;
+    AStatus.source := Format('pump event %d', [FBasalSource]);
+  end;
+
+  if FProfileRate >= 0 then
+  begin
+    AStatus.programmed := FProfileRate;
+    // Whichever figure is newer dates the pair, so an age shown next to them
+    // is never older than the freshest thing they were read from.
+    if FProfileRateAt > AStatus.time then
+      AStatus.time := FProfileRateAt;
+    if AStatus.source = '' then
+      AStatus.source := Format('pump event %d', [TANDEM_EV_ALGORITHM_RATE]);
+  end;
+
+  Result := (AStatus.commanded >= 0) or (AStatus.programmed >= 0);
 end;
 
 {------------------------------------------------------------------------------

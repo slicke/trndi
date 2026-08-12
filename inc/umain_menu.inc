@@ -50,17 +50,48 @@ begin
   ShowOnce('predict', RS_PREDICT);
 end;
 
+// A pump can report two basal rates that disagree -- what the algorithm last
+// commanded, and what the programmed profile has in force -- so this shows both
+// with the time they were recorded, rather than one bare number that gives no
+// way to tell a live rate from a stale command.
 procedure TfBG.miBasalRateClick(Sender: TObject);
 var
-  res: single;
-  err: string;
+  status: TBasalStatus;
+  msg, err: string;
+
+  function RateStr(const AValue: single): string;
+  begin
+    if AValue < 0 then
+      Exit(RS_SERVICE_BASAL_NONE);
+    // Not AValue.toString: a Single spends its digits on the binary error, so
+    // 1.05 prints as 1.049999952. Pump rates are set in thousandths of a unit.
+    Result := Format(RS_SERVICE_BASAL_RATE, [FormatFloat('0.0##', AValue)]);
+  end;
+
 begin
-  res := api.getBasalRate;
-  err := api.errormsg;
-  if res = 0 then
-    ShowMessage(Format('%s: %s', [RS_NODATA_ERROR, IfThen(err <> '', err, RS_NODATA_NONE)]))
+  if not api.getBasalStatus(status) then
+  begin
+    err := api.errormsg;
+    ShowMessage(Format('%s: %s', [RS_NODATA_ERROR, IfThen(err <> '', err, RS_NODATA_NONE)]));
+    Exit;
+  end;
+
+  // Only a backend that tells the two rates apart may label them. Most report
+  // one figure that is neither -- CareLink's is what was actually delivered --
+  // and calling that one "commanded" would be a claim the backend never made.
+  if status.programmed < 0 then
+    msg := Format(RS_SERVICE_BASAL_SINGLE, [RateStr(status.commanded)])
   else
-    ShowMessage(res.toString);
+    msg := Format(RS_SERVICE_BASAL_COMMANDED, [RateStr(status.commanded)]) + LineEnding +
+      Format(RS_SERVICE_BASAL_PROGRAMMED, [RateStr(status.programmed)]);
+
+  if status.time > 0 then
+    msg := msg + LineEnding + Format(RS_SERVICE_BASAL_AGE,
+      [FormatDateTime('t', status.time), MinutesBetween(Now, status.time)]);
+  if status.source <> '' then
+    msg := msg + LineEnding + Format(RS_SERVICE_BASAL_SOURCE, [status.source]);
+
+  ShowMessage(msg);
 end;
 
 procedure TfBG.AutoEnableBasalOverlay;

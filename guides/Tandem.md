@@ -34,7 +34,7 @@ The pump-logs payload the readings come from carries a good deal more than gluco
   Note that the second checkbox, for the pump's own automatic doses, does nothing on Tandem yet — see below.
 
 - **Carbohydrates on the history graph** (Settings → Display → *Show carbohydrates on the history graph*), as discs in their own lane above the bottom axis, labelled in grams. These are the carbs you entered into the bolus calculator; Tandem has no separate meal entry, so unlike CareLink there is no double-counting to reconcile. Carbs entered for a bolus that was never delivered are not shown.
-- **Basal rate** (Menu → Basal rate), in U/hr. This is the rate Control-IQ last commanded, which on a looping pump is generally not your programmed profile rate.
+- **Basal rate** (Menu → Service Menu → *Current Basal*), in U/hr. Two rates are shown, because the pump reports two and they routinely disagree: *Commanded* is the rate Control-IQ last told the pump to run, and *Programmed* is the rate your basal profile has in force. On a looping pump the commanded rate is generally not your profile rate, so the dialog also gives the time both figures were recorded and the pump event they came from — if the commanded rate is hours old, Control-IQ has stopped commanding and your profile has likely moved on to the next segment since.
 
 The `ibc` property on the pump's status and battery events drives the pump-battery notifications (20/15/10/5/2 percent) described in [Notifications.md](Notifications.md). It is a true fine-grained percentage — a live fetch carries values like 80, 45 and 35 — with 255 meaning the pump could not read it.
 
