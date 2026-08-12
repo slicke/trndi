@@ -114,6 +114,14 @@ RS_SERVICE_DOT_ADJUST = 'Dot Adjustment';
 RS_SERVICE_DOT_ADJUST_ADD = 'Add dot adjustment';
 RS_SERVICE_DOT_ADJUST_DESC = 'You can enter plus or minus. Plus = down. 0 = neutral';
 
+RS_SERVICE_BASAL_SINGLE = 'Basal: %s';
+RS_SERVICE_BASAL_COMMANDED = 'Commanded: %s';
+RS_SERVICE_BASAL_PROGRAMMED = 'Programmed: %s';
+RS_SERVICE_BASAL_RATE = '%s U/hr';
+RS_SERVICE_BASAL_NONE = 'not reported';
+RS_SERVICE_BASAL_AGE = 'Recorded %s (%d min ago)';
+RS_SERVICE_BASAL_SOURCE = 'Source: %s';
+
 RS_SERVICE_PREDICT_UNABLE = 'Unable to predict: %s';
 RS_SERVICE_PREDICTIONS = 'Predictions:';
 RS_SERVICE_PREDICT_POINT = 'Reading %d: %.1f %s at %s';

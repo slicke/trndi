@@ -2561,6 +2561,40 @@ msgstr "Sensorn kan vara trasig: flera abrupt hoppande avläsningar upptäcktes.
 msgid "Adjust: %.2f / Scale: %.2fx"
 msgstr "Justering: %.2f / Skala: %.2fx"
 
+#: trndi.strings.rs_service_basal_age
+#, object-pascal-format
+msgid "Recorded %s (%d min ago)"
+msgstr "Emottagen %s (%d min sedan)"
+
+#: trndi.strings.rs_service_basal_commanded
+#, object-pascal-format
+msgid "Commanded: %s"
+msgstr "Begärd: %s"
+
+#: trndi.strings.rs_service_basal_none
+msgid "not reported"
+msgstr "ej rapporterad"
+
+#: trndi.strings.rs_service_basal_programmed
+#, object-pascal-format
+msgid "Programmed: %s"
+msgstr "Programmerad: %s"
+
+#: trndi.strings.rs_service_basal_rate
+#, object-pascal-format
+msgid "%s U/hr"
+msgstr "%s E/tim"
+
+#: trndi.strings.rs_service_basal_single
+#, object-pascal-format
+msgid "Basal: %s"
+msgstr "Basal: %s"
+
+#: trndi.strings.rs_service_basal_source
+#, object-pascal-format
+msgid "Source: %s"
+msgstr "Källa: %s"
+
 #: trndi.strings.rs_service_dot_adjust
 msgid "Dot Adjustment"
 msgstr "Punktjustering"
@@ -3711,7 +3745,7 @@ msgstr "Modern"
 
 #: uconf.rs_theme_prompt
 msgid "Load color preset…"
-msgstr "Ladda standardfärg..."
+msgstr "Ladda färgmall…"
 
 #: uconf.rs_threashold_lines_help
 msgid "Trndi can draw a line on the graph's background, to represent where your high/low limits are."
@@ -4148,4 +4182,3 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
-

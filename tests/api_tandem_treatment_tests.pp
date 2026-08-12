@@ -67,6 +67,7 @@ type
     procedure TestCarbExtraction;
     procedure TestDeviceStatus;
     procedure TestBasalRate;
+    procedure TestBasalStatus;
     procedure TestNothingReportedBeforeAFetch;
   end;
 
@@ -250,6 +251,35 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  The commanded rate and the programmed profile rate ride in the same event and
+  routinely disagree, so both must survive extraction as separate figures --
+  reporting the command alone is what makes a looping pump's own screen and
+  Trndi's disagree.
+ ------------------------------------------------------------------------------}
+procedure TTandemTreatmentTests.TestBasalStatus;
+var
+  status: TBasalStatus;
+begin
+  FeedFixture;
+
+  AssertTrue('Basal status reported after a fetch', FAPI.getBasalStatus(status));
+  AssertEquals('Commanded rate, from commandedRate 1250 mU/hr',
+    1.25, status.commanded, 0.0001);
+  AssertEquals('Programmed rate, from profileBasalRate 850 mU/hr',
+    0.85, status.programmed, 0.0001);
+
+  // Both came from the 23:30 event, and the age shown beside them dates from it
+  AssertEquals('Dated from the event the figures came from',
+    EncodeDate(2026, 8, 10) + EncodeTime(23, 30, 0, 0), status.time, 1 / SecsPerDay);
+  AssertTrue('Names the event the commanded rate came from',
+    Pos('279', status.source) > 0);
+
+  // getBasalRate keeps its own contract: the commanded rate, unchanged
+  AssertEquals('Commanded rate still what getBasalRate reports',
+    1.25, FAPI.getBasalRate, 0.0001);
+end;
+
+{------------------------------------------------------------------------------
   Before any payload has been walked, "nothing reported" must be distinguishable
   from "no insulin given" -- the accessors return False rather than an empty
   list that a caller could read as a quiet night.
@@ -259,6 +289,7 @@ var
   boluses: TBolusList;
   carbs: TCarbList;
   status: TCGMDeviceStatus;
+  basal: TBasalStatus;
 begin
   AssertFalse('No boluses before a fetch', FAPI.getBoluses(boluses));
   AssertEquals('Bolus list is empty', 0, Length(boluses));
@@ -266,6 +297,11 @@ begin
   AssertEquals('Carb list is empty', 0, Length(carbs));
   AssertFalse('No device status before a fetch', FAPI.getDeviceStatus(status));
   AssertEquals('No basal rate before a fetch', 0.0, FAPI.getBasalRate, 0.0001);
+
+  // Unreported rates stay negative: a zero here would read as a suspended pump
+  AssertFalse('No basal status before a fetch', FAPI.getBasalStatus(basal));
+  AssertTrue('Commanded rate unknown, not zero', basal.commanded < 0);
+  AssertTrue('Programmed rate unknown, not zero', basal.programmed < 0);
 end;
 
 initialization

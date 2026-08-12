@@ -64,7 +64,7 @@ type
     procedure SetThresholds(const cgmHi, cgmLo, cgmRangeHi, cgmRangeLo: integer);
     procedure SaveAsPNG(Sender: TObject);
     procedure SaveAsCSV(Sender: TObject);
-    procedure SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
+    procedure SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 0);
     procedure SetBasalOverlayEnabled(aEnabled: boolean);
     procedure SetBoluses(const Boluses: TBolusList);
     procedure SetBolusOverlayEnabled(aEnabled: boolean;

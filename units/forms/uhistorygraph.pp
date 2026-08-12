@@ -164,7 +164,12 @@ private
   procedure DrawThresholdLines(ACanvas: TCanvas; const PlotRect: TRect);
     {** DrawBasalOverlay: Renders daily repeating basal schedule as a small
       area strip at the bottom of the plot. Values are scaled to
-      `FMaxBasal` and clipped to the plot range. }
+      `FMaxBasal` and clipped to the plot range.
+
+      This is the *programmed* schedule, repeated across every day in view.
+      Temporary rates, suspends, profile switches and anything a closed loop
+      commanded are not in it, and a day drawn here is the profile in force
+      now rather than the one in force then. }
   procedure DrawBasalOverlay(ACanvas: TCanvas; const PlotRect: TRect);
     {** DrawBolusOverlay: Renders insulin deliveries as stems rising from the
       bottom axis, scaled against the largest delivery in view. Automatic
@@ -242,9 +247,11 @@ public
       spreadsheet applications. }
   procedure SaveAsCSV(Sender: TObject);
     {** SetBasalProfile: Provide a repeating daily basal profile to be drawn
-      on the graph. The profile repeats every 24h. @param(maxBasal) is the
-      maximum expected basal used to scale the overlay height in pixels. }
-  procedure SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
+      on the graph. The profile repeats every 24h. @param(maxBasal) is the rate
+      the strip's full height stands for; pass 0 (the default) to take it from
+      the profile's own highest rate, which is what keeps the strip readable
+      for a 0.4 U/hr profile and a 4 U/hr one alike. }
+  procedure SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 0);
     {** Enable or disable basal overlay rendering. }
   procedure SetBasalOverlayEnabled(aEnabled: boolean);
     {** SetBoluses: Provide the insulin deliveries to draw as stems along the
@@ -949,10 +956,12 @@ procedure DrawKeyPanel;
     // matching the threshold lines, which are skipped for the same reason.
     hasRange := (FCgmRangeHi <> TrndiAPI.CGM_RANGE_HI_DISABLED) and
       (FCgmRangeLo <> TrndiAPI.CGM_RANGE_LO_DISABLED);
-    entries := 4;
+    entries := 3;
     if hasRange then
       Inc(entries, 3);
     // The treatment keys only earn their space when the overlay is actually on.
+    if FShowBasal and (Length(FBasalProfile) > 0) then
+      Inc(entries);
     if FShowBolus and (Length(FBoluses) > 0) then
     begin
       Inc(entries);
@@ -1016,7 +1025,12 @@ procedure DrawKeyPanel;
     end;
     DrawKeyEntry(hiStr, LevelColor(BGHigh));
     DrawKeyEntry(loStr, LevelColor(BGLOW));
-    DrawKeyEntry(RS_HISTORY_GRAPH_KEY_BASAL, RGBToColor(120,170,255));
+    // The strip is scaled to the profile, so the height of a bar means nothing
+    // without saying what the full height stands for.
+    if FShowBasal and (Length(FBasalProfile) > 0) then
+      DrawKeyEntry(Format('%s (0−%s U/hr)',
+        [RS_HISTORY_GRAPH_KEY_BASAL, FormatFloat('0.0##', FMaxBasal)]),
+        RGBToColor(120,170,255));
     if FShowBolus and (Length(FBoluses) > 0) then
     begin
       DrawKeyEntry(RS_HISTORY_GRAPH_KEY_BOLUS, BolusColor);
@@ -1477,10 +1491,31 @@ begin
   InvalidateBackground;
 end;
 
-procedure TfHistoryGraph.SetBasalProfile(const profile: TBasalProfile; const maxBasal: single = 3.0);
+procedure TfHistoryGraph.SetBasalProfile(const profile: TBasalProfile; const maxBasal: single);
+var
+  i: integer;
+  peak: single;
 begin
   FBasalProfile := Copy(profile);
-  FMaxBasal := maxBasal;
+
+  if maxBasal > 0 then
+    FMaxBasal := maxBasal
+  else
+  begin
+    // Scale to the profile's own peak, the way the bolus stems scale to the
+    // largest dose in view. A fixed ceiling cannot suit both ends of the range
+    // it has to cover: against 3 U/hr a 0.4 U/hr day is a flat sliver with no
+    // readable shape, and every rate at or above the ceiling draws at full
+    // height, so a 3 and a 6 look identical.
+    peak := 0;
+    for i := 0 to High(FBasalProfile) do
+      if FBasalProfile[i].value > peak then
+        peak := FBasalProfile[i].value;
+    // Headroom keeps the tallest bar off the top edge of the strip, and the
+    // floor stops an all-zero profile dividing the height by nothing.
+    FMaxBasal := Max(peak * 1.15, 0.1);
+  end;
+
   InvalidateBackground;
   Invalidate;
 end;
