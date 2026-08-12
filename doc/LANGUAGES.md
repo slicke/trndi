@@ -116,6 +116,12 @@ It lists every resource string in the current checkout that never reached the `.
 then reports translated/fuzzy/untranslated counts per catalog. It is read-only — it
 never writes to `lang/`.
 
+Its exit status covers the `.po` validation only: a `msgfmt` failure fails the target,
+a missing-from-`.pot` listing does not. That listing is advisory — which resource files
+a checkout has depends on the platform and build mode that last compiled, so it is
+routinely non-empty for reasons no target can fix (see the last section). Read it, and
+add what genuinely belongs in the catalogs by hand.
+
 Design-time placeholders (the `?` help buttons, captions still equal to their component
 name, numeric mock-ups) are counted but not listed; pass `LANG_ALL=1` / `-all` to see
 them. The `.po` half needs `msgfmt` from gettext, which Windows does not ship — without
