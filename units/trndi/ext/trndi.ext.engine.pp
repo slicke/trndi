@@ -237,8 +237,10 @@ private
   procedure DrainDeadTimers;
 
     {** Drain the QuickJS job queue (Promise reactions/microtasks) right now
-        instead of waiting for the next OnJSTimer tick. }
-  procedure PumpJobs;
+        instead of waiting for the next OnJSTimer tick. Returns False when the
+        drain hit its budget with jobs still queued; callers that only want the
+        queue advanced can ignore the result. }
+  function PumpJobs: boolean;
 
     {** Show a UX dialog and return the button pressed.
 
@@ -3118,19 +3120,15 @@ end;
     on as the safety net for jobs queued outside those paths. Rejection
     reporting stays in OnJSTimer: FlushPendingRejections opens modal dialogs,
     which must not appear beneath an arbitrary JS call frame.
-    JS_ExecutePendingJob writes the context that handled the job into its
-    second arg, so we feed it a local — passing &FContext would overwrite the
-    admin context with whichever ext ctx ran the job. }
-procedure TTrndiExtEngine.PumpJobs;
-var
-  runCtx: JSContext;
+    The loop itself is JS_DrainPendingJobs in the binding, so this pump and the
+    one in trndi.ext.promise share an implementation and a budget; see it for
+    why the drain is bounded. }
+function TTrndiExtEngine.PumpJobs: boolean;
 begin
+  Result := true;
   if IsExtShuttingDown or (FRuntime = nil) then
     Exit;
-  runCtx := FContext;
-  while JS_IsJobPending(FRuntime) do
-    if JS_ExecutePendingJob(FRuntime, @runCtx) <= 0 then
-      Break;
+  Result := DrainPendingJobs(FContext);
 end;
 
 {** Pump the QuickJS job queue (Promises/microtasks) on each timer tick. }
@@ -3142,10 +3140,15 @@ begin
   // Dispose timers retired since the last tick (never while one is firing).
   DrainDeadTimers;
 
-  PumpJobs;
-
-  // Rejections that survived a full job-queue drain are genuinely unhandled.
-  FlushPendingRejections;
+  // Rejections that survived a full job-queue drain are genuinely unhandled --
+  // but only a full one. A budget-truncated pump leaves jobs queued, and one of
+  // them may be the .catch() that handles a rejection already on the pending
+  // list, so reporting now would open a modal alert for a rejection that is
+  // about to be handled. The next tick pumps again and reports it then if it
+  // survives; a runaway chain that truncates every tick is ended by the
+  // watchdog, after which the queue empties and reporting resumes.
+  if PumpJobs then
+    FlushPendingRejections;
 end;
 
 procedure TTrndiExtEngine.NoteRejection(key: UInt64; const msg: string);

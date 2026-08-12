@@ -388,7 +388,9 @@ switch ($firstArg) {
         Write-Host ("Resource strings in this checkout: {0}   entries in {1}: {2}" -f $pairs.Count, $pot, $inPot.Count)
         Write-Host ""
 
-        $all = $args -contains '-all' -or $env:LANG_ALL
+        # $extraArgs, not $args: the param() block above takes every argument
+        # into $MakeArgs, which leaves $args permanently empty.
+        $all = $extraArgs -contains '-all' -or $env:LANG_ALL
         $skipped = 0; $shown = 0
         foreach ($k in ($pairs.Keys | Where-Object { -not $inPot.Contains($_) } | Sort-Object)) {
             $v = $pairs[$k]

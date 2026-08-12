@@ -364,6 +364,11 @@ begin
   cbCust := TCheckBox.Create(nil);
   cbCustRange := TCheckBox.Create(nil);
   cbPredictions := TCheckBox.Create(nil);
+  cbPredictDots := TCheckBox.Create(nil);
+  cbRotatingArrow := TCheckBox.Create(nil);
+  cbBolusOverlay := TCheckBox.Create(nil);
+  cbBolusOverlayAuto := TCheckBox.Create(nil);
+  cbCarbOverlay := TCheckBox.Create(nil);
   cbWebAPI := TCheckBox.Create(nil);
   cbAutoStart := TCheckBox.Create(nil);
   cbBadgeTrend := TCheckBox.Create(nil);
@@ -421,6 +426,9 @@ begin
   cbFlashPerfect := TCheckBox.Create(nil);
   cbAlertHiLo := TCheckBox.Create(nil);
   cbAlertMissing := TCheckBox.Create(nil);
+  cbAlertReservoir := TCheckBox.Create(nil);
+  cbAlertSensor := TCheckBox.Create(nil);
+  cbAlertBattery := TCheckBox.Create(nil);
   spAlertDurHi := TSpinEdit.Create;
   spAlertDurLo := TSpinEdit.Create;
   spAlertDurUrg := TSpinEdit.Create;
@@ -507,6 +515,9 @@ begin
   spAlertDurUrg.Free;
   spAlertDurLo.Free;
   spAlertDurHi.Free;
+  cbAlertBattery.Free;
+  cbAlertSensor.Free;
+  cbAlertReservoir.Free;
   cbAlertMissing.Free;
   cbAlertHiLo.Free;
   cbShowSensorExpiry.Free;
@@ -562,6 +573,11 @@ begin
   cbBadgeTrend.Free;
   cbAutoStart.Free;
   cbWebAPI.Free;
+  cbCarbOverlay.Free;
+  cbBolusOverlayAuto.Free;
+  cbBolusOverlay.Free;
+  cbRotatingArrow.Free;
+  cbPredictDots.Free;
   cbPredictions.Free;
   cbCustRange.Free;
   cbCust.Free;

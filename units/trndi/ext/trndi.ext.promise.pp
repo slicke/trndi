@@ -110,6 +110,12 @@ function IsExtShuttingDown: boolean;
     reload paths wait until this drops to zero instead of a fixed delay. }
 function ActiveAsyncTaskCount: integer;
 
+{** Drain the runtime's pending Promise job queue, bounded by a small budget.
+    Returns False when the budget stopped the drain with jobs still queued, so
+    the caller knows the queue is not empty; True when it emptied (or a job
+    failed, which ends the drain the way it always did). }
+function DrainPendingJobs(ctx: JSContext): boolean;
+
 const
   {** Index of the Promise resolve function in @code(JSDoubleVal). }
 JprResolve = 0;
@@ -276,21 +282,17 @@ end;
 
 {** Drain the runtime's pending job queue. This unit sits below the engine
     (which owns the 50ms fallback pump), so it drains via the binding alone.
-    JS_ExecutePendingJob needs a real variable for its context out-param. }
-procedure DrainPendingJobs(ctx: JSContext);
-var
-  rt: JSRuntime;
-  runCtx: JSContext;
+
+    The loop and its budget live in the binding (JS_DrainPendingJobs) so this
+    pump and the engine's share one implementation; all this adds is the
+    shutdown guard. The early exits report True because they leave nothing
+    un-run of their own. }
+function DrainPendingJobs(ctx: JSContext): boolean;
 begin
+  Result := true;
   if (ctx = nil) or IsExtShuttingDown then
     Exit;
-  rt := JS_GetRuntime(ctx);
-  if rt = nil then
-    Exit;
-  runCtx := ctx;
-  while JS_IsJobPending(rt) do
-    if JS_ExecutePendingJob(rt, @runCtx) <= 0 then
-      Break;
+  Result := JS_DrainPendingJobs(JS_GetRuntime(ctx), ctx);
 end;
 
 {** Resolve/reject the promise from FSuccess/FResult and free the captured

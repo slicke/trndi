@@ -29,13 +29,38 @@ LCLIntf;
 // Color utility functions
 function DarkenColor(originalColor: TColor; factor: double = 0.8): TColor;
 function LightenColor(originalColor: TColor; factor: double = 0.8): TColor;
+{** WCAG relative luminance of @code(color): 0 for black, 1 for white. Shared
+    by @link(IsLightColor) and @link(ContrastRatio) so the gamma math lives in
+    exactly one place. }
 function RelativeLuminance(color: TColor): double;
 function IsLightColor(bgColor: TColor): boolean;
+{** How much colour @code(color) carries, in channel units: 0 for any grey,
+    255 for a pure hue at full brightness. Deliberately not HSV saturation,
+    which is scale-invariant and so rates a near-black maroon above a bright
+    pink. }
 function ColorChroma(color: TColor): integer;
+{** Straight-line distance between two colours in RGB space: 0 (identical) to
+    441 (black to white). Argument order does not matter. Answers "would anyone
+    take these for the same colour", which @link(ContrastRatio) — a question
+    about luminance alone — cannot. }
 function ColorDistance(colorA, colorB: TColor): integer;
+{** WCAG contrast ratio between two colours: 1.0 (identical) to 21.0 (black on
+    white). Argument order does not matter. }
 function ContrastRatio(colorA, colorB: TColor): double;
+{** Decompose @code(color) into OKLCh, the polar form of Björn Ottosson's
+    OKLab. @code(L) is perceptual lightness (0..1), @code(C) chroma (0 for
+    grey, ~0.32 at the most saturated sRGB corner) and @code(H) the hue angle
+    in radians. }
 procedure ColorToOKLCh(color: TColor; out L, C, H: double);
+{** Realize an OKLCh colour in sRGB. Hue and lightness are honoured exactly;
+    chroma is kept as high as the gamut allows and reduced only when
+    @code(L), @code(C), @code(H) falls outside sRGB. @code(L) at 0 and 1 come
+    out as pure black and white. }
 function OKLChToColor(L, C, H: double): TColor;
+{** Lift @code(foreground) away from @code(background) along the OKLCh
+    lightness axis until it reaches @code(minRatio) contrast, and no further,
+    so the colour stays recognisable rather than washing out. Returns the most
+    separated candidate found when no direction reaches the target. }
 function EnsureContrast(foreground, background: TColor;
   minRatio: double = 3.0): TColor;
 function BlendColors(foreground, background: TColor; alpha: double = 0.5): TColor;
@@ -93,8 +118,6 @@ begin
   Result := RGB(r, g, b);
 end;
 
-// WCAG relative luminance (0 = black, 1 = white). Shared by IsLightColor and
-// ContrastRatio so the gamma math lives in exactly one place.
 function RelativeLuminance(color: TColor): double;
 var
   rgb: array[0..2] of double;
@@ -160,8 +183,6 @@ begin
     Sqr(GetGValue(a) - GetGValue(b)) + Sqr(GetBValue(a) - GetBValue(b))));
 end;
 
-// WCAG contrast ratio, 1.0 (identical) .. 21.0 (black on white). Order of the
-// arguments does not matter.
 function ContrastRatio(colorA, colorB: TColor): double;
 var
   lighter, darker, tmp: double;

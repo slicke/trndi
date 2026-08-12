@@ -88,6 +88,8 @@ type
     procedure TestGetValueReferenceIsOwned;
     procedure TestModuleLoaderReturnsModuleDef;
     procedure TestPromiseJobsRun;
+    procedure TestJobPumpDrainsQueueFully;
+    procedure TestJobPumpBudgetStopsRunawayChain;
     procedure TestTopLevelAwaitPlainEvalIsSyntaxError;
     procedure TestTopLevelAwaitRunsWithAsyncFlag;
     procedure TestInterruptHandlerAbortsScript;
@@ -791,6 +793,87 @@ begin
   end;
 
   AssertEquals('then() should have run', '7', EvalToString('String(globalThis.done)'));
+end;
+
+procedure TQuickJSBindingTests.TestJobPumpDrainsQueueFully;
+var
+  v: JSValue;
+begin
+  // The common case: an ordinary chain is nowhere near the drain budget, so one
+  // pump must empty the queue and report a full drain. The engine's OnJSTimer
+  // only reports unhandled rejections when this says True, so a budget that
+  // truncated normal work would also silence rejection reporting.
+  v := JS_Eval(FContext,
+    'globalThis.steps = 0;' +
+    'Promise.resolve().then(function () { globalThis.steps++; })' +
+    '  .then(function () { globalThis.steps++; })' +
+    '  .then(function () { globalThis.steps++; });',
+    'test.js', JS_EVAL_TYPE_GLOBAL);
+  try
+    AssertFalse('unexpected exception', JS_IsException(v));
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+
+  AssertTrue('the drain should report the queue emptied',
+    JS_DrainPendingJobs(FRuntime, FContext));
+  AssertFalse('no job should remain queued', JS_IsJobPending(FRuntime));
+  AssertEquals('every reaction should have run', '3',
+    EvalToString('String(globalThis.steps)'));
+end;
+
+procedure TQuickJSBindingTests.TestJobPumpBudgetStopsRunawayChain;
+var
+  v: JSValue;
+  startedAt: QWord;
+  drained: boolean;
+  ranJobs: integer;
+begin
+  // A reaction that re-queues itself keeps JS_IsJobPending true forever, so an
+  // unbounded drain never returns and the main thread sits in it until the
+  // engine's watchdog aborts the script - ten seconds of frozen UI. The budget
+  // is what makes this terminate. Note that a regression here hangs the test
+  // rather than failing it, because that is precisely the defect.
+  v := JS_Eval(FContext,
+    'globalThis.jobRuns = 0;' +
+    'globalThis.stopChain = false;' +
+    'function chain() {' +
+    '  Promise.resolve().then(function () {' +
+    '    globalThis.jobRuns++;' +
+    '    if (!globalThis.stopChain) chain();' +
+    '  });' +
+    '}' +
+    'chain();',
+    'test.js', JS_EVAL_TYPE_GLOBAL);
+  try
+    AssertFalse('unexpected exception', JS_IsException(v));
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+
+  startedAt := GetTickCount64;
+  drained := JS_DrainPendingJobs(FRuntime, FContext);
+
+  AssertFalse('the drain should report it stopped short', drained);
+  AssertTrue('the runaway chain should still have jobs queued',
+    JS_IsJobPending(FRuntime));
+  // Generous: the point is that it returned at all, not how fast.
+  AssertTrue('the drain should return promptly, not run to the watchdog',
+    GetTickCount64 - startedAt < 5000);
+
+  ranJobs := StrToInt(EvalToString('String(globalThis.jobRuns)'));
+  AssertTrue('some jobs should have run, got ' + IntToStr(ranJobs), ranJobs > 0);
+  AssertTrue('the job bound should cap the pass, got ' + IntToStr(ranJobs),
+    ranJobs <= JS_PUMP_MAX_JOBS);
+
+  // Let the chain end, then drain for real: TearDown frees the runtime, and
+  // leaving a self-feeding queue behind would be a poor thing to hand it.
+  v := JS_Eval(FContext, 'globalThis.stopChain = true;', 'test.js',
+    JS_EVAL_TYPE_GLOBAL);
+  JS_FreeValue(FContext, v);
+  AssertTrue('the queue should empty once the chain stops',
+    JS_DrainPendingJobs(FRuntime, FContext));
+  AssertFalse('no job should remain queued', JS_IsJobPending(FRuntime));
 end;
 
 procedure TQuickJSBindingTests.TestTopLevelAwaitPlainEvalIsSyntaxError;
