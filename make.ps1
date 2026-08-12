@@ -357,6 +357,14 @@ switch ($firstArg) {
         # Audit lang/: which resource strings never reached the .pot, and how
         # complete each catalog is. Read-only. Mirrors 'make lang-check'.
         #
+        # The exit status reports the .po validation alone: a msgfmt failure
+        # fails the target, a missing-from-.pot listing does not. That list is
+        # advisory by design -- which .rsj/.lrj files a checkout has depends on
+        # the platform and build mode that last compiled (a No Ext build emits
+        # no TrndiExt strings, a Linux build no trndi.native.win ones), so it is
+        # routinely non-empty for reasons no target can fix. Keep this in step
+        # with the Makefile recipe, which exits the same way.
+        #
         # There is deliberately no target that *writes* lang/. updatepofiles
         # rebuilds the .pot as the union of the resource files handed to it and
         # prunes everything else, from the .pot and from every .po -- and the
@@ -374,7 +382,15 @@ switch ($firstArg) {
 
         # .rsj/.lrj are one JSON object per line; name is already the
         # 'unit.lowercaseident' key the .pot references with '#: '.
-        $rx = '"name":"([^"]*)","sourcebytes":\[[^\]]*\],"value":"([^"]*)"'
+        #
+        # Matched, not ConvertFrom-Json'd, because the value has to stay in its
+        # on-disk escaped form: FPC escapes UTF-8 *per byte*, so a decode turns
+        # the several \u escapes of one character into that many Latin-1 ones,
+        # and the placeholder rule below tests for raw \uXXXX runs.
+        # (?:[^"\\]|\\.)* is a JSON string body -- an escaped quote inside a
+        # value (the Nightscout setup HTML has several) no longer cuts the
+        # match short.
+        $rx = '"name":"((?:[^"\\]|\\.)*)","sourcebytes":\[[^\]]*\],"value":"((?:[^"\\]|\\.)*)"'
         $pairs = @{}
         foreach ($f in $res) {
             foreach ($m in [regex]::Matches((Get-Content -Raw $f.FullName), $rx)) {
