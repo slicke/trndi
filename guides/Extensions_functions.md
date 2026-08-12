@@ -137,6 +137,8 @@ console.push("message 2");
 ```
 Accumulates messages in an internal buffer without showing a popup. Use this when you want to collect multiple log messages and display them all at once with `console.logs()`.
 
+The buffer is shared by all loaded extensions (like a browser console shared by all scripts on a page); each entry is prefixed with the id of the extension that pushed it, e.g. `[my-extension] message 1`.
+
 **Parameters:**
 - Message(s) to add to the buffer (same as `console.log`)
 
@@ -156,6 +158,8 @@ console.logs();
 ```
 Displays all buffered messages (accumulated via `console.push()`) in a single popup, then clears the buffer. If no messages are buffered, displays "(no messages buffered)".
 
+Since the buffer is shared, this shows (and clears) messages from **every** loaded extension, each prefixed with its extension id — one chronological stream for debugging a whole setup.
+
 **Parameters:** none
 
 **Returns:** none
@@ -169,7 +173,7 @@ console.warn("Value looks off");
 console.info("Started");
 console.debug("state =", state);
 ```
-Web-style level logging. Unlike `console.log` (which opens a popup per call), these buffer the message with a level prefix — `[error] Something went wrong: ...` — exactly like `console.push()`, so a script that logs in a loop can't spam dialogs. Buffered messages are shown on the next `console.logs()`.
+Web-style level logging. Unlike `console.log` (which opens a popup per call), these buffer the message with a level prefix — `[my-extension] [error] Something went wrong: ...` — exactly like `console.push()`, so a script that logs in a loop can't spam dialogs. Buffered messages are shown on the next `console.logs()`.
 
 **Parameters:**
 - Message(s), concatenated with spaces (same as `console.push`)
