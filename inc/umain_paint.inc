@@ -495,7 +495,7 @@ function ValueToY(const Value: single): integer;
     cnv.Font.Height := -Max(11, Round(clientH * 0.022));
     cnv.Font.Color := textCol;
 
-    for k := Ceil(lo / step) to Floor(hi / step) do
+    for k := Math.Ceil(lo / step) to Math.Floor(hi / step) do
     begin
       v := k * step;
       y := ValueToY(v * BG_CONVERTIONS[mmol][un]);
@@ -508,7 +508,7 @@ function ValueToY(const Value: single): integer;
         txt := Format('%.1f', [v]);
       // Name the unit once, on the topmost line, so the scale is not just a
       // column of bare numbers.
-      if k = Floor(hi / step) then
+      if k = Math.Floor(hi / step) then
         txt := txt + ' ' + BG_UNIT_NAMES[un];
 
       tw := cnv.TextWidth(txt);
