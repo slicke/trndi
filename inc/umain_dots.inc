@@ -502,7 +502,9 @@ begin
 
   for i := 0 to 2 do
   begin
-    sw := Rect(ARect.Left + i * (swW + GAP), ARect.Top,
+    // Classes.Rect: on macOS the MacOSAll unit's QuickDraw Rect type shadows
+    // the RTL function, turning a bare Rect(a,b,c,d) into a failed typecast.
+    sw := Classes.Rect(ARect.Left + i * (swW + GAP), ARect.Top,
       ARect.Left + i * (swW + GAP) + swW, ARect.Top + swH);
     if i = 2 then // absorb the integer-division remainder
       sw.Right := ARect.Right;
@@ -603,9 +605,9 @@ procedure SetPreviewFont(const AName: string; AHeight: integer;
   end;
 
 begin
-  AZones.ValRect := Rect(0, 0, 0, 0);
-  AZones.ArrowRect := Rect(0, 0, 0, 0);
-  AZones.AgoRect := Rect(0, 0, 0, 0);
+  AZones.ValRect := Classes.Rect(0, 0, 0, 0);
+  AZones.ArrowRect := Classes.Rect(0, 0, 0, 0);
+  AZones.AgoRect := Classes.Rect(0, 0, 0, 0);
 
   w := ARect.Width;
   h := ARect.Height;
@@ -739,9 +741,9 @@ begin
   // band in the middle, arrow band below it. The glyph and the number overlap
   // visually (as on the live window), so the arrow's target is the lower part
   // of the glyph, clear of the digits.
-  AZones.AgoRect := Rect(0, 0, w div 2, h div 5);
-  AZones.ValRect := Rect(0, h div 5, w, (h * 3) div 5);
-  AZones.ArrowRect := Rect(0, (h * 3) div 5, w, (h * 9) div 10);
+  AZones.AgoRect := Classes.Rect(0, 0, w div 2, h div 5);
+  AZones.ValRect := Classes.Rect(0, h div 5, w, (h * 3) div 5);
+  AZones.ArrowRect := Classes.Rect(0, (h * 3) div 5, w, (h * 9) div 10);
 end;
 
 procedure TfBG.BuildDotWindowMenu;
