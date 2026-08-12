@@ -21,6 +21,7 @@ object fBG: TfBG
   OnKeyPress = FormKeyPress
   OnMouseLeave = FormMouseLeave
   OnMouseMove = FormMouseMove
+  OnMouseWheel = FormMouseWheel
   OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow

@@ -498,6 +498,8 @@ TfBG = class(TForm)
   procedure speakReading;
   procedure FormMouseLeave({%H-}Sender: TObject);
   procedure FormMouseMove(Sender: TObject;{%H-}Shift: TShiftState; X, Y: integer);
+  procedure FormMouseWheel({%H-}Sender: TObject; {%H-}Shift: TShiftState;
+    WheelDelta: integer; {%H-}MousePos: TPoint; var Handled: boolean);
   procedure FormResize({%H-}Sender: TObject);
   {** Called when the form becomes visible after creation; performs final
       placement operations and triggers initial UI refreshes once all controls
@@ -640,6 +642,14 @@ private
   tKioskApply: TTimer;        // One-shot deferred kiosk activation — entering
                               // fullscreen inside FormShow itself fights the
                               // WM's initial map/placement on some platforms
+  tDotScroll: TTimer;         // Debounce for wheel-driven dot-count changes —
+                              // ApplyTrendDotCount rebuilds every dot control,
+                              // far too heavy to run once per wheel notch.
+                              // Runtime-created on first wheel event.
+  FDotScrollAccum: integer;   // Wheel delta accumulated toward a full ±120
+                              // notch (touchpads send many sub-notch deltas)
+  FDotScrollTarget: integer;  // Pending dot count while the debounce runs
+                              // (0 = nothing pending)
   lClock: TLabel;             // Persistent clock overlay: time + reading shown
                               // at once while fullscreen with main.clock on
                               // (windowed mode keeps the tClock alternation).
@@ -706,6 +716,7 @@ private
   procedure CheckPumpBattery;
   procedure tUpdateCheckTimer(Sender: TObject);
   procedure tKioskApplyTimer(Sender: TObject);
+  procedure tDotScrollTimer({%H-}Sender: TObject);
   procedure tClockOverlayTimer(Sender: TObject);
   {** Show/hide/refresh the persistent fullscreen clock. Cheap to call often:
       it only re-renders on a minute flip, on first show, or when ForceLayout

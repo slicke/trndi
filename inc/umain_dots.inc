@@ -848,6 +848,60 @@ begin
   AdjustGraph;
 end;
 
+// Wheel-driven dot-count adjustment: each notch up adds a trend dot, each
+// notch down removes one. ApplyTrendDotCount tears down and rebuilds every
+// dot control, so the apply is debounced through tDotScroll — a fast flick
+// lands as one rebuild at the final count instead of one per notch. Wired as
+// fBG.OnMouseWheel; the LCL bubbles wheel events unhandled by the child
+// labels/panels up to the form, so scrolling works anywhere over the window.
+procedure TfBG.FormMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: integer; MousePos: TPoint; var Handled: boolean);
+const
+  WHEEL_NOTCH = 120; // Standard delta per detent; touchpads send fractions
+  DEBOUNCE_MS = 200;
+var
+  steps: integer;
+begin
+  Handled := true;
+
+  // Accumulate sub-notch deltas (smooth-scrolling touchpads) and pull out the
+  // whole notches gathered so far. FPC's div truncates toward zero, so the
+  // arithmetic is symmetric in both scroll directions.
+  Inc(FDotScrollAccum, WheelDelta);
+  steps := FDotScrollAccum div WHEEL_NOTCH;
+  if steps = 0 then
+    Exit;
+  Dec(FDotScrollAccum, steps * WHEEL_NOTCH);
+
+  if FDotScrollTarget = 0 then
+    FDotScrollTarget := ACTIVE_DOTS;
+  FDotScrollTarget := EnsureRange(FDotScrollTarget + steps, 1, MAX_DOT_COUNT);
+
+  if tDotScroll = nil then
+  begin
+    tDotScroll := TTimer.Create(Self);
+    tDotScroll.Enabled := false;
+    tDotScroll.Interval := DEBOUNCE_MS;
+    tDotScroll.OnTimer := @tDotScrollTimer;
+  end;
+  // Restart the debounce window on every notch
+  tDotScroll.Enabled := false;
+  tDotScroll.Enabled := true;
+end;
+
+// Debounce expiry: apply the accumulated wheel target in a single rebuild.
+procedure TfBG.tDotScrollTimer(Sender: TObject);
+var
+  newCount: integer;
+begin
+  tDotScroll.Enabled := false;
+  newCount := FDotScrollTarget;
+  FDotScrollTarget := 0;
+  FDotScrollAccum := 0;
+  if (newCount > 0) and (newCount <> ACTIVE_DOTS) then
+    ApplyTrendDotCount(newCount);
+end;
+
 // Keep the graph honest for the duration of an outage. Dot slots are anchored
 // to wall-clock INTERVAL_MINUTES boundaries, so with no new reading arriving the
 // trace has to march left and leave the newest slots empty — otherwise the last
