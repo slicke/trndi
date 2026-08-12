@@ -448,8 +448,13 @@ begin
   end
   else
   begin
-    range := 0;
-    lTir.Caption := range.toString + '-%';
+    // No readings fell inside the TIR window: show a placeholder rather than a
+    // number. -1 marks "nothing to measure" so the hint below stays empty —
+    // the hint carries the percentage that UpdateUIColors (and the settings
+    // dialog's Display preview) tint good/bad by, and a stored 0 made an empty
+    // window indistinguishable from a genuine, alarming 0% in range.
+    range := -1;
+    lTir.Caption := '--%';
   end;
 
   if native.GetBoolSetting('tir.displaymean', false) then
@@ -459,7 +464,10 @@ begin
       lTir.Caption := meanStr + ' | ' + lTir.Caption;
   end;
 
-  lTir.Hint := range.toString;
+  if range >= 0 then
+    lTir.Hint := range.toString
+  else
+    lTir.Hint := '';
   lTir.Visible := true;
 end;
 
