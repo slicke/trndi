@@ -406,6 +406,13 @@ const
   CustomAlphaFallback  = 32;   // was 64
   CustomPigmentDarken  = 0.8;  // pre-darken applied to tir_custom_bg
   BandEdgeGradientPx   = 3;
+  // Candidate spacings for the guide-line scale, per display unit, coarsening
+  // left to right; the first one that clears the minimum gap wins. On a normal
+  // window that lands on 5 mmol/L (the 5/10/15/20 ladder this always drew) and
+  // on the mg/dL equivalent 100/200/300/400 -- the old code drew the mmol
+  // values regardless of unit and labelled them "5".."20" on a mg/dL display.
+  GUIDE_STEPS: array[BGUnit, 0..2] of single =
+    ((2.5, 5, 10), (50, 100, 200));
 var
   loY, hiY, rangeLoY, rangeHiY: integer;
   cnv: TCanvas;
@@ -416,11 +423,6 @@ var
   clientH: integer;
   dotHeight: integer;
   bands: array of TRangeBand;
-
-  debugY: integer;
-  debugValue: single;
-  debugText: string;
-  i: integer;
 
 function ValueToY(const Value: single): integer;
   var
@@ -439,14 +441,92 @@ function ValueToY(const Value: single): integer;
     Result := (clientH - Position) - 1;
   end;
 
+  // "Show Guide Lines" (service menu): a light scale so a dot's height can be
+  // read back as a value. Unlike the threshold bands this is a plain reading
+  // aid, so it is drawn in the user's display unit, it survives high contrast
+  // and range painting being off, and it is anchored on the dot *centre*
+  // (ValueToY) rather than the dot bottom the threshold lines use.
+  procedure PaintGuideLines;
+  const
+    LabelPad = 6;
+  var
+    lo, hi, step, v: single;
+    pxPerUnit: double;
+    k, y, tw, th, lineEnd, labelX, minGapPx: integer;
+    txt: string;
+    ink, lineCol, textCol: TColor;
+  begin
+    if (not DOT_LINES) or (clientH < 80) or (Self.ClientWidth < 40) then
+      Exit;
+
+    lo := BG_API_MIN * BG_CONVERTIONS[un][mmol];
+    hi := BG_API_MAX * BG_CONVERTIONS[un][mmol];
+    // ValueToY spreads the value range over the middle 80% of clientH.
+    pxPerUnit := (clientH - 2 * Round(clientH * 0.1)) / (hi - lo);
+    // At most ~8 lines, and never closer than 30px on a small window: this is
+    // a reading aid, not graph paper.
+    minGapPx := Max(30, clientH div 8);
+
+    step := GUIDE_STEPS[un][High(GUIDE_STEPS[un])];
+    for k := Low(GUIDE_STEPS[un]) to High(GUIDE_STEPS[un]) do
+      if GUIDE_STEPS[un][k] * pxPerUnit >= minGapPx then
+      begin
+        step := GUIDE_STEPS[un][k];
+        Break;
+      end;
+
+    // The form colour swings from a calm in-range tint to an alarm red, so the
+    // ink is picked by luminance instead of tinting the background colour --
+    // the old LightenColor(fBG.Color) guides washed out on the darker alarms.
+    if IsLightColor(Self.Color) then
+      ink := clBlack
+    else
+      ink := clWhite;
+    lineCol := BlendColors(ink, Self.Color, 0.20);
+    textCol := BlendColors(ink, Self.Color, 0.55);
+
+    cnv.Brush.Style := bsClear;
+    cnv.Pen.Style := psDot;
+    cnv.Pen.Width := 1;
+    cnv.Pen.Color := lineCol;
+    cnv.Font.Style := [];
+    // Negative Height is a pixel size, so the labels scale with the window
+    // (and thus with DPI) instead of staying 8pt on a 4K kiosk screen.
+    cnv.Font.Height := -Max(11, Round(clientH * 0.022));
+    cnv.Font.Color := textCol;
+
+    for k := Ceil(lo / step) to Floor(hi / step) do
+    begin
+      v := k * step;
+      y := ValueToY(v * BG_CONVERTIONS[mmol][un]);
+      if (y < 0) or (y >= clientH) then
+        Continue;
+
+      if Frac(step) = 0 then
+        txt := Format('%.0f', [v])
+      else
+        txt := Format('%.1f', [v]);
+      // Name the unit once, on the topmost line, so the scale is not just a
+      // column of bare numbers.
+      if k = Floor(hi / step) then
+        txt := txt + ' ' + BG_UNIT_NAMES[un];
+
+      tw := cnv.TextWidth(txt);
+      th := cnv.TextHeight(txt);
+      labelX := Self.ClientWidth - tw - LabelPad;
+      // Break the line before the label instead of striking through it.
+      lineEnd := labelX - LabelPad;
+      if lineEnd < Self.ClientWidth div 3 then
+        lineEnd := Self.ClientWidth               // too narrow to label
+      else
+        cnv.TextOut(labelX, y - th div 2, txt);
+      cnv.MoveTo(0, y);
+      cnv.LineTo(lineEnd, y);
+    end;
+  end;
+
 begin
-  if native.getboolsetting('main.high_contrast', false) then
-    Exit;
-
   if not Assigned(Self) then
-    Exit;
-
-  if not (PaintRange or PaintRangeCGMRange) then
     Exit;
 
   cnv := Self.Canvas;
@@ -456,15 +536,25 @@ begin
   else
     clientH := Self.ClientHeight;
 
+  // High contrast drops the range overlay, and the range overlay can be turned
+  // off entirely -- but the guide lines are their own menu item, so they still
+  // get drawn.
+  if native.getboolsetting('main.high_contrast', false) or
+    not (PaintRange or PaintRangeCGMRange) then
+  begin
+    PaintGuideLines;
+    Exit;
+  end;
+
   dotHeight := 0;
   if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) then
     // Drawn dots are sized as a square in ResizeDot; the control's Height
     // *is* the diameter, so we can read it directly.
     dotHeight := Max(TrendDots[1].Height, TrendDots[1].Font.Size);
 
-  // ValueToY returns the dot *center*; threshold lines, band edges, and the
-  // DOT_LINES debug guides all need to sit at the dot bottom so a dot whose
-  // value equals the threshold rests flush against the line/band edge.
+  // ValueToY returns the dot *center*; threshold lines and band edges need to
+  // sit at the dot bottom so a dot whose value equals the threshold rests
+  // flush against the line/band edge.
   rowOffset := (dotHeight div 2) + DOT_OFFSET_RANGE;
 
   // Skip threshold/range bands until the first fetch has landed — drawing
@@ -641,33 +731,8 @@ begin
     end;
   end;
 
-  if DOT_LINES then
-  begin
-    cnv.Brush.Style := bsClear;
-    cnv.Pen.Style := psDot;
-    cnv.Pen.Width := 1;
-    cnv.Pen.Color := LightenColor(fBG.Color, 0.3);
-    cnv.Font.Size := 8;
-    cnv.Font.Color := LightenColor(fBG.Color, 0.4);
-
-    for i := 1 to 4 do
-    begin
-      debugValue := i * 5.0;
-      if (debugValue >= BG_API_MIN) and (debugValue <= BG_API_MAX) then
-      begin
-        // Guidelines label where a dot of that value would sit; align with
-        // the dot centre (ValueToY) rather than the dot bottom that the
-        // threshold/band lines use.
-        debugY := ValueToY(debugValue);
-        cnv.MoveTo(0, debugY);
-        cnv.LineTo(Self.ClientWidth, debugY);
-        debugText := Format('%.0f', [debugValue]);
-        cnv.TextOut(Self.ClientWidth - cnv.TextWidth(debugText) - 5,
-          debugY - (cnv.TextHeight(debugText) div 2),
-          debugText);
-      end;
-    end;
-  end;
+  // Last, so the scale sits on top of the range bands rather than under them.
+  PaintGuideLines;
 end;
 
 procedure TfBG.pnOffReadingPaint(Sender: TObject);

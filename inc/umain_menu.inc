@@ -289,6 +289,9 @@ procedure TfBG.miGuidelinesClick(Sender: TObject);
 begin
   miGuidelines.Checked := not miGuidelines.Checked;
   DOT_LINES := miGuidelines.Checked;
+  // The lines are drawn by FormPaint, so without this the toggle does nothing
+  // visible until the next reading (or a resize) triggers a repaint.
+  Invalidate;
 end;
 
 procedure TfBG.miPredictClick(Sender: TObject);
