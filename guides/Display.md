@@ -53,6 +53,8 @@ Kiosk mode:
 - **Keeps the system awake**: on Linux it holds a `systemd-inhibit` idle/sleep lock and disables X11 screen blanking (`xset`) while running; on Windows and macOS the native power APIs are used. Both are released when Trndi exits.
 - **Skips the update popup** — an unattended display has nobody to click it away
 
+**Tip — clock:** enable *Clock* in Settings and a fullscreen Trndi shows the current time permanently at the top of the screen, next to the reading. (In a normal window the same setting instead alternates the big reading with the time every 20 seconds — on a bedside display you want both visible at once.)
+
 Everything else works as normal: the first-run setup, the right-click menu and Settings are all still available, so you can configure a fresh kiosk on the device itself. To leave fullscreen, use the right-click menu's *Full screen* toggle — keep-awake stays active until Trndi exits.
 
 To start Trndi in kiosk mode on login, add `--kiosk` to the `Exec=` line of an autostart entry, e.g. `~/.config/autostart/trndi.desktop`:

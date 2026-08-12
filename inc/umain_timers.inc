@@ -318,6 +318,11 @@ begin
     lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
   end;
 
+  // Catch-all activation for the fullscreen clock: covers fullscreen entered
+  // behind DoFullScreen's back (e.g. the macOS green button) and the setting
+  // being toggled elsewhere. Nearly free — the overlay's own minute gate
+  // swallows the call when nothing changed.
+  UpdateClockOverlay;
 end;
 
 procedure TfBG.tProgressTimer(Sender: TObject);
@@ -353,6 +358,88 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  UpdateClockOverlay
+  ------------------
+  The persistent fullscreen clock: time and reading visible at once, which is
+  what a wall/bedside display wants — the windowed alternation makes the
+  viewer wait out a 20 s cycle to see the time. Shown while main.clock is on
+  AND the form is fullscreen (however it got there: menu toggle, --kiosk,
+  double-click); windowed mode keeps the classic alternation.
+
+  Label and timer are created on first need and the timer only runs while the
+  overlay shows. A minute gate keeps the 1 s tick nearly free: the clockView
+  extension call and the ScaleLbl font search only run on a minute flip, on
+  first show, or when the caller says geometry changed (ForceLayout).
+------------------------------------------------------------------------------}
+procedure TfBG.UpdateClockOverlay(const ForceLayout: boolean);
+var
+  clockText: string;
+  {$ifdef TrndiExt}
+  ex: boolean;
+  {$endif}
+begin
+  if firstboot or FShuttingDown or (not Assigned(native)) then
+    Exit;
+
+  if not (native.GetBoolSetting('main.clock', false) and IsFullscreenNow) then
+  begin
+    if Assigned(lClock) then
+      lClock.Visible := false;
+    if Assigned(tClockOverlay) then
+      tClockOverlay.Enabled := false;
+    Exit;
+  end;
+
+  if not Assigned(lClock) then
+  begin
+    lClock := TLabel.Create(Self);
+    lClock.Name := 'lClock'; // gives it a ux.labels.lclock.scale hook
+    lClock.Parent := Self;
+    lClock.Transparent := true;
+    lClock.PopupMenu := pmSettings; // right-click keeps working on the clock
+  end;
+  if not Assigned(tClockOverlay) then
+  begin
+    tClockOverlay := TTimer.Create(Self);
+    tClockOverlay.Interval := 1000;
+    tClockOverlay.OnTimer := @tClockOverlayTimer;
+  end;
+  tClockOverlay.Enabled := true;
+
+  if lClock.Visible and (FClockOverlayMinute = MinuteOf(Now)) and
+    (not ForceLayout) then
+    Exit;
+  FClockOverlayMinute := MinuteOf(Now);
+
+  // Same text pipeline as the alternating clock below, so a clockView
+  // extension styles the overlay and the flash alike.
+  {$ifdef TrndiExt}
+  clockText := callFuncWithBGReadings('clockView', [DateTimeToStr(Now)], ex);
+  if not ex then
+    clockText := FormatDateTime(FormatSettings.ShortTimeFormat, Now);
+  {$else}
+  clockText := FormatDateTime(FormatSettings.ShortTimeFormat, Now);
+  {$endif}
+  lClock.Caption := clockText;
+
+  // Top-center band, same strip lAgo (left) and lTir (right) occupy; the
+  // font mirrors lAgo so UpdateUIColors' color choices carry over.
+  lClock.Width := ClientWidth div 4;
+  lClock.Height := ClientHeight div 9;
+  lClock.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
+  lClock.Font.Assign(lAgo.Font);
+  lClock.Visible := true;
+  ScaleLbl(lClock, taCenter, tlCenter, true);
+  lClock.Left := (ClientWidth - lClock.Width) div 2;
+  lClock.BringToFront;
+end;
+
+procedure TfBG.tClockOverlayTimer(Sender: TObject);
+begin
+  UpdateClockOverlay;
+end;
+
 procedure TfBG.tClockTimer(Sender: TObject);
 var
   clockText: string;
@@ -361,6 +448,21 @@ var
   {$endif}
 begin
   tClock.Enabled := false;
+  // While the fullscreen overlay shows the time permanently, flashing the
+  // hero over to the clock would just hide the glucose for 5 s per cycle.
+  // Normalize back to "reading shown" if the flash was mid-cycle when the
+  // overlay appeared, and idle until the overlay goes away again.
+  if Assigned(lClock) and lClock.Visible then
+  begin
+    if tClock.Interval = clockDisplay then
+    begin
+      lVal.Caption := lVal.Hint;
+      tClock.Interval := clockInterval;
+      lArrow.Visible := true;
+    end;
+    tClock.Enabled := true;
+    Exit;
+  end;
   if tClock.Interval <> clockDisplay then
   begin
     {$ifdef TrndiExt}
@@ -654,6 +756,10 @@ begin
     lPredict.Left := ClientWidth - lPredict.Width - 5;
   end;
   nextProgressChange;
+
+  // Keep the fullscreen clock's band and font in step with the labels that
+  // were just re-laid out (it mirrors lAgo's font).
+  UpdateClockOverlay(true);
 end;
 
 procedure TfBG.UpdateTrendDots;
@@ -938,7 +1044,7 @@ begin
   end;
   if FShuttingDown then
     Exit;
-  if not ((BorderStyle = bsNone) and (WindowState = wsFullScreen)) then
+  if not IsFullscreenNow then
     DoFullScreen;
   if Assigned(native) then
     native.SetKeepAwake(true);
