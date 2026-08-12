@@ -60,6 +60,9 @@
  * - 2026-08-12: On Windows the dark-mode call moved from FormCreate to a
  *   DoShow override so opening Settings no longer builds the window's
  *   control tree twice (self.Handle in FormCreate forced early creation).
+ * - 2026-08-12: The Windows dark-mode call was dropped entirely (and with it
+ *   the DoShow override, so the dialog no longer asks for its handle at all).
+ *   It only darkened the DWM caption while the themed body stayed light.
  *)
 
 unit uconf;
@@ -650,12 +653,6 @@ private
   {** Show/hide the browser-login button and username field for the current
       backend, based on selectedAPIClass.supportsWebLogin. }
   procedure updateWebLoginUI;
-{$ifdef X_WIN}
-protected
-  {** Applies dark mode. Deferred from FormCreate on Windows because it needs
-      the window handle — see the implementation note. }
-  procedure DoShow; override;
-{$endif}
 public
   chroma: TRazerChromaBase;
   {** Saved TTS voice selection, applied by EnsureTTSVoices once the voice
@@ -2724,26 +2721,6 @@ begin
   // close. If you want immediate preview, close the settings dialog.
 end;
 
-{$ifdef X_WIN}
-{------------------------------------------------------------------------------
-  DoShow (Windows)
-  ----------------
-  Apply dark mode here rather than in FormCreate: setDarkMode needs the
-  window handle, and asking for self.Handle in FormCreate forced the whole
-  16-tab control tree to materialize inside TfConf.Create — only to be torn
-  down and rebuilt when ShowModal's PopupParent assignment recreated the
-  window. That roughly doubled the time to open Settings and made every
-  settings load poke live Win32 controls. At DoShow the handle has just been
-  created for the actual show, so the cost is paid once.
- ------------------------------------------------------------------------------}
-procedure TfConf.DoShow;
-begin
-  if tnative.isDarkMode then
-    tnative.setDarkMode(self.Handle);
-  inherited DoShow;
-end;
-{$endif}
-
 procedure TfConf.FormCreate(Sender: TObject);
 var
   {$ifdef LCLGtk2}
@@ -2826,8 +2803,11 @@ begin
   {$endif}
   tnative := TrndiNative.Create;
   tnative.noFree := true;
-  // On Windows the dark-mode call needs self.Handle and is deferred to
-  // DoShow — see the note there. Elsewhere it is handle-free and cheap.
+  // Windows is deliberately excluded: setDarkMode there only darkens the DWM
+  // caption, and LCL/Win32 renders this dialog's buttons, check boxes, group
+  // boxes and tab headers through uxtheme, where Color/Font.Color never reach
+  // the painted text or glyph. A dark caption over a light body reads as a
+  // bug, so Settings stays light on Windows until the whole dialog can follow.
   {$ifndef X_WIN}
   if tnative.isDarkMode then
     tnative.setDarkMode;
