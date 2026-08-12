@@ -63,7 +63,8 @@ interface
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs, StrUtils,
 ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, trndi.native.base, trndi.native.async, FileUtil, Menus,
-libpascurl, DateUtils, ctypes, trndi.log;
+libpascurl, DateUtils, ctypes, trndi.log,
+Process; // TProcess field (kiosk keep-awake inhibitor child)
 
 type
   {!
@@ -82,6 +83,11 @@ protected
   FFlashValue: string;
   FFlashBaseColor: TColor;
   FFlashCycleMS: integer;
+    // Kiosk keep-awake state: the logind inhibition lives exactly as long as
+    // the `systemd-inhibit ... sleep infinity` child, and the xset flag
+    // remembers whether screen blanking was turned off so disable reverts it.
+  FInhibitProc: TProcess;
+  FXsetApplied: boolean;
   procedure FlashTimerTick(Sender: TObject);
     {** Resolve the INI/CFG file path with backward compatibility.
         Preference order: Lazarus app config, ~/.config/Trndi/trndi.ini, legacy ~/.config/Trndi.cfg }
@@ -182,6 +188,12 @@ public
       autostart spec. The file points Exec= at the current binary. }
   class function SetAutoStart(Enable: boolean): boolean; override;
 
+  {** Keep the system awake (kiosk mode): hold a systemd-logind idle/sleep
+      inhibition as a long-lived @code(systemd-inhibit) child, and turn off
+      X11 screen blanking/DPMS via @code(xset) while enabled. Both halves are
+      best-effort and skipped when their tool is missing. }
+  procedure SetKeepAwake(Enable: boolean); override;
+
     {** Triggers when the tray icon is clicked }
   procedure trayClick(Sender: TObject);
     {** Simple HTTP GET/POST via libcurl, with proxy-first / direct fallback. }
@@ -221,7 +233,7 @@ end;
 implementation
 
 uses
-Process, Types, LCLType;
+Types, LCLType;
 
 // Used by destructor; implemented later in this unit.
 procedure WriteTrndiCurrentValueCache(const Value: string); forward;
@@ -1376,8 +1388,98 @@ end;
   -------
   Clean up tray, badges, and INI store before inherited destructor.
  ------------------------------------------------------------------------------}
+{------------------------------------------------------------------------------
+  SetKeepAwake
+  ------------
+  Two mechanisms, each best-effort and skipped when its tool is missing:
+
+  - systemd-logind idle/sleep inhibition, held as a long-lived
+    `systemd-inhibit --what=idle:sleep ... sleep infinity` child. The lock's
+    lifetime is the child's lifetime, so however Trndi ends — including a
+    crash — the inhibition dies with it and can never wedge the system awake.
+  - X11 screen blanking and DPMS, which logind inhibition does not cover,
+    turned off with `xset s off -dpms` and reverted on disable. Skipped when
+    DISPLAY is unset; Wayland compositors honor the idle inhibition above.
+------------------------------------------------------------------------------}
+procedure TTrndiNativeLinux.SetKeepAwake(Enable: boolean);
+
+function RunXset(const argv: array of string): boolean;
+  var
+    p: TProcess;
+    exe, arg: string;
+  begin
+    Result := false;
+    exe := FindInPath('xset');
+    if (exe = '') or (GetEnvironmentVariable('DISPLAY') = '') then
+      Exit;
+    p := TProcess.Create(nil);
+    try
+      p.Executable := exe;
+      for arg in argv do
+        p.Parameters.Add(arg);
+      p.Options := [poWaitOnExit];
+      try
+        p.Execute;
+        Result := p.ExitStatus = 0;
+      except
+        // best-effort: a failing xset just leaves blanking to the OS
+      end;
+    finally
+      p.Free;
+    end;
+  end;
+
+var
+  exe: string;
+begin
+  if Enable then
+  begin
+    if not Assigned(FInhibitProc) then
+    begin
+      exe := FindInPath('systemd-inhibit');
+      if exe <> '' then
+      begin
+        FInhibitProc := TProcess.Create(nil);
+        FInhibitProc.Executable := exe;
+        FInhibitProc.Parameters.Add('--what=idle:sleep');
+        FInhibitProc.Parameters.Add('--who=Trndi');
+        FInhibitProc.Parameters.Add('--why=Kiosk mode');
+        FInhibitProc.Parameters.Add('--mode=block');
+        FInhibitProc.Parameters.Add('sleep');
+        FInhibitProc.Parameters.Add('infinity');
+        try
+          FInhibitProc.Execute;
+          TrndiDLog('SetKeepAwake: systemd-inhibit lock held');
+        except
+          FreeAndNil(FInhibitProc); // tool present but failed to start
+        end;
+      end;
+    end;
+    if RunXset(['s', 'off', '-dpms']) then
+      FXsetApplied := true;
+  end
+  else
+  begin
+    if Assigned(FInhibitProc) then
+    begin
+      FInhibitProc.Terminate(0);
+      FInhibitProc.WaitOnExit; // reap; exits immediately after the kill
+      FreeAndNil(FInhibitProc);
+      TrndiDLog('SetKeepAwake: systemd-inhibit lock released');
+    end;
+    if FXsetApplied then
+    begin
+      RunXset(['s', 'on', '+dpms']);
+      FXsetApplied := false;
+    end;
+  end;
+end;
+
 destructor TTrndiNativeLinux.Destroy;
 begin
+  // Release any keep-awake inhibition (kills the systemd-inhibit child and
+  // restores screen blanking). No-op when kiosk mode never engaged.
+  SetKeepAwake(false);
   // Only clear GNOME indicator cache on an explicit full shutdown (noFree=false).
   if not noFree then
   begin

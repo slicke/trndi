@@ -924,6 +924,27 @@ begin
   CheckForUpdates;
 end;
 
+// One-shot kiosk activation (--kiosk): enter fullscreen and hold the
+// platform's keep-awake inhibition. Runs shortly after FormShow so the WM has
+// finished mapping the window before DoFullScreen flips BorderStyle and
+// WindowState. DoFullScreen is a toggle, so the fullscreen check keeps a
+// double fire (or a window the WM already made fullscreen) from undoing it.
+procedure TfBG.tKioskApplyTimer(Sender: TObject);
+begin
+  if Assigned(tKioskApply) then
+  begin
+    tKioskApply.Enabled := false;
+    FreeAndNil(tKioskApply);
+  end;
+  if FShuttingDown then
+    Exit;
+  if not ((BorderStyle = bsNone) and (WindowState = wsFullScreen)) then
+    DoFullScreen;
+  if Assigned(native) then
+    native.SetKeepAwake(true);
+  TrndiDLog('Kiosk mode active: fullscreen + keep-awake');
+end;
+
 // Fires once after Application.Run has started pumping the message loop;
 // kicks off the very first async glucose fetch. Spawning the TThread from
 // inside FormCreate can leave the form's WM_PAINT queued behind a worker

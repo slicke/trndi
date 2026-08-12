@@ -37,6 +37,34 @@ sudo apt install -y \
   ## Done!
   You now have an always-on display
 
+# Kiosk mode
+For a dedicated display, start Trndi with the ```--kiosk``` flag:
+```bash
+trndi --kiosk
+```
+
+On macOS, pass the flag through `open` with `--args` (everything after it is handed to the app itself):
+```bash
+open -a Trndi --args --kiosk
+```
+
+Kiosk mode:
+- Starts **fullscreen** automatically (and hides the mouse cursor)
+- **Keeps the system awake**: on Linux it holds a `systemd-inhibit` idle/sleep lock and disables X11 screen blanking (`xset`) while running; on Windows and macOS the native power APIs are used. Both are released when Trndi exits.
+- **Skips the update popup** — an unattended display has nobody to click it away
+
+Everything else works as normal: the first-run setup, the right-click menu and Settings are all still available, so you can configure a fresh kiosk on the device itself. To leave fullscreen, use the right-click menu's *Full screen* toggle — keep-awake stays active until Trndi exits.
+
+To start Trndi in kiosk mode on login, add `--kiosk` to the `Exec=` line of an autostart entry, e.g. `~/.config/autostart/trndi.desktop`:
+```ini
+[Desktop Entry]
+Type=Application
+Name=Trndi
+Exec=/usr/bin/trndi --kiosk
+```
+
+> On Wayland sessions (e.g. labwc on newer Raspberry Pi OS) screen blanking is governed by the compositor; the idle inhibition covers most setups, but if your screen still blanks, check the compositor's idle settings.
+
 # My setup
 > This setup is overly advanced and is just provided as an example of what you can do
   ## Hardware
@@ -76,7 +104,7 @@ sudo apt install -y \
   ## Extra Notes
 
   ### Power saving
-  You should disable power saving so that the Pi won't enter sleep mode!
+  You should disable power saving so that the Pi won't enter sleep mode! Starting Trndi with ```--kiosk``` (see [Kiosk mode](#kiosk-mode)) does this for you while Trndi is running.
   ### LightDM Bug
   There's a bug in the current Raspberry Pi OS that makes lightdm fail. To fix it, edit ```/etc/lightdm/lightdm.conf```, locate the line:
 ```

@@ -634,6 +634,12 @@ private
                               // the first network attempt doesn't compete
                               // with the form's first WM_PAINT.
   FUpdateCheckScheduled: boolean;
+  FKioskMode: boolean;        // --kiosk on the command line: start fullscreen,
+                              // keep the system awake, skip the update popup
+  FKioskApplied: boolean;     // Fullscreen/keep-awake done (FormShow can rerun)
+  tKioskApply: TTimer;        // One-shot deferred kiosk activation — entering
+                              // fullscreen inside FormShow itself fights the
+                              // WM's initial map/placement on some platforms
   FUpdateCheckThread: TUpdateCheckThread;
   FUpdateCheckInFlight: boolean; // True while a TUpdateCheckThread is running.
                                  // Main-thread-only; gates the menu/keyboard
@@ -691,6 +697,7 @@ private
       down. No-op for backends that report no pump battery. }
   procedure CheckPumpBattery;
   procedure tUpdateCheckTimer(Sender: TObject);
+  procedure tKioskApplyTimer(Sender: TObject);
   procedure tBootFetchTimer(Sender: TObject);
   procedure tBootSpinnerTimer(Sender: TObject);
   procedure StopBootSpinner;
@@ -1573,6 +1580,14 @@ begin
 
   {$endif}
 
+  // The quit is confirmed from here on (cancel/minimize exited above).
+  // Release the kiosk keep-awake inhibition now rather than relying on the
+  // native destructor: the detached-fetch-worker path in FormDestroy leaks
+  // `native` deliberately, and an orphaned inhibitor child (systemd-inhibit /
+  // caffeinate) would keep the system awake after Trndi is gone.
+  if FKioskMode and Assigned(native) then
+    native.SetKeepAwake(false);
+
   // Disable timers before shutting down threads to prevent new threads from being created
   if Assigned(tPing) then
     tPing.Enabled := false;
@@ -1957,13 +1972,28 @@ begin
   // which on slow networks shows up as "icon in taskbar but window invisible"
   // for the duration of the request. A one-shot TTimer reuses the existing
   // pattern for tWebServerStart below; the OnTimer handler frees itself.
-  if not FUpdateCheckScheduled then
+  // Kiosk mode skips the check entirely: an unattended wall display has
+  // nobody to click an update dialog away.
+  if (not FUpdateCheckScheduled) and (not FKioskMode) then
   begin
     FUpdateCheckScheduled := true;
     tUpdateCheck := TTimer.Create(Self);
     tUpdateCheck.Interval := 1500;
     tUpdateCheck.OnTimer := @tUpdateCheckTimer;
     tUpdateCheck.Enabled := true;
+  end;
+
+  // Kiosk activation is deferred the same way: entering fullscreen while the
+  // window manager is still mapping/placing the window is unreliable on some
+  // platforms (DoFullScreen flips BorderStyle and WindowState), so let the
+  // first paint land and then flip. One-shot; the handler frees the timer.
+  if FKioskMode and (not FKioskApplied) then
+  begin
+    FKioskApplied := true;
+    tKioskApply := TTimer.Create(Self);
+    tKioskApply.Interval := 300;
+    tKioskApply.OnTimer := @tKioskApplyTimer;
+    tKioskApply.Enabled := true;
   end;
 
   // Subscribe to OS wake-from-sleep events. Done in FormShow so the main

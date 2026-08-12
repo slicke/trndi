@@ -61,6 +61,7 @@ private
   FFlashValue: string;
   FFlashBaseColor: TColor;
   FFlashCycleMS: integer;
+  FKeepAwakeActive: boolean; // True while a SetKeepAwake(true) request stands
   procedure FlashTimerTick(Sender: TObject);
     {** Show the "no speech engine" message, at most once per session. }
   procedure ReportSpeechFailure;
@@ -145,6 +146,11 @@ public
       @code(HKCU\Software\Microsoft\Windows\CurrentVersion\Run). The value is
       the quoted full path of the current executable. }
   class function SetAutoStart(Enable: boolean): boolean; override;
+
+  {** Keep the system and display awake via SetThreadExecutionState.
+      ES_CONTINUOUS makes the request stick until explicitly cleared, so
+      disabling (and Destroy) resets to plain ES_CONTINUOUS. }
+  procedure SetKeepAwake(Enable: boolean); override;
 
   {** Settings API overrides (Windows Registry)
     Keys are stored under HKCU\Software\Trndi\ with the same scoping rules
@@ -847,7 +853,36 @@ begin
     FFlashTimer.Enabled := false;
     FreeAndNil(FFlashTimer);
   end;
+  if FKeepAwakeActive then
+    SetKeepAwake(false);
   inherited Destroy;
+end;
+
+{------------------------------------------------------------------------------
+  SetKeepAwake
+  ------------
+  SetThreadExecutionState with ES_CONTINUOUS keeps the request active for this
+  thread until it is explicitly replaced, so enabling is a single call and
+  disabling resets to plain ES_CONTINUOUS. FPC 3.2.2's Windows unit does not
+  declare the import, hence the local external. The flags are thread-scoped;
+  both calls run on the main thread (kiosk toggling and Destroy).
+------------------------------------------------------------------------------}
+const
+ES_CONTINUOUS = DWORD($80000000);
+ES_SYSTEM_REQUIRED = DWORD($00000001);
+ES_DISPLAY_REQUIRED = DWORD($00000002);
+
+function WinSetThreadExecutionState(esFlags: DWORD): DWORD; stdcall;
+  external 'kernel32.dll' name 'SetThreadExecutionState';
+
+procedure TTrndiNativeWindows.SetKeepAwake(Enable: boolean);
+begin
+  if Enable then
+    WinSetThreadExecutionState(ES_CONTINUOUS or ES_SYSTEM_REQUIRED or
+      ES_DISPLAY_REQUIRED)
+  else
+    WinSetThreadExecutionState(ES_CONTINUOUS);
+  FKeepAwakeActive := Enable;
 end;
 
 procedure TTrndiNativeWindows.StopBadgeFlash;

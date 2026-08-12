@@ -66,7 +66,7 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * __Natively__ runs on your computer without needing installation
 * Runs out-of-the-box! Does not depend on other software to be installed _(on [Linux](#Linux-support), this may depend on your distro)_
 * Supports __multiple languages__
-* Runs on your __Raspberry Pi__ and other arm computers, optionally as a full-screen display
+* Runs on your __Raspberry Pi__ and other arm computers, optionally as a full-screen display — start with `--kiosk` for a dedicated always-on screen (fullscreen + keeps the system awake, see the [Display guide](guides/Display.md))
 * Works on __touch-screen__ devices, such as a RaspberryPi with screen
 * Supports modern ___JavaScript__ extensions, _among other things, there are official extensions for:_
 * * IFTTT
