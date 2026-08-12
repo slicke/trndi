@@ -281,6 +281,10 @@ it with the `--kiosk` command-line flag. Trndi then goes fullscreen by itself,
 keeps the computer and screen awake while it runs, and skips the update popup.
 See the [display guide](guides/Display.md) for a full walkthrough.
 > On macOS, run ```open -a Trndi --args --kiosk``` — the `--args` part passes the flag on to Trndi.
+
+With the *Clock* setting enabled, fullscreen Trndi shows the time permanently
+at the top of the screen alongside the reading — in a normal window the same
+setting instead swaps the big reading for the time every 20 seconds.
 ---
 
 ## Troubleshooting Common Questions

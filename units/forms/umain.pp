@@ -640,6 +640,14 @@ private
   tKioskApply: TTimer;        // One-shot deferred kiosk activation — entering
                               // fullscreen inside FormShow itself fights the
                               // WM's initial map/placement on some platforms
+  lClock: TLabel;             // Persistent clock overlay: time + reading shown
+                              // at once while fullscreen with main.clock on
+                              // (windowed mode keeps the tClock alternation).
+                              // Runtime-created on first use.
+  tClockOverlay: TTimer;      // 1 s caption refresh; runs only while lClock
+                              // is visible so it costs nothing otherwise
+  FClockOverlayMinute: integer; // Minute last rendered — gates the JS/relayout
+                                // work to actual minute flips
   FUpdateCheckThread: TUpdateCheckThread;
   FUpdateCheckInFlight: boolean; // True while a TUpdateCheckThread is running.
                                  // Main-thread-only; gates the menu/keyboard
@@ -698,6 +706,15 @@ private
   procedure CheckPumpBattery;
   procedure tUpdateCheckTimer(Sender: TObject);
   procedure tKioskApplyTimer(Sender: TObject);
+  procedure tClockOverlayTimer(Sender: TObject);
+  {** Show/hide/refresh the persistent fullscreen clock. Cheap to call often:
+      it only re-renders on a minute flip, on first show, or when ForceLayout
+      says geometry changed (resize, fullscreen toggle). }
+  procedure UpdateClockOverlay(const ForceLayout: boolean = false);
+  {** True when the form is effectively fullscreen — the same multi-condition
+      test DoFullScreen toggles on, extracted so kiosk activation and the
+      clock overlay agree with it about what "fullscreen" means. }
+  function IsFullscreenNow: boolean;
   procedure tBootFetchTimer(Sender: TObject);
   procedure tBootSpinnerTimer(Sender: TObject);
   procedure StopBootSpinner;
@@ -2032,6 +2049,15 @@ begin
   DoFullscreen;
 end;
 
+// Determine if the form is currently in fullscreen mode. Multiple conditions
+// because WindowState alone isn't reliable across widgetsets.
+function TfBG.IsFullscreenNow: boolean;
+begin
+  Result := (BorderStyle = bsNone) and
+    ((WindowState = wsFullScreen) or (BoundsRect.Width >= Screen.Width) and
+    (BoundsRect.Height >= Screen.Height));
+end;
+
 procedure TfBG.DoFullScreen;
 var
   IsCurrentlyFullscreen: boolean;
@@ -2039,11 +2065,7 @@ begin
   {$ifdef DARWIN}
   ToggleFullscreenMac;
   {$endif}
-  // Determine if form is currently in fullscreen mode
-  // This needs to check multiple conditions as WindowState alone isn't reliable
-  IsCurrentlyFullscreen := (BorderStyle = bsNone) and
-    ((WindowState = wsFullScreen) or (BoundsRect.Width >= Screen.Width) and
-    (BoundsRect.Height >= Screen.Height));
+  IsCurrentlyFullscreen := IsFullscreenNow;
 
   // Remember the window position for restoration
   if not FStoredWindowInfo.Initialized and not IsCurrentlyFullscreen then
@@ -2118,6 +2140,10 @@ begin
 
   // Adjust for dark mode if applicable
   setColorMode;
+
+  // The persistent clock only exists while fullscreen; sync it with the state
+  // the toggle just produced rather than waiting for the next timer tick.
+  UpdateClockOverlay(true);
 end;
 {$ifdef LCLQt6}
 function TryQtStartSystemMove(AHandle: THandle): boolean;

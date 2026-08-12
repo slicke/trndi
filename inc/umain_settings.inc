@@ -170,6 +170,9 @@ begin
   UseRangeColor := native.GetBoolSetting('ux.range_color', true);
 
   tClock.Enabled := native.GetBoolSetting('main.clock', false);
+  // Apply the clock toggle to the fullscreen overlay right away rather than
+  // on the next timer tick (matters when Settings is used from a kiosk).
+  UpdateClockOverlay(true);
 
   tSwap.Enabled := native.GetBoolSetting('main.alternate', false);
 
