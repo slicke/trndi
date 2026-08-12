@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trndi - CGM Data on Desktop & Raspberry Pi</title>
-    <meta name="description" content="Free desktop app for blood sugar monitoring. Works with Nightscout, Dexcom Share, Tandem Source, Medtronic CareLink, and xDrip. Supports Windows, macOS, Linux, and Raspberry Pi.">
+    <meta name="description" content="Free desktop app for blood sugar monitoring. Works with Nightscout, Dexcom Share, Tandem Source, Medtronic CareLink, FreeStyle Libre (LibreLinkUp), and xDrip. Supports Windows, macOS, Linux, and Raspberry Pi.">
     <meta name="theme-color" content="#12141c">
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="Trndi.ico">
@@ -53,6 +53,7 @@
                 <span class="chip">📡 Dexcom Share</span>
                 <span class="chip">💙 Tandem Source</span>
                 <span class="chip">🩸 Medtronic CareLink</span>
+                <span class="chip">🩹 FreeStyle Libre</span>
                 <span class="chip">📶 xDrip+</span>
             </div>
             <p class="hero-platforms">Windows &bull; macOS &bull; Linux &bull; Raspberry Pi &bull; Embedded Linux<br>
@@ -66,7 +67,7 @@
 
     <div class="stats-bar">
         <div class="container stats-inner">
-            <div class="stat"><strong>5</strong> CGM Sources</div>
+            <div class="stat"><strong>6</strong> CGM Sources</div>
             <div class="stat-divider"></div>
             <div class="stat"><strong>100%</strong> Native</div>
             <div class="stat-divider"></div>
@@ -189,10 +190,15 @@
                     <p>Connects to the Tandem Source cloud with your existing Tandem account credentials.</p>
                 </div>
                 <div class="source-item reveal">
-                    <span class="badge-new">New</span>
                     <div class="source-icon">🩸</div>
                     <h3>Medtronic CareLink</h3>
                     <p>Follow a Medtronic pump via the CareLink Connect follower API — US and EU regions. One-time browser login; Trndi keeps the session alive. <em>Experimental.</em></p>
+                </div>
+                <div class="source-item reveal">
+                    <span class="badge-new">New</span>
+                    <div class="source-icon">🩹</div>
+                    <h3>FreeStyle Libre</h3>
+                    <p>Follows an Abbott sensor through a LibreLinkUp follower account. Works in every region with no server to pick. High/low limits come from your LibreLinkUp alarm settings. <em>Alpha.</em></p>
                 </div>
                 <div class="source-item reveal">
                     <div class="source-icon">📶</div>
@@ -222,7 +228,6 @@
                     <h3>macOS</h3>
                     <p>Apple Silicon</p>
                     <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.dmg" data-asset="Trndi-macos-silicon.dmg" class="btn-download">Download DMG</a>
-                    <p class="download-subtext"><small>Portable .zip available below</small></p>
                 </div>
                 <div class="download-item reveal">
                     <div class="download-icon">🐧</div>
@@ -245,12 +250,7 @@
                 <div class="additional-downloads">
                     <div class="download-category">
                         <h4>Windows (portable)</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-windows-x64.zip" data-asset="Trndi-windows-x64.zip">Portable .zip</a> &bull;
-                        <a href="https://github.com/slicke/trndi/blob/main/doc/NUGET.md">NuGet / Chocolatey</a>
-                    </div>
-                    <div class="download-category">
-                        <h4>macOS (portable)</h4>
-                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.zip" data-asset="Trndi-macos-silicon.zip">Portable .zip</a>
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-windows-x64.zip" data-asset="Trndi-windows-x64.zip">Portable .zip</a>
                     </div>
                     <div class="download-category">
                         <h4>Linux Packages</h4>
@@ -263,6 +263,17 @@
                         <h4>Raspberry Pi Packages</h4>
                         <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi_*_arm64.deb">ARM64 .deb</a> &bull;
                         <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi-*.aarch64.rpm">ARM64 .rpm</a>
+                    </div>
+                </div>
+                <div class="linux-note">
+                    <span class="linux-note-icon" aria-hidden="true">🐧</span>
+                    <div>
+                        <h4>Linux Notes</h4>
+                        <p>Every Linux build needs the Qt6Pas library — <code>libqt6pas6</code> on Debian,
+                            Ubuntu and Raspberry Pi OS, <code>qt6pas</code> on Fedora. The .deb and .rpm ask
+                            for it automatically on distributions that ship it; the AppImage and portable
+                            .zip are not self-contained, so install it yourself first.
+                            <a href="https://github.com/slicke/trndi/blob/main/README.md#linux-notes">Full Linux notes &rarr;</a></p>
                     </div>
                 </div>
                 <p><strong>All versions:</strong> <a href="https://github.com/slicke/trndi/releases">View all releases on GitHub</a></p>
@@ -293,6 +304,10 @@
                 <div class="setup-item reveal">
                     <h3>🩸 Medtronic CareLink</h3>
                     <p>Log in once in your browser with a Care Partner account using the bundled helper, then paste the token into Trndi. See the <a href="https://github.com/slicke/trndi/blob/main/guides/CareLink.md">CareLink setup guide</a>.</p>
+                </div>
+                <div class="setup-item reveal">
+                    <h3>🩹 FreeStyle Libre</h3>
+                    <p>Sign in with a <strong>LibreLinkUp</strong> follower account — not the LibreLink account on the sensor wearer's phone. The wearer invites it once from their app. See the <a href="https://github.com/slicke/trndi/blob/main/guides/LibreLinkUp.md">LibreLinkUp setup guide</a>.</p>
                 </div>
                 <div class="setup-item reveal">
                     <h3>📶 xDrip+</h3>

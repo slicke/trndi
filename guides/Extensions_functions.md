@@ -1,6 +1,20 @@
 # Trndi Extensions API
 Trndi supports ES2023, and provides these functions in addition to it:
 
+> **Permissions:** Each function belongs to a permission group. `data`, `ui`,
+> and `timers` are always granted — anything else (`net`, `exec`, `settings`)
+> must be declared in your extension's `@perms` header and approved by the
+> user. See [Extensions.md](Extensions.md#permissions) for the full mapping.
+>
+> Group quick-reference for the functions on this page:
+> - **`data`**: `getReading`, `getCurrentReading`, `getReadings`, `getLimits`, `getStatistics`, `getBasalRate`, `getUnit`, `getLocale`, `getBuild`, `getCurrentAPI`, `getCurrentUser`, `getCurrentNickname`, `predictReadings`
+> - **`ui`**: `alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`
+> - **`timers`**: `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`
+> - **`net`** (declare): `Trndi.net.fetch`
+> - **`exec`** (declare): `runCMD`
+> - **`settings`** (declare): `getSetting`, `setSetting`, `setLimits`, `setTimeAndRange`, `setOverrideThresholdMinutes`
+> - **No permission needed**: `atob`, `btoa`, `queueMicrotask`, `URL`, `URLSearchParams`, `TextEncoder`, `TextDecoder`, `performance.now`, `crypto.randomUUID`, `crypto.getRandomValues`, `structuredClone`, plus modern JS methods (`replaceAll`, `at`, `findLast`, `Object.hasOwn`, `Promise.allSettled`, `Promise.any`, ...)
+
 ## Contents
 
  - [Trndi functions](#trndi-functions)
@@ -10,6 +24,9 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [select](#select)
    - [log](#log)
    - [console.log](#consolelog)
+   - [console.push](#consolepush)
+   - [console.logs](#consolelogs)
+   - [console.error / warn / info / debug](#consoleerror--warn--info--debug)
    - [htmlMsg](#htmlmsg)
    - [htmlDlg](#htmldlg)   
    - [htmlYesNo](#htmlyesno)      
@@ -18,6 +35,10 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [setDotAdjust](#setdotadjust)
    - [getUnit](#getunit)
    - [getLocale](#getlocale)
+   - [getCurrentReading](#getcurrentreading)
+   - [getReadings](#getreadings)
+   - [getLimits](#getlimits)
+   - [getStatistics](#getstatistics)
    - [setLevelColor](#setlevelcolor)
    - [setTimeAndRange](#settimeandrange)
    - [playSound](#playsound)
@@ -25,17 +46,32 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [setOverrideThresholdMinutes](#setoverridethresholdminutes)
    - [setClockInterval](#setclockinterval)
    - [predictReadings](#predictreadings)
- - [Promises (global)](#promises-global)
-   - [asyncGet](#asyncget)
-   - [jsonGet](#jsonget)
+   - [getBasalRate](#getbasalrate)
+   - [setTimeout](#settimeout)
+   - [setInterval](#setinterval)
+   - [clearTimeout](#cleartimeout)
+   - [clearInterval](#clearinterval)
+ - [Web standard functions](#web-standard-functions)
+   - [atob / btoa](#atob--btoa)
+   - [queueMicrotask](#queuemicrotask)
+   - [URL / URLSearchParams](#url--urlsearchparams)
+   - [TextEncoder / TextDecoder](#textencoder--textdecoder)
+   - [performance.now](#performancenow)
+   - [crypto](#crypto)
+   - [structuredClone](#structuredclone)
+   - [Modern JavaScript methods](#modern-javascript-methods)
+ - [Network](#network)
+   - [fetch](#fetch)
    - [runCMD](#runcmd)
    - [setLimits](#setlimits)
  - [Callbacks](#callbacks)
+   - [Trndi.on / Trndi.off](#trndion--trndioff)
    - [updateCallback](#updatecallback)
    - [fetchCallback](#fetchcallback)
    - [dotClicked](#dotclicked)
    - [uxClick](#uxclick)
    - [clockView](#clockview)
+   - [unloadCallback](#unloadcallback)
  - [User info](#user-info)
    - [getCurrentUser](#getcurrentuser)
    - [getCurrentNickname](#getcurrentnickname)
@@ -44,6 +80,27 @@ Trndi supports ES2023, and provides these functions in addition to it:
 
 ## Trndi functions
 These functions are available via `Trndi.*`, such as `Trndi.alert(...)`:
+
+### Preferred v2 namespaces
+New extensions can use the v2 facade described in
+[Extensions.md](Extensions.md#preferred-trndi-api-v2). It is additive and maps
+to the functions documented below:
+
+| Preferred method | Existing method | Permission |
+| --- | --- | --- |
+| `Trndi.data.current()` | `Trndi.getCurrentReading()` | `data` |
+| `Trndi.data.readings({ limit, minutes })` | `Trndi.getReadings(limit)` (+ facade-side time filter) | `data` |
+| `Trndi.data.limits()` | `Trndi.getLimits()` | `data` |
+| `Trndi.data.statistics({ minutes })` | `Trndi.getStatistics(minutes)` | `data` |
+| `Trndi.data.predict({ count })` | `Trndi.predictReadings(count)` + `predictionConfidence()` | `data` |
+| `Trndi.on(event, fn)` / `Trndi.off(event, fn)` | the [callback](#callbacks) globals (`updateCallback`, ...) | follows the callback |
+| `Trndi.net.fetch(url, init)` | v2 network API | `net` |
+| `Trndi.storage.get/set/remove(key)` | namespaced `getSetting` / `setSetting` | `settings` |
+| `Trndi.storage.getJSON/setJSON(key)` | JSON wrappers over the same storage | `settings` |
+
+Use `Trndi.api.permissions`, `Trndi.permissions.has(name)`, and
+`Trndi.permissions.require(name)` to make optional permissions explicit. The
+API version is available as `Trndi.api.version` (`"2.0"`).
 ### alert
 #### Show an alert
 ```javascript
@@ -73,8 +130,59 @@ _See `console.log`_
 ### console.log
 ```javascript
 console.log(something);
+console.log("reading:", { value: 5.6, trend: "flat" }); // objects are JSON-stringified
 ```
-Prints out data to the user
+Prints out data to the user. Non-string arguments (objects, arrays, errors) are automatically converted to readable JSON instead of `[object Object]` — this applies to all `console.*` functions.
+### console.push
+```javascript
+console.push("message 1");
+console.push("message 2");
+```
+Accumulates messages in an internal buffer without showing a popup. Use this when you want to collect multiple log messages and display them all at once with `console.logs()`.
+
+The buffer is shared by all loaded extensions (like a browser console shared by all scripts on a page); each entry is prefixed with the id of the extension that pushed it, e.g. `[my-extension] message 1`.
+
+**Parameters:**
+- Message(s) to add to the buffer (same as `console.log`)
+
+**Returns:** none
+
+**Example:**
+```javascript
+console.push("Starting process...");
+console.push("Step 1 complete");
+console.push("Step 2 complete");
+console.logs();  // Shows all 3 messages in one popup
+```
+
+### console.logs
+```javascript
+console.logs();
+```
+Displays all buffered messages (accumulated via `console.push()`) in a single popup, then clears the buffer. If no messages are buffered, displays "(no messages buffered)".
+
+Since the buffer is shared, this shows (and clears) messages from **every** loaded extension, each prefixed with its extension id — one chronological stream for debugging a whole setup.
+
+**Parameters:** none
+
+**Returns:** none
+
+**Use case:** Avoids multiple popups when logging multiple messages during extension execution.
+
+### console.error / warn / info / debug
+```javascript
+console.error("Something went wrong:", details);
+console.warn("Value looks off");
+console.info("Started");
+console.debug("state =", state);
+```
+Web-style level logging. Unlike `console.log` (which opens a popup per call), these buffer the message with a level prefix — `[my-extension] [error] Something went wrong: ...` — exactly like `console.push()`, so a script that logs in a loop can't spam dialogs. Buffered messages are shown on the next `console.logs()`.
+
+**Parameters:**
+- Message(s), concatenated with spaces (same as `console.push`)
+
+**Returns:** none
+
 ### htmlMsg
 ```javascript
 Trndi.htmlMsg('Window Title', 'Title', 'Description', '<b>HTML</b> box content', 1)
@@ -111,20 +219,241 @@ Multiplier on where the dots are drawn on screen up/down. Minus = up, plus = dow
 #### Get the current measure unit
 ```javascript
 Trndi.getUnit()
+-> "mmol/L"
 ```
 Returns the current unit: `"mg/dL"` or `"mmol/L"`.
+
+#### Get the current reading
+```javascript
+Trndi.getReading(true)
+-> 5.5
+```
+Returns the current reading, pass ```true``` for mmol/L or ```false``` for mg/dL. Returns ```false``` when no reading is available.
+
 ### getLocale
 #### Get the current app language
 ```javascript
 Trndi.getLocale()
+-> "sv"
 ```
 Returns a language code (such as `sv` or `en`).
+
+### getCurrentReading
+#### Get comprehensive current reading with metadata
+Returns a complete object with the current glucose reading and all associated metadata.
+
+```javascript
+const reading = Trndi.getCurrentReading();
+if (reading === false) {
+  console.log("No readings available");
+} else {
+  console.log(`Value: ${reading.value_mmol} mmol/L`);
+  console.log(`Delta: ${reading.delta_mmol}`);
+  console.log(`Direction: ${reading.direction}`);
+  console.log(`Age: ${reading.age_seconds} seconds`);
+}
+```
+
+**Returns:** Object with properties or `false` if no reading available:
+- `value_system`: Value in current unit (mg/dL or mmol/L based on user setting)
+- `value_mgdl`: Value in mg/dL (integer)
+- `value_mmol`: Value in mmol/L (float)
+- `delta_mgdl`: Change since last reading in mg/dL (integer)
+- `delta_mmol`: Change since last reading in mmol/L (float)
+- `direction`: Trend arrow (↑, ↗, →, ↘, ↓)
+- `timestamp`: TDateTime timestamp (Pascal date format — prefer `timestamp_ms`)
+- `timestamp_ms`: Unix epoch in milliseconds; `new Date(reading.timestamp_ms)` works directly
+- `age_seconds`: Age of reading in seconds
+
+**Example:**
+```javascript
+function updateCallback() {
+  const reading = Trndi.getCurrentReading();
+  if (reading !== false) {
+    if (reading.age_seconds > 300) {
+      Trndi.alert("Reading is over 5 minutes old!");
+    }
+    if (reading.direction === "↓↓" && reading.value_mmol < 5.0) {
+      Trndi.alert("Rapid drop detected!");
+    }
+  }
+}
+```
+
+### getReadings
+#### Get the cached reading history
+Returns the readings Trndi currently holds in memory, newest first. Each entry
+has the same shape as [getCurrentReading](#getcurrentreading).
+
+```javascript
+const readings = Trndi.getReadings();     // everything in memory
+const lastSix = Trndi.getReadings(6);     // at most 6 readings (~30 min)
+
+// v2 facade: filter by time window instead of count
+const lastHour = Trndi.data.readings({ minutes: 60 });
+```
+
+**Parameters:**
+- `count` (optional integer): maximum number of readings to return. Omitted or `<= 0` returns all cached readings.
+
+The v2 form `Trndi.data.readings({ limit, minutes })` additionally drops
+readings older than `minutes` (filtered on `timestamp_ms`); both options are
+optional and combine.
+
+**Returns:** Array of reading objects (may be empty). See [getCurrentReading](#getcurrentreading) for the object properties.
+
+**Example:**
+```javascript
+// Average delta over the last three readings
+const recent = Trndi.getReadings(3);
+if (recent.length === 3) {
+  const avgDelta = recent.reduce((s, r) => s + r.delta_mmol, 0) / recent.length;
+  if (avgDelta < -0.5)
+    Trndi.alert("Glucose is falling steadily!");
+}
+```
+
+### getLimits
+#### Get current CGM threshold limits
+Returns the configured high/low limits and target ranges.
+
+```javascript
+const limits = Trndi.getLimits();
+console.log(`High limit: ${limits.high_mmol} mmol/L`);
+console.log(`Low limit: ${limits.low_mmol} mmol/L`);
+```
+
+**Returns:** Object with limit properties:
+- `low_mgdl`: Low threshold in mg/dL
+- `high_mgdl`: High threshold in mg/dL
+- `low_mmol`: Low threshold in mmol/L
+- `high_mmol`: High threshold in mmol/L
+- `low_range_mgdl`: Target range lower bound in mg/dL (0 if not supported)
+- `high_range_mgdl`: Target range upper bound in mg/dL (500 if not supported)
+- `low_range_mmol`: Target range lower bound in mmol/L
+- `high_range_mmol`: Target range upper bound in mmol/L
+
+**Example:**
+```javascript
+const limits = Trndi.getLimits();
+const reading = Trndi.getReading(true); // mmol/L
+
+if (reading > limits.high_mmol) {
+  console.log("Above high limit!");
+} else if (reading < limits.low_mmol) {
+  console.log("Below low limit!");
+} else if (reading >= limits.low_range_mmol && reading <= limits.high_range_mmol) {
+  console.log("In target range!");
+}
+```
+
+### getStatistics
+#### Get statistical analysis of recent readings
+Calculate comprehensive statistics from readings within a specified time period.
+
+```javascript
+// Get stats for last 24 hours (default)
+const stats = Trndi.getStatistics();
+
+// Get stats for last 3 hours
+const stats3h = Trndi.getStatistics(180);
+```
+
+**Parameters:**
+- `minutes` (optional): Number of minutes to analyze (default: 1440 = 24 hours)
+
+**Returns:** Object with statistical properties:
+- `mean`: Average glucose value in current unit
+- `median`: Median glucose value in current unit
+- `stdDev`: Standard deviation
+- `cv`: Coefficient of variation (CV%) - lower is better, <36% is good
+- `timeInRange`: Percentage of readings within target range
+- `timeAbove`: Percentage of readings above high limit
+- `timeBelow`: Percentage of readings below low limit
+- `readingCount`: Number of readings analyzed
+
+**Example:**
+```javascript
+function updateCallback() {
+  const stats = Trndi.getStatistics(1440); // Last 24 hours
+  
+  if (stats.readingCount < 10) {
+    console.log("Not enough data for statistics");
+    return;
+  }
+  
+  console.log(`24h Average: ${stats.mean.toFixed(1)} mmol/L`);
+  console.log(`Standard Deviation: ${stats.stdDev.toFixed(1)}`);
+  console.log(`CV: ${stats.cv.toFixed(1)}%`);
+  console.log(`Time in Range: ${stats.timeInRange.toFixed(0)}%`);
+  
+  if (stats.cv > 36) {
+    Trndi.alert("High glucose variability detected (CV > 36%)");
+  }
+  
+  if (stats.timeInRange < 70) {
+    console.log("Time in range below target (70%)");
+  }
+}
+```
+
+**Notes:**
+- Statistics are calculated in the user's current unit setting
+- Requires at least one reading in the specified time period
+- Time percentages are based on reading count, not actual time elapsed
+- CV (Coefficient of Variation) is a key metric: <36% indicates stable glucose control
+
+### getBuild
+Returns Trndi's build number
+```javascript
+Trndi.getBuild()
+-> "200"
+```
+
+### getCurrentAPI
+Returns the active glucose source
+```javascript
+Trndi.getCurrentAPI()
+-> "NightScout v3"
+```
+
+### Get a settings value
+Gets a settings file/registry value
+```javascript
+Trndi.getSetting("font.arrow") // String
+-> "Segoe UI"
+Trndi.getSetting("webserver.enable") // Boolean
+-> "true"
+Trndi.getSetting("non.exsting.key") // Not found
+-> false
+```
+
+### Set a settings value
+Sets a settings file/registry value
+```javascript
+Trndi.setSetting("extval.myext.property", "true")
+```
+Stores a settings value, you can store anything under ```extval```.*, modifying other keys will cause Trndi to ask the user's approval before saving!
+
 ### setLevelColor
 #### Sets the UX colors
+Accepts **3, 6 or 10** colors; any other argument count is rejected and the call returns `false`. Note that the last group is ordered high, low, then their text colors — unlike the ok/high/low grouping used by the first six.
+
+| Args | Sets |
+| --- | --- |
+| 1–3 | Reading background: ok, high, low |
+| 4–6 | Reading text color: ok, high, low |
+| 7–10 | Custom range levels set in NightScout (or via JS): background high, background low, text high, text low |
+
 ```javascript
-Trndi.setLevelColor('#7cd55d','#d55d5d', '#5dc6d5',// Readings (ok, hi, lo))
-              '#7cd55d','#612828', '#5d75d5', // Colors for the dots (ok, hi, lo)
-              '#ffbfbf', '#bffff9'); // Color for the custom levels set in NightScout (or via JS) (hi, lo)
+// All ten — the values below are Trndi's built-in "Classic" theme
+Trndi.setLevelColor('#84DC00', '#FFDA07', '#0BBEFF', // Readings (ok, hi, lo)
+                    '#F2FFF2', '#FB5200', '#E9FEFF', // Text (ok, hi, lo)
+                    '#DEC972', '#EE59A8',            // Range background (hi, lo)
+                    '#77651C', '#4E072D');           // Range text (hi, lo)
+
+// Backgrounds only
+Trndi.setLevelColor('#84DC00', '#FFDA07', '#0BBEFF');
 ``` 
 ### setTimeAndRange
 #### Sets the max minutes to fetch and max readings to fetch (subject to which metric the API uses)
@@ -141,6 +470,15 @@ Trndi.playSound('C:\\file.wav')
 ```javascript
 Trndi.sayText('High sugar!')
 ```
+
+### attention
+Displays a system notification. With one argument it is the message; with two,
+the first is the notification title.
+```javascript
+Trndi.attention("Hello there!")
+Trndi.attention("Glucose alert", "Trending low — check your CGM")
+```
+
 <a name="overridemins"></a>
 ### setOverrideThresholdMinutes
 #### Sets number of minutes before a reading is considered old
@@ -154,6 +492,37 @@ Sets the interval when the clock is shown (if enabled), and for how long.
 ```javascript
 Trndi.setClockInterval(100000,10000); // Show clock every 100 sec and for 10 sec. NOTE the values cannot be the same or the clock will always show
 ```
+
+### getBasalRate
+#### Get current basal rate from the CGM backend
+Retrieves the current basal insulin rate from the backend server (e.g., Nightscout).
+
+```javascript
+const basal = Trndi.getBasalRate();
+if (basal === false) {
+  console.log("Basal rate not available");
+} else {
+  console.log(`Current basal rate: ${basal} U/hr`);
+}
+```
+
+**Returns:** 
+- Float value representing current basal rate in U/hr (units per hour)
+- `false` if basal rate is unavailable or not supported by the backend
+
+**Backend Support:**
+- **Nightscout/Nightscout v3**: Fetches from profile.json endpoint ✅
+- **Other backends**: Returns `false` (not implemented)
+
+**Example - Display basal with insulin on board:**
+```javascript
+const basal = Trndi.getBasalRate();
+if (basal !== false) {
+  Trndi.alert(`Current basal: ${basal.toFixed(2)} U/hr`);
+}
+```
+
+**Note:** The function returns the basal rate defined in the active profile at the current time. For pump users with temp basals, this shows the scheduled rate, not the active temporary rate.
 
 ### predictReadings
 #### Predict future blood glucose readings
@@ -171,7 +540,8 @@ const predictions = Trndi.predictReadings(5);
 - `[0]`: Predicted value in current unit (mg/dL or mmol/L)
 - `[1]`: Predicted value in mg/dL
 - `[2]`: Predicted value in mmol/L  
-- `[3]`: Predicted timestamp (TDateTime)
+- `[3]`: Predicted timestamp (TDateTime, Pascal date format)
+- `[4]`: Predicted timestamp as Unix epoch milliseconds (`new Date(pred[4])`)
 
 **Example:**
 ```javascript
@@ -199,24 +569,315 @@ function updateCallback(reading_system, reading_mgdl, reading_mmol, time) {
 - Predictions are based on linear trend and don't account for meals, insulin, or other factors
 - Accuracy decreases for predictions further into the future
 - Maximum 20 predictions can be requested
+- All prediction counts supported by Trndi are returned. Earlier releases
+  accidentally returned an empty array when more than five were requested.
+- `Trndi.predictionConfidence()` returns the `0..1` fit confidence from the
+  most recent prediction run. Prefer `Trndi.data.predict({ count })`, which
+  returns both `{ values, confidence }`.
 
-## Promises (global)
-These are global promises, not prefixed with `Trndi.`:
-### asyncGet 
-#### Fetches a URL
-> Note that theres a size limit of the response, see jsonGet for complex JSONs
+### setTimeout
+#### Schedule a function to run once after a delay
+Executes a function after a specified delay in milliseconds. Works like the standard web `setTimeout`.
+
 ```javascript
-asyncGet("https://sample-files.com/downloads/documents/txt/simple.txt")
-  .then(result => console.log(result))
-  .catch(error => console.log(`Error: ${error}`));
-  ``` 
-### jsonGet 
-#### Fetches a URL and extracts a JSON path
+// Anonymous and arrow functions work
+setTimeout(() => Trndi.alert("5 seconds have passed!"), 5000);
+
+// Named functions too
+function logMessage() {
+  console.log("Timer executed!");
+}
+const timerId = setTimeout(logMessage, 3000);
+
+// Extra arguments are passed to the callback
+setTimeout((name, count) => {
+  console.push(`${name}: ${count}`);
+}, 1000, "readings", 12);
+```
+
+**Parameters:**
+- `callback`: Function to execute (named, anonymous or arrow)
+- `delay`: Time in milliseconds to wait before execution (optional, defaults to 0)
+- `...args`: Any further arguments are passed to the callback when it fires
+
+**Returns:** Timer ID (number) that can be used with `clearTimeout()`
+
+**Notes:**
+- Pass the function without parentheses: `setTimeout(myFunction, 1000)` not `setTimeout(myFunction(), 1000)`
+- The timer is automatically cleaned up after the function executes
+- Minimum delay is system-dependent but typically 1ms
+- Timer continues even if the extension is reloaded (cleanup required)
+
+### setInterval
+#### Schedule a function to run repeatedly at fixed intervals
+Executes a function repeatedly with a fixed delay between each execution. Works like the standard web `setInterval`.
+
 ```javascript
-asyncGet("https://some-json", "item.subitem")
-  .then(result => console.log(result))
-  .catch(error => console.log(`Error: ${error}`));
-  ``` 
+// Anonymous and arrow functions work; stopping from inside the callback is fine
+let count = 0;
+const intervalId = setInterval(() => {
+  count++;
+  console.push(`Count: ${count}`);
+
+  // Stop after 10 iterations
+  if (count >= 10) {
+    clearInterval(intervalId);
+  }
+}, 1000);
+
+// Monitor glucose and alert on trends
+function checkGlucoseTrends() {
+  const predictions = Trndi.predictReadings(3);
+  if (predictions.some(pred => pred[2] < 4.0)) {
+    Trndi.alert("Low glucose predicted!");
+  }
+}
+setInterval(checkGlucoseTrends, 60000); // Check every minute
+```
+
+**Parameters:**
+- `callback`: Function to execute (named, anonymous or arrow)
+- `interval`: Time in milliseconds between each execution
+- `...args`: Any further arguments are passed to the callback on each tick
+
+**Returns:** Timer ID (number) that can be used with `clearInterval()`
+
+**Notes:**
+- Pass the function without parentheses: `setInterval(myFunction, 1000)` not `setInterval(myFunction(), 1000)`
+- Function executes repeatedly until cleared with `clearInterval()`
+- The interval is the delay between executions, not including function runtime
+- Important: Always clear intervals when no longer needed to avoid memory leaks
+
+### clearTimeout
+#### Cancel a scheduled timeout
+Cancels a timer created with `setTimeout()` before it executes.
+
+```javascript
+// Define and schedule a timeout
+function showMessage() {
+  Trndi.alert("This will not show");
+}
+const timerId = setTimeout(showMessage, 5000);
+
+// Cancel it before it fires
+clearTimeout(timerId);
+```
+
+**Parameters:**
+- `timerId`: The timer ID returned by `setTimeout()`
+
+**Returns:** Nothing
+
+**Notes:**
+- Safe to call with an invalid or already-fired timer ID (no-op)
+- Has no effect on timers created with `setInterval()`
+
+### clearInterval
+#### Cancel a repeating interval
+Stops a timer created with `setInterval()` from executing further.
+
+```javascript
+let count = 0;
+function incrementCounter() {
+  count++;
+  if (count >= 5) {
+    clearInterval(intervalId); // Stop after 5 iterations
+  }
+}
+const intervalId = setInterval(incrementCounter, 1000);
+
+// Or cancel it externally
+function stopInterval() {
+  clearInterval(intervalId);
+}
+setTimeout(stopInterval, 10000); // Stop after 10 seconds maximum
+```
+
+**Parameters:**
+- `timerId`: The timer ID returned by `setInterval()`
+
+**Returns:** Nothing
+
+**Notes:**
+- Safe to call with an invalid timer ID (no-op)
+- Important: Always clear intervals to prevent resource leaks
+- Has no effect on timers created with `setTimeout()`
+
+## Web standard functions
+Common web globals, available in every extension without any permission:
+
+### atob / btoa
+```javascript
+const encoded = btoa("user:password");   // "dXNlcjpwYXNzd29yZA=="
+const decoded = atob(encoded);           // "user:password"
+
+// Typical use: HTTP Basic auth
+const res = await Trndi.net.fetch(url, {
+  headers: { "Authorization": "Basic " + btoa(user + ":" + pass) }
+});
+```
+Base64 encode (`btoa`) and decode (`atob`) per the WHATWG spec.
+
+**Notes:**
+- `btoa` throws a `TypeError` if the string contains characters above U+00FF (Latin1 range only, like in browsers)
+- `atob` ignores whitespace and throws a `TypeError` on invalid base64
+- For arbitrary Unicode, encode first: `btoa(encodeURIComponent(s))`
+
+### queueMicrotask
+```javascript
+queueMicrotask(() => {
+  console.push("runs after the current script, before any timers");
+});
+```
+Queues a callback on the microtask queue (same timing as `Promise.resolve().then(...)`). Runs after the currently executing code completes, before any `setTimeout` callbacks.
+
+**Parameters:**
+- `callback`: Function to queue (throws `TypeError` if not a function)
+
+**Returns:** none
+
+### URL / URLSearchParams
+```javascript
+// Build a query string without manual encodeURIComponent juggling
+const u = new URL("https://api.example.com/v1/data");
+u.searchParams.set("sessionId", sessionId);
+u.searchParams.set("minutes", "1440");
+const res = await Trndi.net.fetch(u.toString());
+
+// Parse an existing URL
+const parsed = new URL("https://user:pw@host.com:8443/path?x=1#frag");
+parsed.hostname;              // "host.com"
+parsed.port;                  // "8443"
+parsed.pathname;              // "/path"
+parsed.searchParams.get("x"); // "1"
+
+// Standalone query-string handling
+const q = new URLSearchParams({ a: "1", b: "x y" });
+q.toString();                 // "a=1&b=x+y"
+new URLSearchParams("?a=1&b=2").get("b"); // "2"
+```
+Standard URL parsing and query-string building.
+
+**URLSearchParams** supports `get`, `getAll`, `set`, `append`, `delete`, `has`, `sort`, `forEach`, `keys`, `values`, `entries`, iteration with `for...of`, and construction from a string, object, array of pairs, or another `URLSearchParams`.
+
+**URL** supports `protocol`, `username`, `password`, `hostname`, `port`, `host`, `origin`, `pathname`, `search`, `searchParams`, `hash`, `href`, `toString()`, and relative resolution against a base: `new URL("../other", "https://x.com/a/b/c")`. Changes made through `searchParams` are reflected in `href`/`search`.
+
+**Notes:**
+- Only hierarchical `scheme://host/...` URLs are supported (no `mailto:`, `data:`)
+- An unparsable URL throws a `TypeError`, like in browsers
+
+### TextEncoder / TextDecoder
+```javascript
+const bytes = new TextEncoder().encode("Håj 😀");  // Uint8Array of UTF-8 bytes
+const text = new TextDecoder().decode(bytes);      // "Håj 😀"
+
+// Base64 of arbitrary Unicode (pairs with btoa's Latin1 limit)
+const b64 = btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+```
+UTF-8 encoding and decoding between strings and byte arrays.
+
+**Notes:**
+- `TextDecoder` supports UTF-8 only; other labels throw a `RangeError`
+- Invalid bytes decode to `U+FFFD` (`�`), or throw a `TypeError` with `new TextDecoder("utf-8", { fatal: true })`
+- `decode()` accepts a `Uint8Array`, `ArrayBuffer`, or plain array of byte values
+
+### performance.now
+```javascript
+const t0 = performance.now();
+heavyWork();
+console.log("took " + (performance.now() - t0).toFixed(2) + " ms");
+```
+High-resolution monotonic timestamp in milliseconds (microsecond precision). Unlike `Date.now()`, it never jumps backwards when the system clock changes, so it is the right tool for measuring durations. `performance.timeOrigin + performance.now()` approximates `Date.now()`.
+
+### crypto
+```javascript
+crypto.randomUUID();               // "7d8ad821-19f5-4d54-9c9e-8a24ad76dd9c"
+
+const nonce = new Uint8Array(16);
+crypto.getRandomValues(nonce);     // fills the array in place, returns it
+```
+Cryptographically secure randomness from the operating system's entropy source — use this instead of `Math.random()` for request IDs, nonces or tokens.
+
+**Notes:**
+- `randomUUID()` returns an RFC 4122 version-4 UUID string
+- `getRandomValues` accepts integer typed arrays only (`Uint8Array`, `Int32Array`, ...); `Float32Array`, `Float64Array` and `DataView` throw a `TypeError`
+- Requests over 65536 bytes throw a `RangeError` (the WebCrypto quota)
+
+### structuredClone
+```javascript
+const copy = structuredClone({
+  readings: [1, 2, { v: 3 }],
+  when: new Date(),
+  tags: new Set(["a", "b"])
+});
+copy.readings[2].v = 99;   // original untouched
+```
+Deep-clones a value: plain objects, arrays, `Date`, `RegExp`, `Map`, `Set`, `ArrayBuffer`, typed arrays and `DataView`. Cycles are preserved (`o.self = o` clones correctly), as are views sharing one buffer.
+
+**Notes:**
+- Functions and symbols throw a `TypeError`, like in browsers
+- Class instances come back as plain objects (own enumerable properties only)
+
+### Modern JavaScript methods
+The bundled JavaScript engine predates some newer library methods, so Trndi polyfills them — these all work even though the engine core is older:
+
+```javascript
+"a.b.c".replaceAll(".", "-");        // "a-b-c"
+[1, 2, 3].at(-1);                    // 3   (also on strings)
+[1, 2, 3, 4].findLast(v => v < 4);   // 3
+[1, 2, 3, 4].findLastIndex(v => v < 4); // 2
+Object.hasOwn({ x: 1 }, "x");        // true
+Object.fromEntries([["a", 1]]);      // { a: 1 }
+
+await Promise.allSettled([p1, p2]);  // never rejects; [{status, value/reason}, ...]
+await Promise.any([p1, p2]);         // first fulfilled; AggregateError if all reject
+```
+
+No permission is needed; they are added (non-enumerable, standards-shaped) to every extension automatically. If a future engine upgrade provides them natively, the native versions win.
+
+## Network
+
+### fetch
+#### Standard-style HTTP requests
+A subset of the browser `fetch()` API, available as `Trndi.net.fetch()` when
+the `net` permission is granted. The request runs on a background thread, so
+the Trndi window stays responsive during slow requests.
+
+```javascript
+const response = await Trndi.net.fetch(url, options?)
+```
+- `url` (string, required) — Full URL.
+- `options.method` (string) — `GET` (default) or `POST`. Other methods reject.
+- `options.headers` (object) — Plain object of request headers.
+- `options.body` (string) — Request body. Stringify JSON yourself. String
+  bodies get `Content-Type: text/plain;charset=UTF-8` unless you set one.
+- `options.timeout` (number) — Milliseconds to wait before giving up. When it
+  elapses, the promise rejects with a `TypeError` whose message contains
+  `timeout`. Non-standard (browsers use `AbortController`); off by default,
+  though the transport's own limits (typically ~30 s) still apply.
+
+Resolves with a response object:
+- `status` (number), `ok` (true for 2xx), `url` (final URL after redirects),
+  `redirected` (boolean)
+- `headers.get(name)` / `headers.has(name)` / `headers.keys()` — name lookup
+  is case-insensitive
+- `text()` / `json()` — promises for the buffered body
+
+Rejects with a `TypeError` on transport failure or timeout (like the browser
+API, non-2xx responses resolve — check `response.ok`). Not supported:
+streaming, `AbortController` (use `timeout`), `FormData`, binary bodies.
+
+```javascript
+const res = await Trndi.net.fetch("https://api.example.com/status", {
+  headers: { "X-Api-Key": "abc123" },
+  timeout: 5000                       // give up after 5 seconds
+});
+if (res.ok) {
+  const data = await res.json();
+  console.log(data.value);
+}
+```
+
 ### runCMD 
 #### Runs a program locally
 ```javascript
@@ -242,6 +903,50 @@ _Use floats for mmol/L and integers for mg/dL!_
 
 ## Callbacks
 > _NOTE:_ Simply add a function, named the same as a callback below, to have it triggered
+
+### Trndi.on / Trndi.off
+#### Listener-style alternative to the named callback globals
+Instead of defining one magic global per callback, you can register any number
+of listeners. Each event maps to one of the callback globals below and the
+listener receives exactly the same arguments:
+
+| Event | Equivalent global |
+| --- | --- |
+| `"reading"` | [`updateCallback`](#updatecallback) |
+| `"fetch"` | [`fetchCallback`](#fetchcallback) |
+| `"clock"` | [`clockView`](#clockview) |
+| `"dot"` | [`dotClicked`](#dotclicked) |
+| `"uxclick"` | [`uxClick`](#uxclick) |
+| `"unload"` | [`unloadCallback`](#unloadcallback) |
+
+```javascript
+Trndi.on("reading", () => {
+  const r = Trndi.data.current();
+  if (r !== false && r.delta_mmol < -0.3) console.push("dropping...");
+});
+
+const clockListener = Trndi.on("clock", () => "Hi!"); // shown instead of the clock
+Trndi.off("clock", clockListener);                    // unregister again
+```
+
+**Parameters:**
+- `event` (string): one of the names above (unknown names throw an `Error`)
+- `listener` (function): called with the same arguments as the equivalent global
+
+**Returns:** `Trndi.on` returns the listener (handy for `Trndi.off`); `Trndi.off` returns nothing.
+
+**Notes:**
+- Both styles can coexist: a plain `function updateCallback() {...}` declared in
+  your script keeps running, before the listeners.
+- For events whose return value matters (`clock` must return the text to show,
+  `uxclick` returns `false` to suppress Trndi's own dialog), the last listener
+  that returns something other than `undefined` wins.
+- A listener that throws is logged to the `console.push` buffer and does not
+  stop the remaining listeners.
+- Don't assign `globalThis.updateCallback = ...` *after* calling `Trndi.on` for
+  the same event — that replaces the dispatcher and your listeners stop firing.
+- The event names are also discoverable at runtime via `Trndi.events`.
+
 ### updateCallback
 #### This function is called when the main loop updates the reading
 ```updateCallback(reading_system, reading_mgdl, reading_mmol, time)```
@@ -279,6 +984,22 @@ function clockView(glucose, time){
   const user = Trndi.getCurrentUser(); // Returns the username, if running multiple accounts
   if (user) return user;
   return "Hello"; // Shows Hello instead of the clock every 20 seconds
+}
+```
+Returning `undefined` (no return statement) or an empty string makes Trndi
+fall back to the normal clock for that flash.
+
+### unloadCallback
+#### Called before your extension is unloaded
+```unloadCallback()```
+
+Runs when extensions are reloaded (Settings → Extensions → Reload) and when
+Trndi quits, while your context is still fully alive — use it to flush state,
+e.g. persisting a value with `setSetting`. Keep it fast and synchronous:
+timers and promises will not get a chance to fire afterwards.
+```javascript
+function unloadCallback(){
+  Trndi.setSetting("extval.mycounter", String(counter)); // needs `settings` permission
 }
 ```
 

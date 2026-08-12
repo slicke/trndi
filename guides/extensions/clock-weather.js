@@ -1,5 +1,8 @@
-/* Notify extension for Nightscout
-(c) slicke / No copyright
+/*
+@name Clock Weather
+@copyright (c) slicke / No copyright
+@description Replaces the clock with the current outdoor temperature.
+@perms net
 */
 // Show the current weather instead of the clock
 const WEATHER_API_KEY = '<KEY>';
@@ -8,9 +11,10 @@ const getStockholmTemperature = () => {
     const q = encodeURIComponent('Stockholm');
     const url = `https://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${q}&aqi=no`;
     
-    return jsonGet(url, "current.temp_c")
-        .then(val => {
-            return val;
+    return Trndi.net.fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            return String(data.current.temp_c);
         })
         .catch(e => {
             console.error('Failed to fetch Stockholm temperature', e);

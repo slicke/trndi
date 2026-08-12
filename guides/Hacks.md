@@ -33,10 +33,6 @@ Trndi limits you to between 6-30 before a value is "old" and the "No recent read
 system.fresh_threshold=31
 ```
 
-## Override the 100% badge size (the reading icon on Trndi's app icon)
-```ini
-ux.badge_size=100
-```
 
 ## Override the number readings fetched
 Trndi defaults to a set amount of minutes it fetches (1440), this only affects time-in-range - not the graph!
@@ -55,6 +51,30 @@ To have touch screens display the normal:
 ```ini
 ux.semi_touch=true
 ``` 
+
+## Customize prediction warnings
+By default, Trndi warns if you're going high/low in 7 predictions (~30 minutes). You can customize this:
+```ini
+predictions.future_limit=7
+```
+
+## Change text scale
+Some UI elements can be scaled by using
+```ini
+ux.labels.lpredict.scale=2.00
+```
+Where lpredict maps to the predictions (named lPredict in the code)
+### Common labels that can be scaled
+|Key|Description|
+|:---:|------------|
+|lVal|the value|
+|lArrow|the arrow|
+|lAgo|the timne since last reading|
+|lPredict|the predictions label|
+|lDiff|the reading difference|
+|lTir|the time in range|
+|lMissing|the warning when missing values|
+> NOTE: the names above match the code's name. When entering them in the config file, they have to be _lowercase_: ux.labels.__lowercase__.scale
 
 ## Resetting Trndi
 #### Delete all keys and Trndi will reset to factory-default settings

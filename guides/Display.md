@@ -1,13 +1,13 @@
-![RPi Display](/doc/img/img_rpi.png)
+![RPi Display](/doc/img/img_rpi.jpg)
 # Creating an always-on display with a RaspberryPi and Trndi
 
 ## Disclaimer
 There's no guarantee that this setup will work for you, or that it will continue to work with future updates to Linux or similar operating systems. I take no responsibility for any purchases or commitments you make based on this guide.
 
 ## Hardware
-1. Aquire a RaspberryPi (tested on RPi4 Model B)
-2. Aquire a power supply (eg by getting a Rpi kit with a charger included)
-3. Aquire a screen
+1. Acquire a Raspberry Pi (tested on RPi 4 Model B)
+2. Acquire a power supply (eg by getting an RPi kit with a charger included)
+3. Acquire a screen
    * An old screen
    * A touch screen from a retailer, 7" is a good size
 
@@ -23,11 +23,10 @@ sudo apt install -y \
   libxcb1 libx11-6 libxext6 libxrender1 libxrandr2 \
   libfontconfig1 libfreetype6 libdbus-1-3
   ```
-4. Install the Qt6Pas library with ```apt install libqt6pas6`
-``
+4. Install the Qt6Pas library with ```apt install libqt6pas6```
   ## Install Trndi
 
-  1. In this repo, visit the [latest release](https://github.com/slicke/trndi/releases/latest), and down load the _arm64_ package: ```trndi_X.Y.Z_arm64.deb```
+   1. In this repo, visit the [latest release](https://github.com/slicke/trndi/releases/latest), and download the _arm64_ package: ```trndi_X.Y.Z_arm64.deb```
   2. Install the package via GUI, or via ```dpkg -i <package name>```
 
   # Running Trndi
@@ -38,10 +37,40 @@ sudo apt install -y \
   ## Done!
   You now have an always-on display
 
+# Kiosk mode
+For a dedicated display, start Trndi with the ```--kiosk``` flag:
+```bash
+trndi --kiosk
+```
+
+On macOS, pass the flag through `open` with `--args` (everything after it is handed to the app itself):
+```bash
+open -a Trndi --args --kiosk
+```
+
+Kiosk mode:
+- Starts **fullscreen** automatically (and hides the mouse cursor)
+- **Keeps the system awake**: on Linux it holds a `systemd-inhibit` idle/sleep lock and disables X11 screen blanking (`xset`) while running; on Windows and macOS the native power APIs are used. Both are released when Trndi exits.
+- **Skips the update popup** — an unattended display has nobody to click it away
+
+**Tip — clock:** enable *Clock* in Settings and a fullscreen Trndi shows the current time permanently at the top of the screen, next to the reading. (In a normal window the same setting instead alternates the big reading with the time every 20 seconds — on a bedside display you want both visible at once.)
+
+Everything else works as normal: the first-run setup, the right-click menu and Settings are all still available, so you can configure a fresh kiosk on the device itself. To leave fullscreen, use the right-click menu's *Full screen* toggle — keep-awake stays active until Trndi exits.
+
+To start Trndi in kiosk mode on login, add `--kiosk` to the `Exec=` line of an autostart entry, e.g. `~/.config/autostart/trndi.desktop`:
+```ini
+[Desktop Entry]
+Type=Application
+Name=Trndi
+Exec=/usr/bin/trndi --kiosk
+```
+
+> On Wayland sessions (e.g. labwc on newer Raspberry Pi OS) screen blanking is governed by the compositor; the idle inhibition covers most setups, but if your screen still blanks, check the compositor's idle settings.
+
 # My setup
 > This setup is overly advanced and is just provided as an example of what you can do
   ## Hardware
-  I use a RaspberyPi 4B with 4GB RAM, and a HDMI/USB touch screen
+   I use a Raspberry Pi 4B with 4GB RAM, and a HDMI/USB touch screen
   ## Setting up the SD card
   1. Download/Install the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) version 2 or later
   2. Insert your (16GB or larger) SD card
@@ -52,10 +81,10 @@ sudo apt install -y \
   ## Setting up the Raspberry
   1. Boot the new SD card and make note of the IP address (The display will say "My IP address is...")
   2. SSH into the IP address and update apt: ```apt update```
-  3. Install KDE and dependancies:
-     1. ```sudo apt install kde-standard libqt6pas6``` to install KDE and Trndi dependancies
+  3. Install KDE and dependencies:
+     1. ```sudo apt install kde-standard libqt6pas6``` to install KDE and Trndi dependencies
      2. ```sudo reboot```, and reconnect when the pi is online again
-     3. ```sudo install lightdm``` to install a login manager. Chose _lightdm_ in the popup when asked
+  3. ```sudo apt install lightdm``` to install a login manager. Choose _lightdm_ in the popup when asked
   4. Set these in ```sudo raspi-config```:
      1. System options > Boot: Set GUI
      2. Advanced Options > Wayland: Set Labwc
@@ -77,7 +106,7 @@ sudo apt install -y \
   ## Extra Notes
 
   ### Power saving
-  You should disable power saving so that the Pi won't enter sleep mode!
+  You should disable power saving so that the Pi won't enter sleep mode! Starting Trndi with ```--kiosk``` (see [Kiosk mode](#kiosk-mode)) does this for you while Trndi is running.
   ### LightDM Bug
   There's a bug in the current Raspberry Pi OS that makes lightdm fail. To fix it, edit ```/etc/lightdm/lightdm.conf```, locate the line:
 ```
@@ -87,4 +116,4 @@ and change it to
 ```
 greeter-session=lightdm-greeter
 ```
-You can also use SSDM, but that will break VNC support!
+You can also use SDDM, but that will break VNC support!

@@ -25,9 +25,15 @@ Trndi includes an experimental glucose prediction engine that attempts to foreca
 The prediction engine uses recent CGM readings to calculate trends and project future glucose values. The algorithm:
 
 1. **Analyzes recent readings** - Uses your latest CGM data points
-2. **Calculates trends** - Determines the rate of change (mg/dL per minute)
-3. **Projects forward** - Estimates glucose values at future time points
-4. **Generates multiple predictions** - Creates forecasts for approximately 5, 10, and 15 minutes ahead
+2. **Rejects outliers** - Robustly down-weights spurious readings (sensor spikes, compression lows) so a single bad point cannot dominate the forecast
+3. **Calculates trends** - Determines the rate of change (mg/dL per minute)
+4. **Estimates curvature** - A gentle quadratic term bends the forecast slightly when glucose is speeding up or slowing down
+5. **Projects forward** - Estimates glucose values at future time points
+6. **Generates multiple predictions** - Creates forecasts for approximately 5, 10, and 15 minutes ahead
+
+Each run also produces a **confidence score** (0–1) describing how cleanly the recent data fit the trend model — low values mean the data was noisy or contained outliers, and the forecast should be trusted even less than usual.
+
+In dot mode, a low-confidence forecast draws its prediction dots as a **?** instead of the usual × marker. Clicking any prediction dot shows the exact confidence percentage.
 
 ### Trend Classification
 
@@ -111,6 +117,9 @@ const predictions = Trndi.predictReadings(5);
 
 // Each prediction contains:
 // [value_in_current_unit, mgdl, mmol, timestamp]
+
+// Confidence (0..1) of the most recent prediction run
+const confidence = Trndi.predictionConfidence();
 ```
 
 See [Extensions API](API.md) for more details.

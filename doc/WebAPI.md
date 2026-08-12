@@ -7,6 +7,12 @@ Trndi includes an embedded HTTP API server that exposes glucose readings and pre
 
 ## Configuration
 
+### Enabling via the GUI
+
+The simplest way to turn the web server on is from the Settings dialog: open **Settings → System**, and tick **Enable Web API** under **System Features**. Restart Trndi for the change to take effect. This toggles the `webserver.enable` flag described below; the server then listens on port `8080` with no authentication. To use a different port, or to require a bearer token, set those values manually as shown below.
+
+### Enabling via configuration
+
 #### Linux
 Enable the web server in your configuration file (eg `~/.config/Trndi.cfg`):
 
@@ -59,7 +65,8 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
     "mgdl_delta": "0.0",
     "mmol_delta": "0.0",
     "trend": 3,
-    "timestamp": "2025-11-13 14:30:00"
+    "timestamp": "2025-11-13 14:30:00",
+    "timestamp_utc": "2025-11-13T13:30:00Z"
   },
   "1": {
     "mgdl": "163.0",
@@ -67,7 +74,8 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
     "mgdl_delta": "-5.0",
     "mmol_delta": "-0.3",
     "trend": 3,
-    "timestamp": "2025-11-13 14:25:00"
+    "timestamp": "2025-11-13 14:25:00",
+    "timestamp_utc": "2025-11-13T13:25:00Z"
   }, 
     ...
 }
@@ -79,7 +87,8 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
 - `mgdl_delta`: Change since last reading in mg/dL
 - `mmol_delta`: Change since last reading in mmol/L
 - `trend`: Trend arrow (see Trend Values below)
-- `timestamp`: Reading timestamp
+- `timestamp`: Reading timestamp in local time (`YYYY-MM-DD HH:MM:SS`, no zone) — kept for backwards compatibility
+- `timestamp_utc`: Reading timestamp in UTC (`YYYY-MM-DDTHH:MM:SSZ`) — preferred for new consumers
 
 **Status Codes:**
 - `200 OK`: Data available
@@ -114,7 +123,8 @@ Returns predicted glucose readings (if predictions are enabled).
       "mgdl_delta": "-5.6",
       "mmol_delta": "-0.3",
       "trend": 7,
-      "timestamp": "2025-11-13 14:35:00"
+      "timestamp": "2025-11-13 14:35:00",
+      "timestamp_utc": "2025-11-13T13:35:00Z"
     },
     {
       "mgdl": "152.0",
@@ -122,7 +132,8 @@ Returns predicted glucose readings (if predictions are enabled).
       "mgdl_delta": "-5.4",
       "mmol_delta": "-0.3",
       "trend": 7,
-      "timestamp": "2025-11-13 14:40:00"
+      "timestamp": "2025-11-13 14:40:00",
+      "timestamp_utc": "2025-11-13T13:40:00Z"
     }
   ]
 }
@@ -150,6 +161,46 @@ Returns server status and data availability.
 **Fields:**
 - `status`: Always "ok" if server is running
 - `data_available`: Boolean indicating if glucose data callbacks are configured
+
+This endpoint is kept for compatibility with existing clients.
+
+### GET /health
+
+Returns a richer health payload suitable for uptime/monitoring checks.
+
+**Response Format:**
+```json
+{
+  "status": "ok",
+  "service": "trndi-webapi",
+  "timestamp_utc": "2026-03-27T10:21:38Z",
+  "uptime_seconds": 123,
+  "port": 8080,
+  "auth_required": false,
+  "data_available": true,
+  "endpoints": [
+    "/glucose",
+    "/predict",
+    "/status",
+    "/health"
+  ]
+}
+```
+
+**Fields:**
+- `status`: Always `ok` while the web server is running
+- `service`: Fixed identifier for the embedded server
+- `timestamp_utc`: Server time in UTC (`YYYY-MM-DDTHH:MM:SSZ`)
+- `uptime_seconds`: Seconds since this web server instance started
+- `port`: Bound listening port
+- `auth_required`: Whether bearer token auth is enabled
+- `data_available`: Whether a glucose callback is configured
+- `endpoints`: Current endpoint list exposed by the server
+
+**Example:**
+```bash
+curl -s http://localhost:8080/health | jq
+```
 
 ## Trend Values
 
@@ -275,7 +326,7 @@ sensor:
   - platform: rest
     name: "Trndi Glucose"
     resource: "http://localhost:8080/glucose"
-    {% raw %}value_template: "{{ value_json.current.mmol }}"{% endraw %}
+    value_template: "{{ value_json.current.mmol }}"
     unit_of_measurement: "mmol/L"
     json_attributes:
       - current
@@ -285,12 +336,12 @@ template:
   - sensor:
       - name: "Trndi Glucose Trend"
         state: >
-          {% raw %}{% set trend = state_attr('sensor.trndi_glucose', 'current').trend %}
+          {% set trend = state_attr('sensor.trndi_glucose', 'current').trend %}
           {% set arrows = {
             1: '⇈', 2: '↑', 3: '↗', 4: '→',
             5: '↘', 6: '↓', 7: '⇊'
           } %}
-          {{ arrows.get(trend, '?') }}{% endraw %}
+          {{ arrows.get(trend, '?') }}
 ```
 
 ## Security Considerations
