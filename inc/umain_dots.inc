@@ -741,9 +741,14 @@ begin
   // band in the middle, arrow band below it. The glyph and the number overlap
   // visually (as on the live window), so the arrow's target is the lower part
   // of the glyph, clear of the digits.
-  AZones.AgoRect := Classes.Rect(0, 0, w div 2, h div 5);
-  AZones.ValRect := Classes.Rect(0, h div 5, w, (h * 3) div 5);
-  AZones.ArrowRect := Classes.Rect(0, (h * 3) div 5, w, (h * 9) div 10);
+  // Anchored on ARect like every draw call above, so the zones stay aligned
+  // with what was painted even if the box is ever given a non-origin rect.
+  AZones.AgoRect := Classes.Rect(ARect.Left, ARect.Top,
+    ARect.Left + w div 2, ARect.Top + h div 5);
+  AZones.ValRect := Classes.Rect(ARect.Left, ARect.Top + h div 5,
+    ARect.Left + w, ARect.Top + (h * 3) div 5);
+  AZones.ArrowRect := Classes.Rect(ARect.Left, ARect.Top + (h * 3) div 5,
+    ARect.Left + w, ARect.Top + (h * 9) div 10);
 end;
 
 procedure TfBG.BuildDotWindowMenu;
