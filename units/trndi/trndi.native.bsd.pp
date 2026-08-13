@@ -55,7 +55,7 @@ unit trndi.native.bsd;
 interface
 
 uses
-  trndi.native.linux;
+  trndi.native.linux, trndi.native.base;
 
 type
   {!
@@ -78,13 +78,22 @@ TTrndiNativeBSD = class(TTrndiNativeLinux)
     class function getNotificationSystem: string; override;
     procedure attention(topic, message: string); override;
 
+    {** Alert sounds: the Linux override spawns aplay (ALSA), which BSD base
+        systems don't have; probe for whichever player is actually installed. }
+    class procedure PlaySound(const FileName: string); override;
+
+    {** Wake-from-sleep: the Linux override watches systemd-logind, which does
+        not exist on BSD; detect resume generically via a wall-clock jump. }
+    procedure RegisterWakeCallback(const Callback: TTrndiWakeCallback); override;
+    procedure UnregisterWakeCallback; override;
+
     // BSD-specific overrides can be added here later.
   end;
 
 implementation
 
 uses
-  Classes, SysUtils, Dialogs, trndi.log, trndi.native.async;
+  Classes, SysUtils, DateUtils, Forms, Dialogs, trndi.log, trndi.native.async;
 
 {------------------------------------------------------------------------------
   BSD: TTS fallback + small helpers.
@@ -340,5 +349,161 @@ begin
 
   inherited attention(topic, message);
 end;
+
+{------------------------------------------------------------------------------
+  PlaySound (BSD)
+  ---------------
+  BSD base systems have no ALSA, so the Linux aplay override is usually dead.
+  Probe for whichever player is actually installed: PulseAudio, PipeWire,
+  alsa-utils (from ports), then generic media players.
+------------------------------------------------------------------------------}
+class procedure TTrndiNativeBSD.PlaySound(const FileName: string);
+
+  function TryPlay(const Player: string; const Pre: array of string): boolean;
+  var
+    exe: string;
+    Args: array of string;
+    i: Integer;
+  begin
+    Result := false;
+    exe := ExecInPath(Player);
+    if exe = '' then
+      Exit;
+    SetLength(Args, Length(Pre) + 1);
+    for i := 0 to High(Pre) do
+      Args[i] := Pre[i];
+    Args[High(Args)] := FileName;
+    // Fire-and-forget via the async worker so the child gets reaped (no zombies)
+    RunAndCaptureSimpleAsync(exe, Args, nil);
+    Result := true;
+  end;
+
+begin
+  if not IsValidAudioFile(FileName) then
+    Exit;
+
+  if TryPlay('paplay', []) then Exit;
+  if TryPlay('pw-play', []) then Exit;
+  if TryPlay('aplay', []) then Exit;
+  if TryPlay('ffplay', ['-nodisp', '-autoexit', '-loglevel', 'quiet']) then Exit;
+  if TryPlay('mpv', ['--no-video', '--really-quiet']) then Exit;
+
+  TrndiDLog('PlaySound: no audio player found (install pulseaudio, pipewire, alsa-utils, ffmpeg or mpv)');
+end;
+
+{------------------------------------------------------------------------------
+  Wake-from-sleep notification (BSD)
+  ----------------------------------
+  There is no systemd-logind on BSD, so the Linux gdbus monitor never sees a
+  resume. Instead, detect it generically: Sleep() does not run while the
+  machine is suspended, so waking up with far more wall-clock time elapsed
+  than we slept means the system just resumed. Comparisons are done in UTC so
+  DST transitions don't fake a jump.
+------------------------------------------------------------------------------}
+type
+  TBSDWakeBridge = class
+    Callback: TTrndiWakeCallback;
+    Pending: boolean;
+    procedure Fire(Data: PtrInt);
+  end;
+
+  TClockJumpMonitorThread = class(TThread)
+  protected
+    procedure Execute; override;
+  end;
+
+var
+  gBsdWakeThread: TClockJumpMonitorThread = nil;
+  gBsdWakeBridge: TBSDWakeBridge = nil;
+
+procedure TBSDWakeBridge.Fire(Data: PtrInt);
+begin
+  Pending := false;
+  if Assigned(Callback) then
+    try
+      Callback();
+    except
+      // Don't propagate user callback exceptions through the message loop
+    end;
+end;
+
+procedure TClockJumpMonitorThread.Execute;
+const
+  SliceMS = 500;           // Terminate is checked every slice
+  SlicesPerCheck = 4;      // ~2 s of sleep between clock comparisons
+  JumpThresholdMS = 30000; // far beyond any plausible scheduling delay
+var
+  before: TDateTime;
+  elapsedMS: int64;
+  i: Integer;
+begin
+  while not Terminated do
+  begin
+    before := LocalTimeToUniversal(Now);
+    for i := 1 to SlicesPerCheck do
+    begin
+      if Terminated then
+        Exit;
+      Sleep(SliceMS);
+    end;
+    elapsedMS := MilliSecondsBetween(LocalTimeToUniversal(Now), before);
+    if elapsedMS > int64(SliceMS) * SlicesPerCheck + JumpThresholdMS then
+      if Assigned(gBsdWakeBridge) and (not gBsdWakeBridge.Pending) then
+      begin
+        gBsdWakeBridge.Pending := true;
+        TrndiDLog(Format('Wake detected: clock jumped %d ms during a %d ms sleep',
+          [elapsedMS, SliceMS * SlicesPerCheck]));
+        Application.QueueAsyncCall(@gBsdWakeBridge.Fire, 0);
+      end;
+  end;
+end;
+
+procedure TTrndiNativeBSD.RegisterWakeCallback(const Callback: TTrndiWakeCallback);
+begin
+  // Deliberately not calling inherited: the Linux override spawns a gdbus
+  // monitor for systemd-logind, which doesn't exist on BSD. Store the
+  // callback (all the base implementation does) and run our own detector.
+  FWakeCallback := Callback;
+  if gBsdWakeBridge = nil then
+    gBsdWakeBridge := TBSDWakeBridge.Create;
+  gBsdWakeBridge.Callback := Callback;
+  if not Assigned(Callback) then
+  begin
+    UnregisterWakeCallback;
+    Exit;
+  end;
+  if gBsdWakeThread = nil then
+  begin
+    gBsdWakeThread := TClockJumpMonitorThread.Create(true);
+    gBsdWakeThread.Start;
+  end;
+end;
+
+procedure TTrndiNativeBSD.UnregisterWakeCallback;
+begin
+  if gBsdWakeThread <> nil then
+  begin
+    gBsdWakeThread.Terminate;
+    gBsdWakeThread.WaitFor; // returns within one 500 ms slice
+    FreeAndNil(gBsdWakeThread);
+  end;
+  if Assigned(gBsdWakeBridge) then
+    gBsdWakeBridge.Callback := nil;
+  inherited UnregisterWakeCallback;
+end;
+
+finalization
+  if gBsdWakeThread <> nil then
+  begin
+    try
+      gBsdWakeThread.Terminate;
+      gBsdWakeThread.WaitFor;
+      FreeAndNil(gBsdWakeThread);
+    except
+    end;
+  end;
+  if Assigned(gBsdWakeBridge) and Assigned(Application) then
+    Application.RemoveAsyncCalls(gBsdWakeBridge); // a queued Fire must not outlive the bridge
+  FreeAndNil(gBsdWakeBridge);
 
 end.
