@@ -4739,6 +4739,12 @@ begin
     ShowInTaskBar := stAlways
   else
     ShowInTaskBar := stDefault;
+  // Same reason: the icon set is read while the handle is built. CreateNew
+  // defaults to [biSystemMenu, biMinimize, biMaximize] and bsDialog does not
+  // narrow it -- Win32 just ignores min/max on a dialog frame, while GTK3/Qt
+  // honour BorderIcons on its own and would draw both buttons. These dialogs
+  // are modal and self-sizing, so leave only the close button.
+  BorderIcons := [biSystemMenu];
   inherited CreateWnd;
   hasHTML := false;
   KeyPreview := true;
