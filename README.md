@@ -215,17 +215,17 @@ cd trndi
 make noext
 ```
 
-**With JavaScript extensions:** no QuickJS binaries are shipped for Haiku, so
-build them first — the engine and the ABI shim both, or just the shim against
-Haiku's own quickjs-ng package:
+**With JavaScript extensions:** x86_64 binaries are committed, so a plain
+`make` builds with extensions enabled and nothing else is needed. To rebuild
+them — on another architecture, or to move to a newer quickjs-ng — build the
+engine and the ABI shim together, or just the shim against Haiku's own
+quickjs-ng package:
 
 ```bash
 externals/quickjs/build.sh haiku          # engine + shim into externals/quickjs/prebuilt/
 # ...or, using the packaged engine:
 pkgman install quickjs_ng quickjs_ng_devel
 make shim
-
-make                                       # normal build, extensions enabled
 ```
 
 `make` puts the libraries in `build/lib/`, not beside `build/Trndi`: Haiku's
