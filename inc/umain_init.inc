@@ -78,6 +78,12 @@ begin
   lang := native.GetSetting('locale', '');
   if (lang = 'auto') or (lang = '') then
     lang := native.GetOSLanguage;
+  // Startup calls this twice in multi-user mode: once before the account is
+  // known (so the picker itself is localized) and once after, since 'locale'
+  // is a per-user setting. Reloading the same catalog is wasted work, so the
+  // second pass only costs anything when the account switches language.
+  if (applocale <> '') and (lang = applocale) then
+    Exit;
   applocale := lang;
   Application.ProcessMessages;
 
@@ -341,8 +347,8 @@ end;
 
 procedure TfBG.LoadUserProfile;
 var
-  i: integer;
-  userNick: string;
+  i, preselect: integer;
+  userNick, lastUser: string;
   userList: TStringArray;
   sortHelper: TStringList;
 begin
@@ -362,9 +368,23 @@ begin
         sortHelper.Free;
       end;
     end;
+    // Open on the account chosen last time rather than on whichever name sorts
+    // first: users.active is written on every start, so the common case (same
+    // person, same machine) is a single click. An account removed since then
+    // simply isn't found and the picker opens on the first entry.
+    lastUser := native.GetRootSetting('users.active', '');
+    preselect := 0;
+    if lastUser <> '' then
+      for i := 0 to High(userList) do
+        if SameText(userList[i], lastUser) then
+        begin
+          preselect := i;
+          Break;
+        end;
+
     SlickeDialogsInTaskbar := true;
     i := SlickeList(sdsAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, // Show a prompt to choose user
-      RS_MULTIUSER_BOX, userList, true);
+      RS_MULTIUSER_BOX, userList, true, uxmtCog, preselect);
     SlickeDialogsInTaskbar := false;
 
     if i > -1 then
@@ -631,7 +651,7 @@ procedure haltBoot;
 
 var
   guifontName, txtfontName, apiTarget, prevSetup: string;
-  fil: boolean;
+  fil, englishOnce: boolean;
   userlocale: TFormatSettings;
   minutesStr: string;
   minutesVal, paramIx: integer;
@@ -660,13 +680,22 @@ begin
   // Initialize native interface
   native := TrndiNative.Create;
 
-  if (ssMeta in GetKeyShiftState) and SlickeMsgYesNo(sdsNormal,'Run Trndi in English?', 'Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.') then
-  else
+  englishOnce := (ssMeta in GetKeyShiftState) and SlickeMsgYesNo(sdsNormal,'Run Trndi in English?', 'Run Trndi in English this once? You pressed the Windows/meta key, and can now choose to run Trndi in English. You can change the language in Settings.');
+  if not englishOnce then
     SetLang;
 
     // Establish active user scope as early as possible so startup settings
   // (language/media/etc.) resolve for the selected user.
   LoadUserProfile;
+
+  // 'locale' is stored per user, but the SetLang above has to run before the
+  // account is known - it has to, or the picker itself would be untranslated.
+  // So it resolved the *default* account's language. Re-apply now that
+  // native.configUser is set, or a secondary account never gets the language
+  // it saved. No-ops when both accounts use the same language, and is skipped
+  // entirely when the meta-key override asked for English this once.
+  if multi and (not englishOnce) then
+    SetLang;
 
   // Initialize splash screen first
   InitializeSplashScreen;

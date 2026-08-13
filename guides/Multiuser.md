@@ -15,6 +15,11 @@ When users exist, Trndi will ask which one you want to use on start-up:
 
 ![User select](/doc/img/user_select.png)
 
+The account you used last time is already selected when the dialog opens, so
+returning to the same account is a single click. Each account's language
+setting is applied once you have chosen — accounts can run Trndi in different
+languages.
+
 ## Customizing a user
 * In the user list, click the user's username
 * Below choose an account color and nickname
