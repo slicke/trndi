@@ -110,6 +110,7 @@
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <Checks>
@@ -155,6 +156,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -197,6 +199,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -240,6 +243,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -280,6 +284,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -322,6 +327,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -365,6 +371,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -404,6 +411,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -446,6 +454,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -487,6 +496,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -787,6 +797,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
     </SearchPaths>
     <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>

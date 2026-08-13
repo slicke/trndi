@@ -57,12 +57,15 @@ sudo apt install -y cmake ninja-build gcc gcc-mingw-w64-x86-64
 brew install cmake ninja
 # Haiku
 pkgman install cmake gcc make
+# FreeBSD (clang and make come with the base system)
+pkg install cmake
 
 ./build.sh            # everything this host can produce
 ./build.sh linux      # host .so
 ./build.sh mac        # host .dylib
 ./build.sh win        # win64 .dll (mingw cross)
 ./build.sh haiku      # host .so
+./build.sh freebsd    # host .so
 ./build.sh shim       # the shim only (see below)
 ```
 
@@ -117,13 +120,19 @@ target's directory as well if you want both to link against it.
 | `aarch64-darwin`, `x86_64-darwin` | `build.sh mac`, on a Mac |
 | `aarch64-linux` | build natively on the target (e.g. a Raspberry Pi) |
 | `x86_64-haiku` | `build.sh haiku` on Haiku, or `build.sh shim` against the `quickjs_ng` package |
+| `x86_64-freebsd` | `build.sh freebsd` on FreeBSD (ports has Bellard's quickjs, not ng — build it) |
 | Windows ARM64 | build natively on the platform |
 
 `x86_64-linux`, `aarch64-linux`, `x86_64-win64`, `aarch64-darwin` and
-`x86_64-haiku` are committed. The missing ones — `x86_64-darwin` (Intel Mac)
-and Windows ARM64 — have to be built on the target itself; until they are,
-those hosts can only build Trndi's "No Ext" modes. Anything `build.sh`
-produces is safe to commit — that is the point of `prebuilt/`.
+`x86_64-haiku` are committed. The missing ones — `x86_64-darwin` (Intel Mac),
+`x86_64-freebsd` and Windows ARM64 — have to be built on the target itself;
+until they are, those hosts can only build Trndi's "No Ext" modes. Anything
+`build.sh` produces is safe to commit — that is the point of `prebuilt/`.
+
+Nothing is shared between platforms here, and a near miss is worth naming: a
+native FreeBSD build links `libc.so.7` and cannot load the Linux `libqjs`.
+FreeBSD's Linuxulator runs a whole Linux *process* against Linux libraries
+under `/compat/linux`; it does not let a native executable load a Linux `.so`.
 
 There is no cross-glibc in Fedora's repos, so arm64 Linux is built natively
 rather than cross-compiled.
