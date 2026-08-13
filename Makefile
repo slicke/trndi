@@ -138,11 +138,18 @@ define stage-qjs-libs
 	@if [ -d "$(QJS_DIR)" ]; then \
 	  for dest in $(1); do \
 	    [ -d "$$dest" ] || continue; \
+	    if ls $(QJS_DIR)/libqjs.so.[0-9]*.[0-9]*.[0-9]* >/dev/null 2>&1; then \
+	      rm -f "$$dest"/libqjs.so "$$dest"/libqjs.so.[0-9]*; \
+	    fi; \
 	    cp -P $(QJS_DIR)/$(QJS_LIBS) "$$dest/" 2>/dev/null || true; \
 	    real=$$(cd "$$dest" && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
 	    if [ -n "$$real" ]; then \
 	      ( cd "$$dest" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
 	    fi; \
+	    for f in "$$dest"/libqjs.* "$$dest"/libtqshim.* "$$dest"/tqshim.*; do \
+	      [ -e "$$f" ] || continue; \
+	      [ -s "$$f" ] || { echo "ERROR: $$f is empty or dangling - the QuickJS libraries in $(QJS_DIR) are broken; rebuild them with externals/quickjs/build.sh"; exit 1; }; \
+	    done; \
 	    echo "Copied QuickJS libraries to $$dest"; \
 	  done; \
 	else \

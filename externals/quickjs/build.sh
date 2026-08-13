@@ -93,6 +93,32 @@ host_arch() {
   esac
 }
 
+# Install the engine cmake built in $1 into $2, then recreate its symlinks.
+#
+# The one real versioned file is named explicitly and copied on its own. The
+# glob this replaces ('cp libqjs.so.*') handed cp a SONAME symlink together
+# with the very file it points at, which is order-dependent and not portable:
+# on Haiku it produced a 0-byte destination from a 1.2 MB source, on a first
+# run into an empty directory. Nothing noticed, because the copy ended in
+# '2>/dev/null || true' -- the failure surfaced only at startup, as the loader
+# reporting libqjs.so.0 missing while an intact-looking symlink farm sat in
+# front of an empty file. So: clear stale links, copy one named file, let cp
+# report its own errors, and verify the result is non-empty.
+install_engine() {
+  local from="$1" out="$2" engine
+  engine="$(ls "$from"/libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1)"
+  if [ -z "$engine" ]; then
+    echo "no engine built in $from"; exit 1
+  fi
+  mkdir -p "$out"
+  rm -f "$out"/libqjs.so "$out"/libqjs.so.[0-9]*
+  cp "$engine" "$out/"
+  if [ ! -s "$out/$(basename "$engine")" ]; then
+    echo "copying $engine into $out produced an empty file"; exit 1
+  fi
+  soname_links "$out"
+}
+
 # Recreate the SONAME symlinks in $1; only the real file is tracked in git.
 soname_links() {
   ( cd "$1"
@@ -167,10 +193,8 @@ if [ "$what" = all-linux ] || [ "$what" = linux ]; then
     -o "$WORK/libtqshim.so" "$HERE/tq_shim.c" \
     -L"$WORK/b-linux" -lqjs -Wl,-rpath,'$ORIGIN'
 
-  cp "$WORK"/b-linux/libqjs.so.* "$out/" 2>/dev/null || true
+  install_engine "$WORK/b-linux" "$out"
   cp "$WORK/libtqshim.so" "$out/"
-
-  soname_links "$out"
   echo "    -> $out"
 fi
 
@@ -184,8 +208,7 @@ if [ "$what" = haiku ]; then
   mkdir -p "$out"
 
   build_engine haiku
-  cp "$WORK"/b-haiku/libqjs.so.* "$out/" 2>/dev/null || true
-  soname_links "$out"
+  install_engine "$WORK/b-haiku" "$out"
 
   echo "--> building shim (haiku)"
   build_shim "$out" "$WORK/b-haiku"
