@@ -77,11 +77,32 @@ function ShowFormModalSafe(aForm: TForm): integer;
 
 implementation
 
+// Screen.Fonts.IndexOf is a linear scan over every installed font family, and
+// the LCL enumerates that list once per run and never refreshes it — so both
+// lookups below can only ever produce one answer per process. Cache it: the
+// TXT variant sits on the trend-dot paint/resize path (DotPaint/ResizeDot call
+// it per dot), where re-scanning hundreds of names per frame is pure waste.
+// GUI-thread only, like every other Screen access in this unit.
+var
+  TXTFontCached: boolean = false;
+  TXTFontFound: boolean;
+  TXTFontName: string;
+  GUIFontCached: boolean = false;
+  GUIFontFound: boolean;
+  GUIFontName: string;
+  GUIFontMono: boolean;
+
 {**
   See interface docs. Attempts OS-appropriate defaults.
 }
 function FontTXTInList(out fname: string): boolean;
 begin
+  if TXTFontCached then
+  begin
+    fname := TXTFontName;
+    Exit(TXTFontFound);
+  end;
+
   {$if DEFINED(X_LINUXBSD)}
   fname := 'Noto Sans';
   try
@@ -101,6 +122,10 @@ begin
   fname := 'font';
   Result := true;
   {$endif}
+
+  TXTFontName := fname;
+  TXTFontFound := Result;
+  TXTFontCached := true;
 end;
 
 {$if DEFINED(X_LINUXBSD)}
@@ -133,20 +158,32 @@ var
   i: integer;
 {$endif}
 begin
+  if GUIFontCached then
+  begin
+    fname := GUIFontName;
+    monochrome := GUIFontMono;
+    Exit(GUIFontFound);
+  end;
+
   {$if DEFINED(X_LINUXBSD)}
+  Result := false;
+  fname := '';
   for i := Low(UXIconFonts) to High(UXIconFonts) do
     if Screen.Fonts.IndexOf(UXIconFonts[i].name) >= 0 then
     begin
       fname := UXIconFonts[i].name;
       monochrome := UXIconFonts[i].monochrome;
-      Exit(true);
+      Result := true;
+      Break;
     end;
-  // Nothing usable: hand back the preferred name so the caller can name it in
-  // the "please install a font" message, and claim nothing about the substitute
-  // fontconfig will end up picking.
-  fname := UXIconFonts[Low(UXIconFonts)].name;
-  monochrome := false;
-  Result := false;
+  if not Result then
+  begin
+    // Nothing usable: hand back the preferred name so the caller can name it in
+    // the "please install a font" message, and claim nothing about the substitute
+    // fontconfig will end up picking.
+    fname := UXIconFonts[Low(UXIconFonts)].name;
+    monochrome := false;
+  end;
   {$elseif DEFINED(WINDOWS)}
   fname := 'Segoe UI Symbol';
   monochrome := true;
@@ -163,6 +200,11 @@ begin
   monochrome := false;
   Result := true;
   {$endif}
+
+  GUIFontName := fname;
+  GUIFontMono := monochrome;
+  GUIFontFound := Result;
+  GUIFontCached := true;
 end;
 
 {**
