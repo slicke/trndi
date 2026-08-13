@@ -133,14 +133,14 @@ endif
 # the project root.
 # Where 'build' stages them: beside the executable in $(OUTDIR), and inside a
 # macOS bundle's Contents/MacOS. Empty for a No Ext build, which links no engine.
-# Haiku's runtime_loader never searches the executable's own directory. Its
+# Haiku's runtime_loader does not search the executable's own directory: its
 # default LIBRARY_PATH is "%A/lib" -- a lib/ subdirectory beside the app --
-# followed by the system paths, so that subdirectory is where the engine has to
-# land or the loader reports it missing while it sits right next to the binary.
-# (Trndi.lpi does ask for an rpath of $ORIGIN on Haiku, which the runtime_loader
-# honours only in DT_RPATH; binutils emits DT_RUNPATH by default, and support
-# for that is recent. %A/lib is what actually carries this.) Empty everywhere
-# else, where the libraries go beside the binary.
+# followed by the system paths. Staging there is now a belt rather than the
+# mechanism: Trndi.lpi's rpath works on Haiku once the dollar is escaped (see
+# externals/quickjs/README.md), verified by loading libqjs from beside a binary
+# run from elsewhere. It is kept because it is what made Haiku work at all
+# while that rpath was silently empty. Empty everywhere else, where the
+# libraries go beside the binary.
 ifeq ($(UNAME_S),Haiku)
   QJS_LIBSUBDIR := lib
 endif

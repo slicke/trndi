@@ -228,8 +228,11 @@ pkgman install quickjs_ng quickjs_ng_devel
 make shim
 ```
 
-`make` puts the libraries in `build/lib/`, not beside `build/Trndi`: Haiku's
-runtime_loader searches `%A/lib` and never the executable's own directory.
+`make` puts the libraries both beside `build/Trndi` and in `build/lib/`. Haiku's
+runtime_loader searches `%A/lib` (a `lib/` subdirectory beside the app) rather
+than the executable's own directory, so the copy in `lib/` is what the default
+search path finds; the ones beside the binary are reached through the
+executable's rpath.
 
 _See [externals/quickjs/README.md](/externals/quickjs/README.md) for the trade-off
 between the two._
