@@ -123,11 +123,12 @@ target's directory as well if you want both to link against it.
 | `x86_64-freebsd` | `build.sh freebsd` on FreeBSD (ports has Bellard's quickjs, not ng — build it) |
 | Windows ARM64 | build natively on the platform |
 
-`x86_64-linux`, `aarch64-linux`, `x86_64-win64`, `aarch64-darwin` and
-`x86_64-haiku` are committed. The missing ones — `x86_64-darwin` (Intel Mac),
-`x86_64-freebsd` and Windows ARM64 — have to be built on the target itself;
-until they are, those hosts can only build Trndi's "No Ext" modes. Anything
-`build.sh` produces is safe to commit — that is the point of `prebuilt/`.
+`x86_64-linux`, `aarch64-linux`, `x86_64-win64`, `aarch64-darwin`,
+`x86_64-haiku` and `x86_64-freebsd` are committed. The missing ones —
+`x86_64-darwin` (Intel Mac) and Windows ARM64 — have to be built on the target
+itself; until they are, those hosts can only build Trndi's "No Ext" modes.
+Anything `build.sh` produces is safe to commit — that is the point of
+`prebuilt/`.
 
 Nothing is shared between platforms here, and a near miss is worth naming: a
 native FreeBSD build links `libc.so.7` and cannot load the Linux `libqjs`.
@@ -136,6 +137,21 @@ under `/compat/linux`; it does not let a native executable load a Linux `.so`.
 
 There is no cross-glibc in Fedora's repos, so arm64 Linux is built natively
 rather than cross-compiled.
+
+### FreeBSD version floor
+
+FreeBSD stamps an ABI note with the `__FreeBSD_version` of the build host, and
+the platform's compatibility guarantee runs one way: old binaries keep working
+on newer systems, not the reverse. The committed `x86_64-freebsd` libraries
+report `for FreeBSD 15.1` — check with
+
+```sh
+file libqjs.so.0.15.1
+```
+
+so a 14.x system may refuse to load them and needs its own `build.sh freebsd`
+run. Building on the oldest release you intend to support is the way to keep
+that floor low, exactly as with the glibc floor below.
 
 ### glibc floor
 
