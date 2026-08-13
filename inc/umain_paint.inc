@@ -530,6 +530,20 @@ begin
     Exit;
 
   cnv := Self.Canvas;
+
+  {$ifdef LCLGTK3}
+  // LCL-GTK3 ignores TForm.Color: TGtk3Widget.SetColor's body sits behind an
+  // `if IsWidgetOK and (0 > 1)` (gtk3widgets.pas), so the window keeps the GTK
+  // theme background and the whole glucose-coloured backdrop never appears.
+  // Everything below composites *onto* that backdrop -- the range bands are
+  // alpha blends and the label inks come from GetTextColorForBackground(Color)
+  // -- so without this fill they land on white and wash out. Must precede the
+  // high-contrast early exit below, or unstyled mode stays white too.
+  cnv.Brush.Style := bsSolid;
+  cnv.Brush.Color := Self.Color;
+  cnv.FillRect(0, 0, Self.ClientWidth, Self.ClientHeight);
+  {$endif}
+
   if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) and
     Assigned(TrendDots[1].Parent) then
     clientH := TrendDots[1].Parent.ClientHeight
