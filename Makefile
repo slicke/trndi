@@ -111,6 +111,11 @@ ifeq ($(OS),Windows_NT)
 else ifeq ($(UNAME_S),Darwin)
   QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed s/arm64/aarch64/)-darwin
   QJS_LIBS := *.dylib
+else ifeq ($(UNAME_S),Haiku)
+  # x86_64 matches, but Haiku reports 32-bit x86 as BePC and 64-bit ARM as
+  # arm64, where FPC (and so this directory) says i386 and aarch64.
+  QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed -e s/BePC/i386/ -e s/arm64/aarch64/)-haiku
+  QJS_LIBS := *.so*
 else
   QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m)-linux
   QJS_LIBS := *.so*
@@ -152,7 +157,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets ide-libs ptop lang-check
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
 
 all: release
 
@@ -172,6 +177,7 @@ help:
 	@echo "  check-module-names Check for mismatches between filenames and 'unit' declarations (uses scripts/check-module-names.pl)"
 	@echo "  show-mode  Show resolved build-mode and lazbuild flags"
 	@echo "  ide-libs   Copy the QuickJS engine + ABI shim into the project root, so Extensions builds run from the Lazarus IDE (F9) find them"
+	@echo "  shim       Build the QuickJS ABI shim for this host against an engine that is already installed (see externals/quickjs/build.sh for the engine itself)"
 	@echo "  noext      Build without JavaScript extension support (no QuickJS libraries needed) - use noext-release/noext-debug to override mode"
 	@echo "  assets     Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
 	@echo "  check-assets  Fail if a committed .lrs is out of sync with its sources (CI guard)"
@@ -203,6 +209,16 @@ qjs-links:
 	if [ -n "$$real" ]; then \
 	  ( cd "$(QJS_DIR)" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
 	fi
+
+# Build the QuickJS ABI shim (externals/quickjs/tq_shim.c) for this host. The
+# engine is not rebuilt: this links against whichever libqjs is already in
+# $(QJS_DIR), or the system one where the platform packages quickjs-ng (Haiku:
+# pkgman install quickjs_ng quickjs_ng_devel). The shim is Trndi's own code, so
+# it is the half that has to be compiled on any target prebuilt/ has no binary
+# for. To build the engine as well, use externals/quickjs/build.sh <target>.
+.PHONY: shim
+shim:
+	@externals/quickjs/build.sh shim
 
 # Stage the QuickJS libraries in the project root. The Lazarus IDE builds and
 # runs Trndi there, not in $(OUTDIR), so an Extensions build started with F9

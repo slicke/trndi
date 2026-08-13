@@ -199,6 +199,7 @@ Trndi can be built for Haiku OS using Lazarus.
 - Free Pascal Compiler: `pkgman install fpc`
 - Lazarus build tools: `pkgman install lazarus_bin`
 - OpenSSL for HTTPS support: `pkgman install openssl`
+- For JavaScript extensions only: `pkgman install cmake gcc make`
 
 **Building from source:**
 ```bash
@@ -210,9 +211,25 @@ git clone https://github.com/slicke/trndi.git
 cd trndi
 
 # Use the included Makefile rather than calling lazbuild directly for simplicity.
-# Add noext to build without JavaScript extension support
+# Builds without JavaScript extension support
 make noext
 ```
+
+**With JavaScript extensions:** no QuickJS binaries are shipped for Haiku, so
+build them first — the engine and the ABI shim both, or just the shim against
+Haiku's own quickjs-ng package:
+
+```bash
+externals/quickjs/build.sh haiku          # engine + shim into externals/quickjs/prebuilt/
+# ...or, using the packaged engine:
+pkgman install quickjs_ng quickjs_ng_devel
+make shim
+
+make                                       # normal build, extensions enabled
+```
+
+_See [externals/quickjs/README.md](/externals/quickjs/README.md) for the trade-off
+between the two._
 
 **Features on Haiku:**
 - Native notification support (via `notify-send` if available)

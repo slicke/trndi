@@ -55,12 +55,45 @@ sudo dnf install -y cmake ninja-build gcc mingw64-gcc mingw64-winpthreads-static
 sudo apt install -y cmake ninja-build gcc gcc-mingw-w64-x86-64
 # macOS (the compiler comes from the Xcode command line tools)
 brew install cmake ninja
+# Haiku
+pkgman install cmake gcc make
 
 ./build.sh            # everything this host can produce
 ./build.sh linux      # host .so
 ./build.sh mac        # host .dylib
 ./build.sh win        # win64 .dll (mingw cross)
+./build.sh haiku      # host .so
+./build.sh shim       # the shim only (see below)
 ```
+
+`./build.sh shim` builds *only* `tq_shim.c`, against an engine that is already
+there — the copy in `prebuilt/<target>/` when one exists, otherwise the system's.
+`make shim` is the same thing. That is the useful mode wherever the platform
+packages quickjs-ng itself, and on any target `prebuilt/` has no engine for: the
+shim is Trndi's own code and always has to be compiled, the engine does not.
+
+Either way the engine is checked against `QJS_TAG` before the shim is compiled.
+quickjs-ng is pre-1.0 and makes no ABI promise between minor versions, and
+nothing detects a mismatched engine at runtime — `tq_abi_version` covers the
+shim, not the engine — so a build against the wrong version is refused rather
+than left to fail later (`TRNDI_QJS_ALLOW_VERSION_SKEW=1` overrides).
+
+### Haiku
+
+Haiku packages quickjs-ng at `dev-lang/quickjs-ng`, currently the same tag this
+binding targets, built shared and with a devel package:
+
+```sh
+pkgman install quickjs_ng quickjs_ng_devel
+./build.sh shim       # or: make shim
+```
+
+That is a supported way to get an Extensions build, and the right one if Trndi
+is packaged as an `.hpkg` (`REQUIRES: lib:libqjs`). `./build.sh haiku` builds the
+engine as well and puts it in `prebuilt/`, which is what every other platform
+ships and keeps the engine version under Trndi's control rather than the package
+repository's — the recipe declares `lib:libqjs = 0.15.1 compat >= 0`, so a future
+package bump to 0.16 would satisfy the dependency without satisfying the ABI.
 
 Output lands in `prebuilt/<cpu>-<os>/`, named the way FPC names targets — so
 Apple Silicon is `aarch64-darwin`, not `arm64-darwin`.
@@ -83,13 +116,14 @@ target's directory as well if you want both to link against it.
 | `x86_64-win64` | `build.sh win` (mingw cross), or natively with mingw |
 | `aarch64-darwin`, `x86_64-darwin` | `build.sh mac`, on a Mac |
 | `aarch64-linux` | build natively on the target (e.g. a Raspberry Pi) |
+| `x86_64-haiku` | `build.sh haiku` on Haiku, or `build.sh shim` against the `quickjs_ng` package |
 | Windows ARM64 | build natively on the platform |
 
 `x86_64-linux`, `aarch64-linux`, `x86_64-win64` and `aarch64-darwin` are
-committed. The two missing ones — `x86_64-darwin` (Intel Mac) and Windows ARM64
-— have to be built on the target itself; until they are, those hosts can only
-build Trndi's "No Ext" modes. Anything `build.sh` produces is safe to commit —
-that is the point of `prebuilt/`.
+committed. The missing ones — `x86_64-darwin` (Intel Mac), `x86_64-haiku` and
+Windows ARM64 — have to be built on the target itself; until they are, those
+hosts can only build Trndi's "No Ext" modes. Anything `build.sh` produces is
+safe to commit — that is the point of `prebuilt/`.
 
 There is no cross-glibc in Fedora's repos, so arm64 Linux is built natively
 rather than cross-compiled.
@@ -163,7 +197,12 @@ each platform needs the loader pointed at the executable's own directory:
 |---|---|
 | Windows | automatic — the executable's directory is searched first |
 | Linux | `-k-rpath=$ORIGIN`, set per build mode in `Trndi.lpi` |
+| Haiku | `-k-rpath=$ORIGIN`, same place (its runtime_loader honours `$ORIGIN`) |
 | macOS | `-k-rpath -k@loader_path`, same place |
+
+On Haiku the alternative is `~/config/non-packaged/lib/`, which the runtime
+loader searches anyway — worth knowing if the libraries are installed rather
+than shipped beside the binary.
 
 In a macOS `.app`, that directory is `Contents/MacOS`, which is where
 `dist/macos.sh` puts them.
