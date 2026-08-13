@@ -108,9 +108,9 @@
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <Checks>
@@ -154,9 +154,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -197,9 +197,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -241,9 +241,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -282,9 +282,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -325,9 +325,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -369,9 +369,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -409,9 +409,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -452,9 +452,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -494,9 +494,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
             <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+          <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
@@ -795,9 +795,9 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
       <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
-    <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
-if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=$ORIGIN&apos;;
+    <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;haiku&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
+if TargetOS=&apos;freebsd&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
 if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_path&apos;;"/>
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
