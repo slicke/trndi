@@ -111,6 +111,10 @@ ifeq ($(OS),Windows_NT)
 else ifeq ($(UNAME_S),Darwin)
   QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed s/arm64/aarch64/)-darwin
   QJS_LIBS := *.dylib
+else ifeq ($(UNAME_S),FreeBSD)
+  # FPC names the target x86_64-freebsd where uname -m says amd64.
+  QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed -e s/amd64/x86_64/ -e s/arm64/aarch64/)-freebsd
+  QJS_LIBS := *.so*
 else ifeq ($(UNAME_S),Haiku)
   # x86_64 matches, but Haiku reports 32-bit x86 as BePC and 64-bit ARM as
   # arm64, where FPC (and so this directory) says i386 and aarch64.

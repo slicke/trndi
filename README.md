@@ -241,27 +241,45 @@ between the two._
 - HTTP/HTTPS support via FPC's TFPHTTPClient
 
 ## BSD
-Trndi can be built for FreeBSD, OpenBSD, and NetBSD using Lazarus. 
+Trndi can be built for FreeBSD, OpenBSD, and NetBSD using Lazarus.
 
 **Requirements:**
 - Free Pascal Compiler
 - Lazarus build tools
 - libcurl for HTTP/HTTPS support
 - OpenSSL
+- GNU make — the `Makefile` uses GNU extensions, so build with `gmake`, not BSD `make`
+- For JavaScript extensions on FreeBSD: `cmake` (see below)
 
 **Building from source:**
 ```bash
 # Install dependencies (FreeBSD example)
-pkg install fpc lazarus curl openssl
+pkg install fpc lazarus curl openssl gmake
 
 # Clone and build
 git clone https://github.com/slicke/trndi.git
 cd trndi
 # Use the included Makefile rather than calling lazbuild directly
-make
-# Or build without JavaScript extension support
-make noext
+gmake noext
 ```
+
+**With JavaScript extensions (FreeBSD):** no QuickJS binaries are committed for
+FreeBSD, and the engine cannot be borrowed from another platform — a native
+FreeBSD build links `libc.so.7` and cannot load a Linux `.so`. FreeBSD ports
+carries `lang/quickjs` (Bellard's), which is a different engine from the
+quickjs-ng this binding targets, so build both halves from source once:
+
+```bash
+pkg install cmake
+externals/quickjs/build.sh freebsd     # engine + shim into externals/quickjs/prebuilt/
+gmake                                  # extensions enabled
+```
+
+On OpenBSD and NetBSD use `gmake noext`. Extensions there need the same
+per-platform build as FreeBSD, and nobody has run it — including whether
+`$ORIGIN` in the rpath is honoured, which is what lets the libraries travel
+beside the executable. Adding either is a `build.sh` branch and a test on the
+target, not a port.
 
 **Features on BSD:**
 - Native notification support (via `notify-send` if available)

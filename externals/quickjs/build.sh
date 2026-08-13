@@ -7,6 +7,7 @@
 #   ./build.sh mac      host macOS only
 #   ./build.sh win      win64 cross only
 #   ./build.sh haiku    host Haiku only
+#   ./build.sh freebsd  host FreeBSD only
 #   ./build.sh shim     the ABI shim only, against an engine that is already there
 #
 # See README.md for the required packages.
@@ -25,9 +26,10 @@ what="${1:-all}"
 # themselves, Linux also cross-builds win64 through mingw.
 if [ "$what" = all ]; then
   case "$host" in
-    Darwin) what=mac ;;
-    Haiku)  what=haiku ;;
-    *)      what=all-linux ;;
+    Darwin)  what=mac ;;
+    Haiku)   what=haiku ;;
+    FreeBSD) what=freebsd ;;
+    *)       what=all-linux ;;
   esac
 fi
 
@@ -44,7 +46,15 @@ case "$what" in
     if [ "$host" != Haiku ]; then
       echo "the Haiku libraries must be built on Haiku"; exit 1
     fi ;;
+  freebsd)
+    if [ "$host" != FreeBSD ]; then
+      echo "the FreeBSD libraries must be built on FreeBSD"; exit 1
+    fi ;;
 esac
+
+# FreeBSD's base compiler is clang and there may be no 'gcc' at all, so do not
+# hardcode one; 'cc' is the portable spelling on every target here. $CC wins.
+CC="${CC:-$(command -v cc >/dev/null 2>&1 && echo cc || echo gcc)}"
 
 # A shim-only build compiles one C file against an installed engine: it needs
 # neither the work tree nor the source clone, so do not leave an empty .build
@@ -81,13 +91,14 @@ build_engine() {
 }
 
 # FPC names its targets <cpu>-<os>, and prebuilt/ follows that because the .lpi
-# library path is $(TargetCPU)-$(TargetOS). Two hosts disagree with FPC about
-# the name: Haiku calls 64-bit x86 x86_64 like everyone else, but reports 32-bit
-# x86 as BePC and 64-bit ARM as arm64 (uname.c maps B_CPU_x86 / B_CPU_ARM_64);
-# macOS also says arm64. Linux says i686 where FPC says i386.
+# library path is $(TargetCPU)-$(TargetOS). Several hosts disagree with FPC
+# about the name: FreeBSD says amd64 for x86_64; Haiku reports 32-bit x86 as
+# BePC and 64-bit ARM as arm64 (uname.c maps B_CPU_x86 / B_CPU_ARM_64), and
+# macOS also says arm64; Linux says i686 where FPC says i386.
 host_arch() {
   case "$(uname -m)" in
     BePC|i?86) echo i386 ;;
+    amd64)     echo x86_64 ;;
     arm64)     echo aarch64 ;;
     *)         uname -m ;;
   esac
@@ -138,7 +149,7 @@ soname_links() {
 check_engine_version() {
   local ver
   ver=$(printf '#include <quickjs.h>\nQJS_VERSION_MAJOR.QJS_VERSION_MINOR.QJS_VERSION_PATCH\n' \
-        | ${CC:-gcc} -x c -E "$@" - 2>/dev/null \
+        | $CC -x c -E "$@" - 2>/dev/null \
         | sed '/^#/d;/^[[:space:]]*$/d' | tail -1 | tr -d ' \t')
   if [ -z "$ver" ]; then
     echo "quickjs.h not found."
@@ -176,7 +187,7 @@ build_shim() {
       -o "$out/libtqshim.dylib" "$HERE/tq_shim.c" "${lib[@]}" -lqjs \
       -install_name @rpath/libtqshim.dylib -Wl,-rpath,@loader_path
   else
-    ${CC:-gcc} -shared -fPIC -O2 -std=c11 "${inc[@]}" \
+    $CC -shared -fPIC -O2 -std=c11 "${inc[@]}" \
       -o "$out/libtqshim.so" "$HERE/tq_shim.c" "${lib[@]}" -lqjs \
       -Wl,-rpath,'$ORIGIN'
   fi
@@ -189,7 +200,7 @@ if [ "$what" = all-linux ] || [ "$what" = linux ]; then
 
   build_engine linux
   echo "--> building shim (linux)"
-  gcc -shared -fPIC -O2 -std=c11 -I"$SRC" \
+  $CC -shared -fPIC -O2 -std=c11 -I"$SRC" \
     -o "$WORK/libtqshim.so" "$HERE/tq_shim.c" \
     -L"$WORK/b-linux" -lqjs -Wl,-rpath,'$ORIGIN'
 
@@ -215,15 +226,32 @@ if [ "$what" = haiku ]; then
   echo "    -> $out"
 fi
 
+# FreeBSD ports carries lang/quickjs (Bellard's), not quickjs-ng, so there is
+# no packaged engine this binding can use and both halves are built here. The
+# layout is otherwise the Linux one: rtld honours $ORIGIN, so the libraries sit
+# beside the executable rather than in a subdirectory as on Haiku.
+if [ "$what" = freebsd ]; then
+  out="$HERE/prebuilt/$(host_arch)-freebsd"
+  mkdir -p "$out"
+
+  build_engine freebsd
+  install_engine "$WORK/b-freebsd" "$out"
+
+  echo "--> building shim (freebsd)"
+  build_shim "$out" "$WORK/b-freebsd"
+  echo "    -> $out"
+fi
+
 # Shim only, for a host whose engine is already in place — a packaged one, or a
 # prebuilt/ directory that does not need rebuilding. The shim is Trndi's own
 # code, so it is the half that has to be compiled wherever no binary is shipped.
 if [ "$what" = shim ]; then
   case "$host" in
-    Darwin) out="$HERE/prebuilt/$(host_arch)-darwin" ;;
-    Haiku)  out="$HERE/prebuilt/$(host_arch)-haiku" ;;
-    Linux)  out="$HERE/prebuilt/$(host_arch)-linux" ;;
-    *)      echo "no shim recipe for $host"; exit 1 ;;
+    Darwin)  out="$HERE/prebuilt/$(host_arch)-darwin" ;;
+    Haiku)   out="$HERE/prebuilt/$(host_arch)-haiku" ;;
+    Linux)   out="$HERE/prebuilt/$(host_arch)-linux" ;;
+    FreeBSD) out="$HERE/prebuilt/$(host_arch)-freebsd" ;;
+    *)       echo "no shim recipe for $host"; exit 1 ;;
   esac
 
   # Link against a prebuilt engine when one is sitting there, so the shim
