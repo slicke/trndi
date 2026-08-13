@@ -82,3 +82,41 @@ Podman notes:
 * On Windows and macOS podman runs the containers inside a VM, which must be up first: `podman machine start`. The default machine gets 2 GiB of RAM; if `lazbuild` is killed mid-compile, give it more — `podman machine stop && podman machine set --memory 4096 && podman machine start`.
 * To compile your working tree instead of a fresh clone, mount it over `$TRNDI_DIR`: `podman run -it --rm -v .:/root/trndi:Z trndi-dev`. The `:Z` is needed on SELinux hosts (Fedora, RHEL) and harmless elsewhere; add `--userns=keep-id` to keep the produced files owned by your user rather than by root.
 * Rootless podman is enough — nothing in the image needs `--privileged` or host devices.
+
+### WSL (Windows)
+WSL2 gives a Windows box a real Linux build without a VM or a container, which makes it a convenient place to check the Qt6 and GTK3 paths. The recipe below is deliberately the *edge* one: it builds FPC and Lazarus from trunk, so you can test against compiler and LCL changes long before any distro ships them. For a build that mirrors CI, use the container above or your distro's Lazarus packages instead.
+
+```powershell
+wsl --install FedoraLinux-44      # wsl --list --online for other distros
+```
+
+Inside the distro, install a toolchain and the Trndi dependencies (Fedora shown; substitute `apt`/`zypper` elsewhere):
+
+```sh
+sudo dnf install -y gcc binutils make git qt6pas gtk3-devel libX11-devel gdb
+```
+
+`qt6pas` is the same libqt6pas the Qt6 section above asks for. WSLg forwards the GUI, so the Lazarus IDE and Trndi itself both run with no X server to configure.
+
+Build the trunk toolchain with **fpclazup** — not `fpcup`, which installs FPC alone and has no Lazarus support — from the [Reiniero-fpcup releases](https://github.com/LongDirtyAnimAlf/Reiniero-fpcup/releases):
+
+```sh
+./fpclazup-x86_64-linux \
+  --installdir="$HOME/fpcupdeluxe" \
+  --fpcURL=https://gitlab.com/freepascal.org/fpc/source.git --fpcBranch=main \
+  --lazVersion=trunk \
+  --fpcOPT=-k-znotext --disablejobs --noconfirm
+```
+
+Then rebuild the IDE against Qt6, matching the widgetset Trndi's Linux modes target:
+
+```sh
+cd "$HOME/fpcupdeluxe/lazarus"
+./lazbuild --pcp="$HOME/fpcupdeluxe/config_lazarus" --build-ide= --ws=qt6 --max-process-count=2
+```
+
+WSL notes:
+* Pass the FPC source as `--fpcURL` plus `--fpcBranch`. A `--fpcVersion=3.2.2` shorthand can resolve to an empty URL and fail the checkout with nothing but `Checkout/update of FPC sources failure` to go on, even when the equivalent `--lazVersion` shorthand works.
+* `--fpcOPT=-k-znotext` is required from Fedora 44 / binutils 2.46 onward. Without it FPC compiles to 96% and then fails linking `libpas2jslib.so` with `read-only segment has dynamic relocations`: the RTL is not PIC, and newer `ld` refuses that inside a shared library. This is a distro hardening default rather than an FPC-version problem, so an older FPC hits it just the same.
+* `--disablejobs` and `--max-process-count=2` matter for the same reason the podman note above mentions RAM. Both tools default to one compiler process per core, so a 16-core host against the `[wsl2] memory=6GB` in `%USERPROFILE%\.wslconfig` gets its VM OOM-killed mid-compile — which drops every shell in that distro and loses recently written files, not just the build. Raise the cap or lower the parallelism; on a memory-tight host, lower the parallelism.
+* Trndi's own targets expect FPC 3.2.2, so treat a failure that only appears under a trunk toolchain as suspect until you reproduce it on 3.2.2.
