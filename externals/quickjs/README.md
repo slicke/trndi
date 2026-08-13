@@ -222,20 +222,44 @@ each platform needs the loader pointed at the executable's own directory:
 |---|---|
 | Windows | automatic — the executable's directory is searched first |
 | Linux | `-k-rpath=$ORIGIN`, set per build mode in `Trndi.lpi` |
-| Haiku | a `lib/` subdirectory beside the executable — **not** the executable's own directory |
+| Haiku | `-k-rpath=\$ORIGIN`, plus a `lib/` subdirectory beside the executable as a belt |
+| FreeBSD | `-k-rpath=\$ORIGIN`, same place |
 | macOS | `-k-rpath -k@loader_path`, same place |
 
-Haiku is the odd one out and the layout is not optional. Its runtime_loader
-never searches the directory the executable lives in: the default
-`LIBRARY_PATH` is `%A/lib` (a `lib/` subdirectory beside the app), then
-`~/config/lib`, then `/boot/system/lib`. Libraries sitting *next to* the binary
-are reported as missing while plainly present — the failure looks like a broken
-install rather than a search-path rule. The Makefile therefore stages into
-`build/lib` (and `tests/lib`, and `./lib` for IDE runs) on Haiku.
+### The dollar must be escaped
 
-`Trndi.lpi` does ask for `-k-rpath=$ORIGIN` on Haiku as well, but that is a
-belt, not the mechanism: Haiku honours `$ORIGIN` in `DT_RPATH`, while binutils
-emits `DT_RUNPATH` by default and runtime_loader support for that tag is recent.
+Note the backslash. FPC's link step passes `-k` options through a shell on
+FreeBSD and Haiku, so an unescaped `$ORIGIN` is expanded by that shell to
+nothing: `ld` receives `-rpath=` and stamps an rpath entry that exists and
+points nowhere. The libraries then sit beside the executable, correctly named,
+and the loader still reports them missing. Measured, both with bare `fpc` and
+through the whole lazbuild → `<Conditionals>` → `fpc` → `ld` chain:
+
+| spelling | Linux | FreeBSD | Haiku |
+|---|---|---|---|
+| `-k-rpath=$ORIGIN` | `[$ORIGIN]` | `[]` | `[]` |
+| `-k-rpath=\$ORIGIN` | `[$ORIGIN]` | `[$ORIGIN]` | `[$ORIGIN]` |
+| `-k-rpath -k$ORIGIN` | `[$ORIGIN]` | `[-dynamic-linker=…]` | — |
+
+So all three use the escaped spelling, and the two-argument form is avoided
+entirely — on FreeBSD it swallowed an unrelated linker argument into the rpath.
+Linux tolerates every spelling, which is why this went unnoticed: it worked
+where it was tested and was silently empty everywhere else.
+
+With the escaped form the loaders do resolve a library sitting beside the
+executable, checked on FreeBSD 15.1 and Haiku hrev57937 by running a binary
+from `/` and calling into a library placed next to it — `ldd` on FreeBSD
+reports the copy beside the binary rather than the one in `/lib`.
+
+### Haiku also searches `%A/lib`
+
+With a working rpath the libraries load from beside the executable, verified on
+hrev57937 by running a program from `/` that called into `libqjs` sitting next
+to it. Independently, Haiku's default `LIBRARY_PATH` is `%A/lib` (a `lib/`
+subdirectory beside the app), then `~/config/lib`, then `/boot/system/lib` — so
+the Makefile also stages into `build/lib`, `tests/lib` and `./lib` there. That
+is now redundancy rather than the mechanism, and it is worth keeping: it is what
+made Haiku work at all while the rpath was silently empty.
 `~/config/non-packaged/lib/` is the other place that always works, if the
 libraries are installed rather than shipped beside the binary.
 
