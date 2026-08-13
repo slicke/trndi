@@ -119,11 +119,11 @@ target's directory as well if you want both to link against it.
 | `x86_64-haiku` | `build.sh haiku` on Haiku, or `build.sh shim` against the `quickjs_ng` package |
 | Windows ARM64 | build natively on the platform |
 
-`x86_64-linux`, `aarch64-linux`, `x86_64-win64` and `aarch64-darwin` are
-committed. The missing ones — `x86_64-darwin` (Intel Mac), `x86_64-haiku` and
-Windows ARM64 — have to be built on the target itself; until they are, those
-hosts can only build Trndi's "No Ext" modes. Anything `build.sh` produces is
-safe to commit — that is the point of `prebuilt/`.
+`x86_64-linux`, `aarch64-linux`, `x86_64-win64`, `aarch64-darwin` and
+`x86_64-haiku` are committed. The missing ones — `x86_64-darwin` (Intel Mac)
+and Windows ARM64 — have to be built on the target itself; until they are,
+those hosts can only build Trndi's "No Ext" modes. Anything `build.sh`
+produces is safe to commit — that is the point of `prebuilt/`.
 
 There is no cross-glibc in Fedora's repos, so arm64 Linux is built natively
 rather than cross-compiled.
