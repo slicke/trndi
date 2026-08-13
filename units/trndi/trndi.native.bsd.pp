@@ -40,9 +40,11 @@ unit trndi.native.bsd;
 {**
   @abstract(BSD-specific native features for Trndi.)
 
-  This unit defines @link(TTrndiNativeBSD) which is simply an alias to
-  @link(TTrndiNativeLinux) since BSD systems use the same tooling and
-  conventions as Linux (notify-send, spd-say, INI files, libcurl, etc.).
+  This unit defines @link(TTrndiNativeBSD), a subclass of
+  @link(TTrndiNativeLinux). Most behavior is shared with Linux (INI files,
+  libcurl, notify-send, spd-say), but BSD adds fallbacks for setups where
+  the Linux tooling is missing: espeak-ng/espeak/flite for TTS, and kdialog
+  for notifications.
 
   Prefer using the façade unit @code(trndi.native) which selects the platform
   class alias automatically.
@@ -58,20 +60,23 @@ uses
 type
   {!
     @abstract(BSD implementation - subclass of Linux implementation.)
-    BSD systems use the same tools and conventions as Linux. Declaring a
-    distinct subclass allows BSD-specific overrides in future without
-    changing callers.
+    BSD systems mostly use the same tools and conventions as Linux; this
+    subclass adds fallbacks for the pieces that are often missing on BSD
+    (speech-dispatcher, notify-send).
   }
 TTrndiNativeBSD = class(TTrndiNativeLinux)
   public
-    {** TTS: allow BSD to alter detection/behavior later without changing callers. }
+    {** TTS: prefer the inherited spd-say path; fall back to
+        espeak-ng/espeak/flite when speech-dispatcher is absent. }
     class function SpeakAvailable: boolean; override;
     class function SpeakSoftwareName: string; override;
     procedure Speak(const Text: string); override;
 
-    {** Notifications: same rationale — delegate today, override later if needed. }
+    {** Notifications: inherited gdbus/notify-send path, with kdialog
+        preferred on KDE sessions and used as a fallback elsewhere. }
     class function isNotificationSystemAvailable: boolean; override;
     class function getNotificationSystem: string; override;
+    procedure attention(topic, message: string); override;
 
     // BSD-specific overrides can be added here later.
   end;
@@ -79,7 +84,7 @@ TTrndiNativeBSD = class(TTrndiNativeLinux)
 implementation
 
 uses
-  Classes, SysUtils, Process, Dialogs, trndi.log;
+  Classes, SysUtils, Dialogs, trndi.log, trndi.native.async;
 
 {------------------------------------------------------------------------------
   BSD: TTS fallback + small helpers.
@@ -151,7 +156,17 @@ procedure TTrndiNativeBSD.Speak(const Text: string);
 var
   CmdPath, VoiceType, EspeakVoice, EngineName: string;
   Rate, EspeakWPM: Integer;
-  Proc: TProcess;
+  Args: array of string;
+
+  procedure AddArgs(const a: array of string);
+  var
+    i, base: Integer;
+  begin
+    base := Length(Args);
+    SetLength(Args, base + Length(a));
+    for i := 0 to High(a) do
+      Args[base + i] := a[i];
+  end;
 
   function GetLangPrefix: string;
   var
@@ -233,31 +248,17 @@ begin
     if EspeakWPM > 450 then
       EspeakWPM := 450;
 
-    Proc := TProcess.Create(nil);
-    try
-      Proc.Executable := CmdPath;
-      if EspeakVoice <> '' then
-      begin
-        Proc.Parameters.Add('-v');
-        Proc.Parameters.Add(EspeakVoice);
-      end;
-      if Rate <> 0 then
-        Proc.Parameters.Add('-s' + IntToStr(EspeakWPM));
-      Proc.Parameters.Add(Text);
-      Proc.Options := [];
-      Proc.Execute; // run asynchronously
+    Args := nil;
+    if EspeakVoice <> '' then
+      AddArgs(['-v', EspeakVoice]);
+    if Rate <> 0 then
+      AddArgs(['-s', IntToStr(EspeakWPM)]);
+    AddArgs([Text]);
 
-      TrndiDLog(Format('TTS: %s fallback used (voice=%s rate=%d)', [EngineName, EspeakVoice, EspeakWPM]));
-    except
-      on E: Exception do
-      begin
-        if not ttsErrorShown then
-        begin
-          ShowMessage('TTS Error: ' + E.Message);
-          ttsErrorShown := true;
-        end;
-      end;
-    end;
+    // Fire-and-forget via the async worker: doesn't block the UI, and the
+    // worker thread reaps the child process so zombies don't accumulate.
+    RunAndCaptureSimpleAsync(CmdPath, Args, nil);
+    TrndiDLog(Format('TTS: %s fallback used (voice=%s rate=%d)', [EngineName, EspeakVoice, EspeakWPM]));
     Exit;
   end;
 
@@ -265,25 +266,8 @@ begin
   CmdPath := ExecInPath('flite');
   if CmdPath <> '' then
   begin
-    Proc := TProcess.Create(nil);
-    try
-      Proc.Executable := CmdPath;
-      Proc.Parameters.Add('-t');
-      Proc.Parameters.Add(Text);
-      Proc.Options := [];
-      Proc.Execute;
-
-      TrndiDLog('TTS: flite fallback used');
-    except
-      on E: Exception do
-      begin
-        if not ttsErrorShown then
-        begin
-          ShowMessage('TTS Error: ' + E.Message);
-          ttsErrorShown := true;
-        end;
-      end;
-    end;
+    RunAndCaptureSimpleAsync(CmdPath, ['-t', Text], nil);
+    TrndiDLog('TTS: flite fallback used');
     Exit;
   end;
 
@@ -296,36 +280,65 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Notification stubs still delegate to Linux implementation.
+  Notifications (BSD)
+  -------------------
+  The inherited gdbus/notify-send path is the default; kdialog is preferred
+  on KDE-like sessions and used as a last resort on any desktop when the
+  inherited tooling is missing. UseKDialog keeps availability, the reported
+  system name and the actual send path in agreement.
 ------------------------------------------------------------------------------}
+function HasGuiDisplay: boolean;
+begin
+  Result := (GetEnvironmentVariable('DISPLAY') <> '') or
+    (GetEnvironmentVariable('WAYLAND_DISPLAY') <> '');
+end;
+
+function IsKDESession: boolean;
+var
+  d: string;
+begin
+  d := GetEnvironmentVariable('XDG_CURRENT_DESKTOP');
+  if d = '' then
+    d := GetEnvironmentVariable('DESKTOP_SESSION');
+  Result := Pos('KDE', UpperCase(d)) > 0;
+end;
+
+function UseKDialog: boolean;
+begin
+  Result := (ExecInPath('kdialog') <> '') and HasGuiDisplay and
+    (IsKDESession or not TTrndiNativeLinux.isNotificationSystemAvailable);
+end;
+
 class function TTrndiNativeBSD.isNotificationSystemAvailable: boolean;
 begin
-  // If kdialog exists and a display is available, consider notifications available
-  if (ExecInPath('kdialog') <> '') and
-    ((GetEnvironmentVariable('DISPLAY') <> '') or (GetEnvironmentVariable('WAYLAND_DISPLAY') <> '')) then
+  if UseKDialog then
     Exit(True);
 
   Result := inherited isNotificationSystemAvailable;
 end;
 
 class function TTrndiNativeBSD.getNotificationSystem: string;
-var
-  d: string;
 begin
-  // Prefer kdialog on KDE-like sessions when available
-  if ExecInPath('kdialog') <> '' then
+  if UseKDialog then
   begin
-    d := GetEnvironmentVariable('XDG_CURRENT_DESKTOP');
-    if d = '' then
-      d := GetEnvironmentVariable('DESKTOP_SESSION');
-    if Pos('KDE', UpperCase(d)) > 0 then
-    begin
-      TrndiDLog('Notification system: using kdialog on BSD');
-      Exit('kdialog');
-    end;
+    TrndiDLog('Notification system: using kdialog on BSD');
+    Exit('kdialog');
   end;
 
   Result := inherited getNotificationSystem;
+end;
+
+procedure TTrndiNativeBSD.attention(topic, message: string);
+begin
+  if UseKDialog then
+  begin
+    // Fire-and-forget via the async worker so the child gets reaped (no zombies)
+    RunAndCaptureSimpleAsync(ExecInPath('kdialog'),
+      ['--title', topic, '--passivepopup', message, '5'], nil);
+    Exit;
+  end;
+
+  inherited attention(topic, message);
 end;
 
 end.
