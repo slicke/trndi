@@ -197,12 +197,22 @@ each platform needs the loader pointed at the executable's own directory:
 |---|---|
 | Windows | automatic — the executable's directory is searched first |
 | Linux | `-k-rpath=$ORIGIN`, set per build mode in `Trndi.lpi` |
-| Haiku | `-k-rpath=$ORIGIN`, same place (its runtime_loader honours `$ORIGIN`) |
+| Haiku | a `lib/` subdirectory beside the executable — **not** the executable's own directory |
 | macOS | `-k-rpath -k@loader_path`, same place |
 
-On Haiku the alternative is `~/config/non-packaged/lib/`, which the runtime
-loader searches anyway — worth knowing if the libraries are installed rather
-than shipped beside the binary.
+Haiku is the odd one out and the layout is not optional. Its runtime_loader
+never searches the directory the executable lives in: the default
+`LIBRARY_PATH` is `%A/lib` (a `lib/` subdirectory beside the app), then
+`~/config/lib`, then `/boot/system/lib`. Libraries sitting *next to* the binary
+are reported as missing while plainly present — the failure looks like a broken
+install rather than a search-path rule. The Makefile therefore stages into
+`build/lib` (and `tests/lib`, and `./lib` for IDE runs) on Haiku.
+
+`Trndi.lpi` does ask for `-k-rpath=$ORIGIN` on Haiku as well, but that is a
+belt, not the mechanism: Haiku honours `$ORIGIN` in `DT_RPATH`, while binutils
+emits `DT_RUNPATH` by default and runtime_loader support for that tag is recent.
+`~/config/non-packaged/lib/` is the other place that always works, if the
+libraries are installed rather than shipped beside the binary.
 
 In a macOS `.app`, that directory is `Contents/MacOS`, which is where
 `dist/macos.sh` puts them.
