@@ -251,6 +251,16 @@ executable, checked on FreeBSD 15.1 and Haiku hrev57937 by running a binary
 from `/` and calling into a library placed next to it — `ldd` on FreeBSD
 reports the copy beside the binary rather than the one in `/lib`.
 
+macOS keeps the two-argument form on purpose: `@loader_path` has no dollar for
+a shell to eat, and ld64 wants the path as a separate argument. An installed
+`Trndi.app` records it correctly — worth re-checking with
+
+```sh
+otool -l Trndi.app/Contents/MacOS/Trndi | grep -A2 LC_RPATH   # path @loader_path
+```
+
+if that line is ever rewritten to match the others.
+
 ### Haiku also searches `%A/lib`
 
 With a working rpath the libraries load from beside the executable, verified on
