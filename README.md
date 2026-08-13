@@ -263,16 +263,17 @@ cd trndi
 gmake noext
 ```
 
-**With JavaScript extensions (FreeBSD):** no QuickJS binaries are committed for
-FreeBSD, and the engine cannot be borrowed from another platform — a native
-FreeBSD build links `libc.so.7` and cannot load a Linux `.so`. FreeBSD ports
-carries `lang/quickjs` (Bellard's), which is a different engine from the
-quickjs-ng this binding targets, so build both halves from source once:
+**With JavaScript extensions (FreeBSD):** x86_64 binaries are committed, so
+`gmake` builds with extensions enabled. They are FreeBSD-native and cannot be
+borrowed from another platform — a native FreeBSD build links `libc.so.7` and
+cannot load a Linux `.so` — and they carry an ABI note for the release they
+were built on (currently 15.1), which an older FreeBSD may refuse. To rebuild
+them, note that ports carries `lang/quickjs` (Bellard's), a different engine
+from the quickjs-ng this binding targets, so both halves come from source:
 
 ```bash
 pkg install cmake
 externals/quickjs/build.sh freebsd     # engine + shim into externals/quickjs/prebuilt/
-gmake                                  # extensions enabled
 ```
 
 On OpenBSD and NetBSD use `gmake noext`. Extensions there need the same
