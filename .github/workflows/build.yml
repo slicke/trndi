@@ -319,8 +319,17 @@ jobs:
             if [ -f dist/linux/after-install.sh ]; then FPM_SCRIPTS+=(--after-install dist/linux/after-install.sh); fi
             if [ -f dist/linux/after-remove.sh ]; then FPM_SCRIPTS+=(--after-remove dist/linux/after-remove.sh); fi
 
-            fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture "${DEB_ARCH}" --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
-            fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture "${RPM_ARCH}" --license "GPLv3" --description "Trndi CGM Viewer" "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
+            # Qt6Pas is a weak dependency on purpose. Trndi needs it to start,
+            # but it only reached Debian in trixie, Ubuntu in 25.10 and Fedora
+            # in 43 — a hard Depends/Requires would make the packages refuse to
+            # install on Raspberry Pi OS (bookworm) and Ubuntu 24.04 LTS, where
+            # people install libQt6Pas by hand today. Recommends pulls it in
+            # automatically where the distro ships it and stays out of the way
+            # where it does not. RPM matches the soname rather than the package
+            # name, so any provider satisfies it (Fedora's qt6pas, openSUSE's
+            # libQt6Pas6, third-party repo builds).
+            fpm -s dir -t deb -n trndi -v "${PKG_VERSION}" --architecture "${DEB_ARCH}" --license "GPLv3" --description "Trndi CGM Viewer" --deb-recommends libqt6pas6 "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
+            fpm -s dir -t rpm -n trndi -v "${PKG_VERSION}" --architecture "${RPM_ARCH}" --license "GPLv3" --description "Trndi CGM Viewer" --rpm-tag 'Recommends: libQt6Pas.so.6()(64bit)' "${FPM_SCRIPTS[@]}" -C "$PKG_DIR" .
             
             # Sign packages if GPG key is available (never on PRs — secrets may
             # be absent on fork PRs and PR artifacts are unpublished anyway)

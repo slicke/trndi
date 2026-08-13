@@ -356,6 +356,17 @@ Defaults by platform:
 - Linux: forces the `Qt6` build modes by default (e.g. `Qt6 (Release)`)
 - Windows / macOS: prefers native `Extensions (Release)` / `No Extensions (Release)`(respectively) style builds for release targets
 
+If `lazbuild` is not on your `PATH`, point `LAZBUILD` at it. This is the normal
+case on macOS with [fpcupdeluxe](https://github.com/LongDirtyAnimAlf/fpcupdeluxe),
+which keeps its whole toolchain inside its install directory and never touches
+`PATH`:
+```bash
+LAZBUILD=~/fpcupdeluxe/lazarus/lazbuild gmake
+```
+`WIDGETSET` does not need to be set — it already defaults to `cocoa` on macOS
+and `qt6` on Linux. On Windows the Makefile finds `C:/lazarus/lazbuild.exe` by
+itself, and `make.ps1` does the same.
+
 Examples:
 ```bash
 make            # on Linux -> Qt6 (Release) (artifacts placed in the 'build/' directory)
