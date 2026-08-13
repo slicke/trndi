@@ -158,11 +158,13 @@ public
     out res: string): boolean; override;
   {** Desktop-aware dark mode detection.
     Order:
-    1) KDE Plasma via kreadconfig5: General/ColorScheme contains "Dark".
-    2) GNOME via gsettings: org.gnome.desktop.interface color-scheme (prefer-dark/default),
+    1) xdg-desktop-portal via gdbus: org.freedesktop.appearance color-scheme
+     (desktop-agnostic; works on GNOME, KDE and wlroots compositors).
+    2) KDE Plasma via kreadconfig6/kreadconfig5: General/ColorScheme contains "Dark".
+    3) GNOME via gsettings: org.gnome.desktop.interface color-scheme (prefer-dark/default),
      then fallback to gtk-theme containing "-dark".
-    3) GTK_THEME environment variable contains "dark" (e.g. Adwaita:dark).
-    4) Fallback heuristic comparing clWindow vs clWindowText brightness.
+    4) GTK_THEME environment variable contains "dark" (e.g. Adwaita:dark).
+    5) Fallback heuristic comparing clWindow vs clWindowText brightness.
   }
   class function isDarkMode: boolean; override;
     {** Returns True if notify-send is available on this system. }
@@ -213,7 +215,8 @@ public
     {** Microsecond monotonic clock via clock_gettime(CLOCK_MONOTONIC).
         Random bytes come from the base implementation's /dev/urandom. }
   class function MonotonicMicroseconds: int64; override;
-    {** Play an audio file via aplay. }
+    {** Play an audio file: paplay (PulseAudio/PipeWire), then aplay and
+        generic players as fallbacks. }
   class procedure PlaySound(const FileName: string); override;
     {** Detect Windows Subsystem for Linux: checks /proc/version, kernel osrelease,
         and WSL_* environment variables. Returns IsWSL=false on non-WSL Linux. }
@@ -697,8 +700,8 @@ end;
 {------------------------------------------------------------------------------
   DetectKDEDark
   -------------
-  KDE Plasma: read General/ColorScheme via kreadconfig5. Returns True if a
-  decision was made and sets isDark accordingly.
+  KDE Plasma: read General/ColorScheme via kreadconfig6 (Plasma 6) or
+  kreadconfig5. Returns True if a decision was made and sets isDark accordingly.
  ------------------------------------------------------------------------------}
 function DetectKDEDark(out isDark: boolean): boolean;
 var
@@ -712,7 +715,9 @@ begin
   if (Pos('kde', dHint) = 0) and (Pos('plasma', dHint) = 0) then
   // Not obviously KDE; continue if tool exists
   ;
-  kreadPath := FindInPath('kreadconfig5');
+  kreadPath := FindInPath('kreadconfig6');
+  if kreadPath = '' then
+    kreadPath := FindInPath('kreadconfig5');
   if kreadPath = '' then
     Exit(false);
 
@@ -728,6 +733,45 @@ begin
   end;
 
   Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  DetectPortalDark
+  ----------------
+  Desktop-agnostic: ask xdg-desktop-portal for org.freedesktop.appearance
+  color-scheme via gdbus (0 = no preference, 1 = dark, 2 = light). Works on
+  GNOME, KDE and wlroots compositors alike. Returns True if the portal gave a
+  definite answer; "no preference" falls through to desktop-specific checks.
+ ------------------------------------------------------------------------------}
+function DetectPortalDark(out isDark: boolean): boolean;
+var
+  gdbusPath, outS: string;
+  exitCode: integer;
+begin
+  Result := false;
+  isDark := false;
+  gdbusPath := FindInPath('gdbus');
+  if gdbusPath = '' then
+    Exit;
+
+  if RunAndCaptureSimpleWait(gdbusPath,
+    ['call', '--session',
+     '--dest', 'org.freedesktop.portal.Desktop',
+     '--object-path', '/org/freedesktop/portal/desktop',
+     '--method', 'org.freedesktop.portal.Settings.Read',
+     'org.freedesktop.appearance', 'color-scheme'],
+    outS, exitCode, 3000) and (exitCode = 0) then
+  begin
+    // Reply shape: (<<uint32 1>>,) — match the inner value only
+    if Pos('uint32 1', outS) > 0 then
+    begin
+      isDark := true;
+      Exit(true);
+    end;
+    if Pos('uint32 2', outS) > 0 then
+      Exit(true); // definite light
+    // uint32 0 = no preference — let the desktop-specific probes decide
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -1188,8 +1232,8 @@ end;
 {------------------------------------------------------------------------------
   isDarkMode
   ----------
-  Desktop-aware detection: KDE (kreadconfig5), GNOME (gsettings), GTK_THEME,
-  or fallback luminance heuristic.
+  Desktop-aware detection: portal (gdbus), KDE (kreadconfig6/5), GNOME
+  (gsettings), GTK_THEME, or fallback luminance heuristic.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.isDarkMode: boolean;
 var
@@ -1202,15 +1246,19 @@ function Brightness(C: TColor): double;
   end;
 
 begin
-  // 1) KDE Plasma: kreadconfig5 ColorScheme
+  // 1) xdg-desktop-portal color-scheme (desktop-agnostic)
+  if DetectPortalDark(v) then
+    Exit(v);
+
+  // 2) KDE Plasma: kreadconfig6/kreadconfig5 ColorScheme
   if DetectKDEDark(v) then
     Exit(v);
 
-  // 2) GNOME: gsettings color-scheme/gtk-theme
+  // 3) GNOME: gsettings color-scheme/gtk-theme
   if DetectGnomeDark(v) then
     Exit(v);
 
-  // 3) GTK_THEME environment variable (e.g., Adwaita:dark)
+  // 4) GTK_THEME environment variable (e.g., Adwaita:dark)
   envGtkTheme := EnvValue('GTK_THEME');
   if envGtkTheme <> '' then
     if ContainsDark(envGtkTheme) then
@@ -2987,16 +3035,44 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  PlaySound (Linux/BSD)
-  ---------------------
-  Spawn aplay for a validated audio file.
+  PlaySound (Linux)
+  -----------------
+  Prefer the sound server's own client: paplay works under both PulseAudio and
+  PipeWire (pipewire-pulse), handles more formats than aplay, and is the one
+  that works under WSLg. Raw ALSA and generic players are fallbacks.
  ------------------------------------------------------------------------------}
 class procedure TTrndiNativeLinux.PlaySound(const FileName: string);
+
+  function TryPlay(const Player: string; const Pre: array of string): boolean;
+  var
+    exe: string;
+    Args: array of string;
+    i: integer;
+  begin
+    Result := false;
+    exe := FindInPath(Player);
+    if exe = '' then
+      Exit;
+    SetLength(Args, Length(Pre) + 1);
+    for i := 0 to High(Pre) do
+      Args[i] := Pre[i];
+    Args[High(Args)] := FileName;
+    // Fire-and-forget via the async worker so the child gets reaped (no zombies)
+    RunAndCaptureSimpleAsync(exe, Args, nil);
+    Result := true;
+  end;
+
 begin
   if not IsValidAudioFile(FileName) then
     Exit;
-  // Fire-and-forget via the async worker so the child gets reaped (no zombies)
-  RunAndCaptureSimpleAsync('aplay', [FileName], nil);
+
+  if TryPlay('paplay', []) then Exit;
+  if TryPlay('pw-play', []) then Exit;
+  if TryPlay('aplay', []) then Exit;
+  if TryPlay('ffplay', ['-nodisp', '-autoexit', '-loglevel', 'quiet']) then Exit;
+  if TryPlay('mpv', ['--no-video', '--really-quiet']) then Exit;
+
+  TrndiDLog('PlaySound: no audio player found (install pulseaudio-utils, pipewire, alsa-utils, ffmpeg or mpv)');
 end;
 
 {------------------------------------------------------------------------------
