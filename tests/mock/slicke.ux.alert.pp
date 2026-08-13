@@ -68,8 +68,8 @@ function SlickeMsgYesNo(const dialogsize: TSlickeDialogSize; const caption, desc
 
 function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: string; buttons: TSlickeMsgDlgBtns = nil; const icon: SlickeUXImage = uxmtInformation; scale: Extended = 1; ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 function SlickeInput(const dialogsize: TSlickeDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
-function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false): LongInt; overload;
-function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
+function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false; const icon: SlickeUXImage = uxmtCog; const Preselect: integer = 0): LongInt; overload;
+function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false; const icon: SlickeUXImage = uxmtCog; const Preselect: integer = 0): LongInt; overload;
 
 // Numeric and date inputs (headless stubs)
 function SlickeIntInput(
@@ -214,14 +214,14 @@ begin
   Result := ADefault;
 end;
 
-function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false): LongInt; overload;
+function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false; const icon: SlickeUXImage = uxmtCog; const Preselect: integer = 0): LongInt; overload;
 begin
-  Result := 0;
+  Result := Preselect;
 end;
 
-function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false): LongInt; overload;
+function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false; const icon: SlickeUXImage = uxmtCog; const Preselect: integer = 0): LongInt; overload;
 begin
-  Result := 0;
+  Result := Preselect;
 end;
 
 

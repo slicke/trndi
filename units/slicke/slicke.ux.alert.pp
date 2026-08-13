@@ -688,19 +688,22 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
     @param Choices Array of strings to populate the combo box.
     @param Default If @true, the cancel button is labeled "Default" to indicate defaulting.
     @param icon Emoji icon (default gear).
+    @param Preselect Index selected when the dialog opens; out-of-range values fall back to the first entry.
     @returns Selected index (0-based) on OK, or -1 on cancel.
   }
 function SlickeList(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Choices: array of unicodestring;
 const Default: boolean = false;
-const icon: SlickeUXImage = uxmtCog): integer; overload;
+const icon: SlickeUXImage = uxmtCog;
+const Preselect: integer = 0): integer; overload;
 
 function SlickeList(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Choices: array of string;
 const Default: boolean = false;
-const icon: SlickeUXImage = uxmtCog): integer; overload;
+const icon: SlickeUXImage = uxmtCog;
+const Preselect: integer = 0): integer; overload;
   {**
     Show a single-line string input dialog.
     @param dialogsize Layout preset.
@@ -3134,7 +3137,8 @@ function SlickeList(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Choices: array of string;
 const Default: boolean = false;
-const icon: SlickeUXImage = uxmtCog): integer; overload;
+const icon: SlickeUXImage = uxmtCog;
+const Preselect: integer = 0): integer; overload;
 var
   UChoices: array of unicodestring;
   i: integer;
@@ -3143,7 +3147,8 @@ begin
   for i := 0 to High(Choices) do
     UChoices[i] := unicodestring(Choices[i]);
 
-  Result := SlickeList(dialogsize, ACaption, ATitle, ADesc, UChoices, Default, icon);
+  Result := SlickeList(dialogsize, ACaption, ATitle, ADesc, UChoices, Default, icon,
+    Preselect);
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -3152,7 +3157,8 @@ const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
 const Choices: array of unicodestring;
 const Default: boolean = false;
-const icon: SlickeUXImage = uxmtCog
+const icon: SlickeUXImage = uxmtCog;
+const Preselect: integer = 0
 ): integer;
 const
   Padding = 16;
@@ -3197,7 +3203,13 @@ begin
     ApplyDialogFont(Combo.Font, size, 20);
     ApplyDialogInputHeight(Combo, size);
     Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
-    Combo.ItemIndex := 0;
+    // The caller's most likely answer (e.g. the account used last session)
+    // rather than whichever entry happens to sort first. A stale or unknown
+    // index is not an error here - fall back to the first entry.
+    if (Preselect >= 0) and (Preselect <= High(Choices)) then
+      Combo.ItemIndex := Preselect
+    else
+      Combo.ItemIndex := 0;
 
     OkButton     := MakeDialogButton(Dialog, size, smbSelect, mrOk);
     CancelButton := MakeDialogButton(Dialog, size,
