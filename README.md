@@ -228,6 +228,9 @@ make shim
 make                                       # normal build, extensions enabled
 ```
 
+`make` puts the libraries in `build/lib/`, not beside `build/Trndi`: Haiku's
+runtime_loader searches `%A/lib` and never the executable's own directory.
+
 _See [externals/quickjs/README.md](/externals/quickjs/README.md) for the trade-off
 between the two._
 

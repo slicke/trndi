@@ -129,15 +129,36 @@ endif
 # the project root.
 # Where 'build' stages them: beside the executable in $(OUTDIR), and inside a
 # macOS bundle's Contents/MacOS. Empty for a No Ext build, which links no engine.
+# Haiku's runtime_loader never searches the executable's own directory. Its
+# default LIBRARY_PATH is "%A/lib" -- a lib/ subdirectory beside the app --
+# followed by the system paths, so that subdirectory is where the engine has to
+# land or the loader reports it missing while it sits right next to the binary.
+# (Trndi.lpi does ask for an rpath of $ORIGIN on Haiku, which the runtime_loader
+# honours only in DT_RPATH; binutils emits DT_RUNPATH by default, and support
+# for that is recent. %A/lib is what actually carries this.) Empty everywhere
+# else, where the libraries go beside the binary.
+ifeq ($(UNAME_S),Haiku)
+  QJS_LIBSUBDIR := lib
+endif
+
 QJS_BUILD_DESTS = "$(OUTDIR)" "$(OUTDIR)"/*.app/Contents/MacOS
+ifneq ($(QJS_LIBSUBDIR),)
+  QJS_BUILD_DESTS += "$(OUTDIR)/$(QJS_LIBSUBDIR)"
+endif
 ifeq ($(BUILD_MODE_NAME),No Ext)
   QJS_BUILD_DESTS =
 endif
 
+# Test-binary staging targets, same idea: tests/ plus tests/lib on Haiku.
+QJS_TEST_DESTS = tests $(if $(QJS_LIBSUBDIR),tests/$(QJS_LIBSUBDIR))
+
 define stage-qjs-libs
 	@if [ -d "$(QJS_DIR)" ]; then \
 	  for dest in $(1); do \
-	    [ -d "$$dest" ] || continue; \
+	    case "$$dest" in \
+	      *[*?]*) [ -d "$$dest" ] || continue ;; \
+	      *) mkdir -p "$$dest" ;; \
+	    esac; \
 	    if ls $(QJS_DIR)/libqjs.so.[0-9]*.[0-9]*.[0-9]* >/dev/null 2>&1; then \
 	      rm -f "$$dest"/libqjs.so "$$dest"/libqjs.so.[0-9]*; \
 	    fi; \
@@ -234,7 +255,7 @@ shim:
 # are gitignored in the root; 'make clean' removes them.
 .PHONY: ide-libs
 ide-libs: qjs-links
-	$(call stage-qjs-libs,.)
+	$(call stage-qjs-libs,. $(if $(QJS_LIBSUBDIR),./$(QJS_LIBSUBDIR)))
 
 build: qjs-links
 	mkdir -p $(OUTDIR)
@@ -280,7 +301,7 @@ test: check qjs-links
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
-	@[ -d "$(QJS_DIR)" ] && cp -P $(QJS_DIR)/$(QJS_LIBS) tests/ || true
+	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
 	@echo "Running console tests (embedded Pascal test server)"
 	@./tests/TrndiTestConsole
 
@@ -289,7 +310,7 @@ noext-test: qjs-links
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
-	@[ -d "$(QJS_DIR)" ] && cp -P $(QJS_DIR)/$(QJS_LIBS) tests/ || true
+	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
 	@echo "Running console tests (embedded Pascal test server)"
 	@./tests/TrndiTestConsole
 
@@ -298,7 +319,7 @@ test-noserver: check qjs-links
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
-	@[ -d "$(QJS_DIR)" ] && cp -P $(QJS_DIR)/$(QJS_LIBS) tests/ || true
+	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
 	@echo "Running tests without embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@TRNDI_NO_TESTSERVER=1 ./tests/TrndiTestConsole
 
@@ -307,7 +328,7 @@ noext-test-noserver: qjs-links
 	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
-	@[ -d "$(QJS_DIR)" ] && cp -P $(QJS_DIR)/$(QJS_LIBS) tests/ || true
+	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
 	@echo "Running tests without embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@TRNDI_NO_TESTSERVER=1 ./tests/TrndiTestConsole
 
