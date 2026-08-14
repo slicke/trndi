@@ -2102,6 +2102,30 @@ begin
     (BoundsRect.Height >= Screen.Height));
 end;
 
+{$ifdef LCLQt6}
+// LCL-Qt6 pins frameless (bsNone) forms to a *fixed* Qt size — min = max =
+// current (TQtMainWindow.Resize calls QWidget_setFixedSize). Wayland
+// compositors are the only party allowed to resize a window and they honor
+// those hints even for fullscreen, so showFullScreen parks the window in the
+// screen's top-left corner at its old size instead of covering the screen.
+// Lift the constraint before requesting fullscreen; leaving fullscreen
+// re-pins it via the SetBounds -> TQtMainWindow.Resize path.
+procedure QtUnpinFixedSize(AHandle: THandle);
+const
+  QWIDGETSIZE_MAX = 16777215; // Qt's QWIDGETSIZE_MAX
+var
+  QtWidget: TQtWidget;
+begin
+  if AHandle = 0 then
+    Exit;
+  QtWidget := TQtWidget(AHandle);
+  if not Assigned(QtWidget) or not Assigned(QtWidget.Widget) then
+    Exit;
+  QWidget_setMinimumSize(QtWidget.Widget, 0, 0);
+  QWidget_setMaximumSize(QtWidget.Widget, QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+end;
+{$endif}
+
 procedure TfBG.DoFullScreen;
 var
   IsCurrentlyFullscreen: boolean;
@@ -2170,6 +2194,12 @@ begin
     BorderStyle := bsNone;
     FormStyle := fsStayOnTop;
     Application.ProcessMessages;
+
+    {$ifdef LCLQt6}
+    // The BorderStyle/FormStyle flips above just re-pinned the fixed size;
+    // unpin last so the compositor may actually grow the window.
+    QtUnpinFixedSize(Handle);
+    {$endif}
 
     // Finally set to fullscreen
     WindowState := wsFullScreen;
