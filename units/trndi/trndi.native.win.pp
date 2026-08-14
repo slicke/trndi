@@ -183,8 +183,8 @@ public
   procedure updateBegin; override;
   {** Signal the completion of a long-running update operation (clear taskbar progress). }
   procedure updateDone; override;
-  {** Simple HTTP GET/POST using WinHTTP, with proxy-first / direct fallback
-      driven by the proxy.* root settings. }
+  {** Simple HTTP GET/POST using WinHTTP. A proxy.* root setting is used
+      exclusively; without one WinHTTP follows the system configuration. }
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     const header: string = ''; prefix: boolean = true): string; override;
@@ -1078,7 +1078,7 @@ var
       Result := Copy(Result, 1, 180) + '...';
   end;
 
-  function PerformRequest(withProxy: boolean; forceNoProxy: boolean): boolean;
+  function PerformRequest(withProxy: boolean): boolean;
   begin
     Result := false;
     if withProxy and (proxyHost <> '') then
@@ -1088,14 +1088,8 @@ var
       else
         client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, proxyHost, StrToIntDef(proxyPort, 8080));
     end
-    else if forceNoProxy then
-    begin
-      client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, true);
-    end
     else
-    begin
       client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
-    end;
 
     try
       responseStr := client.Get(url, []);
@@ -1135,47 +1129,32 @@ begin
       TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
     {$endif}
 
-    // Try with proxy first if configured
+    // A configured proxy is the only route out: no direct fallback, or a
+    // dead proxy would silently send the traffic around it.
     if proxyHost <> '' then
     begin
       {$ifdef DEBUG}
       TrndiDLog(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
       {$endif}
-      if PerformRequest(true, false) then
-      begin
-        {$ifdef DEBUG}
-        TrndiNetLog('HTTP GET: proxy attempt succeeded');
-        {$endif}
-        Result := true;
-        Exit;
-      end;
-
+      Result := PerformRequest(true);
       {$ifdef DEBUG}
-      TrndiNetLog('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      if Result then
+        TrndiNetLog('HTTP GET: proxy attempt succeeded')
+      else
+        TrndiNetLog('HTTP GET: proxy attempt failed: ' + res);
       {$endif}
+      Exit;
     end;
 
-    // Fallback: try without proxy
+    // Nothing configured: let WinHTTP use the system proxy configuration.
     {$ifdef DEBUG}
-    if proxyHost <> '' then
-      TrndiNetLog('HTTP GET: attempting direct (forcing no-proxy on WinHTTP)')
-    else
-      TrndiNetLog('HTTP GET: attempting direct');
+    TrndiNetLog('HTTP GET: attempting via system configuration');
     {$endif}
-    if PerformRequest(false, proxyHost <> '') then
-    begin
-      {$ifdef DEBUG}
-      TrndiNetLog('HTTP GET: direct attempt succeeded');
-      {$endif}
-      Result := true;
-    end
-    else
-    begin
-      {$ifdef DEBUG}
-      TrndiNetLog('HTTP GET: direct attempt failed: ' + res);
-      {$endif}
-      Result := false;
-    end;
+    Result := PerformRequest(false);
+    {$ifdef DEBUG}
+    if not Result then
+      TrndiNetLog('HTTP GET: attempt failed: ' + res);
+    {$endif}
 
   finally
     tempInstance.Free;
@@ -1185,8 +1164,8 @@ end;
 {------------------------------------------------------------------------------
   postURL
   -------
-  Simple HTTP POST using WinHTTP client. Mirrors getURL: respects the
-  configured proxy with a direct fallback on failure.
+  Simple HTTP POST using WinHTTP client. Mirrors getURL: a configured proxy is
+  used exclusively, otherwise WinHTTP follows the system configuration.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeWindows.postURL(const url: string; const body: string;
   const contentType: string; out res: string): boolean;
@@ -1198,7 +1177,7 @@ var
   proxyHost, proxyPort, proxyUser, proxyPass: string;
   tempInstance: TTrndiNativeWindows;
 
-  function PerformRequest(withProxy: boolean; forceNoProxy: boolean): boolean;
+  function PerformRequest(withProxy: boolean): boolean;
   begin
     Result := false;
     if withProxy and (proxyHost <> '') then
@@ -1208,8 +1187,6 @@ var
       else
         client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, proxyHost, StrToIntDef(proxyPort, 8080));
     end
-    else if forceNoProxy then
-      client := TWinHTTPClient.Create(DEFAULT_USER_AGENT, true)
     else
       client := TWinHTTPClient.Create(DEFAULT_USER_AGENT);
 
@@ -1248,16 +1225,11 @@ begin
         proxyPort := '8080';
     end;
 
+    // Strict: a configured proxy is never bypassed (mirrors getURL).
     if proxyHost <> '' then
-    begin
-      if PerformRequest(true, false) then
-      begin
-        Result := true;
-        Exit;
-      end;
-    end;
-
-    Result := PerformRequest(false, proxyHost <> '');
+      Result := PerformRequest(true)
+    else
+      Result := PerformRequest(false);
   finally
     tempInstance.Free;
   end;
@@ -2358,9 +2330,9 @@ end;
 {------------------------------------------------------------------------------
   request (Windows)
   -----------------
-  HTTP GET/POST via WinHTTPClient. Honours proxy.* root settings: if a proxy
-  is configured the request runs through it first, then re-tries direct on
-  failure.
+  HTTP GET/POST via WinHTTPClient. Honours proxy.* root settings: a configured
+  proxy carries the request with no direct fallback, and with nothing
+  configured WinHTTP follows the system proxy configuration.
  ------------------------------------------------------------------------------}
 function TTrndiNativeWindows.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
@@ -2454,24 +2426,14 @@ begin
   NormalizeProxyHostPort(proxyHost, proxyPortS);
   proxyPort  := StrToIntDef(proxyPortS, 8080);
 
+  // A configured proxy is the only route out — no direct fallback, so a proxy
+  // that is down surfaces as an error instead of quietly being bypassed.
   if proxyHost <> '' then
   begin
     if (proxyUser <> '') or (proxyPass <> '') then
       client := TWinHTTPClient.Create(useragent, proxyHost, proxyPort, proxyUser, proxyPass)
     else
       client := TWinHTTPClient.Create(useragent, proxyHost, proxyPort);
-    try
-      if TryRequest(client, ResStr) then
-      begin
-        Result := ResStr;
-        Exit;
-      end;
-    finally
-      client.Free;
-    end;
-
-    // Direct fallback must not use system proxy
-    client := TWinHTTPClient.Create(useragent, true);
     try
       TryRequest(client, ResStr);
       Result := ResStr;
@@ -2481,9 +2443,11 @@ begin
     Exit;
   end;
 
-  TrndiDLog('Windows: Using direct connection (no proxy configured) to: ' +
+  // Nothing configured: follow the system's own proxy configuration, which is
+  // what every other Windows application does.
+  TrndiDLog('Windows: Using system proxy configuration for: ' +
     TrndiSafeUrl(address));
-  client := TWinHTTPClient.Create(useragent, true);
+  client := TWinHTTPClient.Create(useragent);
   try
     TryRequest(client, ResStr);
     Result := ResStr;
@@ -2496,7 +2460,9 @@ end;
   requestEx (Windows)
   -------------------
   Cookie-aware, redirect-following HTTP via WinHTTP. Honours proxy.* root
-  settings with the same proxy-first / direct fallback as @link(request).
+  settings the same way @link(request) does: a configured proxy carries every
+  hop with no direct fallback, and with nothing configured WinHTTP follows the
+  system proxy configuration.
  ------------------------------------------------------------------------------}
 function TTrndiNativeWindows.requestEx(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
@@ -2694,7 +2660,7 @@ var
   end;
 
   function TryRequest(const url: string; const isPost: boolean; const requestBody: string;
-    const useProxy: boolean; const forceNoProxy: boolean; out outBody: string;
+    const useProxy: boolean; out outBody: string;
     out outHeaders: TStringList; out outStatus: integer; out outLocation: string;
     out outError: string): boolean;
   var
@@ -2769,9 +2735,6 @@ var
     if useProxy and (proxyHost <> '') then
       hSession := WinHttpOpen(pwidechar(widestring(useragent)), WINHTTP_ACCESS_TYPE_NAMED_PROXY,
         pwidechar(widestring(proxyHost + ':' + IntToStr(proxyPort))), WINHTTP_NO_PROXY_BYPASS, 0)
-    else if forceNoProxy then
-      hSession := WinHttpOpen(pwidechar(widestring(useragent)), WINHTTP_ACCESS_TYPE_NO_PROXY,
-        WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0)
     else
       hSession := WinHttpOpen(pwidechar(widestring(useragent)), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
         WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
@@ -3058,22 +3021,12 @@ begin
     startTick := GetTickCount64;
     TrndiDLog(Format('HTTP %s (winhttp): %s', [methodLabel, TrndiSafeUrl(currentUrl)]));
 
-    if proxyHost <> '' then
-    begin
-      if not TryRequest(currentUrl, currentPost, bodyData, true, false,
-           responseBody, responseHeaders, statusCode, locationHeader, Result.ErrorMessage) then
-      begin
-        if not TryRequest(currentUrl, currentPost, bodyData, false, true,
-             responseBody, responseHeaders, statusCode, locationHeader, Result.ErrorMessage) then
-          Exit;
-      end;
-    end
-    else
-    begin
-      if not TryRequest(currentUrl, currentPost, bodyData, false, true,
-           responseBody, responseHeaders, statusCode, locationHeader, Result.ErrorMessage) then
-        Exit;
-    end;
+    // Configured proxy: no direct fallback on any hop, so a redirect chain
+    // cannot start on the proxy and finish around it. Nothing configured: use
+    // the system's proxy configuration.
+    if not TryRequest(currentUrl, currentPost, bodyData, proxyHost <> '',
+         responseBody, responseHeaders, statusCode, locationHeader, Result.ErrorMessage) then
+      Exit;
 
     endTick := GetTickCount64;
 
