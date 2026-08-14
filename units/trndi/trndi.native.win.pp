@@ -1078,42 +1078,6 @@ var
       Result := Copy(Result, 1, 180) + '...';
   end;
 
-  procedure NormalizeProxyHostPort(var host: string; var port: string);
-  var
-    s: string;
-    p: integer;
-    hostPart, portPart: string;
-  begin
-    s := Trim(host);
-
-    // Strip scheme if provided (e.g. http://proxy:3128)
-    p := Pos('://', s);
-    if p > 0 then
-      s := Copy(s, p + 3, MaxInt);
-
-    // Strip any path
-    p := Pos('/', s);
-    if p > 0 then
-      s := Copy(s, 1, p - 1);
-
-    // If host contains an explicit port, split it out
-    p := LastDelimiter(':', s);
-    if (p > 0) and (p < Length(s)) then
-    begin
-      hostPart := Copy(s, 1, p - 1);
-      portPart := Copy(s, p + 1, MaxInt);
-      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
-      begin
-        s := hostPart;
-        if port = '' then
-          port := portPart;
-      end;
-    end;
-
-    host := s;
-    port := Trim(port);
-  end;
-
   function PerformRequest(withProxy: boolean; forceNoProxy: boolean): boolean;
   begin
     Result := false;
@@ -1234,35 +1198,6 @@ var
   proxyHost, proxyPort, proxyUser, proxyPass: string;
   tempInstance: TTrndiNativeWindows;
 
-  procedure NormalizeProxyHostPort(var host: string; var port: string);
-  var
-    s: string;
-    p: integer;
-    hostPart, portPart: string;
-  begin
-    s := Trim(host);
-    p := Pos('://', s);
-    if p > 0 then
-      s := Copy(s, p + 3, MaxInt);
-    p := Pos('/', s);
-    if p > 0 then
-      s := Copy(s, 1, p - 1);
-    p := LastDelimiter(':', s);
-    if (p > 0) and (p < Length(s)) then
-    begin
-      hostPart := Copy(s, 1, p - 1);
-      portPart := Copy(s, p + 1, MaxInt);
-      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
-      begin
-        s := hostPart;
-        if port = '' then
-          port := portPart;
-      end;
-    end;
-    host := s;
-    port := Trim(port);
-  end;
-
   function PerformRequest(withProxy: boolean; forceNoProxy: boolean): boolean;
   begin
     Result := false;
@@ -1341,39 +1276,6 @@ const
 var
   client: TWinHTTPClient;
   host, portS, user, pass: string;
-
-  procedure NormalizeProxyHostPort(var hostV: string; var portV: string);
-  var
-    s: string;
-    p: integer;
-    hostPart, portPart: string;
-  begin
-    s := Trim(hostV);
-
-    p := Pos('://', s);
-    if p > 0 then
-      s := Copy(s, p + 3, MaxInt);
-
-    p := Pos('/', s);
-    if p > 0 then
-      s := Copy(s, 1, p - 1);
-
-    p := LastDelimiter(':', s);
-    if (p > 0) and (p < Length(s)) then
-    begin
-      hostPart := Copy(s, 1, p - 1);
-      portPart := Copy(s, p + 1, MaxInt);
-      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
-      begin
-        s := hostPart;
-        if Trim(portV) = '' then
-          portV := portPart;
-      end;
-    end;
-
-    hostV := s;
-    portV := Trim(portV);
-  end;
 
 begin
   res := '';
@@ -2544,9 +2446,13 @@ begin
 
   proxyHost  := Trim(GetRootSetting('proxy.host', ''));
   proxyPortS := Trim(GetRootSetting('proxy.port', ''));
-  proxyPort  := StrToIntDef(proxyPortS, 8080);
   proxyUser  := GetRootSetting('proxy.user', '');
   proxyPass  := GetRootSetting('proxy.pass', '');
+  // The host field holds whatever the user typed ('http://proxy:3128'), so it
+  // has to be split the same way getURL and the settings dialog's test button
+  // split it — WinHTTP wants a bare host.
+  NormalizeProxyHostPort(proxyHost, proxyPortS);
+  proxyPort  := StrToIntDef(proxyPortS, 8080);
 
   if proxyHost <> '' then
   begin
@@ -3142,9 +3048,11 @@ begin
 
   proxyHost  := Trim(GetRootSetting('proxy.host', ''));
   proxyPortS := Trim(GetRootSetting('proxy.port', ''));
-  proxyPort  := StrToIntDef(proxyPortS, 8080);
   proxyUser  := GetRootSetting('proxy.user', '');
   proxyPass  := GetRootSetting('proxy.pass', '');
+  // See request(): the stored host may carry a scheme and/or a port.
+  NormalizeProxyHostPort(proxyHost, proxyPortS);
+  proxyPort  := StrToIntDef(proxyPortS, 8080);
 
   repeat
     startTick := GetTickCount64;
