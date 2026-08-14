@@ -478,10 +478,13 @@ procedure LoadUserSettings(f: TfConf);
       edURLLow.Text := GetSetting('url_remote.url_low', '');
       edURLPerfect.Text := GetSetting('url_remote.url_perfect', '');
 
-      edProxyHost.Text := GetSetting('proxy.host', '');
-      edProxyPort.Text := GetSetting('proxy.port', '8080');
-      edProxyUser.Text := GetSetting('proxy.user', '');
-      edProxyPass.Text := GetSetting('proxy.pass', '');
+      // The proxy fields are deliberately absent here: they live in the
+      // non-user-scoped (root) settings, which is the only scope the HTTP
+      // layer reads, and fConf loads/saves them itself in
+      // LoadProxySettingsIntoUI / SaveProxySettingsFromUI. Reading them
+      // user-scoped here handed the dialog a different (empty) value for
+      // every named user and let the OnChange handler write that back over
+      // the working proxy.
 
       cbChroma.Checked := GetBoolSetting('razer.enabled', false);
       cbChromaNormal.Checked := GetBoolSetting('razer.normal', false);
@@ -873,10 +876,8 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('url_remote.url_low', edURLLow.Text);
       SetSetting('url_remote.url_perfect', edURLPerfect.Text);
 
-      SetSetting('proxy.host', edProxyHost.Text);
-      SetSetting('proxy.port', edProxyPort.Text);
-      SetSetting('proxy.user', edProxyUser.Text);
-      SetSetting('proxy.pass', edProxyPass.Text);
+      // Proxy settings are root-scoped and owned by fConf.SaveProxySettingsFromUI
+      // — see the matching note in LoadUserSettings.
 
       SetSetting('razer.enabled', cbChroma.Checked);
       SetSetting('razer.normal', cbChromaNormal.Checked);
