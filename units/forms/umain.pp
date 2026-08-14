@@ -1130,6 +1130,9 @@ private
   function TitleBarWindowHandle: PtrUInt;
     {** Sink receiving the colors native.SetTitleColor was called with. }
   procedure TitleBarColorSink(bg, txt: TColor);
+    {** Bar's maximize button / double-click: enter Trndi's fullscreen (the
+        bar hides there; Esc or F leaves) instead of a plain maximize. }
+  procedure TitleBarMaximizeRequest({%H-}Sender: TObject);
     {** Create/tear down the bar per platform capability and settings. }
   procedure ApplyOwnTitleBar;
     {** Sync bar/grip visibility with the window state (fullscreen etc.). }
