@@ -188,6 +188,51 @@ begin
   SetNextUpdateTimer(reading.date);
 end;
 
+{------------------------------------------------------------------------------
+  NotifyExtensionsLevel
+  ---------------------
+  Broadcast the current glucose classification to extensions as
+  levelCallback(level, previous). Fired on every finalized reading update, not
+  only on transitions — extensions that only care about changes compare the
+  two arguments, while ambient outputs (smart lamps, RGB devices) can use the
+  repeat calls to re-assert their state. Runs for stale updates too, so lights
+  driven by an extension don't keep signalling an outdated level.
+ ------------------------------------------------------------------------------}
+procedure TfBG.NotifyExtensionsLevel(const Fresh: boolean);
+{$ifdef TrndiExt}
+var
+  lvl: string;
+begin
+  if Fresh then
+  begin
+    // IsDataFresh reports true on first boot before anything was fetched;
+    // there is no level to broadcast until a reading exists.
+    if (Length(bgs) < 1) or bgs[0].empty then
+      Exit;
+    case bgs[0].level of
+    trndi.types.BGHigh:
+      lvl := 'high';
+    trndi.types.BGLOW:
+      lvl := 'low';
+    trndi.types.BGRangeHI:
+      lvl := 'range-high';
+    trndi.types.BGRangeLO:
+      lvl := 'range-low';
+    else
+      lvl := 'normal';
+    end;
+  end
+  else
+    lvl := 'stale';
+
+  callFunc('levelCallback', [lvl, FExtLastLevel]);
+  FExtLastLevel := lvl;
+end;
+{$else}
+begin
+end;
+{$endif}
+
 function TfBG.FinalizeReadingUpdate(const Boot: boolean): boolean;
 begin
   Result := IsDataFresh;
@@ -195,6 +240,8 @@ begin
     ApplyFreshDisplayState
   else
     ApplyStaleDisplayState;
+
+  NotifyExtensionsLevel(Result);
 
   if (not Result) and (not Boot) then
     Exit;

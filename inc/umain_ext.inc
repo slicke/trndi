@@ -234,7 +234,7 @@ const
       dispatcher is only installed for events actually subscribed to, so a
       mere Trndi.on("reading",...) doesn't make Pascal-side broadcasts think
       unrelated callbacks exist. }
-    't.events={reading:"updateCallback",fetch:"fetchCallback",clock:"clockView",dot:"dotClicked",uxclick:"uxClick",unload:"unloadCallback"};var ls={};' +
+    't.events={reading:"updateCallback",fetch:"fetchCallback",level:"levelCallback",clock:"clockView",dot:"dotClicked",uxclick:"uxClick",unload:"unloadCallback"};var ls={};' +
     't.on=function(n,f){n=String(n);var g=t.events[n];if(!g)throw new Error("Trndi.on: unknown event \""+n+"\"; valid: "+Object.keys(t.events).join(", "));if(typeof f!=="function")throw new TypeError("Trndi.on: listener must be a function");' +
     'if(!ls[n]){ls[n]=[];var prev=globalThis[g];globalThis[g]=function(){var a=arguments,out,i,r;if(typeof prev==="function")out=prev.apply(this,a);for(i=0;i<ls[n].length;i++){try{r=ls[n][i].apply(null,a);if(r!==undefined)out=r;}catch(e){try{console.push("[Trndi.on "+n+"] "+e);}catch(_e){}}}return out;};}' +
     'ls[n].push(f);return f;};' +
