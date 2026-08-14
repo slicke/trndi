@@ -1069,9 +1069,12 @@ var
   url: string;
   defaultAction: string;
 begin
+  // Critical: a hypo is the one reading the user has to act on straight away,
+  // so the notice asks to be shown through Do Not Disturb and to stay up
+  // until it is dismissed. Platforms without an urgency concept ignore it.
   if native.getBoolSetting('alerts.notice.hilo', true) then
     native.attention(ifthen(multi, multinick, RS_WARN_BG_LO_TITLE),
-      Format(RS_WARN_BG_LO, [lVal.Caption]));
+      Format(RS_WARN_BG_LO, [lVal.Caption]), tnuCritical);
 
   if native.GetBoolSetting('media.pause') then
     actOnMediaController(mcaPause);

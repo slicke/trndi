@@ -62,6 +62,12 @@ TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
   {** Ternary-style boolean with Unset/Unknown states for user overrides. }
 TTrndiBool = (tbUnset, tbTrue, tbFalse, tbUnknown);
 
+  {** How insistent a notification should be. @code(tnuCritical) is for the
+      conditions a user must see now — it asks the desktop to show the toast
+      through Do Not Disturb and to leave it up until dismissed rather than
+      expiring it. Platforms that have no such concept ignore it. }
+TTrndiNoticeUrgency = (tnuNormal, tnuCritical);
+
   {** Callback fired when the OS signals a wake-from-sleep event. Always
       delivered on the main (UI) thread — platform units marshal as needed. }
 TTrndiWakeCallback = procedure of object;
@@ -142,7 +148,13 @@ class var touchOverride: TTrndiBool;
     {** Speak text using native TTS on the current platform. }
   procedure Speak(const Text: string); virtual; abstract;
     {** Show a desktop notification or equivalent attention cue. }
-  procedure attention(topic, message: string); virtual;
+  procedure attention(topic, message: string); virtual; overload;
+    {** As above, but stating how urgent the notice is. Only the platforms
+        whose notification system understands urgency act on it (Linux via the
+        freedesktop hint); the base implementation drops it and shows a normal
+        notification, so callers can always ask. }
+  procedure attention(topic, message: string;
+    urgency: TTrndiNoticeUrgency); virtual; overload;
   {**
     Send an HTTP request to the configured @code(baseurl).
     @param(post) True for POST, False for GET.
@@ -1293,8 +1305,21 @@ end;
 procedure TTrndiNativeBase.attention(topic, message: string);
 begin
   // Default no-op. Platform units override (Windows: WinRT toast,
-  // Linux: gdbus/notify-send, macOS: UNUserNotificationCenter/osascript,
+  // Linux: D-Bus/notify-send, macOS: UNUserNotificationCenter/osascript,
   // Haiku: BNotification).
+end;
+
+{------------------------------------------------------------------------------
+  attention (urgency)
+  -------------------
+  Fall back to the plain notification. A platform that can express urgency
+  overrides this one instead; going through the virtual two-argument call
+  means it still reaches that platform's own notification code.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.attention(topic, message: string;
+{%H-}urgency: TTrndiNoticeUrgency);
+begin
+  attention(topic, message);
 end;
 
 {------------------------------------------------------------------------------

@@ -70,7 +70,7 @@ protected
   function ResolveIniPath: string; override;
 public
   {** Use the detected notifier (notify/notify-send) for notifications. }
-  procedure attention(topic, message: string); override;
+  procedure attention(topic, message: string); override; overload;
     {** Speaks @param(Text) using espeak, if available. }
   procedure Speak(const Text: string); override;
     {** Haiku badge support - placeholder for now. }
