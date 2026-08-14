@@ -68,6 +68,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [Trndi.on / Trndi.off](#trndion--trndioff)
    - [updateCallback](#updatecallback)
    - [fetchCallback](#fetchcallback)
+   - [levelCallback](#levelcallback)
    - [dotClicked](#dotclicked)
    - [uxClick](#uxclick)
    - [clockView](#clockview)
@@ -914,6 +915,7 @@ listener receives exactly the same arguments:
 | --- | --- |
 | `"reading"` | [`updateCallback`](#updatecallback) |
 | `"fetch"` | [`fetchCallback`](#fetchcallback) |
+| `"level"` | [`levelCallback`](#levelcallback) |
 | `"clock"` | [`clockView`](#clockview) |
 | `"dot"` | [`dotClicked`](#dotclicked) |
 | `"uxclick"` | [`uxClick`](#uxclick) |
@@ -954,6 +956,29 @@ Trndi.off("clock", clockListener);                    // unregister again
 ### fetchCallback
 #### This function is called everytime a reading is fetched
 ```fetchCallback(reading_mgdl, reading_mmol, delta_mgdl, delta_mmol, has_data)```
+
+### levelCallback
+#### This function is called after every reading update with the glucose classification
+```levelCallback(level, previous)```
+
+**Parameters:**
+- `level` (string): `"high"`, `"low"`, `"normal"`, `"range-high"` / `"range-low"`
+  (the custom "normal, but on the edge" bands, when configured), or `"stale"`
+  (no fresh data — also sent when readings stop arriving)
+- `previous` (string): the level reported the time before; empty string on the
+  first report after startup
+
+Fires on every update, not only on changes — compare the two arguments to act
+on transitions only. The repeat calls are deliberate: ambient outputs (smart
+lamps, RGB keyboards) can re-assert their state each time, so a lamp that was
+power-cycled catches up on the next reading.
+
+```javascript
+function levelCallback(level, previous) {
+  if (level === previous) return;         // transitions only
+  if (level === "low") Trndi.playSound("alert.wav");
+}
+```
 
 ### dotClicked
 #### This function is called everytime a trend dot is clicked
