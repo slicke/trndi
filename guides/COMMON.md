@@ -16,7 +16,7 @@ Typically the trend used by Dexcom/NightScout/CareLink/etc is flat, 90 degree up
 While the latest reading is recent, it will be drawn with an outline.
 
 ### Use range color for window background
-This makes the title bar of the app colored by the window color. Eg there entire window, including the title, has the same color. On Linux this works on Wayland sessions, where Trndi draws its own title bar (see `doc/Linux.md`); on X11 the window manager owns the title bar and only the client area is colored.
+This makes the title bar of the app colored by the window color. For example, the entire window, including the title bar, has the same color. On Linux this works on Wayland sessions, where Trndi draws its own title bar (see `doc/Linux.md`); on X11 the window manager owns the title bar, so by default only the client area is colored — unless you enable the drawn title bar there too (`ux.own_titlebar=on`).
 
 ## Time-in-range
 ### Color the graph's background...
