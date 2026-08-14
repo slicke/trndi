@@ -100,7 +100,13 @@ end;
 // brings the window - and the bar - back.
 procedure TfBG.TitleBarMaximizeRequest({%H-}Sender: TObject);
 begin
-  DoFullScreen;
+  // A window maximized behind our back (drag-to-top, WM keybind) shows the
+  // restore glyph — honor it. Otherwise the button means "fill the screen",
+  // which for Trndi is fullscreen.
+  if WindowState = wsMaximized then
+    WindowState := wsNormal
+  else
+    DoFullScreen;
 end;
 
 // Create or tear down the bar according to platform capability and settings.
