@@ -89,6 +89,10 @@ type
     procedure Repaint; virtual;
   end;
 
+  // Real LCL forms descend TCustomForm -> TForm; helpers that take the base
+  // class (e.g. slicke.ux.titlebar's SlickeDressWithTitleBar) use this alias.
+  TCustomForm = TForm;
+
   TExceptionEvent = procedure(Sender: TObject; E: Exception) of object;
   TDataEvent = procedure(Data: PtrInt) of object;
 

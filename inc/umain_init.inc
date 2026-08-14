@@ -828,6 +828,8 @@ begin
 
       fWizard := TfWizard.Create(nil, native);
       try
+        // Same drawn-title-bar treatment as Settings on Wayland sessions.
+        DressModalForm(fWizard);
         if fWizard.ShowModal = mrOK then
         begin
           // Wizard saved settings — re-read target and continue init

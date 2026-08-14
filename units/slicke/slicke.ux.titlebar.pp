@@ -145,6 +145,20 @@ public
 end;
 
   {**
+    Convert a decorated form into a frameless one carrying a drawn title bar:
+    drops the native frame, creates the bar (anchored across the top), shifts
+    the existing content down by the bar height (absolutely-placed controls
+    via Top, aligned controls touching the top strip via BorderSpacing) and
+    grows the form to keep the bottom padding. Purely mechanical — the caller
+    decides *whether* (e.g. only on Wayland) and with which colors.
+    @returns(The bar, or @nil when the form is already frameless (deliberate
+             overlays) or already carries a TSlickeTitleBar.)
+  }
+function SlickeDressWithTitleBar(AForm: TCustomForm; ABarBg, ABarText: TColor;
+  AButtons: TSlickeTitleBarButtons = [stbClose]): TSlickeTitleBar;
+
+type
+  {**
     Invisible edge/corner grips that keep a frameless form resizable. Create
     with the form as owner: eight @code(TGraphicControl) strips are placed
     along the borders, wired to @link(SlickeStartSystemResize) with a manual
@@ -904,6 +918,69 @@ procedure TSlickeWindowGrips.SetActive(AActive: boolean);
 begin
   FActive := AActive;
   UpdateLayout;
+end;
+
+{------------------------------------------------------------------------------
+  SlickeDressWithTitleBar
+ ------------------------------------------------------------------------------}
+
+function SlickeDressWithTitleBar(AForm: TCustomForm; ABarBg, ABarText: TColor;
+AButtons: TSlickeTitleBarButtons): TSlickeTitleBar;
+var
+  off, i: integer;
+  c: TControl;
+  wasSizeable: boolean;
+begin
+  Result := nil;
+  if AForm = nil then
+    Exit;
+  // A form that is already frameless chose that on purpose (fullscreen
+  // overlays); and a form that already carries a bar must not get another.
+  if AForm.BorderStyle = bsNone then
+    Exit;
+  for i := 0 to AForm.ControlCount - 1 do
+    if AForm.Controls[i] is TSlickeTitleBar then
+      Exit;
+
+  wasSizeable := AForm.BorderStyle in [bsSizeable, bsSizeToolWin];
+  AForm.BorderStyle := bsNone;
+  Result := TSlickeTitleBar.Create(AForm);
+  Result.Align := alNone; // callers lay out with absolute coords/anchors
+  Result.Parent := AForm;
+  Result.Font.Assign(AForm.Font);
+  Result.Font.Height := 0;
+  Result.UpdateMetrics;
+  off := Result.Height;
+  Result.SetBounds(0, 0, AForm.ClientWidth, off);
+  Result.Anchors := [akLeft, akTop, akRight];
+  Result.Buttons := AButtons;
+  Result.SetColors(ABarBg, ABarText);
+
+  // Make room: the content was laid out against the undecorated client area.
+  for i := 0 to AForm.ControlCount - 1 do
+  begin
+    c := AForm.Controls[i];
+    if c = Result then
+      Continue;
+    if c.Align = alNone then
+    begin
+      // Purely bottom-anchored controls follow the Height increase below on
+      // their own; shifting them here too would move them twice.
+      if (akTop in c.Anchors) or not (akBottom in c.Anchors) then
+        c.Top := c.Top + off;
+    end
+    else
+    if (c.Align in [alTop, alClient, alLeft, alRight]) and (c.Top < off) then
+      c.BorderSpacing.Top := c.BorderSpacing.Top + off;
+  end;
+  AForm.Height := AForm.Height + off;
+  Result.BringToFront;
+
+  // A form that was resizable keeps that ability: without its native frame
+  // there are no compositor resize edges, so give it grips. Owned by the
+  // form; freed with it.
+  if wasSizeable then
+    TSlickeWindowGrips.Create(AForm);
 end;
 
 end.

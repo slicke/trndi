@@ -4554,53 +4554,15 @@ end;
   as BorderSpacing, and the form grows to keep the bottom padding intact.
  ------------------------------------------------------------------------------}
 procedure TDialogForm.PrepareOwnTitleBar;
-var
-  off, i: integer;
-  c: TControl;
 begin
   if Assigned(FUXTitleBar) then
     Exit;
   if not TrndiNative.NeedsCustomTitleBar then
     Exit;
-  // A form that is already frameless chose that on purpose (fullscreen
-  // overlay); only forms that would have carried decorations get the bar.
-  if BorderStyle = bsNone then
-    Exit;
-
-  BorderStyle := bsNone;
-  FUXTitleBar := TSlickeTitleBar.Create(Self);
-  FUXTitleBar.Align := alNone; // dialogs use absolute layout, not alignment
-  FUXTitleBar.Parent := Self;
-  FUXTitleBar.Font.Assign(Font);
-  FUXTitleBar.Font.Height := 0;
-  FUXTitleBar.UpdateMetrics;
-  off := FUXTitleBar.Height;
-  FUXTitleBar.SetBounds(0, 0, ClientWidth, off);
-  FUXTitleBar.Anchors := [akLeft, akTop, akRight];
-  FUXTitleBar.Buttons := [stbClose];
   if TrndiNative.isDarkMode then
-    FUXTitleBar.SetColors(Color, clWhite)
+    FUXTitleBar := SlickeDressWithTitleBar(Self, Color, clWhite, [stbClose])
   else
-    FUXTitleBar.SetColors(Color, clBlack);
-
-  for i := 0 to ControlCount - 1 do
-  begin
-    c := Controls[i];
-    if c = FUXTitleBar then
-      Continue;
-    if c.Align = alNone then
-    begin
-      // Purely bottom-anchored controls follow the Height increase below on
-      // their own; shifting them here too would move them twice.
-      if (akTop in c.Anchors) or not (akBottom in c.Anchors) then
-        c.Top := c.Top + off;
-    end
-    else
-    if (c.Align in [alTop, alClient, alLeft, alRight]) and (c.Top < off) then
-      c.BorderSpacing.Top := c.BorderSpacing.Top + off;
-  end;
-  Height := Height + off;
-  FUXTitleBar.BringToFront;
+    FUXTitleBar := SlickeDressWithTitleBar(Self, Color, clBlack, [stbClose]);
 end;
 
 function TDialogForm.ShowModal: integer;
