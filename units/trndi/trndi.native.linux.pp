@@ -83,10 +83,12 @@ protected
   FFlashValue: string;
   FFlashBaseColor: TColor;
   FFlashCycleMS: integer;
-    // Kiosk keep-awake state: the logind inhibition lives exactly as long as
-    // the `systemd-inhibit ... sleep infinity` child, and the xset flag
-    // remembers whether screen blanking was turned off so disable reverts it.
+    // Kiosk keep-awake state: each inhibition lives exactly as long as its
+    // helper child (logind in FInhibitProc, the desktop session's own power
+    // manager in FDeskInhibitProc), and the xset flag remembers whether screen
+    // blanking was turned off so disable reverts it.
   FInhibitProc: TProcess;
+  FDeskInhibitProc: TProcess;
   FXsetApplied: boolean;
   procedure FlashTimerTick(Sender: TObject);
     {** Resolve the INI/CFG file path with backward compatibility.
@@ -195,10 +197,13 @@ public
       autostart spec. The file points Exec= at the current binary. }
   class function SetAutoStart(Enable: boolean): boolean; override;
 
-  {** Keep the system awake (kiosk mode): hold a systemd-logind idle/sleep
-      inhibition as a long-lived @code(systemd-inhibit) child, and turn off
-      X11 screen blanking/DPMS via @code(xset) while enabled. Both halves are
-      best-effort and skipped when their tool is missing. }
+  {** Keep the system awake (kiosk mode): hold a logind idle/sleep inhibition
+      as a long-lived @code(systemd-inhibit)/@code(elogind-inhibit) child, hold
+      the desktop session's own idle inhibition the same way via
+      @code(gnome-session-inhibit)/@code(kde-inhibit) (GNOME and KDE ignore the
+      logind lock, so Wayland kiosks blank without this), and turn off X11
+      screen blanking/DPMS via @code(xset) while enabled. Every part is
+      best-effort and skipped when its tool is missing. }
   procedure SetKeepAwake(Enable: boolean); override;
 
     {** Triggers when the tray icon is clicked }
@@ -1470,15 +1475,24 @@ end;
 {------------------------------------------------------------------------------
   SetKeepAwake
   ------------
-  Two mechanisms, each best-effort and skipped when its tool is missing:
+  Three mechanisms, each best-effort and skipped when its tool is missing:
 
   - systemd-logind idle/sleep inhibition, held as a long-lived
-    `systemd-inhibit --what=idle:sleep ... sleep infinity` child. The lock's
-    lifetime is the child's lifetime, so however Trndi ends — including a
-    crash — the inhibition dies with it and can never wedge the system awake.
-  - X11 screen blanking and DPMS, which logind inhibition does not cover,
-    turned off with `xset s off -dpms` and reverted on disable. Skipped when
-    DISPLAY is unset; Wayland compositors honor the idle inhibition above.
+    `systemd-inhibit --what=idle:sleep ...` child (or `elogind-inhibit`, same
+    syntax, on the non-systemd distros). The lock's lifetime is the child's
+    lifetime, so however Trndi ends — including a crash — the inhibition dies
+    with it and can never wedge the system awake.
+  - The desktop session's own idle inhibition, held the same way. GNOME and
+    KDE run their own idle timers and honor only their own inhibition APIs,
+    not logind's, so without this a Wayland kiosk still blanks with the
+    logind lock held.
+  - X11 screen blanking and DPMS, which no inhibition above covers, turned
+    off with `xset s off -dpms` and reverted on disable. Skipped when DISPLAY
+    is unset.
+
+  Compositors with no session helper of their own (sway, Hyprland and the
+  other wlroots ones) are not covered by the second mechanism — their idle
+  daemons are separate programs, configured by the user, with no common CLI.
 ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.SetKeepAwake(Enable: boolean);
 
@@ -1508,44 +1522,104 @@ function RunXset(const argv: array of string): boolean;
     end;
   end;
 
+  // Start an inhibitor helper that holds its lock for as long as the command
+  // it wraps runs. That command is `cat` on a pipe rather than `sleep
+  // infinity`: closing our end of its stdin makes it exit on EOF and the
+  // helper follows it out, and the same happens by itself if Trndi dies
+  // without cleaning up. Killing the helper instead would release the lock
+  // but leave the wrapped command orphaned and running forever.
+  // Returns nil when the tool cannot be started, so the caller's field stays
+  // nil and disable has nothing to reap.
+function StartInhibitor(const exe: string; const argv: array of string): TProcess;
+  var
+    arg: string;
+  begin
+    Result := TProcess.Create(nil);
+    Result.Executable := exe;
+    for arg in argv do
+      Result.Parameters.Add(arg);
+    Result.Parameters.Add('cat');
+    Result.Options := [poUsePipes]; // stdin is the lock's lifeline
+    try
+      Result.Execute;
+    except
+      FreeAndNil(Result); // tool present but failed to start
+    end;
+  end;
+
+  procedure StopInhibitor(var p: TProcess; const what: string);
+  begin
+    if not Assigned(p) then
+      Exit;
+    p.CloseInput; // EOF on stdin unwinds cat, then the helper
+    // WaitOnExit also reports False for a helper that had already exited on
+    // its own and been reaped, so check Running before signalling: that pid
+    // is not ours any more.
+    if (not p.WaitOnExit(2000)) and p.Running then
+    begin
+      p.Terminate(0); // helper wedged; blunt instrument, orphan and all
+      p.WaitOnExit;
+    end;
+    FreeAndNil(p);
+    TrndiDLog('SetKeepAwake: ' + what + ' lock released');
+  end;
+
 var
-  exe: string;
+  exe, desktop: string;
 begin
   if Enable then
   begin
     if not Assigned(FInhibitProc) then
     begin
       exe := FindInPath('systemd-inhibit');
+      if exe = '' then
+        exe := FindInPath('elogind-inhibit');
       if exe <> '' then
       begin
-        FInhibitProc := TProcess.Create(nil);
-        FInhibitProc.Executable := exe;
-        FInhibitProc.Parameters.Add('--what=idle:sleep');
-        FInhibitProc.Parameters.Add('--who=Trndi');
-        FInhibitProc.Parameters.Add('--why=Kiosk mode');
-        FInhibitProc.Parameters.Add('--mode=block');
-        FInhibitProc.Parameters.Add('sleep');
-        FInhibitProc.Parameters.Add('infinity');
-        try
-          FInhibitProc.Execute;
-          TrndiDLog('SetKeepAwake: systemd-inhibit lock held');
-        except
-          FreeAndNil(FInhibitProc); // tool present but failed to start
-        end;
+        FInhibitProc := StartInhibitor(exe, ['--what=idle:sleep', '--who=Trndi',
+          '--why=Kiosk mode', '--mode=block']);
+        if Assigned(FInhibitProc) then
+          TrndiDLog('SetKeepAwake: logind lock held via ' + exe);
       end;
     end;
+
+    if not Assigned(FDeskInhibitProc) then
+    begin
+      // Probe the helper matching the running desktop first, then the other
+      // one — a GNOME app menu on a KDE session (or the reverse) is common
+      // enough that the installed tool is a better signal than the hint alone.
+      desktop := UpperCase(DesktopHint);
+      if (Pos('KDE', desktop) > 0) or (Pos('PLASMA', desktop) > 0) then
+      begin
+        exe := FindInPath('kde-inhibit');
+        if exe = '' then
+          exe := FindInPath('gnome-session-inhibit');
+      end
+      else
+      begin
+        exe := FindInPath('gnome-session-inhibit');
+        if exe = '' then
+          exe := FindInPath('kde-inhibit');
+      end;
+
+      if ExtractFileName(exe) = 'kde-inhibit' then
+        FDeskInhibitProc := StartInhibitor(exe, ['--screenSaver', '--power'])
+      else
+      if exe <> '' then
+        FDeskInhibitProc := StartInhibitor(exe, ['--app-id', 'trndi',
+          '--reason', 'Kiosk mode', '--inhibit', 'idle']);
+
+      if Assigned(FDeskInhibitProc) then
+        TrndiDLog('SetKeepAwake: desktop lock held via ' + exe);
+    end;
+
     if RunXset(['s', 'off', '-dpms']) then
       FXsetApplied := true;
   end
   else
   begin
-    if Assigned(FInhibitProc) then
-    begin
-      FInhibitProc.Terminate(0);
-      FInhibitProc.WaitOnExit; // reap; exits immediately after the kill
-      FreeAndNil(FInhibitProc);
-      TrndiDLog('SetKeepAwake: systemd-inhibit lock released');
-    end;
+    StopInhibitor(FInhibitProc, 'logind');
+    StopInhibitor(FDeskInhibitProc, 'desktop');
     if FXsetApplied then
     begin
       RunXset(['s', 'on', '+dpms']);
@@ -1556,7 +1630,7 @@ end;
 
 destructor TTrndiNativeLinux.Destroy;
 begin
-  // Release any keep-awake inhibition (kills the systemd-inhibit child and
+  // Release any keep-awake inhibition (unwinds the inhibitor children and
   // restores screen blanking). No-op when kiosk mode never engaged.
   SetKeepAwake(false);
   // Only clear GNOME indicator cache on an explicit full shutdown (noFree=false).

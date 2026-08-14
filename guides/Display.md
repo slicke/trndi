@@ -50,12 +50,30 @@ open -a Trndi --args --kiosk
 
 Kiosk mode:
 - Starts **fullscreen** automatically (and hides the mouse cursor)
-- **Keeps the system awake**: on Linux it holds a `systemd-inhibit` idle/sleep lock and disables X11 screen blanking (`xset`) while running; on Windows and macOS the native power APIs are used. Both are released when Trndi exits.
+- **Keeps the system awake**: on Windows and macOS the native power APIs are used; on Linux, see [the note below](#keep-awake-on-linux). Released when Trndi exits.
 - **Skips the update popup** — an unattended display has nobody to click it away
 
 **Tip — clock:** enable *Clock* in Settings and a fullscreen Trndi shows the current time permanently at the top of the screen, next to the reading. (In a normal window the same setting instead alternates the big reading with the time every 20 seconds — on a bedside display you want both visible at once.)
 
 Everything else works as normal: the first-run setup, the right-click menu and Settings are all still available, so you can configure a fresh kiosk on the device itself. To leave fullscreen, use the right-click menu's *Full screen* toggle — keep-awake stays active until Trndi exits.
+
+### Keep-awake on Linux
+
+Linux has no single "stay awake" switch, so Trndi asks everything that might blank the screen, and skips whatever isn't installed:
+
+| What | Tool | Covers |
+| --- | --- | --- |
+| Login manager | `systemd-inhibit`, or `elogind-inhibit` on non-systemd distros | Automatic suspend and the logind idle timer |
+| Desktop session | `gnome-session-inhibit` on GNOME, `kde-inhibit` on Plasma | GNOME's and KDE's own idle timers, which ignore the lock above — this is what keeps a **Wayland** kiosk lit |
+| X11 | `xset s off -dpms` | Screen blanking and DPMS power-down on X11 (restored when kiosk mode ends) |
+
+Each lock lives exactly as long as its helper process, so an unexpected exit can never leave the machine stuck awake.
+
+Compositors that bring their own idle daemon — sway with `swayidle`, Hyprland with `hypridle` and other wlroots setups — aren't covered by the middle row, since there's no shared way to ask them. Configure the daemon itself instead, e.g. skip idling while Trndi is running:
+```
+# ~/.config/swayidle/config
+timeout 600 'pgrep -x Trndi >/dev/null || swaylock'
+```
 
 To start Trndi in kiosk mode on login, add `--kiosk` to the `Exec=` line of an autostart entry, e.g. `~/.config/autostart/trndi.desktop`:
 ```ini
