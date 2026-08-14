@@ -101,6 +101,8 @@ sudo dnf install -y gcc binutils make git qt6pas gtk3-devel libX11-devel gdb
 Build the trunk toolchain with **fpclazup** — not `fpcup`, which installs FPC alone and has no Lazarus support — from the [Reiniero-fpcup releases](https://github.com/LongDirtyAnimAlf/Reiniero-fpcup/releases):
 
 ```sh
+wget https://github.com/LongDirtyAnimAlf/Reiniero-fpcup/releases/latest/download/fpclazup-x86_64-linux
+chmod +x fpclazup-x86_64-linux
 ./fpclazup-x86_64-linux \
   --installdir="$HOME/fpcupdeluxe" \
   --fpcURL=https://gitlab.com/freepascal.org/fpc/source.git --fpcBranch=main \
