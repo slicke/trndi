@@ -4563,6 +4563,12 @@ begin
     FUXTitleBar := SlickeDressWithTitleBar(Self, Color, clWhite, [stbClose])
   else
     FUXTitleBar := SlickeDressWithTitleBar(Self, Color, clBlack, [stbClose]);
+
+  // Dressing grew the form by the bar height after the builders had already
+  // sized it under FitDialogHeight's cap; re-apply the guard so a dialog that
+  // sat at the cap cannot push its button row below the usable screen area.
+  if Assigned(FUXTitleBar) then
+    ClientHeight := FitDialogHeight(ClientHeight);
 end;
 
 function TDialogForm.ShowModal: integer;
