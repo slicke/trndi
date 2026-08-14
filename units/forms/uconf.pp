@@ -2044,7 +2044,7 @@ begin
   end;
   // Natives:
   // NSUserNotification
-  // gdbus
+  // dbus / gdbus
   // WinRT-Toast
 
   if url <> '' then

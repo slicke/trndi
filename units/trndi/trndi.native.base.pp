@@ -373,7 +373,8 @@ class var touchOverride: TTrndiBool;
     {** True if a native notification system is available (override per platform). }
   class function isNotificationSystemAvailable: boolean; virtual;
   {** Identify the notification backend in use on this platform.
-      Examples: 'notify-send', 'gdbus', 'WinRT-Toast', 'NSUserNotification', 'none', 'unknown'.
+      Examples: 'notify-send', 'dbus', 'gdbus', 'WinRT-Toast', 'NSUserNotification',
+      'none', 'unknown'.
       Platforms should override to provide a concrete value. }
   class function getNotificationSystem: string; virtual;
     {** Alias for readability: forwards to @link(isNotificationSystemAvailable). }

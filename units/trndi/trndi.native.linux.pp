@@ -62,7 +62,8 @@ interface
 
 uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs, StrUtils,
-ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, trndi.native.base, trndi.native.async, FileUtil, Menus,
+ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, linutils.dbus,
+trndi.native.base, trndi.native.async, FileUtil, Menus,
 libpascurl, DateUtils, ctypes, trndi.log,
 Process; // TProcess field (kiosk keep-awake inhibitor child)
 
@@ -97,8 +98,8 @@ protected
     {** Ensure the INI store is created and directory exists. }
   procedure EnsureIni; inline;
 public
-  {** Prefer gdbus notifications under Qt6; fallback to base attention when
-      gdbus is unavailable or fails. }
+  {** Prefer session-bus notifications under Qt6 — libdbus first, the gdbus
+      tool second; fall back to notify-send when neither answers. }
   procedure attention(topic, message: string); override;
     {** Free tray resources, shutdown KDE badge if needed, and close INI store. }
   destructor Destroy; override;
@@ -160,8 +161,8 @@ public
     out res: string): boolean; override;
   {** Desktop-aware dark mode detection.
     Order:
-    1) xdg-desktop-portal via gdbus: org.freedesktop.appearance color-scheme
-     (desktop-agnostic; works on GNOME, KDE and wlroots compositors).
+    1) xdg-desktop-portal over the session bus: org.freedesktop.appearance
+     color-scheme (desktop-agnostic; GNOME, KDE and wlroots compositors alike).
     2) KDE Plasma via kreadconfig6/kreadconfig5: General/ColorScheme contains "Dark".
     3) GNOME via gsettings: org.gnome.desktop.interface color-scheme (prefer-dark/default),
      then fallback to gtk-theme containing "-dark".
@@ -171,7 +172,8 @@ public
   class function isDarkMode: boolean; override;
     {** Returns True if notify-send is available on this system. }
   class function isNotificationSystemAvailable: boolean; override;
-    {** Identify notification backend: 'gdbus' (Qt6 path) or 'notify-send' or 'none'. }
+    {** Identify notification backend: 'dbus' or 'gdbus' (the Qt6 bus paths),
+        'notify-send', or 'none'. }
   class function getNotificationSystem: string; override;
   {** Check whether platform TTS is available (spd-say on Linux). }
   class function SpeakAvailable: boolean; override;
@@ -231,14 +233,16 @@ public
     {** Detect Windows Subsystem for Linux: checks /proc/version, kernel osrelease,
         and WSL_* environment variables. Returns IsWSL=false on non-WSL Linux. }
   class function DetectWSL: TWSLInfo;
-    {** Spawn a background thread that monitors systemd-logind's
-        @code(org.freedesktop.login1.Manager.PrepareForSleep) signal via
-        @code(gdbus monitor) and invokes the callback when the signal
-        transitions from true (sleeping) to false (resumed). Silently no-ops
-        if @code(gdbus) is missing. The callback is marshalled to the main
-        thread via @code(Application.QueueAsyncCall). }
+    {** Spawn a background thread that watches systemd-logind's
+        @code(org.freedesktop.login1.Manager.PrepareForSleep) signal — over
+        libdbus on a private system-bus connection, or by parsing
+        @code(gdbus monitor) output when the library is missing — and invokes
+        the callback when the signal transitions from true (sleeping) to false
+        (resumed). Silently no-ops when neither transport exists. The callback
+        is marshalled to the main thread via
+        @code(Application.QueueAsyncCall). }
   procedure RegisterWakeCallback(const Callback: TTrndiWakeCallback); override;
-    {** Stop the gdbus monitor process and join its reader thread. }
+    {** Stop the monitor thread (and its gdbus child, if it had one). }
   procedure UnregisterWakeCallback; override;
 
 end;
@@ -664,11 +668,18 @@ begin
     (Pos('gnome', d) > 0) or (Pos('ubuntu', d) > 0) or (Pos('unity', d) > 0);
 end;
 
-// Decide whether we should use gdbus for notifications (Qt6 + gdbus + KDE/GNOME-like)
-function UseGDBusForNotifications: boolean; inline;
+// True when we can talk to the bus at all: libdbus-1 directly, or the gdbus
+// command-line tool as the legacy fallback for systems missing the library.
+function HasDBusTransport: boolean; inline;
+begin
+  Result := DBusAvailable or (FindInPath('gdbus') <> '');
+end;
+
+// Decide whether we should use D-Bus for notifications (Qt6 + bus + KDE/GNOME-like)
+function UseDBusForNotifications: boolean; inline;
 begin
   {$IFDEF LCLQt6}
-  Result := (FindInPath('gdbus') <> '') and IsKdeOrGnomeLike;
+  Result := HasDBusTransport and IsKdeOrGnomeLike;
   {$ELSE}
   Result := false;
   {$ENDIF}
@@ -775,17 +786,66 @@ end;
   DetectPortalDark
   ----------------
   Desktop-agnostic: ask xdg-desktop-portal for org.freedesktop.appearance
-  color-scheme via gdbus (0 = no preference, 1 = dark, 2 = light). Works on
-  GNOME, KDE and wlroots compositors alike. Returns True if the portal gave a
-  definite answer; "no preference" falls through to desktop-specific checks.
+  color-scheme (0 = no preference, 1 = dark, 2 = light) over the session bus,
+  with the gdbus tool as fallback. Works on GNOME, KDE and wlroots compositors
+  alike. Returns True if the portal gave a definite answer; "no preference"
+  falls through to desktop-specific checks.
  ------------------------------------------------------------------------------}
 function DetectPortalDark(out isDark: boolean): boolean;
+
+  // The portal answers Read() with the value wrapped in nested variants;
+  // TDBusMessage.ReadUInt32 unwraps them.
+function PortalSchemeViaDBus(out scheme: cardinal): boolean;
+  var
+    conn: TDBusConn;
+    call, reply: TDBusMessage;
+  begin
+    Result := false;
+    scheme := 0;
+    if not DBusAvailable then
+      Exit;
+    conn := TDBusConn.Create(dbSession);
+    try
+      call := conn.NewCall('org.freedesktop.portal.Desktop',
+        '/org/freedesktop/portal/desktop', 'org.freedesktop.portal.Settings',
+        'Read');
+      if call = nil then
+        Exit;
+      call.AddString('org.freedesktop.appearance');
+      call.AddString('color-scheme');
+      reply := conn.CallBlocking(call, 3000);
+      if reply = nil then
+        Exit; // no portal on this system
+      try
+        Result := reply.ReadUInt32(scheme);
+      finally
+        reply.Free;
+      end;
+    finally
+      conn.Free;
+    end;
+  end;
+
 var
   gdbusPath, outS: string;
   exitCode: integer;
+  scheme: cardinal;
 begin
   Result := false;
   isDark := false;
+
+  if PortalSchemeViaDBus(scheme) then
+  begin
+    if scheme = 1 then
+    begin
+      isDark := true;
+      Exit(true);
+    end;
+    if scheme = 2 then
+      Exit(true); // definite light
+    Exit(false);  // 0 = no preference: let the desktop-specific probes decide
+  end;
+
   gdbusPath := FindInPath('gdbus');
   if gdbusPath = '' then
     Exit;
@@ -1244,8 +1304,8 @@ begin
      (GetEnvironmentVariable('WAYLAND_DISPLAY') = '') then
     Exit(false);
   
-  // Only treat gdbus as available when on KDE/GNOME-like desktops under Qt6
-  if UseGDBusForNotifications then
+  // Only treat the bus as available when on KDE/GNOME-like desktops under Qt6
+  if UseDBusForNotifications then
     Exit(true);
   // Otherwise, rely on notify-send presence
   Result := IsNotifySendAvailable;
@@ -1253,12 +1313,17 @@ end;
 {------------------------------------------------------------------------------
   getNotificationSystem
   ---------------------
-  Return 'gdbus' under Qt6 when gdbus is present; else 'notify-send' if found; else 'none'.
+  Under Qt6 on a KDE/GNOME-like desktop: 'dbus' when libdbus-1 is loadable,
+  'gdbus' when only the CLI is there. Else 'notify-send' if found, else 'none'.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.getNotificationSystem: string;
 begin
-  if UseGDBusForNotifications then
+  if UseDBusForNotifications then
+  begin
+    if DBusAvailable then
+      Exit('dbus');
     Exit('gdbus');
+  end;
   if IsNotifySendAvailable then
     Exit('notify-send');
   Result := 'none';
@@ -1337,7 +1402,9 @@ end;
 {------------------------------------------------------------------------------
   attention
   ---------
-  Send a desktop notification. Prefer gdbus path under Qt6; otherwise fallback.
+  Send a desktop notification. Under Qt6 on KDE/GNOME-like desktops this goes
+  over the session bus (libdbus first, the gdbus tool second); everywhere else,
+  and whenever the bus path fails, it falls back to notify-send.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.attention(topic, message: string);
 
@@ -1408,7 +1475,52 @@ function RunAndCapture(const Exec: string; const Params: array of string;
     end;
   end;
 {$ENDIF}
-  {$IFDEF LCLQt6}
+{$IFDEF LCLQt6}
+  // Notify() straight over the bus. Same arguments as the gdbus path below,
+  // but marshalled as typed values instead of being printed into GVariant
+  // text and parsed back — which also means a reading or a nickname holding a
+  // quote can no longer derail the call.
+function NotifyViaDBus(const Title, Msg: string; out NewId: cardinal): boolean;
+  var
+    conn: TDBusConn;
+    call, reply: TDBusMessage;
+  begin
+    Result := false;
+    NewId := 0;
+    if not DBusAvailable then
+      Exit;
+    conn := TDBusConn.Create(dbSession);
+    try
+      call := conn.NewCall('org.freedesktop.Notifications',
+        '/org/freedesktop/Notifications', 'org.freedesktop.Notifications',
+        'Notify');
+      if call = nil then
+        Exit;
+      call.AddString('Trndi');   // app_name
+      call.AddUInt32(0);         // replaces_id
+      call.AddString('');        // app_icon
+      call.AddString(Title);     // summary
+      call.AddString(Msg);       // body
+      call.AddStringArray([]);   // actions
+      call.OpenDict;             // hints
+      call.CloseDict;
+      call.AddInt32(noticeDuration); // expire_timeout
+      reply := conn.CallBlocking(call, 5000);
+      if reply = nil then
+        Exit;
+      try
+        // The id is only useful for replacing this notification later; a
+        // server that answers at all has accepted it.
+        reply.ReadUInt32(NewId);
+        Result := true;
+      finally
+        reply.Free;
+      end;
+    finally
+      conn.Free;
+    end;
+  end;
+
 var
   Params: array of string;
   OutS, ErrS: string;
@@ -1420,8 +1532,17 @@ var
   {$ENDIF}
 begin
   {$IFDEF LCLQt6}
-  if UseGDBusForNotifications then
+  if UseDBusForNotifications then
   begin
+    if NotifyViaDBus(topic, message, NewId) then
+      Exit;
+    // libdbus missing or the server did not answer: fall through to the gdbus
+    // tool, and to notify-send after that.
+    if FindInPath('gdbus') = '' then
+    begin
+      NotifySendFallback(topic, message);
+      Exit;
+    end;
     ReplaceId := 0;
     SetLength(Params, 0);
     Params :=
@@ -2173,7 +2294,7 @@ var
   f: double;
 begin
   if linutils.KDEBadge.GDesktopId = '' then
-    InitializeBadge('com.slicke.trndi.desktop', 150, nil, UseGDBusForNotifications);
+    InitializeBadge('com.slicke.trndi.desktop', 150, nil, UseDBusForNotifications);
   ClearBadge;
   
   // Only set numeric badge if value can be parsed as a number
@@ -3272,10 +3393,14 @@ end;
   ------------------------------------
   systemd-logind broadcasts org.freedesktop.login1.Manager.PrepareForSleep
   on the system bus: argument=true just before suspend, argument=false when
-  resuming. We spawn `gdbus monitor` on a background thread and watch its
-  stdout for the false transition, then queue the user callback on the
-  main thread. If gdbus is missing we silently no-op — the existing timer
-  gap detection in tMainTimer remains as a fallback.
+  resuming. A background thread subscribes to that signal and queues the user
+  callback on the main thread when it sees the false transition.
+
+  Preferably it subscribes with libdbus on a connection of its own — private,
+  because popping messages off the shared connection would steal them from
+  everything else using the bus. Without libdbus it falls back to watching the
+  stdout of a `gdbus monitor` child, and if neither is available it idles: the
+  timer gap detection in tMainTimer stays as the last line of defence.
  ------------------------------------------------------------------------------}
 type
   TWakeBridge = class
@@ -3287,6 +3412,12 @@ type
   TWakeMonitorThread = class(TThread)
   private
     FProc: TProcess;
+      // Subscribe over libdbus. False when the bus could not be reached, so
+      // the caller can try the gdbus child instead.
+    function RunDBusLoop: boolean;
+      // Legacy: parse the printed output of `gdbus monitor`.
+    procedure RunGDBusLoop;
+    procedure QueueWake;
   protected
     procedure Execute; override;
   public
@@ -3335,7 +3466,73 @@ begin
     end;
 end;
 
-procedure TWakeMonitorThread.Execute;
+{------------------------------------------------------------------------------
+  QueueWake
+  ---------
+  Hand the wake-up to the main thread. Pending guards against a burst of
+  signals stacking up several callbacks before the first one runs.
+ ------------------------------------------------------------------------------}
+procedure TWakeMonitorThread.QueueWake;
+begin
+  if Assigned(gWakeBridge) and (not gWakeBridge.Pending) then
+  begin
+    gWakeBridge.Pending := true;
+    Application.QueueAsyncCall(@gWakeBridge.Fire, 0);
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  RunDBusLoop
+  -----------
+  Watch PrepareForSleep on a private system-bus connection. Returns False
+  before consuming anything if the bus is unreachable, which is the signal to
+  fall back; once the loop is running it only ends on Terminate or a dropped
+  connection.
+ ------------------------------------------------------------------------------}
+function TWakeMonitorThread.RunDBusLoop: boolean;
+var
+  conn: TDBusConn;
+  msg: TDBusMessage;
+  sleeping: boolean;
+begin
+  Result := false;
+  if not DBusAvailable then
+    Exit;
+
+  conn := TDBusConn.Create(dbSystem, true);
+  try
+    if not conn.Connected then
+      Exit;
+    if not conn.AddMatch('type=''signal'',' +
+      'interface=''org.freedesktop.login1.Manager'',' +
+      'member=''PrepareForSleep''') then
+      Exit;
+    Result := true;
+    TrndiDLog('WakeMonitor: watching login1 PrepareForSleep over D-Bus');
+
+    while not Terminated do
+    begin
+      // Short timeout so Terminate is noticed promptly on shutdown.
+      msg := conn.NextSignal(200);
+      if msg = nil then
+        Continue;
+      try
+        if msg.IsSignal('org.freedesktop.login1.Manager', 'PrepareForSleep') and
+          msg.ReadBoolean(sleeping) and (not sleeping) then
+          QueueWake; // false = resumed
+      finally
+        msg.Free;
+      end;
+    end;
+  finally
+    conn.Free;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  RunGDBusLoop
+ ------------------------------------------------------------------------------}
+procedure TWakeMonitorThread.RunGDBusLoop;
 var
   buf: array[0..2047] of byte;
   n: SizeInt;
@@ -3382,13 +3579,7 @@ begin
             // True => about to sleep; false => resumed. Fire on false.
             if (Pos('prepareforsleep', low) > 0)
                and (Pos('false', low) > 0) then
-            begin
-              if Assigned(gWakeBridge) and (not gWakeBridge.Pending) then
-              begin
-                gWakeBridge.Pending := true;
-                Application.QueueAsyncCall(@gWakeBridge.Fire, 0);
-              end;
-            end;
+              QueueWake;
           until false;
         end;
       end
@@ -3404,6 +3595,18 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  Execute
+  -------
+  libdbus if it will have us, the gdbus child otherwise.
+ ------------------------------------------------------------------------------}
+procedure TWakeMonitorThread.Execute;
+begin
+  if RunDBusLoop then
+    Exit;
+  RunGDBusLoop;
+end;
+
 procedure TTrndiNativeLinux.RegisterWakeCallback(const Callback: TTrndiWakeCallback);
 begin
   inherited RegisterWakeCallback(Callback);
@@ -3415,9 +3618,10 @@ begin
     UnregisterWakeCallback;
     Exit;
   end;
-  if FindInPath('gdbus') = '' then
+  if (not DBusAvailable) and (FindInPath('gdbus') = '') then
   begin
-    TrndiDLog('RegisterWakeCallback: gdbus not in PATH; wake detection disabled');
+    TrndiDLog('RegisterWakeCallback: no libdbus and no gdbus; ' +
+      'wake detection disabled');
     Exit;
   end;
   if gWakeThread = nil then
