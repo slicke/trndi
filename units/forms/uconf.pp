@@ -3303,7 +3303,10 @@ end;
 
 procedure TfConf.ProxyEditChange(Sender: TObject);
 begin
-  if FProxyLoading then
+  // FSettingsLoading covers umain filling the dialog, FProxyLoading our own
+  // tab load. Either way the edit is being assigned, not typed in, so writing
+  // it back would only risk overwriting the stored proxy with a placeholder.
+  if FProxyLoading or FSettingsLoading then
     Exit;
   SaveProxySettingsFromUI;
 end;
