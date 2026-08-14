@@ -182,12 +182,29 @@ define stage-qjs-libs
 	fi
 endef
 
-LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG)
+# libgcc search path. FPC links -lgcc on Linux, but libgcc.a lives in GCC's
+# version-specific directory (/usr/lib/gcc/<triple>/<major>/), which ld does not
+# search on its own. Distributions that ship an -Fl line for it in /etc/fpc.cfg
+# link fine; where that line is missing (Fedora) the build dies with
+# "cannot find -lgcc". Ask the installed compiler where the file is rather than
+# hardcoding a version — a GCC major upgrade then needs no change here.
+#
+# Set LIBGCC_DIR= (empty) to opt out, or LIBGCC_DIR=/some/path to override.
+# Empty when gcc is absent or prints a path that does not exist, which leaves
+# the lazbuild command line exactly as it was before.
+ifeq ($(UNAME_S),Linux)
+  GCC ?= gcc
+  LIBGCC_DIR ?= $(shell f=$$($(GCC) -print-libgcc-file-name 2>/dev/null); \
+    [ -n "$$f" ] && [ -f "$$f" ] && dirname "$$f")
+endif
+LIBGCC_FLAGS := $(if $(strip $(LIBGCC_DIR)),--opt=-Fl$(strip $(LIBGCC_DIR)))
+
+LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS)
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
 NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
-NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG)
+NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS)
 
 .PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
 
@@ -223,6 +240,7 @@ help:
 	@echo "  LAZBUILD (default: lazbuild)"
 	@echo "  WIDGETSET (default: $(WIDGETSET))"
 	@echo "  BUILD_MODE (default: $(BUILD_MODE))"
+	@echo "  LIBGCC_DIR (Linux; default: asked of gcc, currently '$(LIBGCC_DIR)'). Set empty to opt out."
 
 check:
 ifeq ($(OS),Windows_NT)
@@ -302,7 +320,7 @@ debug: build
 
 test: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -311,7 +329,7 @@ test: check qjs-links
 
 noext-test: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -320,7 +338,7 @@ noext-test: qjs-links
 
 test-noserver: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -329,7 +347,7 @@ test-noserver: check qjs-links
 
 noext-test-noserver: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
