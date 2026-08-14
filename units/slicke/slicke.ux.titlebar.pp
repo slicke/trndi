@@ -472,8 +472,11 @@ function TSlickeTitleBar.ButtonRect(AIndex: integer): TRect;
 var
   bw, right: integer;
 begin
-  bw := Round(Height * 1.4);
-  right := ClientWidth - (ButtonCount - 1 - AIndex) * bw;
+  // Full-height hit zones (easy targets) sized for the round discs drawn
+  // inside them, plus a small right margin so the last disc isn't flush
+  // against the window edge.
+  bw := Round(Height * 1.15);
+  right := ClientWidth - (ButtonCount - 1 - AIndex) * bw - (Height div 6);
   Result := Rect(right - bw, 0, right, Height);
 end;
 
@@ -489,7 +492,7 @@ end;
 
 procedure TSlickeTitleBar.Paint;
 var
-  i, gs, cx, cy: integer;
+  i, gs, ds, cx, cy: integer;
   r, gr: TRect;
   kind: TSlickeTitleBarButton;
   fillC, glyphC: TColor;
@@ -517,47 +520,52 @@ begin
     ts.Clipping := true;
     ts.EndEllipsis := true;
     r := Rect(Height div 2, 0,
-      ClientWidth - ButtonCount * Round(Height * 1.4) - Height div 4, Height);
+      ClientWidth - ButtonCount * Round(Height * 1.15) - Height div 4, Height);
     Canvas.TextRect(r, r.Left, 0, s, ts);
     Canvas.Brush.Style := bsSolid;
   end;
 
-  // Buttons: hover/pressed fills, then line-drawn glyphs (fonts are not
-  // trustworthy for these three shapes across Linux font setups).
+  // Buttons in the Ubuntu/Yaru style: a faint disc always marks each button,
+  // hover lifts the disc (close goes red), pressed darkens it. Glyphs are
+  // line-drawn (fonts are not trustworthy for these three shapes across
+  // Linux font setups).
   for i := 0 to ButtonCount - 1 do
   begin
     r := ButtonRect(i);
     kind := ButtonKind(i);
     glyphC := FText;
-    if i = FPressedBtn then
+    if (i = FPressedBtn) and (kind = stbClose) then
     begin
-      if kind = stbClose then
-      begin
-        fillC := RGBToColor(190, 20, 40);
-        glyphC := clWhite;
-      end
-      else
-        fillC := MixColors(FBg, FText, 0.30);
-      Canvas.Brush.Color := fillC;
-      Canvas.FillRect(r);
+      fillC := RGBToColor(160, 18, 35);
+      glyphC := clWhite;
     end
     else
-    if i = FHoverBtn then
+    if (i = FHoverBtn) and (kind = stbClose) then
     begin
-      if kind = stbClose then
-      begin
-        fillC := RGBToColor(232, 17, 35);
-        glyphC := clWhite;
-      end
-      else
-        fillC := MixColors(FBg, FText, 0.18);
-      Canvas.Brush.Color := fillC;
-      Canvas.FillRect(r);
-    end;
+      fillC := RGBToColor(199, 22, 43);
+      glyphC := clWhite;
+    end
+    else
+    if i = FPressedBtn then
+      fillC := MixColors(FBg, FText, 0.30)
+    else
+    if i = FHoverBtn then
+      fillC := MixColors(FBg, FText, 0.22)
+    else
+      fillC := MixColors(FBg, FText, 0.10);
 
-    gs := Max(8, Height div 3);
+    // The disc, centered in the hit zone.
+    ds := Round(Height * 0.68);
     cx := (r.Left + r.Right) div 2;
     cy := Height div 2;
+    Canvas.Brush.Style := bsSolid;
+    Canvas.Brush.Color := fillC;
+    Canvas.Pen.Style := psClear;
+    Canvas.Ellipse(cx - ds div 2, cy - ds div 2,
+      cx - ds div 2 + ds, cy - ds div 2 + ds);
+    Canvas.Pen.Style := psSolid;
+
+    gs := Max(7, Round(ds * 0.42));
     gr := Rect(cx - gs div 2, cy - gs div 2, cx - gs div 2 + gs, cy - gs div 2 + gs);
     Canvas.Pen.Color := glyphC;
     Canvas.Pen.Width := Max(1, Height div 24);
