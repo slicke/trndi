@@ -86,6 +86,8 @@ private
   FText: TColor;
   FTitle: string;
   FTitleAlignment: TAlignment;
+  FMetricHeight: integer; // Height UpdateMetrics derived from the font; the
+                          // bar re-asserts it when anything else resizes it
   FButtons: TSlickeTitleBarButtons;
   FHoverBtn: integer;   // index into visible-button order, -1 = none
   FPressedBtn: integer; // button armed by mouse-down, -1 = none
@@ -106,6 +108,7 @@ private
   procedure SetButtons(const AValue: TSlickeTitleBarButtons);
 protected
   procedure Paint; override;
+  procedure Resize; override;
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer); override;
   procedure MouseMove(Shift: TShiftState; X, Y: integer); override;
   procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: integer); override;
@@ -382,7 +385,21 @@ begin
   finally
     bmp.Free;
   end;
-  Height := Max(24, th + 12);
+  FMetricHeight := Max(24, th + 12);
+  Height := FMetricHeight;
+end;
+
+procedure TSlickeTitleBar.Resize;
+begin
+  inherited Resize;
+  // The bar owns its height. LCL's DPI auto-adjust rescales runtime-created
+  // controls on monitor scale events (Wayland fires these liberally, and
+  // fractional setups can fire them repeatedly), which compounded the height
+  // on every pass. Re-derive from the font instead of trusting the scaled
+  // value: on a genuine DPI change the font was scaled too, so the re-measure
+  // lands on the correct new height; on a spurious event it heals back.
+  if (FMetricHeight > 0) and (Height <> FMetricHeight) then
+    UpdateMetrics;
 end;
 
 procedure TSlickeTitleBar.SetColors(ABg, AText: TColor);
