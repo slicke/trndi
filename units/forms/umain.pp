@@ -1135,6 +1135,9 @@ private
   procedure TitleBarMaximizeRequest({%H-}Sender: TObject);
     {** Create/tear down the bar per platform capability and settings. }
   procedure ApplyOwnTitleBar;
+    {** Give a modal helper form (Settings, wizard) the drawn title bar on
+        platforms that need one. No-op elsewhere/when already dressed. }
+  procedure DressModalForm(AForm: TCustomForm);
     {** Sync bar/grip visibility with the window state (fullscreen etc.). }
   procedure UpdateOwnTitleBarState;
 public
