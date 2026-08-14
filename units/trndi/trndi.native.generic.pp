@@ -25,7 +25,8 @@
   implementation built only on FPC facilities:
   - Settings persisted in an INI file (@link(TTrndiNativeGeneric.ResolveIniPath)
     is virtual so platforms can follow their own filesystem conventions)
-  - HTTP via TFPHTTPClient; a configured proxy is used exclusively
+  - HTTP via TFPHTTPClient; a configured proxy is used exclusively, and with
+    none configured the environment's proxy variables are followed
   - Tool discovery via `which` for POSIX-style platforms
 
   It exists so that bringing Trndi to a new platform only requires
@@ -124,6 +125,144 @@ const
   // "Failed to set IO Timeout" from an uninitialized result. Leave the
   // timeout at 0 there — fphttpclient then never touches the socket option.
   HTTP_IO_TIMEOUT = {$IFDEF HAIKU}0{$ELSE}30000{$ENDIF};
+
+{------------------------------------------------------------------------------
+  ResolveEnvProxy
+  ---------------
+  Resolve the environment's proxy variables for a target URL. libcurl does this
+  by itself on the Linux/BSD paths and WinHTTP follows the system configuration
+  on Windows, but TFPHTTPClient never looks at the environment — so without
+  this, "no proxy in the settings" would mean "connect directly" even where the
+  system says otherwise.
+
+  Follows curl's rules: the scheme-specific variable first, then all_proxy,
+  with no_proxy as the bypass list. Uppercase HTTP_PROXY is deliberately not
+  read (in CGI-style environments it is settable from a request header); every
+  other variable is honoured in either case. no_proxy entries match a hostname
+  or a domain suffix; a port inside an entry is not considered.
+
+  Returns False, leaving host empty, when the environment names no proxy for
+  this URL — the caller then behaves exactly as before.
+ ------------------------------------------------------------------------------}
+function ResolveEnvProxy(const url: string; out host: string; out port: string;
+  out user: string; out pass: string): boolean;
+var
+  scheme, target, spec, creds, scratch: string;
+  p: integer;
+
+  function EnvAny(const names: array of string): string;
+  var
+    k: integer;
+  begin
+    Result := '';
+    for k := Low(names) to High(names) do
+    begin
+      Result := Trim(GetEnvironmentVariable(names[k]));
+      if Result <> '' then
+        Exit;
+    end;
+  end;
+
+  function Bypassed(const h: string): boolean;
+  var
+    list: TStringList;
+    k: integer;
+    rule, hn: string;
+  begin
+    Result := false;
+    rule := EnvAny(['no_proxy', 'NO_PROXY']);
+    if rule = '' then
+      Exit;
+    if rule = '*' then
+      Exit(true);
+    if h = '' then
+      Exit;
+    hn := LowerCase(h);
+    list := TStringList.Create;
+    try
+      list.Delimiter := ',';
+      list.StrictDelimiter := true;
+      list.DelimitedText := LowerCase(rule);
+      for k := 0 to list.Count - 1 do
+      begin
+        rule := Trim(list[k]);
+        while (rule <> '') and (rule[1] in ['.', '*']) do
+          Delete(rule, 1, 1);
+        if rule = '' then
+          Continue;
+        if (hn = rule) or ((Length(hn) > Length(rule)) and
+          (Copy(hn, Length(hn) - Length(rule), MaxInt) = '.' + rule)) then
+          Exit(true);
+      end;
+    finally
+      list.Free;
+    end;
+  end;
+
+begin
+  Result := false;
+  host := '';
+  port := '';
+  user := '';
+  pass := '';
+
+  // Target host, for the no_proxy check and to pick the right variable
+  target := Trim(url);
+  scheme := '';
+  p := Pos('://', target);
+  if p > 0 then
+    scheme := LowerCase(Copy(target, 1, p - 1));
+  p := Pos('?', target);
+  if p > 0 then
+    target := Copy(target, 1, p - 1);
+  p := Pos('#', target);
+  if p > 0 then
+    target := Copy(target, 1, p - 1);
+  scratch := '';
+  NormalizeProxyHostPort(target, scratch);
+
+  if scheme = 'https' then
+    spec := EnvAny(['https_proxy', 'HTTPS_PROXY'])
+  else
+    spec := EnvAny(['http_proxy']);
+  if spec = '' then
+    spec := EnvAny(['all_proxy', 'ALL_PROXY']);
+  if spec = '' then
+    Exit;
+
+  if Bypassed(target) then
+    Exit;
+
+  // user:pass@host:port. Strip the scheme, then split the credentials at the
+  // last '@' — before any path trimming, or a password holding a slash would
+  // swallow the host. NormalizeProxyHostPort drops the path afterwards.
+  p := Pos('://', spec);
+  if p > 0 then
+    spec := Copy(spec, p + 3, MaxInt);
+
+  p := LastDelimiter('@', spec);
+  if (p > 0) and (p < Length(spec)) then
+  begin
+    creds := Copy(spec, 1, p - 1);
+    spec := Copy(spec, p + 1, MaxInt);
+    p := Pos(':', creds);
+    if p > 0 then
+    begin
+      user := Copy(creds, 1, p - 1);
+      pass := Copy(creds, p + 1, MaxInt);
+    end
+    else
+      user := creds;
+  end;
+
+  host := spec;
+  NormalizeProxyHostPort(host, port);
+  if host = '' then
+    Exit;
+  if port = '' then
+    port := '8080';
+  Result := true;
+end;
 
 {------------------------------------------------------------------------------
   ToolAvailable
@@ -421,7 +560,11 @@ begin
       NormalizeProxyHostPort(proxyHost, proxyPort);
       if proxyPort = '' then
         proxyPort := '8080';
-    end;
+    end
+    else
+      // Nothing configured: follow the environment's proxy variables, the way
+      // curl does on Linux/BSD.
+      ResolveEnvProxy(url, proxyHost, proxyPort, proxyUser, proxyPass);
 
     {$ifdef DEBUG}
     if proxyHost <> '' then
@@ -536,9 +679,12 @@ begin
       NormalizeProxyHostPort(proxyHost, proxyPort);
       if proxyPort = '' then
         proxyPort := '8080';
-    end;
+    end
+    else
+      ResolveEnvProxy(url, proxyHost, proxyPort, proxyUser, proxyPass);
 
-    // Strict: a configured proxy is never bypassed (mirrors getURL).
+    // Strict: a proxy, configured or from the environment, is never bypassed
+    // (mirrors getURL).
     if proxyHost <> '' then
       Result := PerformRequest(true)
     else
@@ -826,7 +972,9 @@ begin
     NormalizeProxyHostPort(proxyHost, proxyPort);
     if proxyPort = '' then
       proxyPort := '8080';
-  end;
+  end
+  else
+    ResolveEnvProxy(address, proxyHost, proxyPort, proxyUser, proxyPass);
 
   redirectCount := 0;
   currentPost := post;
@@ -1046,7 +1194,9 @@ begin
     NormalizeProxyHostPort(proxyHost, proxyPort);
     if proxyPort = '' then
       proxyPort := '8080';
-  end;
+  end
+  else
+    ResolveEnvProxy(address, proxyHost, proxyPort, proxyUser, proxyPass);
 
   // A configured proxy is used exclusively - no direct fallback, exactly as
   // getURL/postURL do.
