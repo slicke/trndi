@@ -956,8 +956,11 @@ var
       curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
       if proxyPort <> '' then
         curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPort, 8080)));
-      if (proxyUser <> '') and (proxyPass <> '') then
-        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(proxyUser + ':' + proxyPass));
+      if (proxyUser <> '') or (proxyPass <> '') then
+      begin
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(proxyUser));
+        curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
+      end;
     end;
 
     // Ensure a true direct attempt (don't fall back to environment proxies)
@@ -1116,8 +1119,11 @@ var
       curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
       if proxyPort <> '' then
         curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPort, 8080)));
-      if (proxyUser <> '') and (proxyPass <> '') then
-        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(proxyUser + ':' + proxyPass));
+      if (proxyUser <> '') or (proxyPass <> '') then
+      begin
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(proxyUser));
+        curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
+      end;
     end;
     if (not withProxy) and (proxyHost <> '') then
       curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
@@ -1226,8 +1232,11 @@ begin
       curl_easy_setopt(handle, CURLOPT_PROXY, pchar(host));
       if portS <> '' then
         curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(portS, 8080)));
-      if (user <> '') and (pass <> '') then
-        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(user + ':' + pass));
+      if (user <> '') or (pass <> '') then
+      begin
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(user));
+        curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(pass));
+      end;
 
       curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
       curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
@@ -2667,6 +2676,7 @@ var
   methodLabel: string;
   cookieVal: string;
   cookiePos: integer;
+  proxyHost, proxyPortS, proxyUser, proxyPass: string;
 
   function HasHeader(const AName: string): boolean;
   var
@@ -2755,6 +2765,26 @@ begin
       if useragent <> '' then
         curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
 
+      // Same proxy.* root settings as request()/getURL(). Without this the
+      // cookie-driven logins (CareLink, Dexcom, Tandem, LibreLinkUp) were the
+      // only traffic that ignored a configured proxy.
+      proxyHost := Trim(GetRootSetting('proxy.host', ''));
+      proxyPortS := Trim(GetRootSetting('proxy.port', ''));
+      proxyUser := GetRootSetting('proxy.user', '');
+      proxyPass := GetRootSetting('proxy.pass', '');
+      if proxyHost <> '' then
+      begin
+        NormalizeProxyHostPort(proxyHost, proxyPortS);
+        curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
+        if proxyPortS <> '' then
+          curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPortS, 8080)));
+        if (proxyUser <> '') or (proxyPass <> '') then
+        begin
+          curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(proxyUser));
+          curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
+        end;
+      end;
+
       if followRedirects then
       begin
         curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
@@ -2831,6 +2861,21 @@ begin
       curl_easy_setopt(handle, CURLOPT_HEADERDATA, Pointer(headerStream));
 
       errCode := curl_easy_perform(handle);
+
+      // Proxy configured but unusable: retry once directly, as request() and
+      // getURL() do. The failed attempt may have written a partial body or
+      // header block, so both streams are emptied first.
+      if (errCode <> CURLE_OK) and (proxyHost <> '') then
+      begin
+        TrndiNetLog(Format('HTTP %s (curl): proxy attempt failed: %s ; retrying direct',
+          [methodLabel, string(curl_easy_strerror(errCode))]));
+        responseStream.Size := 0;
+        responseStream.Position := 0;
+        headerStream.Size := 0;
+        headerStream.Position := 0;
+        curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
+        errCode := curl_easy_perform(handle);
+      end;
 
       if errCode = CURLE_OK then
       begin
@@ -2978,8 +3023,11 @@ var
       curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
       if proxyPortS <> '' then
         curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPortS, 8080)));
-      if (proxyUser <> '') and (proxyPass <> '') then
-        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, pchar(proxyUser + ':' + proxyPass));
+      if (proxyUser <> '') or (proxyPass <> '') then
+      begin
+        curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(proxyUser));
+        curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
+      end;
     end
     else if (not withProxy) and (proxyHost <> '') then
       curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
