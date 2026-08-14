@@ -25,7 +25,7 @@
   implementation built only on FPC facilities:
   - Settings persisted in an INI file (@link(TTrndiNativeGeneric.ResolveIniPath)
     is virtual so platforms can follow their own filesystem conventions)
-  - HTTP via TFPHTTPClient with proxy-first / direct-fallback behavior
+  - HTTP via TFPHTTPClient; a configured proxy is used exclusively
   - Tool discovery via `which` for POSIX-style platforms
 
   It exists so that bringing Trndi to a new platform only requires
@@ -100,7 +100,7 @@ public
     const header: string = ''; prefix: boolean = true): string; override;
   {** Enhanced HTTP request via TFPHTTPClient: tracks cookies, follows
       redirects manually, captures response headers. Honours the configured
-      proxy with a direct fallback and returns real HTTP status codes
+      proxy exclusively (no direct fallback) and returns real HTTP status codes
       (4xx/5xx never raise), matching the Windows/Mac implementations. }
   function requestEx(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
@@ -392,13 +392,6 @@ var
           HTTP.Proxy.Password := proxyPass;
       end;
 
-      // Ensure a true direct attempt when falling back
-      if (not withProxy) and (proxyHost <> '') then
-      begin
-        HTTP.Proxy.Host := '';
-        HTTP.Proxy.Port := 0;
-      end;
-
       try
         res := HTTP.Get(url);
         Result := true;
@@ -437,47 +430,31 @@ begin
       TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
     {$endif}
 
-    // Try with proxy first if configured
+    // A configured proxy is the only route out: no direct fallback, or a dead
+    // proxy would silently send the traffic around it.
     if proxyHost <> '' then
     begin
       {$ifdef DEBUG}
       TrndiDLog(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
       {$endif}
-      if PerformRequest(true) then
-      begin
-        {$ifdef DEBUG}
-        TrndiNetLog('HTTP GET: proxy attempt succeeded');
-        {$endif}
-        Result := true;
-        Exit;
-      end;
-
+      Result := PerformRequest(true);
       {$ifdef DEBUG}
-      TrndiNetLog('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      if Result then
+        TrndiNetLog('HTTP GET: proxy attempt succeeded')
+      else
+        TrndiNetLog('HTTP GET: proxy attempt failed: ' + res);
       {$endif}
+      Exit;
     end;
 
-    // Fallback: try without proxy
     {$ifdef DEBUG}
-    if proxyHost <> '' then
-      TrndiNetLog('HTTP GET: attempting direct (clearing proxy settings)')
-    else
-      TrndiNetLog('HTTP GET: attempting direct');
+    TrndiNetLog('HTTP GET: attempting direct');
     {$endif}
-    if PerformRequest(false) then
-    begin
-      {$ifdef DEBUG}
-      TrndiNetLog('HTTP GET: direct attempt succeeded');
-      {$endif}
-      Result := true;
-    end
-    else
-    begin
-      {$ifdef DEBUG}
+    Result := PerformRequest(false);
+    {$ifdef DEBUG}
+    if not Result then
       TrndiNetLog('HTTP GET: direct attempt failed: ' + res);
-      {$endif}
-      Result := false;
-    end;
+    {$endif}
 
   finally
     tempInstance.Free;
@@ -487,8 +464,8 @@ end;
 {------------------------------------------------------------------------------
   postURL
   -------
-  Simple HTTP POST using TFPHTTPClient. Respects the configured proxy with a
-  direct fallback on failure (mirrors getURL).
+  Simple HTTP POST using TFPHTTPClient. A configured proxy is used exclusively,
+  with no direct fallback (mirrors getURL).
  ------------------------------------------------------------------------------}
 class function TTrndiNativeGeneric.postURL(const url: string; const body: string;
   const contentType: string; out res: string): boolean;
@@ -518,12 +495,6 @@ var
         if proxyPass <> '' then
           HTTP.Proxy.Password := proxyPass;
       end;
-      if (not withProxy) and (proxyHost <> '') then
-      begin
-        HTTP.Proxy.Host := '';
-        HTTP.Proxy.Port := 0;
-      end;
-
       if contentType <> '' then
         HTTP.AddHeader('Content-Type', contentType);
 
@@ -567,16 +538,11 @@ begin
         proxyPort := '8080';
     end;
 
+    // Strict: a configured proxy is never bypassed (mirrors getURL).
     if proxyHost <> '' then
-    begin
-      if PerformRequest(true) then
-      begin
-        Result := true;
-        Exit;
-      end;
-    end;
-
-    Result := PerformRequest(false);
+      Result := PerformRequest(true)
+    else
+      Result := PerformRequest(false);
   finally
     tempInstance.Free;
   end;
@@ -641,7 +607,8 @@ end;
   requestEx (generic)
   -------------------
   Cookie-aware, manually-redirect-following HTTP via TFPHTTPClient. Honours
-  the configured proxy with a direct fallback (like getURL/postURL). Requests
+  the configured proxy exclusively, with no direct fallback on any hop (like
+  getURL/postURL). Requests
   go through HTTPMethod with an empty allowed-code list so redirects and
   4xx/5xx come back with their real status and body instead of raising,
   matching the Windows/Mac implementations.
@@ -848,8 +815,8 @@ begin
   else
     bodyData := '';
 
-  // Same proxy keys as the Windows implementation; each hop tries the proxy
-  // first and falls back to a direct connection (mirrors getURL/postURL).
+  // Same proxy keys as the Windows implementation; a configured proxy carries
+  // every hop and is never bypassed (mirrors getURL/postURL).
   proxyHost := Trim(GetRootSetting('proxy.host', ''));
   proxyPort := Trim(GetRootSetting('proxy.port', ''));
   proxyUser := GetRootSetting('proxy.user', '');
@@ -869,13 +836,10 @@ begin
     // Manual redirect loop so we can observe headers and cookies.
     while True do
     begin
-      hopOk := false;
-      if proxyHost <> '' then
-        hopOk := TryHop(address, currentPost, bodyData, true, response,
-          statusCode, hopHeaders, hopErr);
-      if not hopOk then
-        hopOk := TryHop(address, currentPost, bodyData, false, response,
-          statusCode, hopHeaders, hopErr);
+      // No direct fallback on a configured proxy, so a redirect chain cannot
+      // start on the proxy and finish around it.
+      hopOk := TryHop(address, currentPost, bodyData, proxyHost <> '', response,
+        statusCode, hopHeaders, hopErr);
 
       Result.Body := response;
       Result.StatusCode := statusCode;
@@ -964,9 +928,9 @@ end;
   request (generic)
   -----------------
   HTTP GET/POST via TFPHTTPClient. Mirrors the simple shape of the libcurl
-  path on Linux/BSD, including the proxy-first / direct-fallback behaviour of
-  getURL and postURL — this is the path the backend drivers use, so a proxy
-  that is ignored here is a proxy that is ignored for all data traffic.
+  path on Linux/BSD, including the exclusive use of a configured proxy — this
+  is the path the backend drivers use, so a proxy that is ignored here is a
+  proxy that is ignored for all data traffic.
  ------------------------------------------------------------------------------}
 function TTrndiNativeGeneric.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
@@ -1084,14 +1048,12 @@ begin
       proxyPort := '8080';
   end;
 
-  // Try the proxy first, then fall back to a direct connection, exactly as
-  // getURL/postURL do. On a failed proxy attempt Result carries that error
-  // until the direct attempt replaces it.
+  // A configured proxy is used exclusively - no direct fallback, exactly as
+  // getURL/postURL do.
   if proxyHost <> '' then
-    if PerformRequest(true, Result) then
-      Exit;
-
-  PerformRequest(false, Result);
+    PerformRequest(true, Result)
+  else
+    PerformRequest(false, Result);
 end;
 
 end.

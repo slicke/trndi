@@ -224,7 +224,8 @@ public
 
     {** Triggers when the tray icon is clicked }
   procedure trayClick(Sender: TObject);
-    {** Simple HTTP GET/POST via libcurl, with proxy-first / direct fallback. }
+    {** Simple HTTP GET/POST via libcurl. A proxy.* root setting is used
+        exclusively; without one curl follows the environment's proxy vars. }
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     const header: string = ''; prefix: boolean = true): string; override;
@@ -963,10 +964,6 @@ var
       end;
     end;
 
-    // Ensure a true direct attempt (don't fall back to environment proxies)
-    if (not withProxy) and (proxyHost <> '') then
-      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
-
     // Write callback
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
@@ -1017,47 +1014,32 @@ begin
       TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
     {$endif}
 
-    // Try with proxy first if configured
+    // A configured proxy is the only route out: no direct fallback, or a dead
+    // proxy would silently send the traffic around it.
     if proxyHost <> '' then
     begin
       {$ifdef DEBUG}
       TrndiDLog(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
       {$endif}
-      if PerformRequest(true) then
-      begin
-        {$ifdef DEBUG}
-        TrndiNetLog('HTTP GET: proxy attempt succeeded');
-        {$endif}
-        Result := true;
-        Exit;
-      end;
-
+      Result := PerformRequest(true);
       {$ifdef DEBUG}
-      TrndiNetLog('HTTP GET: proxy attempt failed: ' + res + ' ; retrying direct');
+      if Result then
+        TrndiNetLog('HTTP GET: proxy attempt succeeded')
+      else
+        TrndiNetLog('HTTP GET: proxy attempt failed: ' + res);
       {$endif}
+      Exit;
     end;
 
-    // Fallback: try without proxy
+    // Nothing configured: curl follows the environment's proxy variables.
     {$ifdef DEBUG}
-    if proxyHost <> '' then
-      TrndiNetLog('HTTP GET: attempting direct (explicitly disabling proxy/env proxy)')
-    else
-      TrndiNetLog('HTTP GET: attempting direct');
+    TrndiNetLog('HTTP GET: attempting via system/environment configuration');
     {$endif}
-    if PerformRequest(false) then
-    begin
-      {$ifdef DEBUG}
-      TrndiNetLog('HTTP GET: direct attempt succeeded');
-      {$endif}
-      Result := true;
-    end
-    else
-    begin
-      {$ifdef DEBUG}
-      TrndiNetLog('HTTP GET: direct attempt failed: ' + res);
-      {$endif}
-      Result := false;
-    end;
+    Result := PerformRequest(false);
+    {$ifdef DEBUG}
+    if not Result then
+      TrndiNetLog('HTTP GET: attempt failed: ' + res);
+    {$endif}
 
   finally
     if headers <> nil then
@@ -1070,8 +1052,8 @@ end;
 {------------------------------------------------------------------------------
   postURL
   -------
-  Simple HTTP POST using libcurl. Respects the configured proxy with a direct
-  fallback on failure (mirrors getURL).
+  Simple HTTP POST using libcurl. A configured proxy is used exclusively, with
+  no direct fallback (mirrors getURL).
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.postURL(const url: string; const body: string;
   const contentType: string; out res: string): boolean;
@@ -1125,9 +1107,6 @@ var
         curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
       end;
     end;
-    if (not withProxy) and (proxyHost <> '') then
-      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
-
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
 
@@ -1166,15 +1145,11 @@ begin
       NormalizeProxyHostPort(proxyHost, proxyPort);
     end;
 
-    // Try with proxy first if configured, then fall back to direct (mirrors getURL)
+    // Strict: a configured proxy is never bypassed (mirrors getURL).
     if proxyHost <> '' then
-      if PerformRequest(true) then
-      begin
-        Result := true;
-        Exit;
-      end;
-
-    Result := PerformRequest(false);
+      Result := PerformRequest(true)
+    else
+      Result := PerformRequest(false);
   finally
     responseStream.Free;
     tempInstance.Free;
@@ -2765,9 +2740,9 @@ begin
       if useragent <> '' then
         curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
 
-      // Same proxy.* root settings as request()/getURL(). Without this the
-      // cookie-driven logins (CareLink, Dexcom, Tandem, LibreLinkUp) were the
-      // only traffic that ignored a configured proxy.
+      // Same proxy.* root settings as request()/getURL(), and like them a
+      // configured proxy is used exclusively — no direct fallback, so a
+      // redirect chain cannot start on the proxy and finish around it.
       proxyHost := Trim(GetRootSetting('proxy.host', ''));
       proxyPortS := Trim(GetRootSetting('proxy.port', ''));
       proxyUser := GetRootSetting('proxy.user', '');
@@ -2862,21 +2837,6 @@ begin
 
       errCode := curl_easy_perform(handle);
 
-      // Proxy configured but unusable: retry once directly, as request() and
-      // getURL() do. The failed attempt may have written a partial body or
-      // header block, so both streams are emptied first.
-      if (errCode <> CURLE_OK) and (proxyHost <> '') then
-      begin
-        TrndiNetLog(Format('HTTP %s (curl): proxy attempt failed: %s ; retrying direct',
-          [methodLabel, string(curl_easy_strerror(errCode))]));
-        responseStream.Size := 0;
-        responseStream.Position := 0;
-        headerStream.Size := 0;
-        headerStream.Position := 0;
-        curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
-        errCode := curl_easy_perform(handle);
-      end;
-
       if errCode = CURLE_OK then
       begin
         endTick := GetTickCount64;
@@ -2970,9 +2930,10 @@ end;
 {------------------------------------------------------------------------------
   request (Linux/BSD)
   -------------------
-  HTTP GET/POST via libcurl. Honours proxy.* root settings: if a proxy is
-  configured, the request runs through it first, then re-tries direct on
-  failure (including a DNS-retry path for laptop wake/resume scenarios).
+  HTTP GET/POST via libcurl. Honours proxy.* root settings: a configured proxy
+  carries the request with no direct fallback, and with nothing configured
+  curl follows the environment's proxy variables. Includes a DNS-retry path
+  for laptop wake/resume scenarios.
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
@@ -2989,6 +2950,7 @@ var
   proxyPortS: string;
   proxyUser: string;
   proxyPass: string;
+  useProxy: boolean;
 
   function IsDnsResolveError(const code: CURLcode): boolean;
   begin
@@ -3028,9 +2990,7 @@ var
         curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(proxyUser));
         curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
       end;
-    end
-    else if (not withProxy) and (proxyHost <> '') then
-      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(''));
+    end;
 
     if headers <> nil then
       curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
@@ -3111,38 +3071,23 @@ begin
       headers := curl_slist_append(headers, pchar('Accept: application/json'));
     end;
 
-    if proxyHost <> '' then
+    // A configured proxy carries the request or the request fails - it is
+    // never bypassed. The DNS retry stays either way: after a laptop resume
+    // the first attempt can fail to resolve the proxy just as easily as the
+    // target host.
+    useProxy := proxyHost <> '';
+    if PerformRequest(useProxy) then
+      Result := responseStream.DataString
+    else if IsDnsResolveError(errCode) then
     begin
-      if PerformRequest(true) then
+      Sleep(1500); // allow DNS/network stack to settle after resume
+      if PerformRequest(useProxy) then
         Result := responseStream.DataString
-      else if PerformRequest(false) then
-        Result := responseStream.DataString
-      else if IsDnsResolveError(errCode) then
-      begin
-        Sleep(1500); // allow DNS/network stack to settle after resume
-        if PerformRequest(false) then
-          Result := responseStream.DataString
-        else
-          Result := string(curl_easy_strerror(errCode));
-      end
       else
         Result := string(curl_easy_strerror(errCode));
     end
     else
-    begin
-      if PerformRequest(false) then
-        Result := responseStream.DataString
-      else if IsDnsResolveError(errCode) then
-      begin
-        Sleep(1500); // allow DNS/network stack to settle after resume
-        if PerformRequest(false) then
-          Result := responseStream.DataString
-        else
-          Result := string(curl_easy_strerror(errCode));
-      end
-      else
-        Result := string(curl_easy_strerror(errCode));
-    end;
+      Result := string(curl_easy_strerror(errCode));
   finally
     if headers <> nil then
       curl_slist_free_all(headers);

@@ -546,8 +546,7 @@ procedure SafeThreadJoin(T: TThread);
     @code(http://proxy:3128), @code(proxy:3128/) or a plain hostname — but
     WinHTTP and libcurl both want the host on its own. Every code path that
     reads the @code(proxy.*) settings must run the value through here first,
-    or the proxy is handed a host it cannot resolve and the request silently
-    falls back to a direct connection.
+    or the proxy is handed a host it cannot resolve and every request fails.
 
     An explicit @param(port) always wins; a port embedded in @param(host) is
     only used when @param(port) is empty. }

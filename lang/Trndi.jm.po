@@ -1144,12 +1144,12 @@ msgstr "Kompatibilitetslege: Din fônsterhanterare stôder inte alla funksjoner,
 #: tfconf.lproxydesc.caption
 msgid ""
 "Enter a proxy server below, to have Trndi connect using it.\n"
-"Should the connection fail, Trndi will fall back to a direct connection.\n"
+"Trndi will not connect around it: if the proxy fails, the connection fails.\n"
 "\n"
 "Proxy support is available for Windows, Linux, BSD and Haiku.\n"
 "macOS users must set the proxy settings in their System Settings.\n"
 "\n"
-"Leave empty to use a normal connection."
+"Leave empty to follow your system's own network settings."
 msgstr ""
 
 #: tfconf.lproxytitle.caption
