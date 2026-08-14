@@ -578,7 +578,7 @@ end;
 procedure NormalizeProxyHostPort(var host: string; var port: string);
 var
   s: string;
-  p: integer;
+  p, q: integer;
   hostPart, portPart: string;
 begin
   s := Trim(host);
@@ -593,8 +593,19 @@ begin
   if p > 0 then
     s := Copy(s, 1, p - 1);
 
-  // If host contains an explicit port, split it out
-  p := LastDelimiter(':', s);
+  // If host contains an explicit port, split it out. A bare IPv6 literal
+  // (::1, fe80::1) is all colons and no port, so only split where the value
+  // says so unambiguously: a bracketed [v6]:port, or a single colon.
+  p := 0;
+  if (s <> '') and (s[1] = '[') then
+  begin
+    q := Pos(']', s);
+    if (q > 0) and (q < Length(s)) and (s[q + 1] = ':') then
+      p := q + 1;
+  end
+  else if Pos(':', s) = LastDelimiter(':', s) then
+    p := LastDelimiter(':', s);
+
   if (p > 0) and (p < Length(s)) then
   begin
     hostPart := Copy(s, 1, p - 1);
