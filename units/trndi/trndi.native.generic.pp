@@ -964,17 +964,99 @@ end;
   request (generic)
   -----------------
   HTTP GET/POST via TFPHTTPClient. Mirrors the simple shape of the libcurl
-  path on Linux/BSD but without proxy support.
+  path on Linux/BSD, including the proxy-first / direct-fallback behaviour of
+  getURL and postURL — this is the path the backend drivers use, so a proxy
+  that is ignored here is a proxy that is ignored for all data traffic.
  ------------------------------------------------------------------------------}
 function TTrndiNativeGeneric.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
 const header: string; prefix: boolean): string;
 var
-  HTTP: TFPHTTPClient;
-  address, body: string;
-  bodyStream: TStringStream;
-  i, p: integer;
-  key, val: string;
+  address: string;
+  i: integer;
+  proxyHost, proxyPort, proxyUser, proxyPass: string;
+
+  // Returns False (with the error message in response) when the attempt threw,
+  // so the caller can retry without the proxy.
+  function PerformRequest(withProxy: boolean; out response: string): boolean;
+  var
+    HTTP: TFPHTTPClient;
+    body, key, val: string;
+    bodyStream: TStringStream;
+    p: integer;
+  begin
+    Result := false;
+    response := '';
+
+    HTTP := TFPHTTPClient.Create(nil);
+    try
+      HTTP.IOTimeout := HTTP_IO_TIMEOUT;
+      if useragent <> '' then
+        HTTP.AddHeader('User-Agent', useragent);
+
+      // A fresh client is proxy-less, so the direct attempt needs no undoing.
+      if withProxy and (proxyHost <> '') then
+      begin
+        HTTP.Proxy.Host := proxyHost;
+        HTTP.Proxy.Port := StrToIntDef(proxyPort, 8080);
+        if proxyUser <> '' then
+          HTTP.Proxy.Username := proxyUser;
+        if proxyPass <> '' then
+          HTTP.Proxy.Password := proxyPass;
+      end;
+
+      if header <> '' then
+      begin
+        p := Pos('=', header);
+        if p > 0 then
+        begin
+          key := Trim(Copy(header, 1, p - 1));
+          val := Trim(Copy(header, p + 1, MaxInt));
+          if key <> '' then
+            HTTP.AddHeader(key, val);
+        end;
+      end;
+
+      try
+        if post then
+        begin
+          if jsondata <> '' then
+          begin
+            HTTP.AddHeader('Content-Type', 'application/json; charset=UTF-8');
+            HTTP.AddHeader('Accept', 'application/json');
+            body := jsondata;
+          end
+          else
+            body := ''; // params already in the query string; empty POST body
+          if body <> '' then
+          begin
+            bodyStream := TStringStream.Create(body);
+            try
+              HTTP.RequestBody := bodyStream;
+              response := HTTP.Post(address);
+            finally
+              HTTP.RequestBody := nil;
+              bodyStream.Free;
+            end;
+          end
+          else
+            response := HTTP.Post(address);
+        end
+        else
+          response := HTTP.Get(address);
+        Result := true;
+      except
+        on E: Exception do
+        begin
+          response := E.Message;
+          Result := false;
+        end;
+      end;
+    finally
+      HTTP.Free;
+    end;
+  end;
+
 begin
   if prefix then
     address := Format('%s/%s', [baseurl, endpoint])
@@ -991,58 +1073,25 @@ begin
       address := address + '&' + params[i];
   end;
 
-  HTTP := TFPHTTPClient.Create(nil);
-  try
-    HTTP.IOTimeout := HTTP_IO_TIMEOUT;
-    if useragent <> '' then
-      HTTP.AddHeader('User-Agent', useragent);
-
-    if header <> '' then
-    begin
-      p := Pos('=', header);
-      if p > 0 then
-      begin
-        key := Trim(Copy(header, 1, p - 1));
-        val := Trim(Copy(header, p + 1, MaxInt));
-        if key <> '' then
-          HTTP.AddHeader(key, val);
-      end;
-    end;
-
-    try
-      if post then
-      begin
-        if jsondata <> '' then
-        begin
-          HTTP.AddHeader('Content-Type', 'application/json; charset=UTF-8');
-          HTTP.AddHeader('Accept', 'application/json');
-          body := jsondata;
-        end
-        else
-          body := ''; // params already in the query string; empty POST body
-        if body <> '' then
-        begin
-          bodyStream := TStringStream.Create(body);
-          try
-            HTTP.RequestBody := bodyStream;
-            Result := HTTP.Post(address);
-          finally
-            HTTP.RequestBody := nil;
-            bodyStream.Free;
-          end;
-        end
-        else
-          Result := HTTP.Post(address);
-      end
-      else
-        Result := HTTP.Get(address);
-    except
-      on E: Exception do
-        Result := E.Message;
-    end;
-  finally
-    HTTP.Free;
+  proxyHost := Trim(GetRootSetting('proxy.host', ''));
+  proxyPort := Trim(GetRootSetting('proxy.port', ''));
+  proxyUser := GetRootSetting('proxy.user', '');
+  proxyPass := GetRootSetting('proxy.pass', '');
+  if proxyHost <> '' then
+  begin
+    NormalizeProxyHostPort(proxyHost, proxyPort);
+    if proxyPort = '' then
+      proxyPort := '8080';
   end;
+
+  // Try the proxy first, then fall back to a direct connection, exactly as
+  // getURL/postURL do. On a failed proxy attempt Result carries that error
+  // until the direct attempt replaces it.
+  if proxyHost <> '' then
+    if PerformRequest(true, Result) then
+      Exit;
+
+  PerformRequest(false, Result);
 end;
 
 end.
