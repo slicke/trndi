@@ -779,6 +779,10 @@ begin
   InitializeUIComponents;
   Application.ProcessMessages;
 
+  // Application-drawn title bar (Wayland / forced via ux.own_titlebar). After
+  // the font setup above so the bar sizes itself from the real UI font.
+  ApplyOwnTitleBar;
+
   // Force first UI update by initializing cached UI state to sentinel values
   // This ensures ShouldUpdateUI(...) returns true on first valid update
   FLastUIColor := TColor(-1);
@@ -824,6 +828,8 @@ begin
 
       fWizard := TfWizard.Create(nil, native);
       try
+        // Same drawn-title-bar treatment as Settings on Wayland sessions.
+        DressModalForm(fWizard);
         if fWizard.ShowModal = mrOK then
         begin
           // Wizard saved settings — re-read target and continue init

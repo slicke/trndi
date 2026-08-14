@@ -66,6 +66,17 @@ TTrndiBool = (tbUnset, tbTrue, tbFalse, tbUnknown);
       delivered on the main (UI) thread — platform units marshal as needed. }
 TTrndiWakeCallback = procedure of object;
 
+  {** Receiver for title-bar colors on platforms whose native decorations
+      cannot be tinted: a registered sink (an application-drawn title bar)
+      gets the same @code(bg)/@code(text) pair the DWM/Cocoa paths apply
+      natively. See @link(TTrndiNativeBase.RegisterTitleColorSink). }
+TTitleColorSink = procedure(bg, Text: TColor) of object;
+  {** Returns the *current* window handle the sink stands in for. A callback
+      rather than a stored handle because the LCL recreates window handles
+      (e.g. on BorderStyle changes), which would silently orphan a stored
+      value. }
+TTitleColorHandleProvider = function: PtrUInt of object;
+
 {$ifdef X_LINUXBSD}
   {** Information about a WSL environment (Windows Subsystem for Linux). }
 TWSLInfo = record
@@ -435,8 +446,24 @@ class var touchOverride: TTrndiBool;
     }
   procedure WriteCurrentIndicatorCache(const Value: string;
     const ReadingTime: TDateTime; FreshMinutes: integer); virtual;
-    {** Set native window titlebar colors if supported. }
+    {** Set native window titlebar colors if supported. The base
+        implementation consults the sink registry (see
+        @link(RegisterTitleColorSink)): when a registered application-drawn
+        title bar answers for @param(form) the colors are routed to it and
+        @true is returned. Platforms with real native support (Windows/macOS)
+        override this and never consult the registry. }
   class function SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean; virtual;
+    {** True when this platform cannot decorate/tint native title bars and the
+        application should draw its own bar (Linux/BSD under Wayland, where the
+        compositor owns the decorations). Base: @false. }
+  class function NeedsCustomTitleBar: boolean; virtual;
+    {** Route future @link(SetTitleColor) calls for the window identified by
+        @param(provider) to @param(sink) instead of the (unsupported) native
+        path. Re-registering the same sink replaces its provider. }
+  class procedure RegisterTitleColorSink(const provider: TTitleColorHandleProvider;
+    const sink: TTitleColorSink);
+    {** Remove a previously registered sink; safe to call when not registered. }
+  class procedure UnregisterTitleColorSink(const sink: TTitleColorSink);
     {** True when the platform renders the active multi-user name as a native
         title-bar badge in place of the "[name] Trndi" caption prefix.
         Base: @false. }
@@ -1793,7 +1820,59 @@ begin
     end;
 end;
 
+// Title-color sink registry. Deliberately tiny: in practice one entry (the
+// main window's drawn title bar). Providers are compared by current handle at
+// call time, so LCL handle recreation cannot orphan an entry.
+var
+TitleSinks: array of record
+  Provider: TTitleColorHandleProvider;
+  Sink: TTitleColorSink;
+end;
+
+class procedure TTrndiNativeBase.RegisterTitleColorSink(
+  const provider: TTitleColorHandleProvider; const sink: TTitleColorSink);
+var
+  i: integer;
+begin
+  for i := 0 to High(TitleSinks) do
+    if TitleSinks[i].Sink = sink then
+    begin
+      TitleSinks[i].Provider := provider;
+      Exit;
+    end;
+  SetLength(TitleSinks, Length(TitleSinks) + 1);
+  TitleSinks[High(TitleSinks)].Provider := provider;
+  TitleSinks[High(TitleSinks)].Sink := sink;
+end;
+
+class procedure TTrndiNativeBase.UnregisterTitleColorSink(const sink: TTitleColorSink);
+var
+  i, j: integer;
+begin
+  for i := 0 to High(TitleSinks) do
+    if TitleSinks[i].Sink = sink then
+    begin
+      for j := i to High(TitleSinks) - 1 do
+        TitleSinks[j] := TitleSinks[j + 1];
+      SetLength(TitleSinks, Length(TitleSinks) - 1);
+      Exit;
+    end;
+end;
+
 class function TTrndiNativeBase.SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean;
+var
+  i: integer;
+begin
+  for i := 0 to High(TitleSinks) do
+    if TitleSinks[i].Provider() = form then
+    begin
+      TitleSinks[i].Sink(bg, Text);
+      Exit(true);
+    end;
+  Result := false;
+end;
+
+class function TTrndiNativeBase.NeedsCustomTitleBar: boolean;
 begin
   Result := false;
 end;

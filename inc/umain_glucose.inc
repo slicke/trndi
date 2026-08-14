@@ -509,6 +509,12 @@ procedure TfBG.FinalizeUpdate;
 begin
   lastup := Now;
 
+  // The drawn title bar renders the form caption itself; repaint it here so
+  // the caption stays current even when the bar's colors did not change (the
+  // color sink only fires from the SetTitleColor paths).
+  if Assigned(FTitleBar) then
+    FTitleBar.RefreshTitle;
+
   if privacyMode then
   begin
     lval.Caption := privacyIcon(lastReading.level);

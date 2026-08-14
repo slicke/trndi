@@ -38,7 +38,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, SpinEx, LCLIntf,
+IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, slicke.ux.titlebar, SpinEx, LCLIntf,
 EditBtn, Clipbrd,
 {$ifdef X_MAC}
 CocoaAll, nsutils.cocoahelpers,
@@ -207,12 +207,21 @@ protected
   title, content, extra: string;
   hasHTML: boolean;
   buttons: TStringArray;
+  FUXTitleBar: TSlickeTitleBar; // Drawn title bar on Wayland (see PrepareOwnTitleBar)
 
   function getContent: string;
     {** Finalizes platform window style, sets KeyPreview, and enables dark mode title bar where supported. }
   procedure CreateWnd; override;
   // Override DoShow instead of using an OnShow event method name.
   procedure DoShow; override;
+    {** On Wayland, replace the compositor's forced decorations with the same
+        drawn title bar the main window uses: frameless form, close-only bar,
+        content shifted down to make room. No-op elsewhere, and skipped for
+        forms that are already deliberately frameless (fullscreen overlays). }
+  procedure PrepareOwnTitleBar;
+public
+    {** Applies @link(PrepareOwnTitleBar) before entering the modal loop. }
+  function ShowModal: integer; override;
 public
   {$ifdef X_WIN}
     {** Owner-draw routine for bit buttons on Windows to match dark mode styling. }
@@ -4528,6 +4537,44 @@ begin
   title := titleValue;
   content := value;
   extra := extraValue;
+end;
+
+{------------------------------------------------------------------------------
+  PrepareOwnTitleBar
+  ------------------
+  Wayland compositors force their own window decorations, which can be neither
+  colored nor removed by the toolkit — so on those sessions the dialog goes
+  frameless and carries the same drawn slicke.ux.titlebar the main window uses.
+  The bar keeps the dialog draggable (compositor-side move via the bar) and
+  provides a close button (= cancel, same as the native X).
+
+  The dialogs lay their content out against the undecorated client area, so the
+  bar cannot simply overlay it: absolutely-placed controls are shifted down by
+  the bar height, aligned controls touching the top strip get the same amount
+  as BorderSpacing, and the form grows to keep the bottom padding intact.
+ ------------------------------------------------------------------------------}
+procedure TDialogForm.PrepareOwnTitleBar;
+begin
+  if Assigned(FUXTitleBar) then
+    Exit;
+  if not TrndiNative.NeedsCustomTitleBar then
+    Exit;
+  if TrndiNative.isDarkMode then
+    FUXTitleBar := SlickeDressWithTitleBar(Self, Color, clWhite, [stbClose])
+  else
+    FUXTitleBar := SlickeDressWithTitleBar(Self, Color, clBlack, [stbClose]);
+
+  // Dressing grew the form by the bar height after the builders had already
+  // sized it under FitDialogHeight's cap; re-apply the guard so a dialog that
+  // sat at the cap cannot push its button row below the usable screen area.
+  if Assigned(FUXTitleBar) then
+    ClientHeight := FitDialogHeight(ClientHeight);
+end;
+
+function TDialogForm.ShowModal: integer;
+begin
+  PrepareOwnTitleBar;
+  Result := inherited ShowModal;
 end;
 
 {** Override to apply custom title bar colors on show. }

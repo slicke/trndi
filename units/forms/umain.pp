@@ -52,7 +52,7 @@ trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, usplash, Generics.Collections, trndi.funcs, trndi.log, utrendarrow,
+slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.log, utrendarrow,
 Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
@@ -1116,6 +1116,30 @@ private
    }
   procedure CheckForUpdates(ShowUpToDateMessage: boolean = false);
   procedure actOnMediaController(act: TMediaControllerAct; arg: string = '');
+private
+    // Application-drawn title bar for platforms whose native decorations
+    // cannot be tinted or removed (Wayland). See inc/umain_titlebar.inc.
+  FTitleBar: TSlickeTitleBar;
+  FWindowGrips: TSlickeWindowGrips; // Edge grips keeping the frameless window resizable
+    {** True while the application-drawn title bar is in use. }
+  function OwnTitleBarActive: boolean;
+    {** Height the drawn bar occupies at the top of the client area (0 when
+        absent/hidden); top-anchored layout adds this to its Top coordinates. }
+  function TitleBarOffset: integer;
+    {** Handle provider for the native title-color sink registry. }
+  function TitleBarWindowHandle: PtrUInt;
+    {** Sink receiving the colors native.SetTitleColor was called with. }
+  procedure TitleBarColorSink(bg, txt: TColor);
+    {** Bar's maximize button / double-click: enter Trndi's fullscreen (the
+        bar hides there; Esc or F leaves) instead of a plain maximize. }
+  procedure TitleBarMaximizeRequest({%H-}Sender: TObject);
+    {** Create/tear down the bar per platform capability and settings. }
+  procedure ApplyOwnTitleBar;
+    {** Give a modal helper form (Settings, wizard) the drawn title bar on
+        platforms that need one. No-op elsewhere/when already dressed. }
+  procedure DressModalForm(AForm: TCustomForm);
+    {** Sync bar/grip visibility with the window state (fullscreen etc.). }
+  procedure UpdateOwnTitleBarState;
 public
   firstboot: boolean;
     {** Generic application exception handler used for reporting unhandled
@@ -1317,6 +1341,7 @@ end;
 {$I ../../inc/umain_ext.inc}
 {$I ../../inc/umain_async.inc}
 {$I ../../inc/umain_helpers.inc}
+{$I ../../inc/umain_titlebar.inc}
 {$I ../../inc/umain_init.inc}
 {$I ../../inc/umain_alerts.inc}
 {$I ../../inc/umain_alphablit.inc}
@@ -1381,6 +1406,10 @@ begin
       native.UnregisterWakeCallback;
     except
     end;
+
+  // Drop the title-color sink so no SetTitleColor call can reach a form
+  // that is going away (the bar itself is owned and freed with the form).
+  TrndiNative.UnregisterTitleColorSink(@TitleBarColorSink);
 
   ShutdownBackgroundThreads;
 
@@ -2098,8 +2127,12 @@ begin
     Application.ProcessMessages;
     Screen.Cursor := crDefault;
 
-    // Then restore border styles
-    BorderStyle := bsSizeToolWin;
+    // Then restore border styles. With the application-drawn title bar the
+    // window is frameless by design and must stay that way.
+    if OwnTitleBarActive then
+      BorderStyle := bsNone
+    else
+      BorderStyle := bsSizeToolWin;
     FormStyle := fsNormal;
     Application.ProcessMessages;
 
@@ -2143,11 +2176,14 @@ begin
     Screen.Cursor := crNone;
     // FIx Raspbian issues
     if IsProblematicWM then
-      if not IsSemiProblematicWM then
+      if not (IsSemiProblematicWM or OwnTitleBarActive) then
       begin
         BorderStyle := bsToolWindow;
       end;
   end;
+
+  // The drawn title bar hides while fullscreen and returns with the window.
+  UpdateOwnTitleBarState;
 
   // Adjust for dark mode if applicable
   setColorMode;

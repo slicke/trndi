@@ -181,7 +181,12 @@ begin
   else
     Self.FormStyle := fsNormal;
 
-  if native.GetBoolSetting('main.noborders', false) then
+  // The drawn title bar may need to appear/disappear when its setting or
+  // main.noborders changed; it also keeps the window frameless, so it wins
+  // over the default border restore below.
+  ApplyOwnTitleBar;
+
+  if native.GetBoolSetting('main.noborders', false) or OwnTitleBarActive then
     Self.BorderStyle := bsNone
   else
   {$ifdef DARWIN}
@@ -1005,6 +1010,9 @@ begin
     fConf.tsExt.Visible := false;
     fConf.lbExtensions.items.add('- Extensions disabled -');
     {$endif}
+    // Wayland: swap the compositor's forced decorations for the drawn bar
+    // before the window maps, so Settings matches the rest of the app.
+    DressModalForm(fConf);
     ShowFormModalSafe(fConf);
 
     if not firstboot then

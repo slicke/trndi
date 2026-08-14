@@ -179,6 +179,11 @@ public
   class function GetWindowManagerName: string; override;
   {** Check if the window manager is Sway. }
   class function nobuttonsVM: boolean; override;
+  {** True on Wayland sessions: the compositor owns the window decorations
+      there, so title-bar coloring (and on some desktops any control over the
+      frame at all) requires an application-drawn bar. X11 sessions return
+      @false — native decorations work, they just cannot be tinted. }
+  class function NeedsCustomTitleBar: boolean; override;
   {** True if a global/appmenu service is active; Linux override. }
   class function HasGlobalMenu: boolean; override;
 
@@ -611,6 +616,32 @@ end;
      (wm.Contains('river')) or
      (wm.Contains('hyprland'));
  end;
+
+{------------------------------------------------------------------------------
+  NeedsCustomTitleBar (Linux)
+  ---------------------------
+  Wayland only: XDG_SESSION_TYPE is the authoritative signal, WAYLAND_DISPLAY
+  the fallback for sessions that neglect to set it (an XWayland app sees both,
+  but an app running through XWayland still gets X11-managed decorations, so
+  the session type wins when present).
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.NeedsCustomTitleBar: boolean;
+var
+  session: string;
+begin
+  // A user who forces the toolkit onto XWayland gets X11-managed (working)
+  // decorations even inside a Wayland session — honor that.
+  if Pos('xcb', LowerCase(GetEnvironmentVariable('QT_QPA_PLATFORM'))) > 0 then
+    Exit(false);
+  if LowerCase(Trim(GetEnvironmentVariable('GDK_BACKEND'))) = 'x11' then
+    Exit(false);
+
+  session := LowerCase(Trim(GetEnvironmentVariable('XDG_SESSION_TYPE')));
+  if session <> '' then
+    Result := session = 'wayland'
+  else
+    Result := GetEnvironmentVariable('WAYLAND_DISPLAY') <> '';
+end;
 
 // True if S contains the substring "dark" (case-insensitive)
 function ContainsDark(const S: string): boolean; inline;

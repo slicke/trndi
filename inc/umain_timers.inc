@@ -428,7 +428,7 @@ begin
   // font mirrors lAgo so UpdateUIColors' color choices carry over.
   lClock.Width := ClientWidth div 4;
   lClock.Height := ClientHeight div 9;
-  lClock.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
+  lClock.Top := TitleBarOffset + 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   lClock.Font.Assign(lAgo.Font);
   lClock.Visible := true;
   ScaleLbl(lClock, taCenter, tlCenter, true);
@@ -639,11 +639,15 @@ begin
   pnOffReading.Height := ClientHeight;
   pnOffReading.ClientWidth := ClientWidth div 35;
 
+  // Everything anchored to the top edge sits below the drawn title bar when
+  // one is active (TitleBarOffset is 0 otherwise).
+  pnOffRange.Top := TitleBarOffset;
   pnOffRange.Height := ClientHeight div 10;
 
   pnOffRange.Font.Size := 7 + pnOffRange.Height div 5;
 
   CenterPanelToCaption(pnOffRange);
+  pnOffRangeBar.Top := TitleBarOffset;
   pnOffRangeBar.Height := pnOffRange.Height div 4;
   pnOffRangeBar.Width := ClientWidth + 10;
 
@@ -658,7 +662,7 @@ begin
   lAgo.Width := ClientWidth div 2;
   lAgo.Height := ClientHeight div 9;
   lAgo.Left := 0;
-  lAgo.Top := 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
+  lAgo.Top := TitleBarOffset + 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   lAgo.Transparent := true;
   // Leave the clock clear of the enabled left-side progress bar at every form width.
   ScaleLbl(lAgo, taLeftJustify, tlCenter, true,
@@ -709,13 +713,13 @@ begin
   if isWSL then
     lTir.Width := 50;
   {$endif}
-  lTir.top := 0;
+  lTir.top := TitleBarOffset;
 
   lArrow.OptimalFill := true;
 
   pnMultiUser.Width := min(max(clientwidth div 30, 5), 50);
-  pnMultiUser.Height := clientheight;
-  pnMultiUser.top := 0;
+  pnMultiUser.Height := clientheight - TitleBarOffset;
+  pnMultiUser.top := TitleBarOffset;
   pnMultiUser.left := 0;
 
   if Assigned(lPredict) and lPredict.Visible then
@@ -760,6 +764,13 @@ begin
     lPredict.Left := ClientWidth - lPredict.Width - 5;
   end;
   nextProgressChange;
+
+  // The drawn title bar and its resize grips must stay above the controls the
+  // BringToFront calls in this pass may have raised over them.
+  if Assigned(FTitleBar) then
+    FTitleBar.BringToFront;
+  if Assigned(FWindowGrips) then
+    FWindowGrips.EnsureOnTop;
 
   // Keep the fullscreen clock's band and font in step with the labels that
   // were just re-laid out (it mirrors lAgo's font).
