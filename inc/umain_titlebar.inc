@@ -93,6 +93,16 @@ begin
   FTitleBar.RefreshTitle;
 end;
 
+// The maximize button (and a double-click on the bar) maps to Trndi's own
+// fullscreen rather than a plain maximize: a frameless maximized window is
+// visually identical to fullscreen anyway, except it would keep the bar. In
+// fullscreen the bar hides; Esc or F (or double-clicking the delta label)
+// brings the window - and the bar - back.
+procedure TfBG.TitleBarMaximizeRequest({%H-}Sender: TObject);
+begin
+  DoFullScreen;
+end;
+
 // Create or tear down the bar according to platform capability and settings.
 // Runs at boot (FormCreate) and again on every settings apply.
 procedure TfBG.ApplyOwnTitleBar;
@@ -126,6 +136,7 @@ begin
       // Start from the current window color; the first setColorMode pass
       // recolors it through the sink.
       FTitleBar.SetColors(Color, IfThen(IsLightColor(Color), clBlack, clWhite));
+      FTitleBar.OnMaximizeRequest := @TitleBarMaximizeRequest;
       // Tiling compositors have no minimize/maximize concept.
       if native.nobuttonsVM then
         FTitleBar.Buttons := [stbClose];
