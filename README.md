@@ -419,6 +419,17 @@ make list-modes # show exact LPI targets if you want to pick one explicitly
 
 Note: By default `make build` writes build artifacts into `$(OUTDIR)` (default: `build/`). You can override this by setting `OUTDIR=...` on the make command line if you prefer a different location.
 
+On Linux the Makefile needs **`gcc` installed** — not to compile Pascal, but to
+locate `libgcc.a`. FPC links `-lgcc`, and that file lives in GCC's
+version-specific directory (`/usr/lib/gcc/<triple>/<major>/`), which `ld` does
+not search on its own. Distributions differ in whether their `/etc/fpc.cfg`
+points there; where it does not — Fedora, for instance — a build fails with
+`/usr/bin/ld.bfd: cannot find -lgcc`. `make` therefore asks the installed
+compiler for the path (`gcc -print-libgcc-file-name`) and passes it to
+`lazbuild`, so a GCC major upgrade needs no change anywhere. Override it with
+`LIBGCC_DIR=/some/path`, or set `LIBGCC_DIR=` (empty) to leave the linker
+untouched.
+
 
 ### History
 Trndi2 (and later) is a rewrite, less bloated, version of Trndi 1, which was never released publicly. Trndi 1 was originally called Dexmon (and only did Dexcom). The original idea spawns from an old app called TrayTrend which I made with a similar purpose.

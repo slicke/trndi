@@ -41,6 +41,21 @@ make ide-libs        # gmake ide-libs on macOS, .\make.ps1 ide-libs on Windows
 
 It does not build anything and does not care which build mode you use, so it costs nothing to re-run. The copies are gitignored in the repo root and `make clean` removes them. On Windows the build targets already copy the DLLs there, so `.\make.ps1 ide-libs` is only needed if you have never run a build.
 
+### gcc (Linux, all build modes)
+
+`gcc` has to be installed on Linux even though nothing here is written in C. FPC links `-lgcc`, and `libgcc.a` sits in GCC's version-specific directory (`/usr/lib/gcc/<triple>/<major>/`) rather than in a directory `ld` searches by default. Some distributions cover this with an `-Fl` line in `/etc/fpc.cfg`; others (Fedora) do not, and the link then ends in:
+
+```
+/usr/bin/ld.bfd: cannot find -lgcc
+```
+
+The `Makefile` resolves the directory at build time with `gcc -print-libgcc-file-name` and passes it to `lazbuild` as `--opt=-Fl<dir>`, so nothing is pinned to a GCC version and a major upgrade breaks nothing. Two knobs, both rarely needed:
+
+- `LIBGCC_DIR=/usr/lib/gcc/...` — use this directory instead of asking `gcc`.
+- `LIBGCC_DIR=` (empty) — pass no `-Fl` at all, for a distribution that already handles it in `/etc/fpc.cfg`.
+
+Building from the Lazarus IDE bypasses the `Makefile` and therefore this logic. If the IDE hits the same link error, add the directory under *Project Options > Compiler Options > Paths > Libraries*, or add the `-Fl` line to `/etc/fpc.cfg` — noting that the latter is what pins you to one GCC version.
+
 ### Qt6
 You need __libqt6pas__, and its development packages. These are normally available with your distro. See the _Linux section in [README.md](/README.md)_ on how to install libqt6pas.
 
