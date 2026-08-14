@@ -46,11 +46,6 @@ interface
 uses
 Classes, SysUtils, IniFiles, trndi.native.base;
 
-{** Split a proxy host setting like 'http://proxy:3128/' into a bare host and
-    port. An explicit @param(port) is kept; a port embedded in @param(host) is
-    used only when @param(port) is empty. }
-procedure NormalizeProxyHostPort(var host: string; var port: string);
-
 type
   {!
     @abstract(Generic, platform-neutral implementation of @link(TTrndiNativeBase).)
@@ -129,42 +124,6 @@ const
   // "Failed to set IO Timeout" from an uninitialized result. Leave the
   // timeout at 0 there — fphttpclient then never touches the socket option.
   HTTP_IO_TIMEOUT = {$IFDEF HAIKU}0{$ELSE}30000{$ENDIF};
-
-procedure NormalizeProxyHostPort(var host: string; var port: string);
-var
-  s: string;
-  p: integer;
-  hostPart, portPart: string;
-begin
-  s := Trim(host);
-
-  // Strip scheme if provided (e.g. http://proxy:3128)
-  p := Pos('://', s);
-  if p > 0 then
-    s := Copy(s, p + 3, MaxInt);
-
-  // Strip any path
-  p := Pos('/', s);
-  if p > 0 then
-    s := Copy(s, 1, p - 1);
-
-  // If host contains an explicit port, split it out
-  p := LastDelimiter(':', s);
-  if (p > 0) and (p < Length(s)) then
-  begin
-    hostPart := Copy(s, 1, p - 1);
-    portPart := Copy(s, p + 1, MaxInt);
-    if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
-    begin
-      s := hostPart;
-      if port = '' then
-        port := portPart;
-    end;
-  end;
-
-  host := s;
-  port := Trim(port);
-end;
 
 {------------------------------------------------------------------------------
   ToolAvailable

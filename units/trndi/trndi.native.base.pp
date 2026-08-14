@@ -540,6 +540,19 @@ DEFAULT_MIN_FONT_SIZE = 8;
     we pump CheckSynchronize so a worker blocked in Synchronize can drain. }
 procedure SafeThreadJoin(T: TThread);
 
+{** Split a stored @code(proxy.host) value into a bare host and a port.
+
+    Users type the proxy in whatever shape their browser accepts —
+    @code(http://proxy:3128), @code(proxy:3128/) or a plain hostname — but
+    WinHTTP and libcurl both want the host on its own. Every code path that
+    reads the @code(proxy.*) settings must run the value through here first,
+    or the proxy is handed a host it cannot resolve and the request silently
+    falls back to a direct connection.
+
+    An explicit @param(port) always wins; a port embedded in @param(host) is
+    only used when @param(port) is empty. }
+procedure NormalizeProxyHostPort(var host: string; var port: string);
+
 implementation
 
 procedure SafeThreadJoin(T: TThread);
@@ -553,6 +566,50 @@ begin
 {$ELSE}
   T.WaitFor;
 {$ENDIF}
+end;
+
+{------------------------------------------------------------------------------
+  NormalizeProxyHostPort
+  ----------------------
+  Turn whatever the user typed into the proxy host field into a bare host plus
+  a port. Shared by every platform's HTTP paths so the settings dialog's
+  "Test proxy" and the real requests can never disagree about what the stored
+  value means.
+ ------------------------------------------------------------------------------}
+procedure NormalizeProxyHostPort(var host: string; var port: string);
+var
+  s: string;
+  p: integer;
+  hostPart, portPart: string;
+begin
+  s := Trim(host);
+
+  // Strip scheme if provided (e.g. http://proxy:3128)
+  p := Pos('://', s);
+  if p > 0 then
+    s := Copy(s, p + 3, MaxInt);
+
+  // Strip any path
+  p := Pos('/', s);
+  if p > 0 then
+    s := Copy(s, 1, p - 1);
+
+  // If host contains an explicit port, split it out
+  p := LastDelimiter(':', s);
+  if (p > 0) and (p < Length(s)) then
+  begin
+    hostPart := Copy(s, 1, p - 1);
+    portPart := Copy(s, p + 1, MaxInt);
+    if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
+    begin
+      s := hostPart;
+      if port = '' then
+        port := portPart;
+    end;
+  end;
+
+  host := s;
+  port := Trim(port);
 end;
 
 type
