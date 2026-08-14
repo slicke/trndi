@@ -700,6 +700,7 @@ private
   tWebServerStart: TTimer;
 
   Chroma: TRazerChromaBase;
+  FExtLastLevel: string; // Last level name broadcast to extensions ('' = none yet)
   FAlertEngine: TAlertEngine;
   FReservoirStep: integer; // Lowest reservoir step already notified (0 = none); persisted in alerts.reservoir.step
   FSensorExpiryStep: integer; // Lowest sensor-expiry step already notified (0 = none); persisted in alerts.sensor.step
@@ -893,6 +894,9 @@ private
   procedure RaiseLowLevelAlert;
   procedure ApplyChromaAlertAction(const ActionSettingKey: string;
     const DefaultAction: string; const AColor: TRGBColor);
+  {** Broadcast levelCallback(level, previous) to extensions after a reading
+      update. No-op in No Ext builds. }
+  procedure NotifyExtensionsLevel(const Fresh: boolean);
   procedure UpdateOffRangePanel(const Value: double);
   procedure DisplayLowRange;
   procedure DisplayHighRange;
