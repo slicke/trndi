@@ -109,6 +109,19 @@ begin
     DoFullScreen;
 end;
 
+// Helper forms shown modally (Settings, first-run wizard) are plain TForms,
+// not TDialogForm, so they don't inherit the alert dialogs' bar. Dress them
+// on the same Wayland condition before they show; SlickeDressWithTitleBar
+// no-ops when the form is already frameless or already dressed, so calling
+// this repeatedly (Settings reopens often) is safe.
+procedure TfBG.DressModalForm(AForm: TCustomForm);
+begin
+  if not (Assigned(AForm) and native.NeedsCustomTitleBar) then
+    Exit;
+  SlickeDressWithTitleBar(AForm, AForm.Color,
+    IfThen(IsLightColor(AForm.Color), clBlack, clWhite), [stbClose]);
+end;
+
 // Create or tear down the bar according to platform capability and settings.
 // Runs at boot (FormCreate) and again on every settings apply.
 procedure TfBG.ApplyOwnTitleBar;
@@ -116,10 +129,11 @@ var
   mode: string;
   want: boolean;
 begin
+  {$ifdef X_LINUXBSD}
   mode := LowerCase(Trim(native.GetSetting('ux.own_titlebar', 'auto')));
   case mode of
   'on':
-    want := true;
+    want := true; // X11 opt-in: colored bar despite working native decorations
   'off':
     want := false;
   else
@@ -128,6 +142,12 @@ begin
   // The fully frameless preference wins — no decorations of any kind.
   if native.GetBoolSetting('main.noborders', false) then
     want := false;
+  {$else}
+  // Linux/BSD only: Windows and macOS have colorable native title bars, and
+  // an imported settings file carrying ux.own_titlebar=on must not strip
+  // their window frames.
+  want := false;
+  {$endif}
 
   if want then
   begin

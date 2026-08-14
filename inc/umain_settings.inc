@@ -1010,6 +1010,9 @@ begin
     fConf.tsExt.Visible := false;
     fConf.lbExtensions.items.add('- Extensions disabled -');
     {$endif}
+    // Wayland: swap the compositor's forced decorations for the drawn bar
+    // before the window maps, so Settings matches the rest of the app.
+    DressModalForm(fConf);
     ShowFormModalSafe(fConf);
 
     if not firstboot then

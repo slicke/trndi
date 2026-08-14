@@ -19,7 +19,7 @@ unit slicke.ux.titlebar;
 interface
 
 uses
-Classes, SysUtils, Controls, Graphics;
+Classes, SysUtils, Controls, Graphics, Forms;
 
 type
 TSlickeTitleBarButton = (stbMinimize, stbMaximize, stbClose);
@@ -60,7 +60,16 @@ public
   property Active: boolean read FActive;
 end;
 
+function SlickeDressWithTitleBar(AForm: TCustomForm; ABarBg, ABarText: TColor;
+  AButtons: TSlickeTitleBarButtons = [stbClose]): TSlickeTitleBar;
+
 implementation
+
+function SlickeDressWithTitleBar(AForm: TCustomForm; ABarBg, ABarText: TColor;
+AButtons: TSlickeTitleBarButtons): TSlickeTitleBar;
+begin
+  Result := nil;
+end;
 
 constructor TSlickeTitleBar.Create(AOwner: TComponent);
 begin
