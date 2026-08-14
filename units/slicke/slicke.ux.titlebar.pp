@@ -85,6 +85,7 @@ private
   FBg: TColor;
   FText: TColor;
   FTitle: string;
+  FTitleAlignment: TAlignment;
   FButtons: TSlickeTitleBarButtons;
   FHoverBtn: integer;   // index into visible-button order, -1 = none
   FPressedBtn: integer; // button armed by mouse-down, -1 = none
@@ -101,6 +102,7 @@ private
   function ButtonCount: integer;
   procedure DoButtonAction(AKind: TSlickeTitleBarButton);
   procedure SetTitle(const AValue: string);
+  procedure SetTitleAlignment(const AValue: TAlignment);
   procedure SetButtons(const AValue: TSlickeTitleBarButtons);
 protected
   procedure Paint; override;
@@ -121,6 +123,9 @@ public
   procedure RefreshTitle;
     {** Bar text; when empty the parent form's Caption is drawn. }
   property Title: string read FTitle write SetTitle;
+    {** How the caption text sits in the bar. Default left-justified, the
+        Windows/KDE convention; taCenter gives the GNOME/macOS look. }
+  property TitleAlignment: TAlignment read FTitleAlignment write SetTitleAlignment;
     {** Which caption buttons to draw. Default: all three. }
   property Buttons: TSlickeTitleBarButtons read FButtons write SetButtons;
     {** Current bar background color. }
@@ -352,6 +357,7 @@ begin
   inherited Create(AOwner);
   FBg := RGBToColor(32, 32, 32);
   FText := clWhite;
+  FTitleAlignment := taLeftJustify;
   FButtons := [stbMinimize, stbMaximize, stbClose];
   FHoverBtn := -1;
   FPressedBtn := -1;
@@ -398,6 +404,14 @@ begin
   if FTitle = AValue then
     Exit;
   FTitle := AValue;
+  Invalidate;
+end;
+
+procedure TSlickeTitleBar.SetTitleAlignment(const AValue: TAlignment);
+begin
+  if FTitleAlignment = AValue then
+    Exit;
+  FTitleAlignment := AValue;
   Invalidate;
 end;
 
@@ -480,7 +494,7 @@ begin
     Canvas.Font.Color := FText;
     Canvas.Brush.Style := bsClear;
     ts := Canvas.TextStyle;
-    ts.Alignment := taCenter;
+    ts.Alignment := FTitleAlignment;
     ts.Layout := tlCenter;
     ts.SingleLine := true;
     ts.Clipping := true;
@@ -558,10 +572,9 @@ begin
     Canvas.Brush.Style := bsSolid;
   end;
 
-  // Hairline along the bottom so the bar separates from same-colored content.
-  Canvas.Pen.Width := 1;
-  Canvas.Pen.Color := MixColors(FBg, FText, 0.12);
-  Canvas.Line(0, Height - 1, ClientWidth, Height - 1);
+  // No separator along the bottom edge on purpose: DWM/Cocoa draw a colored
+  // caption flush against the client area, and full-color mode wants the same
+  // seamless single-surface look here.
 end;
 
 procedure TSlickeTitleBar.DoButtonAction(AKind: TSlickeTitleBarButton);
