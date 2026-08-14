@@ -192,12 +192,15 @@ public
   class function SpeakSoftwareName: string; override;
   {** Best-effort window manager name for Linux. }
   class function GetWindowManagerName: string; override;
-  {** Check if the window manager is Sway. }
+  {** Check if the window manager is a tiling WM/compositor (sway, i3,
+      Hyprland, …). }
   class function nobuttonsVM: boolean; override;
-  {** True on Wayland sessions: the compositor owns the window decorations
-      there, so title-bar coloring (and on some desktops any control over the
-      frame at all) requires an application-drawn bar. X11 sessions return
-      @false — native decorations work, they just cannot be tinted. }
+  {** True on floating-desktop Wayland sessions: the compositor owns the
+      window decorations there, so title-bar coloring (and on some desktops
+      any control over the frame at all) requires an application-drawn bar.
+      X11 sessions return @false — native decorations work, they just cannot
+      be tinted. Tiling compositors (see @link(nobuttonsVM)) also return
+      @false: they intentionally draw no titlebar, so neither should we. }
   class function NeedsCustomTitleBar: boolean; override;
   {** True if a global/appmenu service is active; Linux override. }
   class function HasGlobalMenu: boolean; override;
@@ -619,7 +622,9 @@ end;
 {------------------------------------------------------------------------------
   nobuttonsVM (Linux)
   -------------------
-  Returns true if the window manager is Sway.
+  Returns true when the window manager is a tiling WM/compositor (sway, i3,
+  Hyprland, …) where minimize/maximize have no meaning and windows are
+  keybind-driven.
  ------------------------------------------------------------------------------}
  class function TTrndiNativeLinux.nobuttonsVM: boolean;
  var
@@ -643,7 +648,8 @@ end;
   Wayland only: XDG_SESSION_TYPE is the authoritative signal, WAYLAND_DISPLAY
   the fallback for sessions that neglect to set it (an XWayland app sees both,
   but an app running through XWayland still gets X11-managed decorations, so
-  the session type wins when present).
+  the session type wins when present). Tiling compositors are excluded even
+  on Wayland — see below.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.NeedsCustomTitleBar: boolean;
 var
@@ -661,6 +667,16 @@ begin
     Result := session = 'wayland'
   else
     Result := GetEnvironmentVariable('WAYLAND_DISPLAY') <> '';
+
+  // Tiling compositors (Hyprland, sway, river, …) deliberately draw no
+  // titlebar: their users close/move windows with keybinds, a bar wastes
+  // vertical space in a tiled window, and sway adds its own server-side bar
+  // on tiled/tabbed windows so a drawn one would stack under it. Don't fight
+  // that model — the window keeps the compositor's border and no bar is
+  // drawn. ux.own_titlebar=on still forces the main-window bar for users
+  // running Trndi floating.
+  if Result then
+    Result := not nobuttonsVM;
 end;
 
 // True if S contains the substring "dark" (case-insensitive)

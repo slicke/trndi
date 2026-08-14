@@ -8,8 +8,10 @@ On X11, Trndi cannot color the native title bar (the desktop/window manager owns
 
 On **Wayland** sessions Trndi draws its own title bar instead: the compositor's forced decorations are dropped and replaced with a bar that follows the window color (so title-bar coloring works just like on Windows/macOS), with working drag-to-move, edge resize, double-click maximize and min/max/close buttons. This is automatic on Wayland; you can control it with the `ux.own_titlebar` setting in `trndi.ini` (`auto` (default), `on` — also use it on X11, `off` — never). The bar is skipped when "no borders" mode is enabled, and hidden in fullscreen/kiosk mode.
 
+**Tiling compositors** (Hyprland, sway, river, …) are an exception: they intentionally draw no title bar and windows are managed with keybinds, so `auto` skips the drawn bar there and the window simply keeps the compositor's border. Set `ux.own_titlebar=on` if you run Trndi floating and want the colored bar anyway.
+
 ## Multiple users
-Each user gets their own color and nickname (Settings > Multi User). With the native (X11) title bar there's nothing to badge, so the window title is prefixed with `[name] Trndi` and a small sidebar showing the account appears in the window itself. With the drawn title bar (automatic on Wayland, or on X11 with `ux.own_titlebar=on`), the bar itself takes the account color like on Windows.
+Each user gets their own color and nickname (Settings > Multi User). With the native (X11) title bar there's nothing to badge, so the window title is prefixed with `[name] Trndi` and a small sidebar showing the account appears in the window itself. With the drawn title bar (automatic on Wayland desktops other than tiling compositors, or forced with `ux.own_titlebar=on`), the bar itself takes the account color like on Windows.
 
 ## Notifications
 Trndi auto-selects a notification backend, no configuration needed:
