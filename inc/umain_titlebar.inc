@@ -45,6 +45,11 @@
 // window drops its native frame (bsNone) and shows a TSlickeTitleBar instead,
 // with TSlickeWindowGrips keeping the frameless window resizable.
 //
+// Tiling compositors (Hyprland, sway, …) are excluded from the automatic
+// path: NeedsCustomTitleBar returns false there, since those desktops
+// intentionally draw no titlebar and manage windows via keybinds. 'on'
+// still forces the bar for users running Trndi floating.
+//
 // Coloring needs no new logic: the bar registers a title-color sink with
 // TrndiNative, so the existing native.SetTitleColor calls in
 // umain_glucose.inc (glucose color, off-range color, multi-user color) land
