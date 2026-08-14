@@ -13,8 +13,10 @@ Each user gets their own color and nickname (Settings > Multi User). With the na
 
 ## Notifications
 Trndi auto-selects a notification backend, no configuration needed:
-- KDE/GNOME-like desktops: `org.freedesktop.Notifications` over D-Bus (via `gdbus`)
+- KDE/GNOME-like desktops: `org.freedesktop.Notifications` over D-Bus, spoken directly through `libdbus-1` (already on any desktop system). If the library is somehow absent Trndi falls back to the `gdbus` command-line tool, from GLib's binary package.
 - Other desktops: `notify-send` (usually provided by `libnotify`; install it from your distro if missing)
+
+The same connection carries the panel badge, the dark-mode query to `xdg-desktop-portal`, and the resume-from-suspend signal from logind — so on a system without `libglib2.0-bin` (Debian doesn't pull it in for KDE) those all keep working, where before they needed the `gdbus` tool.
 
 If you don't see toasts, check that a notification service is running and that Do Not Disturb / focus mode isn't suppressing them.
 

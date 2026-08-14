@@ -72,7 +72,7 @@ TTrndiNativeBSD = class(TTrndiNativeLinux)
     class function SpeakSoftwareName: string; override;
     procedure Speak(const Text: string); override;
 
-    {** Notifications: inherited gdbus/notify-send path, with kdialog
+    {** Notifications: inherited D-Bus/notify-send path, with kdialog
         preferred on KDE sessions and used as a fallback elsewhere. }
     class function isNotificationSystemAvailable: boolean; override;
     class function getNotificationSystem: string; override;
@@ -291,7 +291,7 @@ end;
 {------------------------------------------------------------------------------
   Notifications (BSD)
   -------------------
-  The inherited gdbus/notify-send path is the default; kdialog is preferred
+  The inherited D-Bus/notify-send path is the default; kdialog is preferred
   on KDE-like sessions and used as a last resort on any desktop when the
   inherited tooling is missing. UseKDialog keeps availability, the reported
   system name and the actual send path in agreement.
@@ -394,7 +394,7 @@ end;
 {------------------------------------------------------------------------------
   Wake-from-sleep notification (BSD)
   ----------------------------------
-  There is no systemd-logind on BSD, so the Linux gdbus monitor never sees a
+  There is no systemd-logind on BSD, so the Linux logind monitor never sees a
   resume. Instead, detect it generically: Sleep() does not run while the
   machine is suspended, so waking up with far more wall-clock time elapsed
   than we slept means the system just resumed. Comparisons are done in UTC so
@@ -460,8 +460,8 @@ end;
 
 procedure TTrndiNativeBSD.RegisterWakeCallback(const Callback: TTrndiWakeCallback);
 begin
-  // Deliberately not calling inherited: the Linux override spawns a gdbus
-  // monitor for systemd-logind, which doesn't exist on BSD. Store the
+  // Deliberately not calling inherited: the Linux override subscribes to
+  // systemd-logind's sleep signal, which doesn't exist on BSD. Store the
   // callback (all the base implementation does) and run our own detector.
   FWakeCallback := Callback;
   if gBsdWakeBridge = nil then

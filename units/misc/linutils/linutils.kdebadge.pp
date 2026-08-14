@@ -47,7 +47,7 @@ unit linutils.kdebadge;
     - Locale-agnostic: forces dot decimal for progress
     - Debounce: coalesces rapid updates (default 150 ms); set to 0 to disable
     - Change detection: avoids re-sending identical dicts
-    - Optional logging: hook to capture gdbus stdout/stderr and actions
+    - Optional logging: hook to capture transport output and actions
     - No LCL dependencies (threaded debouncer inside)
 
   Usage:
@@ -66,7 +66,9 @@ unit linutils.kdebadge;
          ShutdownBadge;
 
   Requires:
-    - Runtime: `gdbus` in PATH (from GLib/DBus tools)
+    - Runtime: libdbus-1 (loaded on demand via linutils.dbus), or `gdbus` in
+      PATH as a fallback. The signal goes out per reading, so the direct bus
+      path also spares a fork+exec every time the badge changes.
     - Plasma 5/6 with Unity Launcher bridge (standard in KDE)
 
   Notes:
@@ -87,7 +89,7 @@ TBadgeLogProc = procedure(const Msg: string);
 procedure InitializeBadge(const DesktopIdWithDotDesktop: string;
 const DebounceMs: cardinal = 150;
 const LogProc: TBadgeLogProc = nil;
-const GDBusAvailable: boolean = true);
+const BusAvailable: boolean = true);
 procedure ShutdownBadge;
 
 procedure SetDesktopId(const DesktopIdWithDotDesktop: string);
@@ -100,7 +102,8 @@ procedure ShowOnlyCount(const Count: integer);      // progress hidden
 procedure ShowOnlyProgress(const Progress: double); // count hidden
 procedure ClearBadge;                               // hides both
 
-// Advanced: send prebuilt dict safely through the same pipeline
+// Advanced: send prebuilt dict safely through the same pipeline. Text only,
+// so this goes out via gdbus even when libdbus is available.
 procedure EmitRawDict(const Dict: string);
 
 var
@@ -109,28 +112,42 @@ GDesktopId: string = '';
 implementation
 
 uses
-Process, SyncObjs;
+Process, SyncObjs, linutils.dbus;
 
 var
 GDebounceMs: QWord = 150;
 GLog: TBadgeLogProc = nil;
-GDBusEnabled: Boolean = true;
+GBusEnabled: Boolean = true;
 
 type
+  // One badge state on its way to the panel. The values are carried as
+  // themselves for the D-Bus path, and Text is their GVariant rendering -
+  // what the gdbus fallback needs, and what change detection compares.
+  // Typed is false for a caller-supplied raw dict, which only the fallback
+  // can send.
+TBadgeUpdate = record
+  Text: string;
+  Count: integer;
+  CountVisible: boolean;
+  Progress: double;
+  ProgressVisible: boolean;
+  Typed: boolean;
+end;
+
 TBadgeWorker = class(TThread)
 private
   FLock: TRTLCriticalSection;
   FEvt: TEvent;
   FPending: boolean;
-  FPendingDict: string;
+  FPendingUpdate: TBadgeUpdate;
   FLastRequestTick: QWord;
-  FLastSentDict: string;
+  FLastSentText: string;
 protected
   procedure Execute; override;
 public
   constructor Create;
   destructor Destroy; override;
-  procedure Submit(const Dict: string);
+  procedure Submit(const U: TBadgeUpdate);
   procedure Flush;
 end;
 
@@ -198,10 +215,69 @@ begin
     DotFloat(Progress), LowerCase(BoolToStr(ProgressVisible, true))]);
 end;
 
-procedure EmitUnityLauncherUpdate(const DesktopIdWithDotDesktop, Dict: string);
+function BuildUpdate(const Count: integer; const CountVisible: boolean;
+const Progress: double; const ProgressVisible: boolean): TBadgeUpdate;
+begin
+  Result.Count := Count;
+  Result.CountVisible := CountVisible;
+  Result.Progress := Progress;
+  Result.ProgressVisible := ProgressVisible;
+  Result.Typed := true;
+  Result.Text := BuildDict(Count, CountVisible, Progress, ProgressVisible);
+end;
+
+// Which transport an emit would take right now; for the init log line.
+function BadgeTransportName: string;
+begin
+  if DBusAvailable then
+    Result := 'libdbus'
+  else
+    Result := 'gdbus';
+end;
+
+{------------------------------------------------------------------------------
+  EmitViaDBus
+  -----------
+  Broadcast the Update signal straight onto the session bus. Returns False for
+  a raw dict (nothing to marshal from) or when libdbus is unavailable, leaving
+  the caller to shell out instead.
+ ------------------------------------------------------------------------------}
+function EmitViaDBus(const DesktopIdWithDotDesktop: string;
+const U: TBadgeUpdate): boolean;
+var
+  conn: TDBusConn;
+  msg: TDBusMessage;
+begin
+  Result := false;
+  if (not U.Typed) or (not DBusAvailable) then
+    Exit;
+  conn := TDBusConn.Create(dbSession);
+  try
+    msg := conn.NewSignal('/com/canonical/Unity/LauncherEntry',
+      'com.canonical.Unity.LauncherEntry', 'Update');
+    if msg = nil then
+      Exit;
+    msg.AddString('application://' + DesktopIdWithDotDesktop);
+    msg.OpenDict;
+    // int32 count, matching what the gdbus path has always sent - Plasma
+    // takes either width, but there is no reason to change the wire now.
+    msg.DictAddInt32('count', U.Count);
+    msg.DictAddBool('count-visible', U.CountVisible);
+    msg.DictAddDouble('progress', U.Progress);
+    msg.DictAddBool('progress-visible', U.ProgressVisible);
+    msg.CloseDict;
+    Result := conn.Send(msg);
+  finally
+    conn.Free;
+  end;
+end;
+
+procedure EmitUnityLauncherUpdate(const DesktopIdWithDotDesktop: string;
+const U: TBadgeUpdate);
 var
   P: TProcess;
   OutStr, ErrStr: TStringStream;
+  Dict: string;
 begin
   if DesktopIdWithDotDesktop = '' then
   begin
@@ -209,12 +285,16 @@ begin
     Exit;
   end;
 
-  if not GDBusEnabled then
+  if not GBusEnabled then
   begin
-    Log('Emit skipped: gdbus not available');
+    Log('Emit skipped: no D-Bus transport');
     Exit;
   end;
 
+  if EmitViaDBus(DesktopIdWithDotDesktop, U) then
+    Exit;
+
+  Dict := U.Text;
   P := TProcess.Create(nil);
   OutStr := TStringStream.Create('');
   ErrStr := TStringStream.Create('');
@@ -262,9 +342,9 @@ begin
   FEvt := TEvent.Create(nil, false, false, '');
   FreeOnTerminate := false;
   FPending := false;
-  FPendingDict := '';
+  FPendingUpdate := Default(TBadgeUpdate);
   FLastRequestTick := 0;
-  FLastSentDict := '';
+  FLastSentText := '';
   Resume;
 end;
 
@@ -275,13 +355,13 @@ begin
   inherited Destroy;
 end;
 
-procedure TBadgeWorker.Submit(const Dict: string);
+procedure TBadgeWorker.Submit(const U: TBadgeUpdate);
 begin
   EnterCriticalSection(FLock);
   try
-    if Dict = FLastSentDict then
+    if U.Text = FLastSentText then
       Exit; // no change; skip
-    FPendingDict := Dict;
+    FPendingUpdate := U;
     FPending := true;
     FLastRequestTick := GetTickCount64;
     FEvt.SetEvent;
@@ -292,25 +372,25 @@ end;
 
 procedure TBadgeWorker.Flush;
 var
-  ToSend: string;
+  ToSend: TBadgeUpdate;
 begin
   // Force send latest pending immediately
   EnterCriticalSection(FLock);
   try
     if not FPending then
       Exit;
-    ToSend := FPendingDict;
+    ToSend := FPendingUpdate;
     FPending := false;
   finally
     LeaveCriticalSection(FLock);
   end;
 
-  if ToSend <> '' then
+  if ToSend.Text <> '' then
   try
     EmitUnityLauncherUpdate(GDesktopId, ToSend);
     EnterCriticalSection(FLock);
     try
-      FLastSentDict := ToSend;
+      FLastSentText := ToSend.Text;
     finally
       LeaveCriticalSection(FLock);
     end;
@@ -322,7 +402,7 @@ end;
 
 procedure TBadgeWorker.Execute;
 var
-  ToSend: string;
+  ToSend: TBadgeUpdate;
   NowTick: QWord;
 begin
   while not Terminated do
@@ -330,7 +410,7 @@ begin
     // Wake up periodically or when new request arrives
     FEvt.WaitFor(50);
 
-    ToSend := '';
+    ToSend := Default(TBadgeUpdate);
     EnterCriticalSection(FLock);
     try
       if FPending then
@@ -338,7 +418,7 @@ begin
         NowTick := GetTickCount64;
         if (GDebounceMs = 0) or (NowTick - FLastRequestTick >= GDebounceMs) then
         begin
-          ToSend := FPendingDict;
+          ToSend := FPendingUpdate;
           FPending := false;
         end;
       end;
@@ -346,12 +426,12 @@ begin
       LeaveCriticalSection(FLock);
     end;
 
-    if ToSend <> '' then
+    if ToSend.Text <> '' then
     try
       EmitUnityLauncherUpdate(GDesktopId, ToSend);
       EnterCriticalSection(FLock);
       try
-        FLastSentDict := ToSend;
+        FLastSentText := ToSend.Text;
       finally
         LeaveCriticalSection(FLock);
       end;
@@ -371,17 +451,18 @@ end;
 procedure InitializeBadge(const DesktopIdWithDotDesktop: string;
 const DebounceMs: cardinal;
 const LogProc: TBadgeLogProc;
-const GDBusAvailable: boolean);
+const BusAvailable: boolean);
 begin
   GDesktopId := EnsureDotDesktop(DesktopIdWithDotDesktop);
   GDebounceMs := DebounceMs;
   GLog := LogProc;
-  GDBusEnabled := GDBusAvailable;
+  GBusEnabled := BusAvailable;
   EnsureWorker;
-  if GDBusEnabled then
-    Log(Format('KDEBadge initialized (id=%s, debounce=%d ms)', [GDesktopId, DebounceMs]))
+  if GBusEnabled then
+    Log(Format('KDEBadge initialized (id=%s, debounce=%d ms, transport=%s)',
+      [GDesktopId, DebounceMs, BadgeTransportName]))
   else
-    Log(Format('KDEBadge initialized but disabled (gdbus not available, id=%s)', [GDesktopId]));
+    Log(Format('KDEBadge initialized but disabled (no D-Bus, id=%s)', [GDesktopId]));
 end;
 
 procedure ShutdownBadge;
@@ -414,52 +495,46 @@ begin
   GLog := LogProc;
 end;
 
-procedure SubmitDict(const Dict: string);
+procedure SubmitUpdate(const U: TBadgeUpdate);
 begin
-  if Dict = '' then
+  if U.Text = '' then
     Exit;
-  if not GDBusEnabled then
+  if not GBusEnabled then
     Exit;
   EnsureWorker;
   if GDebounceMs = 0 then
   try
-    EmitUnityLauncherUpdate(GDesktopId, Dict);
+    EmitUnityLauncherUpdate(GDesktopId, U);
   except
     on E: Exception do
       Log('Emit error (immediate): ' + E.Message);
   end// Immediate mode
 
   else
-    GWorker.Submit(Dict);
+    GWorker.Submit(U);
 end;
 
 procedure SetBadge(const Value: double);
 var
   Count: integer;
   FracPart: double;
-  Dict: string;
 begin
-  if not GDBusEnabled then
+  if not GBusEnabled then
     Exit;
   Count := ClampInt32(Trunc(Value));
   FracPart := Frac(Value);
   // Show count; progress only if > 0
-  Dict := BuildDict(Count, true, FracPart, FracPart > 0.0);
-  SubmitDict(Dict);
+  SubmitUpdate(BuildUpdate(Count, true, FracPart, FracPart > 0.0));
 end;
 
 procedure ShowOnlyCount(const Count: integer);
-var
-  Dict: string;
 begin
-  Dict := BuildDict(ClampInt32(Count), true, 0.0, false);
-  SubmitDict(Dict);
+  SubmitUpdate(BuildUpdate(ClampInt32(Count), true, 0.0, false));
 end;
 
 procedure ShowOnlyProgress(const Progress: double);
 var
   P: double;
-  Dict: string;
 begin
   // Clamp to [0,1]
   if Progress < 0 then
@@ -470,24 +545,27 @@ begin
   else
     P := Progress;
 
-  Dict := BuildDict(0, false, P, true);
-  SubmitDict(Dict);
+  SubmitUpdate(BuildUpdate(0, false, P, true));
 end;
 
 procedure ClearBadge;
-var
-  Dict: string;
 begin
-  if not GDBusEnabled then
+  if not GBusEnabled then
     Exit;
   // Safe "clear": zero values and both visibility flags false
-  Dict := BuildDict(0, false, 0.0, false);
-  SubmitDict(Dict);
+  SubmitUpdate(BuildUpdate(0, false, 0.0, false));
 end;
 
 procedure EmitRawDict(const Dict: string);
+var
+  U: TBadgeUpdate;
 begin
-  SubmitDict(Dict);
+  // Caller-supplied GVariant text: nothing to marshal, so this one can only
+  // go out through gdbus.
+  U := Default(TBadgeUpdate);
+  U.Text := Dict;
+  U.Typed := false;
+  SubmitUpdate(U);
 end;
 
 initialization
