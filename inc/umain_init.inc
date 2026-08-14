@@ -779,6 +779,10 @@ begin
   InitializeUIComponents;
   Application.ProcessMessages;
 
+  // Application-drawn title bar (Wayland / forced via ux.own_titlebar). After
+  // the font setup above so the bar sizes itself from the real UI font.
+  ApplyOwnTitleBar;
+
   // Force first UI update by initializing cached UI state to sentinel values
   // This ensures ShouldUpdateUI(...) returns true on first valid update
   FLastUIColor := TColor(-1);
