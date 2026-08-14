@@ -21,5 +21,8 @@ If you don't see toasts, check that a notification service is running and that D
 ## Desktop indicators (GNOME/KDE)
 Trndi ships optional GNOME Shell and KDE Plasma panel widgets that show the current reading. See the "Linux desktop indicators" section in the main [README](/README.md) for installation steps (automatic for .deb/.rpm, manual for AppImage).
 
+## Kiosk mode and screen blanking
+`trndi --kiosk` keeps the screen lit by holding an idle inhibition with logind (`systemd-inhibit`/`elogind-inhibit`), with the desktop session's own power manager (`gnome-session-inhibit`/`kde-inhibit` — GNOME and KDE ignore the logind one, so this is what a Wayland kiosk depends on), and by turning off X11 blanking with `xset`. Missing tools are skipped. sway/Hyprland and other wlroots compositors need their idle daemon configured directly — see the [Display guide](/guides/Display.md#keep-awake-on-linux).
+
 ## Settings storage
 Settings are stored at `~/.config/Trndi/trndi.ini`.
