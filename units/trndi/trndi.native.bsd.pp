@@ -76,7 +76,12 @@ TTrndiNativeBSD = class(TTrndiNativeLinux)
         preferred on KDE sessions and used as a fallback elsewhere. }
     class function isNotificationSystemAvailable: boolean; override;
     class function getNotificationSystem: string; override;
-    procedure attention(topic, message: string); override;
+    procedure attention(topic, message: string); override; overload;
+    {** Same routing for an urgent notice: kdialog where kdialog is what we
+        use (it has no urgency concept), the inherited D-Bus path otherwise,
+        which does carry it. }
+    procedure attention(topic, message: string;
+      urgency: TTrndiNoticeUrgency); override; overload;
 
     {** Alert sounds: the Linux override spawns aplay (ALSA), which BSD base
         systems don't have; probe for whichever player is actually installed. }
@@ -339,15 +344,23 @@ end;
 
 procedure TTrndiNativeBSD.attention(topic, message: string);
 begin
+  attention(topic, message, tnuNormal);
+end;
+
+procedure TTrndiNativeBSD.attention(topic, message: string;
+urgency: TTrndiNoticeUrgency);
+begin
   if UseKDialog then
   begin
-    // Fire-and-forget via the async worker so the child gets reaped (no zombies)
+    // Fire-and-forget via the async worker so the child gets reaped (no
+    // zombies). A passive popup cannot be marked urgent, so urgency is lost
+    // here — same as it was before there was an urgency to lose.
     RunAndCaptureSimpleAsync(ExecInPath('kdialog'),
       ['--title', topic, '--passivepopup', message, '5'], nil);
     Exit;
   end;
 
-  inherited attention(topic, message);
+  inherited attention(topic, message, urgency);
 end;
 
 {------------------------------------------------------------------------------

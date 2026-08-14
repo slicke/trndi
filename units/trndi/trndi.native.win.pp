@@ -198,7 +198,7 @@ public
   {** Show a Windows toast via PowerShell + WinRT Windows.UI.Notifications.
       No third-party module (e.g. BurntToast) required; uses PowerShell's
       built-in AUMID so we don't have to register one ourselves. }
-  procedure attention(topic, message: string); override;
+  procedure attention(topic, message: string); override; overload;
   {** Detect an integrated or external touchscreen via SM_DIGITIZER.
       Sets @code(multi) when NID_MULTI_INPUT is reported. }
   class function DetectTouchScreen(out multi: boolean): boolean; override;

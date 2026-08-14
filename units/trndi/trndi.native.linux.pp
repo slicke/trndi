@@ -91,6 +91,11 @@ protected
   FInhibitProc: TProcess;
   FDeskInhibitProc: TProcess;
   FXsetApplied: boolean;
+    // Id of the last notification the server accepted, with the title it was
+    // shown under: repeating the same kind of alert replaces that toast
+    // instead of stacking another copy behind it.
+  FLastNoticeId: cardinal;
+  FLastNoticeTopic: string;
   procedure FlashTimerTick(Sender: TObject);
     {** Resolve the INI/CFG file path with backward compatibility.
         Preference order: Lazarus app config, ~/.config/Trndi/trndi.ini, legacy ~/.config/Trndi.cfg }
@@ -100,7 +105,13 @@ protected
 public
   {** Prefer session-bus notifications under Qt6 — libdbus first, the gdbus
       tool second; fall back to notify-send when neither answers. }
-  procedure attention(topic, message: string); override;
+  procedure attention(topic, message: string); override; overload;
+  {** Notification with an urgency. Over libdbus, @code(tnuCritical) becomes
+      the freedesktop @code(urgency=2) hint: the desktop shows it through Do
+      Not Disturb and leaves it up until dismissed. The older gdbus and
+      notify-send paths cannot carry hints and ignore it. }
+  procedure attention(topic, message: string;
+    urgency: TTrndiNoticeUrgency); override; overload;
     {** Free tray resources, shutdown KDE badge if needed, and close INI store. }
   destructor Destroy; override;
     {** Speaks @param(Text) using spd-say, if available.
@@ -1407,6 +1418,12 @@ end;
   and whenever the bus path fails, it falls back to notify-send.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.attention(topic, message: string);
+begin
+  attention(topic, message, tnuNormal);
+end;
+
+procedure TTrndiNativeLinux.attention(topic, message: string;
+urgency: TTrndiNoticeUrgency);
 
   procedure NotifySendFallback(const Title, Msg: string);
   var
@@ -1484,11 +1501,28 @@ function NotifyViaDBus(const Title, Msg: string; out NewId: cardinal): boolean;
   var
     conn: TDBusConn;
     call, reply: TDBusMessage;
+    replaces: cardinal;
+    expires: integer;
   begin
     Result := false;
     NewId := 0;
     if not DBusAvailable then
       Exit;
+
+    // Replace the previous toast only when it said the same thing: a low
+    // alert must not quietly overwrite a sensor warning that is still up.
+    if (FLastNoticeId <> 0) and (FLastNoticeTopic = Title) then
+      replaces := FLastNoticeId
+    else
+      replaces := 0;
+
+    // A critical notice is one the user has to act on, so it stays until it
+    // is dismissed instead of timing out.
+    if urgency = tnuCritical then
+      expires := 0
+    else
+      expires := noticeDuration;
+
     conn := TDBusConn.Create(dbSession);
     try
       call := conn.NewCall('org.freedesktop.Notifications',
@@ -1497,14 +1531,19 @@ function NotifyViaDBus(const Title, Msg: string; out NewId: cardinal): boolean;
       if call = nil then
         Exit;
       call.AddString('Trndi');   // app_name
-      call.AddUInt32(0);         // replaces_id
-      call.AddString('');        // app_icon
+      call.AddUInt32(replaces);  // replaces_id
+      call.AddString('');        // app_icon: resolved from desktop-entry below
       call.AddString(Title);     // summary
       call.AddString(Msg);       // body
       call.AddStringArray([]);   // actions
       call.OpenDict;             // hints
+      // Ties the toast to trndi.desktop, which is how KDE and GNOME find our
+      // icon and group the notification under the application.
+      call.DictAddString('desktop-entry', 'trndi');
+      if urgency = tnuCritical then
+        call.DictAddByte('urgency', 2); // 0 low, 1 normal (the default), 2 critical
       call.CloseDict;
-      call.AddInt32(noticeDuration); // expire_timeout
+      call.AddInt32(expires);    // expire_timeout
       reply := conn.CallBlocking(call, 5000);
       if reply = nil then
         Exit;
@@ -1535,7 +1574,11 @@ begin
   if UseDBusForNotifications then
   begin
     if NotifyViaDBus(topic, message, NewId) then
+    begin
+      FLastNoticeId := NewId;
+      FLastNoticeTopic := topic;
       Exit;
+    end;
     // libdbus missing or the server did not answer: fall through to the gdbus
     // tool, and to notify-send after that.
     if FindInPath('gdbus') = '' then
