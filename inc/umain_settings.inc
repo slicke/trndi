@@ -181,7 +181,12 @@ begin
   else
     Self.FormStyle := fsNormal;
 
-  if native.GetBoolSetting('main.noborders', false) then
+  // The drawn title bar may need to appear/disappear when its setting or
+  // main.noborders changed; it also keeps the window frameless, so it wins
+  // over the default border restore below.
+  ApplyOwnTitleBar;
+
+  if native.GetBoolSetting('main.noborders', false) or OwnTitleBarActive then
     Self.BorderStyle := bsNone
   else
   {$ifdef DARWIN}

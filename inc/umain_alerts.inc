@@ -323,12 +323,12 @@ begin
   begin
     lInternet.Anchors := [];
     lInternet.Left := Max(8, (ClientWidth - lInternet.Width) div 2);
-    lInternet.Top := 8;
+    lInternet.Top := 8 + TitleBarOffset;
   end
   else
   begin
     lInternet.Anchors := [akTop, akRight];
-    lInternet.Top := 8;
+    lInternet.Top := 8 + TitleBarOffset;
     lInternet.Left := Max(8, ClientWidth - lInternet.Width - 8);
   end;
 
@@ -928,7 +928,7 @@ begin
 
     pnWarning.Width  := ClientWidth - (padding * 2);
     pnWarning.Left   := padding;
-    pnWarning.Top    := padding;
+    pnWarning.Top    := padding + TitleBarOffset;
     pnWarning.Height := baseBannerH + expandedExtraH;
     FWarnBannerBaseH := baseBannerH;
 
