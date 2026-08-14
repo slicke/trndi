@@ -525,15 +525,18 @@ begin
     Canvas.Brush.Style := bsSolid;
   end;
 
-  // Buttons in the Ubuntu/Yaru style: a faint disc always marks each button,
-  // hover lifts the disc (close goes red), pressed darkens it. Glyphs are
-  // line-drawn (fonts are not trustworthy for these three shapes across
+  // Buttons in the KDE/Breeze-flat style: bare glyphs at rest, and hover or
+  // press shows a soft rounded-square highlight behind the glyph (red for
+  // close). Rectangles rather than discs on purpose — the LCL canvas draws
+  // unantialiased ellipses, which read as jagged blobs at this size. Glyphs
+  // are line-drawn (fonts are not trustworthy for these three shapes across
   // Linux font setups).
   for i := 0 to ButtonCount - 1 do
   begin
     r := ButtonRect(i);
     kind := ButtonKind(i);
     glyphC := FText;
+    fillC := FBg;
     if (i = FPressedBtn) and (kind = stbClose) then
     begin
       fillC := RGBToColor(160, 18, 35);
@@ -547,25 +550,26 @@ begin
     end
     else
     if i = FPressedBtn then
-      fillC := MixColors(FBg, FText, 0.30)
+      fillC := MixColors(FBg, FText, 0.26)
     else
     if i = FHoverBtn then
-      fillC := MixColors(FBg, FText, 0.22)
-    else
-      fillC := MixColors(FBg, FText, 0.10);
+      fillC := MixColors(FBg, FText, 0.16);
 
-    // The disc, centered in the hit zone.
-    ds := Round(Height * 0.68);
     cx := (r.Left + r.Right) div 2;
     cy := Height div 2;
-    Canvas.Brush.Style := bsSolid;
-    Canvas.Brush.Color := fillC;
-    Canvas.Pen.Style := psClear;
-    Canvas.Ellipse(cx - ds div 2, cy - ds div 2,
-      cx - ds div 2 + ds, cy - ds div 2 + ds);
-    Canvas.Pen.Style := psSolid;
+    if (i = FHoverBtn) or (i = FPressedBtn) then
+    begin
+      // Highlight square, slightly larger than the glyph, gently rounded.
+      ds := Round(Height * 0.72);
+      Canvas.Brush.Style := bsSolid;
+      Canvas.Brush.Color := fillC;
+      Canvas.Pen.Style := psClear;
+      Canvas.RoundRect(cx - ds div 2, cy - ds div 2,
+        cx - ds div 2 + ds, cy - ds div 2 + ds, ds div 4, ds div 4);
+      Canvas.Pen.Style := psSolid;
+    end;
 
-    gs := Max(7, Round(ds * 0.42));
+    gs := Max(8, Height div 3);
     gr := Rect(cx - gs div 2, cy - gs div 2, cx - gs div 2 + gs, cy - gs div 2 + gs);
     Canvas.Pen.Color := glyphC;
     Canvas.Pen.Width := Max(1, Height div 24);
