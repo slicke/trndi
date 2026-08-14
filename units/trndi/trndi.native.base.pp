@@ -324,7 +324,8 @@ class var touchOverride: TTrndiBool;
   {** Return a best-effort window manager name for the current platform.
       Examples: 'openbox', 'WindowServer', 'Windows Desktop', or empty string when unknown. }
   class function GetWindowManagerName: string; virtual;
-  {** Check if the window manager is Sway (Wayland compositor). }
+  {** Check if the window manager is a tiling WM/compositor (sway, i3,
+      Hyprland, …) where minimize/maximize buttons have no meaning. }
   class function nobuttonsVM: boolean; virtual;
   class function DetectTouchScreen(out multi: boolean): boolean; virtual;
     {** Detect if the device has a touchscreen and whether it's multi-touch. }
@@ -468,7 +469,8 @@ class var touchOverride: TTrndiBool;
   class function SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean; virtual;
     {** True when this platform cannot decorate/tint native title bars and the
         application should draw its own bar (Linux/BSD under Wayland, where the
-        compositor owns the decorations). Base: @false. }
+        compositor owns the decorations — excluding tiling compositors, which
+        intentionally draw no titlebar at all). Base: @false. }
   class function NeedsCustomTitleBar: boolean; virtual;
     {** Route future @link(SetTitleColor) calls for the window identified by
         @param(provider) to @param(sink) instead of the (unsupported) native
@@ -1153,7 +1155,8 @@ end;
 {------------------------------------------------------------------------------
   nobuttonsVM (base)
   ------------------
-  Default implementation returns false. Platform units override to detect Sway.
+  Default implementation returns false. Platform units override to detect
+  tiling WMs/compositors (sway, i3, Hyprland, …).
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.nobuttonsVM: boolean;
 begin

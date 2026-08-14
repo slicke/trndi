@@ -4546,7 +4546,9 @@ end;
   colored nor removed by the toolkit — so on those sessions the dialog goes
   frameless and carries the same drawn slicke.ux.titlebar the main window uses.
   The bar keeps the dialog draggable (compositor-side move via the bar) and
-  provides a close button (= cancel, same as the native X).
+  provides a close button (= cancel, same as the native X). Tiling
+  compositors are excluded (NeedsCustomTitleBar is false there): they draw
+  no titlebar by design, and the dialogs' own buttons keep them closable.
 
   The dialogs lay their content out against the undecorated client area, so the
   bar cannot simply overlay it: absolutely-placed controls are shifted down by
