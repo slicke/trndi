@@ -62,7 +62,7 @@ type
     procedure SetKeepAwake(Enable: boolean); override;
     {** Show a visual notification on macOS.
       Prefer native NSUserNotificationCenter (app-attributed), fall back to base AppleScript impl. }
-    procedure attention(topic, message: string); override;
+    procedure attention(topic, message: string); override; overload;
     {** Speak @param(Text) using the built-in 'say' command.
         Runs asynchronously via a worker thread that also reaps the child
         process; the call returns immediately. }

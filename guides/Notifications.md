@@ -63,9 +63,9 @@ Enabling notifications is optional — you can use Trndi without them.
 ## How Trndi chooses a backend
 - Windows: Uses the built‑in WinRT toast API (`Windows.UI.Notifications.ToastNotificationManager`) via PowerShell — no third‑party module required.
 - macOS: Uses the built‑in user notification center — no setup required.
-- Linux: Auto‑selects between org.freedesktop.Notifications over D‑Bus (gdbus) on KDE/GNOME‑like desktops and notify-send elsewhere. Trndi detects this at runtime; no manual toggle is needed.
+- Linux: Auto‑selects between org.freedesktop.Notifications over D‑Bus on KDE/GNOME‑like desktops and notify-send elsewhere. Trndi detects this at runtime; no manual toggle is needed.
 
-Tip: You can see which backend is active in logs or by observing which tool is invoked (gdbus vs notify-send) when a notification fires.
+Tip: Settings → Notifications names the active backend: `dbus` (the direct D‑Bus path), `gdbus` (the command‑line fallback), or `notify-send`.
 
 ## Windows
 Trndi shows toasts by invoking the WinRT `ToastNotificationManager` directly from a short PowerShell script. PowerShell ships with Windows, so no install step is required.
@@ -92,9 +92,15 @@ To test macOS notifications manually, run Trndi and trigger an alert (for exampl
 
 If you don’t see a notification, check System Settings → Notifications & Focus and verify Trndi is allowed. If the app never shows the permission prompt, watch the logs for the startup authorization call (best‑effort request).
 
-- KDE/GNOME‑like desktops (under Qt6 builds): Uses D‑Bus via gdbus with org.freedesktop.Notifications.
+- KDE/GNOME‑like desktops (under Qt6 builds): `org.freedesktop.Notifications` over D‑Bus, spoken directly through `libdbus-1`; the `gdbus` command‑line tool is used only if that library is missing.
 - Other desktops or when D‑Bus isn’t suitable: Falls back to notify-send.
+
+On the direct D‑Bus path the toasts carry three things the older path could not:
+
+- **Low blood sugar is sent as urgent** (freedesktop `urgency=2`). Your desktop shows it through Do Not Disturb and leaves it on screen until you dismiss it, rather than fading after a few seconds. Everything else — highs, missing readings, reservoir, sensor and battery warnings — is sent at normal urgency and behaves as before.
+- **Repeats replace rather than pile up.** A second low alert updates the toast already on screen instead of stacking another copy behind it. Only a notice with the same title replaces its predecessor, so a low alert never overwrites a sensor warning still waiting to be read.
+- **The toast is attributed to Trndi** (`desktop-entry` hint), so your desktop shows the Trndi icon and groups the notifications under the app in its history.
 
 Notes
 - notify-send is usually provided by libnotify; install it from your distro if missing.
-- If you don’t see notifications, check that your desktop has a notification service running and that the app isn’t muted or suppressed by Do Not Disturb.
+- If you don’t see notifications, check that your desktop has a notification service running and that the app isn’t muted or suppressed by Do Not Disturb. Low alerts should come through a Do Not Disturb; if they don't, your desktop may be configured to suppress even critical notifications.
