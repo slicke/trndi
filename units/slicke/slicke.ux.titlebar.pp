@@ -89,6 +89,13 @@ private
   FMetricHeight: integer; // Height UpdateMetrics derived from the font; the
                           // bar re-asserts it when anything else resizes it
   FButtons: TSlickeTitleBarButtons;
+  FBadgeText: string;   // identity chip text; '' = no chip
+  FBadgeBg: TColor;     // clNone = derive from the bar colors at paint time
+  FBadgeTextColor: TColor;
+  FBadgeWidth: integer; // measured in MeasureBadge, 0 when there is no chip
+  FBadgeHover: boolean;
+  FBadgePressed: boolean;
+  FOnBadgeClick: TNotifyEvent;
   FHoverBtn: integer;   // index into visible-button order, -1 = none
   FPressedBtn: integer; // button armed by mouse-down, -1 = none
   FMaybeDrag: boolean;  // left button down outside the buttons, slop not yet left
@@ -102,6 +109,11 @@ private
   function ButtonAt(X, Y: integer): integer;
   function ButtonKind(AIndex: integer): TSlickeTitleBarButton;
   function ButtonCount: integer;
+  function ButtonsLeft: integer;
+  function BadgeHeight: integer;
+  function BadgeRect: TRect;
+  function BadgeAt(X, Y: integer): boolean;
+  procedure MeasureBadge;
   procedure DoButtonAction(AKind: TSlickeTitleBarButton);
   procedure SetTitle(const AValue: string);
   procedure SetTitleAlignment(const AValue: TAlignment);
@@ -124,6 +136,19 @@ public
   procedure SetColors(ABg, AText: TColor);
     {** Repaint the caption text (call after the form caption changed). }
   procedure RefreshTitle;
+    {** Show an identity chip — a small rounded label carrying @param(AText) —
+        at the right end of the bar, just left of the caption buttons. Meant
+        for the active profile/account name, mirroring the native title-bar
+        badge platforms such as Windows offer. Pass @code(clNone) for
+        @param(ABg)/@param(ATextColor) (the default) to have the chip tint
+        itself from the current bar colors, so it keeps following
+        @link(SetColors) without being re-set. A chip too wide for the bar
+        gives up width before the caption does and ellipsizes its text.
+        Clicking it fires @link(OnBadgeClick). }
+  procedure SetUserBadge(const AText: string; ABg: TColor = clNone;
+    ATextColor: TColor = clNone);
+    {** Remove the identity chip. }
+  procedure ClearUserBadge;
     {** Bar text; when empty the parent form's Caption is drawn. }
   property Title: string read FTitle write SetTitle;
     {** How the caption text sits in the bar. Default left-justified, the
@@ -131,10 +156,14 @@ public
   property TitleAlignment: TAlignment read FTitleAlignment write SetTitleAlignment;
     {** Which caption buttons to draw. Default: all three. }
   property Buttons: TSlickeTitleBarButtons read FButtons write SetButtons;
+    {** Current identity-chip text; empty when no chip is shown. }
+  property BadgeText: string read FBadgeText;
     {** Current bar background color. }
   property BarColor: TColor read FBg;
     {** Current text/glyph color. }
   property BarTextColor: TColor read FText;
+    {** Fired when the identity chip is clicked. }
+  property OnBadgeClick: TNotifyEvent read FOnBadgeClick write FOnBadgeClick;
     {** Fired by the close button; when unassigned the parent form is closed. }
   property OnCloseRequest: TNotifyEvent read FOnCloseRequest write FOnCloseRequest;
     {** Fired by the minimize button; default minimizes the parent form. }
@@ -203,6 +232,10 @@ GRIP_CORNER = 14;
 DRAG_SLOP = 4;
 MIN_FORM_W = 120;
 MIN_FORM_H = 120;
+  // Identity chip: bar left free above and below it, and the gap it keeps from
+  // the caption buttons on its right and the caption text on its left.
+BADGE_INSET = 4;
+BADGE_GAP = 8;
 
 {------------------------------------------------------------------------------
   Compositor glue
@@ -376,6 +409,9 @@ begin
   FText := clWhite;
   FTitleAlignment := taLeftJustify;
   FButtons := [stbMinimize, stbMaximize, stbClose];
+  FBadgeBg := clNone; // "follow the bar colors" until told otherwise
+  FBadgeTextColor := clNone;
+  FBadgeWidth := 0;
   FHoverBtn := -1;
   FPressedBtn := -1;
   Align := alTop;
@@ -401,6 +437,7 @@ begin
   end;
   FMetricHeight := Max(24, th + 12);
   Height := FMetricHeight;
+  MeasureBadge; // chip padding derives from the bar height
 end;
 
 procedure TSlickeTitleBar.Resize;
@@ -504,12 +541,106 @@ begin
       Exit(i);
 end;
 
+// Left edge of the button strip — where the caption/chip area ends. Without
+// buttons the same small right margin ButtonRect leaves applies.
+function TSlickeTitleBar.ButtonsLeft: integer;
+begin
+  if ButtonCount > 0 then
+    Result := ButtonRect(0).Left
+  else
+    Result := ClientWidth - (Height div 6);
+end;
+
+{------------------------------------------------------------------------------
+  Identity chip
+ ------------------------------------------------------------------------------}
+
+function TSlickeTitleBar.BadgeHeight: integer;
+begin
+  Result := Max(14, Height - 2 * BADGE_INSET);
+end;
+
+// Width the chip wants: bold text plus half a chip height of padding on each
+// side (the proportion native badges use). Measured on a scratch bitmap for
+// the same reason UpdateMetrics does — a control canvas is only reliable while
+// painting.
+procedure TSlickeTitleBar.MeasureBadge;
+var
+  bmp: TBitmap;
+begin
+  FBadgeWidth := 0;
+  if FBadgeText = '' then
+    Exit;
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(Font);
+    bmp.Canvas.Font.Style := bmp.Canvas.Font.Style + [fsBold];
+    FBadgeWidth := bmp.Canvas.TextWidth(FBadgeText) + BadgeHeight;
+  finally
+    bmp.Free;
+  end;
+end;
+
+// Chip placement: right-aligned against the caption buttons, vertically
+// centred. A long name never squeezes the caption out — the chip is capped at
+// a third of the bar and ellipsizes instead, and drops out entirely when even
+// that leaves no usable room.
+function TSlickeTitleBar.BadgeRect: TRect;
+var
+  w, h, y, right: integer;
+begin
+  Result := Rect(0, 0, 0, 0);
+  if (FBadgeText = '') or (FBadgeWidth <= 0) then
+    Exit;
+  h := BadgeHeight;
+  w := Min(FBadgeWidth, ClientWidth div 3);
+  if w < h then
+    Exit;
+  right := ButtonsLeft - BADGE_GAP;
+  if right - w < BADGE_GAP then
+    Exit;
+  y := (Height - h) div 2;
+  Result := Rect(right - w, y, right, y + h);
+end;
+
+function TSlickeTitleBar.BadgeAt(X, Y: integer): boolean;
+var
+  r: TRect;
+begin
+  r := BadgeRect;
+  Result := (r.Right > r.Left) and PtInRect(r, Point(X, Y));
+end;
+
+procedure TSlickeTitleBar.SetUserBadge(const AText: string; ABg, ATextColor: TColor);
+begin
+  if (FBadgeText = AText) and (FBadgeBg = ABg) and (FBadgeTextColor = ATextColor) then
+    Exit;
+  FBadgeText := AText;
+  FBadgeBg := ABg;
+  FBadgeTextColor := ATextColor;
+  MeasureBadge;
+  Invalidate;
+end;
+
+procedure TSlickeTitleBar.ClearUserBadge;
+begin
+  if FBadgeText = '' then
+    Exit;
+  FBadgeText := '';
+  FBadgeWidth := 0;
+  FBadgeHover := false;
+  FBadgePressed := false;
+  Cursor := crDefault;
+  Invalidate;
+end;
+
 procedure TSlickeTitleBar.Paint;
 var
   i, gs, ds, cx, cy: integer;
-  r, gr: TRect;
+  r, gr, br: TRect;
   kind: TSlickeTitleBarButton;
-  fillC, glyphC: TColor;
+  fillC, glyphC, badgeBg, badgeTxt: TColor;
   s: string;
   frm: TCustomForm;
   ts: TTextStyle;
@@ -517,7 +648,10 @@ begin
   Canvas.Brush.Color := FBg;
   Canvas.FillRect(ClientRect);
 
-  // Caption text, centered over the whole bar but clipped clear of the buttons.
+  br := BadgeRect;
+
+  // Caption text, centered over the whole bar but clipped clear of the buttons
+  // (and of the identity chip when one is shown).
   s := FTitle;
   frm := GetParentForm(Self);
   if (s = '') and (frm <> nil) then
@@ -533,9 +667,60 @@ begin
     ts.SingleLine := true;
     ts.Clipping := true;
     ts.EndEllipsis := true;
-    r := Rect(Height div 2, 0,
-      ClientWidth - ButtonCount * Round(Height * 1.15) - Height div 4, Height);
-    Canvas.TextRect(r, r.Left, 0, s, ts);
+    if br.Right > br.Left then
+      r := Rect(Height div 2, 0, br.Left - BADGE_GAP, Height)
+    else
+      r := Rect(Height div 2, 0,
+        ClientWidth - ButtonCount * Round(Height * 1.15) - Height div 4, Height);
+    if r.Right > r.Left then
+      Canvas.TextRect(r, r.Left, 0, s, ts);
+    Canvas.Brush.Style := bsSolid;
+  end;
+
+  // Identity chip. A softly rounded rectangle rather than a full capsule:
+  // corner quality on the LCL canvas varies by widgetset (the buttons below
+  // avoid ellipses for that reason), and a moderate radius reads cleanly
+  // everywhere. Unset colors follow the bar itself, which keeps the chip
+  // legible as the bar recolors with the data behind it.
+  if br.Right > br.Left then
+  begin
+    badgeBg := FBadgeBg;
+    if badgeBg = clNone then
+      badgeBg := MixColors(FBg, FText, 0.18);
+    badgeTxt := FBadgeTextColor;
+    if badgeTxt = clNone then
+      badgeTxt := FText;
+    if FBadgePressed then
+      badgeBg := MixColors(badgeBg, badgeTxt, 0.26)
+    else
+    if FBadgeHover then
+      badgeBg := MixColors(badgeBg, badgeTxt, 0.16);
+
+    ds := br.Bottom - br.Top;
+    Canvas.Brush.Style := bsSolid;
+    Canvas.Brush.Color := badgeBg;
+    Canvas.Pen.Style := psClear;
+    Canvas.RoundRect(br.Left, br.Top, br.Right, br.Bottom, ds div 2, ds div 2);
+    Canvas.Pen.Style := psSolid;
+
+    Canvas.Font.Assign(Font);
+    Canvas.Font.Style := Canvas.Font.Style + [fsBold];
+    Canvas.Font.Color := badgeTxt;
+    Canvas.Brush.Style := bsClear;
+    ts := Canvas.TextStyle;
+    // Centred while the name fits. Once the chip is capped the text has to run
+    // from the left, or the ellipsis has no end to sit at and the name is
+    // clipped at *both* ends instead.
+    if br.Right - br.Left < FBadgeWidth then
+      ts.Alignment := taLeftJustify
+    else
+      ts.Alignment := taCenter;
+    ts.Layout := tlCenter;
+    ts.SingleLine := true;
+    ts.Clipping := true;
+    ts.EndEllipsis := true;
+    r := Rect(br.Left + ds div 4, br.Top, br.Right - ds div 4, br.Bottom);
+    Canvas.TextRect(r, r.Left, r.Top, FBadgeText, ts);
     Canvas.Brush.Style := bsSolid;
   end;
 
@@ -668,6 +853,14 @@ begin
     Invalidate;
     Exit;
   end;
+  // The chip is a control, not bar background: pressing it must not arm a
+  // window drag.
+  if BadgeAt(X, Y) then
+  begin
+    FBadgePressed := true;
+    Invalidate;
+    Exit;
+  end;
   frm := GetParentForm(Self);
   if frm = nil then
     Exit;
@@ -681,6 +874,7 @@ var
   p: TPoint;
   frm: TCustomForm;
   hov: integer;
+  hovBadge: boolean;
 begin
   inherited MouseMove(Shift, X, Y);
   frm := GetParentForm(Self);
@@ -718,6 +912,18 @@ begin
     FHoverBtn := hov;
     Invalidate;
   end;
+
+  hovBadge := BadgeAt(X, Y);
+  if hovBadge <> FBadgeHover then
+  begin
+    FBadgeHover := hovBadge;
+    // Hand cursor over the chip, exactly like the native badge platforms.
+    if hovBadge then
+      Cursor := crHandPoint
+    else
+      Cursor := crDefault;
+    Invalidate;
+  end;
 end;
 
 procedure TSlickeTitleBar.MouseUp(Button: TMouseButton; Shift: TShiftState;
@@ -737,26 +943,43 @@ begin
       DoButtonAction(ButtonKind(hit));
     FPressedBtn := -1;
     Invalidate;
+    Exit;
+  end;
+  if FBadgePressed then
+  begin
+    FBadgePressed := false;
+    Invalidate;
+    if BadgeAt(X, Y) and Assigned(FOnBadgeClick) then
+      FOnBadgeClick(Self);
   end;
 end;
 
 procedure TSlickeTitleBar.MouseLeave;
 begin
   inherited MouseLeave;
-  if (FHoverBtn >= 0) or (FPressedBtn >= 0) then
+  if (FHoverBtn >= 0) or (FPressedBtn >= 0) or FBadgeHover or FBadgePressed then
   begin
     FHoverBtn := -1;
     FPressedBtn := -1;
+    FBadgeHover := false;
+    FBadgePressed := false;
+    Cursor := crDefault;
     Invalidate;
   end;
 end;
 
 procedure TSlickeTitleBar.DblClick;
+var
+  p: TPoint;
 begin
   inherited DblClick;
   // Double-click on the free area toggles maximize, like a native bar. A
   // double-click on a button never reaches here: mouse-down armed the button.
-  if FPressedBtn < 0 then
+  // The chip has no press state left by then, so it is re-tested by position.
+  if FPressedBtn >= 0 then
+    Exit;
+  p := ScreenToClient(Mouse.CursorPos);
+  if not BadgeAt(p.x, p.y) then
     DoButtonAction(stbMaximize);
 end;
 
