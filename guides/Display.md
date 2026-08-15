@@ -64,12 +64,12 @@ Linux has no single "stay awake" switch, so Trndi asks everything that might bla
 | What | Tool | Covers |
 | --- | --- | --- |
 | Login manager | `systemd-inhibit`, or `elogind-inhibit` on non-systemd distros | Automatic suspend and the logind idle timer |
-| Desktop session | `gnome-session-inhibit` on GNOME, `kde-inhibit` on Plasma | GNOME's and KDE's own idle timers, which ignore the lock above — this is what keeps a **Wayland** kiosk lit |
+| Desktop session | D-Bus (the desktop portal, the freedesktop screensaver service, or gnome-session — whichever answers first); the `gnome-session-inhibit`/`kde-inhibit` tools as fallback | GNOME's and KDE's own idle timers, which ignore the lock above — this is what keeps a **Wayland** kiosk lit |
 | X11 | `xset s off -dpms` | Screen blanking and DPMS power-down on X11 (restored when kiosk mode ends) |
 
-Each lock lives exactly as long as its helper process, so an unexpected exit can never leave the machine stuck awake.
+Each lock lives exactly as long as its holder — the D-Bus connection or the helper process — so an unexpected exit can never leave the machine stuck awake.
 
-Compositors that bring their own idle daemon — sway with `swayidle`, Hyprland with `hypridle` and other wlroots setups — aren't covered by the middle row, since there's no shared way to ask them. Configure the daemon itself instead, e.g. skip idling while Trndi is running:
+Compositors that bring their own idle daemon — sway with `swayidle`, Hyprland with `hypridle` and other wlroots setups — aren't covered by the middle row unless their `xdg-desktop-portal` backend supports inhibition, since there's no other shared way to ask them. Configure the daemon itself instead, e.g. skip idling while Trndi is running:
 ```
 # ~/.config/swayidle/config
 timeout 600 'pgrep -x Trndi >/dev/null || swaylock'

@@ -91,6 +91,12 @@ protected
   FInhibitProc: TProcess;
   FDeskInhibitProc: TProcess;
   FXsetApplied: boolean;
+    // Desktop idle inhibition held over D-Bus (preferred over spawning the
+    // FDeskInhibitProc helper). Every service tried (portal, freedesktop
+    // ScreenSaver, gnome-session) drops its lock when the holder's bus
+    // connection closes, so this private connection *is* the lock: disable
+    // frees it, and a crashed Trndi releases by itself.
+  FDBusInhibitConn: TDBusConn;
     // Id of the last notification the server accepted, with the title it was
     // shown under: repeating the same kind of alert replaces that toast
     // instead of stacking another copy behind it.
@@ -202,6 +208,11 @@ public
       be tinted. Tiling compositors (see @link(nobuttonsVM)) also return
       @false: they intentionally draw no titlebar, so neither should we. }
   class function NeedsCustomTitleBar: boolean; override;
+  {** True in a Wayland session with the toolkit on the Wayland backend
+      (XDG_SESSION_TYPE, falling back to WAYLAND_DISPLAY); forcing the
+      toolkit onto XWayland answers @false since window management is X11
+      there. Unlike @link(NeedsCustomTitleBar), tiling compositors count. }
+  class function IsWaylandSession: boolean; override;
   {** True if a global/appmenu service is active; Linux override. }
   class function HasGlobalMenu: boolean; override;
 
@@ -215,11 +226,13 @@ public
 
   {** Keep the system awake (kiosk mode): hold a logind idle/sleep inhibition
       as a long-lived @code(systemd-inhibit)/@code(elogind-inhibit) child, hold
-      the desktop session's own idle inhibition the same way via
-      @code(gnome-session-inhibit)/@code(kde-inhibit) (GNOME and KDE ignore the
-      logind lock, so Wayland kiosks blank without this), and turn off X11
+      the desktop session's own idle inhibition (GNOME and KDE ignore the
+      logind lock, so Wayland kiosks blank without this) — over D-Bus when
+      possible (the desktop portal, the freedesktop ScreenSaver service or
+      gnome-session, none of which need external tools), else via a
+      @code(gnome-session-inhibit)/@code(kde-inhibit) child — and turn off X11
       screen blanking/DPMS via @code(xset) while enabled. Every part is
-      best-effort and skipped when its tool is missing. }
+      best-effort and skipped when its tool or service is missing. }
   procedure SetKeepAwake(Enable: boolean); override;
 
     {** Triggers when the tray icon is clicked }
@@ -644,20 +657,20 @@ end;
  end;
 
 {------------------------------------------------------------------------------
-  NeedsCustomTitleBar (Linux)
-  ---------------------------
-  Wayland only: XDG_SESSION_TYPE is the authoritative signal, WAYLAND_DISPLAY
-  the fallback for sessions that neglect to set it (an XWayland app sees both,
-  but an app running through XWayland still gets X11-managed decorations, so
-  the session type wins when present). Tiling compositors are excluded even
-  on Wayland — see below.
+  IsWaylandSession (Linux)
+  ------------------------
+  XDG_SESSION_TYPE is the authoritative signal, WAYLAND_DISPLAY the fallback
+  for sessions that neglect to set it (an XWayland app sees both, but an app
+  running through XWayland still gets X11 window management, so the session
+  type wins when present).
  ------------------------------------------------------------------------------}
-class function TTrndiNativeLinux.NeedsCustomTitleBar: boolean;
+class function TTrndiNativeLinux.IsWaylandSession: boolean;
 var
   session: string;
 begin
-  // A user who forces the toolkit onto XWayland gets X11-managed (working)
-  // decorations even inside a Wayland session — honor that.
+  // A user who forces the toolkit onto XWayland gets X11 window management
+  // (working decorations, stacking hints) even inside a Wayland session —
+  // honor that.
   if Pos('xcb', LowerCase(GetEnvironmentVariable('QT_QPA_PLATFORM'))) > 0 then
     Exit(false);
   if LowerCase(Trim(GetEnvironmentVariable('GDK_BACKEND'))) = 'x11' then
@@ -668,6 +681,17 @@ begin
     Result := session = 'wayland'
   else
     Result := GetEnvironmentVariable('WAYLAND_DISPLAY') <> '';
+end;
+
+{------------------------------------------------------------------------------
+  NeedsCustomTitleBar (Linux)
+  ---------------------------
+  Wayland only (see IsWaylandSession). Tiling compositors are excluded even
+  on Wayland — see below.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeLinux.NeedsCustomTitleBar: boolean;
+begin
+  Result := IsWaylandSession;
 
   // Tiling compositors (Hyprland, sway, river, …) deliberately draw no
   // titlebar: their users close/move windows with keybinds, a bar wastes
@@ -1643,6 +1667,110 @@ function StartInhibitor(const exe: string; const argv: array of string): TProces
     end;
   end;
 
+  // Ask the desktop session itself to hold an idle inhibition over D-Bus:
+  // the desktop portal (GNOME, KDE and anything else shipping
+  // xdg-desktop-portal), then the freedesktop ScreenSaver service (KDE,
+  // XFCE, MATE, Cinnamon), then gnome-session directly. No helper tools
+  // needed — a minimal Wayland kiosk rarely ships gnome-session-inhibit or
+  // kde-inhibit. Every one of these releases when the calling connection
+  // closes, which is why the connection is private and kept: freeing
+  // FDBusInhibitConn is the release, however Trndi exits.
+function TryDBusIdleInhibit: boolean;
+  const
+    INHIBIT_IDLE = 8; // the same flags bit in the portal and gnome-session
+  var
+    conn: TDBusConn;
+    call, reply: TDBusMessage;
+    which, handle: string;
+    cookie: cardinal;
+  begin
+    Result := false;
+    if not DBusAvailable then
+      Exit;
+    conn := TDBusConn.Create(dbSession, true);
+    try
+      if not conn.Connected then
+        Exit;
+      which := '';
+
+      // Portal: Inhibit(parent_window, flags, options) → request handle.
+      // The reply is the handle itself; no Response signal is involved for
+      // an inhibit, it simply holds until the request (or caller) goes away.
+      call := conn.NewCall('org.freedesktop.portal.Desktop',
+        '/org/freedesktop/portal/desktop', 'org.freedesktop.portal.Inhibit',
+        'Inhibit');
+      if call <> nil then
+      begin
+        call.AddString('');  // no parent window
+        call.AddUInt32(INHIBIT_IDLE);
+        call.OpenDict;
+        call.DictAddString('reason', 'Kiosk mode');
+        call.CloseDict;
+        reply := conn.CallBlocking(call, 3000);
+        if reply <> nil then
+          try
+            if reply.ReadObjectPath(handle) and (handle <> '') then
+              which := 'portal';
+          finally
+            reply.Free;
+          end;
+      end;
+
+      // org.freedesktop.ScreenSaver: Inhibit(app, reason) → cookie.
+      if which = '' then
+      begin
+        call := conn.NewCall('org.freedesktop.ScreenSaver',
+          '/org/freedesktop/ScreenSaver', 'org.freedesktop.ScreenSaver',
+          'Inhibit');
+        if call <> nil then
+        begin
+          call.AddString('Trndi');
+          call.AddString('Kiosk mode');
+          reply := conn.CallBlocking(call, 3000);
+          if reply <> nil then
+            try
+              if reply.ReadUInt32(cookie) then
+                which := 'screensaver';
+            finally
+              reply.Free;
+            end;
+        end;
+      end;
+
+      // org.gnome.SessionManager: Inhibit(app, xid, reason, flags) → cookie.
+      if which = '' then
+      begin
+        call := conn.NewCall('org.gnome.SessionManager',
+          '/org/gnome/SessionManager', 'org.gnome.SessionManager', 'Inhibit');
+        if call <> nil then
+        begin
+          call.AddString('trndi');
+          call.AddUInt32(0); // no toplevel window id
+          call.AddString('Kiosk mode');
+          call.AddUInt32(INHIBIT_IDLE);
+          reply := conn.CallBlocking(call, 3000);
+          if reply <> nil then
+            try
+              if reply.ReadUInt32(cookie) then
+                which := 'gnome-session';
+            finally
+              reply.Free;
+            end;
+        end;
+      end;
+
+      if which <> '' then
+      begin
+        FDBusInhibitConn := conn; // the lock lives exactly as long as this
+        conn := nil;
+        Result := true;
+        TrndiDLog('SetKeepAwake: desktop lock held over D-Bus (' + which + ')');
+      end;
+    finally
+      conn.Free;
+    end;
+  end;
+
   procedure StopInhibitor(var p: TProcess; const what: string);
   begin
     if not Assigned(p) then
@@ -1679,7 +1807,13 @@ begin
       end;
     end;
 
-    if not Assigned(FDeskInhibitProc) then
+    // The desktop session's own inhibition: D-Bus first — it needs no
+    // external tools and covers Wayland compositors whose helper binaries
+    // are absent — with the spawned helper tools as fallback.
+    if (not Assigned(FDBusInhibitConn)) and (not Assigned(FDeskInhibitProc)) then
+      TryDBusIdleInhibit;
+
+    if (not Assigned(FDBusInhibitConn)) and (not Assigned(FDeskInhibitProc)) then
     begin
       // Probe the helper matching the running desktop first, then the other
       // one — a GNOME app menu on a KDE session (or the reverse) is common
@@ -1714,6 +1848,13 @@ begin
   end
   else
   begin
+    if Assigned(FDBusInhibitConn) then
+    begin
+      // Closing the private connection is the release — every service drops
+      // its inhibition when the holder disconnects.
+      FreeAndNil(FDBusInhibitConn);
+      TrndiDLog('SetKeepAwake: D-Bus desktop lock released');
+    end;
     StopInhibitor(FInhibitProc, 'logind');
     StopInhibitor(FDeskInhibitProc, 'desktop');
     if FXsetApplied then
