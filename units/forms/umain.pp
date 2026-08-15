@@ -2270,11 +2270,15 @@ begin
     sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
     if LowerCase(sessionType) = 'wayland' then
       if TryQtStartSystemMove(Handle) then
-        Exit// Try a safe helper that attempts to trigger a compositor move.
-// The real implementation may require a small native wrapper; this stub
-// avoids compile errors on older LCLs and returns false when not supported.
-// compositor will handle moving
-    ;
+      begin
+        // The compositor owns the pointer now and swallows the mouse-up
+        // (KWin does; Mutter is more forgiving), so LCL's implicit capture
+        // from this mouse-down would otherwise stick to lVal forever and
+        // route every later press - title-bar buttons, resize grips - back
+        // here. Drop it so the next press starts clean.
+        SetCaptureControl(nil);
+        Exit; // compositor handles the move
+      end;
     {$endif}
 
     DraggingWin := true;

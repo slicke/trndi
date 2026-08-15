@@ -769,11 +769,15 @@ begin
           qwin := QWidget_windowHandle(QtWidget.Widget);
           if qwin <> nil then
             if QWindow_startSystemMove(qwin) then
-              Exit;
+            begin
+              // The compositor swallows the matching mouse-up (KWin), so
+              // drop the implicit capture or it sticks to the pressed
+              // control and hijacks every later press.
+              SetCaptureControl(nil);
+              Exit; // compositor handles the move
+            end;
         end;
-      end// Try to trigger a compositor move using native Qt binding; if it
-// succeeds, let the compositor handle dragging and exit.
-    ;
+      end;
     {$ENDIF}
 
     FDraggingWin := true;
