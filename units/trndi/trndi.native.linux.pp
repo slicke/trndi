@@ -64,7 +64,7 @@ uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs, StrUtils,
 ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, linutils.dbus,
 trndi.native.base, trndi.native.async, FileUtil, Menus,
-libpascurl, DateUtils, ctypes, trndi.log,
+trndi.curl, DateUtils, ctypes, trndi.log,
 Process; // TProcess field (kiosk keep-awake inhibitor child)
 
 type

@@ -49,7 +49,7 @@ Build modes (in `Trndi.lpi`): "Extensions" modes define `TrndiExt` and link the 
 - **`units/trndi/trndi.native.*`** — platform abstraction. `trndi.native.base.pp` declares the interface; `trndi.native.win/linux/mac/bsd/haiku.pp` implement it; `trndi.native.pp` selects the platform class. **Never add platform `{$IFDEF}` blocks to `trndi.native.base`** — put platform code in the platform unit. HTTP requests go through `native.request`.
 - **`units/trndi/ext/`** — JavaScript extension engine (quickjs-ng via the in-tree binding `trndi.ext.quickjs.pp` and the C ABI shim in `externals/quickjs/`). `trndi.ext.engine.pp` is the interpreter host; JS-callable functions live in `inc/js_*_funcs.inc`; `trndi.ext.grant/perm` handle the permission system.
 - **`units/slicke/`** — reusable UI/system helpers (custom alert dialogs in `slicke.ux.alert.pp`, media controller, touch detection).
-- **`units/misc/`** — platform utility bundles (winutils, linutils, nsutils, libpascurl, Razer Chroma).
+- **`units/misc/`** — platform utility bundles (winutils, linutils, nsutils, Razer Chroma) and `trndi.curl.pp`, a minimal in-house libcurl binding (Linux/BSD HTTP).
 - **`lang/`** — `.po` translations (6 languages; `Trndi.jm.po` is Jämtlandic, not Jamaican).
 
 Shared value types (`BGReading`, `BGResults`, trend enums) live in `trndi.types.pp` and `units/trndi/api/` drivers map every backend into them — the UI layer only ever sees these types.
