@@ -27,7 +27,7 @@ languages.
 
 The color chosen will be assigned to the window when Trndi loads the user.
 The username is also displayed in the title bar.
-On Windows the nickname appears as a coloured badge in the top-right of the title bar (using the account colour); click it to open Settings. The titlebar also changes colour. On Linux/macOS the name prefixes the window title as `[name] Trndi` and a sidebar appears.
+On Windows the nickname appears as a coloured badge in the top-right of the title bar (using the account colour); click it to open Settings. The titlebar also changes colour. Linux gets the same badge whenever Trndi draws its own title bar (Wayland, or `ux.own_titlebar=on`) — without an account colour the badge tints itself from the title bar so it stays readable as the bar follows your glucose colour. Where neither applies (X11, macOS) the name prefixes the window title as `[name] Trndi` and a sidebar appears.
 
 ## Standard user
 There is always a standard user, you can assign it a nickname and color aswell. The standard user is the information you've saved before adding additional users. It cannot be removed.

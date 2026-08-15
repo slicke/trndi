@@ -397,8 +397,10 @@ begin
       multinick := userNick; // Set the multi user nickname
       // On platforms with a native title-bar badge (Windows) the name rides in
       // that badge — shown from FormShow — so skip the caption-text prefix.
+      // The drawn Wayland bar does not exist yet at this point; its identity
+      // chip takes over (and drops the prefix) from RefreshUserBadge.
       if not native.SupportsUserBadge then
-        fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
+        fbg.Caption := Format(RS_USER_CAPTION, [userNick, FBaseCaption]); // Set the main form title
     end
     else
     begin // Standard user
@@ -408,7 +410,7 @@ begin
       multinick := userNick; // Set the multi user nickname
       // See above: the badge platforms carry the name in the title-bar badge.
       if not native.SupportsUserBadge then
-        fbg.Caption := Format(RS_USER_CAPTION, [userNick, fBG.Caption]); // Set the main form title
+        fbg.Caption := Format(RS_USER_CAPTION, [userNick, FBaseCaption]); // Set the main form title
     end;
 
     multi := true; // Enable multi user support
@@ -662,6 +664,11 @@ var
 begin
   TrndiDLog(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
+
+  // Caption as designed. The multi-user name prefix is added to and removed
+  // from *this* — never to an already-prefixed caption — as the title-bar
+  // badge appears or disappears (see RefreshUserBadge).
+  FBaseCaption := Caption;
 
   // --kiosk: dedicated-display mode (RPi wall display, bedside screen).
   // FormShow schedules the actual activation: fullscreen, keep-awake, and no
