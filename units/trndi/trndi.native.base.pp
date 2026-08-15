@@ -472,6 +472,12 @@ class var touchOverride: TTrndiBool;
         compositor owns the decorations — excluding tiling compositors, which
         intentionally draw no titlebar at all). Base: @false. }
   class function NeedsCustomTitleBar: boolean; virtual;
+    {** True when running inside a Wayland session (Linux/BSD override) with
+        the toolkit actually on the Wayland backend — an app forced onto
+        XWayland gets X11 window management and answers @false. Wayland
+        compositors ignore application requests such as stay-on-top, so UI
+        that offers those can warn. Base: @false. }
+  class function IsWaylandSession: boolean; virtual;
     {** Route future @link(SetTitleColor) calls for the window identified by
         @param(provider) to @param(sink) instead of the (unsupported) native
         path. Re-registering the same sink replaces its provider. }
@@ -1969,6 +1975,11 @@ begin
 end;
 
 class function TTrndiNativeBase.NeedsCustomTitleBar: boolean;
+begin
+  Result := false;
+end;
+
+class function TTrndiNativeBase.IsWaylandSession: boolean;
 begin
   Result := false;
 end;
