@@ -129,6 +129,9 @@ protected
     // Stored wake callback; platform overrides invoke this when the OS
     // reports a resume-from-sleep event.
   FWakeCallback: TTrndiWakeCallback;
+    // Stored notification-click callback; platform overrides invoke this
+    // when the user activates one of Trndi's notifications.
+  FNoticeClickCallback: TTrndiWakeCallback;
     // Trend arrow shown next to the badge value ('' = off). Set by the UI
     // before setBadge; platform units decide how to render it (Windows
     // composites it into the taskbar icon, macOS appends it to the dock
@@ -430,6 +433,14 @@ class var touchOverride: TTrndiBool;
   procedure RegisterWakeCallback(const Callback: TTrndiWakeCallback); virtual;
     {** Stop listening for wake events and clear the registered callback. }
   procedure UnregisterWakeCallback; virtual;
+    {** Register a callback fired when the user clicks (activates) one of
+        Trndi's notifications. Only one callback may be active at a time; a
+        second call replaces the first, and @nil unregisters. Best-effort:
+        the base implementation just stores the callback, and platforms whose
+        notification path cannot report activation never fire it (Linux fires
+        it on the freedesktop @code(ActionInvoked) signal when notifications
+        go over D-Bus). }
+  procedure RegisterNoticeClickCallback(const Callback: TTrndiWakeCallback); virtual;
     {** Signal the start of a long-running update operation; platform units may
         show a progress indicator (taskbar, dock, etc.). Default no-op. }
   procedure updateBegin; virtual;
@@ -1060,6 +1071,13 @@ end;
 procedure TTrndiNativeBase.UnregisterWakeCallback;
 begin
   FWakeCallback := nil;
+end;
+
+procedure TTrndiNativeBase.RegisterNoticeClickCallback(const Callback: TTrndiWakeCallback);
+begin
+  // Base stores the callback; platform units override to also subscribe to
+  // the native notification-activation source.
+  FNoticeClickCallback := Callback;
 end;
 
 procedure TTrndiNativeBase.updateBegin;

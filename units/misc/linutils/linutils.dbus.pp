@@ -58,7 +58,9 @@ unit linutils.dbus;
     @item(method calls with a reply — @link(TDBusConn.CallBlocking))
     @item(signals — @link(TDBusConn.Send))
     @item(watching for someone else's signals — @link(TDBusConn.AddMatch) plus
-          @link(TDBusConn.NextSignal))
+          @link(TDBusConn.NextSignal) on a thread of one's own, or
+          @link(TDBusConn.SetSignalHandler) plus @link(TDBusConn.Pump) when the
+          watcher shares a thread with method calls (notification actions))
   )
 
   Arguments are appended in order with the @code(Add*) methods;
@@ -174,6 +176,8 @@ public
   {** Read the next argument as an object path (the portal's request
       handle), unwrapping variants. }
   function ReadObjectPath(out val: string): boolean;
+  {** Read the next argument as a string, unwrapping variants. }
+  function ReadString(out val: string): boolean;
 
   {** True when this message is the named signal. }
   function IsSignal(const iface, member: string): boolean;
@@ -181,6 +185,11 @@ public
   {** The underlying libdbus message. }
   property Handle: PDBusMessageRec read FMsg;
 end;
+
+{** Handler for messages delivered through @link(TDBusConn.SetSignalHandler).
+    The message is only borrowed: it is valid for the duration of the call and
+    freed by the connection afterwards. }
+TDBusSignalHandler = procedure(msg: TDBusMessage) of object;
 
 {**
   @abstract(A connection to one of the buses.)
@@ -193,6 +202,8 @@ TDBusConn = class
 private
   FConn: PDBusConnection;
   FPrivate: boolean;
+  FOnSignal: TDBusSignalHandler;
+  FFilterInstalled: boolean;
 public
   {** Connect to @param(kind).
 
@@ -225,8 +236,21 @@ public
   function AddMatch(const rule: string): boolean;
   {** Wait up to @param(timeoutMS) for the next incoming message and return
       it, or @nil if none arrived. The caller frees it. Only meaningful on a
-      private connection. }
+      private connection, and not on one that also has a
+      @link(SetSignalHandler) handler — dispatching and popping would race
+      for the same queue. }
   function NextSignal(timeoutMS: integer): TDBusMessage;
+
+  {** Deliver every incoming message (signals included) to @param(handler)
+      whenever @link(Pump) runs. Installs a libdbus filter, so — unlike
+      @link(NextSignal) — method replies still reach their blocked callers.
+      Pass @nil to stop. The handler runs on whichever thread calls
+      @link(Pump). }
+  procedure SetSignalHandler(const handler: TDBusSignalHandler);
+  {** Read whatever the bus has queued and dispatch it through the installed
+      handler, without blocking. Call periodically (a timer) on the thread
+      the handler should run on. }
+  procedure Pump;
 end;
 
 {** True when libdbus-1 could be loaded. Everything else in this unit is a
@@ -260,7 +284,16 @@ const
   DBUS_TYPE_DICT_ENTRY = 101; // 'e'
   DBUS_TYPE_BYTE = 121;     // 'y'
 
+  // DBusDispatchStatus: dispatch until the queue stops reporting this.
+  DBUS_DISPATCH_DATA_REMAINS = 0;
+  // DBusHandlerResult: a filter returning this leaves the message for others.
+  DBUS_HANDLER_RESULT_NOT_YET_HANDLED = 1;
+
 type
+// DBusHandleMessageFunction — the C callback dbus_connection_add_filter takes.
+TDBusRawFilterFn = function(conn: PDBusConnection; msg: PDBusMessageRec;
+  user_data: Pointer): cint; cdecl;
+
 PDBusError = ^TDBusError;
 {** Mirrors @code(DBusError). Only name/message are read here; the trailing
     block covers the private fields libdbus keeps after them. }
@@ -298,10 +331,17 @@ var
   dbus_connection_read_write: function(conn: PDBusConnection;
     timeout: cint): cint; cdecl;
   dbus_connection_pop_message: function(conn: PDBusConnection): PDBusMessageRec; cdecl;
+  dbus_connection_dispatch: function(conn: PDBusConnection): cint; cdecl;
+  dbus_connection_get_dispatch_status: function(conn: PDBusConnection): cint; cdecl;
+  dbus_connection_add_filter: function(conn: PDBusConnection;
+    fn: TDBusRawFilterFn; user_data: Pointer; free_data_fn: Pointer): cint; cdecl;
+  dbus_connection_remove_filter: procedure(conn: PDBusConnection;
+    fn: TDBusRawFilterFn; user_data: Pointer); cdecl;
   dbus_message_new_method_call: function(dest, path, iface,
     method: PAnsiChar): PDBusMessageRec; cdecl;
   dbus_message_new_signal: function(path, iface,
     member: PAnsiChar): PDBusMessageRec; cdecl;
+  dbus_message_ref: function(msg: PDBusMessageRec): PDBusMessageRec; cdecl;
   dbus_message_unref: procedure(msg: PDBusMessageRec); cdecl;
   dbus_message_is_signal: function(msg: PDBusMessageRec; iface,
     member: PAnsiChar): cint; cdecl;
@@ -317,6 +357,7 @@ var
   dbus_message_iter_get_arg_type: function(iter: PDBusIter): cint; cdecl;
   dbus_message_iter_get_basic: procedure(iter: PDBusIter; val: Pointer); cdecl;
   dbus_message_iter_recurse: procedure(iter, sub: PDBusIter); cdecl;
+  dbus_message_iter_next: function(iter: PDBusIter): cint; cdecl;
 
 {------------------------------------------------------------------------------
   Sym
@@ -373,9 +414,16 @@ begin
   Pointer(dbus_connection_flush) := Sym('dbus_connection_flush', missing);
   Pointer(dbus_connection_read_write) := Sym('dbus_connection_read_write', missing);
   Pointer(dbus_connection_pop_message) := Sym('dbus_connection_pop_message', missing);
+  Pointer(dbus_connection_dispatch) := Sym('dbus_connection_dispatch', missing);
+  Pointer(dbus_connection_get_dispatch_status) :=
+    Sym('dbus_connection_get_dispatch_status', missing);
+  Pointer(dbus_connection_add_filter) := Sym('dbus_connection_add_filter', missing);
+  Pointer(dbus_connection_remove_filter) :=
+    Sym('dbus_connection_remove_filter', missing);
   Pointer(dbus_message_new_method_call) :=
     Sym('dbus_message_new_method_call', missing);
   Pointer(dbus_message_new_signal) := Sym('dbus_message_new_signal', missing);
+  Pointer(dbus_message_ref) := Sym('dbus_message_ref', missing);
   Pointer(dbus_message_unref) := Sym('dbus_message_unref', missing);
   Pointer(dbus_message_is_signal) := Sym('dbus_message_is_signal', missing);
   Pointer(dbus_message_iter_init_append) :=
@@ -392,6 +440,7 @@ begin
   Pointer(dbus_message_iter_get_basic) :=
     Sym('dbus_message_iter_get_basic', missing);
   Pointer(dbus_message_iter_recurse) := Sym('dbus_message_iter_recurse', missing);
+  Pointer(dbus_message_iter_next) := Sym('dbus_message_iter_next', missing);
 
   if missing then
   begin
@@ -645,6 +694,10 @@ begin
   if dbus_message_iter_get_arg_type(@iter) <> argType then
     Exit;
   dbus_message_iter_get_basic(@iter, val);
+  // Step the top-level cursor past the consumed argument (variant wrapping
+  // and all) so multi-argument messages — ActionInvoked carries an id and an
+  // action key — can be read with consecutive Read* calls.
+  dbus_message_iter_next(@FRead);
   Result := true;
 end;
 
@@ -674,6 +727,18 @@ begin
   val := '';
   // The pointed-to characters belong to the message; copy before it is freed.
   Result := ReadBasic(DBUS_TYPE_OBJECT_PATH, @p);
+  if Result and (p <> nil) then
+    val := string(p);
+end;
+
+function TDBusMessage.ReadString(out val: string): boolean;
+var
+  p: PAnsiChar;
+begin
+  p := nil;
+  val := '';
+  // The pointed-to characters belong to the message; copy before it is freed.
+  Result := ReadBasic(DBUS_TYPE_STRING, @p);
   if Result and (p <> nil) then
     val := string(p);
 end;
@@ -733,6 +798,9 @@ destructor TDBusConn.Destroy;
 begin
   if FConn <> nil then
   begin
+    // The filter holds a pointer to this object as its user data; on a
+    // shared connection it would outlive us and dangle, so take it out first.
+    SetSignalHandler(nil);
     // Only private connections may be closed — the shared one belongs to the
     // whole process and closing it would break every other user. Both kinds
     // hand out a reference that has to go back.
@@ -870,6 +938,70 @@ begin
   end;
   if msg <> nil then
     Result := TDBusMessage.Create(msg);
+end;
+
+{------------------------------------------------------------------------------
+  FilterTrampoline
+  ----------------
+  The one C-shaped callback behind SetSignalHandler. Filters only borrow the
+  message, so a reference is taken before handing it to the wrapper, whose
+  destructor gives it back. Always returns NOT_YET_HANDLED: watching must not
+  eat anything another part of libdbus (a blocked method reply, another
+  filter) is waiting for.
+ ------------------------------------------------------------------------------}
+function FilterTrampoline(conn: PDBusConnection; msg: PDBusMessageRec;
+user_data: Pointer): cint; cdecl;
+var
+  wrapped: TDBusMessage;
+begin
+  Result := DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+  if (user_data = nil) or (msg = nil) then
+    Exit;
+  if not Assigned(TDBusConn(user_data).FOnSignal) then
+    Exit;
+  wrapped := TDBusMessage.Create(dbus_message_ref(msg));
+  try
+    try
+      TDBusConn(user_data).FOnSignal(wrapped);
+    except
+      // A handler exception must not unwind through libdbus's C stack.
+    end;
+  finally
+    wrapped.Free;
+  end;
+end;
+
+procedure TDBusConn.SetSignalHandler(const handler: TDBusSignalHandler);
+begin
+  FOnSignal := handler;
+  if FConn = nil then
+    Exit;
+  if Assigned(handler) and (not FFilterInstalled) then
+    FFilterInstalled :=
+      dbus_connection_add_filter(FConn, @FilterTrampoline, Self, nil) <> 0
+  else if (not Assigned(handler)) and FFilterInstalled then
+  begin
+    dbus_connection_remove_filter(FConn, @FilterTrampoline, Self);
+    FFilterInstalled := false;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  Pump
+  ----
+  Nonblocking: pull whatever bytes the socket has, then dispatch queued
+  messages one at a time until the queue reports complete. Dispatching is what
+  runs the installed filter.
+ ------------------------------------------------------------------------------}
+procedure TDBusConn.Pump;
+begin
+  if FConn = nil then
+    Exit;
+  if dbus_connection_read_write(FConn, 0) = 0 then
+    Exit; // disconnected
+  while dbus_connection_get_dispatch_status(FConn) = DBUS_DISPATCH_DATA_REMAINS do
+    if dbus_connection_dispatch(FConn) <> DBUS_DISPATCH_DATA_REMAINS then
+      Break;
 end;
 
 end.

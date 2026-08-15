@@ -731,6 +731,7 @@ private
   procedure tBootSpinnerTimer(Sender: TObject);
   procedure StopBootSpinner;
   procedure OnSystemWake;
+  procedure OnNoticeClick;
   procedure DeferredPostFetchResize(Data: PtrInt);
 
   function dotsInView: integer;
@@ -2061,6 +2062,11 @@ begin
   // form's window handle is allocated (Windows path subclasses its WndProc).
   if Assigned(native) then
     native.RegisterWakeCallback(@OnSystemWake);
+
+  // Bring the window back when the user clicks one of our notifications
+  // (best-effort; platforms without click reporting never fire it).
+  if Assigned(native) then
+    native.RegisterNoticeClickCallback(@OnNoticeClick);
 
   // Show the multi-user name as a native title-bar badge (Windows). Done here
   // so the handle is allocated and the badge's owner-subclass chains on top of
