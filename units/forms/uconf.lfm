@@ -1788,6 +1788,7 @@ object fConf: TfConf
             Top = 24
             Width = 165
             Caption = 'Keep window always on top'
+            OnChange = cbOnTopChange
             TabOrder = 1
           end
           object cbNoBorders: TCheckBox
