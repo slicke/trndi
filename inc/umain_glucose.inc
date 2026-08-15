@@ -2036,19 +2036,35 @@ begin
   if hasBadge then
     pnMultiUser.Visible := false;
 
-  if (not multi or hasBadge)
-    and titlecolor
-    and UseRangeColor then
-  begin
-    Result := SetSingleColorMode;
-    Exit;
-  end
-  else
+  // With range colors off the window keeps its plain background, so the
+  // off-range banner is what carries the range tint — and it lends it to the
+  // title bar. That is a *reading* color though, so it only holds while the
+  // reading is current: during an outage the window is repainted in
+  // STALE_BG_COLOR and a bar still advertising a range would contradict it.
+  // (The banner rule needs UseRangeColor off, the window rule below needs it
+  // on in exactly the cases it used to, so the two never compete.)
   if not UseRangeColor
-    and pnOffRange.Visible then
+    and pnOffRange.Visible
+    and (not FTrendDataStale) then
     if native.SetTitleColor(handle, pnOffRange.Color,
       IfThen(IsLightColor(pnOffRange.Color), clBlack, clWhite)) then
       Exit(true);
+
+  // Otherwise the bar simply mirrors the window. It used to reach this only
+  // while UseRangeColor was on, which tied "is the bar colored at all" to the
+  // banner's visibility — a state that depends on the ux.range_color option
+  // and on where the value happens to sit. Backends that publish no personal
+  // range (Dexcom: cgmRangeLo/Hi stay at their disabled sentinels, so
+  // UpdateApiInformation turns UseRangeColor off and the banner never shows)
+  // therefore stranded the bar on the last color it managed to get, and an
+  // outage left it advertising the glucose color of a reading that was no
+  // longer current.
+  if (not multi or hasBadge)
+    and titlecolor then
+  begin
+    Result := SetSingleColorMode;
+    Exit;
+  end;
 
   // Without a badge, tint the title bar with the user's colour (and drop the
   // now-redundant left colour bar). With a badge the colour is on the badge,
