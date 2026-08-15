@@ -171,6 +171,9 @@ public
   function ReadUInt32(out val: cardinal): boolean;
   {** Read the next argument as a boolean, unwrapping variants. }
   function ReadBoolean(out val: boolean): boolean;
+  {** Read the next argument as an object path (the portal's request
+      handle), unwrapping variants. }
+  function ReadObjectPath(out val: string): boolean;
 
   {** True when this message is the named signal. }
   function IsSignal(const iface, member: string): boolean;
@@ -251,6 +254,7 @@ const
   DBUS_TYPE_INT64 = 120;    // 'x'
   DBUS_TYPE_DOUBLE = 100;   // 'd'
   DBUS_TYPE_STRING = 115;   // 's'
+  DBUS_TYPE_OBJECT_PATH = 111; // 'o'
   DBUS_TYPE_ARRAY = 97;     // 'a'
   DBUS_TYPE_VARIANT = 118;  // 'v'
   DBUS_TYPE_DICT_ENTRY = 101; // 'e'
@@ -660,6 +664,18 @@ begin
   v := 0;
   Result := ReadBasic(DBUS_TYPE_BOOLEAN, @v);
   val := v <> 0;
+end;
+
+function TDBusMessage.ReadObjectPath(out val: string): boolean;
+var
+  p: PAnsiChar;
+begin
+  p := nil;
+  val := '';
+  // The pointed-to characters belong to the message; copy before it is freed.
+  Result := ReadBasic(DBUS_TYPE_OBJECT_PATH, @p);
+  if Result and (p <> nil) then
+    val := string(p);
 end;
 
 function TDBusMessage.IsSignal(const iface, member: string): boolean;
