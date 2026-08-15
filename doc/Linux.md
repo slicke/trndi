@@ -11,7 +11,7 @@ On **Wayland** sessions Trndi draws its own title bar instead: the compositor's 
 **Tiling compositors** (Hyprland, sway, river, …) are an exception: they intentionally draw no title bar and windows are managed with keybinds, so `auto` skips the drawn bar there and the window simply keeps the compositor's border. Set `ux.own_titlebar=on` if you run Trndi floating and want the colored bar anyway.
 
 ## Multiple users
-Each user gets their own color and nickname (Settings > Multi User). With the native (X11) title bar there's nothing to badge, so the window title is prefixed with `[name] Trndi` and a small sidebar showing the account appears in the window itself. With the drawn title bar (automatic on Wayland desktops other than tiling compositors, or forced with `ux.own_titlebar=on`), the bar itself takes the account color like on Windows.
+Each user gets their own color and nickname (Settings > Multi User). With the native (X11) title bar there's nothing to badge, so the window title is prefixed with `[name] Trndi` and a small sidebar showing the account appears in the window itself. With the drawn title bar (automatic on Wayland desktops other than tiling compositors, or forced with `ux.own_titlebar=on`), the nickname rides in the bar itself as a clickable badge at the top right — in the account color, exactly like the Windows title-bar badge — and clicking it opens Settings. The caption prefix and the sidebar are then dropped as redundant, and the bar goes back to following your glucose color. Accounts without a color get a badge tinted from the bar, so it stays readable whatever the reading is.
 
 ## Notifications
 Trndi auto-selects a notification backend, no configuration needed:

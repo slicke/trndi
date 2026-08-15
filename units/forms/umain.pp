@@ -1108,9 +1108,17 @@ private
   procedure InitializeUIComponents;
   procedure InitializeSplashScreen;
   procedure LoadUserProfile;
-  {** (Re)create the native multi-user title-bar badge (Windows) from the
-      current nickname and user colour. No-op where badges are unsupported. }
+  {** (Re)create the multi-user title-bar badge — the native one on Windows,
+      the drawn bar's identity chip on Wayland — from the current nickname and
+      user colour, and put the name in the caption text where neither exists.
+      No-op outside multi-user mode. }
   procedure RefreshUserBadge;
+  {** True while the active user's name rides in a title-bar badge instead of
+      the "[name] Trndi" caption prefix. }
+  function UserBadgeActive: boolean;
+  {** Set the window caption with or without the multi-user name prefix.
+      Idempotent: always rebuilt from the badge-free caption. }
+  procedure ApplyUserCaption(const withNick: boolean);
   {** Click handler for the title-bar badge — opens Settings. }
   procedure UserBadgeClicked;
   procedure CheckAndAcceptLicense;
@@ -1126,6 +1134,9 @@ private
     // cannot be tinted or removed (Wayland). See inc/umain_titlebar.inc.
   FTitleBar: TSlickeTitleBar;
   FWindowGrips: TSlickeWindowGrips; // Edge grips keeping the frameless window resizable
+    // Caption as designed, without the multi-user "[name] " prefix: the prefix
+    // comes and goes with the badge, so it is always rebuilt from this.
+  FBaseCaption: string;
     {** True while the application-drawn title bar is in use. }
   function OwnTitleBarActive: boolean;
     {** Height the drawn bar occupies at the top of the client area (0 when
@@ -1138,6 +1149,9 @@ private
     {** Bar's maximize button / double-click: enter Trndi's fullscreen (the
         bar hides there; Esc or F leaves) instead of a plain maximize. }
   procedure TitleBarMaximizeRequest({%H-}Sender: TObject);
+    {** Drawn bar's identity chip was clicked — same target as the Windows
+        badge: Settings. }
+  procedure TitleBarBadgeClick({%H-}Sender: TObject);
     {** Create/tear down the bar per platform capability and settings. }
   procedure ApplyOwnTitleBar;
     {** Give a modal helper form (Settings, wizard) the drawn title bar on

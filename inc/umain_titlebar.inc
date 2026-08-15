@@ -56,6 +56,11 @@
 // on the drawn bar and return true, exactly like DWM/Cocoa do on Windows and
 // macOS. The handful of top-anchored controls (off-range panel, TIR label,
 // clock, warning banner) offset themselves by TitleBarOffset.
+//
+// Owning the bar also means the multi-user name can live in it: the bar draws
+// an identity chip (TSlickeTitleBar.SetUserBadge) where Windows overlays its
+// native title-bar badge, so Wayland gets the same "[name] Trndi" prefix-free
+// caption. RefreshUserBadge in umain_glucose.inc picks between the two.
 
 {------------------------------------------------------------------------------
   State queries
@@ -112,6 +117,13 @@ begin
     WindowState := wsNormal
   else
     DoFullScreen;
+end;
+
+// The identity chip is the drawn bar's counterpart to the Windows title-bar
+// badge, and leads to the same place: Settings, where the account is switched.
+procedure TfBG.TitleBarBadgeClick({%H-}Sender: TObject);
+begin
+  UserBadgeClicked;
 end;
 
 // Helper forms shown modally (Settings, first-run wizard) are plain TForms,
@@ -188,6 +200,10 @@ begin
     // The caller (FormCreate/ApplySettingsInstantly) owns BorderStyle when
     // the bar is off; nothing to restore here.
   end;
+
+  // The bar carries the multi-user identity chip, so its arrival or departure
+  // decides whether the name sits in the bar or back in the caption text.
+  RefreshUserBadge;
 end;
 
 // Keep bar/grip visibility in sync with the window state: fullscreen hides

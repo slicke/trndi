@@ -34,6 +34,8 @@ private
   FButtons: TSlickeTitleBarButtons;
   FBg: TColor;
   FText: TColor;
+  FBadgeText: string;
+  FOnBadgeClick: TNotifyEvent;
   FOnCloseRequest: TNotifyEvent;
   FOnMinimizeRequest: TNotifyEvent;
   FOnMaximizeRequest: TNotifyEvent;
@@ -42,8 +44,13 @@ public
   procedure UpdateMetrics;
   procedure SetColors(ABg, AText: TColor);
   procedure RefreshTitle;
+  procedure SetUserBadge(const AText: string; ABg: TColor = clNone;
+    ATextColor: TColor = clNone);
+  procedure ClearUserBadge;
   property Title: string read FTitle write FTitle;
   property Buttons: TSlickeTitleBarButtons read FButtons write FButtons;
+  property BadgeText: string read FBadgeText;
+  property OnBadgeClick: TNotifyEvent read FOnBadgeClick write FOnBadgeClick;
   property BarColor: TColor read FBg;
   property BarTextColor: TColor read FText;
   property OnCloseRequest: TNotifyEvent read FOnCloseRequest write FOnCloseRequest;
@@ -90,6 +97,19 @@ end;
 
 procedure TSlickeTitleBar.RefreshTitle;
 begin
+end;
+
+// Recorded rather than drawn, so a test can still assert which name the bar
+// was asked to show.
+procedure TSlickeTitleBar.SetUserBadge(const AText: string;
+ABg, ATextColor: TColor);
+begin
+  FBadgeText := AText;
+end;
+
+procedure TSlickeTitleBar.ClearUserBadge;
+begin
+  FBadgeText := '';
 end;
 
 procedure TSlickeWindowGrips.EnsureOnTop;

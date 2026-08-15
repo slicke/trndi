@@ -2026,13 +2026,14 @@ begin
   if not nocolor then
     fBG.Color := bg;
 
-  // On badge platforms (Windows) the active user's identity is shown by the
-  // title-bar badge, so multi-user mode is normalised to the single-user rule:
-  // the title bar follows the "colour with glucose colour" preference instead
-  // of being forced to the user colour. The main-form colour bar is redundant
-  // next to the badge, so hide it (the borderless float window keeps its bar,
+  // With a title-bar badge (Windows' native one, or the drawn bar's identity
+  // chip on Wayland) the active user's identity is already visible, so
+  // multi-user mode is normalised to the single-user rule: the title bar
+  // follows the "colour with glucose colour" preference instead of being
+  // forced to the user colour. The main-form colour bar is redundant next to
+  // the badge, so hide it (the borderless float window keeps its bar,
   // mirrored from userColorBar).
-  hasBadge := multi and native.SupportsUserBadge;
+  hasBadge := UserBadgeActive;
   if hasBadge then
     pnMultiUser.Visible := false;
 
@@ -2099,17 +2100,32 @@ begin
   miSettingsClick(Self);
 end;
 
+// True when the name has somewhere better to live than the caption text: the
+// native title-bar badge (Windows) or the identity chip on the application
+// drawn bar (Wayland).
+function TfBG.UserBadgeActive: boolean;
+begin
+  Result := multi and (native.SupportsUserBadge or OwnTitleBarActive);
+end;
+
+procedure TfBG.ApplyUserCaption(const withNick: boolean);
+begin
+  if FBaseCaption = '' then
+    Exit;
+  if withNick and multi then
+    Caption := Format(RS_USER_CAPTION, [multinick, FBaseCaption])
+  else
+    Caption := FBaseCaption;
+end;
+
 procedure TfBG.RefreshUserBadge;
-{$ifdef X_WIN}
 var
   bg, txt: TColor;
-{$endif}
 begin
-{$ifdef X_WIN}
-  if not (multi and native.SupportsUserBadge) then
+  if not multi then
     Exit;
 
-  // The pill wears the user's colour when set; otherwise a subtle theme-aware
+  // The badge wears the user's colour when set; otherwise a subtle theme-aware
   // chip so the name stays legible on the default caption.
   if pnMultiUser.Color <> clBlack then
     bg := pnMultiUser.Color
@@ -2122,11 +2138,33 @@ begin
   // light account colours such as yellow.
   txt := IfThen(IsLightColor(bg), clBlack, clWhite);
 
-  if not native.ShowUserBadge(multinick, bg, txt, @UserBadgeClicked) then
-    // Badge could not be created — fall back to the caption-text prefix once.
-    if Pos('[', Caption) = 0 then
-      Caption := Format(RS_USER_CAPTION, [multinick, Caption]);
+  // Drawn bar (Wayland): the chip lives inside the bar we paint ourselves, so
+  // no platform support is needed. Without an account colour it is left to
+  // tint itself from the bar — which recolours with every reading, and a fixed
+  // grey chip would clash with it.
+  if OwnTitleBarActive then
+  begin
+    FTitleBar.OnBadgeClick := @TitleBarBadgeClick;
+    if pnMultiUser.Color <> clBlack then
+      FTitleBar.SetUserBadge(multinick, bg, txt)
+    else
+      FTitleBar.SetUserBadge(multinick);
+    ApplyUserCaption(false); // the chip carries the name; no caption prefix
+    Exit;
+  end;
+
+{$ifdef X_WIN}
+  if native.SupportsUserBadge and
+    native.ShowUserBadge(multinick, bg, txt, @UserBadgeClicked) then
+  begin
+    ApplyUserCaption(false);
+    Exit;
+  end;
 {$endif}
+
+  // No badge anywhere (X11/macOS, or a badge that could not be created): the
+  // name goes back into the caption text.
+  ApplyUserCaption(true);
 end;
 
 function TfBG.CalculateReadingsHash(const Readings: array of BGReading): cardinal;
