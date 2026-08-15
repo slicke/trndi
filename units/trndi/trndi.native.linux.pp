@@ -102,7 +102,23 @@ protected
     // instead of stacking another copy behind it.
   FLastNoticeId: cardinal;
   FLastNoticeTopic: string;
+    // Notification-click support. GNOME directs ActionInvoked at whichever
+    // connection posted the toast, so posting and listening must share one
+    // connection: this private one, created when a click callback registers
+    // and pumped by FNotifyPumpTimer on the main thread. FLiveNoticeIds holds
+    // the ids of Trndi's own toasts still up, telling our activation signals
+    // apart from other applications' (ids are server-global).
+  FNotifyConn: TDBusConn;
+  FNotifyPumpTimer: TTimer;
+  FLiveNoticeIds: array of cardinal;
   procedure FlashTimerTick(Sender: TObject);
+  procedure NotifyPumpTick(Sender: TObject);
+    // Handler behind FNotifyConn.SetSignalHandler: reacts to the freedesktop
+    // ActionInvoked/ActivationToken/NotificationClosed signals.
+  procedure HandleNotifySignal(msg: TDBusMessage);
+  procedure RememberNoticeId(id: cardinal);
+  procedure ForgetNoticeId(id: cardinal);
+  function IsLiveNoticeId(id: cardinal): boolean;
     {** Resolve the INI/CFG file path with backward compatibility.
         Preference order: Lazarus app config, ~/.config/Trndi/trndi.ini, legacy ~/.config/Trndi.cfg }
   function ResolveIniPath: string; virtual;
@@ -272,6 +288,15 @@ public
   procedure RegisterWakeCallback(const Callback: TTrndiWakeCallback); override;
     {** Stop the monitor thread (and its gdbus child, if it had one). }
   procedure UnregisterWakeCallback; override;
+    {** Fire @param(Callback) when the user clicks one of Trndi's
+        notifications. Only works where notifications go over libdbus (the
+        Qt6 D-Bus path): a persistent private session connection both posts
+        the toasts and receives the server's @code(ActionInvoked) signal, and
+        an @code(ActivationToken) the server hands out is exported as
+        @code(XDG_ACTIVATION_TOKEN) so the focus request succeeds on Wayland.
+        The gdbus/notify-send fallbacks cannot report clicks and stay
+        click-less. }
+  procedure RegisterNoticeClickCallback(const Callback: TTrndiWakeCallback); override;
 
 end;
 
@@ -279,6 +304,15 @@ implementation
 
 uses
 Types, LCLType;
+
+resourcestring
+RS_NOTICE_SHOW = 'Show Trndi';
+
+// glibc setenv(3). Used to export the notification server's activation token
+// as XDG_ACTIVATION_TOKEN, which Qt's Wayland backend consumes on the next
+// window-activation request.
+function c_setenv(Name, Value: PAnsiChar; Overwrite: cint): cint;
+cdecl; external 'c' Name 'setenv';
 
 // Used by destructor; implemented later in this unit.
 procedure WriteTrndiCurrentValueCache(const Value: string); forward;
@@ -1459,6 +1493,7 @@ function NotifyViaDBus(const Title, Msg: string; out NewId: cardinal): boolean;
     call, reply: TDBusMessage;
     replaces: cardinal;
     expires: integer;
+    ownConn: boolean;
   begin
     Result := false;
     NewId := 0;
@@ -1479,7 +1514,14 @@ function NotifyViaDBus(const Title, Msg: string; out NewId: cardinal): boolean;
     else
       expires := noticeDuration;
 
-    conn := TDBusConn.Create(dbSession);
+    // Post through the click-listener's connection when one is up: GNOME
+    // directs ActionInvoked at the connection that sent Notify, so a toast
+    // posted elsewhere would have an unhearable click.
+    ownConn := (FNotifyConn = nil) or (not FNotifyConn.Connected);
+    if ownConn then
+      conn := TDBusConn.Create(dbSession)
+    else
+      conn := FNotifyConn;
     try
       call := conn.NewCall('org.freedesktop.Notifications',
         '/org/freedesktop/Notifications', 'org.freedesktop.Notifications',
@@ -1491,7 +1533,12 @@ function NotifyViaDBus(const Title, Msg: string; out NewId: cardinal): boolean;
       call.AddString('');        // app_icon: resolved from desktop-entry below
       call.AddString(Title);     // summary
       call.AddString(Msg);       // body
-      call.AddStringArray([]);   // actions
+      // actions: 'default' is the key servers fire when the toast body
+      // itself is clicked; GNOME and KDE render no extra button for it.
+      if (not ownConn) and Assigned(FNoticeClickCallback) then
+        call.AddStringArray(['default', RS_NOTICE_SHOW])
+      else
+        call.AddStringArray([]);
       call.OpenDict;             // hints
       // Ties the toast to trndi.desktop, which is how KDE and GNOME find our
       // icon and group the notification under the application.
@@ -1507,12 +1554,14 @@ function NotifyViaDBus(const Title, Msg: string; out NewId: cardinal): boolean;
         // The id is only useful for replacing this notification later; a
         // server that answers at all has accepted it.
         reply.ReadUInt32(NewId);
+        RememberNoticeId(NewId);
         Result := true;
       finally
         reply.Free;
       end;
     finally
-      conn.Free;
+      if ownConn then
+        conn.Free;
     end;
   end;
 
@@ -1884,6 +1933,12 @@ begin
     Tray.Free;
   if Assigned(FFlashTimer) then
     FreeAndNil(FFlashTimer);
+  // Stop the pump before the connection it pumps goes away; the connection's
+  // destructor removes the signal filter pointing back at this object.
+  if Assigned(FNotifyPumpTimer) then
+    FreeAndNil(FNotifyPumpTimer);
+  if Assigned(FNotifyConn) then
+    FreeAndNil(FNotifyConn);
   if Assigned(inistore) then
     inistore.Free;
   inherited Destroy;
@@ -3770,6 +3825,156 @@ begin
   if Assigned(gWakeBridge) then
     gWakeBridge.Callback := nil;
   inherited UnregisterWakeCallback;
+end;
+
+{------------------------------------------------------------------------------
+  Notification clicks (Linux)
+  ---------------------------
+  The freedesktop notification server reports a click as the ActionInvoked
+  signal, preceded on Wayland-aware servers (GNOME, Plasma) by an
+  ActivationToken carrying an xdg-activation token. GNOME directs both at the
+  connection that posted the toast — broadcast match rules never see them —
+  so a persistent private connection does double duty: NotifyViaDBus posts
+  through it and a timer on the main thread pumps its incoming queue, which
+  keeps the callback on the main thread with no marshalling. Broadcast-style
+  servers (dunst, mako) are covered by the added match rule on the same
+  connection.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeLinux.RegisterNoticeClickCallback(const Callback: TTrndiWakeCallback);
+begin
+  inherited RegisterNoticeClickCallback(Callback);
+  {$IFDEF LCLQt6}
+  if not Assigned(Callback) then
+  begin
+    if Assigned(FNotifyPumpTimer) then
+      FNotifyPumpTimer.Enabled := false;
+    Exit;
+  end;
+  if FNotifyConn <> nil then
+  begin
+    FNotifyPumpTimer.Enabled := true; // re-registration after an unregister
+    Exit;
+  end;
+  if not DBusAvailable then
+  begin
+    TrndiDLog('RegisterNoticeClickCallback: libdbus unavailable; ' +
+      'notification clicks disabled');
+    Exit;
+  end;
+  FNotifyConn := TDBusConn.Create(dbSession, true);
+  if not FNotifyConn.Connected then
+  begin
+    FreeAndNil(FNotifyConn);
+    TrndiDLog('RegisterNoticeClickCallback: no session bus; ' +
+      'notification clicks disabled');
+    Exit;
+  end;
+  FNotifyConn.AddMatch('type=''signal'',' +
+    'interface=''org.freedesktop.Notifications''');
+  FNotifyConn.SetSignalHandler(@HandleNotifySignal);
+  FNotifyPumpTimer := TTimer.Create(nil);
+  FNotifyPumpTimer.Interval := 250;
+  FNotifyPumpTimer.OnTimer := @NotifyPumpTick;
+  FNotifyPumpTimer.Enabled := true;
+  {$ELSE}
+  // Non-Qt6 builds notify via notify-send, which cannot report clicks.
+  {$ENDIF}
+end;
+
+procedure TTrndiNativeLinux.NotifyPumpTick(Sender: TObject);
+begin
+  if FNotifyConn <> nil then
+    FNotifyConn.Pump;
+end;
+
+procedure TTrndiNativeLinux.HandleNotifySignal(msg: TDBusMessage);
+const
+  NOTIF_IFACE = 'org.freedesktop.Notifications';
+var
+  id: cardinal;
+  s: string;
+begin
+  if msg.IsSignal(NOTIF_IFACE, 'ActivationToken') then
+  begin
+    // Arrives just before ActionInvoked. Exported to the environment, the
+    // token lets Qt's Wayland backend turn the coming focus request into an
+    // xdg-activation the compositor honors; it consumes the variable on use.
+    if msg.ReadUInt32(id) and IsLiveNoticeId(id) and
+      msg.ReadString(s) and (s <> '') then
+      c_setenv('XDG_ACTIVATION_TOKEN', PAnsiChar(RawByteString(s)), 1);
+  end
+  else if msg.IsSignal(NOTIF_IFACE, 'ActionInvoked') then
+  begin
+    if msg.ReadUInt32(id) and IsLiveNoticeId(id) and
+      msg.ReadString(s) and (s = 'default') and
+      Assigned(FNoticeClickCallback) then
+      try
+        FNoticeClickCallback();
+      except
+        // A UI handler must not unwind into the dispatch loop.
+      end;
+  end
+  else if msg.IsSignal(NOTIF_IFACE, 'NotificationClosed') then
+    if msg.ReadUInt32(id) then
+    begin
+      ForgetNoticeId(id);
+      // A dismissed toast must not be the replace target for the next alert
+      // of the same topic; the server would silently resurrect it.
+      if id = FLastNoticeId then
+      begin
+        FLastNoticeId := 0;
+        FLastNoticeTopic := '';
+      end;
+    end;
+end;
+
+procedure TTrndiNativeLinux.RememberNoticeId(id: cardinal);
+var
+  i, n: integer;
+begin
+  if id = 0 then
+    Exit;
+  for i := 0 to High(FLiveNoticeIds) do
+    if FLiveNoticeIds[i] = id then
+      Exit;
+  n := Length(FLiveNoticeIds);
+  if n >= 32 then
+  begin
+    // A server that never reports closes must not grow this forever; shed
+    // the oldest, whose toast is long gone anyway.
+    for i := 0 to n - 2 do
+      FLiveNoticeIds[i] := FLiveNoticeIds[i + 1];
+    FLiveNoticeIds[n - 1] := id;
+  end
+  else
+  begin
+    SetLength(FLiveNoticeIds, n + 1);
+    FLiveNoticeIds[n] := id;
+  end;
+end;
+
+procedure TTrndiNativeLinux.ForgetNoticeId(id: cardinal);
+var
+  i, j: integer;
+begin
+  for i := 0 to High(FLiveNoticeIds) do
+    if FLiveNoticeIds[i] = id then
+    begin
+      for j := i to High(FLiveNoticeIds) - 1 do
+        FLiveNoticeIds[j] := FLiveNoticeIds[j + 1];
+      SetLength(FLiveNoticeIds, Length(FLiveNoticeIds) - 1);
+      Exit;
+    end;
+end;
+
+function TTrndiNativeLinux.IsLiveNoticeId(id: cardinal): boolean;
+var
+  i: integer;
+begin
+  Result := false;
+  for i := 0 to High(FLiveNoticeIds) do
+    if FLiveNoticeIds[i] = id then
+      Exit(true);
 end;
 
 initialization

@@ -1004,6 +1004,20 @@ begin
   updateReading;
 end;
 
+// Fired by trndi.native when the user clicks one of Trndi's notifications:
+// bring the main window back. Invoked on the main thread. On Wayland the
+// platform layer has already exported the server's activation token (when
+// one was provided), so the focus request can actually take effect.
+procedure TfBG.OnNoticeClick;
+begin
+  if FShuttingDown then
+    Exit;
+  if WindowState = wsMinimized then
+    WindowState := wsNormal;
+  Show;
+  BringToFront;
+end;
+
 // Ticks once a second for as long as data is stale. The age and the retry
 // countdown live on the status card, so this just asks the card to recompute
 // its captions (and to re-lay out if the outage crossed an escalation

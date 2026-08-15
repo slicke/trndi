@@ -95,11 +95,12 @@ If you don’t see a notification, check System Settings → Notifications & Foc
 - KDE/GNOME‑like desktops (under Qt6 builds): `org.freedesktop.Notifications` over D‑Bus, spoken directly through `libdbus-1`; the `gdbus` command‑line tool is used only if that library is missing.
 - Other desktops or when D‑Bus isn’t suitable: Falls back to notify-send.
 
-On the direct D‑Bus path the toasts carry three things the older path could not:
+On the direct D‑Bus path the toasts carry four things the older path could not:
 
 - **Low blood sugar is sent as urgent** (freedesktop `urgency=2`). Your desktop shows it through Do Not Disturb and leaves it on screen until you dismiss it, rather than fading after a few seconds. Everything else — highs, missing readings, reservoir, sensor and battery warnings — is sent at normal urgency and behaves as before.
 - **Repeats replace rather than pile up.** A second low alert updates the toast already on screen instead of stacking another copy behind it. Only a notice with the same title replaces its predecessor, so a low alert never overwrites a sensor warning still waiting to be read.
 - **The toast is attributed to Trndi** (`desktop-entry` hint), so your desktop shows the Trndi icon and groups the notifications under the app in its history.
+- **Clicking a toast brings Trndi back.** The notification carries a `default` action, and Trndi listens for the server's `ActionInvoked` signal — so clicking an alert raises the main window. On Wayland the focus request rides the activation token the server hands out (GNOME and Plasma provide one); a compositor that provides none may only mark the window as wanting attention instead of focusing it.
 
 Notes
 - notify-send is usually provided by libnotify; install it from your distro if missing.
