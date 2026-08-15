@@ -503,6 +503,7 @@ TfConf = class(TForm)
   procedure bShortModeHelpClick(Sender: TObject);
   procedure bWarnHiLowHelpClick(Sender: TObject);
   procedure cbMediaDisableChange(Sender: TObject);
+  procedure cbOnTopChange(Sender: TObject);
   function validateUser(var error: string): boolean;
   procedure bAddClick({%H-}Sender: TObject);
   procedure bBadgeFlashHelpClick({%H-}Sender: TObject);
@@ -1762,6 +1763,15 @@ end;
 procedure TfConf.cbMediaDisableChange(Sender: TObject);
 begin
   gbMedia.Enabled := not cbMediaDisable.checked;
+end;
+
+procedure TfConf.cbOnTopChange(Sender: TObject);
+begin
+  // Wayland compositors ignore an application's stay-on-top request, so the
+  // setting only takes effect through a compositor-side rule — tell the user
+  // how instead of failing silently.
+  if cbOnTop.Checked and self.Showing and TrndiNative.IsWaylandSession then
+    ShowMessage(RS_WAYLAND);
 end;
 
 procedure TfConf.bDisableMediaHelpClick(Sender: TObject);
