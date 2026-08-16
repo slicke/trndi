@@ -596,9 +596,22 @@ begin
   end;
 end;
 
+  // Helper: pick the timestamp field to date a reading by. ST is the receiver's
+  // own system clock, which drifts and which neither reference implementation
+  // trusts; WT is the unambiguous wall-time epoch. See the fuller note in
+  // trndi.api.dexcomNew, which makes the same choice.
+function ReadingTimeField(Item: TJSONData): string;
+  begin
+    Result := SafeString(Item, 'WT');
+    if Result = '' then
+      Result := SafeString(Item, 'DT');
+    if Result = '' then
+      Result := SafeString(Item, 'ST');
+  end;
+
 var
   LParams: array[1..3] of string;
-  LGlucoseJSON, LAlertJSON, LTrendStr, LSTStr: string;
+  LGlucoseJSON, LAlertJSON, LTrendStr, LTimeStr: string;
   LData: TJSONData;
   i: integer;
   noval: MaybeInt;
@@ -692,9 +705,9 @@ begin
       Result[i].trend := MapDexcomTrendToEnum(LTrendStr);
 
       // Convert Dexcom timestamp "/Date(ms)/" to TDateTime (safely)
-      LSTStr := SafeString(LData.Items[i], 'ST');
-      if LSTStr <> '' then
-        Result[i].date := DexTimeToTDateTime(LSTStr)
+      LTimeStr := ReadingTimeField(LData.Items[i]);
+      if LTimeStr <> '' then
+        Result[i].date := DexTimeToTDateTime(LTimeStr)
       else
         Result[i].date := 0;
 
