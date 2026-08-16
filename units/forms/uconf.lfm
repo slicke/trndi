@@ -13,6 +13,7 @@ object fConf: TfConf
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnResize = FormResize
+  OnShow = FormShow
   object pcMain: TPageControl
     Left = 15
     Height = 590
@@ -245,7 +246,7 @@ object fConf: TfConf
       end
       object rbTrendWindow: TRadioGroup
         Left = 15
-        Height = 120
+        Height = 87
         Top = 398
         Width = 612
         Align = alTop
@@ -260,10 +261,10 @@ object fConf: TfConf
         ChildSizing.ShrinkHorizontal = crsScaleChilds
         ChildSizing.ShrinkVertical = crsScaleChilds
         ChildSizing.Layout = cclLeftToRightThenTopToBottom
-        ChildSizing.ControlsPerLine = 2
-        ClientHeight = 100
+        ChildSizing.ControlsPerLine = 3
+        ClientHeight = 67
         ClientWidth = 608
-        Columns = 2
+        Columns = 3
         ItemIndex = 1
         Items.Strings = (
           '30 min (6 dots)'
