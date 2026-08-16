@@ -70,6 +70,11 @@ DEXCOM_GLUCOSE_READINGS_ENDPOINT = 'Publisher/ReadPublisherLatestGlucoseValues';
   {** Fetch alert settings (may not always be returned). }
 DEXCOM_ALERT_ENDPOINT = 'Publisher/ReadSubscriberAlertSettings';
 
+  {** All-zero GUID. Dexcom returns it in place of an account or session ID when
+      the request was understood but produced no identity, so it must be
+      rejected rather than passed on to the next call. }
+DEXCOM_NULL_UUID = '00000000-0000-0000-0000-000000000000';
+
   {** Dexcom Share application ID used by mobile apps (commonly reused). }
 DEXCOM_APPLICATION_ID = 'd89443d2-327c-4a6f-89e5-496bbb0317db';
   {** Dexcom Share application ID for Japan. }
@@ -382,11 +387,11 @@ end;
   reading the code:
 
   - Trend. MapDexcomTrendToEnum tries a textual match first, then a numeric
-    one, and the numeric branch prefers a 0-based reading of the code even
-    though Dexcom Share is documented as 1-based. If real payloads send a
-    number, every arrow is one step off; if they send a string, the branch is
-    dead. The census logs the field's JSON *type* alongside its value, which
-    is what distinguishes the two cases.
+    one. The numeric branch now reads the code as 1-based, matching pydexcom's
+    DEXCOM_TREND_DIRECTIONS; pydexcom reports that current Share sends the
+    textual names and dropped integer support entirely, so the branch may well
+    be dead. The census logs the field's JSON *type* alongside its value, which
+    is what settles whether it still fires against a real account.
 
   - The SystemUtcTime response shape. Trndi has two different extractions of
     the XML form in the tree (trndi.api.dexcom takes the 5th '>'/'<' delimited
@@ -447,7 +452,7 @@ const
 var
   i: integer;
   item, trendData: TJSONData;
-  raw, trendRaw, line: string;
+  raw, trendRaw, timeRaw, line: string;
   parsedTime: TDateTime;
 begin
   if DexcomNewCensusDone then
@@ -491,12 +496,23 @@ begin
     end;
     line := line + Format(' -> trend=%s', [MapDexcomTrendToEnum(trendRaw).Text]);
 
-    if (item <> nil) and (item.JSONType = jtObject) and
-      ParseDexcomTime(TJSONObject(item).Get('ST', ''), parsedTime) then
-      line := line + Format(' ST->%s',
+    // Decode the same field GetReadings dates the reading by. The per-field
+    // dump above is what settles the open question: whether DT's milliseconds
+    // match WT's, or are shifted by the offset it carries.
+    timeRaw := '';
+    if (item <> nil) and (item.JSONType = jtObject) then
+    begin
+      timeRaw := TJSONObject(item).Get('WT', '');
+      if timeRaw = '' then
+        timeRaw := TJSONObject(item).Get('DT', '');
+      if timeRaw = '' then
+        timeRaw := TJSONObject(item).Get('ST', '');
+    end;
+    if ParseDexcomTime(timeRaw, parsedTime) then
+      line := line + Format(' time->%s',
         [FormatDateTime('yyyy-mm-dd hh:nn:ss', parsedTime)])
     else
-      line := line + ' ST->unparsed';
+      line := line + ' time->unparsed';
 
     TrndiDLog(line);
   end;
@@ -506,6 +522,8 @@ end;
 resourcestring
 sDexNewErrPass = 'Incorrect username or password combination';
 sDexNewErrLogin = 'Login error: Could not establish a valid session';
+sDexNewErrNoAccount = 'No Dexcom account matched those details. Check the ' +
+  'username, or whether the account belongs to another region';
 sDexNewParamUserName = 'Dexcom Account Username';
 sDexNewParamPassword = 'Password';
 sDexNewParamRegion = 'Region ("usa", "japan"/"jp", or empty)';
@@ -689,6 +707,7 @@ end;
 function DexcomNew.Connect: boolean;
 var
   LBody, LResponse, LTimeResponse, LTimeString, LAccountID, LNameBody, LNameResp, LParseErr: string;
+  LAuthErr: string;
   LServerDateTime: TDateTime;
   LUseEmailAuth: boolean;
   LHTTPResp, LHTTPResp2, LHTTPRespTime: THTTPResponse;
@@ -719,6 +738,18 @@ begin
       lastErr := sDexNewErrLogin + ' (Dex1a): ' + LHTTPResp.ErrorMessage;
       Exit;
     end;
+
+    // Dexcom reports a rejected login as HTTP 500 with a {"Code","Message"}
+    // body. The transport still completed, so Success is true and the codes
+    // have to be recognized in the payload. Without this the body falls through
+    // to the quote-stripping fallback below and is reported as a mangled blob.
+    if DexcomAuthFailureMessage(LResponse, LAuthErr) then
+    begin
+      Result := false;
+      lastErr := LAuthErr + ' (Dex1a)';
+      Exit;
+    end;
+
     if not TryGetTokenOrError(LResponse, LAccountID, LParseErr) then
     begin
       // Fallback: some servers return a plain quoted accountId; strip quotes
@@ -731,6 +762,17 @@ begin
         FreeResponse(LHTTPResp);
         Exit;
       end;
+    end;
+
+    // A null-GUID account id means the endpoint answered but matched no
+    // account. Caught here rather than passed to LoginPublisherAccountById,
+    // which would fail with a vaguer session error one step later; pydexcom
+    // rejects it at the same point (ACCOUNT_ID_DEFAULT).
+    if LAccountID = DEXCOM_NULL_UUID then
+    begin
+      Result := false;
+      lastErr := sDexNewErrNoAccount + ' (Dex1a)';
+      Exit;
     end;
 
     // Check for authentication errors
@@ -767,6 +809,12 @@ begin
         lastErr := sDexNewErrLogin + ' (Dex1b): ' + LHTTPResp.ErrorMessage;
         Exit;
       end;
+      if DexcomAuthFailureMessage(LNameResp, LAuthErr) then
+      begin
+        Result := false;
+        lastErr := LAuthErr + ' (Dex1b)';
+        Exit;
+      end;
       if not TryGetTokenOrError(LNameResp, FSessionID, LParseErr) then
         FSessionID := StringReplace(LNameResp, '"', '', [rfReplaceAll]);
       FSessionID := Trim(FSessionID);
@@ -781,6 +829,12 @@ begin
     begin
       LResponse := LHTTPResp.Body;
       FreeResponse(LHTTPResp);
+      if DexcomAuthFailureMessage(LResponse, LAuthErr) then
+      begin
+        Result := false;
+        lastErr := LAuthErr + ' (Dex1b)';
+        Exit;
+      end;
       if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
       begin
         // Fallback: some servers reply with a plain quoted session token
@@ -813,6 +867,13 @@ begin
         // status with an empty body for this endpoint.
         LResponse := native.request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody,
           'Accept=application/json', true);
+
+      if DexcomAuthFailureMessage(LResponse, LAuthErr) then
+      begin
+        Result := false;
+        lastErr := LAuthErr + ' (Dex1)';
+        Exit;
+      end;
 
       if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
       begin
@@ -847,7 +908,7 @@ begin
   begin
     Result := false;
     // Null GUID indicates authentication rejection (not wrong password)
-    if FSessionID = '00000000-0000-0000-0000-000000000000' then
+    if FSessionID = DEXCOM_NULL_UUID then
       lastErr := 'Dexcom authentication rejected. Possible causes: ' +
         '1) Wrong region (try using another region), ' +
         '2) Dexcom Share not enabled in official app, ' +
@@ -913,7 +974,7 @@ end;
 function DexcomNew.CheckSession: boolean;
 begin
   Result :=
-    (FSessionID <> '') and (FSessionID <> '00000000-0000-0000-0000-000000000000');
+    (FSessionID <> '') and (FSessionID <> DEXCOM_NULL_UUID);
 end;
 
 {------------------------------------------------------------------------------
@@ -994,9 +1055,34 @@ begin
   end;
 end;
 
+  // Helper: pick the timestamp field to date a reading by. Dexcom sends three
+  // and they are not interchangeable: WT is the wall time, DT the display time,
+  // and ST the receiver's own system clock. ST drifts, and is the one field
+  // neither reference implementation trusts -- pydexcom ignores it entirely and
+  // the dexcom-tesla-display bridge ranks it below WT -- so reading it first,
+  // as this driver used to, was the odd choice out.
+  //
+  // WT leads because it is unambiguous: a bare epoch in milliseconds with no
+  // offset suffix to interpret. DT arrives as "Date(<ms>+0000)", and whether
+  // those ms are a true epoch or already shifted by the offset decides whether
+  // a reading lands on the right minute or hours away. pydexcom treats them as
+  // a true epoch and DT is its only source, which is good evidence -- but WT
+  // needs no such judgement call, so it goes first and DT backs it up.
+  //
+  // ST stays as the last resort: a drifting clock still beats falling through
+  // to 0 and rendering the reading as 1899.
+function ReadingTimeField(Item: TJSONData): string;
+  begin
+    Result := SafeString(Item, 'WT');
+    if Result = '' then
+      Result := SafeString(Item, 'DT');
+    if Result = '' then
+      Result := SafeString(Item, 'ST');
+  end;
+
 var
   LParams: array[1..3] of string;
-  LGlucoseJSON, LTrendStr, LSTStr: string;
+  LGlucoseJSON, LTrendStr, LTimeStr: string;
   LData: TJSONData;
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
@@ -1111,9 +1197,9 @@ begin
         Result[i].trend := MapDexcomTrendToEnum(LTrendStr);
 
         // Convert Dexcom timestamp "/Date(ms)/" to TDateTime (safely)
-        LSTStr := SafeString(LData.Items[i], 'ST');
-        if LSTStr <> '' then
-          Result[i].date := DexTimeToTDateTime(LSTStr)
+        LTimeStr := ReadingTimeField(LData.Items[i]);
+        if LTimeStr <> '' then
+          Result[i].date := DexTimeToTDateTime(LTimeStr)
         else
           Result[i].date := 0;
 

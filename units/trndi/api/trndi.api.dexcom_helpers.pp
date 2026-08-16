@@ -50,19 +50,53 @@ function JSONEscape(const S: string): string;
 
 {** Map a Dexcom trend representation (string or numeric) into the internal
     `BGTrend` enum. Prefers textual mapping via `BG_TRENDS_STRING`. If the value
-    is numeric, accepts both 0-based (BGTrend ordinal) and 1-based codes. As a
-    final fallback, recognizes the Dexcom Share API's CamelCase textual trend
-    names and converts them to the corresponding enum. }
+    is numeric, it is read as a Dexcom Share trend code, which is 1-based
+    against `BGTrend`'s 0-based ordinals. As a final fallback, recognizes the
+    Dexcom Share API's CamelCase textual trend names and converts them to the
+    corresponding enum. }
 function MapDexcomTrendToEnum(const S: string): BGTrend;
 
 {** Heuristic: does a Dexcom Share response body indicate a dead/rejected
     session (so the caller should re-authenticate)? Matches both prose
     ("Session ID not found") and the CamelCase error codes Dexcom actually
     sends ("SessionIdNotFound", "SessionNotValid") by comparing with spaces
-    stripped. }
+    stripped.
+
+    Deliberately excludes credential failures: see the implementation note. }
 function DexcomLooksLikeSessionFailure(const Response: string): boolean;
 
+{** Recognize the Dexcom Share authentication failures that deserve a clearer
+    message than the raw payload, and report it in @code(AMessage).
+
+    Covers the codes pydexcom's `_handle_error_code` singles out:
+    `AccountPasswordInvalid`, `SSO_AuthenticateMaxAttemptsExceeded`, and
+    `SSO_InternalError` carrying "Cannot Authenticate by AccountName/AccountId"
+    -- the last being how Dexcom reports a rejected login rather than via a
+    dedicated code.
+
+    @returns(True when the response is a recognized auth failure.) }
+function DexcomAuthFailureMessage(const Response: string;
+  out AMessage: string): boolean;
+
 implementation
+
+resourcestring
+sDexErrCredentials = 'Incorrect username or password combination';
+sDexErrMaxAttempts = 'Too many failed Dexcom sign-in attempts. The account is ' +
+  'temporarily locked - wait before trying again, as further attempts keep it locked.';
+
+{------------------------------------------------------------------------------
+  DexcomNormalize
+  --------------------
+  Fold a response body into the form the substring matchers below expect:
+  spaces stripped, lowercased. Dexcom sends the same condition as prose
+  ("Session ID not found") and as a CamelCase code ("SessionIdNotFound"), and
+  this reduces both to one needle.
+ ------------------------------------------------------------------------------}
+function DexcomNormalize(const Response: string): string;
+begin
+  Result := LowerCase(StringReplace(Response, ' ', '', [rfReplaceAll]));
+end;
 
 function JSONEscape(const S: string): string;
 var
@@ -116,14 +150,31 @@ begin
     if BG_TRENDS_STRING[Result] = L then
       Exit;
 
-  // 2) Numeric: accept either 0-based (BGTrend ordinal) or 1-based codes
+  // 2) Numeric: Dexcom Share's trend codes run
+  //      0=None 1=DoubleUp 2=SingleUp 3=FortyFiveUp 4=Flat
+  //      5=FortyFiveDown 6=SingleDown 7=DoubleDown 8=NotComputable
+  //      9=RateOutOfRange
+  //    which is BGTrend's own order shifted by one, so the code maps to
+  //    BGTrend(code - 1). Confirmed against pydexcom's DEXCOM_TREND_DIRECTIONS.
+  //
+  //    This used to try a 0-based reading first, which silently shifted every
+  //    arrow by one step -- a Dexcom 4 ("Flat") came out as TdFortyFiveDown.
+  //    Only the tail of the range happened to land correctly, via the 1-based
+  //    fallback that fired once the 0-based read went out of bounds.
+  //
+  //    Current Dexcom Share sends the textual names instead (branches 1 and 3);
+  //    pydexcom dropped integer support outright on that basis. This path is
+  //    therefore for older payloads only, which is why the skew went unnoticed.
   if TryStrToInt(L, code) then
   begin
-    if (code >= Ord(Low(BGTrend))) and (code <= Ord(High(BGTrend))) then
-      Result := BGTrend(code)
-    else if (code - 1 >= Ord(Low(BGTrend))) and (code - 1 <= Ord(High(BGTrend))) then
+    if (code >= 1) and (code <= Ord(TdNotComputable) + 1) then
       Result := BGTrend(code - 1)
+    else if code = 9 then
+      // RateOutOfRange. No distinct enum member, so it follows the textual
+      // alias in branch 3 rather than degrading to a placeholder.
+      Result := TdNotComputable
     else
+      // 0 is Dexcom's "None", i.e. no trend rather than a specific arrow.
       Result := TdPlaceholder;
     Exit;
   end;
@@ -153,15 +204,48 @@ begin
   // Strip spaces before lowercasing so "Session ID not found" and
   // "SessionIdNotFound" both reduce to the same needle. Glucose payloads
   // never contain the word "session", so this cannot misfire on real data.
-  L := LowerCase(StringReplace(Response, ' ', '', [rfReplaceAll]));
+  L := DexcomNormalize(Response);
+
+  // "AccountPasswordInvalid" used to be matched here too, which made a wrong
+  // password look like an expired session: the caller re-authenticated and
+  // resubmitted the same bad credentials, so every poll cost two failed
+  // sign-ins instead of one. Dexcom counts those and answers with
+  // SSO_AuthenticateMaxAttemptsExceeded, so the retry was driving the account
+  // toward a lockout. Credential failures are terminal -- pydexcom likewise
+  // retries on SessionError only, never on AccountError -- and are reported
+  // through DexcomAuthFailureMessage instead.
   Result :=
     ((Pos('session', L) > 0) and
     ((Pos('invalid', L) > 0) or (Pos('expired', L) > 0) or
     (Pos('notvalid', L) > 0) or (Pos('notfound', L) > 0) or
     (Pos('sessionidnull', L) > 0))) or
     (Pos('unauthorized', L) > 0) or
-    (Pos('forbidden', L) > 0) or
-    (Pos('accountpassword', L) > 0);
+    (Pos('forbidden', L) > 0);
+end;
+
+function DexcomAuthFailureMessage(const Response: string;
+  out AMessage: string): boolean;
+var
+  L: string;
+begin
+  AMessage := '';
+  Result := false;
+  L := DexcomNormalize(Response);
+  if L = '' then
+    Exit;
+
+  if Pos('sso_authenticatemaxattemptsexceeded', L) > 0 then
+    AMessage := sDexErrMaxAttempts
+  else if Pos('accountpasswordinvalid', L) > 0 then
+    AMessage := sDexErrCredentials
+  else if (Pos('sso_internalerror', L) > 0) and
+    ((Pos('cannotauthenticatebyaccountname', L) > 0) or
+    (Pos('cannotauthenticatebyaccountid', L) > 0)) then
+    AMessage := sDexErrCredentials
+  else
+    Exit;
+
+  Result := true;
 end;
 
 end.

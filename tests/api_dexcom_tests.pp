@@ -129,7 +129,12 @@ begin
     DexcomLooksLikeSessionFailure('Session ID not found'));
   AssertTrue('Prose session is invalid',
     DexcomLooksLikeSessionFailure('The session is invalid'));
-  AssertTrue('Account password error',
+  // A wrong password is terminal, not a recoverable session failure. Matching
+  // it here made the caller re-authenticate and resubmit the same bad
+  // credentials, so every poll spent two failed sign-ins instead of one and
+  // drove the account toward Dexcom's SSO_AuthenticateMaxAttemptsExceeded
+  // lockout. It is reported through DexcomAuthFailureMessage instead.
+  AssertFalse('Account password error is not a session failure',
     DexcomLooksLikeSessionFailure('{"Code":"AccountPasswordInvalid"}'));
   AssertFalse('Glucose payload is not a session failure',
     DexcomLooksLikeSessionFailure(
