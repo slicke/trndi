@@ -1018,14 +1018,6 @@ out res: string; {%H-}noCache: boolean): BGResults;
 // not subject to HTTP GET caching. noCache is accepted for interface
 // compatibility but has no effect on this backend.
 
-  // Helper: convert Dexcom /Date(ms)/ string to TDateTime.
-  // Delegates to ParseDexcomTime so we handle the canonical "/Date(NNN)/" form
-  // (parenthesis included), optional "+0000" offset suffixes, and ISO variants.
-function DexTimeToTDateTime(const S: string): TDateTime;
-  begin
-    if not ParseDexcomTime(S, Result) then
-      Result := 0;
-  end;
 
   // Helper: safely extract numeric 'Value' from a JSON item (handles null/missing)
 function SafeValue(Item: TJSONData; out Ok: boolean): double;
@@ -1065,34 +1057,9 @@ begin
   end;
 end;
 
-  // Helper: pick the timestamp field to date a reading by. Dexcom sends three
-  // and they are not interchangeable: WT is the wall time, DT the display time,
-  // and ST the receiver's own system clock. ST drifts, and is the one field
-  // neither reference implementation trusts -- pydexcom ignores it entirely and
-  // the dexcom-tesla-display bridge ranks it below WT -- so reading it first,
-  // as this driver used to, was the odd choice out.
-  //
-  // WT leads because it is unambiguous: a bare epoch in milliseconds with no
-  // offset suffix to interpret. DT arrives as "Date(<ms>+0000)", and whether
-  // those ms are a true epoch or already shifted by the offset decides whether
-  // a reading lands on the right minute or hours away. pydexcom treats them as
-  // a true epoch and DT is its only source, which is good evidence -- but WT
-  // needs no such judgement call, so it goes first and DT backs it up.
-  //
-  // ST stays as the last resort: a drifting clock still beats falling through
-  // to 0 and rendering the reading as 1899.
-function ReadingTimeField(Item: TJSONData): string;
-  begin
-    Result := SafeString(Item, 'WT');
-    if Result = '' then
-      Result := SafeString(Item, 'DT');
-    if Result = '' then
-      Result := SafeString(Item, 'ST');
-  end;
-
 var
   LParams: array[1..3] of string;
-  LGlucoseJSON, LTrendStr, LTimeStr: string;
+  LGlucoseJSON, LTrendStr: string;
   LData: TJSONData;
   i, LTrendCode: integer;
   LTrendEnum: BGTrend;
@@ -1206,11 +1173,12 @@ begin
         // Use dedicated mapper which handles textual names and numeric codes
         Result[i].trend := MapDexcomTrendToEnum(LTrendStr);
 
-        // Convert Dexcom timestamp "/Date(ms)/" to TDateTime (safely)
-        LTimeStr := ReadingTimeField(LData.Items[i]);
-        if LTimeStr <> '' then
-          Result[i].date := DexTimeToTDateTime(LTimeStr)
-        else
+        // Date the reading from WT, then DT, then ST. Each candidate has to
+        // parse to be used, so a malformed field steps aside for the next one;
+        // the helper leaves date 0 when none of the three is usable.
+        if not DexcomReadingTime(SafeString(LData.Items[i], 'WT'),
+          SafeString(LData.Items[i], 'DT'),
+          SafeString(LData.Items[i], 'ST'), Result[i].date) then
           Result[i].date := 0;
 
         // Dexcom Share returns readings newest-first, so the reading preceding

@@ -49,7 +49,7 @@ unit trndi.api.dexcom_helpers;
 interface
 
 uses
-  SysUtils, trndi.types;
+  SysUtils, trndi.types, trndi.api.dexcom_time;
 
 {** Escape a string for safe inclusion in a JSON value. Worst-case size is 2x
     the input (every char escaped); never under-allocates. }
@@ -62,6 +62,24 @@ function JSONEscape(const S: string): string;
     Dexcom Share API's CamelCase textual trend names and converts them to the
     corresponding enum. }
 function MapDexcomTrendToEnum(const S: string): BGTrend;
+
+{** Date a reading from Dexcom's three candidate timestamp fields, trying
+    @code(AWT), then @code(ADT), then @code(AST).
+
+    Candidates are chosen by whether they *parse*, not merely by being
+    non-empty: a present-but-malformed WT must not shadow a DT or ST that does
+    parse, which would leave the reading dated 1899 -- the outcome the fallback
+    chain exists to avoid.
+
+    WT leads because it is a bare epoch in milliseconds with no offset suffix to
+    interpret. DT is next, being the field pydexcom reads. ST is the receiver's
+    own system clock, which drifts, so it is the last resort.
+
+    @param(ADate Receives the parsed timestamp, or 0 when none of the three
+      parses.)
+    @returns(True when one of the candidates yielded a timestamp.) }
+function DexcomReadingTime(const AWT, ADT, AST: string;
+  out ADate: TDateTime): boolean;
 
 {** Heuristic: does a Dexcom Share response body indicate a dead/rejected
     session (so the caller should re-authenticate)? Matches both prose
@@ -202,6 +220,42 @@ begin
     Result := BGTrend(idx)
   else
     Result := TdPlaceholder;
+end;
+
+{------------------------------------------------------------------------------
+  DexcomReadingTime
+  --------------------
+  Dexcom sends three timestamps per reading and they are not interchangeable.
+  ST is the receiver's own system clock, which drifts, and is the one field
+  neither reference implementation trusts: pydexcom ignores it entirely, and the
+  dexcom-tesla-display bridge ranks it below WT. Both Trndi drivers used to read
+  it first, which was the odd choice out.
+
+  WT leads because it is unambiguous: a bare epoch in milliseconds, with no
+  offset suffix to interpret. DT arrives as "Date(<ms>+0000)", and whether those
+  milliseconds are a true epoch or already shifted by the offset decides whether
+  a reading lands on the right minute or hours away. pydexcom treats them as a
+  true epoch, and DT is its only source, which is good evidence -- but WT needs
+  no such judgement call, so it goes first and DT backs it up.
+
+  ST stays as the last resort: a drifting clock still beats no timestamp.
+ ------------------------------------------------------------------------------}
+function DexcomReadingTime(const AWT, ADT, AST: string;
+  out ADate: TDateTime): boolean;
+begin
+  // Each candidate is offered to the parser rather than merely tested for
+  // content, so a field that is present but unparseable steps aside for the
+  // next one instead of dating the reading 0.
+  if (AWT <> '') and ParseDexcomTime(AWT, ADate) then
+    Exit(true);
+  if (ADT <> '') and ParseDexcomTime(ADT, ADate) then
+    Exit(true);
+  if (AST <> '') and ParseDexcomTime(AST, ADate) then
+    Exit(true);
+  // ParseDexcomTime zeroes its out parameter on entry, but a caller reading
+  // ADate after a False result should not depend on that.
+  ADate := 0;
+  Result := false;
 end;
 
 function DexcomLooksLikeSessionFailure(const Response: string): boolean;

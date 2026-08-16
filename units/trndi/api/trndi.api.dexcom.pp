@@ -555,14 +555,6 @@ out res: string; {%H-}noCache: boolean): BGResults;
 // not subject to HTTP GET caching. noCache is accepted for interface
 // compatibility but has no effect on this backend.
 
-  // Helper: convert Dexcom /Date(ms)/ string to TDateTime.
-  // Delegates to ParseDexcomTime so we handle the canonical "/Date(NNN)/" form
-  // (parenthesis included), optional "+0000" offset suffixes, and ISO variants.
-function DexTimeToTDateTime(const S: string): TDateTime;
-  begin
-    if not ParseDexcomTime(S, Result) then
-      Result := 0;
-  end;
 
   // Helper: safely extract numeric 'Value' from a JSON item (handles null/missing)
 function SafeValue(Item: TJSONData; out Ok: boolean): double;
@@ -602,22 +594,9 @@ begin
   end;
 end;
 
-  // Helper: pick the timestamp field to date a reading by. ST is the receiver's
-  // own system clock, which drifts and which neither reference implementation
-  // trusts; WT is the unambiguous wall-time epoch. See the fuller note in
-  // trndi.api.dexcomNew, which makes the same choice.
-function ReadingTimeField(Item: TJSONData): string;
-  begin
-    Result := SafeString(Item, 'WT');
-    if Result = '' then
-      Result := SafeString(Item, 'DT');
-    if Result = '' then
-      Result := SafeString(Item, 'ST');
-  end;
-
 var
   LParams: array[1..3] of string;
-  LGlucoseJSON, LAlertJSON, LTrendStr, LTimeStr: string;
+  LGlucoseJSON, LAlertJSON, LTrendStr: string;
   LData: TJSONData;
   i: integer;
   noval: MaybeInt;
@@ -710,11 +689,12 @@ begin
       LTrendStr := SafeString(LData.Items[i], 'Trend');
       Result[i].trend := MapDexcomTrendToEnum(LTrendStr);
 
-      // Convert Dexcom timestamp "/Date(ms)/" to TDateTime (safely)
-      LTimeStr := ReadingTimeField(LData.Items[i]);
-      if LTimeStr <> '' then
-        Result[i].date := DexTimeToTDateTime(LTimeStr)
-      else
+      // Date the reading from WT, then DT, then ST. Each candidate has to parse
+      // to be used, so a malformed field steps aside for the next one; the
+      // helper leaves date 0 when none of the three is usable.
+      if not DexcomReadingTime(SafeString(LData.Items[i], 'WT'),
+        SafeString(LData.Items[i], 'DT'),
+        SafeString(LData.Items[i], 'ST'), Result[i].date) then
         Result[i].date := 0;
 
       if CurOk then
