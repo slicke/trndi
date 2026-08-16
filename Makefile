@@ -105,24 +105,34 @@ WIDGETSET ?= qt6
 # FPC's $(TargetCPU)-$(TargetOS), which is what the .lpi library path expands to
 # (note that macOS reports arm64 where FPC says aarch64). QJS_LIBS is the glob
 # used to copy the libraries next to a binary that has to load them.
+#
+# The globs name the two libraries rather than sweeping the directory (*.so*,
+# *.dll, ...). That directory is also on the .lpi linker search path, and
+# stage-qjs-libs copies into tests/, which is the tests' link working directory
+# -- so anything that lands in it is staged next to the test binary and picked
+# up by the *next* link. A stray libcurl.so committed there once made every
+# `make test` after the first fail to link on distros whose curl is not built
+# against librtmp (Fedora), while linking fine on Ubuntu, where it is. Naming
+# the files keeps that class of accident out of the build entirely.
+# Non-matching patterns are harmless: cp reports them and the recipe ignores it.
 ifeq ($(OS),Windows_NT)
   QJS_DIR := externals/quickjs/prebuilt/x86_64-win64
-  QJS_LIBS := *.dll
+  QJS_LIBS := libqjs*.dll libtqshim*.dll tqshim*.dll
 else ifeq ($(UNAME_S),Darwin)
   QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed s/arm64/aarch64/)-darwin
-  QJS_LIBS := *.dylib
+  QJS_LIBS := libqjs*.dylib libtqshim*.dylib
 else ifeq ($(UNAME_S),FreeBSD)
   # FPC names the target x86_64-freebsd where uname -m says amd64.
   QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed -e s/amd64/x86_64/ -e s/arm64/aarch64/)-freebsd
-  QJS_LIBS := *.so*
+  QJS_LIBS := libqjs.so* libtqshim.so*
 else ifeq ($(UNAME_S),Haiku)
   # x86_64 matches, but Haiku reports 32-bit x86 as BePC and 64-bit ARM as
   # arm64, where FPC (and so this directory) says i386 and aarch64.
   QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed -e s/BePC/i386/ -e s/arm64/aarch64/)-haiku
-  QJS_LIBS := *.so*
+  QJS_LIBS := libqjs.so* libtqshim.so*
 else
   QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m)-linux
-  QJS_LIBS := *.so*
+  QJS_LIBS := libqjs.so* libtqshim.so*
 endif
 
 # Stage the QuickJS engine and its ABI shim next to a binary that has to load
