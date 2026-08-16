@@ -34,6 +34,12 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: The numeric trend-mapping tests were rewritten against Dexcom
+ *   Share's 1-based codes; they previously asserted a 0-based reading, which
+ *   pinned the off-by-one they were meant to catch. Coverage was added for the
+ *   authentication-failure messages.
  *)
 unit dexcom_trend_tests;
 
