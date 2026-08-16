@@ -842,10 +842,29 @@ procedure ServerRunner;
 var
   Listener: LongInt;
   Addr: TInetSockAddr;
+{$IF DEFINED(UNIX) OR DEFINED(HAIKU)}
+  ReuseAddr: Integer;
+{$ENDIF}
 begin
   Listener := fpsocket(AF_INET, SOCK_STREAM, 0);
   if Listener <= 0 then Exit;
   ServerListenSocket := Listener;
+{$IF DEFINED(UNIX) OR DEFINED(HAIKU)}
+  // Let the listener bind while the *previous* run's accepted connections are
+  // still in TIME-WAIT. A test run leaves ~90 sockets sitting on port 8080 in
+  // that state, and without this option the next run's fpbind fails with
+  // EADDRINUSE for the ~60s they linger: the thread exits, the readiness poll
+  // below times out, and every server-backed test reports "Failed to start or
+  // reach test server" — which reads as a broken test server rather than a
+  // port that is merely still cooling down.
+  //
+  // SO_REUSEADDR does not allow a second *live* listener, so a port genuinely
+  // in use still fails to bind, as it should. Unix only: on Windows the same
+  // option lets a socket take over a port that is actively being listened on,
+  // which is the opposite of what is wanted.
+  ReuseAddr := 1;
+  fpsetsockopt(Listener, SOL_SOCKET, SO_REUSEADDR, @ReuseAddr, SizeOf(ReuseAddr));
+{$ENDIF}
   FillChar(Addr, SizeOf(Addr), 0);
   Addr.sin_family := AF_INET;
   Addr.sin_port := htons(8080);
@@ -854,6 +873,9 @@ begin
   Addr.sin_addr.s_addr := htonl($7F000001);
   if fpbind(Listener, @Addr, SizeOf(Addr)) <> 0 then
   begin
+    // Say so rather than failing mute: the caller only sees a readiness-poll
+    // timeout, which does not distinguish "port busy" from "server broken".
+    Writeln('Test server: cannot bind 127.0.0.1:8080 (in use by another process?)');
     CloseSocket(Listener);
     ServerListenSocket := -1;
     Exit;
