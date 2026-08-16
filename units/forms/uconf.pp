@@ -63,6 +63,10 @@
  * - 2026-08-12: The Windows dark-mode call was dropped entirely (and with it
  *   the DoShow override, so the dialog no longer asks for its handle at all).
  *   It only darkened the DWM caption while the themed body stayed light.
+ * - 2026-08-16: The General tab's trend-window group is laid out in three
+ *   columns instead of two, and the dialog now measures each tab on show and
+ *   grows by the worst overflow, replacing the fixed Qt6 height bump. The
+ *   group's last row of radio buttons used to sit behind the bottom strip.
  *)
 
 unit uconf;
@@ -583,6 +587,7 @@ TfConf = class(TForm)
   procedure FormCreate({%H-}Sender: TObject);
   procedure FormDestroy({%H-}Sender: TObject);
   procedure FormResize({%H-}Sender: TObject);
+  procedure FormShow({%H-}Sender: TObject);
   procedure fsHi1Change({%H-}Sender: TObject);
   procedure fsHiChange({%H-}Sender: TObject);
   procedure fsLo1Change({%H-}Sender: TObject);
@@ -654,6 +659,9 @@ private
   {** Show/hide the browser-login button and username field for the current
       backend, based on selectedAPIClass.supportsWebLogin. }
   procedure updateWebLoginUI;
+  {** Pixels by which a tab's alTop stack runs past the tab's alBottom band
+      (or past the tab itself, when it has none); <= 0 when the page fits. }
+  function PageOverflow(APage: TTabSheet): integer;
 public
   chroma: TRazerChromaBase;
   {** Saved TTS voice selection, applied by EnsureTTSVoices once the voice
@@ -2807,9 +2815,6 @@ begin
     end;
 
   {$endif}
-  {$ifdef lclqt6}
-  self.height := self.height + 20;
-  {$endif}
   tnative := TrndiNative.Create;
   tnative.noFree := true;
   // Windows is deliberately excluded: setDarkMode there only darkens the DWM
@@ -2874,6 +2879,83 @@ begin
   FFontVal.Free;
   FFontArrow.Free;
   FFontAgo.Free;
+end;
+
+{------------------------------------------------------------------------------
+  PageOverflow
+  ------------
+  How far a tab's alTop stack runs past the room it has. The tabs are laid out
+  by Align, not by anchors, so every row's height comes from the widgetset:
+  Qt6 draws taller edits, buttons and radio rows than the design metrics, and
+  those few pixels per row accumulate down the stack. Where a tab also carries
+  alBottom children (General's update button and backend-warning strip), the
+  overrun disappears behind them - alBottom is placed against the tab's bottom
+  edge regardless of what alTop consumed, and it is declared later in the .lfm,
+  so it paints on top.
+
+  Only direct children are measured: this catches a stack outgrowing its page,
+  not a control outgrowing a panel nested inside one.
+ ------------------------------------------------------------------------------}
+function TfConf.PageOverflow(APage: TTabSheet): integer;
+var
+  i: integer;
+  c: TControl;
+  stackBottom, bandTop: integer;
+begin
+  stackBottom := 0;
+  // With no alBottom children the page's own bottom edge is the limit.
+  bandTop := APage.ClientHeight;
+  for i := 0 to APage.ControlCount - 1 do
+  begin
+    c := APage.Controls[i];
+    if not c.Visible then
+      Continue;
+    case c.Align of
+    alTop:
+      stackBottom := Max(stackBottom, c.Top + c.Height + c.BorderSpacing.Bottom);
+    alBottom:
+      bandTop := Min(bandTop, c.Top - c.BorderSpacing.Top);
+    end;
+  end;
+  Result := stackBottom - bandTop;
+end;
+
+{------------------------------------------------------------------------------
+  FormShow
+  --------
+  Grow the dialog by whatever its worst tab is short of. The .lfm is laid out
+  against Windows metrics, so on other widgetsets - Qt6 most of all - the
+  taller rows push the bottom of a stack out of sight; General's trend-window
+  group was the visible casualty, its last row of radio buttons hidden behind
+  the backend-warning strip.
+
+  Measured rather than a per-widgetset constant, so it also covers a user
+  running an unusually large system font. It has to run here and not in
+  FormCreate: the pages have no useful geometry until the handle exists.
+ ------------------------------------------------------------------------------}
+procedure TfConf.FormShow(Sender: TObject);
+var
+  i, need, room, target: integer;
+begin
+  need := 0;
+  for i := 0 to pcMain.PageCount - 1 do
+    if pcMain.Pages[i].TabVisible then
+      need := Max(need, PageOverflow(pcMain.Pages[i]));
+  if need <= 0 then
+    Exit;
+
+  // Never grow past the screen: a dialog taller than the work area would hide
+  // the very rows this is meant to reveal, and on a frameless (own title bar)
+  // window there is no way to drag it back into view. The clamp only ever
+  // caps the growth - a dialog that is already over the limit (own title bar
+  // plus the nobuttonsVM close strip on a short screen) is left alone rather
+  // than shrunk, which would clip a tab that fits today.
+  target := Height + need;
+  room := Screen.WorkAreaHeight;
+  if room > 0 then
+    target := Min(target, room - 40);
+  if target > Height then
+    Height := target;
 end;
 
 procedure TfConf.FormResize(Sender: TObject);
