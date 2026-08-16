@@ -34,6 +34,12 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: The libcurl transport (getURL, postURL, TestProxyURL, request,
+ *   requestEx, the C callbacks and curl_global_init) moved verbatim to the new
+ *   trndi.native.request.curl unit; the methods here now fetch proxy settings
+ *   and delegate to that shared transport.
  *)
 unit trndi.native.linux;
 

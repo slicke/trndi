@@ -46,6 +46,9 @@
  *   actually used. DEXCOM_NULL_UUID moved to trndi.api.dexcom_helpers so both
  *   Share drivers share one definition. testConnection applies the auth-error
  *   check to the plain-username login as well, not only the e-mail one.
+ * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
+ *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
+ *   LCL-free (console) builds.
  *)
 unit trndi.api.dexcomNew;
 

@@ -45,6 +45,9 @@
  *   and reports why rather than leaving the generic unknown-error text. Connect
  *   and testConnection apply that same check to the plain-username login, which
  *   is the only path an account without an e-mail address takes.
+ * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
+ *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
+ *   LCL-free (console) builds.
  *)
 unit trndi.api.dexcom;
 

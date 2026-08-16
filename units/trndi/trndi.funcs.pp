@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: The UI-free reading sorts, trend maths, debugParams overloads
+ *   and DEBUG_LOG_ALERT moved to the new trndi.funcs.core unit; the routines
+ *   remain callable from here as forwarders.
  *)
 unit trndi.funcs;
 

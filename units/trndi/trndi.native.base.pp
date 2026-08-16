@@ -16,6 +16,10 @@
  * ---------
  *
  * GitHub: https://github.com/slicke/trndi
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: X_CONSOLE builds substitute a TColor range type and a false
+ *   isDarkMode default for the LCL Graphics dependency.
  *)
 
 {**

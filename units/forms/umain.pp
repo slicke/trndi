@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: The form unit now also uses trndi.funcs.core, which took over
+ *   the shared reading/trend helpers and the DEBUG_LOG_ALERT switch from
+ *   trndi.funcs.
  *)
 
 unit umain;

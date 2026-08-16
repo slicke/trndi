@@ -74,6 +74,8 @@
  * - 2026-08-12: the sensor-expiry suffix floors the remaining hours instead of
  *   truncating them, so the hour after a session ends reads "sensor expired"
  *   rather than "0h left". Matches the v1 driver this was ported from.
+ * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
+ *   trndi.funcs.
  *)
 unit trndi.api.nightscout3;
 
