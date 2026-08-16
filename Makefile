@@ -171,6 +171,15 @@ endif
 # Test-binary staging targets, same idea: tests/ plus tests/lib on Haiku.
 QJS_TEST_DESTS = tests $(if $(QJS_LIBSUBDIR),tests/$(QJS_LIBSUBDIR))
 
+# Staging must prove both library families actually landed, not merely that
+# nothing broken did. The loop below that checks for empty/dangling files is
+# negative-only: with nothing copied at all, every pattern stays literal, each
+# iteration skips, and "Copied QuickJS libraries" is printed regardless. cp's
+# own failure cannot be relied on either, since its errors are suppressed so a
+# non-matching pattern stays harmless. That combination once let a staging bug
+# through to a test binary that died at startup on a missing libtqshim.so, so
+# the engine and the shim are each asserted present and non-empty afterwards --
+# including tqshim.dll, which Windows ships without the lib prefix.
 define stage-qjs-libs
 	@if [ -d "$(QJS_DIR)" ]; then \
 	  for dest in $(1); do \
@@ -190,6 +199,15 @@ define stage-qjs-libs
 	      [ -e "$$f" ] || continue; \
 	      [ -s "$$f" ] || { echo "ERROR: $$f is empty or dangling - the QuickJS libraries in $(QJS_DIR) are broken; rebuild them with externals/quickjs/build.sh"; exit 1; }; \
 	    done; \
+	    engine=''; shim=''; \
+	    for f in "$$dest"/libqjs.so* "$$dest"/libqjs.dylib "$$dest"/libqjs.dll; do \
+	      if [ -s "$$f" ]; then engine="$$f"; break; fi; \
+	    done; \
+	    for f in "$$dest"/libtqshim.so* "$$dest"/libtqshim.dylib "$$dest"/libtqshim.dll "$$dest"/tqshim.dll; do \
+	      if [ -s "$$f" ]; then shim="$$f"; break; fi; \
+	    done; \
+	    [ -n "$$engine" ] || { echo "ERROR: no QuickJS engine library staged in $$dest (QJS_LIBS='$(QJS_LIBS)' matched nothing in $(QJS_DIR))"; exit 1; }; \
+	    [ -n "$$shim" ] || { echo "ERROR: no QuickJS ABI shim staged in $$dest (QJS_LIBS='$(QJS_LIBS)' matched nothing in $(QJS_DIR)); the shim ships as libtqshim.so/.dylib or tqshim.dll"; exit 1; }; \
 	    echo "Copied QuickJS libraries to $$dest"; \
 	  done; \
 	else \
