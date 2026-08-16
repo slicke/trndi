@@ -34,6 +34,13 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: The listener sets SO_REUSEADDR on Unix, so a run can rebind
+ *   while the previous run's connections are still in TIME-WAIT, and a failed
+ *   bind is reported instead of exiting silently. Startup success is now
+ *   determined by the listening socket rather than by the existence of a
+ *   thread, which could outlive a server that never bound.
  *)
 unit pascal_testserver;
 
