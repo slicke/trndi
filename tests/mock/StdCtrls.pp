@@ -179,7 +179,7 @@ end;
 constructor TLabel.Create(AOwner: Controls.TComponent = nil);
 begin
   inherited Create(AOwner);
-  FAlignment := Graphics.taLeftJustify;
+  FAlignment := Classes.taLeftJustify; // TAlignment and its values come from Classes
   FLayout := Graphics.tlTop;
   FWordWrap := False;
   // Ensure a canvas exists for drawing helpers
