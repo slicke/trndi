@@ -40,7 +40,8 @@ Classes, trndi.native.base
 {$IFDEF TEST}, trndi.native.mock
 {$ENDIF}
 {$IFNDEF TEST}
-{$IF DEFINED(X_WIN)}, trndi.native.win
+{$IF DEFINED(X_CONSOLE)}, trndi.native.console // build-mode define: LCL-free front ends (CLI/TUI)
+{$ELSEIF DEFINED(X_WIN)}, trndi.native.win
 {$ELSEIF DEFINED(X_MAC)}, trndi.native.mac
 {$ELSEIF DEFINED(HAIKU)}, trndi.native.haiku
 {$ELSEIF DEFINED(BSD)}, trndi.native.bsd
@@ -63,7 +64,10 @@ TWSLInfo = trndi.native.base.TWSLInfo;
 TTrndiNativeMock = trndi.native.mock.TTrndiNativeMock;
 TrndiNative = TTrndiNativeMock;
 {$ELSE}
-{$IF DEFINED(X_WIN)}
+{$IF DEFINED(X_CONSOLE)}
+TTrndiNativeConsole = trndi.native.console.TTrndiNativeConsole;
+TrndiNative = TTrndiNativeConsole;
+{$ELSEIF DEFINED(X_WIN)}
 TTrndiNativeWindows = trndi.native.win.TTrndiNativeWindows;
 TrndiNative = TTrndiNativeWindows;
 {$ELSEIF DEFINED(X_MAC)}

@@ -51,11 +51,8 @@ fpjson, jsonparser, dateutils, buildinfo, trndi.log
 {$ifdef DARWIN}, CocoaAll, nsutils.nshelpers{$endif}
 {$ifdef DEBUG}, slicke.ux.alert{$endif};
 
-{$ifdef DEBUG}
-type
-  _arr2 = array[1..2] of string;
-  _arr3 = array[1..3] of string;
-{$endif}
+// _arr2/_arr3 and the debugParams overloads moved to trndi.funcs.core, which
+// the API drivers can use without pulling in the LCL.
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 function GetAppPath: string;
@@ -120,12 +117,7 @@ function JSValueRawArray(const values: array of const): JSValueRaw;
 // Convert array of const to array of JSValueRaw with proper type matching
 procedure ConvertVarRecsToJSValueRaw(const params: array of const; var jsValues: array of JSValueRaw);
 {$endif}
-{$ifdef DEBUG}
-function debugParams(arr: TStringArray): string; overload;
-function debugParams(arr: TStringList): string; overload;
-function debugParams(arr: _arr2): string; overload;
-function debugParams(arr: _arr3): string; overload;
-{$endif}
+// debugParams overloads live in trndi.funcs.core.
 
 const
 INTERVAL_MINUTES = 5; // Each time interval is 5 minutes
@@ -148,8 +140,8 @@ DOT_PREDICT = #3; // Predicted future reading (drawn as a hollow ring)
 
 PREDICTION_DOT_COUNT = 3; // Future prediction dots shown on the main trend (5/10/15 min)
 
-ARROW_MIN_TILT = 10;  // Smallest lean shown once the value is actually moving (degrees); keeps direction readable
-ARROW_MAX_ANGLE = 70; // Cap for the rotating trend arrow (degrees from flat); keeps it a lean, never vertical
+// ARROW_MIN_TILT / ARROW_MAX_ANGLE now live in trndi.funcs.core alongside the
+// trend-angle maths that is their only consumer.
 
 var
 DOT_ADJUST: single = 0; // Multiplyer where dots appear
@@ -159,38 +151,14 @@ ACTIVE_DOTS: integer = 10; // Runtime dot count for the main trend display (save
 DATA_FRESHNESS_THRESHOLD_MINUTES: integer = 11; // Max minutes before data is considered outdated
 
 {$ifdef DEBUG}
-DEBUG_LOG_ALERT: boolean = false;
+// DEBUG_LOG_ALERT lives in trndi.funcs.core (read by the LCL-free API drivers).
 TRNDI_DEBUG_LOG_ALERT: boolean = false;
 TRNDI_DEBUG_LOG_ALERT_SNOOZE: TDateTime;
 {$endif}
 implementation
 
-
-{$ifdef DEBUG}
-function debugParams(arr: _arr2): string;
-begin
-  result := Format('%s :: %s', [arr[1], arr[2]]);
-end;
-function debugParams(arr: _arr3): string;
-begin
-  result := Format('%s :: %s :: %s', [arr[1], arr[2], arr[3]]);
-end;
-function debugParams(arr: TStringArray): string;
-begin
-  result := string.Join(' :: ', arr);
-end;
-
-function debugParams(arr: TStringList): string;
-var
-s: TStringList;
-begin
-  s := TStringList.Create;
-  s.AddDelimitedText(arr.DelimitedText, arr.Delimiter, true);
-  s.Delimiter := '`';
-  result := StringReplace(s.DelimitedText, '`', ' :: ', [rfReplaceAll]);
-  s.free;
-end;
-{$endif}
+uses
+trndi.funcs.core; // UI-free reading/trend helpers; re-exposed by the forwarders below
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
 var
@@ -318,53 +286,19 @@ begin
   end;
 end;
 
-procedure SortReadingsCore(var Readings: array of BGReading; ascending: boolean);
-  procedure QuickSort(L, R: Integer);
-  var
-    I, J: Integer;
-    P, T: BGReading;
-  begin
-    repeat
-      I := L;
-      J := R;
-      P := Readings[(L + R) div 2];
-      repeat
-        if ascending then
-        begin
-          while Readings[I].date < P.date do Inc(I);
-          while Readings[J].date > P.date do Dec(J);
-        end
-        else
-        begin
-          while Readings[I].date > P.date do Inc(I);
-          while Readings[J].date < P.date do Dec(J);
-        end;
-        if I <= J then
-        begin
-          T := Readings[I];
-          Readings[I] := Readings[J];
-          Readings[J] := T;
-          Inc(I);
-          Dec(J);
-        end;
-      until I > J;
-      if L < J then QuickSort(L, J);
-      L := I;
-    until I >= R;
-  end;
-begin
-  if Length(Readings) > 1 then
-    QuickSort(Low(Readings), High(Readings));
-end;
-
+{------------------------------------------------------------------------------
+  Sorting and trend maths moved to trndi.funcs.core so the API drivers can use
+  them without the LCL. Kept here as forwarders so existing LCL callers need no
+  uses-clause change.
+ ------------------------------------------------------------------------------}
 procedure SortReadingsDescending(var Readings: array of BGReading);
 begin
-  SortReadingsCore(Readings, false);
+  trndi.funcs.core.SortReadingsDescending(Readings);
 end;
 
 procedure SortReadingsAscending(var Readings: array of BGReading);
 begin
-  SortReadingsCore(Readings, true);
+  trndi.funcs.core.SortReadingsAscending(Readings);
 end;
 
 // SetPointHeight procedure
@@ -420,90 +354,17 @@ end;
 
 function CalculateTrendFromDelta(delta: single): BGTrend;
 begin
-  // Calculate trend based on delta in mg/dL over 5 minutes
-  // Based on standard CGM trend arrow thresholds
-  if delta <= -15 then          // ≤-3 mg/dL/min
-    Result := TdDoubleDown
-  else
-  if delta <= -10 then     // ≤-2 mg/dL/min
-    Result := TdSingleDown
-  else
-  if delta <= -5 then      // ≤-1 mg/dL/min
-    Result := TdFortyFiveDown
-  else
-  if delta < 5 then        // -1 to +1 mg/dL/min
-    Result := TdFlat
-  else
-  if delta < 10 then       // +1 to +2 mg/dL/min
-    Result := TdFortyFiveUp
-  else
-  if delta < 15 then       // +2 to +3 mg/dL/min
-    Result := TdSingleUp
-  else                          // ≥+3 mg/dL/min
-    Result := TdDoubleUp;
+  Result := trndi.funcs.core.CalculateTrendFromDelta(delta);
 end;
 
-{ Maps a glucose delta to a continuous arrow rotation angle.
-
-  Deliberately gentle, but always readable: only near-zero noise (within a tiny
-  dead-band) stays flat. As soon as the value is genuinely moving the arrow
-  leans by at least ARROW_MIN_TILT so the direction is unmistakable, then the
-  tilt grows linearly with the rate of change — reaching 45° at a clearly-moving
-  ~15 mg/dL (~0.8 mmol/L) over 5 minutes and capped at ARROW_MAX_ANGLE so even a
-  fast move reads as a lean rather than a vertical spike.
-
-  @param(delta Change in mg/dL over a 5-minute interval.)
-  @returns(Rotation in degrees: 0 = flat, positive = rising, negative = falling;
-           magnitude is either 0 or within ARROW_MIN_TILT..ARROW_MAX_ANGLE.) }
 function CalculateTrendAngle(delta: single): single;
-const
-  DEAD_BAND = 0.5;         // mg/dL per 5 min; only near-zero noise stays flat
-  DELTA_AT_45 = 15.0;      // mg/dL per 5 min mapped to 45°
-var
-  mag: single;
 begin
-  if Abs(delta) <= DEAD_BAND then
-    Exit(0);
-  // Magnitude: linear, but never so shallow it looks flat, never past the cap.
-  mag := (Abs(delta) / DELTA_AT_45) * 45.0;
-  if mag < ARROW_MIN_TILT then
-    mag := ARROW_MIN_TILT
-  else
-  if mag > ARROW_MAX_ANGLE then
-    mag := ARROW_MAX_ANGLE;
-  if delta < 0 then
-    Result := -mag
-  else
-    Result := mag;
+  Result := trndi.funcs.core.CalculateTrendAngle(delta);
 end;
 
-{ Representative rotation angle for a discrete trend arrow.
-
-  Used as a fallback for the rotating arrow when no usable delta is available
-  (e.g. the first reading, or a stale gap), so the arrow still points in the
-  direction the CGM reported. Mirrors CalculateTrendAngle's ±90° range.
-
-  @param(trend The discrete trend enumeration.)
-  @returns(Rotation in degrees: 0 = flat, positive = rising, negative = falling.) }
 function TrendToAngle(trend: BGTrend): single;
 begin
-  // Soft angles consistent with CalculateTrendAngle's gentle scale.
-  case trend of
-  TdDoubleUp:
-    Result := 60;
-  TdSingleUp:
-    Result := 40;
-  TdFortyFiveUp:
-    Result := 20;
-  TdFortyFiveDown:
-    Result := -20;
-  TdSingleDown:
-    Result := -40;
-  TdDoubleDown:
-    Result := -60;
-  else                          // TdFlat, TdNotComputable, TdPlaceholder
-    Result := 0;
-  end;
+  Result := trndi.funcs.core.TrendToAngle(trend);
 end;
 
 function ParseCompilerDate: TDateTime;

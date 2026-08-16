@@ -46,7 +46,7 @@ Classes, SysUtils, StrUtils, sha1,
   // Parent classes and modules
 trndi.api.nightscout, trndi.api, trndi.native, trndi.types,
   // FPC/Lazarus units
-DateUtils, Dialogs, fpjson, jsonparser;
+DateUtils, fpjson, jsonparser;
 
 (*******************************************************************************
   Constants for xDrip endpoints

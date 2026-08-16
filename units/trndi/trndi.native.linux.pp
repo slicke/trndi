@@ -70,7 +70,7 @@ trndi.native.base, trndi.native.async, FileUtil, Menus,
   // paint on. SetTray is a no-op there — no test asserts on the tray icon.
 trndi.badgeicon,
 {$endif}
-trndi.curl, DateUtils, ctypes, trndi.log,
+trndi.native.request.curl, DateUtils, ctypes, trndi.log,
 Process; // TProcess field (kiosk keep-awake inhibitor child)
 
 type
@@ -334,36 +334,8 @@ FreshMinutes: integer; const Trend: string); forward;
 function DesktopHint: string; forward;
 function FindInPath(const FileName: string): string; forward;
 
-// C-compatible write callback used by libcurl to collect response data.
-// Lives here (and not in the base unit) because Linux/BSD is the only
-// platform using libcurl after the platform split.
-function CurlWriteCallback(buffer: pchar; size, nmemb: SizeUInt;
-userdata: Pointer): SizeUInt; cdecl;
-var
-  stream: TStringStream;
-  actualSize: SizeUInt;
-begin
-  Result := size * nmemb;
-
-  if (buffer = nil) or (size = 0) or (nmemb = 0) or (Result = 0) then
-    Exit;
-
-  // 10MB single-chunk cap to avoid runaway allocations.
-  if Result > 10485760 then
-    Exit(0); // abort the transfer instead of silently dropping the chunk
-
-  actualSize := Result;
-  stream := TStringStream(userdata);
-  if stream = nil then
-    Exit;
-
-  try
-    if actualSize > 0 then
-      stream.WriteBuffer(buffer^, actualSize);
-  except
-    Result := 0; // signal curl to abort
-  end;
-end;
+// The libcurl write callbacks moved to trndi.native.request.curl together
+// with the transport implementations.
 
 {------------------------------------------------------------------------------
   IsNotifySendAvailable
@@ -565,24 +537,8 @@ begin
   Result := False;
 end;
 
-// C-compatible write callback for libcurl used in this unit
-function CurlWriteCallback_Linux(buffer: pchar; size, nmemb: SizeUInt;
-userdata: Pointer): SizeUInt; cdecl;
-var
-  Bytes: SizeUInt;
-  SS: TStringStream;
-begin
-  if (userdata = nil) or (buffer = nil) then
-  begin
-    Result := 0;
-    Exit;
-  end;
-  SS := TStringStream(userdata);
-  Bytes := size * nmemb;
-  if Bytes > 0 then
-    SS.WriteBuffer(buffer^, Bytes);
-  Result := Bytes;
-end;
+// (CurlWriteCallback_Linux moved to trndi.native.request.curl as
+// CurlWriteCallbackPlain.)
 
 // Return value of environment variable Name (empty if unset)
 function EnvValue(const Name: string): string; inline;
@@ -1002,335 +958,56 @@ end;
   Linux/PC implementation using cURL; returns response text or error.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.getURL(const url: string; out res: string): boolean;
-const
-  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 var
-  handle: CURL;
-  headers: pcurl_slist;
-  errCode: CURLcode;
-  responseStream: TStringStream;
-  proxyHost, proxyPort, proxyUser, proxyPass: string;
   tempInstance: TTrndiNativeLinux;
-
-  function SafeUrlForLog(const s: string): string;
-  var
-    cut: integer;
-  begin
-    Result := s;
-    cut := Pos('#', Result);
-    if cut > 0 then
-      Result := Copy(Result, 1, cut - 1);
-    cut := Pos('?', Result);
-    if cut > 0 then
-      Result := Copy(Result, 1, cut - 1);
-    if Length(Result) > 180 then
-      Result := Copy(Result, 1, 180) + '...';
-  end;
-
-  function PerformRequest(withProxy: boolean): boolean;
-  begin
-    Result := false;
-
-    // Clear any prior attempt's response (proxy attempt may have written partial data)
-    responseStream.Size := 0;
-    responseStream.Position := 0;
-
-    handle := curl_easy_init();
-    if handle = nil then
-    begin
-      res := 'curl: failed to init';
-      Exit;
-    end;
-
-    // Set URL and options
-    curl_easy_setopt(handle, CURLOPT_URL, pchar(url));
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
-    curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
-    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
-    curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
-
-    // Set proxy if configured and requested
-    if withProxy and (proxyHost <> '') then
-    begin
-      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
-      if proxyPort <> '' then
-        curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPort, 8080)));
-      if (proxyUser <> '') or (proxyPass <> '') then
-      begin
-        curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(proxyUser));
-        curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
-      end;
-    end;
-
-    // Write callback
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
-
-    errCode := curl_easy_perform(handle);
-    if errCode <> CURLE_OK then
-    begin
-      res := string(curl_easy_strerror(errCode));
-      Result := false;
-    end
-    else
-    begin
-      res := Trim(responseStream.DataString);
-      Result := true;
-    end;
-
-    curl_easy_cleanup(handle);
-  end;
-
+  proxy: TCurlProxy;
 begin
-  res := '';
-  headers := nil;
-  responseStream := TStringStream.Create('');
   tempInstance := TTrndiNativeLinux.Create;
-    // When creating a short-lived helper instance, avoid destructor side-effects
-    // (like clearing the GNOME/KDE cache). Mark it as noFree so Destroy() skips cleanup.
-    tempInstance.noFree := true;
+  // Avoid destructor side-effects (like clearing the GNOME/KDE cache) for a
+  // short-lived settings-reader instance.
+  tempInstance.noFree := true;
   try
-    // Get proxy settings
-    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
-    if proxyHost <> '' then
-    begin
-      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
-      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
-      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
-      NormalizeProxyHostPort(proxyHost, proxyPort);
-    end;
-
-    {$ifdef DEBUG}
-    if proxyHost <> '' then
-    begin
-      if (proxyUser <> '') and (proxyPass <> '') then
-        TrndiDLog(Format('HTTP GET: proxy configured (%s:%s) with auth; url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]))
-      else
-        TrndiDLog(Format('HTTP GET: proxy configured (%s:%s) no auth; url=%s', [proxyHost, proxyPort, SafeUrlForLog(url)]));
-    end
-    else
-      TrndiDLog(Format('HTTP GET: no proxy configured; url=%s', [SafeUrlForLog(url)]));
-    {$endif}
-
-    // A configured proxy is the only route out: no direct fallback, or a dead
-    // proxy would silently send the traffic around it.
-    if proxyHost <> '' then
-    begin
-      {$ifdef DEBUG}
-      TrndiDLog(Format('HTTP GET: attempting via proxy %s:%s', [proxyHost, proxyPort]));
-      {$endif}
-      Result := PerformRequest(true);
-      {$ifdef DEBUG}
-      if Result then
-        TrndiNetLog('HTTP GET: proxy attempt succeeded')
-      else
-        TrndiNetLog('HTTP GET: proxy attempt failed: ' + res);
-      {$endif}
-      Exit;
-    end;
-
-    // Nothing configured: curl follows the environment's proxy variables.
-    {$ifdef DEBUG}
-    TrndiNetLog('HTTP GET: attempting via system/environment configuration');
-    {$endif}
-    Result := PerformRequest(false);
-    {$ifdef DEBUG}
-    if not Result then
-      TrndiNetLog('HTTP GET: attempt failed: ' + res);
-    {$endif}
-
+    proxy := FetchCurlProxy(tempInstance);
   finally
-    if headers <> nil then
-      curl_slist_free_all(headers);
-    responseStream.Free;
     tempInstance.Free;
   end;
+  Result := CurlGetURL(url, proxy, res);
 end;
 
 {------------------------------------------------------------------------------
   postURL
   -------
-  Simple HTTP POST using libcurl. A configured proxy is used exclusively, with
-  no direct fallback (mirrors getURL).
+  Simple HTTP POST using libcurl (shared transport). A configured proxy is
+  used exclusively, with no direct fallback (mirrors getURL).
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.postURL(const url: string; const body: string;
   const contentType: string; out res: string): boolean;
-const
-  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
 var
-  handle: CURL;
-  headers: pcurl_slist;
-  errCode: CURLcode;
-  responseStream: TStringStream;
-  proxyHost, proxyPort, proxyUser, proxyPass: string;
   tempInstance: TTrndiNativeLinux;
-
-  function PerformRequest(withProxy: boolean): boolean;
-  begin
-    Result := false;
-    responseStream.Size := 0;
-    responseStream.Position := 0;
-
-    handle := curl_easy_init();
-    if handle = nil then
-    begin
-      res := 'curl: failed to init';
-      Exit;
-    end;
-
-    curl_easy_setopt(handle, CURLOPT_URL, pchar(url));
-    curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
-    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
-    curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
-
-    curl_easy_setopt(handle, CURLOPT_POST, clong(1));
-    curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(body));
-    curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(body)));
-
-    headers := nil;
-    if contentType <> '' then
-      headers := curl_slist_append(headers, pchar('Content-Type: ' + contentType));
-    if headers <> nil then
-      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
-
-    if withProxy and (proxyHost <> '') then
-    begin
-      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
-      if proxyPort <> '' then
-        curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPort, 8080)));
-      if (proxyUser <> '') or (proxyPass <> '') then
-      begin
-        curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(proxyUser));
-        curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
-      end;
-    end;
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
-
-    errCode := curl_easy_perform(handle);
-    if errCode <> CURLE_OK then
-    begin
-      res := string(curl_easy_strerror(errCode));
-      Result := false;
-    end
-    else
-    begin
-      res := Trim(responseStream.DataString);
-      Result := true;
-    end;
-
-    if headers <> nil then
-    begin
-      curl_slist_free_all(headers);
-      headers := nil;
-    end;
-    curl_easy_cleanup(handle);
-  end;
-
+  proxy: TCurlProxy;
 begin
-  res := '';
-  responseStream := TStringStream.Create('');
   tempInstance := TTrndiNativeLinux.Create;
+  // Avoid destructor side-effects (like clearing the GNOME/KDE cache) for a
+  // short-lived settings-reader instance.
   tempInstance.noFree := true;
   try
-    proxyHost := tempInstance.GetSetting('proxy.host', '', true);
-    if proxyHost <> '' then
-    begin
-      proxyPort := tempInstance.GetSetting('proxy.port', '', true);
-      proxyUser := tempInstance.GetSetting('proxy.user', '', true);
-      proxyPass := tempInstance.GetSetting('proxy.pass', '', true);
-      NormalizeProxyHostPort(proxyHost, proxyPort);
-    end;
-
-    // Strict: a configured proxy is never bypassed (mirrors getURL).
-    if proxyHost <> '' then
-      Result := PerformRequest(true)
-    else
-      Result := PerformRequest(false);
+    proxy := FetchCurlProxy(tempInstance);
   finally
-    responseStream.Free;
     tempInstance.Free;
   end;
+  Result := CurlPostURL(url, body, contentType, proxy, res);
 end;
 
 {------------------------------------------------------------------------------
   TestProxyURL
   ------------
-  Proxy-only HTTP GET using cURL. No direct fallback.
+  Proxy-only HTTP GET using cURL (shared transport). No direct fallback.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.TestProxyURL(const url: string;
   const proxyHost: string; const proxyPort: string; const proxyUser: string;
   const proxyPass: string; out res: string): boolean;
-const
-  DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; trndi) TrndiAPI';
-var
-  handle: CURL;
-  errCode: CURLcode;
-  responseStream: TStringStream;
-  host, portS, user, pass: string;
-
 begin
-  res := '';
-  Result := false;
-
-  host := Trim(proxyHost);
-  portS := Trim(proxyPort);
-  user := Trim(proxyUser);
-  pass := proxyPass; // keep password as-is (may contain spaces)
-  NormalizeProxyHostPort(host, portS);
-
-  if host = '' then
-  begin
-    res := 'Proxy host is empty.';
-    Exit(false);
-  end;
-
-  responseStream := TStringStream.Create('');
-  try
-    handle := curl_easy_init();
-    if handle = nil then
-    begin
-      res := 'curl: failed to init';
-      Exit(false);
-    end;
-
-    try
-      curl_easy_setopt(handle, CURLOPT_URL, pchar(url));
-      curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
-      curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
-      curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
-      curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
-
-      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(host));
-      if portS <> '' then
-        curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(portS, 8080)));
-      if (user <> '') or (pass <> '') then
-      begin
-        curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(user));
-        curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(pass));
-      end;
-
-      curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback_Linux));
-      curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
-
-      errCode := curl_easy_perform(handle);
-      if errCode <> CURLE_OK then
-      begin
-        res := string(curl_easy_strerror(errCode));
-        Result := false;
-      end
-      else
-      begin
-        res := Trim(responseStream.DataString);
-        Result := true;
-      end;
-    finally
-      curl_easy_cleanup(handle);
-    end;
-  finally
-    responseStream.Free;
-  end;
+  Result := CurlTestProxyURL(url, proxyHost, proxyPort, proxyUser, proxyPass, res);
 end;
 
 {------------------------------------------------------------------------------
@@ -2702,540 +2379,43 @@ begin
   end;
 end;
 
-// C-compatible write callback for requestEx (global, no nested/static link).
-function CurlWriteCallbackEx(buffer: pchar; size, nitems: SizeUInt;
-userdata: Pointer): SizeUInt; cdecl;
-var
-  stream: TStringStream;
-  actualSize: SizeUInt;
-begin
-  Result := size * nitems;
-
-  if (buffer = nil) or (size = 0) or (nitems = 0) or (Result = 0) then
-    Exit;
-
-  if Result > 10485760 then // 10MB limit
-    Exit(0); // abort the transfer instead of silently dropping the chunk
-
-  actualSize := Result;
-  stream := TStringStream(userdata);
-
-  if stream = nil then
-    Exit;
-
-  try
-    if actualSize > 0 then
-      stream.WriteBuffer(buffer^, actualSize);
-  except
-    Result := 0;
-  end;
-end;
-
-// C-compatible header callback for requestEx (global, no nested/static link).
-function CurlHeaderCallbackEx(buffer: pchar; size, nitems: SizeUInt;
-userdata: Pointer): SizeUInt; cdecl;
-var
-  stream: TStringStream;
-  actualSize: SizeUInt;
-  headerLine: string;
-begin
-  Result := size * nitems;
-
-  if (buffer = nil) or (size = 0) or (nitems = 0) or (Result = 0) then
-    Exit;
-
-  if Result > 1048576 then // 1MB header limit
-    Exit(0); // abort the transfer instead of silently dropping the header
-
-  actualSize := Result;
-  stream := TStringStream(userdata);
-
-  if stream = nil then
-    Exit;
-
-  try
-    SetLength(headerLine, actualSize);
-    if actualSize > 0 then
-      Move(buffer^, headerLine[1], actualSize);
-    stream.WriteString(headerLine);
-  except
-    Result := 0;
-  end;
-end;
+// The C-compatible libcurl callbacks moved to trndi.native.request.curl
+// together with the transport implementations.
 
 {------------------------------------------------------------------------------
   requestEx (Linux/BSD)
   ---------------------
-  Cookie-aware, redirect-following HTTP via libcurl. TLS certificates are
-  verified against the system CA store. DEBUG builds can disable verification
-  via TRNDI_INSECURE_TLS=1 for driver development behind an intercepting proxy.
+  Cookie-aware, redirect-following HTTP via libcurl (shared transport in
+  trndi.native.request.curl). TLS certificates are verified against the system
+  CA store. DEBUG builds can disable verification via TRNDI_INSECURE_TLS=1 for
+  driver development behind an intercepting proxy.
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.requestEx(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
 cookieJar: TStringList; followRedirects: boolean;
 maxRedirects: integer; customHeaders: TStringList;
 prefix: boolean): THTTPResponse;
-var
-  handle: CURL;
-  headers: pcurl_slist;
-  errCode: CURLcode;
-  address, sx: string;
-  maskedSx: string;
-  i, j: integer;
-  responseStream: TStringStream;
-  headerStream: TStringStream;
-  cookieData: string;
-  responseLine: string;
-  responseCode: clong;
-  redirectCountVal: clong;
-  effectiveUrl: pchar;
-  startTick: QWord;
-  endTick: QWord;
-  methodLabel: string;
-  cookieVal: string;
-  cookiePos: integer;
-  proxyHost, proxyPortS, proxyUser, proxyPass: string;
-
-  function HasHeader(const AName: string): boolean;
-  var
-    k: integer;
-    nameLower: string;
-  begin
-    Result := false;
-    if customHeaders = nil then
-      Exit;
-    nameLower := LowerCase(AName) + ':';
-    for k := 0 to customHeaders.Count - 1 do
-      if Pos(nameLower, LowerCase(Trim(customHeaders[k]))) = 1 then
-        Exit(true);
-  end;
-
-  procedure MaskParam(var S: string; const name: string);
-  var
-    p, valStart, q: integer;
-  begin
-    p := Pos(name + '=', S);
-    if p = 0 then
-      Exit;
-    valStart := p + Length(name) + 1;
-    q := PosEx('&', S, valStart);
-    if q = 0 then
-      q := Length(S) + 1;
-    Delete(S, valStart, q - valStart);
-    Insert('***', S, valStart);
-  end;
-
 begin
-  if prefix then
-    address := Format('%s/%s', [TrimRightSet(baseurl, ['/']), TrimLeftSet(endpoint, ['/'])])
-  else
-    address := endpoint;
-
-  Result.Body := '';
-  Result.Headers := TStringList.Create;
-  Result.Cookies := TStringList.Create;
-  Result.Success := false;
-  Result.StatusCode := 0;
-  Result.RedirectCount := 0;
-  Result.FinalURL := '';
-  Result.ErrorMessage := '';
-
-  // GET: append query string. POST: query goes in the body, not the URL.
-  if (not post) and (jsondata = '') and (Length(params) > 0) then
-  begin
-    address := address + '?' + params[0];
-    for j := 1 to High(params) do
-      address := address + '&' + params[j];
-  end;
-
-  headers := nil;
-  responseStream := TStringStream.Create('');
-  headerStream := TStringStream.Create('');
-  try
-    if post then
-      methodLabel := 'POST'
-    else
-      methodLabel := 'GET';
-    startTick := GetTickCount64;
-    TrndiDLog(Format('HTTP %s (curl): %s', [methodLabel, TrndiSafeUrl(address)]));
-    handle := curl_easy_init();
-    if handle = nil then
-    begin
-      Result.ErrorMessage := 'Failed to initialize CURL';
-      Exit;
-    end;
-
-    try
-      curl_easy_setopt(handle, CURLOPT_URL, pchar(address));
-      curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
-      curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
-      curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, pchar(''));
-      {$ifdef DEBUG}
-      curl_easy_setopt(handle, CURLOPT_VERBOSE, clong(1));
-      // Allow intercepting proxies (e.g. mitmproxy) during driver development only
-      if GetEnvironmentVariable('TRNDI_INSECURE_TLS') = '1' then
-      begin
-        curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, clong(0));
-        curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, clong(0));
-      end;
-      {$endif}
-
-      if useragent <> '' then
-        curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
-
-      // Same proxy.* root settings as request()/getURL(), and like them a
-      // configured proxy is used exclusively — no direct fallback, so a
-      // redirect chain cannot start on the proxy and finish around it.
-      proxyHost := Trim(GetRootSetting('proxy.host', ''));
-      proxyPortS := Trim(GetRootSetting('proxy.port', ''));
-      proxyUser := GetRootSetting('proxy.user', '');
-      proxyPass := GetRootSetting('proxy.pass', '');
-      if proxyHost <> '' then
-      begin
-        NormalizeProxyHostPort(proxyHost, proxyPortS);
-        curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
-        if proxyPortS <> '' then
-          curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPortS, 8080)));
-        if (proxyUser <> '') or (proxyPass <> '') then
-        begin
-          curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(proxyUser));
-          curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
-        end;
-      end;
-
-      if followRedirects then
-      begin
-        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
-        curl_easy_setopt(handle, CURLOPT_MAXREDIRS, clong(maxRedirects));
-      end
-      else
-        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(0));
-
-      if (cookieJar <> nil) and (cookieJar.Count > 0) then
-      begin
-        cookieData := '';
-        for i := 0 to cookieJar.Count - 1 do
-        begin
-          if Trim(cookieJar[i]) = '' then
-            Continue;
-          if cookieData <> '' then
-            cookieData := cookieData + '; ';
-          cookieData := cookieData + cookieJar[i];
-        end;
-        if cookieData <> '' then
-          curl_easy_setopt(handle, CURLOPT_COOKIE, pchar(cookieData));
-      end;
-
-      if customHeaders <> nil then
-        for i := 0 to customHeaders.Count - 1 do
-          headers := curl_slist_append(headers, pchar(customHeaders[i]));
-
-      if jsondata <> '' then
-      begin
-        if not HasHeader('Content-Type') then
-          headers := curl_slist_append(headers, pchar('Content-Type: application/json; charset=UTF-8'));
-        if not HasHeader('Accept') then
-          headers := curl_slist_append(headers, pchar('Accept: application/json'));
-        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
-        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
-        curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(jsondata)));
-      end
-      else if post then
-      begin
-        if not HasHeader('Content-Type') then
-          headers := curl_slist_append(headers, pchar('Content-Type: application/x-www-form-urlencoded'));
-
-        if Length(params) > 0 then
-        begin
-          sx := '';
-          for j := 0 to High(params) do
-          begin
-            if j > 0 then
-              sx := sx + '&';
-            sx := sx + params[j];
-          end;
-
-          maskedSx := sx;
-          MaskParam(maskedSx, 'code_verifier');
-          MaskParam(maskedSx, 'code');
-          MaskParam(maskedSx, 'password');
-          MaskParam(maskedSx, 'client_secret');
-          TrndiNetLog('HTTP POST body (masked): ' + Copy(maskedSx, 1, 2000));
-
-          curl_easy_setopt(handle, CURLOPT_POST, clong(1));
-          curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
-          curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(sx)));
-        end
-        else
-          curl_easy_setopt(handle, CURLOPT_POST, clong(1));
-      end;
-
-      if headers <> nil then
-        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
-
-      curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallbackEx));
-      curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
-      curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, Pointer(@CurlHeaderCallbackEx));
-      curl_easy_setopt(handle, CURLOPT_HEADERDATA, Pointer(headerStream));
-
-      errCode := curl_easy_perform(handle);
-
-      if errCode = CURLE_OK then
-      begin
-        endTick := GetTickCount64;
-        Result.Success := true;
-        Result.Body := responseStream.DataString;
-
-        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, @responseCode);
-        Result.StatusCode := responseCode;
-
-        curl_easy_getinfo(handle, CURLINFO_EFFECTIVE_URL, @effectiveUrl);
-        if effectiveUrl <> nil then
-          Result.FinalURL := string(effectiveUrl);
-
-        redirectCountVal := 0;
-        curl_easy_getinfo(handle, CURLINFO_REDIRECT_COUNT, @redirectCountVal);
-        Result.RedirectCount := redirectCountVal;
-
-        TrndiDLog(Format('HTTP %s (curl) ok: status=%d, bytes=%d, redirects=%d, ms=%d',
-          [methodLabel, Result.StatusCode, Length(Result.Body), Result.RedirectCount, endTick - startTick]));
-
-        headerStream.Position := 0;
-        while headerStream.Position < headerStream.Size do
-        begin
-          responseLine := '';
-          while headerStream.Position < headerStream.Size do
-          begin
-            i := Ord(headerStream.ReadByte);
-            if i = 10 then // LF
-              Break;
-            if i <> 13 then // skip CR
-              responseLine := responseLine + Chr(i);
-          end;
-
-          responseLine := Trim(responseLine);
-          if responseLine <> '' then
-          begin
-            // HTTP/2 and envoy-fronted servers send lowercase header names
-            if Pos('set-cookie:', LowerCase(responseLine)) = 1 then
-            begin
-              cookieVal := Trim(Copy(responseLine, Length('set-cookie:') + 1, MaxInt));
-              cookiePos := Pos(';', cookieVal);
-              if cookiePos > 0 then
-                cookieVal := Copy(cookieVal, 1, cookiePos - 1);
-              if cookieVal <> '' then
-              begin
-                Result.Cookies.Add(cookieVal);
-                if cookieJar <> nil then
-                begin
-                  // Replace a stale value for the same cookie name, so a
-                  // rotated session cookie doesn't get sent twice
-                  cookiePos := Pos('=', cookieVal);
-                  j := -1;
-                  if cookiePos > 0 then
-                    for i := 0 to cookieJar.Count - 1 do
-                      if Pos(Copy(cookieVal, 1, cookiePos), cookieJar[i]) = 1 then
-                      begin
-                        j := i;
-                        Break;
-                      end;
-                  if j >= 0 then
-                    cookieJar[j] := cookieVal
-                  else if cookieJar.IndexOf(cookieVal) = -1 then
-                    cookieJar.Add(cookieVal);
-                end;
-              end;
-            end;
-            Result.Headers.Add(responseLine);
-          end;
-        end;
-      end
-      else
-      begin
-        endTick := GetTickCount64;
-        Result.Success := false;
-        Result.ErrorMessage := string(curl_easy_strerror(errCode));
-        TrndiDLog(Format('HTTP %s (curl) error: code=%d, msg=%s, ms=%d',
-          [methodLabel, Ord(errCode), Result.ErrorMessage, endTick - startTick]));
-      end;
-
-    finally
-      curl_easy_cleanup(handle);
-    end;
-  finally
-    if headers <> nil then
-      curl_slist_free_all(headers);
-    responseStream.Free;
-    headerStream.Free;
-  end;
+  Result := CurlRequestEx(post, baseurl, useragent, endpoint, params, jsondata,
+    cookieJar, followRedirects, maxRedirects, customHeaders, prefix,
+    FetchCurlProxy(self));
 end;
 
 {------------------------------------------------------------------------------
   request (Linux/BSD)
   -------------------
-  HTTP GET/POST via libcurl. Honours proxy.* root settings: a configured proxy
-  carries the request with no direct fallback, and with nothing configured
-  curl follows the environment's proxy variables. Includes a DNS-retry path
-  for laptop wake/resume scenarios.
+  HTTP GET/POST via libcurl (shared transport in trndi.native.request.curl).
+  Honours proxy.* root settings: a configured proxy carries the request with
+  no direct fallback, and with nothing configured curl follows the
+  environment's proxy variables. Includes a DNS-retry path for laptop
+  wake/resume scenarios.
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
 const header: string; prefix: boolean): string;
-var
-  handle: CURL;
-  headers: pcurl_slist;
-  errCode: CURLcode;
-  address, sx: string;
-  p: integer;
-  key, val: string;
-  responseStream: TStringStream;
-  proxyHost: string;
-  proxyPortS: string;
-  proxyUser: string;
-  proxyPass: string;
-  useProxy: boolean;
-
-  function IsDnsResolveError(const code: CURLcode): boolean;
-  begin
-    Result := code = CURLE_COULDNT_RESOLVE_HOST;
-  end;
-
-  function PerformRequest(withProxy: boolean): boolean;
-  var
-    j: integer;
-  begin
-    Result := false;
-    responseStream.Size := 0;
-    responseStream.Position := 0;
-
-    handle := curl_easy_init();
-    if handle = nil then
-    begin
-      errCode := CURLE_FAILED_INIT;
-      Exit(false);
-    end;
-
-    curl_easy_setopt(handle, CURLOPT_URL, pchar(address));
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
-    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
-    curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
-
-    if useragent <> '' then
-      curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
-
-    if withProxy and (proxyHost <> '') then
-    begin
-      curl_easy_setopt(handle, CURLOPT_PROXY, pchar(proxyHost));
-      if proxyPortS <> '' then
-        curl_easy_setopt(handle, CURLOPT_PROXYPORT, clong(StrToIntDef(proxyPortS, 8080)));
-      if (proxyUser <> '') or (proxyPass <> '') then
-      begin
-        curl_easy_setopt(handle, CURLOPT_PROXYUSERNAME, pchar(proxyUser));
-        curl_easy_setopt(handle, CURLOPT_PROXYPASSWORD, pchar(proxyPass));
-      end;
-    end;
-
-    if headers <> nil then
-      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
-
-    if jsondata <> '' then
-    begin
-      curl_easy_setopt(handle, CURLOPT_POST, clong(1));
-      curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(jsondata));
-      curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE, clong(Length(jsondata)));
-    end
-    else if post then
-    begin
-      if Length(params) > 0 then
-      begin
-        sx := '';
-        for j := 0 to High(params) do
-        begin
-          if j > 0 then
-            sx := sx + '&';
-          sx := sx + params[j];
-        end;
-        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
-        curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(sx));
-      end
-      else
-        curl_easy_setopt(handle, CURLOPT_POST, clong(1));
-    end;
-
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, Pointer(@CurlWriteCallback));
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, Pointer(responseStream));
-
-    errCode := curl_easy_perform(handle);
-    curl_easy_cleanup(handle);
-    Result := (errCode = CURLE_OK);
-  end;
-
 begin
-  Result := '';
-
-  if prefix then
-    address := Format('%s/%s', [baseurl, endpoint])
-  else
-    address := endpoint;
-
-  if (jsondata = '') and (Length(params) > 0) then
-  begin
-    address := address + '?' + params[0];
-    for p := 1 to High(params) do
-      address := address + '&' + params[p];
-  end;
-
-  headers := nil;
-  responseStream := TStringStream.Create('');
-  try
-    proxyHost := Trim(GetRootSetting('proxy.host', ''));
-    proxyPortS := Trim(GetRootSetting('proxy.port', ''));
-    proxyUser := GetRootSetting('proxy.user', '');
-    proxyPass := GetRootSetting('proxy.pass', '');
-    // The host field holds whatever the user typed ('http://proxy:3128'), so
-    // split it exactly like getURL and the settings dialog's test button do.
-    NormalizeProxyHostPort(proxyHost, proxyPortS);
-
-    if header <> '' then
-    begin
-      p := Pos('=', header);
-      if p > 0 then
-      begin
-        key := Trim(Copy(header, 1, p - 1));
-        val := Trim(Copy(header, p + 1, MaxInt));
-        if key <> '' then
-          headers := curl_slist_append(headers, pchar(Format('%s: %s', [key, val])));
-      end;
-    end;
-
-    if jsondata <> '' then
-    begin
-      headers := curl_slist_append(headers, pchar('Content-Type: application/json; charset=UTF-8'));
-      headers := curl_slist_append(headers, pchar('Accept: application/json'));
-    end;
-
-    // A configured proxy carries the request or the request fails - it is
-    // never bypassed. The DNS retry stays either way: after a laptop resume
-    // the first attempt can fail to resolve the proxy just as easily as the
-    // target host.
-    useProxy := proxyHost <> '';
-    if PerformRequest(useProxy) then
-      Result := responseStream.DataString
-    else if IsDnsResolveError(errCode) then
-    begin
-      Sleep(1500); // allow DNS/network stack to settle after resume
-      if PerformRequest(useProxy) then
-        Result := responseStream.DataString
-      else
-        Result := string(curl_easy_strerror(errCode));
-    end
-    else
-      Result := string(curl_easy_strerror(errCode));
-  finally
-    if headers <> nil then
-      curl_slist_free_all(headers);
-    responseStream.Free;
-  end;
+  Result := CurlRequest(post, baseurl, useragent, endpoint, params, jsondata,
+    header, prefix, FetchCurlProxy(self));
 end;
 
 {------------------------------------------------------------------------------
@@ -3924,11 +3104,8 @@ begin
       Exit(true);
 end;
 
-initialization
-  // libcurl requires a one-shot global init before any per-handle use, ideally
-  // before threads start. Doing it here (rather than lazily on first request)
-  // means the first HTTP call on this platform can't race with init.
-  curl_global_init(CURL_GLOBAL_DEFAULT);
+// libcurl's one-shot global init lives in trndi.native.request.curl's
+// initialization section, shared with every curl-backed native class.
 
 finalization
   if gWakeThread <> nil then
