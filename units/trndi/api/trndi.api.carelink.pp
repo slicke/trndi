@@ -44,7 +44,7 @@ interface
 uses
   Classes, SysUtils,
   // Trndi units
-  trndi.types, trndi.api, trndi.native.base, trndi.funcs,
+  trndi.types, trndi.api, trndi.native.base, trndi.funcs.core,
   // FPC units
   fpjson, jsonparser, dateutils, base64;
 
@@ -354,8 +354,10 @@ function ParseCareLinkTime(const S: string; out ADate: TDateTime): boolean;
 
 implementation
 
+{$ifndef X_CONSOLE}
 uses
-  LResources;
+  LResources; // TLazarusResourceStream for the embedded login-helper assets
+{$endif}
 
 resourcestring
   sErrCareLinkNoCreds = 'No CareLink token data found. Paste the captured login data (JSON) as the credential — see the CareLink guide.';
@@ -898,6 +900,7 @@ end;
   overwriting any existing copy. Raises on I/O failure so WriteAssets can fail
   as a whole rather than run the helper against a half-written folder.
  ------------------------------------------------------------------------------}
+{$ifndef X_CONSOLE}
 procedure ExtractCareLinkAsset(const AResName: string; AResType: PChar;
   const AFolder, AFileName: string);
 var
@@ -928,6 +931,7 @@ class function CareLink.WriteAssets(const AFolder: string): boolean;
 begin
   if not ForceDirectories(AFolder) then
     Exit(false);
+
   // Callers fall back to the bundle next to the executable on a False result,
   // so a locked or read-only target must return False rather than escape as an
   // exception — that fallback is unreachable if this raises.
@@ -940,6 +944,17 @@ begin
     Result := false;
   end;
 end;
+{$else}
+{------------------------------------------------------------------------------
+  Console builds carry no Lazarus resource bundles (TLazarusResourceStream is
+  LCL). Returning False sends callers to the documented fallback: the helper
+  bundle shipped next to the executable.
+ ------------------------------------------------------------------------------}
+class function CareLink.WriteAssets(const AFolder: string): boolean;
+begin
+  Result := false;
+end;
+{$endif}
 
 {------------------------------------------------------------------------------
   Refresh the access token. Medtronic rotates the refresh token on every use,
@@ -2259,6 +2274,7 @@ begin
   Result := 40; // ... and down to 40 mg/dL
 end;
 
+{$ifndef X_CONSOLE}
 initialization
   // Register the embedded login-helper assets (carelink-login.mjs and the
   // package manifests) so CareLink.WriteAssets can extract them at runtime.
@@ -2266,5 +2282,6 @@ initialization
   // the path is relative to this unit. Regenerate with: make assets (or
   // make.ps1 assets).
   {$I ../../../assets/carelink_assets.lrs}
+{$endif}
 
 end.

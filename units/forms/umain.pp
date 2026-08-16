@@ -52,7 +52,7 @@ trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.log, utrendarrow,
+slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow,
 Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
