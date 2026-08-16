@@ -15,6 +15,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * GitHub: https://github.com/slicke/trndi
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
+ *   trndi.funcs.
  *)
 unit trndi.api;
 

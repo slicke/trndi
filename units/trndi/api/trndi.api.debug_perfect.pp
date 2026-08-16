@@ -35,6 +35,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: Dropped the unused Dialogs import so the unit compiles in LCL-
+ *   free (console) builds.
  *)
 
 unit trndi.api.debug_perfect; // 5.5 mmol/L
