@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
+ *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
+ *   LCL-free (console) builds.
  *)
 unit trndi.api.tandem;
 

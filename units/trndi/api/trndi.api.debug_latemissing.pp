@@ -35,6 +35,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
+ *   trndi.funcs.
  *)
 
 (*
