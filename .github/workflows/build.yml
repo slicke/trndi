@@ -565,7 +565,13 @@ jobs:
           # The extension engine links quickjs-ng and its ABI shim as DLLs, which
           # Windows resolves from the executable's own directory. Place them next
           # to Trndi.exe so the tests below and the packages built from here work.
-          Copy-Item '.\externals\quickjs\prebuilt\x86_64-win64\*.dll' -Destination '.' -Force
+          # Named rather than swept (*.dll): that directory is on the linker
+          # search path, so anything else landing in it would be copied beside
+          # the binary and, below, into the shipped ZIP. The Linux side stages by
+          # name through dist/linux/stage-qjs.sh for the same reason.
+          $qjsDir = '.\externals\quickjs\prebuilt\x86_64-win64'
+          $qjsDlls = @("$qjsDir\libqjs*.dll", "$qjsDir\libtqshim*.dll", "$qjsDir\tqshim*.dll")
+          Get-ChildItem -Path $qjsDlls -ErrorAction SilentlyContinue | Copy-Item -Destination '.' -Force
           # Run tests via the same entry point developers use locally (the test
           # runner embeds its own Pascal test server). No extra args: make.ps1
           # forwards them to both lazbuild and the test exe. Runs on every event,
@@ -576,7 +582,7 @@ jobs:
           # Package ZIP
           New-Item -ItemType Directory -Path artifacts -Force | Out-Null
           Copy-Item '.\Trndi.exe' -Destination '.\artifacts\'
-          Copy-Item '.\externals\quickjs\prebuilt\x86_64-win64\*.dll' -Destination '.\artifacts\'
+          Get-ChildItem -Path $qjsDlls -ErrorAction SilentlyContinue | Copy-Item -Destination '.\artifacts\'
           if (Test-Path '.\lang') { Copy-Item '.\lang' -Destination '.\artifacts\lang' -Recurse }
           # The CareLink login helper is compiled into Trndi.exe and written to
           # the user's writable settings folder on demand — nothing to bundle.
