@@ -9,16 +9,55 @@ if (!@files) {
   while (<STDIN>) { chomp; push @files, $_ if $_; }
 }
 
+# Blank out Pascal comments so prose can't be mistaken for code. A wrapped
+# doc-comment line that happens to begin with "unit " (e.g. "...so this
+# unit never touches...") otherwise matches before the real declaration and
+# reports a mismatch against a word from a sentence.
+# Comment bodies are replaced space-for-space and newlines are kept, so line
+# anchoring and any reported positions still line up with the original file.
+sub strip_comments {
+  my ($src) = @_;
+  my $out = '';
+  # state: code | brace {...} | paren (*...*) | line // | string '...'
+  my $state = 'code';
+  my $i = 0;
+  my $len = length $src;
+  while ($i < $len) {
+    my $c  = substr($src, $i, 1);
+    my $c2 = substr($src, $i, 2);
+    if ($state eq 'code') {
+      if    ($c2 eq '(*') { $state = 'paren'; $out .= '  '; $i += 2; next; }
+      elsif ($c2 eq '//') { $state = 'line';  $out .= '  '; $i += 2; next; }
+      elsif ($c  eq '{')  { $state = 'brace'; $out .= ' ';  $i++;    next; }
+      # Track string literals so an apostrophe in code can't be confused with
+      # a comment delimiter, and vice versa.
+      elsif ($c  eq "'")  { $state = 'string'; $out .= $c;  $i++;    next; }
+      $out .= $c; $i++; next;
+    }
+    if ($state eq 'string') {
+      $out .= $c; $i++;
+      $state = 'code' if $c eq "'";   # doubled '' reopens on the next pass
+      next;
+    }
+    # inside a comment: keep newlines, blank everything else
+    if    ($state eq 'brace' && $c  eq '}')  { $state = 'code'; $out .= ' ';  $i++;    next; }
+    elsif ($state eq 'paren' && $c2 eq '*)') { $state = 'code'; $out .= '  '; $i += 2; next; }
+    elsif ($state eq 'line'  && $c  eq "\n") { $state = 'code'; $out .= "\n"; $i++;    next; }
+    $out .= ($c eq "\n") ? "\n" : ' ';
+    $i++;
+  }
+  return $out;
+}
+
 my $errors = 0;
 for my $f (@files) {
   next unless -f $f;
   next if $f =~ m{(?:^|/)backup/};
   open my $fh, '<', $f or next;
-  my $unit;
-  while (<$fh>) {
-    if (/^\s*unit\s+([A-Za-z0-9_.]+)/i) { $unit = $1; last; }
-  }
+  my $src = do { local $/; <$fh> };
   close $fh;
+  my $unit;
+  if (strip_comments($src) =~ /^\s*unit\s+([A-Za-z0-9_.]+)/im) { $unit = $1; }
   unless (defined $unit) {
     printf("MISSING UNIT: %s (no 'unit' declaration found)\n", $f);
     $errors++;
