@@ -1399,6 +1399,10 @@ msgctxt "trndi.api.dexcom.serrdexlogin"
 msgid "Login error: Could not establish a valid session"
 msgstr ""
 
+#: trndi.api.dexcom.serrdexnoaccount
+msgid "No Dexcom account matched those details. Check the username or e-mail address."
+msgstr ""
+
 #: trndi.api.dexcom.serrdexpass
 msgid "Invalid Dexcom password or account credentials"
 msgstr ""
@@ -1430,9 +1434,17 @@ msgstr ""
 msgid "Dexcom Username"
 msgstr ""
 
+#: trndi.api.dexcom_helpers.sdexerrmaxattempts
+msgid "Too many failed Dexcom sign-in attempts. The account is temporarily locked - wait before trying again, as further attempts keep it locked."
+msgstr ""
+
 #: trndi.api.dexcomnew.sdexnewerrlogin
 msgctxt "trndi.api.dexcomnew.sdexnewerrlogin"
 msgid "Login error: Could not establish a valid session"
+msgstr ""
+
+#: trndi.api.dexcomnew.sdexnewerrnoaccount
+msgid "No Dexcom account matched those details. Check the username, or whether the account belongs to another region"
 msgstr ""
 
 #: trndi.api.dexcomnew.sdexnewerrpass
@@ -1698,6 +1710,10 @@ msgstr ""
 #: trndi.ext.functions.sexttitle
 msgctxt "trndi.ext.functions.sexttitle"
 msgid "Extension error"
+msgstr ""
+
+#: trndi.native.linux.rs_notice_show
+msgid "Show Trndi"
 msgstr ""
 
 #: trndi.strings.rs_alert_snooze
@@ -3080,6 +3096,10 @@ msgstr ""
 msgid ""
 "Dexcom servers do not provide custom high and low blood sugar values.\n"
 "Please set your own thresholds in the Customization tab."
+msgstr ""
+
+#: uconf.rs_dex_old
+msgid "The \"Dexcom New\" backend is recommended - new features are added there."
 msgstr ""
 
 #: uconf.rs_diff_right_help
