@@ -115,8 +115,14 @@ type
     constructor Create; virtual;
   end;
 
-  // Alignment/layout types used across widgets
-  TAlignment = (taLeftJustify, taRightJustify, taCenter);
+  // Alignment/layout types used across widgets.
+  // Aliased from Classes rather than redeclared: the real LCL graphics.pp
+  // declares no TAlignment of its own, so code reaching it through Graphics
+  // actually gets Classes.TAlignment. A separate enum here would be a type the
+  // real build never produces, and it makes units resolving TAlignment via
+  // Classes (e.g. trndi.native.base) incompatible with units resolving it via
+  // Graphics.
+  TAlignment = Classes.TAlignment;
   TTextLayout = (tlTop, tlCenter, tlBottom);
 
   // Minimal text style used by Canvas.TextStyle

@@ -18,8 +18,10 @@
  * GitHub: https://github.com/slicke/trndi
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
- * - 2026-08-16: X_CONSOLE builds substitute a TColor range type and a false
- *   isDarkMode default for the LCL Graphics dependency.
+ * - 2026-08-16: The LCL Graphics dependency was replaced by the new
+ *   trndi.native.colors unit, which owns the TColor definition (re-exported
+ *   here) and the default isDarkMode heuristic. This unit keeps no build-mode
+ *   conditionals of its own.
  *)
 
 {**
@@ -56,20 +58,15 @@ interface
 }
 
 uses
-  Classes, SysUtils,
-{$ifndef X_CONSOLE}
-  Graphics,                     // LCL — supplies TColor for the colour APIs below
-{$endif}
-  trndi.log, SyncObjs, StrUtils;
+  Classes, SysUtils, trndi.native.colors, trndi.log, SyncObjs, StrUtils;
 
-{$ifdef X_CONSOLE}
 type
-  {** Stand-in for LCL @code(Graphics.TColor) for front ends built without the
-      LCL (console/TUI). Same underlying range as the LCL type, so colour
-      settings written by a GUI build read back unchanged here. Not a platform
-      switch: X_CONSOLE is set by the build, not by inc/native.inc. }
-TColor = -$7FFFFFFF-1..$7FFFFFFF;
-{$endif}
+  {** Re-export of @link(trndi.native.colors.TColor) so consumers of this unit
+      resolve the colour APIs below without importing the colour unit — or the
+      LCL — themselves. @code(TAlignment) needs no such treatment: it comes
+      from @code(Classes), which is where the real LCL's own graphics unit
+      leaves it too. }
+TColor = trndi.native.colors.TColor;
 
 type
 {$ifdef X_LINUXBSD}
@@ -1887,26 +1884,13 @@ end;
 {------------------------------------------------------------------------------
   isDarkMode (class, virtual)
   ----------------------
-  Default cross-platform heuristic: compare luminance of clWindow and clWindowText.
+  Default cross-platform heuristic, implemented by trndi.native.colors: compare
+  luminance of clWindow and clWindowText where there is a widgetset to ask.
   Platform units may override for more accurate detection.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.isDarkMode: boolean;
-{$ifndef X_CONSOLE}
-
-function Brightness(C: TColor): double;
-  begin
-    Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
-  end;
-
-{$endif}
 begin
-{$ifdef X_CONSOLE}
-  // No LCL system colours to compare without a widgetset. Console front ends
-  // override this (e.g. from COLORFGBG or a terminal query).
-  Result := false;
-{$else}
-  Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
-{$endif}
+  Result := DefaultIsDarkMode;
 end;
 
 {------------------------------------------------------------------------------
