@@ -42,9 +42,8 @@ unit trndi.api.tandem;
 interface
 
 uses
-  Classes, SysUtils, Dialogs,
-  // Trndi units
-  trndi.types, trndi.api, trndi.native.base, trndi.funcs, trndi.log, math,
+  Classes, SysUtils,   // Trndi units
+  trndi.types, trndi.api, trndi.native.base, trndi.funcs.core, trndi.log, math,
   // FPC units
   fpjson, jsonparser, dateutils, StrUtils, base64, slicke.sha256;
 

@@ -52,7 +52,20 @@ interface
 }
 
 uses
-  Classes, SysUtils, Graphics, trndi.log, SyncObjs, StrUtils;
+  Classes, SysUtils,
+{$ifndef X_CONSOLE}
+  Graphics,                     // LCL — supplies TColor for the colour APIs below
+{$endif}
+  trndi.log, SyncObjs, StrUtils;
+
+{$ifdef X_CONSOLE}
+type
+  {** Stand-in for LCL @code(Graphics.TColor) for front ends built without the
+      LCL (console/TUI). Same underlying range as the LCL type, so colour
+      settings written by a GUI build read back unchanged here. Not a platform
+      switch: X_CONSOLE is set by the build, not by inc/native.inc. }
+TColor = -$7FFFFFFF-1..$7FFFFFFF;
+{$endif}
 
 type
 {$ifdef X_LINUXBSD}
@@ -1874,14 +1887,22 @@ end;
   Platform units may override for more accurate detection.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeBase.isDarkMode: boolean;
+{$ifndef X_CONSOLE}
 
 function Brightness(C: TColor): double;
   begin
     Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
   end;
 
+{$endif}
 begin
+{$ifdef X_CONSOLE}
+  // No LCL system colours to compare without a widgetset. Console front ends
+  // override this (e.g. from COLORFGBG or a terminal query).
+  Result := false;
+{$else}
   Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
+{$endif}
 end;
 
 {------------------------------------------------------------------------------

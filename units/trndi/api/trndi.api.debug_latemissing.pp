@@ -60,7 +60,7 @@ unit trndi.api.debug_latemissing;
 interface
 
 uses
-  Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs,
+  Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs.core,
   dateutils, Math;
 
 type

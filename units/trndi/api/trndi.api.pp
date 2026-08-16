@@ -23,7 +23,7 @@ unit trndi.api;
 interface
 
 uses
-Classes, SysUtils, trndi.types, dateutils, trndi.native, trndi.funcs;
+Classes, SysUtils, trndi.types, dateutils, trndi.native, trndi.funcs.core;
 
 type
   {** CGMCore holds thresholds used to classify blood glucose values.

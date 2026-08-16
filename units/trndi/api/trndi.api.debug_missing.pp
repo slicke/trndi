@@ -44,8 +44,8 @@ unit trndi.api.debug_missing;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
-trndi.api.debug, trndi.funcs, fpjson, jsonparser, dateutils;
+Classes, SysUtils, trndi.types, trndi.api, trndi.native,
+trndi.api.debug, trndi.funcs.core, fpjson, jsonparser, dateutils;
 
 type
   // Main class

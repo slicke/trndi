@@ -43,7 +43,7 @@ unit trndi.types;
 interface
 
 uses
-SysUtils, Dialogs;
+SysUtils;
 
 {$I ../../inc/types.inc}
 
