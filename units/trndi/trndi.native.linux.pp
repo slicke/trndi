@@ -64,6 +64,12 @@ uses
 Classes, SysUtils, Graphics, IniFiles, Dialogs, StrUtils,
 ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, linutils.dbus,
 trndi.native.base, trndi.native.async, FileUtil, Menus,
+{$ifndef TEST}
+  // The tray painter rasterizes through the real LCL image types; the console
+  // test build swaps in tests/mock/graphics.pp, which has no rasterizer to
+  // paint on. SetTray is a no-op there — no test asserts on the tray icon.
+trndi.badgeicon,
+{$endif}
 trndi.curl, DateUtils, ctypes, trndi.log,
 Process; // TProcess field (kiosk keep-awake inhibitor child)
 
@@ -76,6 +82,12 @@ TTrndiNativeLinux = class(TTrndiNativeBase)
 protected
   Tray: TTrayIcon;
   TrayMenu: TPopupMenu;
+  {$ifndef TEST}
+    // Painter behind the tray icon. Kept for the process lifetime because it
+    // caches the application logo downscaled from a 1024px asset — far too
+    // slow to redo on every reading.
+  FTrayPainter: TTrndiBadgeIcon;
+  {$endif}
   inistore: TIniFile; // Linux-specific settings store
     // Flashing support
   FFlashTimer: TTimer;
@@ -140,13 +152,12 @@ public
         Shows a user-visible message when the tool is not present. }
     {** Speak text via spd-say if present; warn user if missing. }
   procedure Speak(const Text: string); override;
-    {** Draw a badge with @param(Value) text on tray icon using @param(BadgeColor).
-        @param(badge_size_ratio Determines badge diameter relative to icon size)
-        @param(min_font_size Lower bound for font size while fitting text) }
-    {** Draw a badge on the tray icon. }
-  {** Draw a badge with @param(Value) text on tray icon using @param(BadgeColor).
-      @param(badge_size_ratio Determines badge diameter relative to icon size)
-      @param(min_font_size Lower bound for font size while fitting text) }
+    {** Compose the tray icon: the logo, @param(Value) in a badge filled with
+        @param(BadgeColor), and @link(TTrndiNativeBase.badgeTrend) as an arrow
+        badge when one is set. An empty @param(Value) leaves the bare logo.
+        @param(badge_size_ratio Badge edge relative to the icon edge)
+        @param(min_font_size Accepted for signature compatibility with the
+          other platforms; the painter fits the text to the badge itself) }
   procedure SetTray(const Value: string; BadgeColor: TColor;
     badge_size_ratio: double = 0.8; min_font_size: integer = 8);
     {** Convenience overload: redirects to base two-arg version. }
@@ -1960,6 +1971,10 @@ begin
     TrayMenu.Free;
   if Assigned(Tray) then
     Tray.Free;
+  {$ifndef TEST}
+  if Assigned(FTrayPainter) then
+    FreeAndNil(FTrayPainter);
+  {$endif}
   if Assigned(FFlashTimer) then
     FreeAndNil(FFlashTimer);
   // Stop the pump before the connection it pumps goes away; the connection's
@@ -2312,26 +2327,23 @@ end;
 {------------------------------------------------------------------------------
   SetTray
   -------
-  Draw a badge on the system tray icon and synchronize KDE taskbar badge.
+  Compose the tray icon: the logo, the reading in a rounded badge and, when one
+  is set, the trend arrow — the same picture the Windows taskbar icon shows.
+
+  The pixels come from trndi.badgeicon rather than from this unit's canvas.
+  Drawing the badge with LCL's RoundRect/TextOut, as this used to, produced an
+  aliased badge on an opaque black square, because canvas operations neither
+  antialias nor write the alpha channel of a 32-bit bitmap.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.SetTray(const Value: string; BadgeColor: TColor;
 badge_size_ratio: double = 0.8; min_font_size: integer = 8);
-const
-  INITIAL_FONT_SIZE_RATIO = 0.5;
-  TEXT_PADDING = 3;
-  CORNER_RADIUS = 6;
+{$ifdef TEST}
+begin
+  // No tray, and no rasterizer, in the console test build. See the uses clause.
+end;
+{$else}
 var
-  BaseIcon, OutIcon: TIcon;
-  Bmp: TBitmap;
-  W, H, BadgeSize, Radius: integer;
-  BadgeRect: TRect;
-  TextW, TextH: integer;
-  FontSize: integer;
-  TextColor: TColor;
-  rgb: longint;
-  r, g, b: byte;
-  BadgeText: string;
-  dval: double;
+  Composed: TPortableNetworkGraphic;
 begin
   // If the GNOME top-bar extension or KDE plasmoid is in use, suppress the legacy tray icon.
   if IsTrndiGnomeExtensionEnabled or IsTrndiKdePlasmoidVisible then
@@ -2360,128 +2372,30 @@ begin
     end;
   end;
 
-  if Value = '' then
-  begin
-    // Reset to app icon and force refresh
-    if (Application.Icon <> nil) and (Application.Icon.Width > 0) then
-      Tray.Icon.Assign(Application.Icon);
-    // Toggle visibility to force redraw in some tray implementations
-    Tray.Visible := false;
-    Tray.Visible := true;
-    Exit;
-  end;
+  if not Assigned(FTrayPainter) then
+    FTrayPainter := TTrndiBadgeIcon.Create;
+  // Application.Icon is empty until the LCL has processed the main form's
+  // resources, so the first SetTray of a session can arrive before there is a
+  // logo to scale. Retry until one turns up rather than caching the emptiness.
+  if not FTrayPainter.HasBase then
+    FTrayPainter.SetBase(Application.Icon);
 
+  Composed := FTrayPainter.Render(Value, FBadgeTrend, BadgeColor, badge_size_ratio);
   try
-    if TryStrToFloat(Value, dval, fsettings) then
-      BadgeText := FormatFloat('0.0', dval, fsettings)
-    else
-      BadgeText := Value;
-  except
-    BadgeText := Value;
-  end;
-
-  BaseIcon := TIcon.Create;
-  OutIcon := TIcon.Create;
-  Bmp := TBitmap.Create;
-  try
-    if (Application.Icon <> nil) and (Application.Icon.Width > 0) then
-      BaseIcon.Assign(Application.Icon)
-    else
-      BaseIcon.SetSize(24, 24);
-
-    W := BaseIcon.Width;
-    H := BaseIcon.Height;
-    if (W <= 0) or (H <= 0) then
-    begin
-      W := 24;
-      H := 24;
-    end;
-
-    // Badge occupies a fraction of the icon's smallest side
-    BadgeSize := Round(Min(W, H) * badge_size_ratio);
-    if BadgeSize < 10 then
-      BadgeSize := 10;
-
-    Bmp.SetSize(W, H);
-    Bmp.PixelFormat := pf32bit;
-
-    Bmp.Canvas.Brush.Style := bsSolid;
-    Bmp.Canvas.Brush.Color := clNone;
-    Bmp.Canvas.FillRect(Rect(0, 0, W, H));
-    Bmp.Canvas.Draw(0, 0, BaseIcon);
-
-    BadgeRect := Rect(W - BadgeSize, H - BadgeSize, W, H);
-
-    rgb := ColorToRGB(BadgeColor);
-    r := byte(rgb);
-    g := byte(rgb shr 8);
-    b := byte(rgb shr 16);
-    if (0.299 * r + 0.587 * g + 0.114 * b) > 128 then
-      TextColor := clBlack
-    else
-      TextColor := clWhite;
-
-    Bmp.Canvas.Brush.Color := BadgeColor;
-    Bmp.Canvas.Pen.Color := BadgeColor;
-
-    if BadgeSize <= 12 then
-      Bmp.Canvas.FillRect(BadgeRect)
-    else
-    begin
-      Radius := Round(CORNER_RADIUS * BadgeSize / 32);
-      if Radius < 2 then
-        Radius := 2;
-
-      Bmp.Canvas.RoundRect(
-        BadgeRect.Left, BadgeRect.Top,
-        BadgeRect.Right, BadgeRect.Bottom,
-        Radius * 2, Radius * 2
-        );
-
-      Bmp.Canvas.FillRect(
-        Rect(BadgeRect.Right - Radius, BadgeRect.Bottom - Radius,
-        BadgeRect.Right, BadgeRect.Bottom)
-        );
-    end;
-
-    Bmp.Canvas.Font.Name := 'DejaVu Sans';
-    Bmp.Canvas.Font.Style := [fsBold];
-    Bmp.Canvas.Font.Color := TextColor;
-
-    FontSize := Round(BadgeSize * INITIAL_FONT_SIZE_RATIO);
-    if FontSize < min_font_size then
-      FontSize := min_font_size;
-    Bmp.Canvas.Font.Size := FontSize;
-
-    TextW := Bmp.Canvas.TextWidth(BadgeText);
-    TextH := Bmp.Canvas.TextHeight(BadgeText);
-
-    // Fit text without going smaller than minimum font size
-    while (TextW > (BadgeSize - TEXT_PADDING)) and (FontSize > min_font_size) do
-    begin
-      Dec(FontSize);
-      Bmp.Canvas.Font.Size := FontSize;
-      TextW := Bmp.Canvas.TextWidth(BadgeText);
-      TextH := Bmp.Canvas.TextHeight(BadgeText);
-    end;
-
-    Bmp.Canvas.Brush.Style := bsClear;
-    Bmp.Canvas.TextOut(
-      BadgeRect.Left + ((BadgeRect.Right - BadgeRect.Left) - TextW) div 2,
-      BadgeRect.Top + ((BadgeRect.Bottom - BadgeRect.Top) - TextH) div 2,
-      BadgeText
-      );
-
-    OutIcon.Assign(Bmp);
-    Tray.Icon.Assign(OutIcon);
-    Tray.Visible := false;
-    Tray.Visible := true;
+    Tray.Icon.Assign(Composed);
   finally
-    Bmp.Free;
-    OutIcon.Free;
-    BaseIcon.Free;
+    Composed.Free;
   end;
+
+  // Assigning the icon already fires TCustomTrayIcon.IconChanged, which pushes
+  // the new pixmap to the widgetset. The hide/show cycle this used to do
+  // instead tears the item down and re-registers it, which under
+  // StatusNotifierItem makes the icon blink and jump to the end of the panel's
+  // tray on every reading.
+  if not Tray.Visible then
+    Tray.Visible := true;
 end;
+{$endif}
 
 {------------------------------------------------------------------------------
   SetBadge (advanced)
