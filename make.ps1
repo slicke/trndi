@@ -71,7 +71,17 @@ function Copy-QuickJSLibs {
         Write-Warning "QuickJS libraries not found at $src - extensions will fail to start. Rebuild them with externals/quickjs/build.sh."
         return
     }
-    foreach ($dll in (Get-ChildItem (Join-Path $src '*.dll'))) {
+    # Name the two libraries rather than sweeping *.dll. This directory is also
+    # on the linker search path, so anything else that lands in it gets copied
+    # next to Trndi.exe and into the packages built from there. A stray
+    # libcurl.so committed into the Linux prebuilt directory did exactly that on
+    # the Makefile side (see QJS_LIBS there, which is now equally explicit).
+    # The shim ships as tqshim.dll without the lib prefix; libtqshim*.dll is
+    # listed so either spelling is picked up. Patterns matching nothing are
+    # skipped rather than treated as an error.
+    $patterns = @('libqjs*.dll', 'libtqshim*.dll', 'tqshim*.dll') |
+        ForEach-Object { Join-Path $src $_ }
+    foreach ($dll in (Get-ChildItem -Path $patterns -ErrorAction SilentlyContinue)) {
         Copy-Item $dll.FullName $Destination -Force
         Write-Host "  copied $($dll.Name) -> $Destination" -ForegroundColor DarkGray
     }
