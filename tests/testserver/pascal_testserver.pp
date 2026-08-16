@@ -848,7 +848,10 @@ var
 begin
   Listener := fpsocket(AF_INET, SOCK_STREAM, 0);
   if Listener <= 0 then Exit;
-  ServerListenSocket := Listener;
+  // ServerListenSocket is published only once the socket is actually listening,
+  // below. It is the one piece of state a caller can read to tell a live server
+  // from a thread that started and died, so it must not be set while the bind
+  // could still fail.
 {$IF DEFINED(UNIX) OR DEFINED(HAIKU)}
   // Let the listener bind while the *previous* run's accepted connections are
   // still in TIME-WAIT. A test run leaves ~90 sockets sitting on port 8080 in
@@ -877,15 +880,15 @@ begin
     // timeout, which does not distinguish "port busy" from "server broken".
     Writeln('Test server: cannot bind 127.0.0.1:8080 (in use by another process?)');
     CloseSocket(Listener);
-    ServerListenSocket := -1;
     Exit;
   end;
   if fplisten(Listener, 5) <> 0 then
   begin
     CloseSocket(Listener);
-    ServerListenSocket := -1;
     Exit;
   end;
+  // Listening for real from here on, so publish the socket.
+  ServerListenSocket := Listener;
   ServerShouldStop := False;
   while not ServerShouldStop do
   begin
@@ -897,19 +900,46 @@ begin
 end;
 
 function StartPascalTestServer(out BaseURL: string): boolean;
+var
+  i: integer;
 begin
   Result := False;
   BaseURL := 'http://127.0.0.1:8080';
+
+  // A non-nil thread is not proof of a server: ServerRunner exits when the bind
+  // or listen fails, leaving the object behind (FreeOnTerminate is False). Judge
+  // by the listening socket instead, and reap a thread that has stopped serving
+  // so the next call starts a fresh one rather than inheriting a dead one.
   if ServerThread <> nil then
   begin
-    Result := True;
-    Exit;
+    if ServerListenSocket <> -1 then
+      Exit(True);
+    ServerThread.Free;
+    ServerThread := nil;
   end;
 
   ServerThread := TThread.CreateAnonymousThread(@ServerRunner);
   ServerThread.FreeOnTerminate := False;
   ServerThread.Start;
-  Result := True;
+
+  // Report what happened rather than merely that a thread was spawned. Callers
+  // that poll for readiness themselves are unharmed by the wait (the socket
+  // appears in milliseconds); PascalTestServer.lpr has no such poll and used to
+  // announce "listening" and block forever when the bind had in fact failed.
+  for i := 1 to 200 do
+  begin
+    if ServerListenSocket <> -1 then
+      Exit(True);
+    Sleep(10);
+  end;
+
+  // Timed out without a listener. Ask the loop to stop before freeing: the
+  // destructor waits for the thread, and ServerRunner's loop watches
+  // ServerShouldStop rather than Terminated, so a thread that somehow got that
+  // far would otherwise never be joined.
+  ServerShouldStop := True;
+  ServerThread.Free;
+  ServerThread := nil;
 end;
 
 procedure StopPascalTestServer;
