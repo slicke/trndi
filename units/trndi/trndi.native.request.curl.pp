@@ -50,8 +50,8 @@
   - Depends only on the RTL, the @code(trndi.curl) binding, @code(trndi.log)
     and @code(trndi.native.base) — no LCL, no widgetset.
   - Settings access stays in the calling class: callers resolve their proxy
-    configuration (usually via @link(FetchCurlProxy)) and pass it in, so this
-    unit never touches a settings store.
+    configuration (usually via @link(FetchCurlProxy)) and pass it in — no
+    settings store is ever touched from here.
   - Behavior contract (same as the Linux implementation always had): a
     configured proxy is used exclusively with no direct fallback; with none
     configured, curl follows the environment's proxy variables. TLS verifies
