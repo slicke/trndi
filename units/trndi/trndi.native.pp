@@ -16,6 +16,10 @@
  * ---------
  *
  * GitHub: https://github.com/slicke/trndi
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: The dispatch can now select trndi.native.console when the
+ *   build defines X_CONSOLE (LCL-free console/TUI front ends).
  *)
 
 {**
