@@ -57,6 +57,13 @@
   Selected by @code(trndi.native)'s dispatch when the build defines
   @code(X_CONSOLE) (a build-mode define, not a platform one — any OS target can
   set it).
+
+  Threading: notifications and speech are launched through
+  @code(trndi.native.async), which runs each child on a worker thread so it gets
+  waited on rather than left as a zombie. A console program must therefore link
+  a thread driver — put @code(cthreads) first in the program's uses clause on
+  Unix, as LCL builds do implicitly. Without one the RTL aborts with runtime
+  error 232 on the first notification, which no @code(try..except) can catch.
 }
 
 unit trndi.native.console;
@@ -122,7 +129,7 @@ end;
 implementation
 
 uses
-Process;
+trndi.native.async;
 
 {------------------------------------------------------------------------------
   FindSpeechCmd
@@ -147,26 +154,16 @@ end;
   journal rather than vanishing.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeConsole.attention(topic, message: string);
-var
-  AProcess: TProcess;
 begin
   if ToolAvailable('notify-send') then
-  begin
-    AProcess := TProcess.Create(nil);
-    try
-      AProcess.Executable := 'notify-send';
-      AProcess.Parameters.Add('--app-name=Trndi');
-      AProcess.Parameters.Add(topic);
-      AProcess.Parameters.Add(message);
-      try
-        AProcess.Execute;
-        Exit;
-      except
-        // Fall through to the stderr path below
-      end;
-    finally
-      AProcess.Free;
-    end;
+  try
+    // Fire-and-forget via the async worker, as the Linux unit does: the worker
+    // thread waits on the child, so notifications don't leave zombies behind.
+    RunAndCaptureSimpleAsync('notify-send',
+      ['--app-name=Trndi', topic, message], nil);
+    Exit;
+  except
+    // Fall through to the stderr path below
   end;
   Flush(StdErr);
   Writeln(StdErr, Format('[Trndi] %s: %s', [topic, message]));
@@ -175,30 +172,21 @@ end;
 {------------------------------------------------------------------------------
   Speak
   -----
-  Fire-and-forget child process, mirroring the Haiku unit: freeing the TProcess
-  does not kill the async speech child.
+  Fire-and-forget via the async worker, as the Linux unit does: speech doesn't
+  block the caller, and the worker thread waits on the child so it gets reaped.
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeConsole.Speak(const Text: string);
 var
-  AProcess: TProcess;
   cmd: string;
 begin
   cmd := FindSpeechCmd;
   if cmd = '' then
     Exit;
 
-  AProcess := TProcess.Create(nil);
   try
-    AProcess.Executable := cmd;
-    AProcess.Parameters.Add(Text);
-    AProcess.Options := [poNoConsole];
-    try
-      AProcess.Execute;
-    except
-      // Silently fail if speech doesn't work
-    end;
-  finally
-    AProcess.Free;
+    RunAndCaptureSimpleAsync(cmd, [Text], nil);
+  except
+    // Silently fail if speech doesn't work
   end;
 end;
 
