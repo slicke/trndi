@@ -34,6 +34,13 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: Numeric Dexcom trend codes are read as 1-based, matching the
+ *   Share API; they were previously read 0-based, which shifted every arrow by
+ *   one step. Credential failures are no longer reported as recoverable
+ *   session failures, so a wrong password is not retried, and are described by
+ *   the new DexcomAuthFailureMessage.
  *)
 unit trndi.api.dexcom_helpers;
 

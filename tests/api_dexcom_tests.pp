@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: The session-failure matcher test now expects a credential
+ *   failure to be terminal rather than a recoverable session error, so a wrong
+ *   password is no longer retried into a lockout.
  *)
 unit api_dexcom_tests;
 

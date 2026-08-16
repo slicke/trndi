@@ -34,6 +34,16 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: Readings are dated from the WT field, falling back to DT and
+ *   then ST, rather than from ST alone -- the receiver's own system clock,
+ *   which drifts. A null-GUID account id is rejected at the authenticate step
+ *   instead of being passed on to the login call. Recognised Dexcom
+ *   authentication errors (AccountPasswordInvalid,
+ *   SSO_AuthenticateMaxAttemptsExceeded, SSO_InternalError) now produce their
+ *   own messages, and the debug payload census records the timestamp field
+ *   actually used.
  *)
 unit trndi.api.dexcomNew;
 
