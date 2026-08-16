@@ -249,7 +249,8 @@ end;
 
   Used as a fallback for the rotating arrow when no usable delta is available
   (e.g. the first reading, or a stale gap), so the arrow still points in the
-  direction the CGM reported. Mirrors CalculateTrendAngle's ±90° range.
+  direction the CGM reported. Returns 0 for flat and unknown trends and at most
+  ±60°, staying inside the ±ARROW_MAX_ANGLE that CalculateTrendAngle clamps to.
  ------------------------------------------------------------------------------}
 function TrendToAngle(trend: BGTrend): single;
 begin
