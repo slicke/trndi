@@ -34,8 +34,12 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: Removed a stray '{' that preceded the unit declaration. It
+ *   opened a comment that ran to the '}' of the following {$mode ObjFPC},
+ *   swallowing the declaration itself.
  *)
-                       {
 unit trndi.ext.types;
 
 {$mode ObjFPC}{$H+}
