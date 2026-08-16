@@ -48,6 +48,7 @@ type
   TTrndiNativeMockTest = class(TTestCase)
   published
     procedure TestSettings;
+    procedure TestCSVSettingRoundTrip;
     procedure TestHTTPExample;
     procedure TestProxyURLInvalid;
   end;
@@ -64,6 +65,30 @@ begin
     AssertEquals('unittest-value', n.GetSetting('unittest.testkey', ''));
     n.DeleteSetting('unittest.testkey');
     AssertEquals('', n.GetSetting('unittest.testkey', ''));
+  finally
+    n.Free;
+  end;
+end;
+
+// A multi-user account name may contain spaces, so the list must survive the
+// store/load round trip intact -- "dexcom gammal" used to come back split in two.
+procedure TTrndiNativeMockTest.TestCSVSettingRoundTrip;
+var
+  n: TTrndiNativeBase;
+  res: TStringArray;
+begin
+  n := TrndiNative.Create;
+  try
+    n.SetCSVSetting('unittest.csvkey', ['dexcom', 'dexcom gammal', 'Ann-Marie 2']);
+    AssertTrue('csv setting should exist', n.TryGetCSVSetting('unittest.csvkey', res));
+    AssertEquals('entry count', 3, Length(res));
+    AssertEquals('dexcom', res[0]);
+    AssertEquals('dexcom gammal', res[1]);
+    AssertEquals('Ann-Marie 2', res[2]);
+
+    n.DeleteSetting('unittest.csvkey');
+    AssertFalse('deleted csv setting should not exist',
+      n.TryGetCSVSetting('unittest.csvkey', res));
   finally
     n.Free;
   end;

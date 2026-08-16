@@ -1577,28 +1577,39 @@ end;
   TryGetCSVSetting
   -------------------------
   Gets a list of settings, returns true if the reading is non-empty and the value in def
+
+  The split is strictly on commas, mirroring SetCSVSetting's plain comma join.
+  TStringList.CommaText cannot be used here: it also breaks on whitespace, so a
+  stored entry such as a multi-user account named "dexcom gammal" came back as
+  two entries.
   -----------------------------------------------------------------------------}
 function TTrndiNativeBase.TryGetCSVSetting(const keyname: string; out res: TStringArray;
 global: boolean = false): boolean;
 var
   val: string;
-  sl: TStringList;
+  i, segStart, count: integer;
 begin
-  Result := false;
-  if self.TryGetSetting(keyname, val, global) then
-  begin
-    sl := TStringList.Create;
-    try
-      sl.Clear;
-      sl.CommaText := val;
-      res := sl.ToStringArray;
-      Result := true;
-    finally
-      sl.Free;
+  res := [];
+  Result := self.TryGetSetting(keyname, val, global);
+  if not Result then
+    exit;
+
+  count := 1;
+  for i := 1 to Length(val) do
+    if val[i] = ',' then
+      Inc(count);
+
+  SetLength(res, count);
+  count := 0;
+  segStart := 1;
+  for i := 1 to Length(val) do
+    if val[i] = ',' then
+    begin
+      res[count] := Copy(val, segStart, i - segStart);
+      Inc(count);
+      segStart := i + 1;
     end;
-  end
-  else
-    Result := false;
+  res[count] := Copy(val, segStart, Length(val) - segStart + 1);
 end;
 
 {------------------------------------------------------------------------------
