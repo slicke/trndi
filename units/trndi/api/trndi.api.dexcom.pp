@@ -34,6 +34,12 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-16: Readings are dated from the WT field, falling back to DT and
+ *   then ST, rather than from ST alone -- the receiver's own system clock,
+ *   which drifts. The trend and session-failure changes this driver inherits
+ *   are recorded in trndi.api.dexcom_helpers.
  *)
 unit trndi.api.dexcom;
 
