@@ -39,7 +39,12 @@
  * - 2026-08-16: Readings are dated from the WT field, falling back to DT and
  *   then ST, rather than from ST alone -- the receiver's own system clock,
  *   which drifts. The trend and session-failure changes this driver inherits
- *   are recorded in trndi.api.dexcom_helpers.
+ *   are recorded in trndi.api.dexcom_helpers. testConnection now fails on a
+ *   recognised Dexcom authentication error or a null-GUID account id, instead
+ *   of reporting a locked-out or unmatched account as a working connection,
+ *   and reports why rather than leaving the generic unknown-error text. Connect
+ *   and testConnection apply that same check to the plain-username login, which
+ *   is the only path an account without an e-mail address takes.
  *)
 unit trndi.api.dexcom;
 
@@ -232,6 +237,8 @@ uses trndi.api.dexcom_time, trndi.api.dexcom_helpers;
 resourcestring
 sErrDexPass = 'Invalid Dexcom password or account credentials';
 sErrDexLogin = 'Login error: Could not establish a valid session';
+sErrDexNoAccount = 'No Dexcom account matched those details. Check the ' +
+  'username or e-mail address.';
 sParamUserName = 'Dexcom Username';
 sParamPassword = 'Dexcom Password';
 
@@ -376,6 +383,7 @@ var
   LTimeMs: int64;
   LUseEmailAuth: boolean;
   resp: string;
+  LAuthErr: string;
 begin
   // Detect if user provided email (contains @) or phone (starts with +)
   // These require two-step auth: AuthenticatePublisherAccount → LoginPublisherAccountById
@@ -430,6 +438,19 @@ begin
     {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_NAME_ENDPOINT, resp, '']));{$endif}
   end;
 
+  // A recognised authentication failure is reported as itself before the
+  // substring checks below get a chance to mistake it for a session token.
+  // SSO_AuthenticateMaxAttemptsExceeded contains neither "error" nor "invalid",
+  // so a locked-out account otherwise reached CheckSession as a live token.
+  // Both branches converge here because this driver has no by-name fallback to
+  // keep open, unlike the new one.
+  if DexcomAuthFailureMessage(resp, LAuthErr) then
+  begin
+    Result := false;
+    lastErr := LAuthErr + ' (Dex1)';
+    Exit;
+  end;
+
   // Check for various error responses before validation
   if (FSessionID = '') or (Pos('error', LowerCase(FSessionID)) > 0) or
     (Pos('invalid', LowerCase(FSessionID)) > 0) then
@@ -452,7 +473,7 @@ begin
   begin
     Result := false;
     // Null GUID indicates authentication rejection (not wrong password)
-    if FSessionID = '00000000-0000-0000-0000-000000000000' then
+    if FSessionID = DEXCOM_NULL_UUID then
       lastErr := 'Dexcom authentication rejected. Possible causes: ' +
         '1) Wrong region (try using another region), ' +
         '2) Dexcom Share not enabled in official app, ' +
@@ -764,7 +785,8 @@ end;
 class function Dexcom.testConnection(user, pass: string; var res: string; extra: string): MaybeBool;
 var
   tn: TrndiNative;
-  base, body, accountId, sessionId, timeResp, timeStr: string;
+  base, body, resp, accountId, sessionId, timeResp, timeStr: string;
+  authErr: string;
   js: TJSONData;
   useEmailAuth: boolean;
   LServerDateTime: TDateTime;
@@ -787,9 +809,35 @@ begin
     // 1) Authenticate
     if useEmailAuth then
     begin
-      accountId := StringReplace(tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
-      if (accountId = '') or (Pos('error', LowerCase(accountId)) > 0) or (Pos('invalid', LowerCase(accountId)) > 0) then
+      resp := tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body);
+
+      // Recognised credential failures are terminal here: this call only looks
+      // the account up, and no other endpoint can do it, so there is nothing to
+      // fall back to. Without this, codes carrying neither "error" nor
+      // "invalid" -- SSO_AuthenticateMaxAttemptsExceeded above all -- survive
+      // the quote-stripping below as a non-empty "account id" and the test
+      // reports a locked-out account as a working connection.
+      if DexcomAuthFailureMessage(resp, authErr) then
+      begin
+        res := authErr;
         Exit;
+      end;
+
+      accountId := StringReplace(resp, '"', '', [rfReplaceAll]);
+      if (accountId = '') or (Pos('error', LowerCase(accountId)) > 0) or (Pos('invalid', LowerCase(accountId)) > 0) then
+      begin
+        res := sErrDexLogin;
+        Exit;
+      end;
+
+      // A null GUID means the lookup ran but matched no account. Rejected here
+      // rather than sent to the login call, which would fail with a vaguer
+      // error one step later.
+      if accountId = DEXCOM_NULL_UUID then
+      begin
+        res := sErrDexNoAccount;
+        Exit;
+      end;
 
       body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
         [accountId, JSONEscape(pass), DEXCOM_APPLICATION_ID]);
@@ -797,11 +845,27 @@ begin
       sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
     end
     else
-      sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
+    begin
+      resp := tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], body);
+
+      // Terminal here for the same reason it is on the authenticate call: a
+      // plain username has only this endpoint, so there is no fallback to
+      // protect by letting the failure through.
+      if DexcomAuthFailureMessage(resp, authErr) then
+      begin
+        res := authErr;
+        Exit;
+      end;
+
+      sessionId := StringReplace(resp, '"', '', [rfReplaceAll]);
+    end;
 
     // 2) Basic checks on session token
     if (sessionId = '') or (Pos('error', LowerCase(sessionId)) > 0) or (Pos('invalid', LowerCase(sessionId)) > 0) or (Pos('AccountPassword', sessionId) > 0) then
+    begin
+      res := sErrDexPass;
       Exit;
+    end;
 
     // 3) Time probe
     timeResp := tn.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
