@@ -43,7 +43,9 @@
  *   authentication errors (AccountPasswordInvalid,
  *   SSO_AuthenticateMaxAttemptsExceeded, SSO_InternalError) now produce their
  *   own messages, and the debug payload census records the timestamp field
- *   actually used.
+ *   actually used. DEXCOM_NULL_UUID moved to trndi.api.dexcom_helpers so both
+ *   Share drivers share one definition. testConnection applies the auth-error
+ *   check to the plain-username login as well, not only the e-mail one.
  *)
 unit trndi.api.dexcomNew;
 
@@ -79,11 +81,6 @@ DEXCOM_TIME_ENDPOINT = 'General/SystemUtcTime';
 DEXCOM_GLUCOSE_READINGS_ENDPOINT = 'Publisher/ReadPublisherLatestGlucoseValues';
   {** Fetch alert settings (may not always be returned). }
 DEXCOM_ALERT_ENDPOINT = 'Publisher/ReadSubscriberAlertSettings';
-
-  {** All-zero GUID. Dexcom returns it in place of an account or session ID when
-      the request was understood but produced no identity, so it must be
-      rejected rather than passed on to the next call. }
-DEXCOM_NULL_UUID = '00000000-0000-0000-0000-000000000000';
 
   {** Dexcom Share application ID used by mobile apps (commonly reused). }
 DEXCOM_APPLICATION_ID = 'd89443d2-327c-4a6f-89e5-496bbb0317db';
@@ -1354,7 +1351,19 @@ begin
     else
     begin
       // Legacy behaviour: some servers return plain quoted session token
-      sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
+      resp := tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], body);
+
+      // Terminal here for the same reason it is on the authenticate call: this
+      // is the only endpoint a plain username can use, so there is no fallback
+      // to protect. Unlike LoginPublisherAccountById above, where "Cannot
+      // Authenticate by AccountId" is the signal to try this very endpoint.
+      if DexcomAuthFailureMessage(resp, authErr) then
+      begin
+        res := authErr;
+        Exit;
+      end;
+
+      sessionId := StringReplace(resp, '"', '', [rfReplaceAll]);
     end;
 
     // 2) Basic checks on session token

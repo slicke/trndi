@@ -40,7 +40,8 @@
  *   Share API; they were previously read 0-based, which shifted every arrow by
  *   one step. Credential failures are no longer reported as recoverable
  *   session failures, so a wrong password is not retried, and are described by
- *   the new DexcomAuthFailureMessage.
+ *   the new DexcomAuthFailureMessage. DEXCOM_NULL_UUID moved here from
+ *   trndi.api.dexcomNew so both Share drivers share one definition.
  *)
 unit trndi.api.dexcom_helpers;
 
@@ -50,6 +51,13 @@ interface
 
 uses
   SysUtils, trndi.types, trndi.api.dexcom_time;
+
+const
+  {** All-zero GUID. Dexcom returns it in place of an account or session ID when
+      the request was understood but produced no identity, so it must be
+      rejected rather than passed on to the next call. Shared by both Share
+      drivers so the two cannot disagree on what an empty identity looks like. }
+DEXCOM_NULL_UUID = '00000000-0000-0000-0000-000000000000';
 
 {** Escape a string for safe inclusion in a JSON value. Worst-case size is 2x
     the input (every char escaped); never under-allocates. }
