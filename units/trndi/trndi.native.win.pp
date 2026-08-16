@@ -1359,7 +1359,6 @@ var
   FontSize, Radius, TrendRadius, py: integer;
   SmallIconSize: integer;
   TextColor: TColor;
-  dval: double;
   borderColor: TColor;
   ShellIcon: HICON;
   hMain: HWND;
@@ -1653,14 +1652,11 @@ begin
       Exit;
     end;
 
-    try
-      if TryStrToFloat(Value, dval, fsettings) then
-        BadgeText := FormatFloat('0.0', dval, fsettings)
-      else
-        BadgeText := Value;
-    except
-      BadgeText := Value;
-    end;
+    // Printed exactly as the caller formatted it. Forcing one decimal here used
+    // to turn an mg/dL reading of "148" into "148.0" — five glyphs in a badge
+    // sized for three, so the fitting loop shrank the font for nothing. The
+    // caller has already formatted for the active unit.
+    BadgeText := Value;
 
     // Source from the cached pristine icon, never Application.Icon — we write
     // back to Application.Icon at the end, so reading from it would composite
