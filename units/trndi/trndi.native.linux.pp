@@ -2050,7 +2050,6 @@ end;
 procedure WriteTrndiCurrentValueCache(const Value: string);
 var
   cacheDir, filePath, badgeText: string;
-  dval: double;
   sl: TStringList;
   existing: TStringList;
 
@@ -2095,14 +2094,10 @@ begin
     Exit;
   end;
 
-  // Keep formatting consistent with tray badge (one decimal when numeric)
+  // Kept consistent with the tray badge, which prints the caller's string as
+  // it stands: the caller has already formatted for the active unit, and
+  // forcing one decimal on top of that made an mg/dL "148" read "148.0".
   badgeText := Value;
-  try
-    if TryStrToFloat(Value, dval, DefaultFormatSettings) then
-      badgeText := FormatFloat('0.0', dval, DefaultFormatSettings);
-  except
-    badgeText := Value;
-  end;
 
   try
     ForceDirectories(ExtractFileDir(filePath));
@@ -2138,7 +2133,6 @@ procedure WriteTrndiCurrentStateCache(const Value: string; ReadingEpoch: int64;
 FreshMinutes: integer);
 var
   cacheDir, filePath, badgeText: string;
-  dval: double;
   sl: TStringList;
 
 procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
@@ -2180,13 +2174,8 @@ begin
     Exit;
   end;
 
+  // As above: the caller's own formatting, not one forced decimal.
   badgeText := Value;
-  try
-    if TryStrToFloat(Value, dval, DefaultFormatSettings) then
-      badgeText := FormatFloat('0.0', dval, DefaultFormatSettings);
-  except
-    badgeText := Value;
-  end;
 
   try
     ForceDirectories(ExtractFileDir(filePath));
