@@ -33,3 +33,31 @@ console.log(`Reading age: ${readingAge} seconds (${readingAgeMinutes.toFixed(1)}
 console.log(`Threshold: ${freshMin} minutes (${thresholdSeconds} seconds)`);
 console.log(`Is stale: ${testStaleness(readingEpoch, freshMin, now)}`);
 console.log(`Expected: true (reading is ${readingAgeMinutes.toFixed(1)} minutes old, threshold is ${freshMin} minutes)`);
+
+// Test the panel label composition — mirrors extension.js. Line 4 of the cache
+// file carries the trend arrow, and is absent (older Trndi) or empty (the user
+// turned the badge trend off) rather than ever holding a placeholder.
+function labelFor(value, arrow, isStale) {
+  if (isStale)
+    return '--';
+  return arrow ? `${value} ${arrow}` : value;
+}
+
+const labelCases = [
+  ['7.2', '↗', false, '7.2 ↗', 'arrow published'],
+  ['7.2', '', false, '7.2', 'badge trend off (empty line 4)'],
+  ['7.2', undefined, false, '7.2', 'older Trndi (no line 4)'],
+  ['7.2', '↗', true, '--', 'stale wins over the arrow'],
+];
+
+let failures = 0;
+for (const [value, arrow, isStale, expected, what] of labelCases) {
+  const got = labelFor(value, arrow, isStale);
+  const ok = got === expected;
+  if (!ok)
+    failures++;
+  console.log(`${ok ? 'PASS' : 'FAIL'}: ${what} -> "${got}"${ok ? '' : ` (expected "${expected}")`}`);
+}
+
+if (failures > 0)
+  process.exitCode = 1;

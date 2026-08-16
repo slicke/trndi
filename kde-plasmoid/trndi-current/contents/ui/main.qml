@@ -21,6 +21,7 @@ PlasmoidItem {
     id: root
 
     property string readingText: ""
+    property string trendArrow: ""
     property string lastErrorText: ""
     property string lastGoodText: ""
     property double lastGoodEpochMs: 0
@@ -28,6 +29,14 @@ PlasmoidItem {
     property bool readingStale: false
     property string ageText: ""
     property bool showAgeRow: plasmoid.configuration.ShowAgeRow
+    property bool showTrendArrow: plasmoid.configuration.ShowTrendArrow
+
+    // The reading with the trend arrow appended, when Trndi published one and
+    // this widget is set to show it.
+    property string displayText: (root.showTrendArrow && root.trendArrow.length > 0
+                                  && root.readingText.length > 0)
+                                 ? root.readingText + " " + root.trendArrow
+                                 : root.readingText
     // If reads temporarily fail (file:// hiccup), keep last known value briefly.
     property int keepLastGoodForMs: 30000
 
@@ -39,7 +48,7 @@ PlasmoidItem {
 
         FittedLabel {
             id: compactReading
-            text: root.readingText.length > 0 ? root.readingText
+            text: root.displayText.length > 0 ? root.displayText
                                               : (root.lastErrorText.length > 0 ? "!" : "")
             visible: text.length > 0
             elide: Text.ElideNone
@@ -71,7 +80,7 @@ PlasmoidItem {
         spacing: 2
 
         FittedLabel {
-            text: root.readingText.length > 0 ? root.readingText : root.lastErrorText
+            text: root.displayText.length > 0 ? root.displayText : root.lastErrorText
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideNone
@@ -99,7 +108,7 @@ PlasmoidItem {
     }
 
     toolTipMainText: "Trndi"
-    toolTipSubText: root.readingText.length > 0 ? root.readingText
+    toolTipSubText: root.displayText.length > 0 ? root.displayText
                                                 : (root.lastErrorText.length > 0 ? root.lastErrorText : "No current value")
 
     Timer {
@@ -130,11 +139,13 @@ PlasmoidItem {
             out = out.trim();
             err = err.trim();
 
-            // Format: "<value>\t<epochSeconds>\t<freshMinutes>\t<mtimeSeconds>" (epoch/fresh/mtime may be empty).
+            // Format: "<value>\t<epochSeconds>\t<freshMinutes>\t<mtimeSeconds>\t<trendArrow>"
+            // (every field after the value may be empty).
             var value = out;
             var epoch = 0;
             var freshMin = 0;
             var mtimeSec = 0;
+            var arrow = "";
             var parts = null;
             if (out.indexOf("\t") !== -1) {
                 parts = out.split("\t");
@@ -148,6 +159,7 @@ PlasmoidItem {
                 epoch = (parts.length > 1 ? parseInt(parts[1], 10) : 0);
                 freshMin = (parts.length > 2 ? parseInt(parts[2], 10) : 0);
                 mtimeSec = (parts.length > 3 ? parseInt(parts[3], 10) : 0);
+                arrow = (parts.length > 4 ? String(parts[4]).trim() : "");
             }
 
             value = value.trim();
@@ -177,6 +189,7 @@ PlasmoidItem {
 
             if (value.length > 0) {
                 root.readingText = value;
+                root.trendArrow = arrow;
                 root.lastGoodText = value;
                 root.lastGoodEpochMs = now;
                 root.lastErrorText = "";
@@ -192,6 +205,7 @@ PlasmoidItem {
                 // No output means "no value" (file missing) => clear.
                 root.readingStale = false;
                 root.readingText = "";
+                root.trendArrow = "";
                 root.lastGoodText = "";
                 root.lastGoodEpochMs = 0;
                 root.lastErrorText = "";
@@ -219,6 +233,7 @@ PlasmoidItem {
         //   line1: value
         //   line2: reading epoch seconds
         //   line3: freshness threshold minutes
+        //   line4: trend arrow ('' when Trndi's badge trend setting is off)
                 // Output a single line with tab-separated fields for easy parsing.
         return "bash -lc '" +
                "f=\"${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt\"; " +
@@ -227,10 +242,11 @@ PlasmoidItem {
              "v=$(head -n1 \"$f\" 2>/dev/null); " +
              "t=$(sed -n 2p \"$f\" 2>/dev/null); " +
              "m=$(sed -n 3p \"$f\" 2>/dev/null); " +
+             "a=$(sed -n 4p \"$f\" 2>/dev/null); " +
              // Hide if cache file is old (Trndi likely not running). Fixed 11 minutes.
              "age=$((now-mt)); thr=$((11*60)); " +
              "if [ $mt -gt 0 ] && [ $age -gt $thr ]; then exit 0; fi; " +
-                         "printf \"%s\\t%s\\t%s\\t%s\\n\" \"$v\" \"$t\" \"$m\" \"$mt\"; " +
+                         "printf \"%s\\t%s\\t%s\\t%s\\t%s\\n\" \"$v\" \"$t\" \"$m\" \"$mt\" \"$a\"; " +
                "fi'";
     }
 }

@@ -17,11 +17,19 @@ import org.kde.kirigami as Kirigami
 
 KCM.SimpleKCM {
     property alias cfg_ShowAgeRow: showAgeRow.checked
+    property alias cfg_ShowTrendArrow: showTrendArrow.checked
 
     Kirigami.FormLayout {
         QQC2.CheckBox {
             id: showAgeRow
             text: "Show “X ago” row"
+        }
+
+        QQC2.CheckBox {
+            id: showTrendArrow
+            // Trndi only publishes an arrow while its own "trend arrow on the
+            // badge" setting is on; this hides it for this widget alone.
+            text: "Show trend arrow"
         }
     }
 }
