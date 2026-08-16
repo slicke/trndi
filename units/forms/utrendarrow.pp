@@ -99,7 +99,9 @@ end;
 
 procedure TTrendArrow.SetAngle(AValue: single);
 begin
-  // Clamp to the same +/-90 range the angle calculation produces.
+  // Defensive bound at straight up/down. The angle calculations stay well
+  // inside it: CalculateTrendAngle clamps to +/-ARROW_MAX_ANGLE (70) and
+  // TrendToAngle tops out at +/-60.
   if AValue > 90 then
     AValue := 90
   else if AValue < -90 then
