@@ -114,7 +114,12 @@ WIDGETSET ?= qt6
 # `make test` after the first fail to link on distros whose curl is not built
 # against librtmp (Fedora), while linking fine on Ubuntu, where it is. Naming
 # the files keeps that class of accident out of the build entirely.
-# Non-matching patterns are harmless: cp reports them and the recipe ignores it.
+#
+# QJS_LIBS holds several patterns, so every use must go through
+# $(addprefix $(QJS_DIR)/,$(QJS_LIBS)) -- a plain $(QJS_DIR)/$(QJS_LIBS)
+# prefixes only the first one, leaving the rest to glob against the current
+# directory, match nothing, and be silently dropped by the recipe's error
+# suppression. Non-matching patterns are otherwise harmless.
 ifeq ($(OS),Windows_NT)
   QJS_DIR := externals/quickjs/prebuilt/x86_64-win64
   QJS_LIBS := libqjs*.dll libtqshim*.dll tqshim*.dll
@@ -176,7 +181,7 @@ define stage-qjs-libs
 	    if ls $(QJS_DIR)/libqjs.so.[0-9]*.[0-9]*.[0-9]* >/dev/null 2>&1; then \
 	      rm -f "$$dest"/libqjs.so "$$dest"/libqjs.so.[0-9]*; \
 	    fi; \
-	    cp -P $(QJS_DIR)/$(QJS_LIBS) "$$dest/" 2>/dev/null || true; \
+	    cp -P $(addprefix $(QJS_DIR)/,$(QJS_LIBS)) "$$dest/" 2>/dev/null || true; \
 	    real=$$(cd "$$dest" && ls libqjs.so.[0-9]*.[0-9]*.[0-9]* 2>/dev/null | head -1); \
 	    if [ -n "$$real" ]; then \
 	      ( cd "$$dest" && ln -sf "$$real" libqjs.so.0 && ln -sf libqjs.so.0 libqjs.so ); \
