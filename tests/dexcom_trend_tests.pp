@@ -48,27 +48,45 @@ uses
 type
   TDexcomTrendMappingTests = class(TTestCase)
   published
-    procedure MapsNumericZeroBased;
-    procedure MapsNumericOneBased;
+    procedure MapsNumericDexcomCodes;
+    procedure MapsNumericEdgeCodes;
     procedure MapsTextualStandard;
     procedure MapsTextualCamelCase;
     procedure UnknownMapsToPlaceholder;
+    procedure AuthFailureMessages;
   end;
 
 implementation
 
-procedure TDexcomTrendMappingTests.MapsNumericZeroBased;
+procedure TDexcomTrendMappingTests.MapsNumericDexcomCodes;
 begin
-  AssertEquals(Ord(TdDoubleUp), Ord(MapDexcomTrendToEnum('0')));
-  AssertEquals(Ord(TdFlat), Ord(MapDexcomTrendToEnum('3')));
-  AssertEquals(Ord(TdNotComputable), Ord(MapDexcomTrendToEnum('7')));
+  // Dexcom Share's legacy integer codes, which are BGTrend's order shifted by
+  // one: 1=DoubleUp .. 7=DoubleDown, 8=NotComputable. Verified against
+  // pydexcom's DEXCOM_TREND_DIRECTIONS and the trend table in
+  // FreemanConsultingServices/dexcom-tesla-display.
+  //
+  // These used to be read 0-based, so every arrow came out one step off -- a
+  // Dexcom 4 ("Flat") displayed as TdFortyFiveDown. The old tests asserted
+  // that skew as correct, which is why it survived.
+  AssertEquals(Ord(TdDoubleUp), Ord(MapDexcomTrendToEnum('1')));
+  AssertEquals(Ord(TdSingleUp), Ord(MapDexcomTrendToEnum('2')));
+  AssertEquals(Ord(TdFortyFiveUp), Ord(MapDexcomTrendToEnum('3')));
+  AssertEquals(Ord(TdFlat), Ord(MapDexcomTrendToEnum('4')));
+  AssertEquals(Ord(TdFortyFiveDown), Ord(MapDexcomTrendToEnum('5')));
+  AssertEquals(Ord(TdSingleDown), Ord(MapDexcomTrendToEnum('6')));
+  AssertEquals(Ord(TdDoubleDown), Ord(MapDexcomTrendToEnum('7')));
+  AssertEquals(Ord(TdNotComputable), Ord(MapDexcomTrendToEnum('8')));
 end;
 
-procedure TDexcomTrendMappingTests.MapsNumericOneBased;
+procedure TDexcomTrendMappingTests.MapsNumericEdgeCodes;
 begin
-  AssertEquals(Ord(TdSingleUp), Ord(MapDexcomTrendToEnum('1')));
-  AssertEquals(Ord(TdFortyFiveDown), Ord(MapDexcomTrendToEnum('4')));
-  AssertEquals(Ord(TdPlaceholder), Ord(MapDexcomTrendToEnum('8')));
+  // 0 is Dexcom's "None" -- absence of a trend, not an arrow.
+  AssertEquals(Ord(TdPlaceholder), Ord(MapDexcomTrendToEnum('0')));
+  // 9 is RateOutOfRange, which follows its textual alias to TdNotComputable
+  // rather than degrading to a placeholder.
+  AssertEquals(Ord(TdNotComputable), Ord(MapDexcomTrendToEnum('9')));
+  AssertEquals(Ord(TdPlaceholder), Ord(MapDexcomTrendToEnum('10')));
+  AssertEquals(Ord(TdPlaceholder), Ord(MapDexcomTrendToEnum('-1')));
 end;
 
 procedure TDexcomTrendMappingTests.MapsTextualStandard;
@@ -91,7 +109,37 @@ end;
 procedure TDexcomTrendMappingTests.UnknownMapsToPlaceholder;
 begin
   AssertEquals(Ord(TdPlaceholder), Ord(MapDexcomTrendToEnum('Banana')));
-  AssertEquals(Ord(TdPlaceholder), Ord(MapDexcomTrendToEnum('9')));
+  AssertEquals(Ord(TdPlaceholder), Ord(MapDexcomTrendToEnum('')));
+end;
+
+procedure TDexcomTrendMappingTests.AuthFailureMessages;
+var
+  msg: string;
+begin
+  // The codes pydexcom's _handle_error_code singles out. These must be
+  // recognized as terminal credential problems, never as recoverable session
+  // failures -- retrying them costs a second failed sign-in per poll and walks
+  // the account toward SSO_AuthenticateMaxAttemptsExceeded.
+  AssertTrue('AccountPasswordInvalid recognized',
+    DexcomAuthFailureMessage('{"Code":"AccountPasswordInvalid"}', msg));
+  AssertTrue('AccountPasswordInvalid has a message', msg <> '');
+
+  AssertTrue('Max attempts recognized',
+    DexcomAuthFailureMessage('{"Code":"SSO_AuthenticateMaxAttemptsExceeded"}', msg));
+  AssertTrue('Max attempts has a distinct message',
+    Pos('locked', LowerCase(msg)) > 0);
+
+  AssertTrue('SSO_InternalError with authenticate message recognized',
+    DexcomAuthFailureMessage(
+    '{"Code":"SSO_InternalError","Message":"Cannot Authenticate by AccountName"}',
+    msg));
+
+  // SSO_InternalError on its own is a server fault, not a credential problem.
+  AssertFalse('Bare SSO_InternalError not treated as a credential failure',
+    DexcomAuthFailureMessage('{"Code":"SSO_InternalError"}', msg));
+  AssertFalse('Session errors are not credential failures',
+    DexcomAuthFailureMessage('{"Code":"SessionIdNotFound"}', msg));
+  AssertFalse('Empty response', DexcomAuthFailureMessage('', msg));
 end;
 
 initialization
