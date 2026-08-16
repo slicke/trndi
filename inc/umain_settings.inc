@@ -436,8 +436,9 @@ procedure LoadUserSettings(f: TfConf);
       // ItemIndex order is the TDotColorMode order — see the type's note.
       rgDots.ItemIndex := Ord(DotColorModeFromSetting(
         GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT))));
-      // Trend arrow in the taskbar icon (Windows) / dock badge (macOS)
-      {$if defined(X_WIN) or defined(X_MAC)}
+      // Trend arrow in the taskbar icon (Windows) / dock badge (macOS) /
+      // tray icon (Linux, BSD)
+      {$if defined(X_WIN) or defined(X_MAC) or defined(X_PC)}
       // Keep this default in step with the two read sites in umain_settings /
       // umain_glucose, or the checkbox will disagree with what the badge shows.
       cbBadgeTrend.Checked := GetBoolSetting('badge.trend', true);
