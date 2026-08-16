@@ -7,5 +7,9 @@
       <label>Show “X ago” row</label>
       <default>false</default>
     </entry>
+    <entry name="ShowTrendArrow" type="Bool">
+      <label>Show trend arrow</label>
+      <default>true</default>
+    </entry>
   </group>
 </kcfg>
