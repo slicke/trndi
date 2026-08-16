@@ -59,6 +59,7 @@ export default class TrndiCurrentExtension extends Extension {
       const [line1] = dis.read_line_utf8(null);
       const [line2] = dis.read_line_utf8(null);
       const [line3] = dis.read_line_utf8(null);
+      const [line4] = dis.read_line_utf8(null);
       dis.close(null);
 
       if (!line1)
@@ -82,6 +83,8 @@ export default class TrndiCurrentExtension extends Extension {
       // line1: value
       // line2: reading epoch seconds
       // line3: freshness threshold minutes
+      // line4: trend arrow, empty when the user turned the badge trend off
+      const arrow = line4 ? String(line4).trim() : '';
       let isStale = false;
       let epoch = line2 ? parseInt(String(line2).trim(), 10) : NaN;
       const freshMin = line3 ? parseInt(String(line3).trim(), 10) : NaN;
@@ -104,8 +107,8 @@ export default class TrndiCurrentExtension extends Extension {
         isStale = (now - epoch) > (freshMin * 60);
       }
 
-      log(`[TrndiCurrent] Read: value=${value}, isStale=${isStale}, epoch=${epoch}, freshMin=${freshMin}, mtimeAge=${mtimeAge}`);
-      return { value, isStale, epoch, freshMin };
+      log(`[TrndiCurrent] Read: value=${value}, arrow=${arrow}, isStale=${isStale}, epoch=${epoch}, freshMin=${freshMin}, mtimeAge=${mtimeAge}`);
+      return { value, arrow, isStale, epoch, freshMin };
     } catch (e) {
       log(`[TrndiCurrent] Error reading file: ${e}`);
       return null;
@@ -144,13 +147,15 @@ export default class TrndiCurrentExtension extends Extension {
     // versions/themes. Use a clear, robust stale indicator instead.
     if (state.isStale) {
       this._label.set_text('--');
+    } else if (state.arrow) {
+      this._label.set_text(`${state.value} ${state.arrow}`);
     } else {
       this._label.set_text(state.value);
     }
 
     // Low-noise debug: log only when value/stale changes.
     try {
-      const dbg = `${state.value}|${state.isStale ? 'stale' : 'fresh'}|${state.epoch ?? ''}|${state.freshMin ?? ''}`;
+      const dbg = `${state.value}|${state.arrow ?? ''}|${state.isStale ? 'stale' : 'fresh'}|${state.epoch ?? ''}|${state.freshMin ?? ''}`;
       if (dbg !== this._lastDebugKey) {
         this._lastDebugKey = dbg;
         log(`[TrndiCurrent] ${dbg}`);

@@ -326,9 +326,9 @@ function c_setenv(Name, Value: PAnsiChar; Overwrite: cint): cint;
 cdecl; external 'c' Name 'setenv';
 
 // Used by destructor; implemented later in this unit.
-procedure WriteTrndiCurrentValueCache(const Value: string); forward;
+procedure WriteTrndiCurrentValueCache(const Value, Trend: string); forward;
 procedure WriteTrndiCurrentStateCache(const Value: string; ReadingEpoch: int64;
-FreshMinutes: integer); forward;
+FreshMinutes: integer; const Trend: string); forward;
 
 // Implemented later in this unit; used by helpers above their definitions.
 function DesktopHint: string; forward;
@@ -1963,7 +1963,7 @@ begin
   if not noFree then
   begin
     // Clear GNOME indicator cache on normal shutdown
-    WriteTrndiCurrentValueCache('');
+    WriteTrndiCurrentValueCache('', '');
     ClearBadge;
     ShutdownBadge;
   end;
@@ -2047,7 +2047,7 @@ begin
   Result := '';
 end;
 
-procedure WriteTrndiCurrentValueCache(const Value: string);
+procedure WriteTrndiCurrentValueCache(const Value, Trend: string);
 var
   cacheDir, filePath, badgeText: string;
   sl: TStringList;
@@ -2114,10 +2114,18 @@ begin
       sl := TStringList.Create;
       try
         sl.Add(badgeText);
+        // Lines 2-3 belong to the state writer; keep what it left and pad with
+        // the "unknown" zeroes when it has not run yet, so the trend arrow
+        // always lands on line 4 for the panel indicators to find.
         if existing.Count > 1 then
-          sl.Add(existing[1]);
+          sl.Add(existing[1])
+        else
+          sl.Add('0');
         if existing.Count > 2 then
-          sl.Add(existing[2]);
+          sl.Add(existing[2])
+        else
+          sl.Add('0');
+        sl.Add(Trend);
         SaveStringListAtomic(filePath, sl);
       finally
         sl.Free;
@@ -2130,7 +2138,7 @@ begin
 end;
 
 procedure WriteTrndiCurrentStateCache(const Value: string; ReadingEpoch: int64;
-FreshMinutes: integer);
+FreshMinutes: integer; const Trend: string);
 var
   cacheDir, filePath, badgeText: string;
   sl: TStringList;
@@ -2184,6 +2192,10 @@ begin
       sl.Add(badgeText);
       sl.Add(IntToStr(ReadingEpoch));
       sl.Add(IntToStr(FreshMinutes));
+      // Line 4: trend arrow for the panel indicators, empty when the user
+      // turned the badge trend off. This writer runs right after SetBadge, so
+      // it has to repeat the arrow or it would erase what SetBadge just wrote.
+      sl.Add(Trend);
       SaveStringListAtomic(filePath, sl);
     finally
       sl.Free;
@@ -2406,8 +2418,11 @@ begin
     linutils.KDEBadge.SetBadge(f);
   // If TryStrToFloat fails, badge stays cleared (ClearBadge above)
 
-  // Write current reading for GNOME top-bar indicator (reads ~/.cache/trndi/current.txt)
-  WriteTrndiCurrentValueCache(Value);
+  // Write current reading for the GNOME top-bar indicator and the Plasma
+  // widget (both read ~/.cache/trndi/current.txt). FBadgeTrend carries the
+  // arrow the tray icon is about to draw, so the panel indicators can follow
+  // the same badge.trend setting.
+  WriteTrndiCurrentValueCache(Value, FBadgeTrend);
   
   SetTray(Value, badgecolor, badge_size_ratio, min_font_size);
 end;
@@ -2431,7 +2446,7 @@ begin
   if FreshMinutes < 0 then
     FreshMinutes := 0;
 
-  WriteTrndiCurrentStateCache(Value, epoch, FreshMinutes);
+  WriteTrndiCurrentStateCache(Value, epoch, FreshMinutes, FBadgeTrend);
 end;
 
 // Overload: delegate to the full implementation with default parameters

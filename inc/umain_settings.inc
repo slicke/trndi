@@ -437,7 +437,7 @@ procedure LoadUserSettings(f: TfConf);
       rgDots.ItemIndex := Ord(DotColorModeFromSetting(
         GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT))));
       // Trend arrow in the taskbar icon (Windows) / dock badge (macOS) /
-      // tray icon (Linux, BSD)
+      // tray icon and panel indicators (Linux, BSD)
       {$if defined(X_WIN) or defined(X_MAC) or defined(X_PC)}
       // Keep this default in step with the two read sites in umain_settings /
       // umain_glucose, or the checkbox will disagree with what the badge shows.
@@ -854,7 +854,10 @@ procedure SaveUserSettings(f: TfConf);
       // somehow opened unselected.
       if f.rgDots.ItemIndex >= 0 then
         SetSetting('ux.dot_color_mode', f.rgDots.ItemIndex);
-      {$if defined(X_WIN) or defined(X_MAC)}
+      // Must match the visibility gate above (X_PC included): the checkbox is
+      // shown on Linux/BSD, where the setting drives the tray icon arrow and
+      // the arrow published to the GNOME/Plasma panel indicators.
+      {$if defined(X_WIN) or defined(X_MAC) or defined(X_PC)}
       SetSetting('badge.trend', cbBadgeTrend.Checked);
       {$endif}
       SetSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);

@@ -6,7 +6,7 @@
     "Description": "Shows Trndi's current reading in the panel",
     "Icon": "view-statistics",
     "License": "GPL-3.0-only",
-    "Version": "1.1",
+    "Version": "1.2",
     "Website": "https://github.com/slicke/trndi",
     "Category": "System Information",
     "Authors": [

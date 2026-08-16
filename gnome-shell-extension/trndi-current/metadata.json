@@ -2,7 +2,7 @@
   "uuid": "trndi-current@slicke.com",
   "name": "Trndi Current",
   "description": "Shows the current Trndi reading in the GNOME top bar by reading ~/.cache/trndi/current.txt",
-  "version": 2,
+  "version": 3,
   "shell-version": ["45", "46", "47", "48", "49", "50", "51", "52"],
   "url": "https://github.com/slicke/trndi"
 }

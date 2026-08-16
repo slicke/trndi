@@ -158,6 +158,7 @@ Both indicators read the same cache file: `${XDG_CACHE_HOME:-$HOME/.cache}/trndi
 
 **Installation:**
 - **DEB/RPM packages**: Extensions install automatically to `/usr/local/share/trndi/`
+- **From a source checkout**: run the installer next to each indicator — `./gnome-shell-extension/install.sh` or `./kde-plasmoid/install.sh` (add `--system` for all users, `--uninstall` to remove)
 - **AppImage**: Extensions are bundled but require manual installation:
   ```bash
   # Extract AppImage to access extensions
