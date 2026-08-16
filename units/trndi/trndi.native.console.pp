@@ -165,8 +165,10 @@ begin
   except
     // Fall through to the stderr path below
   end;
-  Flush(StdErr);
   Writeln(StdErr, Format('[Trndi] %s: %s', [topic, message]));
+  // Flush after writing: an alert must reach the terminal or journal when it
+  // happens, not whenever the buffer next fills or the program exits.
+  Flush(StdErr);
 end;
 
 {------------------------------------------------------------------------------
