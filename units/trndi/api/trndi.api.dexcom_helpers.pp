@@ -226,10 +226,10 @@ end;
   DexcomReadingTime
   --------------------
   Dexcom sends three timestamps per reading and they are not interchangeable.
-  ST is the receiver's own system clock, which drifts, and is the one field
-  neither reference implementation trusts: pydexcom ignores it entirely, and the
-  dexcom-tesla-display bridge ranks it below WT. Both Trndi drivers used to read
-  it first, which was the odd choice out.
+  ST is the receiver's own system clock, which drifts, and is the field
+  third-party Share clients trust least: pydexcom ignores it entirely, and
+  others rank it below WT. Both Trndi drivers used to read it first, which was
+  the odd choice out.
 
   WT leads because it is unambiguous: a bare epoch in milliseconds, with no
   offset suffix to interpret. DT arrives as "Date(<ms>+0000)", and whether those
