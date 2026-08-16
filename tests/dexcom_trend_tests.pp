@@ -70,8 +70,8 @@ procedure TDexcomTrendMappingTests.MapsNumericDexcomCodes;
 begin
   // Dexcom Share's legacy integer codes, which are BGTrend's order shifted by
   // one: 1=DoubleUp .. 7=DoubleDown, 8=NotComputable. Verified against
-  // pydexcom's DEXCOM_TREND_DIRECTIONS and the trend table in
-  // FreemanConsultingServices/dexcom-tesla-display.
+  // pydexcom's DEXCOM_TREND_DIRECTIONS, and against a second independent
+  // third-party Share client using the same table.
   //
   // These used to be read 0-based, so every arrow came out one step off -- a
   // Dexcom 4 ("Flat") displayed as TdFortyFiveDown. The old tests asserted
