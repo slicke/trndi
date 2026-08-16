@@ -44,7 +44,7 @@ unit trndi.api.debug_firstmissing;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native, trndi.funcs,
+Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs.core,
 fpjson, jsonparser, dateutils, trndi.api.debug;
 
 type

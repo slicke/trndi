@@ -54,9 +54,8 @@ unit trndi.api.dexcomNew;
 interface
 
 uses
-Classes, SysUtils, Dialogs,
-// Trndi units
-trndi.types, trndi.api, trndi.native, trndi.native.base, trndi.funcs,
+Classes, SysUtils, // Trndi units
+trndi.types, trndi.api, trndi.native, trndi.native.base, trndi.funcs.core,
 {$ifdef debug} trndi.log,{$endif}
 // FPC units
 fpjson, jsonparser, dateutils, StrUtils;

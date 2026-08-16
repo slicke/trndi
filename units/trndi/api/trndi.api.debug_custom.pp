@@ -44,7 +44,7 @@ unit trndi.api.debug_custom;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types,
+Classes, SysUtils, trndi.types,
 trndi.api.debug, fpjson, jsonparser, trndi.api;
 
 type

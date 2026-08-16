@@ -44,7 +44,7 @@ unit trndi.api.debug_edge;
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types, trndi.api, trndi.native,
+Classes, SysUtils, trndi.types, trndi.api, trndi.native,
 fpjson, jsonparser, dateutils;
 
 type

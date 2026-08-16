@@ -44,7 +44,7 @@ unit trndi.api.debug_perfect; // 5.5 mmol/L
 interface
 
 uses
-Classes, SysUtils, Dialogs, trndi.types,
+Classes, SysUtils, trndi.types,
 trndi.api.debug, fpjson, jsonparser;
 
 type
