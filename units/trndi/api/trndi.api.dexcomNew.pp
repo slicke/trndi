@@ -1246,6 +1246,7 @@ class function DexcomNew.testConnection(user, pass: string; var res: string; ext
 var
   tn: TrndiNative;
   base, body, resp, accountId, sessionId, timeResp, timeStr, nameBody, nameResp, parseErr: string;
+  authErr: string;
   js: TJSONData;
   useEmailAuth: boolean;
   LServerDateTime: TDateTime;
@@ -1286,6 +1287,23 @@ begin
     begin
         // Authenticate -> extract account id or error
         resp := tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body);
+
+        // Recognised credential failures are terminal here, as in Connect:
+        // this call only looks the account up, and no other endpoint can do it,
+        // so there is nothing to fall back to. Without this the error body
+        // survives the quote-stripping below as a mangled non-empty "account
+        // id" and is reported as a generic login failure further down.
+        //
+        // Deliberately not applied to the LoginPublisherAccountById response
+        // below: "Cannot Authenticate by AccountId" is the very signal that the
+        // by-name endpoint should be tried, so failing on it would close off
+        // the nickname path this method exists to cover.
+        if DexcomAuthFailureMessage(resp, authErr) then
+        begin
+          res := authErr;
+          Exit;
+        end;
+
         if not TryGetTokenOrError(resp, accountId, parseErr) then
         begin
           // Fallback to legacy behavior: strip quotes if present
@@ -1296,6 +1314,15 @@ begin
             res := 'An error occured with your email address: ' + parseErr;
             Exit;
           end;
+        end;
+
+        // A null GUID means the lookup ran but matched no account. Rejected
+        // here rather than sent to the login call, which would fail with a
+        // vaguer error one step later. Matches Connect.
+        if accountId = DEXCOM_NULL_UUID then
+        begin
+          res := sDexNewErrNoAccount;
+          Exit;
         end;
 
         body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
