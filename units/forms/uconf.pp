@@ -67,6 +67,10 @@
  *   columns instead of two, and the dialog now measures each tab on show and
  *   grows by the worst overflow, replacing the fixed Qt6 height bump. The
  *   group's last row of radio buttons used to sit behind the bottom strip.
+ * - 2026-08-16: The two original Dexcom entries carry a line recommending the
+ *   Dexcom New backend. The recommendation sits on the entry the user already
+ *   has selected, since one placed on the Dexcom New entries would only reach
+ *   people already looking at them.
  *)
 
 unit uconf;
@@ -840,6 +844,9 @@ RS_TIMESTAMP_HELP =
 RS_DEX =
   'Dexcom servers do not provide custom high and low blood sugar values.'+sLineBreak+'Please set your own thresholds in the Customization tab.';
 
+RS_DEX_OLD =
+  'The "Dexcom New" backend is recommended - new features are added there.';
+
 RS_BETA =
   'This backend is in a beta stage, it may not work as intended!'+sLineBreak+' If possible, choose another backend.';
 
@@ -1592,7 +1599,14 @@ procedure WarnUnstableAPI;
       cbCust.Font.Color := clBlack;
 
       pnSysWarn.Show;
-      lSysWarnInfo.Caption := info + RS_DEX;
+      // Both Dexcom drivers need the threshold note, but only the original one
+      // gets the pointer to Dexcom New. The recommendation has to sit on the
+      // entry the user already has selected -- putting it on the Dexcom New
+      // entries would only reach people who are looking at them anyway.
+      if (cbSys.Text = API_DEX_USA) or (cbSys.Text = API_DEX_EU) then
+        lSysWarnInfo.Caption := info + RS_DEX + sLineBreak + RS_DEX_OLD
+      else
+        lSysWarnInfo.Caption := info + RS_DEX;
       pnSysWarn.Color := $0053A2E8;
     end;
     API_NS3:

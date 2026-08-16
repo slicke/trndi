@@ -34,9 +34,11 @@ Both collections are fetched together and cached for ten minutes, so a normal re
 This driver can ask the server "has anything changed?" as a single tiny request (`/lastModified`). Trndi uses that to poll roughly every 20 seconds whenever a reading is running late, so a delayed upload appears within seconds instead of minutes. Other backends wait out the normal retry interval (about two minutes), since a retry there costs a full fetch. If readings stay missing for more than half an hour, Trndi treats it as a real gap and falls back to the normal cadence.
 
 ## Dexcom _(USA/Outside USA)_
-This is Trndi's original implementation of Dexcom. It is still updated when needed, and a very viable choice for stability.
+This is Trndi's original implementation of Dexcom. It still works and is still fixed when something breaks, but _Dexcom New_ is the recommended choice — that is where new features are added.
 
 ## Dexcom New _(USA/Outside USA/Japan)_
+**This is the recommended Dexcom driver.**
+
 This is a complete re-write of the Dexcom driver with some more modern concepts. It was loosely inspired by the _pydexcom_ library.
 This backend also supports Japan, as a result. New features are primarily added to this driver.
 
