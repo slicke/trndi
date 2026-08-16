@@ -1181,35 +1181,35 @@ object fConf: TfConf
       end
       object Panel8: TPanel
         Left = 0
-        Height = 50
-        Top = 500
+        Height = 70
+        Top = 480
         Width = 637
         Align = alBottom
         BevelOuter = bvNone
-        ClientHeight = 50
+        ClientHeight = 70
         ClientWidth = 637
         ParentBackground = False
         TabOrder = 4
         object Panel9: TPanel
           Left = 515
-          Height = 50
+          Height = 70
           Top = 0
           Width = 122
           Align = alRight
           BevelOuter = bvNone
-          ClientHeight = 50
+          ClientHeight = 70
           ClientWidth = 122
           ParentBackground = False
           TabOrder = 0
           object Button3: TButton
             Left = 0
             Height = 30
-            Top = 10
+            Top = 20
             Width = 122
             Align = alClient
             AutoSize = True
-            BorderSpacing.Top = 10
-            BorderSpacing.Bottom = 10
+            BorderSpacing.Top = 20
+            BorderSpacing.Bottom = 20
             Caption = 'Check for update'
             TabOrder = 0
             OnClick = Button3Click
@@ -1217,13 +1217,13 @@ object fConf: TfConf
         end
         object pnSysWarn: TPanel
           Left = 2
-          Height = 46
+          Height = 66
           Top = 2
           Width = 511
           Align = alClient
           BorderSpacing.Around = 2
           BevelOuter = bvNone
-          ClientHeight = 46
+          ClientHeight = 66
           ClientWidth = 511
           Color = 5481192
           ParentBackground = False
@@ -1232,7 +1232,7 @@ object fConf: TfConf
           Visible = False
           object lSysWarnInfo: TLabel
             Left = 5
-            Height = 36
+            Height = 56
             Top = 5
             Width = 501
             Align = alClient

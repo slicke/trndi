@@ -71,6 +71,9 @@
  *   Dexcom New backend. The recommendation sits on the entry the user already
  *   has selected, since one placed on the Dexcom New entries would only reach
  *   people already looking at them.
+ * - 2026-08-16: The backend-warning strip on the General tab is 20px taller,
+ *   so its label holds the three lines the Tandem, CareLink and original
+ *   Dexcom captions already carry; the third line was being clipped.
  *)
 
 unit uconf;
