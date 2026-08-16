@@ -60,6 +60,8 @@ type
     procedure MapsTextualCamelCase;
     procedure UnknownMapsToPlaceholder;
     procedure AuthFailureMessages;
+    procedure ReadingTimePrefersWT;
+    procedure ReadingTimeFallsBackWhenMalformed;
   end;
 
 implementation
@@ -146,6 +148,53 @@ begin
   AssertFalse('Session errors are not credential failures',
     DexcomAuthFailureMessage('{"Code":"SessionIdNotFound"}', msg));
   AssertFalse('Empty response', DexcomAuthFailureMessage('', msg));
+end;
+
+procedure TDexcomTrendMappingTests.ReadingTimePrefersWT;
+const
+  // Same instant in all three fields, so only the choice of field is under
+  // test. DT carries the offset suffix Dexcom actually sends.
+  WT = '/Date(1610464324000)/';
+  DT = '/Date(1610464324000+0000)/';
+  ST = '/Date(1610464324000)/';
+var
+  d, expected: TDateTime;
+begin
+  AssertTrue('WT parses', DexcomReadingTime(WT, DT, ST, expected));
+
+  AssertTrue('WT is used when present', DexcomReadingTime(WT, '', '', d));
+  AssertEquals('WT value', expected, d);
+
+  AssertTrue('DT is used when WT is absent', DexcomReadingTime('', DT, '', d));
+  AssertTrue('ST is used when WT and DT are absent',
+    DexcomReadingTime('', '', ST, d));
+
+  AssertFalse('No candidates at all', DexcomReadingTime('', '', '', d));
+  AssertEquals('Date cleared when nothing parses', 0.0, d);
+end;
+
+procedure TDexcomTrendMappingTests.ReadingTimeFallsBackWhenMalformed;
+const
+  GOOD = '/Date(1610464324000)/';
+  JUNK = 'not-a-timestamp';
+var
+  d, expected: TDateTime;
+begin
+  AssertTrue('Reference parses', DexcomReadingTime(GOOD, '', '', expected));
+
+  // A present-but-unparseable field must not shadow one that does parse.
+  // Selecting purely on non-emptiness left the reading dated 0, which renders
+  // as 1899 -- the very outcome the fallback chain exists to prevent.
+  AssertTrue('Malformed WT falls back to DT',
+    DexcomReadingTime(JUNK, GOOD, '', d));
+  AssertEquals('DT value used', expected, d);
+
+  AssertTrue('Malformed WT and DT fall back to ST',
+    DexcomReadingTime(JUNK, JUNK, GOOD, d));
+  AssertEquals('ST value used', expected, d);
+
+  AssertFalse('All three malformed', DexcomReadingTime(JUNK, JUNK, JUNK, d));
+  AssertEquals('Date cleared when nothing parses', 0.0, d);
 end;
 
 initialization
