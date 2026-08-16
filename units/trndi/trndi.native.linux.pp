@@ -478,35 +478,64 @@ end;
 {------------------------------------------------------------------------------
   HasGlobalMenu (Linux)
   ---------------------
-  Detect common global menu registrars/services (qdbus list) and related
-  hints (GTK_MODULES, KDE plasmoid presence). This is best-effort but
-  catches the common cases: com.canonical.AppMenu.Registrar and org.kde/appmenu.
+  Detect common global menu registrars/services by listing the session bus
+  names, plus a GTK_MODULES hint. This is best-effort but catches the common
+  cases: com.canonical.AppMenu.Registrar and org.kde/appmenu.
+
+  The bus is queried through whichever CLI the system happens to ship. busctl
+  (systemd) and gdbus (glib) are tried first because they are near-universal;
+  the Qt tool is only a fallback, and its binary name varies by distro
+  (plain `qdbus` does not exist on e.g. Fedora KDE, which ships `qdbus-qt6`).
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.HasGlobalMenu: boolean;
+const
+  QDBUS_NAMES: array[0..4] of string =
+    ('qdbus', 'qdbus6', 'qdbus-qt6', 'qdbus-qt5', 'qdbus-qt4');
 var
   outS: string;
   exitCode: integer;
-  qdbusPath: string;
+  toolPath: string;
   gtkMods: string;
+  i: integer;
+
+  // True when a session bus name listing mentions a known appmenu registrar.
+  // Matches well-known service names only; the generic substring 'appmenu'
+  // would produce false positives on some systems.
+  function HasRegistrar(const busNames: string): boolean;
+  var
+    lower: string;
+  begin
+    lower := LowerCase(busNames);
+    Result := (Pos('com.canonical.appmenu.registrar', lower) > 0) or
+      (Pos('org.kde.appmenu', lower) > 0);
+  end;
+
 begin
   Result := False;
 
-  // Quick hint: desktop type may indicate the presence of a global menu
-  // but we still continue to look for services.
-  // Try qdbus and search for known AppMenu-related names
-  qdbusPath := FindInPath('qdbus');
-  if qdbusPath <> '' then
+  toolPath := FindInPath('busctl');
+  if toolPath <> '' then
+    if RunAndCaptureSimpleWait(toolPath, ['--user', '--no-pager', '--acquired', 'list'],
+      outS, exitCode, 7000) and (exitCode = 0) and HasRegistrar(outS) then
+      Exit(True);
+
+  toolPath := FindInPath('gdbus');
+  if toolPath <> '' then
+    if RunAndCaptureSimpleWait(toolPath, ['call', '--session',
+      '--dest', 'org.freedesktop.DBus',
+      '--object-path', '/org/freedesktop/DBus',
+      '--method', 'org.freedesktop.DBus.ListNames'],
+      outS, exitCode, 7000) and (exitCode = 0) and HasRegistrar(outS) then
+      Exit(True);
+
+  for i := Low(QDBUS_NAMES) to High(QDBUS_NAMES) do
   begin
-    if RunAndCaptureSimpleWait(qdbusPath, [], outS, exitCode, 7000) and (exitCode = 0) then
-    begin
-      outS := LowerCase(outS);
-      // Match well-known AppMenu registrar/service names only. Avoid
-      // matching the generic substring 'appmenu' which can produce
-      // false-positives on some systems.
-      if (Pos('com.canonical.appmenu.registrar', outS) > 0) or
-        (Pos('org.kde.appmenu', outS) > 0) then
-        Exit(True);
-    end;
+    toolPath := FindInPath(QDBUS_NAMES[i]);
+    if toolPath = '' then
+      Continue;
+    if RunAndCaptureSimpleWait(toolPath, [], outS, exitCode, 7000) and
+      (exitCode = 0) and HasRegistrar(outS) then
+      Exit(True);
   end;
 
   // GTK module hint: only match explicit appmenu-gtk module, not the generic 'appmenu' substring
@@ -517,7 +546,7 @@ begin
 
   // Do NOT use KDE plasmoid presence as a global-menu indicator:
   // the plasmoid may be visible for display purposes without a desktop
-  // global menu bar being present. Only qdbus service checks are reliable.
+  // global menu bar being present. Only bus service checks are reliable.
 
   // Do NOT check for appmenu helper tools on PATH; their presence does not
   // guarantee a working global menu bar integration.
