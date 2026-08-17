@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-17: The Unix connectivity probe now converts the target IP with
+ *   StrToNetAddr instead of StrToHostAddr, which returned host byte order
+ *   and made the OpenDNS fallback probe a byte-swapped address.
  *)
 (* Async helpers: thread implementations moved out of umain_helpers.inc
    This include defines background worker threads used by the main form.
@@ -203,7 +208,11 @@ function IsURLReachable(const URL: string; Port: word = 80): boolean;
 
     try
       try
-        HostAddr := StrToHostAddr(URL);
+        // StrToNetAddr, not StrToHostAddr: sin_addr must be in network byte
+        // order and StrToHostAddr returns host order. The swap went unnoticed
+        // because 8.8.8.8 and 1.1.1.1 are byte-palindromes — only the OpenDNS
+        // fallback (208.67.222.222) was actually probed at a swapped address.
+        HostAddr := StrToNetAddr(URL);
 
         if HostAddr.s_addr = 0 then
           Exit;
