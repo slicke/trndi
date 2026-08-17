@@ -1128,6 +1128,12 @@ private
   procedure UserBadgeClicked;
   procedure CheckAndAcceptLicense;
   function InitializeAPI: boolean;
+  {** Seed the level-based alert rules (high, low, urgent low) from the active
+      API's thresholds. Must run only after `connect` and any wizard/override
+      adjustments have settled — the thresholds are placeholders before that.
+      Idempotent: rule state (snooze, last fired, violation start) is untouched,
+      so it can be re-applied whenever the limits change. }
+  procedure SeedLevelAlertRules;
   {** Check GitHub releases for newer versions of Trndi and optionally notify
       the user. When `ShowUpToDateMessage` is True, a message will be shown
       when the application is already current.

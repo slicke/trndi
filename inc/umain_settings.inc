@@ -39,6 +39,10 @@
    before the mmol/L unit conversion runs, matching the save path's mg/dL
    premise; loading after it showed the stored mg/dL figure as mmol and
    inflated it ~18-fold on the next save. *)
+(* MODIFICATION NOTICE (2026-08-17): override.lo/override.hi are now persisted
+   only while the custom-limits box is ticked, and cleared otherwise - writing
+   them unconditionally froze the dialog's seeded values (initCGMCore's 401/40
+   when Settings opened before the backend connected) into every later boot. *)
 (* Settings dialog and instant-apply configuration for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -68,6 +72,9 @@ begin
     api.cgmHi := native.GetIntSetting('override.hi', api.cgmHi);
     api.cgmRangeLo := native.GetIntSetting('override.rangelo', api.cgmRangeLo);
     api.cgmRangeHi := native.GetIntSetting('override.rangehi', api.cgmRangeHi);
+    // The limits just moved, and the alert durations/hysteresis may have too -
+    // re-seed so the alerts follow without waiting for a restart.
+    SeedLevelAlertRules;
   end;
 
   langCode := native.GetSetting('locale', 'en');
@@ -782,15 +789,31 @@ procedure SaveUserSettings(f: TfConf);
       rangeLoVal := Min(fsLoRange.Value, fsHiRange.Value);
       rangeHiVal := Max(fsLoRange.Value, fsHiRange.Value);
 
-      if rbUnit.ItemIndex = 0 then
+      // Same reasoning as the range pair below: the limit fields always hold a
+      // value (seeded from the backend when no override is stored), so writing
+      // them unconditionally froze whatever the dialog happened to show into
+      // the config - including initCGMCore's 401/40 placeholders when Settings
+      // was opened before the backend had connected, which the boot retry loop
+      // does on a failed Connect. Those keys are then applied to every backend
+      // on every later boot. Persist only while the box is ticked, and clear
+      // them otherwise so the backend's own limits keep applying.
+      if cbCust.Checked then
       begin
-        SetSetting('override.lo', Round(loVal * TrndiAPI.toMGDL).ToString);
-        SetSetting('override.hi', Round(hiVal * TrndiAPI.toMGDL).ToString);
+        if rbUnit.ItemIndex = 0 then
+        begin
+          SetSetting('override.lo', Round(loVal * TrndiAPI.toMGDL).ToString);
+          SetSetting('override.hi', Round(hiVal * TrndiAPI.toMGDL).ToString);
+        end
+        else
+        begin
+          SetSetting('override.lo', Round(loVal).ToString);
+          SetSetting('override.hi', Round(hiVal).ToString);
+        end;
       end
       else
       begin
-        SetSetting('override.lo', Round(loVal).ToString);
-        SetSetting('override.hi', Round(hiVal).ToString);
+        DeleteSetting('override.lo');
+        DeleteSetting('override.hi');
       end;
 
       // The range fields always hold a usable value now (they fall back to the
