@@ -537,7 +537,7 @@ begin
   lastup := 0;
 
   if not tAgo.Enabled then
-    lAgo.Caption := '🕑 ' + RS_UNKNOWN_TIME;
+    lAgo.Caption := CLOCK_CAPTION_PREFIX + RS_UNKNOWN_TIME;
 
   // The fetch now runs on TGlucoseFetchThread. The post-fetch UI flow
   // (ApplyFetchedReadings → ProcessCurrentReading → FinalizeReadingUpdate)
