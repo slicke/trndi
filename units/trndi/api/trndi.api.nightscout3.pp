@@ -76,6 +76,8 @@
  *   rather than "0h left". Matches the v1 driver this was ported from.
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs.
+ * - 2026-08-17: An absent bgHigh/bgLow in settings.thresholds now keeps the
+ *   existing limit instead of defaulting to 0.
  *)
 unit trndi.api.nightscout3;
 
@@ -1113,8 +1115,11 @@ begin
       (settings.Find('thresholds').JSONType = jtObject) then
     begin
       th := TJSONObject(settings.Find('thresholds'));
-      cgmHi := th.Get('bgHigh', 0);
-      cgmLo := th.Get('bgLow', 0);
+      // An absent bgHigh/bgLow leaves initCGMCore's placeholder standing, which
+      // is what the boot path's wizard fallback tests for — defaulting to 0
+      // instead set a high limit of zero, reading every value as high.
+      cgmHi := th.Get('bgHigh', cgmHi);
+      cgmLo := th.Get('bgLow', cgmLo);
       cgmRangeHi := th.Get('bgTargetTop', CGM_RANGE_HI_DISABLED);
       cgmRangeLo := th.Get('bgTargetBottom', 0);
       Result := true;

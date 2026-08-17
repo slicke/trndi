@@ -39,6 +39,8 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-08-17: An absent bgHigh/bgLow in settings.thresholds now keeps the
+ *   existing limit instead of defaulting to 0.
  *)
 unit trndi.api.nightscout;
 
@@ -495,9 +497,12 @@ begin
       ThresholdsObj := SettingsObj.FindPath('thresholds') as TJSONObject;
       if Assigned(ThresholdsObj) then
       begin
-        // These map directly into TrndiAPI’s exposed properties.
-        cgmHi := ThresholdsObj.Get('bgHigh', 0);
-        cgmLo := ThresholdsObj.Get('bgLow', 0);
+        // These map directly into TrndiAPI’s exposed properties. An absent
+        // bgHigh/bgLow leaves initCGMCore's placeholder standing, which is what
+        // the boot path's wizard fallback tests for — defaulting to 0 instead
+        // set a high limit of zero, reading every value as high.
+        cgmHi := ThresholdsObj.Get('bgHigh', cgmHi);
+        cgmLo := ThresholdsObj.Get('bgLow', cgmLo);
         cgmRangeHi := ThresholdsObj.Get('bgTargetTop', CGM_RANGE_HI_DISABLED);
         cgmRangeLo := ThresholdsObj.Get('bgTargetBottom', 0);
       end;
