@@ -284,7 +284,7 @@ begin
     exit;
 
   if Length(bgs) < 1 then
-    lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO
+    lAgo.Caption := CLOCK_CAPTION_PREFIX + RS_COMPUTE_FAILED_AGO
   else
   try
     d := lastReading.date;
@@ -293,29 +293,21 @@ begin
     if showTimestamp then
     begin
       timeStr := FormatDateTime('hh:nn', d);
-      {$ifndef lclgtk2}
-      lAgo.Caption := '🕑 ' + timeStr;
-      {$else}
-      lAgo.Caption := '⌚ ' + timeStr;
-      {$endif}
+      lAgo.Caption := CLOCK_CAPTION_PREFIX + timeStr;
     end
     else
     begin
       min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;
       if min < 0 then
         min := 0;
-      {$ifndef lclgtk2}
-      lAgo.Caption := '🕑 ' + Format(RS_LAST_UPDATE, [min]);
-      {$else}
-      lAgo.Caption := '⌚ ' + Format(RS_LAST_UPDATE, [min]);
-      {$endif}
+      lAgo.Caption := CLOCK_CAPTION_PREFIX + Format(RS_LAST_UPDATE, [min]);
     end;
 
     UpdatePredictionTimes;
 
     predictFuture;
   except
-    lAgo.Caption := '🕑 ' + RS_COMPUTE_FAILED_AGO;
+    lAgo.Caption := CLOCK_CAPTION_PREFIX + RS_COMPUTE_FAILED_AGO;
   end;
 
   // Catch-all activation for the fullscreen clock: covers fullscreen entered

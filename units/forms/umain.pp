@@ -251,6 +251,14 @@ var
 TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
   RS_tpoBottomRight, RS_tpoCustom, RS_tpoTopRight);
 const
+  // Prefix on every "time since last reading" caption, trailing space included.
+  // GTK2 renders no colour emoji, so U+1F551 comes out as tofu there — fall back
+  // to the plain BMP watch character.
+{$ifndef lclgtk2}
+CLOCK_CAPTION_PREFIX = '🕑 ';
+{$else}
+CLOCK_CAPTION_PREFIX = '⌚ ';
+{$endif}
   // Public timing constants used across the unit/interface
 CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
   // Escalation boundaries for the stale-data card, in minutes since the last
