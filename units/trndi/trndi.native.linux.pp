@@ -46,6 +46,9 @@
  * - 2026-08-17: SetTray's GNOME-extension/KDE-plasmoid probes are now cached
  *   with a 60 s TTL (ShouldSuppressTrayIcon) instead of spawning probe
  *   processes on every tray repaint.
+ * - 2026-08-17: attention's RunAndCapture helper now checks for child exit
+ *   before draining the pipes rather than after, so output written just
+ *   before exit can no longer be lost.
  *)
 unit trndi.native.linux;
 
@@ -1195,6 +1198,7 @@ function RunAndCapture(const Exec: string; const Params: array of string;
     OutStr, ErrStr: TStringStream;
     Buf: array[0..4095] of byte;
     n: SizeInt;
+    exited: boolean;
   begin
     Result := false;
     StdoutS := ''; StderrS := ''; ExitCode := -1;
@@ -1213,6 +1217,12 @@ function RunAndCapture(const Exec: string; const Params: array of string;
       P.Execute;
 
       repeat
+        // Sample Running *before* draining: bytes the child wrote before
+        // exiting stay readable in the pipe, so when the exit is seen the
+        // drain below is guaranteed to run once more and cannot miss the
+        // tail of the output. Draining first and then checking Running lost
+        // whatever arrived between the two.
+        exited := not P.Running;
         while P.Output.NumBytesAvailable > 0 do
         begin
           n := P.Output.Read(Buf, SizeOf(Buf));
@@ -1225,7 +1235,7 @@ function RunAndCapture(const Exec: string; const Params: array of string;
           if n > 0 then
             ErrStr.WriteBuffer(Buf, n) else Break;
         end;
-        if not P.Running then
+        if exited then
           Break;
         Sleep(5);
       until false;
