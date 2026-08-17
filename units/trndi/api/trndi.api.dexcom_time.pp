@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-17: The smart-quote normalization in ParseDexcomTime replaced
+ *   ASCII '"' with itself (a no-op); it now replaces the actual U+201C/U+201D
+ *   characters, spelled as UTF-8 byte sequences.
  *)
 unit trndi.api.dexcom_time;
 
@@ -165,9 +170,12 @@ begin
   HasOffset := False;
   if Trim(S) = '' then Exit;
 
-  // Normalize quotes to standard ASCII quotes (in case smart quotes are present)
-  NormalizedS := StringReplace(S, '"', '"', [rfReplaceAll]);
-  NormalizedS := StringReplace(NormalizedS, '"', '"', [rfReplaceAll]);
+  // Normalize quotes to standard ASCII quotes (in case smart quotes are
+  // present). The literals are spelled as UTF-8 byte sequences (U+201C/U+201D)
+  // so an ASCII re-save of this file cannot silently turn them into plain '"'
+  // again, which would make both calls no-ops.
+  NormalizedS := StringReplace(S, #$E2#$80#$9C, '"', [rfReplaceAll]);
+  NormalizedS := StringReplace(NormalizedS, #$E2#$80#$9D, '"', [rfReplaceAll]);
 
   // 1) XML-like: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
   if Pos('<', NormalizedS) > 0 then

@@ -40,6 +40,9 @@
  *   requestEx, the C callbacks and curl_global_init) moved verbatim to the new
  *   trndi.native.request.curl unit; the methods here now fetch proxy settings
  *   and delegate to that shared transport.
+ * - 2026-08-17: The gdbus notification fallback now records the toast id the
+ *   server returns and passes it as replaces_id for same-topic alerts,
+ *   matching the libdbus path instead of stacking a new toast every time.
  *)
 unit trndi.native.linux;
 
@@ -1314,7 +1317,13 @@ begin
       NotifySendFallback(topic, message);
       Exit;
     end;
-    ReplaceId := 0;
+    // Same replacement rule as NotifyViaDBus: reuse the previous toast's id
+    // only when it carried the same topic, so a low alert cannot quietly
+    // overwrite a sensor warning that is still up.
+    if (FLastNoticeId <> 0) and (FLastNoticeTopic = topic) then
+      ReplaceId := FLastNoticeId
+    else
+      ReplaceId := 0;
     SetLength(Params, 0);
     Params :=
       ['call', '--session',
@@ -1347,6 +1356,14 @@ begin
           Inc(i);
         if i > p then
           NewId := StrToIntDef(Copy(s, p, i - p), 0);
+      end;
+      // Record the accepted toast so the next same-topic alert replaces it —
+      // previously the parsed id was discarded and every alert stacked a new
+      // toast on the gdbus path.
+      if NewId <> 0 then
+      begin
+        FLastNoticeId := NewId;
+        FLastNoticeTopic := topic;
       end;
     end
     else
