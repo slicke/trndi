@@ -35,6 +35,9 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-17): The high/low/urgent-low alert rules are now
+   seeded after Connect and the wizard/override adjustments instead of before
+   them, so they no longer inherit initCGMCore's placeholder thresholds. *)
 // Main form helper functions for trend dots and UI initialization
 
 // Apply a procedure to all active trend dots; also provides count and index
@@ -886,18 +889,9 @@ begin
     Application.ProcessMessages;
 
     FAlertEngine := TAlertEngine.Create;
-    // Persistence-before-fire (minutes) and hysteresis (mg/dL) are user-tunable;
-    // defaults filter out single-sample spikes and threshold bounce without
-    // delaying urgent-low alerts.
-    FAlertEngine.SetupRule(akHigh,       true,  api.cgmHi,  30, 0,
-      native.GetIntSetting('alerts.duration.high', 10),
-      native.GetFloatSetting('alerts.hysteresis.high', 5));
-    FAlertEngine.SetupRule(akLow,        true,  api.cgmLo,  15, 0,
-      native.GetIntSetting('alerts.duration.low', 5),
-      native.GetFloatSetting('alerts.hysteresis.low', 5));
-    FAlertEngine.SetupRule(akUrgentLow,  true,  api.limitLO, 5, 5,
-      native.GetIntSetting('alerts.duration.urgent', 0),
-      native.GetFloatSetting('alerts.hysteresis.urgent', 5));
+    // The level rules (high/low/urgent low) are seeded further down, once
+    // Connect and the wizard/override adjustments have settled the thresholds -
+    // reading them here would pin every alert to initCGMCore's placeholders.
     FAlertEngine.SetupRule(akMissing,
       GetBoolSetting('alerts.notice.missing', true), 0, 15);
     FAlertEngine.SetupRule(akSensorFault, true, 0, 30);
@@ -999,6 +993,10 @@ begin
     api.cgmHi := GetIntSetting('override.hi', api.cgmHi);
     api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
     api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
+
+    // Thresholds are final now - give the alert engine the same limits the UI
+    // paints with.
+    SeedLevelAlertRules;
 
     PredictGlucoseReading := GetBoolSetting('predictions.enable', false);
     PredictShortMode := GetBoolSetting('predictions.short', false);

@@ -37,6 +37,10 @@
  *)
 (* MODIFICATION NOTICE (2026-08-05): Replaced floating-point wrapped-row
    rounding with integer ceiling division for FPC/macOS compatibility. *)
+(* MODIFICATION NOTICE (2026-08-17): Added SeedLevelAlertRules, which sets the
+   high/low/urgent-low rules from the API's thresholds. The boot path used to
+   inline this before Connect, pinning every alert to initCGMCore's 401/40
+   placeholders. *)
 (* Warning overlay panel, connection badge, and alert snooze for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -117,6 +121,34 @@ begin
     lines.Free;
     bmp.Free;
   end;
+end;
+
+{------------------------------------------------------------------------------
+  Seed the level alert rules from the API's current thresholds.
+
+  Persistence-before-fire (minutes) and hysteresis (mg/dL) are user-tunable;
+  defaults filter out single-sample spikes and threshold bounce without
+  delaying urgent-low alerts.
+
+  Called after boot has settled the thresholds and again whenever settings
+  change them, so the alerts track the limits the UI paints with. SetupRule
+  rewrites only the rule's configuration - snooze, last-fired and violation
+  timestamps survive, so re-seeding never resets an alert in progress.
+------------------------------------------------------------------------------}
+procedure TfBG.SeedLevelAlertRules;
+begin
+  if (FAlertEngine = nil) or (api = nil) then
+    Exit;
+
+  FAlertEngine.SetupRule(akHigh,       true,  api.cgmHi,  30, 0,
+    native.GetIntSetting('alerts.duration.high', 10),
+    native.GetFloatSetting('alerts.hysteresis.high', 5));
+  FAlertEngine.SetupRule(akLow,        true,  api.cgmLo,  15, 0,
+    native.GetIntSetting('alerts.duration.low', 5),
+    native.GetFloatSetting('alerts.hysteresis.low', 5));
+  FAlertEngine.SetupRule(akUrgentLow,  true,  api.limitLO, 5, 5,
+    native.GetIntSetting('alerts.duration.urgent', 0),
+    native.GetFloatSetting('alerts.hysteresis.urgent', 5));
 end;
 
 function TfBG.AlertsSnoozed: boolean;
