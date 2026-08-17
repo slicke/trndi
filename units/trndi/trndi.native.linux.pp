@@ -43,6 +43,9 @@
  * - 2026-08-17: The gdbus notification fallback now records the toast id the
  *   server returns and passes it as replaces_id for same-topic alerts,
  *   matching the libdbus path instead of stacking a new toast every time.
+ * - 2026-08-17: SetTray's GNOME-extension/KDE-plasmoid probes are now cached
+ *   with a 60 s TTL (ShouldSuppressTrayIcon) instead of spawning probe
+ *   processes on every tray repaint.
  *)
 unit trndi.native.linux;
 
@@ -465,6 +468,34 @@ begin
   finally
     sl.Free;
   end;
+end;
+
+{------------------------------------------------------------------------------
+  ShouldSuppressTrayIcon
+  ----------------------
+  TTL-cached combination of the two probes above. IsTrndiGnomeExtensionEnabled
+  spawns gnome-extensions/gsettings children with multi-second wait caps, and
+  SetTray runs on every reading — and every 400 ms during a badge flash — so
+  probing on each call stalls the main thread with process spawns. Installing
+  or removing the panel indicator is rare; a stale answer self-corrects within
+  the TTL.
+ ------------------------------------------------------------------------------}
+var
+gTraySuppressCached: boolean = false;
+gTraySuppressCheckedAt: QWord = 0;
+gTraySuppressValid: boolean = false;
+
+function ShouldSuppressTrayIcon: boolean;
+const
+  TRAY_SUPPRESS_TTL_MS = 60000;
+begin
+  if gTraySuppressValid and
+    (GetTickCount64 - gTraySuppressCheckedAt < TRAY_SUPPRESS_TTL_MS) then
+    Exit(gTraySuppressCached);
+  gTraySuppressCached := IsTrndiGnomeExtensionEnabled or IsTrndiKdePlasmoidVisible;
+  gTraySuppressCheckedAt := GetTickCount64;
+  gTraySuppressValid := true;
+  Result := gTraySuppressCached;
 end;
 
 {------------------------------------------------------------------------------
@@ -2046,8 +2077,9 @@ end;
 var
   Composed: TPortableNetworkGraphic;
 begin
-  // If the GNOME top-bar extension or KDE plasmoid is in use, suppress the legacy tray icon.
-  if IsTrndiGnomeExtensionEnabled or IsTrndiKdePlasmoidVisible then
+  // If the GNOME top-bar extension or KDE plasmoid is in use, suppress the
+  // legacy tray icon (TTL-cached probe; see ShouldSuppressTrayIcon).
+  if ShouldSuppressTrayIcon then
   begin
     if Assigned(TrayMenu) then
       FreeAndNil(TrayMenu);
