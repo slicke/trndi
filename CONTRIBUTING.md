@@ -33,6 +33,7 @@ This keeps `main` stable and integrates new features smoothly.
 ## Getting Started
 
 - Fork the repo, clone, and branch from `develop`.
+- Lazarus is the reference IDE. If you prefer VS Code, see [doc/VSCODE.md](doc/VSCODE.md) for extension and language-server setup.
 - Keep edits minimal and focused (small PRs are best).
 - If your change affects public behavior or API, update docs and add a brief test/example.
 
@@ -264,6 +265,7 @@ pasdoc --output=doc/pasdoc-api --name "Trndi API" \
 
 - [guides/API.md](guides/API.md) — API overview and expectations
 - [README.md](README.md) — Project overview and build instructions
+- [doc/VSCODE.md](doc/VSCODE.md) — Editing Trndi in VS Code
 - [doc/](doc/) — Documentation output
 
 ---
