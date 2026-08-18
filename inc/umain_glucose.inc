@@ -40,6 +40,26 @@
    min-duration persistence survive readings that dip just inside range;
    routing an in-band reading to the "normal" handler used to reset the
    engine and defeat both settings. *)
+(* MODIFICATION NOTICE (2026-08-18): ProcessCurrentReading and
+   UpdateUIBasedOnGlucose now decline to run on an empty reading or while the
+   data is stale. A placeholder (the BG_NO_VAL sentinel lastReading returns
+   with no readings, or a newest entry the backend cleared as unparsable)
+   reads as -904 and used to raise a false critical urgent-low alert and a
+   "LOW" hero value; re-running either procedure on stale data re-fired alarms
+   for an hours-old reading and repainted the outage screen as live. Both now
+   read the newest reading that carries a value, as does IsDataFresh, and
+   ApplyFetchedReadings drops leading entries with neither value nor timestamp
+   - one unparsable newest item used to report a total outage with current data
+   behind it. Also: extensions are told about staleness from the path that
+   actually runs on a stale fetch; time-in-range skips placeholder readings and
+   its optional mean now honours the same range.time window as the percentage
+   beside it; the UI-update gate compares the time-in-range hint rather than
+   lTir's never-assigned Color; each prediction horizon picks its nearest entry
+   independently (the old in-scan exclusions could hide an exact match) and
+   formats values in the display unit's own precision; DisplayLowRange no
+   longer force-shows the off-range bar that its range-colour branch just hid;
+   setColorMode takes back a title-bar tint it lent from the off-range banner,
+   and restores the multi-user colour bar when the title-bar badge goes away. *)
 (* Glucose update pipeline, data fetching, UI state and color logic for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -122,7 +142,30 @@ function FormatSigned(const Value: double): string;
 begin
   if firstboot then
     exit;
-  reading := lastReading;
+  // The newest reading that carries a value, which is not always bgs[0]: a
+  // backend that could not parse an item clears it but keeps its slot, and the
+  // hero should show the most recent real value rather than skip an update
+  // because a placeholder happens to be at the head of the list. Matches what
+  // ApplyStaleDisplayState puts up for the same reason.
+  reading := lastDataReading;
+
+  // Never render a placeholder as if it were a reading. With bgs empty (or
+  // every entry cleared) lastDataReading falls back to the BG_NO_VAL sentinel
+  // (-904), which is below any low limit and used to put a false "LOW" up as
+  // the hero value. The fetch pipeline reaches this only via
+  // ApplyFetchedReadings, but ApplySettingsInstantly calls it directly on
+  // whatever happens to be cached.
+  if reading.empty then
+    exit;
+
+  // ApplyStaleDisplayState owns the presentation for the duration of an
+  // outage: the dimmed struck-out hero, the cleared delta/age/TIR slots and
+  // the stale background. Re-running the live path over it (again, only
+  // reachable from ApplySettingsInstantly) rewrites the caption as a current
+  // value and clears lVal.Font.Style further down, taking the strike-through
+  // with it, so the screen claims a reading that may be hours old is live.
+  if FTrendDataStale then
+    exit;
 
   if not privacyMode then
   begin
@@ -271,7 +314,14 @@ begin
   if Length(bgs) < 1 then
     Exit(false);
 
-  Result := MinutesBetween(Now, lastReading.date) <= native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
+  // Dated from the newest reading that actually carries a value, not from
+  // bgs[0]. Backends clear an entry they cannot parse (both Dexcom drivers do)
+  // and the cleared entry keeps its slot, so keying on bgs[0] let one malformed
+  // item at the head of the list report a total outage — stale card, missing-
+  // readings alert and a pegged progress tube — with current data sitting one
+  // index behind it. lastDataReading falls back to bgs[0] when every entry is
+  // empty, which is the genuine no-data case and still answers false.
+  Result := MinutesBetween(Now, lastDataReading.date) <= native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
 end;
 
 //------------------------------------------------------------------------------
@@ -459,6 +509,8 @@ var
   cutoffTime: TDateTime;
   ranges: set of trndi.types.BGValLevel;
   meanStr: string;
+  meanSum: double;
+  meanCount: integer;
 begin
   ok := 0;
   no := 0;
@@ -470,12 +522,24 @@ begin
   rangeMinutes := native.GetIntSetting('range.time', 9999);
   cutoffTime := IncMinute(Now, -rangeMinutes);
 
+  // Placeholders are skipped the same way BGMean and PlaceTrendDots skip them.
+  // A backend that cleared an unparsable entry (Dexcom does) leaves a reading
+  // with a real timestamp but no value, and `level` on such a reading is
+  // whatever the zero-initialized array held — ordinal 0, BGRangeHI — so every
+  // sensor gap used to be counted as a classified sample and moved the
+  // percentage in one direction or the other depending on `range.custom`.
+  meanSum := 0;
+  meanCount := 0;
   for reading in bgs do
-    if reading.date >= cutoffTime then
+    if (reading.date >= cutoffTime) and (not reading.empty) then
+    begin
       if reading.level in ranges then
         Inc(ok)
       else
         Inc(no);
+      meanSum := meanSum + reading.convert(un);
+      Inc(meanCount);
+    end;
 
   if (ok + no) > 0 then
   begin
@@ -509,9 +573,14 @@ begin
     lTir.Caption := '--%';
   end;
 
-  if native.GetBoolSetting('tir.displaymean', false) then
+  // The mean is computed over the same readings the percentage beside it was
+  // computed from. It used to come from BGMean(un, -1), which averages the
+  // whole fetch window regardless of range.time — so once the window was
+  // narrowed the label put a three-hour percentage next to a twenty-four-hour
+  // average and presented the pair as one statistic.
+  if native.GetBoolSetting('tir.displaymean', false) and (meanCount > 0) then
   begin
-    meanStr := BGMean(un, -1);
+    meanStr := Format(BG_MSG_SHORT[un], [meanSum / meanCount]);
     if meanStr <> '' then
       lTir.Caption := meanStr + ' | ' + lTir.Caption;
   end;
@@ -521,6 +590,17 @@ begin
   else
     lTir.Hint := '';
   lTir.Visible := true;
+
+  // UpdateUIColors turns this hint into the good/bad tint, but the gate that
+  // decides whether to run it sits in FinalizeUpdate — which runs before this
+  // procedure, so it can only ever see the previous cycle's percentage. Re-tint
+  // here when the number actually moved, otherwise a crossing of good_tir or
+  // bad_tir would not reach the label until the reading after next.
+  if lTir.Hint <> FLastTirHint then
+  begin
+    UpdateUIColors;
+    FLastTirHint := lTir.Hint;
+  end;
 end;
 
 function TfBG.updateReading(boot: boolean = false): boolean;
@@ -584,10 +664,10 @@ begin
 
   UpdatePredictionLabel;
 
-  if ShouldUpdateUI(fBG.Color, lVal.Caption, lTir.Caption, lTir.Color) then
+  if ShouldUpdateUI(fBG.Color, lVal.Caption, lTir.Caption, lTir.Hint) then
   begin
     UpdateUIColors;
-    CacheUIState(fBG.Color, lVal.Caption, lTir.Caption, lTir.color);
+    CacheUIState(fBG.Color, lVal.Caption, lTir.Caption, lTir.Hint);
   end;
 
   // Optional trend arrow next to the reading (Windows taskbar icon /
@@ -665,6 +745,14 @@ var
   trend: BGTrend;
   minutes, targetMinutes: integer;
   validCount: integer;
+
+// Predicted values follow the same per-unit precision as every other value on
+// screen. Formatting them as %.1f regardless of unit printed mg/dL as "142.0",
+// a decimal the scale doesn't carry and that appears nowhere else in the UI.
+function PredValue(idx: integer): string;
+  begin
+    Result := SysUtils.Format(BG_MSG_SHORT[un], [bgr[idx].convert(un)]);
+  end;
 begin
   if not Assigned(api) then
     Exit;
@@ -691,13 +779,13 @@ begin
       closest5 := i;
     end;
 
-    if (Abs(currentDiff - 10) < diff10) and (i <> closest5) then
+    if Abs(currentDiff - 10) < diff10 then
     begin
       diff10 := Abs(currentDiff - 10);
       closest10 := i;
     end;
 
-    if (Abs(currentDiff - 15) < diff15) and (i <> closest5) and (i <> closest10) then
+    if Abs(currentDiff - 15) < diff15 then
     begin
       diff15 := Abs(currentDiff - 15);
       closest15 := i;
@@ -709,6 +797,20 @@ begin
       closestTarget := i;
     end;
   end;
+
+  // Each horizon picks its own nearest prediction above, then a slot that
+  // landed on an entry an earlier slot already shows is dropped. The exclusions
+  // used to sit inside the scan instead, where they bound an index the moment
+  // an earlier slot held it — so a later slot could never see that entry again
+  // even when it was the exact match. Predictions are spaced by the source
+  // data's average interval, not a fixed five minutes, so this was reachable in
+  // practice: on a 7.5-minute cadence the entry 15 minutes out was claimed by
+  // the 10-minute slot in the same iteration it became eligible, and the
+  // 15-minute slot rendered '?' with its exact match sitting right there.
+  if closest10 = closest5 then
+    closest10 := -1;
+  if (closest15 = closest5) or (closest15 = closest10) then
+    closest15 := -1;
 
   validCount := 0;
   if closest5 >= 0 then
@@ -754,16 +856,16 @@ begin
       if PredictShortShowValue then
       begin
         if PredictShortFullArrows then
-          lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closestTarget].convert(un)])
+          lPredict.Caption := Format('⏱%d'' %s %s', [minutes, BG_TREND_ARROWS_UTF[trend], PredValue(closestTarget)])
         else
         begin
           case trend of
           TdDoubleUp, TdSingleUp, TdFortyFiveUp:
-            lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, bgr[closestTarget].convert(un)]);
+            lPredict.Caption := Format('⏱%d'' ↗ %s', [minutes, PredValue(closestTarget)]);
           TdFlat:
-            lPredict.Caption := Format('⏱%d'' → %.1f', [minutes, bgr[closestTarget].convert(un)]);
+            lPredict.Caption := Format('⏱%d'' → %s', [minutes, PredValue(closestTarget)]);
           TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-            lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, bgr[closestTarget].convert(un)]);
+            lPredict.Caption := Format('⏱%d'' ↘ %s', [minutes, PredValue(closestTarget)]);
           else
             lPredict.Caption := '?';
           end;
@@ -796,7 +898,7 @@ begin
       minutes := Round(MinutesBetween(bgr[closest5].date, lastReadingTime));
       delta := bgr[closest5].convert(mgdl) - lastReadingValue;
       trend := CalculateTrendFromDelta(delta);
-      pred1 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest5].convert(un)]);
+      pred1 := Format('⏱%d'' %s %s', [minutes, BG_TREND_ARROWS_UTF[trend], PredValue(closest5)]);
     end
     else
       pred1 := '?';
@@ -806,7 +908,7 @@ begin
       minutes := Round(MinutesBetween(bgr[closest10].date, lastReadingTime));
       delta := bgr[closest10].convert(mgdl) - lastReadingValue;
       trend := CalculateTrendFromDelta(delta);
-      pred2 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest10].convert(un)]);
+      pred2 := Format('⏱%d'' %s %s', [minutes, BG_TREND_ARROWS_UTF[trend], PredValue(closest10)]);
     end
     else
       pred2 := '?';
@@ -816,7 +918,7 @@ begin
       minutes := Round(MinutesBetween(bgr[closest15].date, lastReadingTime));
       delta := bgr[closest15].convert(mgdl) - lastReadingValue;
       trend := CalculateTrendFromDelta(delta);
-      pred3 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], bgr[closest15].convert(un)]);
+      pred3 := Format('⏱%d'' %s %s', [minutes, BG_TREND_ARROWS_UTF[trend], PredValue(closest15)]);
     end
     else
       pred3 := '?';
@@ -980,7 +1082,31 @@ begin
   if api = nil then
     Exit;
 
-  reading := lastReading;
+  // Same "newest reading with a value" rule ProcessCurrentReading follows, so
+  // the alert engine judges the value the screen is showing.
+  reading := lastDataReading;
+
+  // Both the alert engine and the threshold routing below take `reading` at
+  // face value, so neither may ever see a placeholder. With bgs empty (or every
+  // entry cleared) lastDataReading falls back to the BG_NO_VAL sentinel (-904),
+  // which is far below any low threshold, so EvaluateLevel
+  // enters the urgent-low band and - with the default zero min-duration -
+  // fires a critical hypo alert, media pause and Chroma red for a reading that
+  // does not exist. The fetch pipeline bails out before this (a placeholder is
+  // never fresh enough to get here), but ApplySettingsInstantly calls this
+  // directly, so a settings save while the first fetch is still failing used
+  // to raise a false urgent low.
+  if reading.empty then
+    Exit;
+
+  // Stale data must not be re-evaluated as if it had just arrived. Once the
+  // engine's ReAlert window has passed, re-running it on an hours-old value
+  // re-fires the alarm for that value, and the handlers below repaint the
+  // window in a live range colour over ApplyStaleDisplayState's presentation.
+  // The fetch pipeline stops short of here whenever the data is not fresh; the
+  // direct callers have to honour the same rule.
+  if FTrendDataStale then
+    Exit;
 
   // One evaluation per update, made BEFORE the threshold routing below. The
   // engine tracks violations across its hysteresis band, so a reading that
@@ -1190,6 +1316,7 @@ const ErrorMsg: string; Boot: boolean): boolean;
 var
   msg: string;
   i: integer;
+  firstUsable: integer;
   hasData: boolean;
   fresh: boolean;
 begin
@@ -1207,11 +1334,22 @@ begin
       Break;
     end;
 
-  // Copy worker output into the main-thread bgs slot.
-  if hasData then
+  // Copy worker output into the main-thread bgs slot, dropping any leading
+  // entries that carry neither a value nor a timestamp. An item the backend
+  // could not parse at all is cleared before it is ever dated (Dexcom's newer
+  // driver does exactly this), and such an entry cannot be placed on the time
+  // axis or rendered anywhere — it only displaces the reading the pipeline
+  // treats as current. Entries that are empty but dated are kept: those are
+  // genuine gaps and the trend row is entitled to show them in their own slot.
+  firstUsable := 0;
+  while (firstUsable <= High(Readings)) and Readings[firstUsable].empty
+    and (Readings[firstUsable].date = 0) do
+    Inc(firstUsable);
+
+  if hasData and (firstUsable <= High(Readings)) then
   begin
-    SetLength(bgs, Length(Readings));
-    Move(Readings[0], bgs[0], Length(Readings) * SizeOf(BGReading));
+    SetLength(bgs, Length(Readings) - firstUsable);
+    Move(Readings[firstUsable], bgs[0], Length(bgs) * SizeOf(BGReading));
   end
   else
     SetLength(bgs, 0);
@@ -1296,8 +1434,17 @@ begin
   else
     ApplyStaleDisplayState;
 
+  // Extensions learn about staleness here rather than from
+  // FinalizeReadingUpdate. The caller skips that procedure whenever this one
+  // returns false — which is every non-fresh fetch — so its 'stale' broadcast
+  // was unreachable, and an extension mirroring the level (a smart lamp) kept
+  // asserting the last live one, hypo red included, for the whole outage. The
+  // fresh side stays where it is: it needs the classification that the rest of
+  // this function still has to do.
   if not fresh then
   begin
+    NotifyExtensionsLevel(false);
+
     msg := RS_NO_BACKEND;
     if Trim(ErrorMsg) <> '' then
     begin
@@ -1617,7 +1764,6 @@ begin
     pnOffRangeBar.Visible := true;
     setColorMode;
   end;
-  pnOffRangeBar.Visible := true;
   pnOffRange.Caption := Format('↧ %s ↧', [RS_OFF_LO]);
 
   if Assigned(fFloat) then
@@ -2022,9 +2168,15 @@ end;
 function TfBG.setColorMode(bg: tColor; const nocolor: boolean = false): boolean;
 var
   hasBadge: boolean;
+  wasBannerTinted: boolean;
 begin
   if not nocolor then
     fBG.Color := bg;
+
+  // Consume the flag up front: whichever rule below claims the bar owns it from
+  // here, and only the banner rule re-arms it.
+  wasBannerTinted := FTitleTintedFromBanner;
+  FTitleTintedFromBanner := false;
 
   // With a title-bar badge (Windows' native one, or the drawn bar's identity
   // chip on Wayland) the active user's identity is already visible, so
@@ -2035,7 +2187,15 @@ begin
   // mirrored from userColorBar).
   hasBadge := UserBadgeActive;
   if hasBadge then
-    pnMultiUser.Visible := false;
+    pnMultiUser.Visible := false
+  else
+    // ...and put it back when the badge goes away again. Only LoadUserProfile
+    // ever showed the bar, and that runs once at FormCreate, so turning the
+    // drawn title bar off at runtime (which retires the identity chip) used to
+    // leave the account colour with nowhere to live until the app restarted.
+    // userColorBar carries the users.colorbox preference and is false in
+    // single-user mode, where the bar has nothing to show anyway.
+    pnMultiUser.Visible := userColorBar;
 
   // With range colors off the window keeps its plain background, so the
   // off-range banner is what carries the range tint — and it lends it to the
@@ -2049,7 +2209,10 @@ begin
     and (not FTrendDataStale) then
     if native.SetTitleColor(handle, pnOffRange.Color,
       IfThen(IsLightColor(pnOffRange.Color), clBlack, clWhite)) then
+    begin
+      FTitleTintedFromBanner := true;
       Exit(true);
+    end;
 
   // Otherwise the bar simply mirrors the window. It used to reach this only
   // while UseRangeColor was on, which tied "is the bar colored at all" to the
@@ -2078,6 +2241,19 @@ begin
       pnMultiUser.Visible := false;
       Exit(true);
     end;
+
+  // Every rule above declined, so nothing is claiming the bar this pass. If the
+  // banner rule at the top tinted it on an earlier pass, that colour is still
+  // sitting there — DWMWA_CAPTION_COLOR is sticky and the drawn Wayland bar
+  // only repaints when SetTitleColor is called — and it now describes a reading
+  // that has either gone stale or come back into range. Hand the bar back to
+  // the window so it stops making a claim the data no longer supports. Only
+  // runs for a tint this function actually applied, so a bar the app never
+  // touched is left alone.
+  if wasBannerTinted then
+    if native.SetTitleColor(handle, fBG.Color,
+      IfThen(IsLightColor(fBG.Color), clBlack, clWhite)) then
+      Exit(true);
 
   if native.isDarkMode then
     native.setDarkMode
@@ -2177,20 +2353,27 @@ begin
       cardinal(Trunc(Readings[i].date * 86400));
 end;
 
+// The fourth comparand is lTir's *hint*, not its colour: the hint carries the
+// raw time-in-range percentage, and UpdateUIColors is what turns that into the
+// good/bad font tint. Comparing lTir.Color instead — a background property
+// nothing in the app ever assigns — made the fourth term a constant, so a
+// percentage that crossed good_tir/bad_tir without changing the caption (easy
+// with range.tir_icon on, where the caption is a coarse emoji bucket) never
+// triggered the repaint and the label kept the previous tint.
 function TfBG.ShouldUpdateUI(const NewColor: TColor; const NewCaption: string;
-const NewTir: string; const NewTirColor: TColor): boolean;
+const NewTir: string; const NewTirHint: string): boolean;
 begin
   Result := (NewColor <> FLastUIColor) or (NewCaption <> FLastUICaption) or
-    (NewTir <> FLastTir) or (NewTirColor <> FLastTirColor);
+    (NewTir <> FLastTir) or (NewTirHint <> FLastTirHint);
 end;
 
 procedure TfBG.CacheUIState(const UIColor: TColor; const UICaption: string;
-const UITir: string; const UITirColor: TColor);
+const UITir: string; const UITirHint: string);
 begin
   FLastUIColor := UIColor;
   FLastUICaption := UICaption;
   FLastTir := UITir;
-  FLastTirColor := UITirColor;
+  FLastTirHint := UITirHint;
 end;
 
 procedure TfBG.CheckForUpdates(ShowUpToDateMessage: boolean = false);

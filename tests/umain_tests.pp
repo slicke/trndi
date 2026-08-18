@@ -43,7 +43,7 @@ interface
 
 uses
   fpcunit, testregistry, umain, SysUtils, StdCtrls, ExtCtrls, Classes, Graphics,
-  trndi.native, trndi.types, trndi.funcs, trndi.shared;
+  trndi.native, trndi.types, trndi.funcs, trndi.shared, trndi.api, trndi.api.debug;
 
 type
   TUmainTests = class(TTestCase)
@@ -77,6 +77,10 @@ type
 
     // API receiver message handling (no crash)
     procedure TestAPIReceiverHandlesMessages;
+
+    // Placeholder readings must never drive the display or the alert engine
+    procedure TestProcessCurrentReadingIgnoresPlaceholder;
+    procedure TestUpdateUIBasedOnGlucoseIgnoresPlaceholder;
   end;
 
 implementation
@@ -955,6 +959,110 @@ begin
       native.Free;
       native := nil;
     end;
+  end;
+end;
+
+{ With no readings at all, lastReading hands back an initialized placeholder
+  whose value is the BG_NO_VAL sentinel (-904). ProcessCurrentReading used to
+  take that at face value: -904 is below any low limit, so it wrote RS_LOW into
+  the hero label. Reachable in the shipped app because ApplySettingsInstantly
+  calls the procedure directly, without the "readings exist and are fresh"
+  precondition the fetch pipeline establishes. }
+procedure TUmainTests.TestProcessCurrentReadingIgnoresPlaceholder;
+var
+  g: TfBG;
+  n: TrndiNative;
+  a: DebugAPI;
+  lbl: TLabel;
+begin
+  n := TrndiNative.Create;
+  a := nil;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      a := DebugAPI.Create('', '');
+      a.connect;                 // cgmLo = 60, cgmHi = 160
+      api := a;
+      g.firstboot := false;
+      SetLength(bgs, 0);         // no readings: lastReading is the placeholder
+
+      lbl := TLabel(g.FindComponent('lVal'));
+      if Assigned(lbl) then
+        lbl.Caption := 'untouched';
+
+      // The guard has to return before any display control is touched. The
+      // console build has no LFM controls, so without it the RS_LOW write
+      // faults here rather than merely showing the wrong value — either way
+      // this call must come back clean.
+      try
+        g.ProcessCurrentReadingForTests;
+      except
+        on E: Exception do
+          Fail('A placeholder reading reached the display path: ' +
+            E.ClassName + ': ' + E.Message);
+      end;
+
+      if Assigned(lbl) then
+        AssertEquals('A placeholder reading must not be rendered as a value',
+          'untouched', lbl.Caption);
+    finally
+      api := nil;
+      fBG := nil;
+      g.Free;
+    end;
+  finally
+    a.Free;
+    n.Free;
+    native := nil;
+  end;
+end;
+
+{ Same placeholder, but through the path that reaches the alert engine:
+  EvaluateLevel(-904) lands deep in the urgent-low band and (with the default
+  zero min-duration) fires a critical hypo alert for a reading that does not
+  exist. Asserted here through HandleLowGlucose's visible side effect — the
+  low background colour — which is set on exactly the same branch. }
+procedure TUmainTests.TestUpdateUIBasedOnGlucoseIgnoresPlaceholder;
+var
+  g: TfBG;
+  n: TrndiNative;
+  a: DebugAPI;
+begin
+  n := TrndiNative.Create;
+  a := nil;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      a := DebugAPI.Create('', '');
+      a.connect;
+      api := a;
+      g.firstboot := false;
+      SetLength(bgs, 0);
+
+      g.Color := clFuchsia;      // sentinel: no glucose branch would pick this
+      try
+        g.UpdateUIBasedOnGlucoseForTests;
+      except
+        on E: Exception do
+          Fail('A placeholder reading reached the alert path: ' +
+            E.ClassName + ': ' + E.Message);
+      end;
+
+      AssertEquals('A placeholder reading must not repaint the window as a low',
+        clFuchsia, g.Color);
+    finally
+      api := nil;
+      fBG := nil;
+      g.Free;
+    end;
+  finally
+    a.Free;
+    n.Free;
+    native := nil;
   end;
 end;
 

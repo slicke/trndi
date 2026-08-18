@@ -35,6 +35,11 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-18): tAgoTimer no longer rewrites the "last
+   update" caption while the data is stale. The timer runs for the whole
+   outage and bgs still holds the cached readings, so it put the age back
+   beside the stale card within fifteen seconds of ApplyStaleDisplayState
+   deliberately clearing it. *)
 (* Timer handlers and layout helpers for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -283,9 +288,18 @@ begin
   if firstboot then
     exit;
 
+  // While the data is stale the age belongs to the stale card, which states it
+  // with the context that makes it mean something. ApplyStaleDisplayState
+  // clears lAgo for exactly that reason, but this timer keeps running for the
+  // whole outage (it is only stopped at shutdown) and bgs still holds the
+  // cached readings, so an unguarded write put "🕑 X min ago" back beside the
+  // card within fifteen seconds and then flickered it off again on every failed
+  // fetch. The rest of the tick still runs: the fullscreen clock below is
+  // wall-clock, not reading age.
   if Length(bgs) < 1 then
     lAgo.Caption := CLOCK_CAPTION_PREFIX + RS_COMPUTE_FAILED_AGO
   else
+  if not FTrendDataStale then
   try
     d := lastReading.date;
     showTimestamp := native.GetBoolSetting('display.timestamp');

@@ -38,6 +38,9 @@
 (* MODIFICATION NOTICE (2026-08-17): The high/low/urgent-low alert rules are now
    seeded after Connect and the wizard/override adjustments instead of before
    them, so they no longer inherit initCGMCore's placeholder thresholds. *)
+(* MODIFICATION NOTICE (2026-08-18): The UI-state cache seeds FLastTirHint in
+   place of the removed FLastTirColor, following ShouldUpdateUI's switch to the
+   time-in-range hint. *)
 // Main form helper functions for trend dots and UI initialization
 
 // Apply a procedure to all active trend dots; also provides count and index
@@ -796,7 +799,7 @@ begin
   // Force first UI update by initializing cached UI state to sentinel values
   // This ensures ShouldUpdateUI(...) returns true on first valid update
   FLastUIColor := TColor(-1);
-  FLastTirColor := TColor(-1);
+  FLastTirHint := '<uninitialized>';
   FLastUICaption := '<uninitialized>';
   FLastTir := '<uninitialized>';
   FLastConnectionDetail := '';

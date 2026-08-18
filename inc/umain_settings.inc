@@ -43,6 +43,13 @@
    only while the custom-limits box is ticked, and cleared otherwise - writing
    them unconditionally froze the dialog's seeded values (initCGMCore's 401/40
    when Settings opened before the backend connected) into every later boot. *)
+(* MODIFICATION NOTICE (2026-08-18): ApplySettingsInstantly now re-asserts the
+   stale presentation, and skips the badge refresh, when the data is not fresh
+   - UpdateUIColors recomputes the dimmed hero tone from the background, so a
+   settings save during an outage left the stale screen half-applied. The
+   time-in-range checkbox also loads with the same default CalcRangeTime
+   computes with; the two disagreed, so a fresh install showed the box ticked
+   while the percentage was calculated as though it were not. *)
 (* Settings dialog and instant-apply configuration for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -250,9 +257,22 @@ begin
 
   ProcessCurrentReading;
 
+  // Both procedures above decline to run while the data is stale, since they
+  // speak for a current reading. UpdateUIColors does not - it derives every
+  // font colour from fBG.Color and so recomputes the hero tone that
+  // ApplyStaleDisplayState had dimmed, leaving the outage presentation
+  // half-applied. Re-assert the whole stale state rather than patching the one
+  // colour back: it is what a failed fetch would do at this point, and it also
+  // restores anything else the settings pass touched on its way through
+  // (ResizeUIElements re-shows labels the outage had cleared).
+  if FTrendDataStale then
+    ApplyStaleDisplayState;
+
   // Refresh the taskbar/dock badge so a toggled trend-arrow option applies
-  // without waiting for the next reading.
-  if (not firstboot) and (not lastReading.empty) then
+  // without waiting for the next reading. Skipped during an outage, where the
+  // badge belongs to ApplyStaleDisplayState: it deliberately shows '--' rather
+  // than a value the data no longer supports.
+  if (not firstboot) and (not FTrendDataStale) and (not lastReading.empty) then
   begin
     if native.GetBoolSetting('badge.trend', true) then
       native.badgeTrend := lastReading.trend.Img
@@ -403,7 +423,9 @@ procedure LoadUserSettings(f: TfConf);
 
       cbMoveDIffRight.Checked := GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter) = taRightJustify;
 
-      cbTIR.Checked := native.GetBoolSetting('range.custom', true);
+      // Must match CalcRangeTime's default for the same key, or a fresh install
+      // shows the box ticked while time-in-range is computed as if it were not.
+      cbTIR.Checked := native.GetBoolSetting('range.custom', false);
       seTir.Value := native.GetIntSetting('range.time', 9999);
 
       cbTirIcon.checked := native.GetBoolSetting('range.tir_icon', false);
