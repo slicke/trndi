@@ -106,6 +106,11 @@ function GetSpeakSoftwareName: string;
 // Re-export: join a finished worker thread without TThread.WaitFor's
 // join-after-detach crash on Haiku (see trndi.native.base.SafeThreadJoin).
 procedure SafeThreadJoin(T: TThread);
+
+// Re-export: join and dispose of a finished worker thread. Free is unsafe on
+// Haiku for the same reason WaitFor is, so there it detaches instead. Set your
+// own reference to nil after calling.
+procedure SafeThreadRelease(T: TThread);
 implementation
 
 function GetWindowManagerName: string;
@@ -126,6 +131,11 @@ end;
 procedure SafeThreadJoin(T: TThread);
 begin
   trndi.native.base.SafeThreadJoin(T);
+end;
+
+procedure SafeThreadRelease(T: TThread);
+begin
+  trndi.native.base.SafeThreadRelease(T);
 end;
 
 end.

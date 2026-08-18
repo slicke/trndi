@@ -571,6 +571,12 @@ DEFAULT_MIN_FONT_SIZE = 8;
     we pump CheckSynchronize so a worker blocked in Synchronize can drain. }
 procedure SafeThreadJoin(T: TThread);
 
+{** Release a worker thread the caller has already run to completion: joins it
+    and frees it where that is safe, and detaches it where it is not. Callers
+    set their own reference to nil afterwards - the thread's concrete class
+    makes a @code(var) parameter impossible here. }
+procedure SafeThreadRelease(T: TThread);
+
 {** Split a stored @code(proxy.host) value into a bare host and a port.
 
     Users type the proxy in whatever shape their browser accepts —
@@ -595,6 +601,26 @@ begin
       Sleep(1);
 {$ELSE}
   T.WaitFor;
+{$ENDIF}
+end;
+
+procedure SafeThreadRelease(T: TThread);
+begin
+  if not Assigned(T) then
+    Exit;
+{$IFDEF HAIKU}
+  // SafeThreadJoin above dodges TThread.WaitFor, but Free cannot: TThread
+  // .Destroy calls WaitFor itself for any thread it has not reaped, so it walks
+  // straight back into the same join-after-detach access violation. The object
+  // therefore cannot be freed from here at all - hand it to the RTL instead.
+  // A thread still running is freed by ThreadFunc when it exits; one that has
+  // already finished leaks, because FreeOnTerminate is read only on that exit
+  // path. Callers run this at shutdown, so it leaks once per worker at most,
+  // and that beats taking the process down with it.
+  T.FreeOnTerminate := true;
+{$ELSE}
+  T.WaitFor;
+  T.Free;
 {$ENDIF}
 end;
 
@@ -870,11 +896,74 @@ GraceMs: cardinal = 5000): THTTPResponse;
 var
   worker: TRequestExWaitThread;
   completed: boolean;
-  i: integer;
-  j: integer;
-  cookieName: string;
-  existingIndex: integer;
+
+  // Fold the response's cookies into the caller's jar, updating an existing
+  // entry with the same name rather than appending a duplicate. Shared by the
+  // threaded path and the Haiku inline path below. The counters live here
+  // rather than in the enclosing function: FPC rejects a non-local variable as
+  // a for-loop counter.
+  procedure MergeCookiesIntoJar;
+  var
+    i, j: integer;
+    cookieName: string;
+    existingIndex: integer;
+  begin
+    if not Assigned(cookieJar) then
+      Exit;
+    for i := 0 to Result.Cookies.Count - 1 do
+    begin
+      cookieName := Copy(Result.Cookies[i], 1, Pos('=', Result.Cookies[i]) - 1);
+      existingIndex := -1;
+      for j := 0 to cookieJar.Count - 1 do
+        if Copy(cookieJar[j], 1, Pos('=', cookieJar[j]) - 1) = cookieName then
+        begin
+          existingIndex := j;
+          Break;
+        end;
+      if existingIndex >= 0 then
+        cookieJar[existingIndex] := Result.Cookies[i]
+      else
+        cookieJar.Add(Result.Cookies[i]);
+    end;
+  end;
+
 begin
+{$IFDEF HAIKU}
+  // No worker thread on Haiku. FPC's TThread is unusable there: TThread.Destroy
+  // calls WaitFor for a thread it has not reaped, and WaitFor hits the same
+  // join-after-detach access violation SafeThreadJoin exists to dodge - so
+  // freeing the worker raised EAccessViolation straight into the caller, which
+  // is what made every backend's Connect fail at boot.
+  //
+  // Nothing is lost by dropping it. RequestExWait blocks its caller until the
+  // worker finishes anyway, so the thread only ever bought the timeout, and
+  // Haiku cannot honour a timeout regardless: TSocketStream.SetIOTimeout has no
+  // branch for it and raises instead, which is why trndi.native.generic pins
+  // HTTP_IO_TIMEOUT to 0 there. TimeoutMs and GraceMs are accepted and ignored.
+  try
+    Result := requestEx(post, endpoint, params, jsondata, cookieJar,
+      followRedirects, maxRedirects, customHeaders, prefix);
+  except
+    on E: Exception do
+    begin
+      Result := Default(THTTPResponse);
+      Result.StatusCode := -1;
+      Result.Success := false;
+      if Trim(E.Message) <> '' then
+        Result.ErrorMessage := E.ClassName + ': ' + E.Message
+      else
+        Result.ErrorMessage := E.ClassName;
+    end;
+  end;
+  // Callers free both lists unconditionally, so hand back the same non-nil
+  // guarantee the threaded path gives them.
+  if not Assigned(Result.Headers) then
+    Result.Headers := TStringList.Create;
+  if not Assigned(Result.Cookies) then
+    Result.Cookies := TStringList.Create;
+  MergeCookiesIntoJar;
+  Exit;
+{$ENDIF}
   worker := TRequestExWaitThread.Create(Self, post, endpoint, params, jsondata,
     cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
   worker.Start;
@@ -896,27 +985,7 @@ begin
     if Assigned(worker.Response.Cookies) then
       Result.Cookies.Assign(worker.Response.Cookies);
     // Merge response cookies into caller's cookieJar, preserving existing cookies
-    if Assigned(cookieJar) then
-    begin
-      for i := 0 to Result.Cookies.Count - 1 do
-      begin
-        // Try to update existing cookie by name (before '='), or add if not found
-        cookieName := Copy(Result.Cookies[i], 1, Pos('=', Result.Cookies[i]) - 1);
-        existingIndex := -1;
-        for j := 0 to cookieJar.Count - 1 do
-        begin
-          if Copy(cookieJar[j], 1, Pos('=', cookieJar[j]) - 1) = cookieName then
-          begin
-            existingIndex := j;
-            Break;
-          end;
-        end;
-        if existingIndex >= 0 then
-          cookieJar[existingIndex] := Result.Cookies[i]
-        else
-          cookieJar.Add(Result.Cookies[i]);
-      end;
-    end;
+    MergeCookiesIntoJar;
     SafeThreadJoin(worker);
     worker.Free;
   end
