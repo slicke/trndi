@@ -1819,8 +1819,8 @@ begin
     end;
     if FUpdateCheckThread.Finished then
     begin
-      SafeThreadJoin(FUpdateCheckThread);
-      FreeAndNil(FUpdateCheckThread);
+      SafeThreadRelease(FUpdateCheckThread);
+      FUpdateCheckThread := nil;
     end
     else
     begin
@@ -1836,8 +1836,8 @@ begin
     FConnectivityThread.Terminate;
     while not FConnectivityThread.Finished do
       Application.ProcessMessages;
-    SafeThreadJoin(FConnectivityThread);
-    FreeAndNil(FConnectivityThread);
+    SafeThreadRelease(FConnectivityThread);
+    FConnectivityThread := nil;
   end;
 
   if Assigned(FPingThread) then
@@ -1845,8 +1845,8 @@ begin
     FPingThread.Terminate;
     while not FPingThread.Finished do
       Application.ProcessMessages;
-    SafeThreadJoin(FPingThread);
-    FreeAndNil(FPingThread);
+    SafeThreadRelease(FPingThread);
+    FPingThread := nil;
   end;
 
   if Assigned(FPredictionThread) then
@@ -1854,8 +1854,8 @@ begin
     FPredictionThread.Terminate;
     while not FPredictionThread.Finished do
       Application.ProcessMessages;
-    SafeThreadJoin(FPredictionThread);
-    FreeAndNil(FPredictionThread);
+    SafeThreadRelease(FPredictionThread);
+    FPredictionThread := nil;
   end;
 
   if Assigned(FGlucoseFetchThread) then
@@ -1876,8 +1876,8 @@ begin
     end;
     if FGlucoseFetchThread.Finished then
     begin
-      SafeThreadJoin(FGlucoseFetchThread);
-      FreeAndNil(FGlucoseFetchThread);
+      SafeThreadRelease(FGlucoseFetchThread);
+      FGlucoseFetchThread := nil;
     end
     else
     begin
@@ -1903,8 +1903,8 @@ begin
     end;
     if FHistoryFetchThread.Finished then
     begin
-      SafeThreadJoin(FHistoryFetchThread);
-      FreeAndNil(FHistoryFetchThread);
+      SafeThreadRelease(FHistoryFetchThread);
+      FHistoryFetchThread := nil;
     end
     else
     begin
