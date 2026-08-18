@@ -39,6 +39,10 @@
  * - 2026-08-16: The form unit now also uses trndi.funcs.core, which took over
  *   the shared reading/trend helpers and the DEBUG_LOG_ALERT switch from
  *   trndi.funcs.
+ * - 2026-08-18: ShouldUpdateUI/CacheUIState compare the time-in-range hint
+ *   instead of lTir's never-assigned Color, so FLastTirColor became
+ *   FLastTirHint; added FTitleTintedFromBanner so setColorMode can take back a
+ *   title-bar tint it lent from the off-range banner.
  *)
 
 unit umain;
@@ -624,7 +628,13 @@ private
   FLastUIColor: TColor;
   FLastUICaption: string;
   FLastTir: string;
-  FLastTirColor: TColor;
+  FLastTirHint: string; // TIR percentage behind the caption — drives the tint
+  FTitleTintedFromBanner: boolean; // setColorMode lent the off-range banner's
+                                   // colour to the title bar. Both DWM's
+                                   // caption colour and the drawn bar keep
+                                   // whatever they were last given, so the
+                                   // tint has to be taken back explicitly
+                                   // once the banner stops carrying it.
   FLastConnectionStatus: string;
   FLastConnectionDetail: string;
   FConnectivityThread: TConnectivityCheckThread;
@@ -1030,11 +1040,11 @@ private
       and expensive redraws.
    }
   function ShouldUpdateUI(const NewColor: TColor; const NewCaption: string;
-    const NewTIR: string; const NewTIRColor: TColor): boolean;
+    const NewTIR: string; const NewTIRHint: string): boolean;
   {** Store the current UI state values for later comparisons in ShouldUpdateUI.
    }
   procedure CacheUIState(const UIColor: TColor; const UICaption: string;
-    const UITir: string; const UITirColor: TColor);
+    const UITir: string; const UITirHint: string);
 
   procedure HandleLatestReadingFreshness(const LatestReading: BGReading;
     CurrentTime: TDateTime);

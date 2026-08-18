@@ -102,3 +102,13 @@ function TfBG.DotOutlineColorForTests(Background: TColor): TColor;
 begin
   Result := DotOutlineColor(Background);
 end;
+
+procedure TfBG.ProcessCurrentReadingForTests;
+begin
+  ProcessCurrentReading;
+end;
+
+procedure TfBG.UpdateUIBasedOnGlucoseForTests;
+begin
+  UpdateUIBasedOnGlucose;
+end;
