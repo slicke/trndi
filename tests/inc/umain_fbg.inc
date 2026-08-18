@@ -50,3 +50,5 @@
   function DotSeparatedFromValueForTests(Candidate, Background,
     ValueColor: TColor): boolean;
   function DotOutlineColorForTests(Background: TColor): TColor;
+  procedure ProcessCurrentReadingForTests;
+  procedure UpdateUIBasedOnGlucoseForTests;
