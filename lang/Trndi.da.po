@@ -1447,10 +1447,6 @@ msgstr "Dexcom-adgangskode"
 msgid "Dexcom Username"
 msgstr "Dexcom-brugernavn"
 
-#: trndi.api.dexcom_helpers.sdexerrmaxattempts
-msgid "Too many failed Dexcom sign-in attempts. The account is temporarily locked - wait before trying again, as further attempts keep it locked."
-msgstr ""
-
 #: trndi.api.dexcomnew.sdexnewerrlogin
 msgctxt "trndi.api.dexcomnew.sdexnewerrlogin"
 msgid "Login error: Could not establish a valid session"
@@ -1461,6 +1457,7 @@ msgid "No Dexcom account matched those details. Check the username, or whether t
 msgstr ""
 
 #: trndi.api.dexcomnew.sdexnewerrpass
+msgctxt "trndi.api.dexcomnew.sdexnewerrpass"
 msgid "Incorrect username or password combination"
 msgstr "Forkert brugernavn eller adgangskodekombination"
 
@@ -1494,6 +1491,16 @@ msgstr "Region (\"usa\", \"japan\"/\"jp\", eller tom)"
 #: trndi.api.dexcomnew.sdexnewparamusername
 msgid "Dexcom Account Username"
 msgstr "Dexcom-kontobrugernavn"
+
+#: trndi.api.dexcom_helpers.sdexerrcredentials
+#, fuzzy
+msgctxt "trndi.api.dexcom_helpers.sdexerrcredentials"
+msgid "Incorrect username or password combination"
+msgstr "Forkert brugernavn eller adgangskodekombination"
+
+#: trndi.api.dexcom_helpers.sdexerrmaxattempts
+msgid "Too many failed Dexcom sign-in attempts. The account is temporarily locked - wait before trying again, as further attempts keep it locked."
+msgstr ""
 
 #: trndi.api.librelinkup.serrllubadcredentials
 msgid "LibreLinkUp rejected the email or password."
@@ -1725,10 +1732,6 @@ msgstr "Fejl i udvidelsen"
 msgctxt "trndi.ext.functions.sexttitle"
 msgid "Extension error"
 msgstr "Udvidelsesfejl"
-
-#: trndi.native.linux.rs_notice_show
-msgid "Show Trndi"
-msgstr ""
 
 #: trndi.strings.rs_alert_snooze
 msgid "Snooze alerts"
