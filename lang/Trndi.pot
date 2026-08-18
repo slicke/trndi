@@ -1434,10 +1434,6 @@ msgstr ""
 msgid "Dexcom Username"
 msgstr ""
 
-#: trndi.api.dexcom_helpers.sdexerrmaxattempts
-msgid "Too many failed Dexcom sign-in attempts. The account is temporarily locked - wait before trying again, as further attempts keep it locked."
-msgstr ""
-
 #: trndi.api.dexcomnew.sdexnewerrlogin
 msgctxt "trndi.api.dexcomnew.sdexnewerrlogin"
 msgid "Login error: Could not establish a valid session"
@@ -1448,6 +1444,7 @@ msgid "No Dexcom account matched those details. Check the username, or whether t
 msgstr ""
 
 #: trndi.api.dexcomnew.sdexnewerrpass
+msgctxt "trndi.api.dexcomnew.sdexnewerrpass"
 msgid "Incorrect username or password combination"
 msgstr ""
 
@@ -1480,6 +1477,15 @@ msgstr ""
 
 #: trndi.api.dexcomnew.sdexnewparamusername
 msgid "Dexcom Account Username"
+msgstr ""
+
+#: trndi.api.dexcom_helpers.sdexerrcredentials
+msgctxt "trndi.api.dexcom_helpers.sdexerrcredentials"
+msgid "Incorrect username or password combination"
+msgstr ""
+
+#: trndi.api.dexcom_helpers.sdexerrmaxattempts
+msgid "Too many failed Dexcom sign-in attempts. The account is temporarily locked - wait before trying again, as further attempts keep it locked."
 msgstr ""
 
 #: trndi.api.librelinkup.serrllubadcredentials
@@ -1710,10 +1716,6 @@ msgstr ""
 #: trndi.ext.functions.sexttitle
 msgctxt "trndi.ext.functions.sexttitle"
 msgid "Extension error"
-msgstr ""
-
-#: trndi.native.linux.rs_notice_show
-msgid "Show Trndi"
 msgstr ""
 
 #: trndi.strings.rs_alert_snooze
