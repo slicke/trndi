@@ -240,6 +240,13 @@ executable's rpath.
 _See [externals/quickjs/README.md](/externals/quickjs/README.md) for the trade-off
 between the two._
 
+**Set your time zone first.** A fresh Haiku install runs on GMT until you pick
+a zone in *Preferences > Time*, and Haiku is where Trndi gets its offset from.
+Leave it on GMT in a zone that is not GMT and Trndi connects and shows a reading,
+but every reading looks as many hours old as you are from GMT — so the trend dots
+stay empty and Trndi reports that nothing has arrived for that many hours. It
+looks like a sensor or backend problem; it is the clock.
+
 **Features on Haiku:**
 - Native notification support (via `notify-send` if available)
 - Text-to-speech support (via `espeak` if available)
