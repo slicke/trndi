@@ -56,6 +56,28 @@ The `Makefile` resolves the directory at build time with `gcc -print-libgcc-file
 
 Building from the Lazarus IDE bypasses the `Makefile` and therefore this logic. If the IDE hits the same link error, add the directory under *Project Options > Compiler Options > Paths > Libraries*, or add the `-Fl` line to `/etc/fpc.cfg` — noting that the latter is what pins you to one GCC version.
 
+### Haiku
+
+Two things a fresh Haiku install does not give you.
+
+**Development packages.** `pkgman install fpc lazarus_bin openssl` is enough to get the compiler running, but the link step then fails on `-lgcc` and `-liconv`. Haiku separates running from linking: `/boot/system/lib/` holds the shared libraries from the runtime packages, while `/boot/system/develop/lib/` — the directory the linker searches — is filled by the matching `_devel` packages. `libgcc.a` and the `libiconv.so` symlink live there:
+
+```bash
+pkgman install gcc_syslibs_devel libiconv_devel
+```
+
+The `LIBGCC_DIR` logic described above is Linux-only and does not apply here. On Haiku the library belongs in the standard location, so install the package rather than passing `-Fl`.
+
+**Memory: at least 2 GB.** Compiling the main program is the peak — `{$R *.res}` in `Trndi.lpr` is processed at `end.`, with every unit still in memory — and at exactly that moment FPC forks `fpcres` to convert `Trndi.res`. On a 512 MB VM without a swap file the fork fails for want of memory, and the build stops with something that reads like a broken toolchain:
+
+```
+(9022) Compiling resource /path/to/lib/x86_64-haiku/Trndi.or
+Trndi.lpr(111,1) Error: (9030) Can't call the resource compiler "/boot/system/bin/fpcres", switching to external mode
+Trndi.lpr(111,1) Fatal: (10026) There were 1 errors compiling module, stopping
+```
+
+`fpcres` is not the problem — running the same command by hand succeeds in a fraction of a second. FPC emits 9030 whenever `ExecuteProcess` raises, which on Unix includes `fork()` returning -1. Turning on swap (*Preferences > Virtual Memory*, needs a reboot) helps, but giving the machine more RAM is the real fix.
+
 ### Qt6
 You need __libqt6pas__, and its development packages. These are normally available with your distro. See the _Linux section in [README.md](/README.md)_ on how to install libqt6pas.
 
