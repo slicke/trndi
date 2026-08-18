@@ -200,12 +200,14 @@ Trndi can be built for Haiku OS using Lazarus.
 - Free Pascal Compiler: `pkgman install fpc`
 - Lazarus build tools: `pkgman install lazarus_bin`
 - OpenSSL for HTTPS support: `pkgman install openssl`
+- Linker libraries: `pkgman install gcc_syslibs_devel libiconv_devel`
 - For JavaScript extensions only: `pkgman install cmake gcc make`
+- At least 2 GB of RAM — the compiler needs it at the resource-compilation step, see the [build guide](/guides/BUILDING.md)
 
 **Building from source:**
 ```bash
 # Install dependencies
-pkgman install fpc lazarus_bin openssl
+pkgman install fpc lazarus_bin openssl gcc_syslibs_devel libiconv_devel
 
 # Clone and build
 git clone https://github.com/slicke/trndi.git
