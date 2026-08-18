@@ -376,7 +376,13 @@ initialization
   // each HTTPS request with 'Could not initialize OpenSSL library'. Overwrite
   // the unversioned entry the way the unit's own Darwin branch overwrites it;
   // the '.1.1' fallback below it stays intact should Haiku ever ship 1.1.
+  //
+  // 3.2.3 (the fixes_3_2 branch) carries '.3' in the list already and reworked
+  // the surrounding declarations, so the assignment is both redundant and a
+  // compile risk there - keep it to the releases that need it.
+  {$if FPC_FULLVERSION < 30203}
   DLLVersions[1] := '.3';
+  {$endif}
 
   // Trndi starts several network threads at once (glucose, connectivity,
   // ping, prediction, update check) and FPC 3.2.2's InitSSLInterface has no
