@@ -369,6 +369,15 @@ initialization
   // local time instead of UTC.
   SyncTimezoneFromLibroot;
 
+  // FPC 3.2.2's openssl unit probes a fixed list of soname suffixes ('',
+  // '.1.1', '.11', '.10', '.1.0.x', '.0.9.x') and predates OpenSSL 3, while
+  // Haiku ships libssl.so.3/libcrypto.so.3 and nothing else. Every suffix
+  // therefore misses, InitSSLInterface returns False and TFPHTTPClient fails
+  // each HTTPS request with 'Could not initialize OpenSSL library'. Overwrite
+  // the unversioned entry the way the unit's own Darwin branch overwrites it;
+  // the '.1.1' fallback below it stays intact should Haiku ever ship 1.1.
+  DLLVersions[1] := '.3';
+
   // Trndi starts several network threads at once (glucose, connectivity,
   // ping, prediction, update check) and FPC 3.2.2's InitSSLInterface has no
   // lock around its library loading and proc-pointer assignment. Load
