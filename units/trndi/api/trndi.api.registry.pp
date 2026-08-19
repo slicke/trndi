@@ -41,7 +41,8 @@ uses
   trndi.api.debug_secondmissing, trndi.api.debug_firstXmissing,
   trndi.api.debug_intermittentmissing, trndi.api.debug_slow,
   trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry,
-  trndi.api.debug_faultysensor, trndi.api.debug_latemissing
+  trndi.api.debug_faultysensor, trndi.api.debug_latemissing,
+  trndi.api.debug_list
 {$endif};
 
 {$I ../../../inc/defines.inc}
@@ -88,7 +89,8 @@ const
   (code: 'API_D_LOWSOON'; name: API_D_LOWSOON; cls: DebugLowSoonAPI),
   (code: 'API_D_SENSOR_EXPIRY'; name: API_D_SENSOR_EXPIRY; cls: DebugSensorExpiryAPI),
   (code: 'API_D_FAULTY'; name: API_D_FAULTY; cls: DebugFaultySensorAPI),
-  (code: 'API_D_LATE_MISSING'; name: API_D_LATE_MISSING; cls: DebugLateMissingAPI)
+  (code: 'API_D_LATE_MISSING'; name: API_D_LATE_MISSING; cls: DebugLateMissingAPI),
+  (code: 'API_D_LIST'; name: API_D_LIST; cls: DebugListAPI)
 {$endif}
   );
 
