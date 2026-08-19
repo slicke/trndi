@@ -551,6 +551,21 @@ var
 begin
   tResize.Enabled := false;
 
+  // A minimized window cannot be measured. lVal carries OptimalFill, so its on
+  // screen size is LCL's AdjustFontForOptimalFill result, not the Font.Size
+  // ScaleLbl writes below -- and AdjustFontForOptimalFill measures through
+  // GetDC(Parent.Handle), which has no live window context while the form sits
+  // in the macOS Dock. It then bails out and leaves ScaleLbl's much smaller
+  // value on the label. Deminiaturizing does not repair it: Cocoa reports
+  // SIZE_RESTORED with unchanged bounds, TWinControl.WMSize skips the bounds
+  // update, so no DoSetBounds and no second fill pass ever runs. Defer the
+  // whole relayout to FormWindowStateChange instead.
+  if WindowState = wsMinimized then
+  begin
+    FResizePending := true;
+    Exit;
+  end;
+
   if DraggingWin then
   begin
     if pnWarning.Visible then
@@ -1151,6 +1166,19 @@ procedure TfBG.DeferredPostFetchResize({%H-}Data: PtrInt);
 begin
   if FShuttingDown then
     Exit;
+  tResizeTimer(Self);
+end;
+
+// Fired by TCustomForm.Resizing whenever the window state changes. Runs the
+// relayout that tResizeTimer refused to do while the form was minimized, now
+// that there is a real window to measure against.
+procedure TfBG.FormWindowStateChange(Sender: TObject);
+begin
+  if FShuttingDown or (WindowState = wsMinimized) then
+    Exit;
+  if not FResizePending then
+    Exit;
+  FResizePending := false;
   tResizeTimer(Self);
 end;
 

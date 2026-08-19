@@ -467,6 +467,7 @@ TfBG = class(TForm)
     {%H-}Shift: TShiftState; {%H-}X, {%H-}Y: Integer);
   procedure fbReadingsDblClick({%H-}Sender: TObject);
   procedure FormActivate({%H-}Sender: TObject);
+  procedure FormWindowStateChange({%H-}Sender: TObject);
   procedure FormClick({%H-}Sender: TObject);
   procedure FormCloseQuery({%H-}Sender: TObject; var CanClose: boolean);
   procedure FormClose({%H-}Sender: TObject; var {%H-}CloseAction: TCloseAction);
@@ -702,6 +703,7 @@ private
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
   FWarnPulseSecond: integer;    // Second the wsSoon pulse last repainted on
   FProgressPulsing: boolean;    // Set by pnNextProgressPaint while a reading is overdue
+  FResizePending: boolean;      // A relayout was requested while minimized; replayed on restore
   FStaleStage: TStaleStage;     // Escalation step of the active stale card
   FNextFetchAt: TDateTime;      // When tMain will fire next; drives the retry countdown
   FForceRefresh: boolean; // Force bypass of cached API reads on wake
