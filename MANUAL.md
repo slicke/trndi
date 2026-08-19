@@ -194,7 +194,7 @@ When enabled, Trndi can show where your blood sugar might be heading in the next
   confidence percentage. A mark that predicts a **low** never fades — it's
   drawn at full strength with a heavier stroke, so an incoming low stands out.
 
-**Important**: Predictions are estimates based on your current trend. They don't know about food you just ate, insulin you just took, or exercise. Use them as a guide, not a guarantee!
+**Important**: Predictions are estimates based on your current trend. They don't know about food you just ate, insulin you just took, or exercise. Use them as a guide, not a guarantee! While your data is outdated, predictions are hidden entirely — an old trend can't forecast anything.
 
 ### Privacy Mode
 Hides your actual numbers, showing only dots and arrows. Useful when:

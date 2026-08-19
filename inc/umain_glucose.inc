@@ -425,6 +425,12 @@ begin
   // the same freshness flag so it can't come back behind this.
   if Assigned(FTrendArrow) then
     FTrendArrow.Visible := false;
+  // Same claim as the arrow, one step further out: a forecast extrapolated
+  // from a trend that has stopped updating. Hide both prediction forms;
+  // UpdatePredictionLabel is gated on the same flag so nothing re-arms them
+  // until data is fresh again.
+  lPredict.Visible := false;
+  HidePredictionDots;
   // A dark slate rather than pure black: the stale card has to sit on top of
   // it and still read as a raised surface.
   setColorMode(STALE_BG_COLOR);
@@ -706,6 +712,18 @@ begin
   end;
 
   if not PredictGlucoseReading then
+  begin
+    lPredict.Visible := false;
+    HidePredictionDots;
+    Exit;
+  end;
+
+  // Fetches can keep succeeding while the sensor itself has gone quiet; the
+  // cached forecast still matches lastReading then and would keep rendering —
+  // a prediction extrapolated from a trend the UI has already struck out as
+  // stale. ApplyStaleDisplayState hides the marks at the moment of the flip;
+  // this gate keeps the periodic label refresh from putting them back.
+  if FTrendDataStale then
   begin
     lPredict.Visible := false;
     HidePredictionDots;
