@@ -252,6 +252,11 @@ begin
   UpdateTrendDots;
   AdjustGraph;
 
+  // UpdateUIBasedOnGlucose below re-applies the window color with the dim
+  // rule live, so sync the boundary watcher rather than letting the next
+  // tAgo tick repaint a second time.
+  FNightDimmed := NightDimActive;
+
   UpdateUIColors;
   UpdateUIBasedOnGlucose;
 
@@ -463,6 +468,9 @@ procedure LoadUserSettings(f: TfConf);
       cbCarbOverlay.Checked := GetBoolSetting('display.carb_overlay');
       cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', false);
       cbDotGaps.Checked := GetBoolSetting('ux.dot_gaps', true);
+      cbNightDim.Checked := GetBoolSetting('ux.night_dim', false);
+      seNightDimFrom.Value := GetIntSetting('ux.night_dim_from', 22);
+      seNightDimTo.Value := GetIntSetting('ux.night_dim_to', 7);
       // ItemIndex order is the TDotColorMode order — see the type's note.
       rgDots.ItemIndex := Ord(DotColorModeFromSetting(
         GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT))));
@@ -895,6 +903,9 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('display.carb_overlay', cbCarbOverlay.Checked);
       SetSetting('ux.dot_fresh', cbDotFresh.Checked);
       SetSetting('ux.dot_gaps', cbDotGaps.Checked);
+      SetSetting('ux.night_dim', cbNightDim.Checked);
+      SetSetting('ux.night_dim_from', seNightDimFrom.Value);
+      SetSetting('ux.night_dim_to', seNightDimTo.Value);
       // A radio group with nothing selected would otherwise store -1, which
       // DotColorModeFromSetting reads back as the default anyway - but leaving
       // the stored value alone keeps the user's choice through a dialog that

@@ -196,6 +196,13 @@ When enabled, Trndi can show where your blood sugar might be heading in the next
 
 **Important**: Predictions are estimates based on your current trend. They don't know about food you just ate, insulin you just took, or exercise. Use them as a guide, not a guarantee! While your data is outdated, predictions are hidden entirely — an old trend can't forecast anything.
 
+### Night Dimming
+*Settings → Colors → Backgrounds → Dim the window at night*: between the hours you
+pick, the in-range window blends most of the way to black so a bedside screen
+stops lighting the room. Highs, lows, drifting-range tints and the outdated-data
+warning always keep their full daytime strength — the dimming only ever applies
+while everything is calm, which is what makes it safe to sleep next to.
+
 ### Privacy Mode
 Hides your actual numbers, showing only dots and arrows. Useful when:
 - Screen sharing in a video call
