@@ -338,7 +338,7 @@ procedure TfBG.DotPaint(Sender: TObject);
 var
   S, fontn: string;
   L: TDotControl;
-  d, ringWidth, xSize, xOff, i, slot: integer;
+  d, ringWidth, xSize, xOff, xThick, i, slot: integer;
   dotColor, ringColor: TColor;
   xAlpha: double;
 begin
@@ -410,8 +410,17 @@ begin
       // it sits in and gets clipped by a negative offset.
       xSize := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.6));
       xOff  := (d - xSize) div 2;
-      DrawSmoothX(L.Canvas, xSize, dotColor, Max(2, xSize div 8), xOff, xOff,
-        xAlpha);
+      xThick := Max(2, xSize div 8);
+      // A forecast at or below the low threshold is the one prediction that
+      // must not fade into the background: full opacity and a heavier stroke,
+      // whatever the confidence fade would otherwise have done to it, so an
+      // incoming low stands out at a glance.
+      if (slot <= High(FPredictionLow)) and FPredictionLow[slot] then
+      begin
+        xAlpha := 1.0;
+        xThick := Max(3, xSize div 5);
+      end;
+      DrawSmoothX(L.Canvas, xSize, dotColor, xThick, xOff, xOff, xAlpha);
       Exit;
     end;
 
@@ -960,12 +969,14 @@ end;
 // trace left) is never a gap — the stale UI owns that story. Runs at the end
 // of every placement pass, which fully rebuilds slot state first, so stale
 // gap markers from the previous pass cannot survive here.
-procedure TfBG.MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double);
+procedure TfBG.MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double;
+  AAnchor: TDateTime);
 var
   ix, g: integer;
   prevPos, vPrev, vNext: double;
   havePrev: boolean;
   l: TDotControl;
+  H, M, S, MS: word;
 
   // A slot counts as filled only when it holds a real reading: gap dots are
   // excluded by caption so a previous pass's markers can't seed new ones.
@@ -977,6 +988,12 @@ var
   end;
 
 begin
+  // Optional, like the fresh ring (ux.dot_fresh). Placement rebuilt every
+  // slot before this runs, so turning the option off simply leaves the empty
+  // slots hidden — no stale markers to clean up.
+  if not native.GetBoolSetting('ux.dot_gaps', true) then
+    Exit;
+
   // The left anchor starts as the caller's outside-the-window reading (if
   // any) and becomes each filled slot in turn.
   havePrev := AHasOlder;
@@ -1002,6 +1019,11 @@ begin
           / (ix - prevPos), native.locale);
         // The synthetic value must never show as a tooltip.
         l.ShowHint := false;
+        // The slot's nominal reading time, encoded like the real dots' Tags
+        // (H*100+M), so the popup menu can say *when* the reading is missing.
+        DecodeTime(IncMinute(AAnchor, -INTERVAL_MINUTES * (ACTIVE_DOTS - g)),
+          H, M, S, MS);
+        l.Tag := H * 100 + M;
         l.Visible := DotSlotVisible(g);
       end;
 
@@ -1289,6 +1311,7 @@ begin
     Exit;
 
   SetLength(PredictionDots, PREDICTION_DOT_COUNT);
+  SetLength(FPredictionLow, PREDICTION_DOT_COUNT);
   for i := 0 to PREDICTION_DOT_COUNT - 1 do
   begin
     PredictionDots[i] := TPaintBox.Create(Self);
@@ -1479,9 +1502,13 @@ begin
   l := Sender as TDotControl;
 
   // A gap marker has no reading behind it: nothing to expand, and its Hint is
-  // a synthetic placement value that must not reach the JS bridge.
+  // a synthetic placement value that must not reach the JS bridge. Explain
+  // the hole instead — the Tag carries the slot's nominal time.
   if l.Caption = DOT_GAP then
+  begin
+    ShowMessage(Format(RS_UX_GAP_HERE, [l.Tag div 100, l.Tag mod 100]));
     Exit;
+  end;
 
   actOnTrend(@ExpandDot);
   isDot := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);

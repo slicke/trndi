@@ -963,12 +963,18 @@ procedure TfBG.RenderPredictionDots(const bgr: BGResults;
       DecodeTime(bgr[Idx].date, H, M, S, MS);
       l.Tag := H * 100 + M;
       l.Font.Color := DetermineColorForReading(bgr[Idx]);
+      // A forecast at or below the low threshold gets full visual weight in
+      // DotPaint (no confidence/horizon fade), so an incoming low stands out.
+      if Slot <= High(FPredictionLow) then
+        FPredictionLow[Slot] := Assigned(api) and (bgr[Idx].val <= api.cgmLo);
       l.Visible := true;
     end
     else
     begin
       l.Hint := '';
       l.Visible := false;
+      if Slot <= High(FPredictionLow) then
+        FPredictionLow[Slot] := false;
     end;
   end;
 
@@ -2006,7 +2012,7 @@ begin
 
   // Slot state is fully rebuilt above (every slot was either filled or
   // cleared), so gaps can now be told apart from plain edge emptiness.
-  MarkTrendGaps(hasOlder, olderPos, olderVal);
+  MarkTrendGaps(hasOlder, olderPos, olderVal, anchorTime);
 
   TrndiDLog(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
 end;
