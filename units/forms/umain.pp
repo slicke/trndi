@@ -717,6 +717,9 @@ private
     // Future-prediction markers (drawn as X) shown to the right of the trend
     // when dot mode is enabled. 0-based, fixed length PREDICTION_DOT_COUNT.
   PredictionDots: array of TDotControl;
+    // Parallel to PredictionDots: true when that slot's forecast is at or
+    // below the low threshold, so DotPaint gives the mark full weight.
+  FPredictionLow: array of boolean;
   FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user
   multinick: string;
@@ -837,8 +840,11 @@ private
       window's left edge, with AOlderPos/AOlderVal anchoring the interpolation
       (fractional slot position ≤ 0 and value in the display unit). Trailing
       emptiness (an outage marching the trace left) is never a gap — the stale
-      UI owns that story. Runs after every placement pass. }
-  procedure MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double);
+      UI owns that story. AAnchor is the placement pass's slot anchor, used to
+      stamp each gap's nominal slot time into its Tag for the popup menu.
+      Honors the ux.dot_gaps setting. Runs after every placement pass. }
+  procedure MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double;
+    AAnchor: TDateTime);
     {** Ring color/width marking the freshest reading's dot, per dot-coloring
         mode. Shared by DotPaint and the settings-dialog preview so the two
         cannot drift apart. }

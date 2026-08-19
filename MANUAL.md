@@ -124,7 +124,9 @@ so a sensor gap is visible instead of the dots just sitting further apart. This
 includes the oldest slots when an earlier reading exists beyond the left edge of
 the window. Slots are only left truly empty when nothing proves a reading is
 missing: before your history starts, or on the right while data is outdated
-(the stale warning covers that case).
+(the stale warning covers that case). Click or right-click a ring to see when
+the missing reading would have been. The rings can be turned off under
+*Settings → Display → Mark missing readings*.
 
 **Changing how the dots are coloured**: *Settings → Colors → Backgrounds → Trend
 dot coloring*. A preview strip under the options shows how the selected mode
@@ -189,7 +191,8 @@ When enabled, Trndi can show where your blood sugar might be heading in the next
   minutes. Their opacity tells you how much to trust them: the marks fade as
   the forecast confidence drops, and the further-out marks are always drawn a
   little fainter than the 5-minute one. Click a mark to see the exact
-  confidence percentage.
+  confidence percentage. A mark that predicts a **low** never fades — it's
+  drawn at full strength with a heavier stroke, so an incoming low stands out.
 
 **Important**: Predictions are estimates based on your current trend. They don't know about food you just ate, insulin you just took, or exercise. Use them as a guide, not a guarantee!
 

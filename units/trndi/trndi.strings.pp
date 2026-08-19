@@ -328,6 +328,7 @@ RS_CHANGES_APPLY = 'Apply this value when Trndi starts?';
 
 RS_UX_READING_HERE = 'Reading here: %s at %.2d:%.2d';
 RS_UX_PREDICTION_HERE = 'Prediction here: %s at %.2d:%.2d';
+RS_UX_GAP_HERE = 'No reading received around %.2d:%.2d';
 
 RS_DATE_PICKER_CAPTION = 'Choose a date';
 RS_DATE_PICKER_TITLE = 'Choose a date to show readings from';
