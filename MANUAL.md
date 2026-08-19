@@ -175,6 +175,13 @@ When enabled, Trndi can show where your blood sugar might be heading in the next
 - **Short mode**: Just an arrow or `⏱10' ↗ 145.2`
   - Shows just the 10-minute prediction
 
+- **Dot mode** (*Show predictions as dots on the trend*): Instead of text, three
+  small **×** marks continue the trend graph to the right, at 5, 10 and 15
+  minutes. Their opacity tells you how much to trust them: the marks fade as
+  the forecast confidence drops, and the further-out marks are always drawn a
+  little fainter than the 5-minute one. Click a mark to see the exact
+  confidence percentage.
+
 **Important**: Predictions are estimates based on your current trend. They don't know about food you just ate, insulin you just took, or exercise. Use them as a guide, not a guarantee!
 
 ### Privacy Mode
