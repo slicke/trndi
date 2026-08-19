@@ -19,12 +19,12 @@ object fConf: TfConf
     Height = 590
     Top = 11
     Width = 645
-    ActivePage = tsCustom
+    ActivePage = tsDisplay
     Align = alClient
     BorderSpacing.Left = 10
     BorderSpacing.Right = 10
     BorderSpacing.Around = 5
-    TabIndex = 5
+    TabIndex = 3
     TabOrder = 0
     OnChange = pcMainChange
     object tsCommon: TTabSheet
@@ -1595,21 +1595,21 @@ object fConf: TfConf
       end
       object pnDisplay: TPanel
         Left = 8
-        Height = 123
+        Height = 101
         Top = 43
         Width = 623
         Align = alClient
         BorderSpacing.Around = 8
         BevelOuter = bvNone
         BorderStyle = bsSingle
-        ClientHeight = 123
+        ClientHeight = 101
         ClientWidth = 623
         ParentBackground = False
         TabOrder = 1
         object pbDisplayPreview: TPaintBox
           Cursor = crHandPoint
           Left = 0
-          Height = 123
+          Height = 101
           Top = 0
           Width = 623
           Align = alClient
@@ -1617,12 +1617,12 @@ object fConf: TfConf
       end
       object gbDisplayPrefs: TGroupBox
         Left = 0
-        Height = 381
-        Top = 174
+        Height = 403
+        Top = 152
         Width = 639
         Align = alBottom
         Caption = 'Display Preferences'
-        ClientHeight = 352
+        ClientHeight = 374
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 2
@@ -1697,7 +1697,7 @@ object fConf: TfConf
             Left = 16
             Height = 22
             Top = 116
-            Width = 332
+            Width = 337
             Caption = 'Mark missing readings in the trend with a faint ring'
             TabOrder = 11
           end
@@ -1748,7 +1748,7 @@ object fConf: TfConf
         object GroupBox12: TGroupBox
           Left = 0
           Height = 57
-          Top = 352
+          Top = 374
           Width = 635
           Align = alTop
           Caption = 'Advanced'
@@ -1776,7 +1776,7 @@ object fConf: TfConf
         object GroupBox13: TGroupBox
           Left = 0
           Height = 105
-          Top = 256
+          Top = 275
           Width = 635
           Align = alTop
           Caption = 'Window'

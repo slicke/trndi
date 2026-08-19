@@ -616,7 +616,7 @@ var
   bg, valColor, subColor, arrowColor, tirColor: TColor;
   dotColor, ringColor, ident, partner: TColor;
   valText, arrowText, agoText, diffText, tirText: string;
-  w, h, i, d, x, y, tw, th, ringWidth, r: integer;
+  w, h, i, d, x, y, tw, th, ringWidth, r, cols, gs: integer;
 
 function HasDigit(const s: string): boolean;
   var
@@ -757,10 +757,31 @@ begin
 
   // A rising trend visiting every range band, sized and slotted like the live
   // dots (0.6 of the slot width, clamped), newest on the right carrying the
-  // fresh ring when the option previews it.
-  d := Max(MIN_DOT_DIAMETER_PX, Min(h div 8, (w * 6) div (DOT_COUNT * 10)));
+  // fresh ring when the option previews it. Prediction slots compress the
+  // history to the left, exactly as TrendColumnCount does on the main window.
+  cols := DOT_COUNT;
+  if AData.PredictDots then
+    Inc(cols, PREDICTION_DOT_COUNT);
+  d := Max(MIN_DOT_DIAMETER_PX, Min(h div 8, (w * 6) div (cols * 10)));
   for i := 0 to DOT_COUNT - 1 do
   begin
+    x := ARect.Left + Round((i + 0.5) * w / cols) - d div 2;
+    // Compress the climb into the upper ~3/4 so the delta row stays readable.
+    y := ARect.Top + PAD + (((DOT_COUNT - 1 - i) * (h - 2 * PAD - d))
+      div (DOT_COUNT - 1) * 3) div 4;
+
+    // One mid-trend slot renders as a sensor gap when the option is on — the
+    // same quiet hollow ring DotPaint draws, at the height the climb passes
+    // through anyway (the preview's trace is linear).
+    if AData.GapRing and (i = DOT_COUNT div 2) then
+    begin
+      gs := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
+      DrawSmoothCircle(ACanvas, gs, clNone,
+        BlendColors(GetTextColorForBackground(bg), bg, GAP_DOT_BLEND),
+        Max(1, gs div 8), x + (d - gs) div 2, y + (d - gs) div 2);
+      Continue;
+    end;
+
     PreviewBandColors(ATheme, i div 2, ident, partner);
     dotColor := DotDisplayColor(ident, partner, bg, valColor, mode);
     if (i = DOT_COUNT - 1) and AData.FreshRing then
@@ -777,11 +798,28 @@ begin
       ringWidth := 0;
       ringColor := dotColor;
     end;
-    x := ARect.Left + Round((i + 0.5) * w / DOT_COUNT) - d div 2;
-    // Compress the climb into the upper ~3/4 so the delta row stays readable.
-    y := ARect.Top + PAD + (((DOT_COUNT - 1 - i) * (h - 2 * PAD - d))
-      div (DOT_COUNT - 1) * 3) div 4;
     DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
+  end;
+
+  // Prediction × marks in the trailing slots, colored through the same
+  // pipeline as DotPaint's DOT_PREDICT branch and carrying the same
+  // per-horizon fade (at full confidence — the preview has no engine to ask).
+  // Flat, at the newest dot's height: the preview forecasts "steady".
+  if AData.PredictDots then
+  begin
+    PreviewBandColors(ATheme, 4, ident, partner);
+    dotColor := DotDisplayColor(ident, partner, bg, valColor, mode);
+    if mode = dcmOutline then
+      dotColor := EnsureContrast(dotColor, bg, DOT_MIN_CONTRAST);
+    gs := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.6));
+    y := ARect.Top + PAD; // the climb's endpoint (i = DOT_COUNT - 1)
+    for i := 0 to PREDICTION_DOT_COUNT - 1 do
+    begin
+      x := ARect.Left + Round((DOT_COUNT + i + 0.5) * w / cols) - d div 2;
+      DrawSmoothX(ACanvas, gs, dotColor, Max(2, gs div 8),
+        x + (d - gs) div 2, y + (d - gs) div 2,
+        1.0 - i * PREDICTION_HORIZON_FADE);
+    end;
   end;
 
   // Click targets for the dialog's font pickers: ago strip on top, reading

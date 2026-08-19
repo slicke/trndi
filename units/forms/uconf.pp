@@ -105,6 +105,8 @@ TDisplayPreviewData = record
   ValFont, ArrowFont, AgoFont: string; // font names as currently picked
   State: integer;                      // 0 = in range, 1 = high, 2 = low
   FreshRing: boolean;                  // cbDotFresh as currently checked
+  GapRing: boolean;                    // cbDotGaps as currently checked
+  PredictDots: boolean;                // predictions + dot mode as currently checked
   DecimalSep: string;                  // edCommaSep as currently typed
 end;
 
@@ -2711,6 +2713,10 @@ begin
   rbPredictShortShowValue.Enabled   := shortOn;
   rbPredictShortArrowOnly.Enabled   := shortOn;
   cbPredictShortMinutes.Enabled     := shortOn;
+
+  // The Display-tab miniature shows prediction marks only while dot mode is
+  // effectively on, so a toggle here must repaint it.
+  RefreshDotPreview(nil);
 end;
 
 procedure TfConf.cbPredictionsChange(Sender: TObject);
@@ -2788,6 +2794,8 @@ begin
   cbPreviewState.OnChange := @RefreshDotPreview;
   cbPreviewState.ShowHint := true;
   cbDotFresh.OnChange := @RefreshDotPreview;
+  cbDotGaps.OnChange := @RefreshDotPreview;
+  cbPredictDots.OnChange := @RefreshDotPreview;
   rgDots.OnClick := @RefreshDotPreview;
   cl_ok_bg.OnColorChanged := @RefreshDotPreview;
   cl_hi_bg.OnColorChanged := @RefreshDotPreview;
@@ -3192,6 +3200,8 @@ begin
   data.AgoFont := FFontAgo.Name;
   data.State := Max(0, cbPreviewState.ItemIndex);
   data.FreshRing := cbDotFresh.Checked;
+  data.GapRing := cbDotGaps.Checked;
+  data.PredictDots := cbPredictions.Checked and cbPredictDots.Checked;
   data.DecimalSep := edCommaSep.Text;
   FOnDisplayPreview(pbDisplayPreview.Canvas,
     Rect(0, 0, pbDisplayPreview.Width, pbDisplayPreview.Height),
