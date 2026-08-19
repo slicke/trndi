@@ -68,6 +68,8 @@ type
     ValFont, ArrowFont, AgoFont: string;
     State: integer;
     FreshRing: boolean;
+    GapRing: boolean;
+    PredictDots: boolean;
     DecimalSep: string;
   end;
 
@@ -215,6 +217,10 @@ type
     fsAlertHystUrg: TFloatSpinEdit;
     cbConnectivityButton: TCheckBox;
     cbShowSensorExpiry: TCheckBox;
+    cbDotGaps: TCheckBox;
+    cbNightDim: TCheckBox;
+    seNightDimFrom: TSpinEdit;
+    seNightDimTo: TSpinEdit;
     cbLang: TComboBox;
 
     // Color buttons and related controls
@@ -437,6 +443,10 @@ begin
   fsAlertHystUrg := TFloatSpinEdit.Create;
   cbConnectivityButton := TCheckBox.Create(nil);
   cbShowSensorExpiry := TCheckBox.Create(nil);
+  cbDotGaps := TCheckBox.Create(nil);
+  cbNightDim := TCheckBox.Create(nil);
+  seNightDimFrom := TSpinEdit.Create;
+  seNightDimTo := TSpinEdit.Create;
   cbLang := TComboBox.Create(nil);
 
   // Color buttons and related controls
@@ -509,6 +519,10 @@ begin
   cl_ok_bg.Free;
 
   cbLang.Free;
+  seNightDimTo.Free;
+  seNightDimFrom.Free;
+  cbNightDim.Free;
+  cbDotGaps.Free;
   fsAlertHystUrg.Free;
   fsAlertHystLo.Free;
   fsAlertHystHi.Free;
