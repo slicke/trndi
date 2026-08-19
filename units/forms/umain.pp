@@ -831,6 +831,14 @@ private
   procedure CreateTrendDots;
   procedure FreeTrendDotControls;
   procedure ApplyTrendDotCount(newCount: integer);
+  {** Mark empty trend slots that provably sit between two real readings as
+      sensor gaps (DOT_GAP). Interior emptiness always qualifies; a leading run
+      (the oldest slots) qualifies when AHasOlder reports a reading beyond the
+      window's left edge, with AOlderPos/AOlderVal anchoring the interpolation
+      (fractional slot position ≤ 0 and value in the display unit). Trailing
+      emptiness (an outage marching the trace left) is never a gap — the stale
+      UI owns that story. Runs after every placement pass. }
+  procedure MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double);
     {** Ring color/width marking the freshest reading's dot, per dot-coloring
         mode. Shared by DotPaint and the settings-dialog preview so the two
         cannot drift apart. }
@@ -1371,6 +1379,10 @@ DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
 // slot so further-out forecasts read as less certain at a glance.
 PREDICTION_ALPHA_MIN = 0.35; // × opacity at zero confidence
 PREDICTION_HORIZON_FADE = 0.15; // opacity step per horizon slot further out
+// Interior trend gaps draw a thin hollow ring blended this far toward the
+// window's text tone — enough to say "a reading is missing here" without
+// competing with the real dots around it.
+GAP_DOT_BLEND = 0.4;
 
 // Standalone helpers referenced by multiple include files below.
 function CaptionStartsWithDigit(const S: string): boolean;
