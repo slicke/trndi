@@ -73,6 +73,7 @@ type
     FHandle: PtrUInt;
     FShowInTaskBar: TShowInTaskBar;
     FIcon: TIcon;
+    FOnWindowStateChange: TNotifyEvent;
   public
     procedure Close; virtual;
     procedure DoClose(var CloseAction: TCloseAction); virtual;
@@ -85,6 +86,10 @@ type
     property Handle: PtrUInt read FHandle write FHandle;
     property ShowInTaskBar: TShowInTaskBar read FShowInTaskBar write FShowInTaskBar;
     property Icon: TIcon read FIcon write FIcon;
+    // Real LCL fires this from TCustomForm.Resizing; umain assigns it during
+    // startup to replay a relayout it deferred while minimized.
+    property OnWindowStateChange: TNotifyEvent read FOnWindowStateChange
+      write FOnWindowStateChange;
     function HandleAllocated: Boolean; virtual;
     procedure Repaint; virtual;
   end;
