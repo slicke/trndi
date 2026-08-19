@@ -1549,7 +1549,6 @@ msgid "Dexcom Account Username"
 msgstr "Användarnamn, Dexcom-konto"
 
 #: trndi.api.dexcom_helpers.sdexerrcredentials
-#, fuzzy
 msgctxt "trndi.api.dexcom_helpers.sdexerrcredentials"
 msgid "Incorrect username or password combination"
 msgstr "Fel användarnamn eller lösenord"
@@ -4205,4 +4204,3 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
-
