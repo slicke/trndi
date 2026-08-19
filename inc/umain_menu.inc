@@ -936,8 +936,11 @@ begin
 
   BuildDotWindowMenu;
 
-  if (Sender as TPopupMenu).PopupComponent is TDotControl then
+  if ((Sender as TPopupMenu).PopupComponent is TDotControl) and
+    (((Sender as TPopupMenu).PopupComponent as TDotControl).Caption <> DOT_GAP) then
   begin
+    // Gap markers are excluded above: their Hint is a synthetic placement
+    // value and their Tag a stale time, neither of which is a reading.
     tpb := (Sender as TPopupMenu).PopupComponent as TDotControl;
     H := tpb.Tag div 100;
     M := tpb.Tag mod 100;

@@ -956,6 +956,9 @@ procedure TfBG.RenderPredictionDots(const bgr: BGResults;
       // Store the value in the display unit so UpdatePredictionDotHeights can
       // parse it the same way the history dots are parsed.
       l.Hint := bgr[Idx].format(un, BG_MSG_SHORT, BGPrimary);
+      // Hover shows the predicted value, like the history dots' tooltips;
+      // clicking still shows the confidence. Suppressed in privacy mode.
+      l.ShowHint := not privacyMode;
       // Encode the predicted time so the right-click menu can show it.
       DecodeTime(bgr[Idx].date, H, M, S, MS);
       l.Tag := H * 100 + M;
@@ -1868,9 +1871,9 @@ procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading;
 CurrentTime: TDateTime);
 var
   slotIndex, i, labelNumber, searchStart: integer;
-  slotStart, slotEnd, anchorTime, anchorSource: TDateTime;
-  slotEpsilon: double;
-  found: boolean;
+  slotStart, slotEnd, anchorTime, anchorSource, oldestStart: TDateTime;
+  slotEpsilon, olderPos, olderVal: double;
+  found, hasOlder: boolean;
   reading: BGReading;
   l: TDotControl;
 const
@@ -1973,6 +1976,37 @@ begin
       end;
     end;
   end;
+
+  // A leading run of empty slots (the oldest end) is only a gap when a real
+  // reading exists beyond the window's left edge — otherwise the history
+  // simply doesn't reach that far. The slot loop left everything older than
+  // the oldest filled slot unconsumed at searchStart, so scan those for the
+  // first real reading older than the oldest slot.
+  hasOlder := false;
+  olderPos := 0;
+  olderVal := 0;
+  oldestStart := IncMinute(anchorTime, -INTERVAL_MINUTES * ACTIVE_DOTS);
+  for i := searchStart to High(SortedReadings) do
+  begin
+    reading := SortedReadings[i];
+    if reading.empty then
+      Continue;
+    if reading.date < oldestStart then
+    begin
+      hasOlder := true;
+      // Fractional position on the same 1..ACTIVE_DOTS grid the dots use
+      // (≤ 0, since it lies left of slot 1), so the leading gaps interpolate
+      // over the reading's true distance in time.
+      olderPos := ACTIVE_DOTS
+        - (anchorTime - reading.date) * MinsPerDay / INTERVAL_MINUTES;
+      olderVal := reading.convert(un);
+      Break;
+    end;
+  end;
+
+  // Slot state is fully rebuilt above (every slot was either filled or
+  // cleared), so gaps can now be told apart from plain edge emptiness.
+  MarkTrendGaps(hasOlder, olderPos, olderVal);
 
   TrndiDLog(Format('PlaceTrendDots complete: anchor=%s', [DateTimeToStr(anchorTime)]));
 end;
@@ -2086,6 +2120,9 @@ begin
     // search cursor) — a narrow window only withholds the dot from view.
     l.Visible := DotSlotVisible(labelNumber);
     l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
+    // The Hint doubles as the hover tooltip, so the reading shows on hover
+    // without the click-expand dance — unless privacy mode hides values.
+    l.ShowHint := not privacyMode;
 
     DecodeTime(reading.date, H, M, S, MS);
     l.Tag := H * 100 + M;
