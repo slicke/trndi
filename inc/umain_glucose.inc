@@ -2221,6 +2221,46 @@ begin
     Result := BlendColors(Result, STALE_BG_COLOR, STALE_DOT_BLEND);
 end;
 
+function TfBG.NightDimActive: boolean;
+var
+  fromH, toH, nowH: integer;
+begin
+  Result := false;
+  if not native.GetBoolSetting('ux.night_dim', false) then
+    Exit;
+  fromH := native.GetIntSetting('ux.night_dim_from', 22);
+  toH := native.GetIntSetting('ux.night_dim_to', 7);
+  if fromH = toH then
+    Exit; // zero-length window: treat as off rather than always-on
+  nowH := HourOf(Now);
+  if fromH < toH then
+    Result := (nowH >= fromH) and (nowH < toH)
+  else
+    // The usual case: the window wraps midnight (e.g. 22 → 7).
+    Result := (nowH >= fromH) or (nowH < toH);
+end;
+
+procedure TfBG.CheckNightDim;
+var
+  dimNow: boolean;
+begin
+  if firstboot or FShuttingDown or (Length(bgs) = 0) then
+    Exit;
+  dimNow := NightDimActive;
+  if dimNow = FNightDimmed then
+    Exit;
+  FNightDimmed := dimNow;
+  // The stale display owns the window during an outage (STALE_BG_COLOR never
+  // dims anyway); the flag above still tracks the flip so recovery paints the
+  // right state immediately.
+  if FTrendDataStale then
+    Exit;
+  // Re-run the full pipeline rather than poking colors directly: it already
+  // knows how to derive every label, dot and title-bar tint from the range
+  // color of the current reading — setColorMode applies the dim on the way.
+  FinalizeUIUpdate;
+end;
+
 function TfBG.setColorMode: boolean;
 begin
   Result := setColorMode(clFuchsia, true);
@@ -2232,7 +2272,19 @@ var
   wasBannerTinted: boolean;
 begin
   if not nocolor then
+  begin
+    // Night dim: between the configured hours the calm in-range window is
+    // blended most of the way to black, so a bedside screen stops lighting
+    // the room. Only the plain in-range color dims — a high, a low, a
+    // drifting relative range and the stale slate keep their full daytime
+    // presence, which is what makes the feature safe to sleep next to. Every
+    // downstream color (labels via GetTextColorForBackground, dots via
+    // DotDisplayColor) derives from fBG.Color at paint time, so the rest of
+    // the window mutes to match without further plumbing.
+    if (bg = bg_color_ok) and NightDimActive then
+      bg := BlendColors(bg, clBlack, NIGHT_DIM_KEEP);
     fBG.Color := bg;
+  end;
 
   // Consume the flag up front: whichever rule below claims the bar owns it from
   // here, and only the banner rule re-arms it.

@@ -288,6 +288,10 @@ begin
   if firstboot then
     exit;
 
+  // This timer is the app's steady 15 s heartbeat, so it also watches for the
+  // night-dim window opening or closing between readings.
+  CheckNightDim;
+
   // While the data is stale the age belongs to the stale card, which states it
   // with the context that makes it mean something. ApplyStaleDisplayState
   // clears lAgo for exactly that reason, but this timer keeps running for the

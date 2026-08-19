@@ -630,6 +630,8 @@ private
   FLastUICaption: string;
   FLastTir: string;
   FLastTirHint: string; // TIR percentage behind the caption — drives the tint
+  FNightDimmed: boolean; // last night-dim window state CheckNightDim saw, so a
+                         // boundary crossing repaints exactly once
   FTitleTintedFromBanner: boolean; // setColorMode lent the off-range banner's
                                    // colour to the title bar. Both DWM's
                                    // caption colour and the drawn bar keep
@@ -765,6 +767,14 @@ private
   function dotsInView: integer;
   function setColorMode: boolean;
   function setColorMode(bg: tColor; const nocolor: boolean = false): boolean;
+  {** True while the night-dim window (ux.night_dim + from/to hours) covers the
+      current wall-clock time. Says nothing about whether dimming is actually
+      painted — setColorMode only dims the calm in-range color. }
+  function NightDimActive: boolean;
+  {** Once-a-minute-ish boundary watch (driven from tAgo): when the night-dim
+      window opens or closes with no reading arriving to repaint the UI, re-run
+      the color pipeline so the change shows up on time. }
+  procedure CheckNightDim;
   function setSingleColorMode: boolean;
   procedure SetLang;
   procedure fixWarningPanel;
@@ -1389,6 +1399,10 @@ PREDICTION_HORIZON_FADE = 0.15; // opacity step per horizon slot further out
 // window's text tone — enough to say "a reading is missing here" without
 // competing with the real dots around it.
 GAP_DOT_BLEND = 0.4;
+// Night dim keeps this much of the in-range color; the rest goes to black.
+// Text, dots and every other on-window color derive from the background at
+// paint time, so they mute along with it for free.
+NIGHT_DIM_KEEP = 0.25;
 
 // Standalone helpers referenced by multiple include files below.
 function CaptionStartsWithDigit(const S: string): boolean;

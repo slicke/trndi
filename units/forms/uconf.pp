@@ -201,6 +201,10 @@ TfConf = class(TForm)
   cbCustRange: TCheckBox;
   cbDotFresh: TCheckBox;
   cbDotGaps: TCheckBox;
+  cbNightDim: TCheckBox;
+  seNightDimFrom: TSpinEdit;
+  seNightDimTo: TSpinEdit;
+  lNightDimTo: TLabel;
   cbAlertMissing: TCheckBox;
   cbLang: TComboBox;
   cbMoveDIffRight: TCheckBox;
