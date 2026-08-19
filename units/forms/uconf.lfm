@@ -1354,6 +1354,39 @@ object fConf: TfConf
             BorderSpacing.Around = 5
             OnPaint = pbDotPreviewPaint
           end
+          object cbNightDim: TCheckBox
+            Left = 5
+            Height = 22
+            Top = 307
+            Width = 220
+            Caption = 'Dim the window at night'
+            TabOrder = 1
+          end
+          object seNightDimFrom: TSpinEdit
+            Left = 250
+            Height = 23
+            Top = 306
+            Width = 52
+            MaxValue = 23
+            TabOrder = 2
+            Value = 22
+          end
+          object lNightDimTo: TLabel
+            Left = 310
+            Height = 17
+            Top = 309
+            Width = 8
+            Caption = '–'
+          end
+          object seNightDimTo: TSpinEdit
+            Left = 326
+            Height = 23
+            Top = 306
+            Width = 52
+            MaxValue = 23
+            TabOrder = 3
+            Value = 7
+          end
           object Label22: TLabel
             Left = 0
             Height = 18

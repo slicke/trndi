@@ -1008,6 +1008,9 @@ begin
     PredictGlucoseReading := GetBoolSetting('predictions.enable', false);
     PredictShortMode := GetBoolSetting('predictions.short', false);
     PredictDotMode := GetBoolSetting('predictions.dots', false);
+    // Seed the boundary watcher with the current window state; the colors
+    // themselves pick the dim up live in setColorMode on the first paint.
+    FNightDimmed := NightDimActive;
     RotatingArrow := GetBoolSetting('display.rotating_arrow', false);
     ShowBolusOverlay := GetBoolSetting('display.bolus_overlay', false);
     ShowAutoBolusOverlay := GetBoolSetting('display.bolus_overlay.auto', false);
