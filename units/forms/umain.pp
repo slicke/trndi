@@ -1366,8 +1366,11 @@ RAPID_POLL_INTERVAL_MS = 20000; // 20 seconds
 // rapid mode stands down and the normal retry clamp takes over.
 RAPID_POLL_MAX_OVERDUE_MS = 1800000; // 30 minutes
 DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
-// Below this confidence the prediction dots draw a ? instead of the × marker
-PREDICTION_UNCERTAIN_BELOW = 0.3;
+// Prediction-dot × opacity: the mark fades as the engine's confidence drops
+// (never below the base, so it stays findable) and steps down once per horizon
+// slot so further-out forecasts read as less certain at a glance.
+PREDICTION_ALPHA_MIN = 0.35; // × opacity at zero confidence
+PREDICTION_HORIZON_FADE = 0.15; // opacity step per horizon slot further out
 
 // Standalone helpers referenced by multiple include files below.
 function CaptionStartsWithDigit(const S: string): boolean;
