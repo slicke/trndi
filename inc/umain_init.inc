@@ -671,6 +671,10 @@ begin
   TrndiDLog(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
 
+  // Assigned here rather than in the LFM: it pairs with the wsMinimized guard
+  // in tResizeTimer, which is the only reason the event is wanted at all.
+  OnWindowStateChange := @FormWindowStateChange;
+
   // Caption as designed. The multi-user name prefix is added to and removed
   // from *this* — never to an already-prefixed caption — as the title-bar
   // badge appears or disappears (see RefreshUserBadge).
