@@ -808,6 +808,16 @@ var
   cardW, cardH, headH, detailH, extraH, glyphW, cardPad, detailW: integer;
   headFont, detailFont: integer;
 begin
+  // Nothing to lay out while the panel is hidden — and the wlStatusCard branch
+  // below does more than position the card: it shrinks lVal to the band left
+  // above it. hideWarningPanel leaves FWarnSeverity latched at wsCritical, so
+  // without this gate every relayout after a recovered outage keeps sizing the
+  // hero for a card that is no longer on screen — the value comes back a third
+  // of its normal height. tResizeTimer is the caller that reaches here with the
+  // panel hidden; the others either show it first or already test Visible.
+  if not (Assigned(pnWarning) and pnWarning.Visible) then
+    Exit;
+
   calculatedFontSize := 12;
   pnWarning.AutoSize := false;
   GetWarnSeverityVisual(FWarnSeverity, tintColor, opacityTmp, layout);
