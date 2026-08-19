@@ -1778,34 +1778,6 @@ object fConf: TfConf
             TabOrder = 10
           end
         end
-        object GroupBox12: TGroupBox
-          Left = 0
-          Height = 57
-          Top = 374
-          Width = 635
-          Align = alTop
-          Caption = 'Advanced'
-          ClientHeight = 28
-          ClientWidth = 631
-          TabOrder = 2
-          object cbShowSensorExpiry: TCheckBox
-            Left = 16
-            Height = 22
-            Top = 8
-            Width = 266
-            Caption = 'Show sensor expiry in top-center badge'
-            TabOrder = 0
-          end
-          object bDisplayAdvancedHelp: TButton
-            Left = 584
-            Height = 22
-            Top = 0
-            Width = 27
-            Caption = '?'
-            TabOrder = 1
-            OnClick = bDisplayAdvancedHelpClick
-          end
-        end
         object GroupBox13: TGroupBox
           Left = 0
           Height = 105
@@ -2724,13 +2696,13 @@ object fConf: TfConf
       ClientWidth = 639
       object GroupBox9: TGroupBox
         Left = 0
-        Height = 105
+        Height = 131
         Top = 183
         Width = 639
         Align = alTop
         BorderSpacing.Top = 15
         Caption = 'Display'
-        ClientHeight = 76
+        ClientHeight = 102
         ClientWidth = 635
         ParentBackground = False
         TabOrder = 0
@@ -2788,6 +2760,23 @@ object fConf: TfConf
           Caption = '?'
           TabOrder = 5
           OnClick = bConnectHelpClick
+        end
+        object cbShowSensorExpiry: TCheckBox
+          Left = 10
+          Height = 22
+          Top = 74
+          Width = 266
+          Caption = 'Show sensor expiry in top-center badge'
+          TabOrder = 6
+        end
+        object bDisplayAdvancedHelp: TButton
+          Left = 384
+          Height = 22
+          Top = 74
+          Width = 27
+          Caption = '?'
+          TabOrder = 7
+          OnClick = bDisplayAdvancedHelpClick
         end
       end
       object Panel27: TPanel
