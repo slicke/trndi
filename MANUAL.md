@@ -115,7 +115,16 @@ Those small dots you see across the screen show your recent readings over time:
   colour of the moment, so a high dot on a high (yellow) background is hard to
   pick out — if that bothers you, the setting below changes it
 
-**How to use them**: Click on any dot to see the actual number for that reading.
+**How to use them**: Hover over a dot to see its value in a tooltip, or click it
+to swap the dot for the actual number. (Both are disabled in privacy mode.)
+
+**Missing readings**: If the sensor skipped a reading between two known ones,
+that slot shows a faint hollow ring at the height the trace would pass through —
+so a sensor gap is visible instead of the dots just sitting further apart. This
+includes the oldest slots when an earlier reading exists beyond the left edge of
+the window. Slots are only left truly empty when nothing proves a reading is
+missing: before your history starts, or on the right while data is outdated
+(the stale warning covers that case).
 
 **Changing how the dots are coloured**: *Settings → Colors → Backgrounds → Trend
 dot coloring*. A preview strip under the options shows how the selected mode

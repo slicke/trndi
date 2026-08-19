@@ -175,6 +175,9 @@ begin
   end;
 end;
 
+// ADotColor = clNone draws no disc at all — a hollow ring only — so the
+// pixels inside the rim stay transparent and whatever sits behind the dot
+// (range bands, the window color) shows through.
 procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
   ADotColor, ARingColor: TColor; ARingWidth: integer;
   AOffsetX: integer = 0; AOffsetY: integer = 0);
@@ -188,7 +191,7 @@ var
   rr, rg, rb: byte;
   invRing, aOut: double;
   premulR, premulG, premulB: double;
-  hasRing: boolean;
+  hasRing, hasDisc: boolean;
   key: string;
 begin
   if ASize < 2 then
@@ -201,9 +204,17 @@ begin
   if TryBlitCachedDot(ACanvas, key, ASize, AOffsetX, AOffsetY) then
     Exit;
 
-  fr := Red(ColorToRGB(ADotColor));
-  fg := Green(ColorToRGB(ADotColor));
-  fb := Blue(ColorToRGB(ADotColor));
+  hasDisc := ADotColor <> clNone;
+  if hasDisc then
+  begin
+    fr := Red(ColorToRGB(ADotColor));
+    fg := Green(ColorToRGB(ADotColor));
+    fb := Blue(ColorToRGB(ADotColor));
+  end
+  else
+  begin
+    fr := 0; fg := 0; fb := 0;
+  end;
   hasRing := (ARingWidth > 0) and (ARingColor <> clNone);
   if hasRing then
   begin
@@ -231,7 +242,9 @@ begin
       begin
         dist := Sqrt(Sqr(x - cx) + Sqr(y - cy));
 
-        if dist <= r - 0.5 then
+        if not hasDisc then
+          alphaDisc := 0.0
+        else if dist <= r - 0.5 then
           alphaDisc := 1.0
         else if dist >= r + 0.5 then
           alphaDisc := 0.0
@@ -332,13 +345,30 @@ begin
   L := Sender as TDotControl;
   S := L.Caption;
 
-  if (S = DOT_GRAPH) or (S = DOT_FRESH) or (S = DOT_PREDICT) then
+  if (S = DOT_GRAPH) or (S = DOT_FRESH) or (S = DOT_PREDICT) or (S = DOT_GAP) then
   begin
     // Square the bounds — ResizeDot pre-sized to a square slot. Use the smaller
     // edge so a sloppy resize round can't crop the circle.
     d := Min(L.Width, L.Height);
     if d < 2 then
       Exit;
+
+    if S = DOT_GAP then
+    begin
+      // A gap marker is deliberately quiet: a thin hollow ring sunk most of
+      // the way into the background, sitting at the trace's interpolated
+      // height, so a missing reading says "something should be here" without
+      // competing with the real dots around it. Slightly smaller than the
+      // data dots, and ring-only (clNone disc) so the range bands behind it
+      // stay visible through the hole. Drawn from the window tone rather than
+      // the dot's Font.Color — a gap has no reading and thus no range color.
+      xSize := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
+      xOff  := (d - xSize) div 2;
+      DrawSmoothCircle(L.Canvas, xSize, clNone,
+        BlendColors(GetTextColorForBackground(fBG.Color), fBG.Color,
+        GAP_DOT_BLEND), Max(1, xSize div 8), xOff, xOff);
+      Exit;
+    end;
 
     // DetermineColorForReading stored the dot's range color; separating it from
     // the background is this side's job, because only here is the background
@@ -915,6 +945,72 @@ begin
     ApplyTrendDotCount(newCount);
 end;
 
+// Mark empty trend slots that provably sit between two real readings as
+// sensor gaps. The gap dot carries a linearly interpolated value in its Hint
+// so the shared layout pipeline (UpdateTrendDots → SetPointHeight →
+// AdjustGraph) places it where the trace would pass; the DOT_GAP caption
+// keeps that synthetic value out of tooltips, click-expansion and the JS
+// bridge. An empty slot only becomes a gap when readings on both sides prove
+// one is missing between them: interior emptiness always qualifies, and a
+// leading run (the oldest slots) qualifies when the caller found a reading
+// beyond the window's left edge — AOlderPos/AOlderVal then anchor the
+// interpolation at that reading's fractional slot position (≤ 0), so the
+// leading gaps ride the true time span instead of pretending the outside
+// reading sits one slot away. Trailing emptiness (an outage marching the
+// trace left) is never a gap — the stale UI owns that story. Runs at the end
+// of every placement pass, which fully rebuilds slot state first, so stale
+// gap markers from the previous pass cannot survive here.
+procedure TfBG.MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double);
+var
+  ix, g: integer;
+  prevPos, vPrev, vNext: double;
+  havePrev: boolean;
+  l: TDotControl;
+
+  // A slot counts as filled only when it holds a real reading: gap dots are
+  // excluded by caption so a previous pass's markers can't seed new ones.
+  function ParseSlot(i: integer; out v: double): boolean;
+  begin
+    Result := Assigned(TrendDots[i]) and (TrendDots[i].Caption <> DOT_GAP)
+      and (TrendDots[i].Hint <> '')
+      and TryStrToFloat(TrendDots[i].Hint, v, native.locale);
+  end;
+
+begin
+  // The left anchor starts as the caller's outside-the-window reading (if
+  // any) and becomes each filled slot in turn.
+  havePrev := AHasOlder;
+  prevPos := AOlderPos;
+  vPrev := AOlderVal;
+
+  for ix := 1 to High(TrendDots) do
+  begin
+    if not ParseSlot(ix, vNext) then
+      Continue;
+
+    if havePrev then
+      // Floor(prevPos) + 1 is the first whole slot right of the anchor; for a
+      // filled-slot anchor that is simply the next slot.
+      for g := Max(1, Floor(prevPos) + 1) to ix - 1 do
+      begin
+        l := TrendDots[g];
+        if not Assigned(l) then Continue;
+        l.Caption := DOT_GAP;
+        // Interpolated in the display unit the hints are stored in; linear in
+        // slot position, which is linear in time on the fixed slot grid.
+        l.Hint := FloatToStr(vPrev + (vNext - vPrev) * (g - prevPos)
+          / (ix - prevPos), native.locale);
+        // The synthetic value must never show as a tooltip.
+        l.ShowHint := false;
+        l.Visible := DotSlotVisible(g);
+      end;
+
+    havePrev := true;
+    prevPos := ix;
+    vPrev := vNext;
+  end;
+end;
+
 // Keep the graph honest for the duration of an outage. Dot slots are anchored
 // to wall-clock INTERVAL_MINUTES boundaries, so with no new reading arriving the
 // trace has to march left and leave the newest slots empty — otherwise the last
@@ -1060,7 +1156,9 @@ begin
   if privacyMode then
     exit;
 
-  if l.hint = '' then
+  // A gap dot's Hint is an interpolated placement value, not a reading —
+  // never expand it into visible text.
+  if (l.hint = '') or (l.Caption = DOT_GAP) then
     Exit;
 
   isDot := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);
@@ -1310,7 +1408,8 @@ begin
   if ix <= ACTIVE_DOTS then
     slotW := slotW * DotStride;
   l.AutoSize := false;
-  if (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH) or (l.Caption = DOT_PREDICT) then
+  if (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH) or
+    (l.Caption = DOT_PREDICT) or (l.Caption = DOT_GAP) then
   begin
     // Square sizing — DotPaint draws a circle inscribed in this box. 0.6
     // matches the visible disc area of the legacy ● glyph at 85% slot width.
@@ -1378,6 +1477,11 @@ var
   {$endif}
 begin
   l := Sender as TDotControl;
+
+  // A gap marker has no reading behind it: nothing to expand, and its Hint is
+  // a synthetic placement value that must not reach the JS bridge.
+  if l.Caption = DOT_GAP then
+    Exit;
 
   actOnTrend(@ExpandDot);
   isDot := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);
