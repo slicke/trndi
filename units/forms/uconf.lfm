@@ -1637,12 +1637,12 @@ object fConf: TfConf
         end
         object GroupBox11: TGroupBox
           Left = 0
-          Height = 201
+          Height = 220
           Top = 55
           Width = 635
           Align = alTop
           Caption = 'General'
-          ClientHeight = 172
+          ClientHeight = 191
           ClientWidth = 631
           TabOrder = 1
           object cbProgress: TCheckBox
@@ -1693,6 +1693,14 @@ object fConf: TfConf
             Caption = 'Highlight the newest dot while the reading is fresh'
             TabOrder = 7
           end
+          object cbDotGaps: TCheckBox
+            Left = 16
+            Height = 22
+            Top = 116
+            Width = 332
+            Caption = 'Mark missing readings in the trend with a faint ring'
+            TabOrder = 11
+          end
           object bRotatingArrowHelp: TButton
             Left = 584
             Height = 22
@@ -1714,7 +1722,7 @@ object fConf: TfConf
           object cbBolusOverlay: TCheckBox
             Left = 16
             Height = 22
-            Top = 116
+            Top = 135
             Width = 268
             Caption = 'Show insulin doses on the history graph'
             TabOrder = 8
@@ -1723,7 +1731,7 @@ object fConf: TfConf
           object cbBolusOverlayAuto: TCheckBox
             Left = 32
             Height = 22
-            Top = 135
+            Top = 154
             Width = 270
             Caption = 'Include automatic doses from the pump'
             TabOrder = 9
@@ -1731,7 +1739,7 @@ object fConf: TfConf
           object cbCarbOverlay: TCheckBox
             Left = 16
             Height = 22
-            Top = 154
+            Top = 173
             Width = 277
             Caption = 'Show carbohydrates on the history graph'
             TabOrder = 10

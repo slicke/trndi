@@ -936,16 +936,18 @@ begin
 
   BuildDotWindowMenu;
 
-  if ((Sender as TPopupMenu).PopupComponent is TDotControl) and
-    (((Sender as TPopupMenu).PopupComponent as TDotControl).Caption <> DOT_GAP) then
+  if (Sender as TPopupMenu).PopupComponent is TDotControl then
   begin
-    // Gap markers are excluded above: their Hint is a synthetic placement
-    // value and their Tag a stale time, neither of which is a reading.
     tpb := (Sender as TPopupMenu).PopupComponent as TDotControl;
     H := tpb.Tag div 100;
     M := tpb.Tag mod 100;
 
     miDotVal.Visible := true;
+    if tpb.Caption = DOT_GAP then
+      // A gap marker's Hint is a synthetic placement value, not a reading —
+      // say when the reading is missing instead of quoting the Hint.
+      miDotVal.Caption := Format(RS_UX_GAP_HERE, [H, M])
+    else
     if tpb.Caption = DOT_PREDICT then
       miDotVal.Caption := Format(RS_UX_PREDICTION_HERE, [tpb.hint, H, M])
     else

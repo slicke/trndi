@@ -198,6 +198,7 @@ TfConf = class(TForm)
   cbCust1: TCheckBox;
   cbCustRange: TCheckBox;
   cbDotFresh: TCheckBox;
+  cbDotGaps: TCheckBox;
   cbAlertMissing: TCheckBox;
   cbLang: TComboBox;
   cbMoveDIffRight: TCheckBox;
