@@ -115,9 +115,12 @@ end;
 // Antialiased X mark, same compositing approach as DrawSmoothCircle. Two
 // corner-to-corner diagonals clipped by the bounding box; alpha derives from
 // the analytical distance to the nearest diagonal so the strokes stay smooth
-// at small sizes without relying on GDI's aliased LineTo.
+// at small sizes without relying on GDI's aliased LineTo. AAlpha scales the
+// whole mark's opacity — DotPaint uses it to fade the prediction marks by
+// confidence and horizon.
 procedure DrawSmoothX(ACanvas: TCanvas; ASize: integer; AColor: TColor;
-  AThickness: integer; AOffsetX: integer = 0; AOffsetY: integer = 0);
+  AThickness: integer; AOffsetX: integer = 0; AOffsetY: integer = 0;
+  AAlpha: double = 1.0);
 var
   intf: TLazIntfImage;
   x, y: integer;
@@ -125,12 +128,16 @@ var
   fr, fg, fb: byte;
   key: string;
 begin
-  if (ASize < 2) or (AThickness < 1) then
+  if (ASize < 2) or (AThickness < 1) or (AAlpha <= 0) then
     Exit;
+  if AAlpha > 1.0 then
+    AAlpha := 1.0;
 
   // The rendered image depends only on these parameters (offsets are applied
-  // at blit time), so reuse the finished image across paints.
-  key := Format('x|%d|%d|%d', [ASize, Integer(AColor), AThickness]);
+  // at blit time), so reuse the finished image across paints. Alpha is
+  // quantized to percent so tiny confidence drift can't churn the cache.
+  key := Format('x|%d|%d|%d|%d', [ASize, Integer(AColor), AThickness,
+    Round(AAlpha * 100)]);
   if TryBlitCachedDot(ACanvas, key, ASize, AOffsetX, AOffsetY) then
     Exit;
 
@@ -159,7 +166,7 @@ begin
         else
           aPix := halfT + 0.5 - dist;
 
-        PutAlphaPixel(intf, x, y, fr, fg, fb, aPix);
+        PutAlphaPixel(intf, x, y, fr, fg, fb, aPix * AAlpha);
       end;
 
     FinishDotRender(ACanvas, key, intf, ASize, AOffsetX, AOffsetY);
@@ -318,8 +325,9 @@ procedure TfBG.DotPaint(Sender: TObject);
 var
   S, fontn: string;
   L: TDotControl;
-  d, ringWidth, xSize, xOff: integer;
+  d, ringWidth, xSize, xOff, i, slot: integer;
   dotColor, ringColor: TColor;
+  xAlpha: double;
 begin
   L := Sender as TDotControl;
   S := L.Caption;
@@ -341,28 +349,27 @@ begin
       fBG.Color, lVal.Font.Color, DotColorMode);
     if S = DOT_PREDICT then
     begin
-      // A × and a ? are strokes, not discs, and nothing rims them — so the one
-      // mode that leaves the fill unlifted has to lift it here or the forecast
+      // A × is strokes, not a disc, and nothing rims it — so the one mode
+      // that leaves the fill unlifted has to lift it here or the forecast
       // mark disappears on the window its own range owns.
       if DotColorMode = dcmOutline then
         dotColor := EnsureContrast(dotColor, fBG.Color, DOT_MIN_CONTRAST);
 
-      // When the engine reports low confidence in its forecast, draw a ?
-      // instead of the × so the uncertainty is visible at a glance. Clicking
-      // the dot shows the exact confidence percentage.
-      if PredictionConfidence < PREDICTION_UNCERTAIN_BELOW then
-      begin
-        with L.Canvas do
+      // Uncertainty is opacity: the × fades as the engine's confidence in the
+      // forecast drops, and steps down once more per horizon slot so the
+      // 15-minute mark always reads as less certain than the 5-minute one.
+      // PREDICTION_ALPHA_MIN keeps the mark findable even at zero confidence;
+      // clicking the dot still shows the exact percentage.
+      slot := 0;
+      for i := 0 to High(PredictionDots) do
+        if PredictionDots[i] = L then
         begin
-          Brush.Style := bsClear;
-          Font.Assign(L.Font);
-          Font.Color := dotColor;
-          Font.Style := [fsBold];
-          Font.Height := Max(8, Round(d * 0.9));
-          TextOut((d - TextWidth('?')) div 2, (d - TextHeight('?')) div 2, '?');
+          slot := i;
+          break;
         end;
-        Exit;
-      end;
+      xAlpha := (PREDICTION_ALPHA_MIN + (1.0 - PREDICTION_ALPHA_MIN)
+        * EnsureRange(PredictionConfidence, 0.0, 1.0))
+        * (1.0 - slot * PREDICTION_HORIZON_FADE);
 
       // Compact × (multiplication-sign) shape: shorter, thinner strokes inset
       // from the slot edges, centred in the same square the history dot would
@@ -373,7 +380,8 @@ begin
       // it sits in and gets clipped by a negative offset.
       xSize := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.6));
       xOff  := (d - xSize) div 2;
-      DrawSmoothX(L.Canvas, xSize, dotColor, Max(2, xSize div 8), xOff, xOff);
+      DrawSmoothX(L.Canvas, xSize, dotColor, Max(2, xSize div 8), xOff, xOff,
+        xAlpha);
       Exit;
     end;
 
