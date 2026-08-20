@@ -1948,8 +1948,8 @@ msgid "Apply this value when Trndi starts?"
 msgstr "Läs in detta värde när Trndi startar?"
 
 #: trndi.strings.rs_cleanup
-msgid "Wait. Shutting down extensions engine..."
-msgstr "Vänta. Stänger tilläggsmotorn..."
+msgid "Shutting down the extension engine..."
+msgstr "Stänger tilläggsmotorn..."
 
 #: trndi.strings.rs_cleanup_wait
 #, object-pascal-format
@@ -2095,10 +2095,6 @@ msgstr "Filen \"%s\" hittades inte"
 msgctxt "trndi.strings.rs_ext_msg"
 msgid "Extension Message"
 msgstr "Tilläggsmeddelande"
-
-#: trndi.strings.rs_ext_shutdown
-msgid "Shutting down extensions..."
-msgstr "Stänger ned tillägg..."
 
 #: trndi.strings.rs_ext_user_info
 msgctxt "trndi.strings.rs_ext_user_info"

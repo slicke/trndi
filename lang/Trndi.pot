@@ -1821,7 +1821,7 @@ msgid "Apply this value when Trndi starts?"
 msgstr ""
 
 #: trndi.strings.rs_cleanup
-msgid "Wait. Shutting down extensions engine..."
+msgid "Shutting down the extension engine..."
 msgstr ""
 
 #: trndi.strings.rs_cleanup_wait
@@ -1963,10 +1963,6 @@ msgstr ""
 #: trndi.strings.rs_ext_msg
 msgctxt "trndi.strings.rs_ext_msg"
 msgid "Extension Message"
-msgstr ""
-
-#: trndi.strings.rs_ext_shutdown
-msgid "Shutting down extensions..."
 msgstr ""
 
 #: trndi.strings.rs_ext_user_info
