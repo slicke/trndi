@@ -1157,9 +1157,10 @@ private
   procedure InitializeUIComponents;
   procedure InitializeSplashScreen;
   procedure LoadUserProfile;
-  {** (Re)create the multi-user title-bar badge — the native one on Windows,
-      the drawn bar's identity chip on Wayland — from the current nickname and
-      user colour, and put the name in the caption text where neither exists.
+  {** (Re)create the multi-user title-bar badge — the native one on Windows
+      and macOS, the drawn bar's identity chip on Wayland — from the current
+      nickname and user colour, and put the name in the caption text where
+      none of those exists.
       No-op outside multi-user mode. }
   procedure RefreshUserBadge;
   {** True while the active user's name rides in a title-bar badge instead of
@@ -2304,6 +2305,16 @@ begin
 
   // The drawn title bar hides while fullscreen and returns with the window.
   UpdateOwnTitleBarState;
+
+  {$ifdef DARWIN}
+  // The BorderStyle flips above add and remove the window's titled style mask,
+  // and AppKit drops title-bar accessories along with the title bar — so the
+  // badge has to be re-attached on the way out of fullscreen (and released on
+  // the way in, which ShowUserBadge does when it finds no title bar). Only
+  // macOS: on Windows the flip recreates the window handle, and the layered
+  // badge there deliberately keeps its owner subclass until WM_NCDESTROY.
+  RefreshUserBadge;
+  {$endif}
 
   // Adjust for dark mode if applicable
   setColorMode;

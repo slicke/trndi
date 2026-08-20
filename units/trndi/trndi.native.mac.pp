@@ -75,6 +75,14 @@ type
         untouched so it can keep encoding the blood-glucose reading.
         @returns(True if the NSWindow was reachable and the color was applied) }
     class function SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean; override;
+    {** @true — the multi-user name is shown as a title-bar accessory view. }
+    class function SupportsUserBadge: boolean; override;
+    {** Create/refresh a clickable pill in the title bar, carried by an
+        @code(NSTitlebarAccessoryViewController). See base. }
+    function ShowUserBadge(const nick: string; bg, textColor: TColor;
+      const onClick: TTrndiWakeCallback): boolean; override;
+    {** Detach the title-bar accessory if present. }
+    procedure HideUserBadge; override;
 
     // Settings API overrides (NSUserDefaults/CFPreferences)
     {** Read a string from preferences; returns @param(def) when missing.
@@ -1804,6 +1812,274 @@ begin
   if Assigned(gWakeBridge) then
     gWakeBridge.Callback := nil;
   inherited UnregisterWakeCallback;
+end;
+
+{------------------------------------------------------------------------------
+  Multi-user title-bar badge
+  --------------------------
+  Shows the active account's nickname as a small clickable pill at the right
+  end of the title bar, replacing the "[name] Trndi" caption prefix used where
+  no badge exists. macOS has a public API for exactly this: an
+  NSTitlebarAccessoryViewController with layoutAttribute = right, which lets
+  AppKit place the view and keep it there across moves, resizes, display
+  changes and full-screen transitions -- so unlike the Windows unit's layered
+  badge window this needs no owner subclassing and no geometry chasing. The
+  traffic lights sit on the left and the title text is centered, so the right
+  end of the bar is free.
+
+  The pill is drawn by hand (rounded rect + centered text) rather than built
+  from an NSButton, so it can carry the account colour the same way the
+  Windows badge and the Wayland identity chip do.
+
+  A click is marshalled to the main thread with Application.QueueAsyncCall
+  rather than invoked inline: the callback opens Settings, and running a modal
+  dialog from inside AppKit's own mouseDown dispatch invites a wedged event
+  loop.
+ ------------------------------------------------------------------------------}
+const
+  UBADGE_H_PAD    = 9;      // px of breathing room left/right of the text
+  UBADGE_V_INSET  = 4;      // px between the pill and the title bar's edges
+  UBADGE_EDGE_GAP = 10;     // px between the pill and the window's right edge
+  UBADGE_MAX_W    = 220;    // widest pill; longer nicknames ellipsize
+  UBADGE_MIN_H    = 16;     // floor for the pill height on short title bars
+  UBADGE_FONT_SZ  = 11;     // title-bar sized text
+
+type
+  // Content view of the accessory: draws the pill and turns a click into the
+  // caller's callback. Deliberately not an NSButton -- see the note above.
+  TTrndiUserBadgeView = objcclass(NSView)
+    procedure drawRect(dirtyRect: NSRect); override;
+    procedure mouseDown(theEvent: NSEvent); override;
+    function mouseDownCanMoveWindow: ObjCBOOL; override;
+    function acceptsFirstMouse(theEvent: NSEvent): ObjCBOOL; override;
+  end;
+
+var
+  gUserBadgeVC: NSTitlebarAccessoryViewController = nil;
+  gUserBadgeView: TTrndiUserBadgeView = nil;
+  gUserBadgeWindow: NSWindow = nil;
+  gUserBadgeBridge: TWakeBridge = nil;
+  gUserBadgeNick: string = '';
+  gUserBadgeBg: TColor = clBlack;
+  gUserBadgeFg: TColor = clWhite;
+
+// TColor after ColorToRGB is $00BBGGRR: R = low byte, G = mid, B = high --
+// the same unpacking SetTitleColor does.
+function UserBadgeColor(c: TColor): NSColor;
+var
+  rgb: longint;
+begin
+  rgb := ColorToRGB(c);
+  Result := NSColor.colorWithSRGBRed_green_blue_alpha((rgb and $FF) / 255.0,
+    ((rgb shr 8) and $FF) / 255.0, ((rgb shr 16) and $FF) / 255.0, 1.0);
+end;
+
+// Text attributes for the pill: title-bar sized, centered and tail-truncated,
+// so an over-long nickname loses characters instead of the pill losing its
+// shape. Autoreleased, like the strings the notification code builds.
+function UserBadgeTextAttrs: NSDictionary;
+var
+  attrs: NSMutableDictionary;
+  para: NSMutableParagraphStyle;
+begin
+  para := NSMutableParagraphStyle.alloc.init;
+  para.setAlignment(NSCenterTextAlignment);
+  para.setLineBreakMode(NSLineBreakByTruncatingTail);
+  attrs := NSMutableDictionary.dictionaryWithCapacity(3);
+  attrs.setObject_forKey(NSFont.systemFontOfSize(UBADGE_FONT_SZ), NSFontAttributeName);
+  attrs.setObject_forKey(UserBadgeColor(gUserBadgeFg), NSForegroundColorAttributeName);
+  attrs.setObject_forKey(para, NSParagraphStyleAttributeName);
+  para.release;
+  Result := attrs;
+end;
+
+// UTF-8 explicitly: NSSTR decodes via the system C-string encoding and garbles
+// non-ASCII nicknames.
+function UserBadgeNSNick: NSString;
+begin
+  Result := NSString.stringWithUTF8String(PChar(gUserBadgeNick));
+end;
+
+procedure TTrndiUserBadgeView.drawRect(dirtyRect: NSRect);
+var
+  attrs: NSDictionary;
+  nick: NSString;
+  b, pill, textRect: NSRect;
+  textH: CGFloat;
+begin
+  if gUserBadgeNick = '' then
+    Exit;
+  b := bounds;
+  pill := NSMakeRect(0, UBADGE_V_INSET, b.size.width - UBADGE_EDGE_GAP,
+    b.size.height - 2 * UBADGE_V_INSET);
+  if (pill.size.width <= 0) or (pill.size.height <= 0) then
+    Exit;
+
+  UserBadgeColor(gUserBadgeBg).setFill;
+  NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(pill,
+    pill.size.height / 2, pill.size.height / 2).fill;
+
+  attrs := UserBadgeTextAttrs;
+  nick := UserBadgeNSNick;
+  // The view is unflipped, so centre the text by giving it a rect exactly one
+  // line tall, offset by half the leftover height.
+  textH := nick.sizeWithAttributes(attrs).height;
+  textRect := NSMakeRect(pill.origin.x + UBADGE_H_PAD,
+    pill.origin.y + (pill.size.height - textH) / 2,
+    pill.size.width - 2 * UBADGE_H_PAD, textH);
+  if textRect.size.width > 0 then
+    nick.drawInRect_withAttributes(textRect, attrs);
+end;
+
+procedure TTrndiUserBadgeView.mouseDown(theEvent: NSEvent);
+begin
+  // Swallowed on purpose: no inherited call, so the click opens Settings
+  // instead of starting a title-bar window drag.
+  if Assigned(gUserBadgeBridge) and (not gUserBadgeBridge.Pending) then
+  begin
+    gUserBadgeBridge.Pending := true;
+    Application.QueueAsyncCall(@gUserBadgeBridge.Fire, 0);
+  end;
+end;
+
+function TTrndiUserBadgeView.mouseDownCanMoveWindow: ObjCBOOL;
+begin
+  Result := false;
+end;
+
+// The pill is a shortcut, so it should work on the click that also activates
+// the window rather than needing a second one.
+function TTrndiUserBadgeView.acceptsFirstMouse(theEvent: NSEvent): ObjCBOOL;
+begin
+  Result := true;
+end;
+
+// True while the accessory is actually installed on AWindow. Asked rather than
+// remembered because AppKit drops accessories when the titled style mask goes
+// away (Trndi's fullscreen flips BorderStyle to bsNone), and a stale "it's
+// attached" flag would leave the badge gone for good.
+function UserBadgeAttachedTo(AWindow: NSWindow): boolean;
+var
+  list: NSArray;
+begin
+  Result := false;
+  if (gUserBadgeVC = nil) or (AWindow = nil) then
+    Exit;
+  list := AWindow.titlebarAccessoryViewControllers;
+  Result := (list <> nil) and (list.indexOfObject(gUserBadgeVC) <> NSUInteger(NSNotFound));
+end;
+
+// Take the accessory off whichever window holds it. The controller and its
+// view stay alive (we own a reference from alloc) so a later re-show is cheap.
+procedure DetachUserBadge;
+var
+  list: NSArray;
+  idx: NSUInteger;
+begin
+  if (gUserBadgeVC <> nil) and (gUserBadgeWindow <> nil) then
+  begin
+    list := gUserBadgeWindow.titlebarAccessoryViewControllers;
+    if list <> nil then
+    begin
+      idx := list.indexOfObject(gUserBadgeVC);
+      if idx <> NSUInteger(NSNotFound) then
+        gUserBadgeWindow.removeTitlebarAccessoryViewControllerAtIndex(NSInteger(idx));
+    end;
+  end;
+  gUserBadgeWindow := nil;
+end;
+
+class function TTrndiNativeMac.SupportsUserBadge: boolean;
+begin
+  Result := true;
+end;
+
+function TTrndiNativeMac.ShowUserBadge(const nick: string;
+bg, textColor: TColor; const onClick: TTrndiWakeCallback): boolean;
+var
+  view: NSView;
+  win: NSWindow;
+  barH, pillW: CGFloat;
+begin
+  Result := false;
+  if (nick = '') or (Application = nil) or (Application.MainForm = nil)
+    or (not Application.MainForm.HandleAllocated) then
+  begin
+    HideUserBadge;
+    Exit;
+  end;
+
+  // The LCL Cocoa form handle is the content view; its window is the NSWindow
+  // whose title bar we decorate (same hop SetTitleColor makes).
+  view := NSView(Application.MainForm.Handle);
+  if view = nil then
+    Exit;
+  win := view.window;
+  if win = nil then
+    Exit;
+
+  // No title bar to hang the pill on (fullscreen/kiosk drop the titled style
+  // mask): drop the accessory and report failure, which puts the name back in
+  // the caption text where the caller's fallback expects it.
+  if (win.styleMask and NSTitledWindowMask) = 0 then
+  begin
+    HideUserBadge;
+    Exit;
+  end;
+
+  gUserBadgeNick := nick;
+  gUserBadgeBg := bg;
+  gUserBadgeFg := textColor;
+
+  if gUserBadgeBridge = nil then
+    gUserBadgeBridge := TWakeBridge.Create;
+  gUserBadgeBridge.Callback := onClick;
+  gUserBadgeBridge.Pending := false;
+
+  // Match the real title-bar height so AppKit doesn't grow the bar (which
+  // would push the window's content down) and the pill stays centered in it.
+  barH := win.frame.size.height - win.contentRectForFrameRect(win.frame).size.height;
+  if barH < UBADGE_MIN_H + 2 * UBADGE_V_INSET then
+    barH := UBADGE_MIN_H + 2 * UBADGE_V_INSET;
+
+  pillW := UserBadgeNSNick.sizeWithAttributes(UserBadgeTextAttrs).width +
+    2 * UBADGE_H_PAD;
+  if pillW > UBADGE_MAX_W then
+    pillW := UBADGE_MAX_W;
+
+  if gUserBadgeView = nil then
+    gUserBadgeView := TTrndiUserBadgeView.alloc.initWithFrame(
+      NSMakeRect(0, 0, pillW + UBADGE_EDGE_GAP, barH))
+  else
+    gUserBadgeView.setFrame(NSMakeRect(0, 0, pillW + UBADGE_EDGE_GAP, barH));
+
+  if gUserBadgeVC = nil then
+  begin
+    gUserBadgeVC := NSTitlebarAccessoryViewController.alloc.init;
+    gUserBadgeVC.setLayoutAttribute(NSLayoutAttributeRight);
+    // 0 = follow the auto-hiding title bar in full screen instead of forcing
+    // a strip of chrome to stay on screen.
+    gUserBadgeVC.setFullScreenMinHeight(0);
+    gUserBadgeVC.setView(gUserBadgeView);
+  end;
+
+  if not UserBadgeAttachedTo(win) then
+  begin
+    if gUserBadgeWindow <> win then
+      DetachUserBadge;
+    win.addTitlebarAccessoryViewController(gUserBadgeVC);
+  end;
+  gUserBadgeWindow := win;
+  gUserBadgeView.setNeedsDisplay_(true);
+  Result := true;
+end;
+
+procedure TTrndiNativeMac.HideUserBadge;
+begin
+  DetachUserBadge;
+  gUserBadgeNick := '';
+  if Assigned(gUserBadgeBridge) then
+    gUserBadgeBridge.Callback := nil;
 end;
 
 end.
