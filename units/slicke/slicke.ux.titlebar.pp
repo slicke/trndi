@@ -1152,6 +1152,7 @@ AButtons: TSlickeTitleBarButtons): TSlickeTitleBar;
 var
   off, i: integer;
   c: TControl;
+  firstTop: TControl;
   wasSizeable: boolean;
 begin
   Result := nil;
@@ -1180,6 +1181,20 @@ begin
   Result.SetColors(ABarBg, ABarText);
 
   // Make room: the content was laid out against the undecorated client area.
+  // Aligned controls stack, so pushing the top of the stack pushes everything
+  // aligned below it along — spacing every aligned control (as this used to)
+  // shifted an alClient control down twice on forms that also carry an alTop
+  // control (Settings' pcMain below its 1px alTop divider). Only what really
+  // touches the top strip gets the extra spacing: the topmost visible alTop
+  // control when there is one, otherwise each side/client control up there.
+  firstTop := nil;
+  for i := 0 to AForm.ControlCount - 1 do
+  begin
+    c := AForm.Controls[i];
+    if (c <> Result) and (c.Align = alTop) and c.Visible then
+      if (firstTop = nil) or (c.Top < firstTop.Top) then
+        firstTop := c;
+  end;
   for i := 0 to AForm.ControlCount - 1 do
   begin
     c := AForm.Controls[i];
@@ -1193,7 +1208,13 @@ begin
         c.Top := c.Top + off;
     end
     else
-    if (c.Align in [alTop, alClient, alLeft, alRight]) and (c.Top < off) then
+    if firstTop <> nil then
+    begin
+      if c = firstTop then
+        c.BorderSpacing.Top := c.BorderSpacing.Top + off;
+    end
+    else
+    if (c.Align in [alClient, alLeft, alRight]) and (c.Top < off) then
       c.BorderSpacing.Top := c.BorderSpacing.Top + off;
   end;
   AForm.Height := AForm.Height + off;
