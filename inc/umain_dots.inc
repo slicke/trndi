@@ -1046,7 +1046,7 @@ begin
     if havePrev then
       // Floor(prevPos) + 1 is the first whole slot right of the anchor; for a
       // filled-slot anchor that is simply the next slot.
-      for g := Max(1, Floor(prevPos) + 1) to ix - 1 do
+      for g := Max(1, Math.Floor(prevPos) + 1) to ix - 1 do
       begin
         l := TrendDots[g];
         if not Assigned(l) then Continue;
