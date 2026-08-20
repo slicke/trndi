@@ -1044,6 +1044,11 @@ private
       changes. This includes updating of panels, labels and dot metrics.
    }
   procedure ResizeUIElements;
+  {** Lay out the Setup screen shown when no backend could be created at boot:
+      hide the reading-only chrome the LFM leaves visible and refit the
+      "Setup" label and Settings button to the current window size.
+   }
+  procedure LayoutSetupScreen;
   {** Iterate over all trend dots and update their position and visibility
       based on the data in `TrendDots[].Hint`. This only adjusts visuals and
       doesn't fetch data from backends.

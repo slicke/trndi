@@ -639,6 +639,40 @@ end;
 
 {$endif}
 
+// The Setup screen replaces the reading display when no backend could be
+// created at boot (haltBoot). The normal relayout path (tResizeTimer /
+// ResizeUIElements) exits early without an API, so it never cleans up after
+// the LFM: the off-reading strip stayed on as a letter-wrapped sliver, the
+// prediction label lingered, "Setup" kept its design-time fill and the
+// Settings button hid under the drawn title bar. Lay out the few controls
+// the screen actually uses and hide the rest. Runs from haltBoot and again
+// from tResizeTimer on every resize while the screen is up.
+procedure TfBG.LayoutSetupScreen;
+begin
+  // Chrome that only means something with readings on screen.
+  pnOffReading.Visible := false;
+  pnOffRange.Visible := false;
+  pnOffRangeBar.Visible := false;
+  if Assigned(pnNextProgress) then
+    pnNextProgress.Visible := false;
+  if Assigned(lPredict) then
+    lPredict.Visible := false;
+  lArrow.Caption := '';
+  lDiff.Caption := '';
+  lAgo.Caption := '';
+  lTir.Caption := '';
+  lRef.Caption := '';
+
+  // "Setup" fills the window like a reading would; lVal is client-aligned so
+  // only the font needs refitting.
+  ScaleLbl(lVal);
+
+  // Keep the button clear of the application-drawn title bar (Wayland);
+  // TitleBarOffset is 0 with native decorations.
+  bSettings.Left := 8;
+  bSettings.Top := TitleBarOffset + 8;
+end;
+
 // Initialize the TrendDots array in FormCreate
 procedure TfBG.FormCreate({%H-}Sender: TObject);
 procedure haltBoot;
@@ -651,6 +685,7 @@ procedure haltBoot;
     lVal.Caption := RS_SETUP;
     lVal.Cursor := crHandPoint;
     bSettings.Show;
+    LayoutSetupScreen;
   end;
 
 var
