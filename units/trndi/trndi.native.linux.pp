@@ -36,6 +36,11 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-20: The INI settings store is now class-wide with a lock, one
+ *   snapshot per process. Per-instance TIniFile stores clobbered each other:
+ *   every UpdateFile rewrites the whole file from that instance's memory, so
+ *   the settings dialog's writes (user.nick/user.color) were erased by the
+ *   main window's next write.
  * - 2026-08-16: The libcurl transport (getURL, postURL, TestProxyURL, request,
  *   requestEx, the C callbacks and curl_global_init) moved verbatim to the new
  *   trndi.native.request.curl unit; the methods here now fetch proxy settings
@@ -103,7 +108,16 @@ protected
     // slow to redo on every reading.
   FTrayPainter: TTrndiBadgeIcon;
   {$endif}
-  inistore: TIniFile; // Linux-specific settings store
+    // Settings store. Class var: every TrndiNative instance in the process
+    // shares one snapshot. TIniFile rewrites the WHOLE file from memory on
+    // UpdateFile, so with per-instance stores two instances clobbered each
+    // other's keys — the settings dialog's own TrndiNative (uconf.tnative)
+    // wrote user.nick/user.color, and umain's native erased them again with
+    // its next write (and vice versa). Guarded by inilock: the fetch thread
+    // writes rotated tokens while the GUI reads and writes.
+class var inistore: TIniFile;
+class var inilock: TRTLCriticalSection;
+var
     // Flashing support
   FFlashTimer: TTimer;
   FFlashEnd: TDateTime;
@@ -1724,8 +1738,9 @@ begin
     FreeAndNil(FNotifyPumpTimer);
   if Assigned(FNotifyConn) then
     FreeAndNil(FNotifyConn);
-  if Assigned(inistore) then
-    inistore.Free;
+  // inistore is class-wide and deliberately NOT freed here: the settings
+  // dialog's TrndiNative is destroyed while umain's lives on. Freed in the
+  // unit's finalization.
   inherited Destroy;
 end;
 
@@ -2302,9 +2317,14 @@ global: boolean): string;
 var
   key: string;
 begin
-  EnsureIni;
-  key := buildKey(keyname, global);
-  Result := inistore.ReadString('trndi', key, def);
+  EnterCriticalSection(inilock);
+  try
+    EnsureIni;
+    key := buildKey(keyname, global);
+    Result := inistore.ReadString('trndi', key, def);
+  finally
+    LeaveCriticalSection(inilock);
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -2318,11 +2338,16 @@ const val: string; global: boolean);
 var
   key: string;
 begin
-  EnsureIni;
-  key := buildKey(keyname, global);
-  // Write under a canonical section
-  inistore.WriteString('trndi', key, val);
-  inistore.UpdateFile;
+  EnterCriticalSection(inilock);
+  try
+    EnsureIni;
+    key := buildKey(keyname, global);
+    // Write under a canonical section
+    inistore.WriteString('trndi', key, val);
+    inistore.UpdateFile;
+  finally
+    LeaveCriticalSection(inilock);
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -2334,10 +2359,15 @@ procedure TTrndiNativeLinux.DeleteSetting(const keyname: string; global: boolean
 var
   key: string;
 begin
-  EnsureIni;
-  key := buildKey(keyname, global);
-  inistore.DeleteKey('trndi', key);
-  inistore.UpdateFile;
+  EnterCriticalSection(inilock);
+  try
+    EnsureIni;
+    key := buildKey(keyname, global);
+    inistore.DeleteKey('trndi', key);
+    inistore.UpdateFile;
+  finally
+    LeaveCriticalSection(inilock);
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -2347,8 +2377,13 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.ReloadSettings;
 begin
-  FreeAndNil(inistore);
-  // will be recreated on next access
+  EnterCriticalSection(inilock);
+  try
+    FreeAndNil(inistore);
+    // will be recreated on next access
+  finally
+    LeaveCriticalSection(inilock);
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -2363,11 +2398,12 @@ var
   i, j: integer;
   section, key, value: string;
 begin
-  EnsureIni;
+  EnterCriticalSection(inilock);
   sl := TStringList.Create;
   sections := TStringList.Create;
   keys := TStringList.Create;
   try
+    EnsureIni;
     inistore.ReadSections(sections);
     for i := 0 to sections.Count - 1 do
     begin
@@ -2388,6 +2424,7 @@ begin
     keys.Free;
     sections.Free;
     sl.Free;
+    LeaveCriticalSection(inilock);
   end;
 end;
 
@@ -2407,13 +2444,14 @@ var
 begin
   if iniData = '' then
     Exit;
-  EnsureIni;
+  EnterCriticalSection(inilock);
   sl := TStringList.Create;
   mem := TMemoryStream.Create;
   ini := nil;
   sections := TStringList.Create;
   keys := TStringList.Create;
   try
+    EnsureIni;
     mem.WriteBuffer(iniData[1], Length(iniData));
     mem.Position := 0;
     sl.LoadFromStream(mem);
@@ -2441,6 +2479,7 @@ begin
     ini.Free;
     mem.Free;
     sl.Free;
+    LeaveCriticalSection(inilock);
   end;
 end;
 
@@ -3172,7 +3211,14 @@ end;
 // libcurl's one-shot global init lives in trndi.native.request.curl's
 // initialization section, shared with every curl-backed native class.
 
+initialization
+  InitCriticalSection(TTrndiNativeLinux.inilock);
+
 finalization
+  // The settings store is class-wide (see the inistore declaration); freed
+  // here rather than in any instance destructor.
+  FreeAndNil(TTrndiNativeLinux.inistore);
+  DoneCriticalSection(TTrndiNativeLinux.inilock);
   if gWakeThread <> nil then
   begin
     try
