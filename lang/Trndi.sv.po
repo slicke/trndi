@@ -491,6 +491,10 @@ msgstr "Använd egna värden"
 msgid "Highlight the newest dot while the reading is fresh"
 msgstr "Markera den nyaste punkten när avläsningen är färsk"
 
+#: tfconf.cbdotgaps.caption
+msgid "Mark missing readings in the trend with a faint ring"
+msgstr "Mörk saknade avläsningar i trenden med en blek ring"
+
 #: tfconf.cbflash.caption
 msgid "Badge Flashing"
 msgstr "Brickflashning"
@@ -2914,6 +2918,11 @@ msgctxt "trndi.strings.rs_ux_enter_dot_size"
 msgid "Enter a value, the dot size will multiply by this"
 msgstr "Skriv in ett värde, punktstorleken kommer att gångras med detta"
 
+#: trndi.strings.rs_ux_gap_here
+#, object-pascal-format
+msgid "No reading received around %.2d:%.2d"
+msgstr "Ingen avläsning mottogs runt %.2d:%.2d"
+
 #: trndi.strings.rs_ux_noise
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
@@ -3681,6 +3690,16 @@ msgstr "När privat läge är aktiverat, visas inte avläsningar. Trndi visar is
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr "Borttagna konton blir inaktiva, de kan återställas genom att skapa om användaren med samma namn"
+
+#: uconf.rs_remove_confirm
+#, object-pascal-format
+msgid "Remove the account \"%s\"?"
+msgstr "Ta bort kontot \"%s\"?"
+
+#: uconf.rs_remove_erase
+#, object-pascal-format
+msgid "Also erase the stored settings for \"%s\"? If you keep them, adding the same name again restores the account."
+msgstr "Radera även de sparade inställningarna för \"%s\"? Om du behåller dem, kan du lägga till samma namn senare för att återställa kontot."
 
 #: uconf.rs_rotating_arrow_help
 msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
