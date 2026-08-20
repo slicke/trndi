@@ -341,12 +341,8 @@ begin
   FStoredWindowInfo.Initialized := false;
 //  fSplash.Image1.Picture.Icon := Application.Icon;
   fSplash.incProgress(7, '');
-  fSplash.lInfo.Font.Color := fSplash.lSplashWarn.Font.color;
   {$ifdef X_WIN}
   fSplash.ShowInTaskBar := stAlways;
-  {$endif}
-  {$ifdef DARWIN}
-  fSplash.lSplashWarn.Font.Size := 9;
   {$endif}
   fSplash.Show;
 end;
@@ -1083,7 +1079,8 @@ begin
   // before any threading machinery starts.
   //
   // Note: Enabled stays false here. The explicit Application.ProcessMessages
-  // further down (and any implicit pumping from fSplash.Close / Self.Show)
+  // further down (and any implicit pumping from fSplash.FadeOutAndClose /
+  // Self.Show)
   // would otherwise dispatch this 50 ms WM_TIMER while FormCreate is still
   // mid-setup. Arming happens at the very end of FormCreate.
   FBootFetchPending := true;
@@ -1108,7 +1105,7 @@ begin
   // Cleanup splash screen. Nil after Free so later `if Assigned(fSplash)`
   // checks (e.g., LoadExtensions during a reload) don't dereference a dangling
   // pointer and crash inside TControl.GetText.
-  fSplash.Close;
+  fSplash.FadeOutAndClose;
   FreeAndNil(fSplash);
   
   // Bring main window to front after splash closes
