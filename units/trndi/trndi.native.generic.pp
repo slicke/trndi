@@ -18,6 +18,13 @@
  * GitHub: https://github.com/slicke/trndi
  *)
 
+(*
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-20: The INI settings store is now class-wide with a lock, one
+ *   snapshot per process — per-instance TIniFile stores clobbered each
+ *   other's writes (see the matching note in trndi.native.linux).
+ *)
+
 {**
   @abstract(Portable fallback implementation of @link(TTrndiNativeBase).)
 
@@ -55,7 +62,13 @@ type
   }
 TTrndiNativeGeneric = class(TTrndiNativeBase)
 protected
-  inistore: TIniFile; // INI-backed settings store
+    // INI-backed settings store. Class var: every instance in the process
+    // shares one snapshot — TIniFile rewrites the whole file from memory on
+    // UpdateFile, so per-instance stores clobber each other's writes (see the
+    // matching note in trndi.native.linux). Guarded by inilock.
+class var inistore: TIniFile;
+class var inilock: TRTLCriticalSection;
+var
     {** Resolve the INI file path. Default: GetAppConfigDir + trndi.ini.
         Platforms override to follow their own conventions (e.g. Haiku's
         ~/config/settings/Trndi). }
@@ -328,8 +341,8 @@ end;
  ------------------------------------------------------------------------------}
 destructor TTrndiNativeGeneric.Destroy;
 begin
-  if inistore <> nil then
-    FreeAndNil(inistore);
+  // inistore is class-wide and deliberately NOT freed here — other instances
+  // keep using it. Freed in the unit's finalization.
   inherited Destroy;
 end;
 
@@ -343,9 +356,14 @@ function TTrndiNativeGeneric.GetSetting(const keyname: string; def: string = '';
 var
   key: string;
 begin
-  EnsureIni;
-  key := buildKey(keyname, global);
-  Result := inistore.ReadString('trndi', key, def);
+  EnterCriticalSection(inilock);
+  try
+    EnsureIni;
+    key := buildKey(keyname, global);
+    Result := inistore.ReadString('trndi', key, def);
+  finally
+    LeaveCriticalSection(inilock);
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -358,10 +376,15 @@ procedure TTrndiNativeGeneric.SetSetting(const keyname: string; const val: strin
 var
   key: string;
 begin
-  EnsureIni;
-  key := buildKey(keyname, global);
-  inistore.WriteString('trndi', key, val);
-  inistore.UpdateFile;
+  EnterCriticalSection(inilock);
+  try
+    EnsureIni;
+    key := buildKey(keyname, global);
+    inistore.WriteString('trndi', key, val);
+    inistore.UpdateFile;
+  finally
+    LeaveCriticalSection(inilock);
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -374,10 +397,15 @@ procedure TTrndiNativeGeneric.DeleteSetting(const keyname: string;
 var
   key: string;
 begin
-  EnsureIni;
-  key := buildKey(keyname, global);
-  inistore.DeleteKey('trndi', key);
-  inistore.UpdateFile;
+  EnterCriticalSection(inilock);
+  try
+    EnsureIni;
+    key := buildKey(keyname, global);
+    inistore.DeleteKey('trndi', key);
+    inistore.UpdateFile;
+  finally
+    LeaveCriticalSection(inilock);
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -387,8 +415,13 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTrndiNativeGeneric.ReloadSettings;
 begin
-  if inistore <> nil then
-    FreeAndNil(inistore);
+  EnterCriticalSection(inilock);
+  try
+    if inistore <> nil then
+      FreeAndNil(inistore);
+  finally
+    LeaveCriticalSection(inilock);
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -403,11 +436,12 @@ var
   i, j: integer;
   section, key, value: string;
 begin
-  EnsureIni;
+  EnterCriticalSection(inilock);
   sl := TStringList.Create;
   sections := TStringList.Create;
   keys := TStringList.Create;
   try
+    EnsureIni;
     inistore.ReadSections(sections);
     for i := 0 to sections.Count - 1 do
     begin
@@ -428,6 +462,7 @@ begin
     keys.Free;
     sections.Free;
     sl.Free;
+    LeaveCriticalSection(inilock);
   end;
 end;
 
@@ -447,13 +482,14 @@ var
 begin
   if iniData = '' then
     Exit;
-  EnsureIni;
+  EnterCriticalSection(inilock);
   sl := TStringList.Create;
   mem := TMemoryStream.Create;
   ini := nil;
   sections := TStringList.Create;
   keys := TStringList.Create;
   try
+    EnsureIni;
     mem.WriteBuffer(iniData[1], Length(iniData));
     mem.Position := 0;
     sl.LoadFromStream(mem);
@@ -481,6 +517,7 @@ begin
     ini.Free;
     mem.Free;
     sl.Free;
+    LeaveCriticalSection(inilock);
   end;
 end;
 
@@ -1205,5 +1242,14 @@ begin
   else
     PerformRequest(false, Result);
 end;
+
+initialization
+  InitCriticalSection(TTrndiNativeGeneric.inilock);
+
+finalization
+  // The settings store is class-wide (see the inistore declaration); freed
+  // here rather than in any instance destructor.
+  FreeAndNil(TTrndiNativeGeneric.inistore);
+  DoneCriticalSection(TTrndiNativeGeneric.inilock);
 
 end.
