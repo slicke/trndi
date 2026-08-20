@@ -586,7 +586,13 @@ begin
   UpdateTrendElements;
 
   if not Assigned(api) then
+  begin
+    // No backend was created at boot — the window is showing the Setup
+    // screen, whose layout still has to track the window size.
+    if firstboot then
+      LayoutSetupScreen;
     Exit;
+  end;
 
   UpdateApiInformation;
 
