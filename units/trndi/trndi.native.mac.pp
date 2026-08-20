@@ -170,7 +170,9 @@ type
 implementation
 
 uses
-  DateUtils, trndi.native.async;
+  // CGBase carries CGFloat, the type NSRect/NSSize are built from; CocoaAll
+  // itself does not re-export it.
+  DateUtils, CGBase, trndi.native.async;
 
 const
   ObjCLib = '/usr/lib/libobjc.A.dylib';
