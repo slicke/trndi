@@ -74,6 +74,13 @@
  * - 2026-08-16: The backend-warning strip on the General tab is 20px taller,
  *   so its label holds the three lines the Tandem, CareLink and original
  *   Dexcom captions already carry; the third line was being clipped.
+ * - 2026-08-20: The Multi User tab no longer writes to storage while the
+ *   dialog is open: color/nick edits are staged (kept when browsing the user
+ *   list, where they were silently discarded before) and persisted by
+ *   CommitUserAccounts only when the dialog is saved. Removing an account now
+ *   asks for confirmation and offers to erase its stored settings, which used
+ *   to linger with no way to delete them. The account panel's own Save button
+ *   was removed — with edits staged automatically it had nothing left to do.
  *)
 
 unit uconf;
@@ -181,7 +188,6 @@ TfConf = class(TForm)
   bSysTouch: TButton;
   bTestAnnounce: TButton;
   btReset: TButton;
-  btUserSave: TButton;
   Button3: TButton;
   bvExt: TBevel;
   bvExt1: TBevel;
@@ -471,7 +477,6 @@ TfConf = class(TForm)
   pcMain: TPageControl;
   pnDisplay: TPanel;
   pUserNick: TPanel;
-  pUserSave2: TPanel;
   cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
   rbTrendWindow: TRadioGroup;
@@ -565,7 +570,6 @@ TfConf = class(TForm)
   procedure bExportSettingsClick(Sender: TObject);
   procedure bImportSettingsClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
-  procedure btUserSaveClick(Sender: TObject);
   procedure cbColorPresetChange(Sender: TObject);
   procedure pbDotPreviewPaint(Sender: TObject);
   procedure pbDisplayPreviewPaint(Sender: TObject);
@@ -612,7 +616,6 @@ TfConf = class(TForm)
   procedure lbExtensionsClickCheck(Sender: TObject);
   procedure lbExtensionsDblClick(Sender: TObject);
   procedure lbExtensionsSelectionChange(Sender: TObject; User: boolean);
-  procedure lbUsersEnter(Sender: TObject);
   procedure lbUsersSelectionChange(Sender: TObject; User: boolean);
   procedure lConfigPredictClick({%H-}Sender: TObject);
   procedure lLicenseClick({%H-}Sender: TObject);
@@ -662,6 +665,31 @@ private
   {** Click targets as the renderer last reported them; hit-tested in
       pbDisplayPreviewMouseDown. }
   FPreviewZones: TDisplayPreviewZones;
+  {** Multi User tab staging. Nothing on that tab is written to storage while
+      the dialog is open — color/nick edits are staged in these lists and only
+      CommitUserAccounts (called from umain's save path, i.e. after the user
+      answered Yes to saving) persists them. This keeps the tab consistent
+      with every other tab, which is also cancellable. Keys are account names,
+      with USER_KEY_DEFAULT standing in for the default account ('-' can never
+      collide, account names are letters/digits/spaces only). }
+  FUserNicks: TStringList;
+  FUserColors: TStringList;
+  {** Accounts removed with "erase settings"; wiped on commit. A plain remove
+      keeps the settings so re-adding the same name restores the account. }
+  FUserErased: TStringList;
+  {** Staging key of the account currently shown in gbMulti; '' when none. }
+  FShownUserKey: string;
+  {** True when the account panel's fields differ from what was loaded or
+      last staged — set by their OnChange handlers, cleared when the fields
+      are (re)filled or staged. }
+  FUserDirty: boolean;
+  {** Staging key for a list row: USER_KEY_DEFAULT for the default account
+      row (caption starts with '-'), the account name otherwise. }
+  function UserKeyOf(const item: string): string;
+  {** Stage the account panel's pending edits (if any) under FShownUserKey. }
+  procedure StageShownUserEdits;
+  {** Point tnative at the account behind a staging key. }
+  procedure SetConfigUserFromKey(const key: string);
   {** Open the shared font picker for one of the preview fonts and repaint
       the miniature on OK. }
   procedure PickDisplayFont(target: TFont; const title, sample: string);
@@ -685,6 +713,10 @@ public
   procedure EnsureTTSVoices;
   procedure PopulateChromaDevices;
   procedure UpdatePredictionStates;
+  {** Persist the Multi User tab: wipe accounts removed with "erase settings"
+      and write the staged color/nick edits. Called by umain's save path after
+      the user confirmed saving; cancelling the dialog discards everything. }
+  procedure CommitUserAccounts;
   {** Constrain the custom range spin edits to the low/high limit spin edits.
       The custom range subdivides the low/high area, so it can never sit
       outside it. Call after loading values or switching unit. }
@@ -753,6 +785,11 @@ end;
 
 var
 tnative: TrndiNative;
+
+const
+  {** Staging key for the default account on the Multi User tab; account names
+      are letters/digits/spaces only, so '-' can never collide. }
+USER_KEY_DEFAULT = '-';
 
 resourcestring
 RS_HINTS_ENABLE = 'Explain parts of the window when they are clicked';
@@ -910,6 +947,9 @@ RS_CURRENT_ACC_NO = 'These settings are available when using a multi-account';
 RS_CURRENT_ACC_DEF = 'Settings for "default" only apply while multi-user is active';
 RS_REMOVE_ACC =
   'Removed accounts are made inactive, and can be restored by adding the same name again';
+RS_REMOVE_CONFIRM = 'Remove the account "%s"?';
+RS_REMOVE_ERASE =
+  'Also erase the stored settings for "%s"? If you keep them, adding the same name again restores the account.';
 RS_AUTO = 'Auto-detect';
 RS_UPTODATE = 'You are up to date';
 RS_NEWVER = 'Version %s is available, would you like to go to the downloads page? You can also ignore this warning for 2 weeks.';
@@ -1501,41 +1541,93 @@ begin
   FExtDeferredPath := '';
 end;
 
-procedure TfConf.lbUsersEnter(Sender: TObject);
-begin
+{------------------------------------------------------------------------------
+  Multi User tab staging helpers
 
+  The tab never writes to storage while the dialog is open: color/nick edits
+  are staged in FUserNicks/FUserColors and "erase settings" removals in
+  FUserErased, and CommitUserAccounts persists it all only when the user
+  answers Yes to saving. This keeps the tab consistent with the rest of the
+  dialog (before, the account panel's Save wrote immediately while add/remove
+  was deferred — cancelling could leave settings for accounts that were never
+  created).
+ ------------------------------------------------------------------------------}
+function TfConf.UserKeyOf(const item: string): string;
+begin
+  if (item <> '') and (item[1] = '-') then
+    Result := USER_KEY_DEFAULT
+  else
+    Result := item;
+end;
+
+procedure TfConf.SetConfigUserFromKey(const key: string);
+begin
+  if key = USER_KEY_DEFAULT then
+    tnative.configUser := ''
+  else
+    tnative.configUser := key;
+end;
+
+procedure TfConf.StageShownUserEdits;
+procedure Stage(sl: TStringList; const val: string);
+  var
+    i: integer;
+  begin
+    // Values[] can't be used: assigning '' there deletes the pair, and an
+    // emptied nickname must stay staged
+    i := sl.IndexOfName(FShownUserKey);
+    if i >= 0 then
+      sl[i] := FShownUserKey + '=' + val
+    else
+      sl.Add(FShownUserKey + '=' + val);
+  end;
+begin
+  if (FShownUserKey = '') or not gbMulti.Enabled or not FUserDirty then
+    Exit;
+  Stage(FUserColors, IntToStr(cbUser.ButtonColor));
+  Stage(FUserNicks, edNick.Text);
+  FUserDirty := false;
 end;
 
 procedure TfConf.lbUsersSelectionChange(Sender: TObject; User: boolean);
 var
-  u: string;
+  u, key: string;
+  i: integer;
 begin
-  btUserSave.Enabled := false;
+  StageShownUserEdits; // Browsing the list must not lose pending edits
+
   if lbUsers.ItemIndex < 0 then
   begin
+    FShownUserKey := '';
     gbMulti.Enabled := false;
+    FUserDirty := false;
     Exit;
   end;
 
   u := lbUsers.Items[lbusers.ItemIndex];
+  key := UserKeyOf(u);
+  bRemove.Enabled := key <> USER_KEY_DEFAULT;
 
-  if u[1] = '-' then
-  begin
-    tNative.configUser := '';
-    bRemove.Enabled := false;
-  end
+  // Show staged edits when there are any, the stored values otherwise
+  SetConfigUserFromKey(key);
+  i := FUserColors.IndexOfName(key);
+  if i >= 0 then
+    cbUser.ButtonColor := TColor(StrToIntDef(FUserColors.ValueFromIndex[i], clBlack))
   else
-  begin
-    tNative.configUser := u;
-    bRemove.Enabled := true;
-  end;
-
-  cbUser.ButtonColor := tNative.GetColorSetting('user.color', clBlack);
-  edNick.Text := tNative.GetSetting('user.nick', '');
+    cbUser.ButtonColor := tNative.GetColorSetting('user.color', clBlack);
+  i := FUserNicks.IndexOfName(key);
+  if i >= 0 then
+    edNick.Text := FUserNicks.ValueFromIndex[i]
+  else
+    edNick.Text := tNative.GetSetting('user.nick', '');
+  // Reset the prefix so unrelated tnative reads elsewhere in the dialog
+  // (extension permissions etc.) don't resolve against the browsed account
+  tNative.configUser := '';
   lUserName.Caption := u;
 
+  FShownUserKey := key;
   gbMulti.Enabled := true;
-  btUserSave.Enabled := false; // Twice as the fields change during update
+  FUserDirty := false; // Filling the fields fired their OnChange
 end;
 
 procedure TfConf.lConfigPredictClick(Sender: TObject);
@@ -1679,7 +1771,7 @@ end;
 
 procedure TfConf.cbUserColorChanged(Sender: TObject);
 begin
-  btUserSave.Enabled := true;
+  FUserDirty := true;
 end;
 
 procedure TfConf.edCommaSep1Change(Sender: TObject);
@@ -1696,7 +1788,7 @@ end;
 
 procedure TfConf.edNickChange(Sender: TObject);
 begin
-  btUserSave.Enabled := true;
+  FUserDirty := true;
 end;
 
 procedure TfConf.ePassEnter({%H-}Sender: TObject);
@@ -1886,6 +1978,7 @@ var
   s, x: string;
   c: char;
   mr: TModalResult;
+  i: integer;
 begin
   s := SlickeInput(sdsAuto, RS_ENTER_USER, RS_ENTER_USER, RS_ENTER_NAME, '', mr);
   if mr = mrOk then
@@ -1909,8 +2002,14 @@ begin
         ShowMessage(RS_DUPE_NAME);
         Exit;
       end;
+    // Re-adding a name cancels a pending "erase settings" from this session,
+    // restoring the account instead
+    i := FUserErased.IndexOf(s);
+    if i >= 0 then
+      FUserErased.Delete(i);
     lbUsers.AddItem(s, nil);
     lbUsers.Enabled := true;
+    lbUsers.ItemIndex := lbUsers.Items.Count - 1; // Show the new account
   end;
 end;
 
@@ -2026,17 +2125,50 @@ begin
 end;
 
 procedure TfConf.bRemoveClick(Sender: TObject);
+var
+  uname: string;
+  i: integer;
 begin
-  if lbUsers.ItemIndex > -1 then
-    lbUsers.DeleteSelected;
-  if lbUsers.Items.Count <= 1 then
-  begin
-    lbUsers.Enabled := false;
-    gbMulti.Enabled := false;
-  end;
+  if lbUsers.ItemIndex < 0 then
+    Exit;
+  uname := lbUsers.Items[lbUsers.ItemIndex];
+  if UserKeyOf(uname) = USER_KEY_DEFAULT then
+    Exit; // The default account cannot be removed
 
-  ShowMessage(RS_REMOVE_ACC);
-  bRemove.Enabled := false; // No item selexted now
+  if SlickeDialog(sdsAuto, tsMulti.Caption, Format(RS_REMOVE_CONFIRM, [uname]),
+    [[mbYes, mbNo], [mbNo, mbYes]]) <> mrYes then
+    Exit;
+
+  // Removal alone is a soft delete (re-adding the name restores the account);
+  // wiping the stored settings is a separate, explicit choice — and even that
+  // only happens if the dialog is saved (see CommitUserAccounts)
+  if SlickeDialog(sdsAuto, tsMulti.Caption, Format(RS_REMOVE_ERASE, [uname]),
+    [[mbYes, mbNo], [mbNo, mbYes]]) = mrYes then
+  begin
+    if FUserErased.IndexOf(uname) < 0 then
+      FUserErased.Add(uname);
+  end
+  else
+    ShowMessage(RS_REMOVE_ACC);
+
+  // Drop staged edits so a re-added name starts from its stored values
+  i := FUserNicks.IndexOfName(uname);
+  if i >= 0 then
+    FUserNicks.Delete(i);
+  i := FUserColors.IndexOfName(uname);
+  if i >= 0 then
+    FUserColors.Delete(i);
+  if FShownUserKey = uname then
+    FShownUserKey := '';
+
+  lbUsers.DeleteSelected;
+  if lbUsers.Items.Count <= 1 then
+    lbUsers.Enabled := false;
+  if lbUsers.ItemIndex < 0 then
+  begin
+    gbMulti.Enabled := false;
+    bRemove.Enabled := false; // No item selected now
+  end;
 end;
 
 procedure TfConf.bBackendHelpClick(Sender: TObject);
@@ -2564,17 +2696,50 @@ begin
   end;
 end;
 
-procedure TfConf.btUserSaveClick(Sender: TObject);
+{------------------------------------------------------------------------------
+  CommitUserAccounts
+  ------------------
+  Persist the Multi User tab. Called from umain's SaveUserSettings, i.e. only
+  after the user answered Yes to saving — cancelling the dialog discards the
+  staged edits and pending erasures alike. Runs before the caller rewrites
+  users.names, so lbUsers still holds the final account list.
+ ------------------------------------------------------------------------------}
+procedure TfConf.CommitUserAccounts;
+var
+  i: integer;
+  key: string;
+function KeyIsLive(const key: string): boolean;
+  begin
+    // The default account always exists; named accounts must still be listed
+    // (an edit staged before the account was removed must not resurrect it)
+    Result := (key = USER_KEY_DEFAULT) or (lbUsers.Items.IndexOf(key) >= 0);
+  end;
 begin
-  if lUserName.Caption[1] = '-' then
-    tNative.configUser := ''
-  else
-    tNative.configUser := lUserName.Caption;
+  StageShownUserEdits; // Catch edits made right before closing the dialog
 
-  tNative.SetColorSetting('user.color', cbUser.ButtonColor);
-  tNative.SetSetting('user.nick', edNick.Text);
+  for i := 0 to FUserErased.Count - 1 do
+    tnative.WipeUserSettings(FUserErased[i]);
 
-  btUserSave.Enabled := false;
+  for i := 0 to FUserColors.Count - 1 do
+  begin
+    key := FUserColors.Names[i];
+    if not KeyIsLive(key) then
+      Continue;
+    SetConfigUserFromKey(key);
+    tnative.SetColorSetting('user.color',
+      TColor(StrToIntDef(FUserColors.ValueFromIndex[i], clBlack)));
+  end;
+
+  for i := 0 to FUserNicks.Count - 1 do
+  begin
+    key := FUserNicks.Names[i];
+    if not KeyIsLive(key) then
+      Continue;
+    SetConfigUserFromKey(key);
+    tnative.SetSetting('user.nick', FUserNicks.ValueFromIndex[i]);
+  end;
+
+  tnative.configUser := '';
 end;
 
 procedure TfConf.bUseURLHelpClick(Sender: TObject);
@@ -2786,6 +2951,11 @@ begin
   FFontArrow.Assign(pnDisplay.Font);
   FFontAgo.Assign(pnDisplay.Font);
 
+  // Multi User tab staging; persisted by CommitUserAccounts on dialog save
+  FUserNicks := TStringList.Create;
+  FUserColors := TStringList.Create;
+  FUserErased := TStringList.Create;
+
   ApplyCaptionsFromResources;
 
   // Everything that changes what the previews show repaints them. The mode
@@ -2909,6 +3079,9 @@ begin
   FFontVal.Free;
   FFontArrow.Free;
   FFontAgo.Free;
+  FUserNicks.Free;
+  FUserColors.Free;
+  FUserErased.Free;
 end;
 
 {------------------------------------------------------------------------------

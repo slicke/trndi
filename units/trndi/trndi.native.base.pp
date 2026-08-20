@@ -22,6 +22,8 @@
  *   trndi.native.colors unit, which owns the TColor definition (re-exported
  *   here) and the default isDarkMode heuristic. This unit keeps no build-mode
  *   conditionals of its own.
+ * - 2026-08-20: Added WipeUserSettings, which deletes every stored key
+ *   belonging to one multi-user account (found by prefix via ExportSettings).
  *)
 
 {**
@@ -252,6 +254,11 @@ class var touchOverride: TTrndiBool;
     virtual; abstract;
     {** Delete a non-user-scoped key. }
   procedure DeleteRootSetting(keyname: string);
+    {** Delete every stored setting belonging to the multi-user account
+      @param(username) — i.e. all keys written while @code(configUser) was that
+      name. Does nothing for an empty name (the default account's keys carry no
+      prefix, so they cannot be told apart from root keys). }
+  procedure WipeUserSettings(const username: string);
     {** Read a non-user-scoped key or default. }
   function GetRootSetting(const keyname: string; def: string = ''): string;
     {** Read a string setting or default. Empty is a valid value, @link(GetSettingEx) handles empty values as default; honor @param(global) scoping. }
@@ -1930,6 +1937,43 @@ end;
 procedure TTrndiNativeBase.DeleteRootSetting(keyname: string);
 begin
   DeleteSetting(keyname, true);
+end;
+
+{------------------------------------------------------------------------------
+  WipeUserSettings
+  ----------------
+  Delete every stored key that belongs to one multi-user account. There is no
+  cross-platform key enumeration, but ExportSettings already renders the whole
+  store as "key=value" lines, so the account's keys are found by their
+  "<username>_" prefix (see buildKey) and deleted one by one. Account names are
+  restricted to letters, digits and spaces (never '_'), so a name can not
+  prefix-collide with another account's keys.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.WipeUserSettings(const username: string);
+var
+  lines: TStringList;
+  line, prefix, key: string;
+  eq: integer;
+begin
+  if Trim(username) = '' then
+    Exit; // The default account's keys are unprefixed; refuse to guess
+
+  prefix := username + '_';
+  lines := TStringList.Create;
+  try
+    lines.Text := ExportSettings;
+    for line in lines do
+    begin
+      eq := Pos('=', line);
+      if eq < 2 then
+        Continue; // Section header or blank line
+      key := Copy(line, 1, eq - 1);
+      if Copy(key, 1, Length(prefix)) = prefix then
+        DeleteSetting(key, true); // The exported key already carries the prefix
+    end;
+  finally
+    lines.Free;
+  end;
 end;
 
 {------------------------------------------------------------------------------

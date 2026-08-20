@@ -35,6 +35,10 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-20): SaveUserSettings now calls the dialog's
+   CommitUserAccounts before rewriting users.names, persisting the Multi User
+   tab's staged color/nick edits and pending account erasures — the tab itself
+   no longer writes to storage while the dialog is open. *)
 (* MODIFICATION NOTICE (2026-08-11): The alert-hysteresis spinners now load
    before the mmol/L unit conversion runs, matching the save path's mg/dL
    premise; loading after it showed the stored mg/dL figure as mmol and
@@ -786,6 +790,11 @@ procedure SaveUserSettings(f: TfConf);
       native.SetSetting('main.alternate', cbAlternate.Checked);
       native.SetSetting('main.ontop',     cbOnTop.Checked);
       native.SetSetting('main.noborders', cbNoBorders.Checked);
+
+      // Persist the Multi User tab's staged edits and pending erasures while
+      // lbUsers still holds the default row (the commit checks the list to
+      // skip edits staged for accounts that were removed afterwards)
+      f.CommitUserAccounts;
 
       for i := lbUsers.Items.Count - 1 downto 0 do
         if lbUsers.items[i][1] = '-' then

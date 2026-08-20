@@ -259,6 +259,7 @@ type
     procedure cbMediaDisableChange(Sender: TObject);
     procedure UpdatePredictionStates;
     procedure ApplyRangeBounds;
+    procedure CommitUserAccounts;
 
     constructor Create(AOwner: TComponent = nil);
     destructor Destroy; override;
@@ -301,6 +302,11 @@ begin
 end;
 
 procedure TfConf.ApplyRangeBounds;
+begin
+  // no-op in tests
+end;
+
+procedure TfConf.CommitUserAccounts;
 begin
   // no-op in tests
 end;

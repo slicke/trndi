@@ -3805,7 +3805,6 @@ object fConf: TfConf
         ItemHeight = 0
         TabOrder = 0
         TopIndex = -1
-        OnEnter = lbUsersEnter
         OnSelectionChange = lbUsersSelectionChange
       end
       object lUserTrack: TLabel
@@ -3903,27 +3902,6 @@ object fConf: TfConf
             BorderSpacing.Around = 10
             Caption = 'Nickname:'
             Layout = tlCenter
-          end
-        end
-        object pUserSave2: TPanel
-          Left = 445
-          Height = 72
-          Top = 0
-          Width = 170
-          Align = alRight
-          BevelOuter = bvNone
-          ClientHeight = 72
-          ClientWidth = 170
-          ParentBackground = False
-          TabOrder = 2
-          object btUserSave: TButton
-            Left = 24
-            Height = 25
-            Top = 24
-            Width = 112
-            Caption = 'Save'
-            TabOrder = 0
-            OnClick = btUserSaveClick
           end
         end
       end
