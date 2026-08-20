@@ -3795,18 +3795,6 @@ object fConf: TfConf
       Caption = 'Multi User'
       ClientHeight = 555
       ClientWidth = 639
-      object lbUsers: TListBox
-        Left = 10
-        Height = 281
-        Top = 33
-        Width = 619
-        Align = alClient
-        BorderSpacing.Around = 10
-        ItemHeight = 0
-        TabOrder = 0
-        TopIndex = -1
-        OnSelectionChange = lbUsersSelectionChange
-      end
       object lUserTrack: TLabel
         Left = 15
         Height = 18
@@ -3819,96 +3807,124 @@ object fConf: TfConf
         BorderSpacing.Around = 5
         Caption = 'Add users below, if you wish to track more than one person.'
       end
-      object gbMulti: TGroupBox
+      object gbUsers: TGroupBox
         Left = 10
-        Height = 101
-        Top = 324
-        Width = 619
-        Align = alBottom
+        Height = 405
+        Top = 33
+        Width = 339
+        Align = alClient
+        BorderSpacing.Around = 10
+        Caption = 'Accounts'
+        ClientHeight = 376
+        ClientWidth = 335
+        ParentBackground = False
+        TabOrder = 0
+        object lbUsers: TListBox
+          Left = 5
+          Height = 366
+          Top = 5
+          Width = 325
+          Align = alClient
+          BorderSpacing.Around = 5
+          ItemHeight = 0
+          TabOrder = 0
+          TopIndex = -1
+          OnSelectionChange = lbUsersSelectionChange
+        end
+      end
+      object gbMulti: TGroupBox
+        Left = 359
+        Height = 405
+        Top = 33
+        Width = 270
+        Align = alRight
         BorderSpacing.Around = 10
         Caption = 'Account Settings'
-        ClientHeight = 72
-        ClientWidth = 615
+        ClientHeight = 376
+        ClientWidth = 266
         Enabled = False
         ParentBackground = False
         TabOrder = 1
-        object pUserColor: TPanel
-          Left = 0
-          Height = 72
-          Top = 0
-          Width = 170
-          Align = alLeft
-          BevelOuter = bvNone
-          ClientHeight = 72
-          ClientWidth = 170
-          ParentBackground = False
-          TabOrder = 0
-          object lUserName: TLabel
-            Left = 16
-            Height = 18
-            Top = 0
-            Width = 32
-            Caption = 'User:'
-          end
-          object cbUser: TColorButton
-            Left = 16
-            Height = 25
-            Top = 24
-            Width = 136
-            BorderWidth = 2
-            ButtonColorSize = 16
-            ButtonColor = clBlack
-            Caption = 'Account color'
-            OnColorChanged = cbUserColorChanged
-          end
-          object Label5: TLabel
-            Left = 16
-            Height = 18
-            Top = 48
-            Width = 114
-            Caption = 'Black = transparent'
-            Font.Style = [fsItalic]
-            ParentFont = False
-          end
+        object lUserName: TLabel
+          Left = 6
+          Height = 18
+          Top = 6
+          Width = 254
+          Align = alTop
+          BorderSpacing.Around = 6
+          Caption = 'User:'
+          Font.Style = [fsBold]
+          ParentFont = False
+          WordWrap = True
         end
-        object pUserNick: TPanel
-          Left = 170
-          Height = 72
-          Top = 0
-          Width = 275
-          Align = alClient
-          BevelOuter = bvNone
-          ClientHeight = 72
-          ClientWidth = 275
-          ParentBackground = False
+        object Label3: TLabel
+          Left = 6
+          Height = 18
+          Top = 36
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Top = 6
+          Caption = 'Nickname:'
+        end
+        object edNick: TEdit
+          Left = 6
+          Height = 23
+          Top = 58
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Top = 4
+          TabOrder = 0
+          OnChange = edNickChange
+        end
+        object cbUser: TColorButton
+          Left = 6
+          Height = 25
+          Top = 93
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Top = 12
+          BorderWidth = 2
+          ButtonColorSize = 16
+          ButtonColor = clBlack
+          Caption = 'Account color'
+          OnColorChanged = cbUserColorChanged
+        end
+        object Label5: TLabel
+          Left = 6
+          Height = 18
+          Top = 122
+          Width = 254
+          Align = alTop
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Top = 4
+          Caption = 'Black = transparent'
+          Font.Style = [fsItalic]
+          ParentFont = False
+        end
+        object bRemove: TButton
+          Left = 6
+          Height = 28
+          Top = 342
+          Width = 254
+          Align = alBottom
+          AutoSize = True
+          BorderSpacing.Around = 6
+          Caption = '- Remove'
           TabOrder = 1
-          object edNick: TEdit
-            Left = 85
-            Height = 23
-            Top = 24
-            Width = 190
-            Align = alClient
-            BorderSpacing.Top = 24
-            BorderSpacing.Bottom = 25
-            TabOrder = 0
-            OnChange = edNickChange
-          end
-          object Label3: TLabel
-            Left = 10
-            Height = 52
-            Top = 10
-            Width = 65
-            Align = alLeft
-            BorderSpacing.Around = 10
-            Caption = 'Nickname:'
-            Layout = tlCenter
-          end
+          OnClick = bRemoveClick
         end
       end
       object Panel1: TPanel
         Left = 0
         Height = 42
-        Top = 435
+        Top = 448
         Width = 639
         Align = alBottom
         BevelOuter = bvNone
@@ -3916,17 +3932,6 @@ object fConf: TfConf
         ClientWidth = 639
         ParentBackground = False
         TabOrder = 2
-        object bRemove: TButton
-          Left = 437
-          Height = 30
-          Top = 0
-          Width = 75
-          Align = alRight
-          Caption = '- Remove'
-          Constraints.MaxHeight = 30
-          TabOrder = 0
-          OnClick = bRemoveClick
-        end
         object bAdd: TButton
           Left = 512
           Height = 30
@@ -3936,7 +3941,7 @@ object fConf: TfConf
           BorderSpacing.Right = 10
           Caption = '+ Add'
           Constraints.MaxHeight = 30
-          TabOrder = 1
+          TabOrder = 0
           OnClick = bAddClick
         end
         object bMultiUserHelp: TButton
@@ -3948,7 +3953,7 @@ object fConf: TfConf
           BorderSpacing.Right = 10
           Caption = '?'
           Constraints.MaxHeight = 30
-          TabOrder = 2
+          TabOrder = 1
           OnClick = bMultiUserHelpClick
         end
       end

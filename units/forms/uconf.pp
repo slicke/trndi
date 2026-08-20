@@ -81,6 +81,10 @@
  *   asks for confirmation and offers to erase its stored settings, which used
  *   to linger with no way to delete them. The account panel's own Save button
  *   was removed — with edits staged automatically it had nothing left to do.
+ * - 2026-08-20: The Multi User tab is laid out like the Extensions tab:
+ *   accounts list on the left, an Account Settings column on the right with
+ *   the account name as its header and Remove at its foot, Add and help
+ *   underneath. The wrapper panels inside the old bottom strip are gone.
  *)
 
 unit uconf;
@@ -368,6 +372,7 @@ TfConf = class(TForm)
   fsLoRange: TFloatSpinEdit;
   gbDisplayPrefs: TGroupBox;
   gbMulti: TGroupBox;
+  gbUsers: TGroupBox;
   gbOverride: TGroupBox;
   gbAlertBehavior: TGroupBox;
   lAlertHiCol: TLabel;
@@ -473,10 +478,8 @@ TfConf = class(TForm)
   pnBackend: TPanel;
   pnHelp: TPanel;
 
-  pUserColor: TPanel;
   pcMain: TPageControl;
   pnDisplay: TPanel;
-  pUserNick: TPanel;
   cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
   rbTrendWindow: TRadioGroup;
