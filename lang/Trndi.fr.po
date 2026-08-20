@@ -1937,8 +1937,8 @@ msgid "Apply this value when Trndi starts?"
 msgstr "Appliquer cette valeur au démarrage de Trndi ?"
 
 #: trndi.strings.rs_cleanup
-msgid "Wait. Shutting down extensions engine..."
-msgstr "Veuillez patienter. Arrêt du moteur d'extensions..."
+msgid "Shutting down the extension engine..."
+msgstr "Arrêt du moteur d'extensions..."
 
 #: trndi.strings.rs_cleanup_wait
 #, object-pascal-format
@@ -2084,10 +2084,6 @@ msgstr "Fichier « %s » introuvable"
 msgctxt "trndi.strings.rs_ext_msg"
 msgid "Extension Message"
 msgstr "Message d'extension"
-
-#: trndi.strings.rs_ext_shutdown
-msgid "Shutting down extensions..."
-msgstr "Arrêt des extensions..."
 
 #: trndi.strings.rs_ext_user_info
 msgctxt "trndi.strings.rs_ext_user_info"

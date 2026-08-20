@@ -620,3 +620,54 @@ begin
   if native.GetBoolSetting('main.noborders', false) then
     Self.BorderStyle := bsNone;
 end;
+
+{------------------------------------------------------------------------------
+  ShowShutdownScreen
+  ------------------
+  The quit is confirmed and the extension engine is about to be torn down,
+  which can block for several seconds. Turn the window into a calm "shutting
+  down" notice styled after the splash screen: all reading UI is hidden, the
+  glucose-coloured backdrop becomes the splash dark, and FormPaint draws the
+  splash accent line along the top (see umain_paint.inc).
+ ------------------------------------------------------------------------------}
+procedure TfBG.ShowShutdownScreen;
+const
+  COL_BACKDROP = $001E1E1E; // Splash card dark (usplash COL_CARD)
+  COL_SUBTEXT  = $009E9E9E;
+var
+  i: integer;
+begin
+  FShutdownScreen := true;
+
+  // Everything except the two message labels goes — trend dots, panels and
+  // the touch menu are all direct children, so one sweep covers them.
+  for i := 0 to ControlCount - 1 do
+    if (Controls[i] <> lVal) and (Controls[i] <> lDiff) then
+      Controls[i].Visible := false;
+
+  Color := COL_BACKDROP;
+  Screen.Cursor := crHourGlass; // Restored implicitly when the process exits
+
+  // lVal normally renders a reading at fill-the-window size; a sentence at
+  // that size just clips. Give it a deliberate, moderate size instead.
+  lVal.OptimalFill := false;
+  lVal.WordWrap := true;
+  lVal.Alignment := taCenter;
+  lVal.Layout := tlCenter;
+  lVal.Font.Color := clWhite;
+  lVal.Font.Height := Scale96ToForm(24);
+  lVal.Font.Style := [];
+  lVal.Caption := RS_CLEANUP;
+  lVal.Visible := true;
+
+  // Sub-line along the bottom (ResizeUIElements already parked lDiff there)
+  lDiff.OptimalFill := false;
+  lDiff.Alignment := taCenter;
+  lDiff.Font.Color := COL_SUBTEXT;
+  lDiff.Font.Height := Scale96ToForm(14);
+  lDiff.Caption := Format(RS_CLEANUP_WAIT, [20]);
+  lDiff.Visible := true;
+
+  Invalidate;
+  Application.ProcessMessages; // Paint it before the blocking teardown starts
+end;

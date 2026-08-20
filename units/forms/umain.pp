@@ -614,6 +614,7 @@ private
     end;
   titlecolor: boolean;
   FShuttingDown: boolean; // Flag to prevent recursive shutdown calls
+  FShutdownScreen: boolean; // Shutdown screen is up: skip normal paint/resize work
   FCloseAfterFormCreate: boolean; // Flag to close form after initialization completes
 
     // Performance optimization fields
@@ -1060,6 +1061,11 @@ private
    }
   procedure ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
     customTl: TTextLayout = tlCenter; allowCustom: boolean = true; padding: integer = 0);
+  {** Swap the main window to the extension-shutdown screen: hide all reading
+      UI, paint a neutral splash-style backdrop and show a centered wait
+      message. Called from FormClose once the quit is confirmed.
+   }
+  procedure ShowShutdownScreen;
 
     // Performance optimization methods
   {** Compute a simple hash of an array of readings used for change detection
@@ -1620,24 +1626,12 @@ begin
 end;
 
 // FormCloseQuery event handler - called BEFORE FormClose
-procedure TfBG.FormCloseQuery(Sender: TObject; var CanClose: boolean);
+procedure TfBG.FormCloseQuery({%H-}Sender: TObject; var CanClose: boolean);
 begin
-  {$ifdef TrndiExt}
-  // Show immediate user feedback for shutdown process using big lVal text
-  lVal.Caption := RS_EXT_SHUTDOWN;
-  lVal.Visible := true;
-  Application.ProcessMessages; // Ensure caption is updated immediately
-  
-  // Set global shutdown flag immediately to prevent any new JS operations
-  try
-    trndi.ext.engine.SetGlobalShutdown;
-  except
-    // Ignore any errors during shutdown flag setting
-  end;
-  {$endif}
-
-  // Always allow close to proceed. Actual termination is decided in FormClose
-  // after the user has confirmed they really want to quit.
+  // No shutdown work happens here: the quit is not confirmed yet (the dialog
+  // runs in FormClose), and anything done at this point would stick after a
+  // Cancel. SetGlobalShutdown in particular is one-way — setting it here used
+  // to leave extensions permanently dead when the user cancelled the quit.
   CanClose := true;
 end;
 
@@ -1747,11 +1741,17 @@ begin
   ShutdownBackgroundThreads;
 
   {$ifdef TrndiExt}
-  // NOTE: Application.Terminate is now called in FormCloseQuery for earlier detection
-  
+  // The quit is confirmed: swap the window to the shutdown screen right away
+  // so the user gets feedback before the settle-down waits below, not after.
+  ShowShutdownScreen;
+
   // CRITICAL: Signal extension shutdown FIRST before stopping timers
   // This prevents new async operations from starting
   try
+    // Block any new JS operations. The flag is one-way, which is why it is
+    // only set here, after the quit is confirmed — never in FormCloseQuery.
+    trndi.ext.engine.SetGlobalShutdown;
+
     // Let extensions run their unloadCallback while the engine and JS
     // contexts are still fully alive; once shutdown is signalled below,
     // no more JS may execute.
@@ -1789,17 +1789,6 @@ begin
     Sleep(250);  // Increased significantly 
     Application.ProcessMessages;
     Sleep(150);  // Additional wait
-    Application.ProcessMessages;
-    
-    // Update user feedback before engine cleanup
-    lVal.Caption := RS_CLEANUP;
-    actOnTrend(@HideDot);
-    lTir.Hide;
-    lArrow.hide;
-//    lDiff.Hide;
-    lDiff.Caption := Format(RS_CLEANUP_WAIT, [20]);
-    lAgo.hide;
-    lPredict.hide;
     Application.ProcessMessages;
     
     // Now safely shutdown the extension engine
@@ -2044,6 +2033,9 @@ var
   warnAlphaTmp: byte;
   warnLayoutTmp: TWarnLayout;
 begin
+  if FShutdownScreen then
+    Exit; // The shutdown screen owns the window now; keep its layout alone
+
   if Sender = lval then
     tResize.OnTimer(self)
   else

@@ -531,6 +531,21 @@ begin
 
   cnv := Self.Canvas;
 
+  // Shutdown screen (ShowShutdownScreen): a plain splash-style backdrop with
+  // the splash's green accent glow along the top — no bands, no guide lines.
+  // The explicit fill also covers LCL-GTK3, where TForm.Color is ignored.
+  if FShutdownScreen then
+  begin
+    cnv.Brush.Style := bsSolid;
+    cnv.Brush.Color := Self.Color;
+    cnv.FillRect(0, 0, Self.ClientWidth, Self.ClientHeight);
+    cnv.GradientFill(Rect(0, 0, Self.ClientWidth div 2, Scale96ToForm(3)),
+      $00002214, $0000DC84, gdHorizontal);
+    cnv.GradientFill(Rect(Self.ClientWidth div 2, 0, Self.ClientWidth,
+      Scale96ToForm(3)), $0000DC84, $00002214, gdHorizontal);
+    Exit;
+  end;
+
   {$ifdef LCLGTK3}
   // LCL-GTK3 ignores TForm.Color: TGtk3Widget.SetColor's body sits behind an
   // `if IsWidgetOK and (0 > 1)` (gtk3widgets.pas), so the window keeps the GTK
