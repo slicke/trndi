@@ -2291,11 +2291,11 @@ begin
   wasBannerTinted := FTitleTintedFromBanner;
   FTitleTintedFromBanner := false;
 
-  // With a title-bar badge (Windows' native one, or the drawn bar's identity
-  // chip on Wayland) the active user's identity is already visible, so
-  // multi-user mode is normalised to the single-user rule: the title bar
-  // follows the "colour with glucose colour" preference instead of being
-  // forced to the user colour. The main-form colour bar is redundant next to
+  // With a title-bar badge (the native one on Windows and macOS, or the drawn
+  // bar's identity chip on Wayland) the active user's identity is already
+  // visible, so multi-user mode is normalised to the single-user rule: the
+  // title bar follows the "colour with glucose colour" preference instead of
+  // being forced to the user colour. The main-form colour bar is redundant next to
   // the badge, so hide it (the borderless float window keeps its bar,
   // mirrored from userColorBar).
   hasBadge := UserBadgeActive;
@@ -2390,8 +2390,8 @@ begin
 end;
 
 // True when the name has somewhere better to live than the caption text: the
-// native title-bar badge (Windows) or the identity chip on the application
-// drawn bar (Wayland).
+// native title-bar badge (Windows, macOS) or the identity chip on the
+// application drawn bar (Wayland).
 function TfBG.UserBadgeActive: boolean;
 begin
   Result := multi and (native.SupportsUserBadge or OwnTitleBarActive);
@@ -2442,17 +2442,19 @@ begin
     Exit;
   end;
 
-{$ifdef X_WIN}
+  // Native title-bar badge (Windows' layered pill, the macOS titlebar
+  // accessory view): platforms without one inherit a base ShowUserBadge that
+  // returns false, so no conditional compilation is needed here.
   if native.SupportsUserBadge and
     native.ShowUserBadge(multinick, bg, txt, @UserBadgeClicked) then
   begin
     ApplyUserCaption(false);
     Exit;
   end;
-{$endif}
 
-  // No badge anywhere (X11/macOS, or a badge that could not be created): the
-  // name goes back into the caption text.
+  // No badge anywhere (X11, or a badge that could not be created — a
+  // fullscreen window has no title bar to carry it): the name goes back into
+  // the caption text.
   ApplyUserCaption(true);
 end;
 

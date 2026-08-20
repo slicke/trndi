@@ -58,8 +58,8 @@
 // clock, warning banner) offset themselves by TitleBarOffset.
 //
 // Owning the bar also means the multi-user name can live in it: the bar draws
-// an identity chip (TSlickeTitleBar.SetUserBadge) where Windows overlays its
-// native title-bar badge, so Wayland gets the same "[name] Trndi" prefix-free
+// an identity chip (TSlickeTitleBar.SetUserBadge) where Windows and macOS put
+// a native title-bar badge, so Wayland gets the same "[name] Trndi" prefix-free
 // caption. RefreshUserBadge in umain_glucose.inc picks between the two.
 
 {------------------------------------------------------------------------------
