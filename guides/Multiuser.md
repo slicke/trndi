@@ -23,7 +23,7 @@ languages.
 ## Customizing a user
 * In the user list, click the user's username
 * Below choose an account color and nickname
-> Click _Save_, __before__ closing the window or selecting another user. Settings wont apply unless you click Save!
+> Edits are kept while you browse the user list, but nothing is stored until you close the settings window and __save settings__ — closing without saving discards them, just like every other setting.
 
 The color chosen will be assigned to the window when Trndi loads the user.
 The username is also displayed in the title bar.
@@ -33,11 +33,12 @@ On Windows and macOS the nickname appears as a coloured badge in the top-right o
 There is always a standard user, you can assign it a nickname and color aswell. The standard user is the information you've saved before adding additional users. It cannot be removed.
 
 ## Removing a user
-* Select the user in the list and click Remove. 
-* Close settings and apply changes.
+* Select the user in the list and click Remove, and confirm.
+* Trndi then asks whether to also __erase the user's stored settings__ (server, color, nickname etc.). If you keep them, the account can be restored later.
+* Close settings and apply changes — removals (and erasures) only take effect when you save.
 
 ## Retrieving a user
-If you add a username again, which has been deleted before, the setting will still be saved. Thus, deleting a user removes them from the list, but does not delete their data!
+If you add a username again, which has been removed before (without erasing its settings), the settings will still be there. Thus, removing a user takes them out of the list, but only deletes their data if you asked for that when removing!
 
 ## Reverting to single user
 * Remove all users, close settings and apply
