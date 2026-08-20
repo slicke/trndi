@@ -477,6 +477,10 @@ msgstr ""
 msgid "Highlight the newest dot while the reading is fresh"
 msgstr ""
 
+#: tfconf.cbdotgaps.caption
+msgid "Mark missing readings in the trend with a faint ring"
+msgstr ""
+
 #: tfconf.cbflash.caption
 msgid "Badge Flashing"
 msgstr ""
@@ -2760,6 +2764,11 @@ msgctxt "trndi.strings.rs_ux_enter_dot_size"
 msgid "Enter a value, the dot size will multiply by this"
 msgstr ""
 
+#: trndi.strings.rs_ux_gap_here
+#, object-pascal-format
+msgid "No reading received around %.2d:%.2d"
+msgstr ""
+
 #: trndi.strings.rs_ux_noise
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
@@ -3492,6 +3501,16 @@ msgstr ""
 
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
+msgstr ""
+
+#: uconf.rs_remove_confirm
+#, object-pascal-format
+msgid "Remove the account \"%s\"?"
+msgstr ""
+
+#: uconf.rs_remove_erase
+#, object-pascal-format
+msgid "Also erase the stored settings for \"%s\"? If you keep them, adding the same name again restores the account."
 msgstr ""
 
 #: uconf.rs_rotating_arrow_help

@@ -490,6 +490,10 @@ msgstr "Eigene Werte verwenden"
 msgid "Highlight the newest dot while the reading is fresh"
 msgstr ""
 
+#: tfconf.cbdotgaps.caption
+msgid "Mark missing readings in the trend with a faint ring"
+msgstr ""
+
 #: tfconf.cbflash.caption
 msgid "Badge Flashing"
 msgstr "Badge-Blinken"
@@ -2769,6 +2773,11 @@ msgctxt "trndi.strings.rs_ux_enter_dot_size"
 msgid "Enter a value, the dot size will multiply by this"
 msgstr "Einen Wert eingeben, die Punktgröße wird damit multipliziert"
 
+#: trndi.strings.rs_ux_gap_here
+#, object-pascal-format
+msgid "No reading received around %.2d:%.2d"
+msgstr ""
+
 #: trndi.strings.rs_ux_noise
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
@@ -3496,6 +3505,16 @@ msgstr "Im Datenschutzmodus ist der tatsächliche Blutzuckerwert verborgen. Trnd
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
 msgstr "Entfernte Konten werden inaktiv und können durch erneutes Hinzufügen desselben Namens wiederhergestellt werden"
+
+#: uconf.rs_remove_confirm
+#, object-pascal-format
+msgid "Remove the account \"%s\"?"
+msgstr "Das Konto \"%s\" entfernen?"
+
+#: uconf.rs_remove_erase
+#, object-pascal-format
+msgid "Also erase the stored settings for \"%s\"? If you keep them, adding the same name again restores the account."
+msgstr "Auch die gespeicherten Einstellungen für \"%s\" löschen? Werden sie behalten, stellt das erneute Hinzufügen desselben Namens das Konto wieder her."
 
 #: uconf.rs_rotating_arrow_help
 msgid "Instead of the fixed up/steady/down arrows, the trend arrow is rotated smoothly to match how fast your glucose is changing: nearly flat for small changes and leaning further down (or up) the faster it moves."
