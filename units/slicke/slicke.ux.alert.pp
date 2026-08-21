@@ -162,13 +162,18 @@ mbUXClose     = mbClose;
   {**
     @name Custom button results
     @desc
-    Modal results for the buttons that have no Lazarus equivalent. Buttons
-    without an entry of their own share @code(mrSlickeCustom), so a dialog can
-    only tell two custom buttons apart when at least one of them is listed
-    here — @seealso(UXButtonToModalResult).
+    Modal results for the buttons that have no Lazarus equivalent, so a dialog
+    showing several custom buttons can tell them apart —
+    @seealso(UXButtonToModalResult). @code(mrSlickeCustom) remains the fallback
+    for anything unmapped.
   }
-mrSlickeCustom = TModalResult(110);
-mrSlickeNever  = TModalResult(111);
+mrSlickeCustom   = TModalResult(110);
+mrSlickeNever    = TModalResult(111);
+mrSlickeOpenFile = TModalResult(112);
+mrSlickeMinimize = TModalResult(113);
+mrSlickeRead     = TModalResult(114);
+mrSlickeDefault  = TModalResult(115);
+mrSlickeSnooze   = TModalResult(116);
 
   {**
     @name System constants
@@ -210,6 +215,9 @@ protected
   FUXTitleBar: TSlickeTitleBar; // Drawn title bar on Wayland (see PrepareOwnTitleBar)
 
   function getContent: string;
+    {** Sets PopupMode/PopupParent so window managers treat the dialog as
+        transient for the initiating window; called from @code(CreateWnd). }
+  procedure ApplyPopupParent;
     {** Finalizes platform window style, sets KeyPreview, and enables dark mode title bar where supported. }
   procedure CreateWnd; override;
   // Override DoShow instead of using an OnShow event method name.
@@ -223,11 +231,6 @@ public
     {** Applies @link(PrepareOwnTitleBar) before entering the modal loop. }
   function ShowModal: integer; override;
 public
-  {$ifdef X_WIN}
-    {** Owner-draw routine for bit buttons on Windows to match dark mode styling. }
-  procedure ButtonDrawItem(Sender: TObject;
-    ACanvas: TCanvas; ARect: TRect; State: TButtonState);
-  {$endif}
     {** OnClick handler used by inline full-screen message overlays created via @link(SlickeMessage). }
   procedure SlickeMessageOnClick(sender: TObject);
     {** OnMouseDown companion — fires on first touch contact so the overlay
@@ -400,11 +403,10 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
   Simplified Extended message dialog for displaying yes/no dialogs
   @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
   @param caption Window caption.
-  @param title Title text.
   @param desc Description of dialog.
   @param micon Icon for the dialog
   @param scale Size for the actual dialog
-  @returns Lazarus modal result corresponding to the button clicked.
+  @returns @true when the user chose Yes; @false otherwise.
 }
 function SlickeMsgYesNo(
 const dialogsize: TSlickeDialogSize;
@@ -415,11 +417,10 @@ const scale: single = 1): boolean;
 {**
   Simplified Extended message dialog for displaying yes/no dialogs
   @param caption Window caption.
-  @param title Title text.
   @param desc Description of dialog.
   @param micon Icon for the dialog
   @param scale The size of the actual dialog
-  @returns Lazarus modal result corresponding to the button clicked.
+  @returns @true when the user chose Yes; @false otherwise.
 }
 function SlickeMsgYesNo(
 const caption, desc: string;
@@ -490,7 +491,7 @@ scale: single = 1; hpadding: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {**
-    Alias for @lnk(SlickeMsg) with HTML data
+    Alias for @link(SlickeMsg) with HTML data
   }
 function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
@@ -500,7 +501,7 @@ scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 
   {**
-    Helper for @lnk(SlickeMsg) with text data
+    Helper for @link(SlickeMsg) with text data
   }
 function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
@@ -799,7 +800,8 @@ const icon: SlickeUXImage = uxmtCog
     @param icon Emoji icon (default gear).
     @param key Column 0 header (defaults to localized @code(sKey)).
     @param value Column 1 header (defaults to localized @code(sValue)).
-    @returns Selected row index on OK; -1 if canceled.
+    @returns Selected row index (0-based, header row excluded, so it indexes
+      straight into @code(Keys)/@code(Values)) on OK; -1 if canceled.
   }
 function SlickeTable(const dialogsize: TSlickeDialogSize;
 const ACaption, ATitle, ADesc: string;
@@ -1429,6 +1431,43 @@ begin
   Result := Format('#%.2x%.2x%.2x', [R, G, B]);
 end;
 
+{ Style the contents of every <a> element with an underline and the given
+  colour, by walking the anchor tags. Shared by the HTML dialog and the HTML
+  log panel: the latter used to do this with a blanket StringReplace of '">',
+  which also fired inside any other tag whose last attribute ended that way
+  (an <img src="...">, a <font color="...">) and injected markup mid-tag. }
+function DecorateLinks(const Src, LinkColorHtml: string): string;
+var
+  lower: string;
+  searchPos, openPos, tagEndPos, closePos: SizeInt;
+begin
+  Result := Src;
+  lower := LowerCase(Result);
+  searchPos := 1;
+  while true do
+  begin
+    openPos := PosEx('<a', lower, searchPos);
+    if openPos = 0 then
+      Break;
+
+    tagEndPos := PosEx('>', lower, openPos);
+    if tagEndPos = 0 then
+      Break;
+
+    Insert('<u><font color="' + LinkColorHtml + '">', Result, tagEndPos + 1);
+    lower := LowerCase(Result);
+
+    closePos := PosEx('</a>', lower, tagEndPos + 1);
+    if closePos = 0 then
+      Break;
+
+    Insert('</font></u>', Result, closePos);
+    lower := LowerCase(Result);
+
+    searchPos := closePos + Length('</a>') + Length('</font></u>');
+  end;
+end;
+
 { ---------------------------------------------------------------------------
   Screen fitting helpers
 
@@ -1746,7 +1785,7 @@ end;
     small touch panels get @code(sdsMedium) rather than a dialog wider than the
     screen.
 }
-function GeTSlickeDialogSize(dialogsize: TSlickeDialogSize): TSlickeDialogSize;
+function GetSlickeDialogSize(dialogsize: TSlickeDialogSize): TSlickeDialogSize;
 begin
   case dialogsize of
   sdsNormal,
@@ -1763,86 +1802,29 @@ begin
     else
       result := sdsMedium;
   else
-    result := GeTSlickeDialogSize(sdsAuto);
+    result := GetSlickeDialogSize(sdsAuto);
   end;
 end;
 
-{**
-  Compute the wrapped text height for a label given its fixed width.
-  @param ALabel Label with font and width already assigned.
-  @returns Pixel height needed to display the caption.
-}
+{ Collapse CRLF/CR to LF so TStringList splitting sees uniform line breaks. }
 function NormalizeLineBreaks(const S: string): string;
 begin
   Result := StringReplace(S, #13#10, #10, [rfReplaceAll]);
   Result := StringReplace(Result, #13, #10, [rfReplaceAll]);
 end;
 
+{ Implemented further down, past the dialog builders that need it here. }
+function MeasureWrappedHeight(const AText: string; AFont: TFont;
+  MaxWidth: integer): integer; forward;
+
+{**
+  Compute the wrapped text height for a label given its fixed width.
+  @param ALabel Label with font, width and caption already assigned.
+  @returns Pixel height needed to display the caption.
+}
 function CalcWrappedHeight(ALabel: TLabel): integer;
-var
-  bmp: Graphics.TBitmap;
-  paragraphs, words: TStringList;
-  para, token, currentLine: string;
-  i, p, totalLines, lineCount: integer;
 begin
-  bmp := Graphics.TBitmap.Create;
-  paragraphs := TStringList.Create;
-  words := TStringList.Create;
-  try
-    // A 0x0 bitmap has no usable canvas on GTK3 (Gdk-CRITICAL, zero metrics),
-    // which collapses every measured label; give it a surface first.
-    bmp.SetSize(1, 1);
-    bmp.Canvas.Font.Assign(ALabel.Font);
-
-    // Split by explicit line breaks first (each is a forced new line)
-    paragraphs.Text := NormalizeLineBreaks(ALabel.Caption);
-    // TStringList.Text splits on LF boundaries
-
-    totalLines := 0;
-    for p := 0 to paragraphs.Count - 1 do
-    begin
-      para := TrimRight(paragraphs[p]); // preserve empty lines meaningfully
-      if para = '' then
-      begin
-        Inc(totalLines); // empty paragraph still consumes one empty line
-        Continue;
-      end;
-
-      words.Clear;
-      words.Delimiter := ' ';
-      words.StrictDelimiter := true;
-      words.DelimitedText := para;
-
-      currentLine := '';
-      lineCount := 1;
-      for i := 0 to words.Count - 1 do
-      begin
-        token := words[i];
-        if bmp.Canvas.TextWidth(Trim(currentLine + ' ' + token)) > ALabel.Width then
-        begin
-          Inc(lineCount);
-          currentLine := token;
-        end
-        else
-          currentLine := Trim(currentLine + ' ' + token);
-      end;
-      Inc(totalLines, lineCount);
-    end;
-
-    // If there were zero paragraphs, height is zero; ensure at least one line
-    if (paragraphs.Count = 0) then
-      totalLines := 1;
-
-    Result := totalLines * bmp.Canvas.TextHeight('Hg');
-    {$ifdef Darwin}
-    if totalLines > 0 then
-      Inc(Result, bmp.Canvas.TextHeight('Hg') div 2);
-    {$endif}
-  finally
-    bmp.Free;
-    paragraphs.Free;
-    words.Free;
-  end;
+  Result := MeasureWrappedHeight(ALabel.Caption, ALabel.Font, ALabel.Width);
 end;
 
 {**
@@ -2057,13 +2039,13 @@ end;
 {**
   Width at which body text in this font reaches a comfortable line measure.
   @param AFont Font the text will render with.
-  @returns Pixel width of a line of about forty characters.
+  @returns Pixel width of a line of about thirty-five characters.
   @remarks Needed because a sentence measured unwrapped at 24 pt asks for more
     width than any dialog should occupy: at that size the text has to be allowed
     to break, or the dialog stretches to the edge of the screen to keep one line
     intact. Expressed in characters of the font itself rather than in pixels, so
     it holds at any type size and DPI - @code(n) is close to the average
-    lowercase advance, and forty of them sits at the short end of the 45-75
+    lowercase advance, and thirty-five of them sits just under the 45-75
     character measure typography treats as readable, which suits a dialog rather
     than a page of prose.
 }
@@ -2103,10 +2085,20 @@ begin
     Result := mrYesToAll;
   mbClose:
     Result := mrClose;
+  // Each named custom button answers with a result of its own, so a dialog
+  // showing several of them at once can tell which was pressed.
   mbSlickeNever:
-    // Has a result of its own so it stays distinguishable from the other
-    // custom buttons when a dialog shows two of them at once.
     Result := mrSlickeNever;
+  mbSlickeOpenFile:
+    Result := mrSlickeOpenFile;
+  mbSlickeMinimize:
+    Result := mrSlickeMinimize;
+  mbSlickeRead:
+    Result := mrSlickeRead;
+  mbSlickeDefault:
+    Result := mrSlickeDefault;
+  mbSlickeSnooze:
+    Result := mrSlickeSnooze;
   else
     // fallback / custom button
     Result := mrSlickeCustom;
@@ -2805,7 +2797,7 @@ var
   bgcol: TColor;
   size: TSlickeDialogSize;
 begin
-  size := GeTSlickeDialogSize(dialogsize);
+  size := GetSlickeDialogSize(dialogsize);
   Result := ADefault;
   ModalResult := mrCancel;
   bgcol := getBackground;
@@ -2944,7 +2936,13 @@ var
   tb: TButton;
   {$endif}
   df: TDialogForm;
+  ovBg, ovText: TColor;
 begin
+  // The overlay was the one dialog in this unit that never learned dark mode:
+  // it hardcoded the light-blue scheme, which on a dark-mode touch device made
+  // every inline message a full-screen flash of light.
+  ovBg   := TColor(IfThen(TrndiNative.isDarkMode, uxclDarkBg, uxclLightBlue));
+  ovText := TColor(IfThen(TrndiNative.isDarkMode, uxclDarkText, uxclBlue));
   if (dialogsize = sdsOnForm) and ((sender <> nil) and (sender.FindComponent(onFormName) = nil)) then
   begin
 
@@ -2966,14 +2964,14 @@ begin
       tp.Height := sender.ClientHeight;
       tp.Anchors := [akLeft, akTop, akRight, akBottom];
       tp.BringToFront;
-      tp.Color := uxclLightBlue;
+      tp.Color := ovBg;
 
       // --- Title: measured, not guessed, so the body never lands on top of it ---
       tt := TLabel.Create(tp);
       tt.parent := tp;
       tt.autosize := false;
       tt.WordWrap := true;
-      tt.Font.Color := uxclBlue;
+      tt.Font.Color := ovText;
       tt.Font.Style := [fsBold];
       tt.Font.Size := tp.Width div 20;
       tt.left := Margin;
@@ -3007,7 +3005,7 @@ begin
       ts.Parent := tp;
       ts.BorderStyle := bsNone;
       ts.ParentColor := false;
-      ts.Color := uxclLightBlue;
+      ts.Color := ovBg;
       ts.Left := Margin;
       ts.Top := tt.Top + tt.Height + Margin;
       ts.Width := tp.Width - (Margin * 2);
@@ -3031,7 +3029,7 @@ begin
       tl := TLabel.Create(ts);
       tl.parent := ts;
       tl.autosize := false;
-      tl.Font.Color := uxclBlue;
+      tl.Font.Color := ovText;
       tl.Font.Size := tp.Width div 20;
       if IsProblematicWM then
         tl.Font.size := 38;
@@ -3087,7 +3085,7 @@ var
 begin
   Result := ADefault;
   ModalResult := mrCancel;
-  size := GeTSlickeDialogSize(dialogsize);
+  size := GetSlickeDialogSize(dialogsize);
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -3182,7 +3180,7 @@ var
   size: TSlickeDialogSize;
 begin
   Result := -1;
-  size := GeTSlickeDialogSize(dialogsize);
+  size := GetSlickeDialogSize(dialogsize);
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -3258,7 +3256,7 @@ var
   size: TSlickeDialogSize;
 begin
   Result := -1;
-  size := GeTSlickeDialogSize(dialogsize);
+  size := GetSlickeDialogSize(dialogsize);
   BgCol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -3338,7 +3336,9 @@ begin
     CenterButtons(Dialog, OkButton, CancelButton, Grid.Top + Grid.Height, size, Padding);
 
     if ShowModalSafe(Dialog) = mrOk then
-      Result := Grid.Row;
+      // Grid.Row counts the fixed header row, so the first data row is 1;
+      // shift to the 0-based index into Keys/Values the docs promise.
+      Result := Grid.Row - 1;
   finally
     Dialog.Free;
   end;
@@ -3371,7 +3371,7 @@ begin
   Result := TFont.Create;
   Result.Assign(ADefaultFont);
   ModalResult := mrCancel;
-  size := GeTSlickeDialogSize(dialogsize);
+  size := GetSlickeDialogSize(dialogsize);
   bgcol := getBackground;
 
   Dialog := TDialogForm.CreateNew(nil);
@@ -3492,7 +3492,7 @@ var
   bgcol: TColor;
   size: TSlickeDialogSize;
 begin
-  size := GeTSlickeDialogSize(dialogsize);
+  size := GetSlickeDialogSize(dialogsize);
   Result := ADefault;
   ModalResult := mrCancel;
   bgcol := getBackground;
@@ -3684,45 +3684,13 @@ var
   contentHeight, maxHeight, finalHeight: integer;
   hpd: TIpHttpDataProvider;
   htmldata: string;
-
-function DecorateLinks(const Src, LinkColorHtml: string): string;
-  var
-    lower: string;
-    searchPos, openPos, tagEndPos, closePos: SizeInt;
-  begin
-    Result := Src;
-    lower := LowerCase(Result);
-    searchPos := 1;
-    while true do
-    begin
-      openPos := PosEx('<a', lower, searchPos);
-      if openPos = 0 then
-        Break;
-
-      tagEndPos := PosEx('>', lower, openPos);
-      if tagEndPos = 0 then
-        Break;
-
-      Insert('<u><font color="' + LinkColorHtml + '">', Result, tagEndPos + 1);
-      lower := LowerCase(Result);
-
-      closePos := PosEx('</a>', lower, tagEndPos + 1);
-      if closePos = 0 then
-        Break;
-
-      Insert('</font></u>', Result, closePos);
-      lower := LowerCase(Result);
-
-      searchPos := closePos + Length('</a>') + Length('</font></u>');
-    end;
-  end;
 begin
   // An empty list would leave OkButton unassigned when the dialog height is
   // computed below; fall back to this function's documented default.
   if Length(buttons) = 0 then
     buttons := [mbAbort];
   bgcol := getBackground;
-  size := GeTSlickeDialogSize(dialogsize);
+  size := GetSlickeDialogSize(dialogsize);
 
   Dialog := TDialogForm.CreateNew(nil);
   try
@@ -3941,7 +3909,7 @@ begin
   if Length(buttons) = 0 then
     buttons := [mbAbort];
   bgcol := getBackground;
-  size := GeTSlickeDialogSize(dialogsize);
+  size := GetSlickeDialogSize(dialogsize);
 
   Dialog := TDialogForm.CreateNew(nil);
   try
@@ -4284,18 +4252,7 @@ begin
       try
         // Wrap content in HTML structure with background color from dumpbg
         FontTXTInList(sysfont);
-        htmlstr := StringReplace(
-          logmsg,
-          '">', '"><u><font color="' + TColorToHTML(getBaseColor) + '">',
-          [rfReplaceAll]
-          );
-
-        htmlstr := StringReplace(
-          htmlstr,
-          '</a>',
-          '</font></u></a>',
-          [rfReplaceAll]
-          );
+        htmlstr := DecorateLinks(logmsg, TColorToHTML(getBaseColor));
         htmlstr :=           '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: ' + sysfont + ';">' +
           htmlstr +
           '</body></html>';
@@ -4537,6 +4494,36 @@ begin
   title := titleValue;
   content := value;
   extra := extraValue;
+end;
+
+{ Give the dialog an explicit popup owner so X11/Wayland window managers can
+  treat it as transient for the initiating window (some WMs, common on
+  Raspberry Pi/embedded setups, otherwise ignore the hint entirely). Prefer
+  the currently active form - most likely the initiator - then the Owner,
+  then the main form. }
+procedure TDialogForm.ApplyPopupParent;
+begin
+  try
+    if Assigned(Screen) and Assigned(Screen.ActiveForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := Screen.ActiveForm;
+    end
+    else
+    if Assigned(Owner) and (Owner is TForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := TForm(Owner);
+    end
+    else
+    if Assigned(Application) and Assigned(Application.MainForm) then
+    begin
+      PopupMode := pmExplicit;
+      PopupParent := Application.MainForm;
+    end;
+  except
+    // Some LCL backends may raise; ignore and continue.
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -4797,34 +4784,7 @@ begin
   inherited CreateWnd;
   hasHTML := false;
   KeyPreview := true;
-  // Ensure dialogs have an explicit popup owner so X11/Wayland window managers
-  // can treat them as transient for the initiating window. Also provide a
-  // conservative fallback on non-Windows systems by keeping the dialog on top
-  // briefly which mitigates cases where the WM ignores transient hints
-  // (common on some Raspberry Pi/embedded setups).
-  try
-    // Prefer the currently active form (most likely the initiator) as the popup
-    // parent. Fall back to Owner (if it's a TForm) and then Application.MainForm.
-    if Assigned(Screen) and Assigned(Screen.ActiveForm) then
-    begin
-      PopupMode := pmExplicit;
-      PopupParent := Screen.ActiveForm;
-    end
-    else
-    if Assigned(Owner) and (Owner is TForm) then
-    begin
-      PopupMode := pmExplicit;
-      PopupParent := TForm(Owner);
-    end
-    else
-    if Assigned(Application) and Assigned(Application.MainForm) then
-    begin
-      PopupMode := pmExplicit;
-      PopupParent := Application.MainForm;
-    end;
-  except
-    // Some LCL backends may raise; ignore and continue.
-  end;
+  ApplyPopupParent;
 
   {$ifdef X_MAC}
   // Make the title bar blend into the dialog: transparent titlebar + full-size
@@ -4866,26 +4826,7 @@ begin
       GetWindowLong(Handle, GWL_STYLE) or WS_SYSMENU);
 
   KeyPreview := true;
-  // As above, ensure PopupMode/PopupParent is set where possible.
-  try
-    if Assigned(Screen) and Assigned(Screen.ActiveForm) then
-    begin
-      PopupMode := pmExplicit;
-      PopupParent := Screen.ActiveForm;
-    end
-    else
-    if Assigned(Owner) and (Owner is TForm) then
-    begin
-      PopupMode := pmExplicit;
-      PopupParent := TForm(Owner);
-    end
-    else
-    if Assigned(Application) and Assigned(Application.MainForm) then
-    begin
-      PopupMode := pmExplicit;
-      PopupParent := Application.MainForm;
-    end;
-  except end;
+  ApplyPopupParent;
   if not TrndiNative.isDarkMode then
     Exit;
   if (Win32MajorVersion < 10) or
@@ -5130,44 +5071,6 @@ begin
   if Assigned(FontPickerPreview) and (Combo.ItemIndex >= 0) then
     FontPickerPreview.Font.Name := Combo.Items[Combo.ItemIndex];
 end;
-
-{$ifdef X_WIN}
-{**
-  Owner-draw for dark buttons on Windows.
-  @param Sender The @code(TDarkButton) being drawn.
-  @param ACanvas Canvas to draw on.
-  @param ARect Button rectangle.
-  @param State Button state (up/down/hot).
-}
-procedure TDialogForm.ButtonDrawItem(Sender: TObject;
-ACanvas: TCanvas; ARect: TRect; State: TButtonState);
-var
-  Btn: TDarkButton absolute Sender;
-  TxtFlags: cardinal;
-begin
-  // 1) Background
-  if bsDown = State then
-    ACanvas.Brush.Color := RGBToColor(30, 30, 30)
-  else
-    ACanvas.Brush.Color := clBlack;
-  ACanvas.FillRect(ARect);
-
-  // 2) Border
-  ACanvas.Pen.Color := RGBToColor(80, 80, 80);
-  ACanvas.Rectangle(ARect.Left, ARect.Top, ARect.Right, ARect.Bottom);
-
-  // 3) Text
-  ACanvas.Font.Assign(Btn.Font);
-  ACanvas.Font.Color := clWhite;
-  TxtFlags := DT_CENTER or  DT_VCENTER or DT_SINGLELINE;
-  DrawText(ACanvas.Handle, pchar(Btn.Caption), Length(Btn.Caption),
-    ARect, TxtFlags);
-
-  // 4) Focus indicator
-  if bsHot = State then
-    ACanvas.DrawFocusRect(ARect);
-end;
-{$endif}
 
 procedure TDialogForm.ElementKeyDown(Sender: TObject; var Key: char);
 begin
