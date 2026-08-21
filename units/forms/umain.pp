@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: isWSL is declared unconditionally (default false) now that
+ *   DetectWSL is part of the native base contract - Qt6 builds outside
+ *   Linux/BSD (Haiku) reference it in umain_timers.
  * - 2026-08-16: The form unit now also uses trndi.funcs.core, which took over
  *   the shared reading/trend helpers and the DEBUG_LOG_ALERT switch from
  *   trndi.funcs.
@@ -1264,9 +1267,9 @@ clockInterval: integer = CLOCK_INTERVAL_MS;
 clockDisplay: integer = 5000;
 fSplash: TfSplash;
 native: TrndiNative;
-{$ifdef X_LINUXBSD}
+// Stays false everywhere but Linux/BSD: only umain_init's Linux path runs
+// DetectWSL, and the base stub reports not-WSL anyway.
 isWSL : boolean = false;
-{$endif}
 applocale: string;
 dotscale: single = 1;
 
