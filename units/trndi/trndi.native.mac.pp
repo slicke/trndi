@@ -967,6 +967,18 @@ begin
   Result := True;
 end;
 
+var
+  // Caption colors last applied by SetTitleColor, and to which window: the
+  // title-bar hamburger adopts these so it reads as part of the bar rather
+  // than a theme-grey chip on it (the Windows unit keeps the same record
+  // for its layered pill).
+  gLastTitleWin: NSWindow = nil;
+  gLastTitleBg: TColor = clNone;
+  gLastTitleText: TColor = clNone;
+
+// Implemented in the hamburger section at the bottom of the unit.
+procedure SyncTitleMenuToCaption(win: NSWindow; bg, txt: TColor); forward;
+
 {------------------------------------------------------------------------------
   SetTitleColor
   -------------
@@ -1003,6 +1015,12 @@ begin
     UseDark := ColorToRGB(Text) = ColorToRGB(clWhite);
 
     SetCocoaTitleBarColor(Win, R, G, B, UseDark);
+    // Keep the hamburger pill flush with the caption it sits on: remember the
+    // colors (so a pill created later starts right) and repaint a live one.
+    gLastTitleWin := Win;
+    gLastTitleBg := bg;
+    gLastTitleText := Text;
+    SyncTitleMenuToCaption(Win, bg, Text);
     Result := True;
   except
     Result := False;
@@ -2205,6 +2223,21 @@ begin
   gTitleMenuWindow := nil;
 end;
 
+// Recolor the pill to the caption colors SetTitleColor just applied, so it
+// reads as part of the bar (three bars, no visible chip) rather than a
+// theme-grey chip on a colored bar. In full-color mode this fires with
+// every reading.
+procedure SyncTitleMenuToCaption(win: NSWindow; bg, txt: TColor);
+begin
+  if (gTitleMenuView = nil) or (win = nil) or (win <> gTitleMenuWindow) then
+    Exit;
+  if (gTitleMenuBg = bg) and (gTitleMenuFg = txt) then
+    Exit;
+  gTitleMenuBg := bg;
+  gTitleMenuFg := txt;
+  gTitleMenuView.setNeedsDisplay_(true);
+end;
+
 class function TTrndiNativeMac.SupportsTitleMenuButton: boolean;
 begin
   Result := true;
@@ -2240,8 +2273,20 @@ begin
     Exit;
   end;
 
-  gTitleMenuBg := bg;
-  gTitleMenuFg := glyphColor;
+  // The caller's colors are a theme fallback; when Trndi has already colored
+  // this window's title bar (full-color mode, the default), the pill adopts
+  // the caption colors instead so it blends into the bar — the same rule the
+  // Windows pill follows.
+  if (gLastTitleWin = win) and (gLastTitleBg <> clNone) then
+  begin
+    gTitleMenuBg := gLastTitleBg;
+    gTitleMenuFg := gLastTitleText;
+  end
+  else
+  begin
+    gTitleMenuBg := bg;
+    gTitleMenuFg := glyphColor;
+  end;
 
   if gTitleMenuBridge = nil then
     gTitleMenuBridge := TTrndiWakeBridge.Create;
