@@ -280,28 +280,13 @@ end;
 {------------------------------------------------------------------------------
   ToolAvailable
   -------------
-  Probe PATH for an executable via `which`. Silently returns False when the
-  probe itself fails (e.g. no `which` on the system).
+  Probe PATH for an executable via the shared walker. This used to spawn
+  `which`, which failed on systems without it; the in-process walk probes
+  the same PATH (plus the common extra bins) without that dependency.
  ------------------------------------------------------------------------------}
 class function TTrndiNativeGeneric.ToolAvailable(const tool: string): boolean;
-var
-  AProcess: TProcess;
 begin
-  Result := false;
-  AProcess := TProcess.Create(nil);
-  try
-    AProcess.Executable := 'which';
-    AProcess.Parameters.Add(tool);
-    AProcess.Options := [poUsePipes, poWaitOnExit, poNoConsole];
-    try
-      AProcess.Execute;
-      Result := AProcess.ExitStatus = 0;
-    except
-      Result := false;
-    end;
-  finally
-    AProcess.Free;
-  end;
+  Result := FindExecutableInPath(tool) <> '';
 end;
 
 {------------------------------------------------------------------------------
