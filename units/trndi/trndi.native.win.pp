@@ -3946,19 +3946,21 @@ end;
 
 // Resting glyph color: the caption text blended mostly into the caption, so
 // the bars sit back instead of competing with the reading. Hover (tracked in
-// MenuWndProc) repaints with the full-contrast gMenuGlyph.
+// MenuWndProc) repaints with the full-contrast gMenuGlyph. Channels are
+// unpacked by hand ($00BBGGRR) — the Windows unit's inline GetRValue/RGB
+// helpers trip an FPC 3.2.2 win64 codegen internal error here.
 function MenuRestGlyphColor: TColor;
 const
   KEEP = 96; // /255 ≈ 38% of the glyph color survives at rest
 var
-  cb, cf: DWORD;
+  cb, cf, r, g, b: longint;
 begin
-  cb := DWORD(ColorToRGB(gMenuBg));
-  cf := DWORD(ColorToRGB(gMenuGlyph));
-  Result := TColor(RGB(
-    (GetRValue(cb) * (255 - KEEP) + GetRValue(cf) * KEEP) div 255,
-    (GetGValue(cb) * (255 - KEEP) + GetGValue(cf) * KEEP) div 255,
-    (GetBValue(cb) * (255 - KEEP) + GetBValue(cf) * KEEP) div 255));
+  cb := ColorToRGB(gMenuBg);
+  cf := ColorToRGB(gMenuGlyph);
+  r := ((cb and $FF) * (255 - KEEP) + (cf and $FF) * KEEP) div 255;
+  g := (((cb shr 8) and $FF) * (255 - KEEP) + ((cf shr 8) and $FF) * KEEP) div 255;
+  b := (((cb shr 16) and $FF) * (255 - KEEP) + ((cf shr 16) and $FF) * KEEP) div 255;
+  Result := TColor(r or (g shl 8) or (b shl 16));
 end;
 
 // Move the hamburger to the caption's left end, vertically centred. The main
@@ -3996,6 +3998,7 @@ var
   w, h, radius, capH, yy, xx: integer;
   rightX, capTop, capBottom: integer;
   gw, gx, cy, gap, penW, i: integer;
+  glyph: TColor;
   blend: BLENDFUNCTION;
   ptSrc: TPoint;
   sz: TSize;
@@ -4047,11 +4050,12 @@ begin
 
       // Three bars, centred — ghosted at rest, full caption-text color while
       // the cursor is over the pill.
-      penW := Max(1, h div 9);
       if gMenuHover then
-        pen := CreatePen(PS_SOLID, penW, DWORD(ColorToRGB(gMenuGlyph)))
+        glyph := gMenuGlyph
       else
-        pen := CreatePen(PS_SOLID, penW, DWORD(ColorToRGB(MenuRestGlyphColor)));
+        glyph := MenuRestGlyphColor;
+      penW := Max(1, h div 9);
+      pen := CreatePen(PS_SOLID, penW, DWORD(ColorToRGB(glyph)));
       oldPen := SelectObject(memDC, pen);
       gw := Round(h * 0.62);
       gx := (w - gw) div 2;
