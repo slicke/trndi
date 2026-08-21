@@ -100,8 +100,13 @@ type
     procedure ReloadSettings; override;
     {** Export all settings to INI format string. }
     function ExportSettings: string; override;
-    {** Import settings from INI format string. }
-    procedure ImportSettings(const iniData: string); override;
+    // Import uses the base template; only the write step is macOS-specific:
+    // one migration check up front, raw defaults writes, one synchronize.
+  protected
+    procedure ImportSettingsBegin; override;
+    procedure ImportSettingKey(const section, key, value: string); override;
+    procedure ImportSettingsEnd; override;
+  public
     // Badge
     {** Set the dock tile badge label (text only). }
     procedure SetBadge(const Value: string; BadgeColor: TColor); overload; reintroduce;
@@ -1245,59 +1250,24 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  ImportSettings
-  ---------------
-  Import settings from INI format string to NSUserDefaults.
+  ImportSettings hooks
+  --------------------
+  The scaffold (parse + walk) is the base template; these hooks carry the
+  macOS write step it brackets.
  ------------------------------------------------------------------------------}
-procedure TTrndiNativeMac.ImportSettings(const iniData: string);
-var
-  sl: TStringList;
-  mem: TMemoryStream;
-  ini: TMemIniFile;
-  sections, keys: TStringList;
-  i, j: integer;
-  section, key, value: string;
-  defaults: NSUserDefaults;
+procedure TTrndiNativeMac.ImportSettingsBegin;
 begin
-  if iniData = '' then
-    Exit;
-  sl := TStringList.Create;
-  mem := TMemoryStream.Create;
-  ini := nil;
-  sections := TStringList.Create;
-  keys := TStringList.Create;
-  defaults := NSUserDefaults.standardUserDefaults;
   EnsurePrefsUtf8Migration;
-  try
-    mem.WriteBuffer(iniData[1], Length(iniData));
-    mem.Position := 0;
-    sl.LoadFromStream(mem);
-    
-    // Create a temporary INI file in memory
-    ini := TMemIniFile.Create('');
-    ini.SetStrings(sl);
-    
-    ini.ReadSections(sections);
-    for i := 0 to sections.Count - 1 do
-    begin
-      section := sections[i];
-      ini.ReadSection(section, keys);
-      for j := 0 to keys.Count - 1 do
-      begin
-        key := keys[j];
-        value := ini.ReadString(section, key, '');
-        SetPrefUTF8String(key, value);
-      end;
-    end;
-    
-    defaults.synchronize;
-  finally
-    keys.Free;
-    sections.Free;
-    ini.Free;
-    mem.Free;
-    sl.Free;
-  end;
+end;
+
+procedure TTrndiNativeMac.ImportSettingKey(const section, key, value: string);
+begin
+  SetPrefUTF8String(key, value); // raw key — the defaults store is flat
+end;
+
+procedure TTrndiNativeMac.ImportSettingsEnd;
+begin
+  NSUserDefaults.standardUserDefaults.synchronize;
 end;
 
 {------------------------------------------------------------------------------
