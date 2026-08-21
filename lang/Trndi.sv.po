@@ -868,6 +868,7 @@ msgid "These settings reside in different parts of the settings dialog, but has 
 msgstr "Dessa inställningar finns på diverse platser i inställningarna, men har samlats här för din bekvämlighet!"
 
 #: tfconf.label18.caption
+msgctxt "tfconf.label18.caption"
 msgid "Connection"
 msgstr "Anslutning"
 
@@ -1197,6 +1198,7 @@ msgid "Trend dot coloring"
 msgstr "Trendpunktsfärg"
 
 #: tfconf.tsaccess.caption
+msgctxt "tfconf.tsaccess.caption"
 msgid "Accessibility"
 msgstr "Tillgänglighet"
 
@@ -1210,10 +1212,12 @@ msgid "Backgrounds"
 msgstr "Bakgrunder"
 
 #: tfconf.tschroma.caption
+msgctxt "tfconf.tschroma.caption"
 msgid "Razer Chroma"
 msgstr "Razer Chroma"
 
 #: tfconf.tscolors.caption
+msgctxt "tfconf.tscolors.caption"
 msgid "Colors"
 msgstr "Färger"
 
@@ -1235,6 +1239,7 @@ msgid "Display"
 msgstr "Visning"
 
 #: tfconf.tsext.caption
+msgctxt "tfconf.tsext.caption"
 msgid "Extensions"
 msgstr "Tillägg"
 
@@ -1244,6 +1249,7 @@ msgid "General"
 msgstr "Allmänt"
 
 #: tfconf.tsintegration.caption
+msgctxt "tfconf.tsintegration.caption"
 msgid "Integrations"
 msgstr "Integrationer"
 
@@ -1257,10 +1263,12 @@ msgid "Predictions"
 msgstr "Förutspåelser"
 
 #: tfconf.tsproxy.caption
+msgctxt "tfconf.tsproxy.caption"
 msgid "Proxy"
 msgstr "Proxy"
 
 #: tfconf.tssystem.caption
+msgctxt "tfconf.tssystem.caption"
 msgid "System"
 msgstr "System"
 
@@ -2331,6 +2339,7 @@ msgid "Help"
 msgstr "Hjälp"
 
 #: trndi.strings.rs_menu_name
+msgctxt "trndi.strings.rs_menu_name"
 msgid "Glucose"
 msgstr "Blodsocker"
 
@@ -3391,6 +3400,10 @@ msgctxt "uconf.rs_err_password"
 msgid "You must enter a password"
 msgstr "Du måste ange ett lösenord"
 
+#: uconf.rs_essentials_intro
+msgid "The settings most people look for. Each one also lives on its own page in the list to the left."
+msgstr ""
+
 #: uconf.rs_export_empty
 msgid "No settings to export."
 msgstr "Inga inställningar att exportera."
@@ -3539,6 +3552,36 @@ msgstr ""
 msgid "An alert will only trigger if the condition has been true continuously for this many minutes. Set to 0 to trigger immediately."
 msgstr "En varning utlöses bara om tillståndet har uppfyllts kontinuerligt i detta antal minuter. Ange 0 för att utlösa direkt."
 
+#: uconf.rs_nav_app
+msgid "App & system"
+msgstr ""
+
+#: uconf.rs_nav_appearance
+msgid "Appearance"
+msgstr ""
+
+#: uconf.rs_nav_connection
+#, fuzzy
+msgctxt "uconf.rs_nav_connection"
+msgid "Connection"
+msgstr "Anslutning"
+
+#: uconf.rs_nav_features
+#, fuzzy
+msgctxt "uconf.rs_nav_features"
+msgid "Integrations"
+msgstr "Integrationer"
+
+#: uconf.rs_nav_glucose
+#, fuzzy
+msgctxt "uconf.rs_nav_glucose"
+msgid "Glucose"
+msgstr "Blodsocker"
+
+#: uconf.rs_nav_search
+msgid "Search settings"
+msgstr ""
+
 #: uconf.rs_newver
 #, object-pascal-format
 msgid "Version %s is available, would you like to go to the downloads page? You can also ignore this warning for 2 weeks."
@@ -3626,6 +3669,146 @@ msgstr "Välj vilket språk Trndi ska startas på. Om du väljer fel, kan du hå
 #: uconf.rs_override_ns
 msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
 msgstr "Du använder NightScout, du bör sätta dessa värden på din server (om möjligt), eftersom Trndi plockar upp värdena som standard"
+
+#: uconf.rs_page_access
+#, fuzzy
+msgctxt "uconf.rs_page_access"
+msgid "Accessibility"
+msgstr "Tillgänglighet"
+
+#: uconf.rs_page_accounts
+msgid "Accounts"
+msgstr ""
+
+#: uconf.rs_page_alerts
+msgid "Alerts"
+msgstr ""
+
+#: uconf.rs_page_chroma
+#, fuzzy
+msgctxt "uconf.rs_page_chroma"
+msgid "Razer Chroma"
+msgstr "Razer Chroma"
+
+#: uconf.rs_page_colors
+#, fuzzy
+msgctxt "uconf.rs_page_colors"
+msgid "Colors"
+msgstr "Färger"
+
+#: uconf.rs_page_datasource
+msgid "Data source"
+msgstr ""
+
+#: uconf.rs_page_display
+#, fuzzy
+msgctxt "uconf.rs_page_display"
+msgid "Display"
+msgstr "Visning"
+
+#: uconf.rs_page_essentials
+msgid "Essentials"
+msgstr ""
+
+#: uconf.rs_page_extensions
+#, fuzzy
+msgctxt "uconf.rs_page_extensions"
+msgid "Extensions"
+msgstr "Tillägg"
+
+#: uconf.rs_page_finetune
+msgid "Fine-tuning"
+msgstr ""
+
+#: uconf.rs_page_graph_colors
+msgid "Graph"
+msgstr ""
+
+#: uconf.rs_page_integrations
+msgid "Music & links"
+msgstr ""
+
+#: uconf.rs_page_predictions
+#, fuzzy
+msgctxt "uconf.rs_page_predictions"
+msgid "Predictions"
+msgstr "Förutspåelser"
+
+#: uconf.rs_page_proxy
+#, fuzzy
+msgctxt "uconf.rs_page_proxy"
+msgid "Proxy"
+msgstr "Proxy"
+
+#: uconf.rs_page_ranges
+msgid "Glucose & ranges"
+msgstr ""
+
+#: uconf.rs_page_system
+#, fuzzy
+msgctxt "uconf.rs_page_system"
+msgid "System"
+msgstr "System"
+
+#: uconf.rs_pd_access
+msgid "Text-to-speech, high contrast and in-app explanations."
+msgstr ""
+
+#: uconf.rs_pd_accounts
+msgid "Track more than one person from the same Trndi."
+msgstr ""
+
+#: uconf.rs_pd_alerts
+msgid "When and how Trndi warns you about highs, lows and missing readings."
+msgstr ""
+
+#: uconf.rs_pd_chroma
+msgid "Light up Razer keyboards and mice with your readings."
+msgstr ""
+
+#: uconf.rs_pd_colors
+msgid "The colors used for high, OK and low readings."
+msgstr ""
+
+#: uconf.rs_pd_datasource
+msgid "Where Trndi fetches your readings from, and the login it uses."
+msgstr ""
+
+#: uconf.rs_pd_display
+msgid "Fonts and what is shown in the main window."
+msgstr ""
+
+#: uconf.rs_pd_essentials
+msgid "The settings most people look for, collected in one place."
+msgstr ""
+
+#: uconf.rs_pd_extensions
+msgid "JavaScript plugins that extend Trndi."
+msgstr ""
+
+#: uconf.rs_pd_finetune
+msgid "Sizes, scales and other tweaks most people never need."
+msgstr ""
+
+#: uconf.rs_pd_integrations
+msgid "Play music or call a web address when readings go high or low."
+msgstr ""
+
+#: uconf.rs_pd_predictions
+msgid "Experimental: let Trndi estimate where your glucose is heading."
+msgstr ""
+
+#: uconf.rs_pd_proxy
+msgid "Route Trndi's network traffic through a proxy server."
+msgstr ""
+
+#: uconf.rs_pd_ranges
+msgid "Your unit, your high/low limits and your ideal target range."
+msgstr ""
+
+#: uconf.rs_pd_system
+msgid "System information, autostart, web access and settings backup."
+msgstr ""
 
 #: uconf.rs_pos
 #, object-pascal-format
@@ -4219,3 +4402,4 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
+
