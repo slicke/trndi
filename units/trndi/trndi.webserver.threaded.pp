@@ -867,7 +867,7 @@ begin
     // TThread.WaitFor pthread_joins a thread that FPC 3.2.2's cthreads has
     // already pthread_detach()ed in its exit path; Haiku frees the pthread
     // struct on detached exit, so the join GPFs. Poll Finished instead
-    // (see SafeThreadJoin in trndi.native.base).
+    // (see SafeThreadJoin in trndi.native.threading).
     while not FThread.Finished do
       Sleep(1);
     {$ELSE}
