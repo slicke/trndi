@@ -41,7 +41,7 @@ unit LclIntf;
 
 interface
 
-uses Classes, LCLType, Controls, Graphics;
+uses Classes, Types, LCLType, Controls, Graphics;
 
 // Minimal placeholder for LclIntf used in headless builds.
 function RGB(R, G, B: Integer): TColor;
@@ -50,6 +50,11 @@ function RGB(R, G, B: Integer): TColor;
 function getKeyShiftState: Controls.TShiftState;
 procedure OpenURL(const url: AnsiString);
 procedure OpenDocument(const path: AnsiString);
+
+// Text measurement stub for usplash: pretends every string is one 20px line.
+function DrawText(DC: PtrUInt; Str: PChar; Count: Integer; var Rect: TRect;
+  Flags: Cardinal): Integer;
+function IsRectEmpty(const R: TRect): Boolean;
 
 implementation
 
@@ -71,6 +76,19 @@ end;
 function RGB(R, G, B: Integer): TColor;
 begin
   Result := Graphics.RGB(R, G, B);
+end;
+
+function DrawText(DC: PtrUInt; Str: PChar; Count: Integer; var Rect: TRect;
+  Flags: Cardinal): Integer;
+begin
+  // Headless: report a fixed one-line height so layout code gets a sane rect.
+  Rect.Bottom := Rect.Top + 20;
+  Result := 20;
+end;
+
+function IsRectEmpty(const R: TRect): Boolean;
+begin
+  Result := (R.Right <= R.Left) or (R.Bottom <= R.Top);
 end;
 
 end.

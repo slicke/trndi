@@ -64,6 +64,7 @@ const
 type
   TBrushStyle = (bsSolid, bsClear);
   TPenStyle = (psSolid, psClear, psDot);
+  TGradientDirection = (gdVertical, gdHorizontal);
   TPenEndCap = (pecRound, pecSquare, pecFlat);
   TPenJoinStyle = (pjsRound, pjsBevel, pjsMiter);
   TFontStyle = (fsBold, fsStrikeOut);
@@ -168,6 +169,8 @@ type
     property Pixels[X, Y: Integer]: TColor read GetPixels;
     procedure Draw(X, Y: Integer; Src: TObject); virtual;
     procedure StretchDraw(const R: TRect; Src: TObject); virtual;
+    procedure GradientFill(const ARect: TRect; AStart, AStop: TColor;
+      ADirection: TGradientDirection); virtual;
   end;
 
   TIcon = class(TObject)
@@ -300,6 +303,12 @@ begin
 end;
 
 procedure TCanvas.TextOut(X, Y: Integer; const S: string);
+begin
+  // no-op for headless
+end;
+
+procedure TCanvas.GradientFill(const ARect: TRect; AStart, AStop: TColor;
+  ADirection: TGradientDirection);
 begin
   // no-op for headless
 end;

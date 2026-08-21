@@ -74,6 +74,8 @@ type
     FShowInTaskBar: TShowInTaskBar;
     FIcon: TIcon;
     FOnWindowStateChange: TNotifyEvent;
+    FAlphaBlend: Boolean;
+    FAlphaBlendValue: Byte;
   public
     procedure Close; virtual;
     procedure DoClose(var CloseAction: TCloseAction); virtual;
@@ -92,6 +94,10 @@ type
       write FOnWindowStateChange;
     function HandleAllocated: Boolean; virtual;
     procedure Repaint; virtual;
+    // Real LCL scales from 96 DPI to the form's DPI; headless is always 1:1.
+    function Scale96ToForm(const ASize: Integer): Integer; virtual;
+    property AlphaBlend: Boolean read FAlphaBlend write FAlphaBlend;
+    property AlphaBlendValue: Byte read FAlphaBlendValue write FAlphaBlendValue;
   end;
 
   // Real LCL forms descend TCustomForm -> TForm; helpers that take the base
@@ -185,6 +191,11 @@ end;
 procedure TForm.Close;
 begin
   // no-op for headless
+end;
+
+function TForm.Scale96ToForm(const ASize: Integer): Integer;
+begin
+  Result := ASize; // headless: no DPI scaling
 end;
 
 procedure TForm.Repaint;
