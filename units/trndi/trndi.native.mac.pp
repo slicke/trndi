@@ -2068,12 +2068,16 @@ const
 
 type
   // Content view of the accessory: draws the hamburger pill and turns a
-  // click into the caller's callback.
+  // click into the caller's callback. A tracking area gives it hover — the
+  // bars rest ghosted and gain full contrast under the cursor.
   TTrndiTitleMenuView = objcclass(NSView)
     procedure drawRect(dirtyRect: NSRect); override;
     procedure mouseDown(theEvent: NSEvent); override;
     function mouseDownCanMoveWindow: ObjCBOOL; override;
     function acceptsFirstMouse(theEvent: NSEvent): ObjCBOOL; override;
+    procedure updateTrackingAreas; override;
+    procedure mouseEntered(theEvent: NSEvent); override;
+    procedure mouseExited(theEvent: NSEvent); override;
   end;
 
 var
@@ -2083,6 +2087,8 @@ var
   gTitleMenuBridge: TTrndiWakeBridge = nil; // shared class, this unit's instance
   gTitleMenuBg: TColor = clBlack;
   gTitleMenuFg: TColor = clWhite;
+  gTitleMenuHover: boolean = false;
+  gTitleMenuTrack: NSTrackingArea = nil;
 
 procedure TTrndiTitleMenuView.drawRect(dirtyRect: NSRect);
 var
@@ -2100,8 +2106,12 @@ begin
   NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(pill,
     pill.size.height / 2, pill.size.height / 2).fill;
 
-  // Three bars, centred in the pill.
-  UserBadgeColor(gTitleMenuFg).setFill;
+  // Three bars, centred in the pill — ghosted at rest so they don't compete
+  // with the reading, full glyph color while the cursor is over the pill.
+  if gTitleMenuHover then
+    UserBadgeColor(gTitleMenuFg).setFill
+  else
+    UserBadgeColor(gTitleMenuFg).colorWithAlphaComponent(0.38).setFill;
   barW := pill.size.width * 0.5;
   barT := pill.size.height * 0.11;
   if barT < 1.5 then
@@ -2130,6 +2140,38 @@ end;
 function TTrndiTitleMenuView.acceptsFirstMouse(theEvent: NSEvent): ObjCBOOL;
 begin
   Result := true;
+end;
+
+// Hover tracking for the ghost-at-rest paint: one tracking area kept in sync
+// with the view (NSTrackingInVisibleRect makes AppKit follow resizes, so the
+// rect argument is only a placeholder).
+procedure TTrndiTitleMenuView.updateTrackingAreas;
+begin
+  inherited updateTrackingAreas;
+  if gTitleMenuTrack <> nil then
+  begin
+    removeTrackingArea(gTitleMenuTrack);
+    gTitleMenuTrack.release;
+    gTitleMenuTrack := nil;
+  end;
+  gTitleMenuTrack := NSTrackingArea.alloc.initWithRect_options_owner_userInfo(
+    bounds,
+    NSTrackingMouseEnteredAndExited or NSTrackingActiveAlways or
+    NSTrackingInVisibleRect,
+    Self, nil);
+  addTrackingArea(gTitleMenuTrack);
+end;
+
+procedure TTrndiTitleMenuView.mouseEntered(theEvent: NSEvent);
+begin
+  gTitleMenuHover := true;
+  setNeedsDisplay_(true);
+end;
+
+procedure TTrndiTitleMenuView.mouseExited(theEvent: NSEvent);
+begin
+  gTitleMenuHover := false;
+  setNeedsDisplay_(true);
 end;
 
 // Attachment tracking mirrors the badge: asked rather than remembered,
@@ -2242,6 +2284,8 @@ end;
 procedure TTrndiNativeMac.HideTitleMenuButton;
 begin
   DetachTitleMenu;
+  // A pill hidden mid-hover gets no mouseExited; don't let it come back lit.
+  gTitleMenuHover := false;
   if Assigned(gTitleMenuBridge) then
     gTitleMenuBridge.Callback := nil;
 end;

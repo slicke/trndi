@@ -3668,6 +3668,7 @@ var
   gMenuH: integer = 0;
   gMenuBg: TColor = clBlack;
   gMenuGlyph: TColor = clWhite;
+  gMenuHover: boolean = false;
 
 // True when device pixel (px,py) lies inside a w×h rounded rectangle with the
 // given corner radius. Mirrors the corner test used by SetBadge.FixBadgeAlpha.
@@ -3940,6 +3941,24 @@ begin
     DestroyWindow(gMenuHWnd);
     gMenuHWnd := 0;
   end;
+  gMenuHover := false;
+end;
+
+// Resting glyph color: the caption text blended mostly into the caption, so
+// the bars sit back instead of competing with the reading. Hover (tracked in
+// MenuWndProc) repaints with the full-contrast gMenuGlyph.
+function MenuRestGlyphColor: TColor;
+const
+  KEEP = 96; // /255 ≈ 38% of the glyph color survives at rest
+var
+  cb, cf: DWORD;
+begin
+  cb := DWORD(ColorToRGB(gMenuBg));
+  cf := DWORD(ColorToRGB(gMenuGlyph));
+  Result := TColor(RGB(
+    (GetRValue(cb) * (255 - KEEP) + GetRValue(cf) * KEEP) div 255,
+    (GetGValue(cb) * (255 - KEEP) + GetGValue(cf) * KEEP) div 255,
+    (GetBValue(cb) * (255 - KEEP) + GetBValue(cf) * KEEP) div 255));
 end;
 
 // Move the hamburger to the caption's left end, vertically centred. The main
@@ -4026,9 +4045,13 @@ begin
       DeleteObject(brush);
       DeleteObject(pen);
 
-      // Three bars, centred.
+      // Three bars, centred — ghosted at rest, full caption-text color while
+      // the cursor is over the pill.
       penW := Max(1, h div 9);
-      pen := CreatePen(PS_SOLID, penW, DWORD(ColorToRGB(gMenuGlyph)));
+      if gMenuHover then
+        pen := CreatePen(PS_SOLID, penW, DWORD(ColorToRGB(gMenuGlyph)))
+      else
+        pen := CreatePen(PS_SOLID, penW, DWORD(ColorToRGB(MenuRestGlyphColor)));
       oldPen := SelectObject(memDC, pen);
       gw := Round(h * 0.62);
       gx := (w - gw) div 2;
@@ -4094,9 +4117,13 @@ begin
   PaintTitleMenu;
 end;
 
-// WndProc of the hamburger window: clicks and the hand cursor, like the badge.
+// WndProc of the hamburger window: clicks and the hand cursor, like the
+// badge, plus hover tracking — the pill rests ghosted and repaints to full
+// contrast while the cursor is over it (TrackMouseEvent supplies the leave).
 function MenuWndProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM;
   lParam: LPARAM): LRESULT; stdcall;
+var
+  tme: TTrackMouseEvent;
 begin
   case uMsg of
     WM_LBUTTONUP:
@@ -4105,6 +4132,23 @@ begin
         gMenuBridge.Queue;
       Exit(0);
     end;
+    WM_MOUSEMOVE:
+      if not gMenuHover then
+      begin
+        gMenuHover := true;
+        FillChar(tme, SizeOf(tme), 0);
+        tme.cbSize := SizeOf(tme);
+        tme.dwFlags := TME_LEAVE;
+        tme.hwndTrack := hWnd;
+        TrackMouseEvent(tme);
+        PaintTitleMenu;
+      end;
+    WM_MOUSELEAVE:
+      if gMenuHover then
+      begin
+        gMenuHover := false;
+        PaintTitleMenu;
+      end;
     WM_SETCURSOR:
     begin
       Windows.SetCursor(Windows.LoadCursor(0, IDC_HAND));
