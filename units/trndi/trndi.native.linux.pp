@@ -90,8 +90,8 @@ trndi.native.base, trndi.native.async, FileUtil, Menus,
   // paint on. SetTray is a no-op there — no test asserts on the tray icon.
 trndi.badgeicon,
 {$endif}
-trndi.native.request.curl, trndi.native.settings.ini, DateUtils, ctypes,
-trndi.log,
+trndi.native.request.curl, trndi.native.settings.ini, trndi.native.wakebridge,
+DateUtils, ctypes, trndi.log,
 Process; // TProcess field (kiosk keep-awake inhibitor child)
 
 type
@@ -2625,12 +2625,6 @@ end;
   timer gap detection in tMainTimer stays as the last line of defence.
  ------------------------------------------------------------------------------}
 type
-  TWakeBridge = class
-    Callback: TTrndiWakeCallback;
-    Pending: boolean;
-    procedure Fire(Data: PtrInt);
-  end;
-
   TWakeMonitorThread = class(TThread)
   private
     FProc: TProcess;
@@ -2650,18 +2644,7 @@ type
 
 var
   gWakeThread: TWakeMonitorThread = nil;
-  gWakeBridge: TWakeBridge = nil;
-
-procedure TWakeBridge.Fire(Data: PtrInt);
-begin
-  Pending := false;
-  if Assigned(Callback) then
-    try
-      Callback();
-    except
-      // Don't propagate user callback exceptions through the message loop
-    end;
-end;
+  gWakeBridge: TTrndiWakeBridge = nil; // shared class, this unit's instance
 
 constructor TWakeMonitorThread.Create;
 begin
@@ -2696,11 +2679,8 @@ end;
  ------------------------------------------------------------------------------}
 procedure TWakeMonitorThread.QueueWake;
 begin
-  if Assigned(gWakeBridge) and (not gWakeBridge.Pending) then
-  begin
-    gWakeBridge.Pending := true;
-    Application.QueueAsyncCall(@gWakeBridge.Fire, 0);
-  end;
+  if Assigned(gWakeBridge) then
+    gWakeBridge.Queue;
 end;
 
 {------------------------------------------------------------------------------
@@ -2833,7 +2813,7 @@ procedure TTrndiNativeLinux.RegisterWakeCallback(const Callback: TTrndiWakeCallb
 begin
   inherited RegisterWakeCallback(Callback);
   if gWakeBridge = nil then
-    gWakeBridge := TWakeBridge.Create;
+    gWakeBridge := TTrndiWakeBridge.Create;
   gWakeBridge.Callback := Callback;
   if not Assigned(Callback) then
   begin
