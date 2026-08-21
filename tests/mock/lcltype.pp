@@ -60,8 +60,13 @@ const
   VK_X = 88; // 'X'
   VK_ESCAPE = 27; // Escape key
   crHandPoint = 12; // cursor constant used by umain
+  crHourGlass = 11; // busy cursor shown by the shutdown screen
   crDefault = 0;
   crNone = 1; // hide cursor for screenshots/headless mode
+
+// DrawText flags (Win32 values, as in real LCLType) used by usplash
+  DT_WORDBREAK = $10;
+  DT_CALCRECT = $400;
 
 // Minimal Mouse global used by umain
 type
