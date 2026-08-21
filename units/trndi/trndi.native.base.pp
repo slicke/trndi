@@ -529,6 +529,9 @@ class var touchOverride: TTrndiBool;
   class function SupportsTitleMenuButton: boolean; virtual;
     {** Show a clickable hamburger button at the left end of the title bar,
         painted as a @param(bg)-filled pill with @param(glyphColor) bars.
+        The colors are a fallback — a platform that colors its caption via
+        @link(SetTitleColor) may substitute the live caption colors so the
+        button blends into the bar (Windows does).
         @param(onClick) fires on the main thread when it is clicked.
         @returns(@true when the button was shown.)
         Base: no-op returning @false. }

@@ -427,7 +427,9 @@ begin
     Exit;
 
   // Theme-aware neutral pill — the same fallback colouring the user badge
-  // uses when no account colour is set, so the two read as one family.
+  // uses when no account colour is set. Only a fallback: Windows swaps it
+  // for the DWM caption colours whenever SetTitleColor runs (full-colour
+  // mode recolours with every reading), so the pill blends into the bar.
   if native.isDarkMode then
     bg := RGBToColor(64, 64, 68)
   else
