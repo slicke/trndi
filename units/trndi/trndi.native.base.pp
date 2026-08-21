@@ -220,6 +220,12 @@ class var touchOverride: TTrndiBool;
     maxRedirects: integer = 10; customHeaders: TStringList = nil;
     prefix: boolean = true; TimeoutMs: cardinal = 5000;
     GraceMs: cardinal = 5000): THTTPResponse;
+    {** True when @link(RequestExWait) may run requestEx on a worker thread
+        (the default). A platform that cannot host worker threads safely
+        overrides this to return False, and RequestExWait then calls
+        requestEx inline on the caller's thread — TimeoutMs and GraceMs are
+        accepted but ignored on that path. }
+  class function SupportsAsyncRequest: boolean; virtual;
 
     // Settings API
     {** Store a non-user-scoped key (global). }
@@ -837,6 +843,11 @@ end;
   the result with a timeout. Returns a THTTPResponse; on timeout the returned
   record has `Success = false` and `ErrorMessage = 'timeout'.
  ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.SupportsAsyncRequest: boolean;
+begin
+  Result := true; // platforms whose TThread cannot be joined safely override
+end;
+
 function TTrndiNativeBase.RequestExWait(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string = '';
 cookieJar: TStringList = nil; followRedirects: boolean = true;
@@ -849,7 +860,7 @@ var
 
   // Fold the response's cookies into the caller's jar, updating an existing
   // entry with the same name rather than appending a duplicate. Shared by the
-  // threaded path and the Haiku inline path below. The counters live here
+  // threaded path and the inline fallback below. The counters live here
   // rather than in the enclosing function: FPC rejects a non-local variable as
   // a for-loop counter.
   procedure MergeCookiesIntoJar;
@@ -878,42 +889,36 @@ var
   end;
 
 begin
-{$IFDEF HAIKU}
-  // No worker thread on Haiku. FPC's TThread is unusable there: TThread.Destroy
-  // calls WaitFor for a thread it has not reaped, and WaitFor hits the same
-  // join-after-detach access violation SafeThreadJoin exists to dodge - so
-  // freeing the worker raised EAccessViolation straight into the caller, which
-  // is what made every backend's Connect fail at boot.
-  //
-  // Nothing is lost by dropping it. RequestExWait blocks its caller until the
-  // worker finishes anyway, so the thread only ever bought the timeout, and
-  // Haiku cannot honour a timeout regardless: TSocketStream.SetIOTimeout has no
-  // branch for it and raises instead, which is why trndi.native.generic pins
-  // HTTP_IO_TIMEOUT to 0 there. TimeoutMs and GraceMs are accepted and ignored.
-  try
-    Result := requestEx(post, endpoint, params, jsondata, cookieJar,
-      followRedirects, maxRedirects, customHeaders, prefix);
-  except
-    on E: Exception do
-    begin
-      Result := Default(THTTPResponse);
-      Result.StatusCode := -1;
-      Result.Success := false;
-      if Trim(E.Message) <> '' then
-        Result.ErrorMessage := E.ClassName + ': ' + E.Message
-      else
-        Result.ErrorMessage := E.ClassName;
+  if not SupportsAsyncRequest then
+  begin
+    // A platform vetoed the worker thread (see SupportsAsyncRequest, and the
+    // Haiku override for why): run requestEx inline on the caller's thread.
+    // The thread only ever bought the timeout, so TimeoutMs and GraceMs are
+    // accepted and ignored here.
+    try
+      Result := requestEx(post, endpoint, params, jsondata, cookieJar,
+        followRedirects, maxRedirects, customHeaders, prefix);
+    except
+      on E: Exception do
+      begin
+        Result := Default(THTTPResponse);
+        Result.StatusCode := -1;
+        Result.Success := false;
+        if Trim(E.Message) <> '' then
+          Result.ErrorMessage := E.ClassName + ': ' + E.Message
+        else
+          Result.ErrorMessage := E.ClassName;
+      end;
     end;
+    // Callers free both lists unconditionally, so hand back the same non-nil
+    // guarantee the threaded path gives them.
+    if not Assigned(Result.Headers) then
+      Result.Headers := TStringList.Create;
+    if not Assigned(Result.Cookies) then
+      Result.Cookies := TStringList.Create;
+    MergeCookiesIntoJar;
+    Exit;
   end;
-  // Callers free both lists unconditionally, so hand back the same non-nil
-  // guarantee the threaded path gives them.
-  if not Assigned(Result.Headers) then
-    Result.Headers := TStringList.Create;
-  if not Assigned(Result.Cookies) then
-    Result.Cookies := TStringList.Create;
-  MergeCookiesIntoJar;
-  Exit;
-{$ENDIF}
   worker := TRequestExWaitThread.Create(Self, post, endpoint, params, jsondata,
     cookieJar, followRedirects, maxRedirects, customHeaders, prefix);
   worker.Start;
