@@ -405,6 +405,49 @@ begin
   last_popup := now;
 end;
 
+// (Re)create the settings hamburger (☰) at the title bar's left end — the
+// user badge's counterpart on the opposite side, and shown regardless of
+// multi-user mode. On Wayland the drawn bar paints its own button (and keeps
+// it legible as the bar recolors); on Windows/macOS the native layered
+// pill/accessory is used. Platforms with neither (X11) simply have no button
+// — the same menu stays reachable via right-click.
+procedure TfBG.RefreshTitleMenu;
+var
+  bg, glyph: TColor;
+begin
+  if OwnTitleBarActive then
+  begin
+    native.HideTitleMenuButton;
+    FTitleBar.OnMenuClick := @TitleBarMenuClick;
+    FTitleBar.ShowMenuButton := true;
+    Exit;
+  end;
+
+  if not native.SupportsTitleMenuButton then
+    Exit;
+
+  // Theme-aware neutral pill — the same fallback colouring the user badge
+  // uses when no account colour is set, so the two read as one family.
+  if native.isDarkMode then
+    bg := RGBToColor(64, 64, 68)
+  else
+    bg := RGBToColor(228, 228, 231);
+  glyph := IfThen(IsLightColor(bg), clBlack, clWhite);
+  if not native.ShowTitleMenuButton(bg, glyph, @TitleMenuClicked) then
+    native.HideTitleMenuButton;
+  // The caption is not touched here: RefreshUserBadge (which callers run
+  // right after this) owns it via ApplyUserCaption, and that picks up the
+  // Windows hamburger pad live.
+end;
+
+// Title-bar hamburger clicked (native button or drawn bar): open the same
+// menu a right-click on the window shows, at the pointer — which sits on
+// the button the user just clicked.
+procedure TfBG.TitleMenuClicked;
+begin
+  pmSettings.PopUp;
+end;
+
 procedure TfBG.pnWarningClick(Sender: TObject);
 begin
   {$ifdef TrndiExt}

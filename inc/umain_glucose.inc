@@ -2401,13 +2401,18 @@ begin
 end;
 
 procedure TfBG.ApplyUserCaption(const withNick: boolean);
+var
+  pad: string;
 begin
   if FBaseCaption = '' then
     Exit;
+  // Windows indents the caption text clear of the layered hamburger button
+  // at the caption's left end; everywhere else this is ''.
+  pad := native.TitleMenuCaptionPad;
   if withNick and multi then
-    Caption := Format(RS_USER_CAPTION, [multinick, FBaseCaption])
+    Caption := pad + Format(RS_USER_CAPTION, [multinick, FBaseCaption])
   else
-    Caption := FBaseCaption;
+    Caption := pad + FBaseCaption;
 end;
 
 procedure TfBG.RefreshUserBadge;
@@ -2415,7 +2420,12 @@ var
   bg, txt: TColor;
 begin
   if not multi then
+  begin
+    // Single-user: no badge or nick prefix, but the caption still needs the
+    // Windows hamburger pad applied (or dropped) — see ApplyUserCaption.
+    ApplyUserCaption(false);
     Exit;
+  end;
 
   // The badge wears the user's colour when set; otherwise a subtle theme-aware
   // chip so the name stays legible on the default caption.
