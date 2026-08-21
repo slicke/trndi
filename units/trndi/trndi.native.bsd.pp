@@ -83,10 +83,6 @@ TTrndiNativeBSD = class(TTrndiNativeLinux)
     procedure attention(topic, message: string;
       urgency: TTrndiNoticeUrgency); override; overload;
 
-    {** Alert sounds: the Linux override spawns aplay (ALSA), which BSD base
-        systems don't have; probe for whichever player is actually installed. }
-    class procedure PlaySound(const FileName: string); override;
-
     {** Wake-from-sleep: the Linux override watches systemd-logind, which does
         not exist on BSD; detect resume generically via a wall-clock jump. }
     procedure RegisterWakeCallback(const Callback: TTrndiWakeCallback); override;
@@ -107,61 +103,23 @@ uses
   - SpeakAvailable/SpeakSoftwareName reflect available fallback engines.
 ------------------------------------------------------------------------------}
 
-function ExecInPath(const FileName: string): string;
-var
-  PathVar: string;
-  Paths: TStringList;
-  i: Integer;
-  Dir: string;
-  ExtraDirs: array[0..3] of string = ('/usr/local/bin', '/usr/pkg/bin', '/usr/sbin', '/sbin');
-  j: Integer;
-begin
-  Result := '';
-  PathVar := GetEnvironmentVariable('PATH');
-  if PathVar <> '' then
-  begin
-    Paths := TStringList.Create;
-    try
-      Paths.Delimiter := ':';
-      Paths.StrictDelimiter := True;
-      Paths.DelimitedText := PathVar;
-      for i := 0 to Paths.Count - 1 do
-      begin
-        Dir := IncludeTrailingPathDelimiter(Paths[i]);
-        if FileExists(Dir + FileName) then
-          Exit(Dir + FileName);
-      end;
-    finally
-      Paths.Free;
-    end;
-  end;
-
-  // Check common extra locations (FreeBSD/NetBSD/pkg convention)
-  for j := Low(ExtraDirs) to High(ExtraDirs) do
-  begin
-    Dir := IncludeTrailingPathDelimiter(ExtraDirs[j]);
-    if FileExists(Dir + FileName) then
-      Exit(Dir + FileName);
-  end;
-end;
-
 class function TTrndiNativeBSD.SpeakAvailable: boolean;
 begin
   // Prefer Linux implementation (spd-say). If not present, check common BSD TTS.
   if inherited SpeakAvailable then
     Exit(True);
-  Result := (ExecInPath('espeak-ng') <> '') or (ExecInPath('espeak') <> '') or (ExecInPath('flite') <> '');
+  Result := (FindExecutableInPath('espeak-ng') <> '') or (FindExecutableInPath('espeak') <> '') or (FindExecutableInPath('flite') <> '');
 end;
 
 class function TTrndiNativeBSD.SpeakSoftwareName: string;
 begin
   if inherited SpeakAvailable then
     Exit(inherited SpeakSoftwareName);
-  if ExecInPath('espeak-ng') <> '' then
+  if FindExecutableInPath('espeak-ng') <> '' then
     Exit('espeak-ng');
-  if ExecInPath('espeak') <> '' then
+  if FindExecutableInPath('espeak') <> '' then
     Exit('espeak');
-  if ExecInPath('flite') <> '' then
+  if FindExecutableInPath('flite') <> '' then
     Exit('flite');
   Result := '';
 end;
@@ -244,11 +202,11 @@ begin
   Rate := GetIntSetting('tts.rate', 0);
 
   // Try espeak-ng/espeak fallback with voice/rate mapping
-  CmdPath := ExecInPath('espeak-ng');
+  CmdPath := FindExecutableInPath('espeak-ng');
   EngineName := 'espeak-ng';
   if CmdPath = '' then
   begin
-    CmdPath := ExecInPath('espeak');
+    CmdPath := FindExecutableInPath('espeak');
     EngineName := 'espeak';
   end;
   if CmdPath <> '' then
@@ -277,7 +235,7 @@ begin
   end;
 
   // Try flite fallback (no voice/rate mapping currently)
-  CmdPath := ExecInPath('flite');
+  CmdPath := FindExecutableInPath('flite');
   if CmdPath <> '' then
   begin
     RunAndCaptureSimpleAsync(CmdPath, ['-t', Text], nil);
@@ -319,7 +277,7 @@ end;
 
 function UseKDialog: boolean;
 begin
-  Result := (ExecInPath('kdialog') <> '') and HasGuiDisplay and
+  Result := (FindExecutableInPath('kdialog') <> '') and HasGuiDisplay and
     (IsKDESession or not TTrndiNativeLinux.isNotificationSystemAvailable);
 end;
 
@@ -355,53 +313,12 @@ begin
     // Fire-and-forget via the async worker so the child gets reaped (no
     // zombies). A passive popup cannot be marked urgent, so urgency is lost
     // here — same as it was before there was an urgency to lose.
-    RunAndCaptureSimpleAsync(ExecInPath('kdialog'),
+    RunAndCaptureSimpleAsync(FindExecutableInPath('kdialog'),
       ['--title', topic, '--passivepopup', message, '5'], nil);
     Exit;
   end;
 
   inherited attention(topic, message, urgency);
-end;
-
-{------------------------------------------------------------------------------
-  PlaySound (BSD)
-  ---------------
-  BSD base systems have no ALSA, so the Linux aplay override is usually dead.
-  Probe for whichever player is actually installed: PulseAudio, PipeWire,
-  alsa-utils (from ports), then generic media players.
-------------------------------------------------------------------------------}
-class procedure TTrndiNativeBSD.PlaySound(const FileName: string);
-
-  function TryPlay(const Player: string; const Pre: array of string): boolean;
-  var
-    exe: string;
-    Args: array of string;
-    i: Integer;
-  begin
-    Result := false;
-    exe := ExecInPath(Player);
-    if exe = '' then
-      Exit;
-    SetLength(Args, Length(Pre) + 1);
-    for i := 0 to High(Pre) do
-      Args[i] := Pre[i];
-    Args[High(Args)] := FileName;
-    // Fire-and-forget via the async worker so the child gets reaped (no zombies)
-    RunAndCaptureSimpleAsync(exe, Args, nil);
-    Result := true;
-  end;
-
-begin
-  if not IsValidAudioFile(FileName) then
-    Exit;
-
-  if TryPlay('paplay', []) then Exit;
-  if TryPlay('pw-play', []) then Exit;
-  if TryPlay('aplay', []) then Exit;
-  if TryPlay('ffplay', ['-nodisp', '-autoexit', '-loglevel', 'quiet']) then Exit;
-  if TryPlay('mpv', ['--no-video', '--really-quiet']) then Exit;
-
-  TrndiDLog('PlaySound: no audio player found (install pulseaudio, pipewire, alsa-utils, ffmpeg or mpv)');
 end;
 
 {------------------------------------------------------------------------------

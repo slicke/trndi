@@ -1751,40 +1751,10 @@ end;
   Search PATH for a file name and return the first matching absolute path.
  ------------------------------------------------------------------------------}
 function FindInPath(const FileName: string): string;
-var
-  PathVar, Dir: string;
-  Paths: TStringList;
-  i: integer;
-  ExtraDirs: array[0..3] of string = ('/usr/local/bin', '/usr/pkg/bin', '/usr/sbin', '/sbin');
-  j: Integer;
 begin
-  Result := '';
-  PathVar := GetEnvironmentVariable('PATH');
-  if PathVar <> '' then
-  begin
-    Paths := TStringList.Create;
-    try
-      Paths.Delimiter := ':';
-      Paths.StrictDelimiter := true;
-      Paths.DelimitedText := PathVar;
-      for i := 0 to Paths.Count - 1 do
-      begin
-        Dir := IncludeTrailingPathDelimiter(Paths[i]);
-        if FileExists(Dir + FileName) then
-          Exit(Dir + FileName);
-      end;
-    finally
-      Paths.Free;
-    end;
-  end;
-
-  // Fallback to common system/bin locations (useful on BSDs and restricted PATHs)
-  for j := Low(ExtraDirs) to High(ExtraDirs) do
-  begin
-    Dir := IncludeTrailingPathDelimiter(ExtraDirs[j]);
-    if FileExists(Dir + FileName) then
-      Exit(Dir + FileName);
-  end;
+  // Thin alias kept for this unit's many call sites; the walker itself is
+  // shared as trndi.native.base.FindExecutableInPath.
+  Result := FindExecutableInPath(FileName);
 end;
 
 function GetUserCacheDirLinux: string;
