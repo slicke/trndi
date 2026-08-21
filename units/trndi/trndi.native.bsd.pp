@@ -34,6 +34,12 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: ExecInPath and the PlaySound override were byte-copies of
+ *   Linux's helpers and are gone - the shared FindExecutableInPath and the
+ *   inherited PlaySound serve instead. TBSDWakeBridge was replaced by the
+ *   shared trndi.native.wakebridge class (BSD keeps its own instance).
  *)
 unit trndi.native.bsd;
 

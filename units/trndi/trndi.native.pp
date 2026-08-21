@@ -18,6 +18,9 @@
  * GitHub: https://github.com/slicke/trndi
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: SafeThreadJoin/Release re-exports forward to the new
+ *   trndi.native.threading unit; the TWSLVersion/TWSLInfo re-exports are
+ *   unconditional now that DetectWSL is part of the base contract.
  * - 2026-08-16: The dispatch can now select trndi.native.console when the
  *   build defines X_CONSOLE (LCL-free console/TUI front ends).
  *)

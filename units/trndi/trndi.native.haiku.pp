@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: setDarkMode overrides the new base contract; the new
+ *   SupportsAsyncRequest override replaces the Haiku {$IFDEF} that lived
+ *   inside trndi.native.base's RequestExWait.
  *)
 unit trndi.native.haiku;
 

@@ -15,6 +15,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * GitHub: https://github.com/slicke/trndi
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: start is an override of the (newly virtual) base hook rather
+ *   than a shadow; setDarkMode overrides the new base contract (handle
+ *   ignored - the whole app is themed); ImportSettings became the base
+ *   template's three hooks (migration check, raw defaults writes, one
+ *   synchronize); the local TWakeBridge class was replaced by the shared
+ *   trndi.native.wakebridge unit.
  *)
 unit trndi.native.mac;
 

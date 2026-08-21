@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: TForm gained Scale96ToForm (1:1) and the AlphaBlend pair,
+ *   needed by the reworked splash screen.
  *)
 unit Forms;
 

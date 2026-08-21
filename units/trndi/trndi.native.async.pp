@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: SafeThreadJoin now comes from the new trndi.native.threading
+ *   unit (moved out of trndi.native.base).
  * - 2026-08-17: Removed the unused RequestExAsync/RequestExWait wrappers and
  *   TRequestExWorker (every caller uses TTrndiNativeBase.RequestExWait
  *   instead). TRunAndCaptureWorker now drains and discards the child's

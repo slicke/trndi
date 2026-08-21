@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: ColorLuminance is exported (bit-op RGB so it exists in
+ *   X_CONSOLE builds); DefaultIsDarkMode and the platform units use it
+ *   instead of nested copies.
  *)
 
 {**
