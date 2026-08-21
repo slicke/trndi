@@ -1338,6 +1338,17 @@ end;
   -------------
   Apply caption and text colors to a window using DWM attributes.
  ------------------------------------------------------------------------------}
+var
+  // Last caption colors successfully applied, and to which window: the
+  // title-bar hamburger pill sits on the caption, so it mirrors these (see
+  // SyncTitleMenuToCaption below) instead of keeping its theme fallback.
+  gLastTitleHWnd: HWND = 0;
+  gLastTitleBg: TColor = clNone;
+  gLastTitleText: TColor = clNone;
+
+// Implemented in the hamburger section at the bottom of the unit.
+procedure SyncTitleMenuToCaption(owner: HWND; bg, txt: TColor); forward;
+
 class function TTrndiNativeWindows.SetTitleColor(form: PtrUInt;
 bg, Text: TColor): boolean;
 const
@@ -1360,6 +1371,16 @@ begin
   hrText := SetDwmAttr(form, DWMWA_TEXT_COLOR, textColor, SizeOf(textColor));
 
   Result := HrSucceeded(hrCaption) and HrSucceeded(hrText);
+
+  // Keep the hamburger pill flush with the caption it sits on: remember the
+  // colors (so a pill created later starts right) and repaint a live one.
+  if Result then
+  begin
+    gLastTitleHWnd := HWND(form);
+    gLastTitleBg := bg;
+    gLastTitleText := Text;
+    SyncTitleMenuToCaption(HWND(form), bg, Text);
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -4059,6 +4080,20 @@ begin
   end;
 end;
 
+// Recolor the pill to the caption colors DWM was just given, so it reads as
+// part of the caption (three bars, no visible chip) rather than a grey pill
+// on a colored bar. In full-color mode this fires with every reading.
+procedure SyncTitleMenuToCaption(owner: HWND; bg, txt: TColor);
+begin
+  if (gMenuHWnd = 0) or (owner <> gBadgeOwner) then
+    Exit;
+  if (gMenuBg = bg) and (gMenuGlyph = txt) then
+    Exit;
+  gMenuBg := bg;
+  gMenuGlyph := txt;
+  PaintTitleMenu;
+end;
+
 // WndProc of the hamburger window: clicks and the hand cursor, like the badge.
 function MenuWndProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM;
   lParam: LPARAM): LRESULT; stdcall;
@@ -4240,8 +4275,19 @@ begin
     Exit;
   owner := Application.MainForm.Handle;
 
-  gMenuBg := bg;
-  gMenuGlyph := glyphColor;
+  // The caller's colors are a theme fallback; when Trndi has already colored
+  // this window's caption (full-color mode, the default), the pill adopts
+  // the caption colors instead so it blends into the bar.
+  if (gLastTitleHWnd = owner) and (gLastTitleBg <> clNone) then
+  begin
+    gMenuBg := gLastTitleBg;
+    gMenuGlyph := gLastTitleText;
+  end
+  else
+  begin
+    gMenuBg := bg;
+    gMenuGlyph := glyphColor;
+  end;
 
   EnsureMenuClass;
   EnsureOverlayOwnerHook(owner);
