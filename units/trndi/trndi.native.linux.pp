@@ -83,7 +83,7 @@ interface
 uses
 Classes, SysUtils, Graphics, Dialogs, StrUtils,
 ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, linutils.dbus,
-trndi.native.base, trndi.native.async, FileUtil, Menus,
+trndi.native.base, trndi.native.async, trndi.native.colors, FileUtil, Menus,
 {$ifndef TEST}
   // The tray painter rasterizes through the real LCL image types; the console
   // test build swaps in tests/mock/graphics.pp, which has no rasterizer to
@@ -1108,12 +1108,6 @@ class function TTrndiNativeLinux.isDarkMode: boolean;
 var
   v: boolean;
   envGtkTheme: string;
-
-function Brightness(C: TColor): double;
-  begin
-    Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
-  end;
-
 begin
   // 1) xdg-desktop-portal color-scheme (desktop-agnostic)
   if DetectPortalDark(v) then
@@ -1135,8 +1129,9 @@ begin
     else
       Exit(false);
 
-  // 4) Last-resort heuristic using system colors
-  Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
+  // 4) Last-resort heuristic using system colors (shared luminance helper)
+  Result := ColorLuminance(ColorToRGB(clWindow)) <
+    ColorLuminance(ColorToRGB(clWindowText));
 end;
 
 {------------------------------------------------------------------------------
@@ -1748,37 +1743,40 @@ begin
   Result := '';
 end;
 
+// Write a text file via a same-directory .tmp and rename, so readers of the
+// indicator caches never see a half-written file. Shared by the two cache
+// writers below.
+procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
+var
+  tmp: string;
+begin
+  tmp := TargetPath + '.tmp';
+  try
+    Lines.SaveToFile(tmp);
+    // Atomic replace (same directory).
+    if not RenameFile(tmp, TargetPath) then
+    begin
+      // Fallback if target exists and rename fails.
+      try
+        DeleteFile(TargetPath);
+      except
+      end;
+      RenameFile(tmp, TargetPath);
+    end;
+  finally
+    try
+      if FileExists(tmp) then
+        DeleteFile(tmp);
+    except
+    end;
+  end;
+end;
+
 procedure WriteTrndiCurrentValueCache(const Value, Trend: string);
 var
   cacheDir, filePath, badgeText: string;
   sl: TStringList;
   existing: TStringList;
-
-procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
-  var
-    tmp: string;
-  begin
-    tmp := TargetPath + '.tmp';
-    try
-      Lines.SaveToFile(tmp);
-      // Atomic replace (same directory).
-      if not RenameFile(tmp, TargetPath) then
-      begin
-        // Fallback if target exists and rename fails.
-        try
-          DeleteFile(TargetPath);
-        except
-        end;
-        RenameFile(tmp, TargetPath);
-      end;
-    finally
-      try
-        if FileExists(tmp) then
-          DeleteFile(tmp);
-      except
-      end;
-    end;
-  end;
 begin
   cacheDir := GetUserCacheDirLinux;
   if cacheDir = '' then
@@ -1843,30 +1841,6 @@ FreshMinutes: integer; const Trend: string);
 var
   cacheDir, filePath, badgeText: string;
   sl: TStringList;
-
-procedure SaveStringListAtomic(const TargetPath: string; const Lines: TStringList);
-  var
-    tmp: string;
-  begin
-    tmp := TargetPath + '.tmp';
-    try
-      Lines.SaveToFile(tmp);
-      if not RenameFile(tmp, TargetPath) then
-      begin
-        try
-          DeleteFile(TargetPath);
-        except
-        end;
-        RenameFile(tmp, TargetPath);
-      end;
-    finally
-      try
-        if FileExists(tmp) then
-          DeleteFile(tmp);
-      except
-      end;
-    end;
-  end;
 begin
   cacheDir := GetUserCacheDirLinux;
   if cacheDir = '' then

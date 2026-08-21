@@ -179,34 +179,6 @@ class function TTrndiNativeMock.TestProxyURL(const url: string; const proxyHost:
 var
   HTTP: TFPHTTPClient;
   host, portS, user, pass: string;
-  procedure NormalizeProxyHostPort(var hostV: string; var portV: string);
-  var
-    s: string;
-    p: integer;
-    hostPart, portPart: string;
-  begin
-    s := Trim(hostV);
-    p := Pos('://', s);
-    if p > 0 then
-      s := Copy(s, p + 3, MaxInt);
-    p := Pos('/', s);
-    if p > 0 then
-      s := Copy(s, 1, p - 1);
-    p := LastDelimiter(':', s);
-    if (p > 0) and (p < Length(s)) then
-    begin
-      hostPart := Copy(s, 1, p - 1);
-      portPart := Copy(s, p + 1, MaxInt);
-      if (hostPart <> '') and (StrToIntDef(portPart, -1) > 0) then
-      begin
-        s := hostPart;
-        if Trim(portV) = '' then
-          portV := portPart;
-      end;
-    end;
-    hostV := s;
-    portV := Trim(portV);
-  end;
 begin
   res := '';
   Result := False;
@@ -214,7 +186,9 @@ begin
   portS := Trim(proxyPort);
   user := Trim(proxyUser);
   pass := proxyPass;
-  NormalizeProxyHostPort(host, portS);
+  // Base's shared normalizer (IPv6-bracket aware) — the mock used to carry
+  // an older private copy.
+  trndi.native.base.NormalizeProxyHostPort(host, portS);
 
   if host = '' then
   begin
