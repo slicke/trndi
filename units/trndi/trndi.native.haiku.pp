@@ -88,6 +88,19 @@ public
   class function GetWindowManagerName: string; override;
   {** Placeholder for dark mode toggling on Haiku. }
   class function setDarkMode: boolean;
+  {** No worker thread for RequestExWait on Haiku. FPC 3.2.2's TThread is
+      unusable there: TThread.Destroy calls WaitFor for a thread it has not
+      reaped, and WaitFor hits the same join-after-detach access violation
+      SafeThreadJoin (trndi.native.threading) exists to dodge - so freeing
+      the worker raised EAccessViolation straight into the caller, which is
+      what made every backend's Connect fail at boot.
+
+      Nothing is lost by dropping it. RequestExWait blocks its caller until
+      the worker finishes anyway, so the thread only ever bought the timeout,
+      and Haiku cannot honour a timeout regardless: TSocketStream.SetIOTimeout
+      has no branch for it and raises instead, which is why
+      trndi.native.generic pins HTTP_IO_TIMEOUT to 0 there. }
+  class function SupportsAsyncRequest: boolean; override;
 end;
 
 implementation
@@ -353,6 +366,17 @@ end;
 class function TTrndiNativeHaiku.setDarkMode: boolean;
 begin
   // No-op placeholder for Haiku
+  Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  SupportsAsyncRequest
+  --------------------
+  False: no worker thread for RequestExWait here - see the interface comment
+  for the full join-after-detach rationale.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeHaiku.SupportsAsyncRequest: boolean;
+begin
   Result := false;
 end;
 
