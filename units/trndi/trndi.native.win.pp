@@ -1861,6 +1861,135 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  Settings cache (unit-level, process-wide)
+  -----------------------------------------
+  Cache for settings reads. The backing store (HKCU registry) is a singleton,
+  so the cache is too — multiple TrndiNative instances all observe the same
+  cache and stay coherent with each other's writes. Keys stored here are the
+  full key (post-buildKey).
+
+  The "warm" flag means the cache holds a complete snapshot of the store, so
+  a missed lookup is authoritative (return def). When false, a miss must fall
+  through to the registry.
+
+  Cache and lock are created in this unit's initialization section so they are
+  guaranteed available before any TrndiNative construction, and they are
+  class-lifetime singletons that may be touched by background workers (e.g.
+  TRequestExWaitThread -> requestEx -> GetRootSetting for proxy.* lookups)
+  not joined at shutdown. Freeing them in finalization would race with those
+  workers, so the objects stay in place for the process lifetime and shutdown
+  just invalidates the warm snapshot.
+ ------------------------------------------------------------------------------}
+var
+  gSettingsCache: TStringList;
+  gSettingsCacheLock: SyncObjs.TCriticalSection;
+  gSettingsCacheWarm: boolean;
+
+// Try to read a fully-resolved key from the cache. Returns True if a cached
+// value was found OR the cache is warm and the key is absent (in which case
+// val is empty). Returns False only when the cache is cold and the caller
+// must consult the backing store.
+function TryGetCachedSetting(const fullKey: string; out val: string): boolean;
+var
+  idx: integer;
+begin
+  Result := false;
+  val := '';
+  if gSettingsCacheLock = nil then
+    Exit;
+  gSettingsCacheLock.Enter;
+  try
+    idx := gSettingsCache.IndexOfName(fullKey);
+    if idx >= 0 then
+    begin
+      val := gSettingsCache.ValueFromIndex[idx];
+      Result := true;
+    end
+    else
+    if gSettingsCacheWarm then
+      // Authoritative miss — the snapshot did not contain this key.
+      Result := true;
+  finally
+    gSettingsCacheLock.Leave;
+  end;
+end;
+
+// Update or insert a single cached value. Safe to call on a cold cache — it
+// only adds the single entry without flipping the warm flag.
+procedure SetCachedSetting(const fullKey, val: string);
+begin
+  if gSettingsCacheLock = nil then
+    Exit;
+  gSettingsCacheLock.Enter;
+  try
+    gSettingsCache.Values[fullKey] := val;
+  finally
+    gSettingsCacheLock.Leave;
+  end;
+end;
+
+// Remove a key from the cache (no-op if not present).
+procedure RemoveCachedSetting(const fullKey: string);
+var
+  idx: integer;
+begin
+  if gSettingsCache = nil then
+    Exit;
+  gSettingsCacheLock.Enter;
+  try
+    idx := gSettingsCache.IndexOfName(fullKey);
+    if idx >= 0 then
+      gSettingsCache.Delete(idx);
+  finally
+    gSettingsCacheLock.Leave;
+  end;
+end;
+
+// Drop all cached values and clear the warm flag. The next read re-warms via
+// WarmSettingsCache (or falls through to the registry and caches lazily).
+procedure ClearSettingsCache;
+begin
+  if gSettingsCacheLock = nil then
+    Exit;
+  gSettingsCacheLock.Enter;
+  try
+    if gSettingsCache <> nil then
+      gSettingsCache.Clear;
+    gSettingsCacheWarm := false;
+  finally
+    gSettingsCacheLock.Leave;
+  end;
+end;
+
+// Replace the cache contents with a complete snapshot of the backing store
+// and mark the cache warm. Snapshot must have entries in name=value form;
+// ownership stays with the caller.
+procedure SeedSettingsCache(Snapshot: TStrings);
+var
+  i: integer;
+  k, v: string;
+begin
+  if gSettingsCacheLock = nil then
+    Exit;
+  gSettingsCacheLock.Enter;
+  try
+    gSettingsCache.Clear;
+    if Snapshot <> nil then
+      for i := 0 to Snapshot.Count - 1 do
+      begin
+        k := Snapshot.Names[i];
+        if k = '' then
+          Continue;
+        v := Snapshot.ValueFromIndex[i];
+        gSettingsCache.Values[k] := v;
+      end;
+    gSettingsCacheWarm := true;
+  finally
+    gSettingsCacheLock.Leave;
+  end;
+end;
+
+{------------------------------------------------------------------------------
   WarmSettingsCache
   -----------------
   Snapshot every value under HKCU\Software\Trndi\ into the process-wide cache
@@ -1879,11 +2008,11 @@ begin
   // can't interleave (write to registry, update cache) between our enum and
   // our seed — that interleaving would let SeedSettingsCache wipe the value
   // the writer just placed in the cache.
-  TTrndiNativeBase.FSettingsCacheLock.Enter;
+  gSettingsCacheLock.Enter;
   try
     // Double-checked: another thread may have warmed while we waited for
     // the lock.
-    if TTrndiNativeBase.FSettingsCacheWarm then
+    if gSettingsCacheWarm then
       Exit;
     names := TStringList.Create;
     snapshot := TStringList.Create;
@@ -1906,14 +2035,14 @@ begin
             snapshot.Add(k + '=' + reg.ReadString(k));
         end;
       end;
-      TTrndiNativeBase.SeedSettingsCache(snapshot);
+      SeedSettingsCache(snapshot);
     finally
       reg.Free;
       snapshot.Free;
       names.Free;
     end;
   finally
-    TTrndiNativeBase.FSettingsCacheLock.Leave;
+    gSettingsCacheLock.Leave;
   end;
 end;
 
@@ -1934,10 +2063,10 @@ var
 begin
   key := buildKey(keyname, global);
 
-  if not TTrndiNativeBase.FSettingsCacheWarm then
+  if not gSettingsCacheWarm then
     WarmSettingsCache;
 
-  if TTrndiNativeBase.TryGetCachedSetting(key, cached) then
+  if TryGetCachedSetting(key, cached) then
   begin
     // Legacy behaviour: an empty stored value and a missing key both collapse
     // to def. Preserve that so callers don't need to change.
@@ -1958,7 +2087,7 @@ begin
       if reg.ValueExists(key) then
       begin
         Result := reg.ReadString(key);
-        TTrndiNativeBase.SetCachedSetting(key, Result);
+        SetCachedSetting(key, Result);
       end;
   finally
     reg.Free;
@@ -1983,7 +2112,7 @@ begin
     if reg.OpenKey('\SOFTWARE\Trndi\', true) then
     begin
       reg.WriteString(key, val);
-      TTrndiNativeBase.SetCachedSetting(key, val);
+      SetCachedSetting(key, val);
     end
     else
       TrndiDLog('SetSetting: failed to open HKCU\SOFTWARE\Trndi for key ' + key);
@@ -2012,7 +2141,7 @@ begin
   finally
     reg.Free;
   end;
-  TTrndiNativeBase.RemoveCachedSetting(key);
+  RemoveCachedSetting(key);
 end;
 
 {------------------------------------------------------------------------------
@@ -2025,7 +2154,7 @@ begin
   // Drop the in-memory cache so the next read re-warms from the registry.
   // Use this after another process (or another TrndiNative instance via
   // ImportSettings) may have written to HKCU\Software\Trndi.
-  TTrndiNativeBase.ClearSettingsCache;
+  ClearSettingsCache;
 end;
 
 {------------------------------------------------------------------------------
@@ -2123,7 +2252,7 @@ begin
   end;
   // Bulk write bypassed the per-key cache update path; drop the cache so the
   // next read picks up the imported values.
-  TTrndiNativeBase.ClearSettingsCache;
+  ClearSettingsCache;
 end;
 
 {------------------------------------------------------------------------------
@@ -3868,7 +3997,18 @@ begin
   DestroyBadgeWindow;
 end;
 
+initialization
+  // Create the settings cache before any TrndiNative construction can touch
+  // it. Never freed — see the cache comment block for the shutdown contract.
+  gSettingsCacheLock := SyncObjs.TCriticalSection.Create;
+  gSettingsCache := TStringList.Create;
+  gSettingsCache.CaseSensitive := true;
+  gSettingsCache.NameValueSeparator := '=';
+
 finalization
+  // The cache objects deliberately leak (background workers may still read
+  // them at exit); just invalidate the warm snapshot.
+  gSettingsCacheWarm := false;
   try
     // Ensure the background speech worker is cleanly stopped on shutdown so
     // COM/SAPI resources are released and the thread is joined.
