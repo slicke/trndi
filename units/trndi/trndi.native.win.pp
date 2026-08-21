@@ -3946,9 +3946,7 @@ end;
 
 // Resting glyph color: the caption text blended mostly into the caption, so
 // the bars sit back instead of competing with the reading. Hover (tracked in
-// MenuWndProc) repaints with the full-contrast gMenuGlyph. Channels are
-// unpacked by hand ($00BBGGRR) — the Windows unit's inline GetRValue/RGB
-// helpers trip an FPC 3.2.2 win64 codegen internal error here.
+// MenuWndProc) repaints with the full-contrast gMenuGlyph.
 function MenuRestGlyphColor: TColor;
 const
   KEEP = 96; // /255 ≈ 38% of the glyph color survives at rest
@@ -4061,10 +4059,16 @@ begin
       gx := (w - gw) div 2;
       cy := h div 2;
       gap := Max(2, Round(h * 0.22));
-      for i := -1 to 1 do
+      // Additive stepping, not cy + i*gap over i in -1..1: the negative-based
+      // loop variable becomes a narrow subrange, and its widening multiply
+      // makes ppcx64 3.2.2 -O3 abort with internal error 200306031
+      // (check_register_size) under this function's register pressure.
+      yy := cy - gap;
+      for i := 0 to 2 do
       begin
-        MoveToEx(memDC, gx, cy + i * gap, nil);
-        LineTo(memDC, gx + gw, cy + i * gap);
+        MoveToEx(memDC, gx, yy, nil);
+        LineTo(memDC, gx + gw, yy);
+        Inc(yy, gap);
       end;
       SelectObject(memDC, oldPen);
       DeleteObject(pen);
