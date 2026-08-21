@@ -93,6 +93,7 @@ type
     FHandle: PtrUInt; // Mock window handle for Windows-specific code
     FAnchors: TAnchors;
     FShowHint: Boolean;
+    procedure SetParentControl(AValue: TWinControl);
   protected
     FCanvas: TCanvas;
     FFont: TFont;
@@ -106,7 +107,7 @@ type
     property Top: Integer read FTop write FTop;
     property Width: Integer read FWidth write FWidth;
     property Height: Integer read FHeight write FHeight;
-    property Parent: TWinControl read FParent write FParent;
+    property Parent: TWinControl read FParent write SetParentControl;
     property Canvas: TCanvas read FCanvas;
     property Font: TFont read FFont write FFont;
     property Caption: string read FCaption write FCaption;
@@ -163,6 +164,17 @@ type
 
 
   TWinControl = class(TControl)
+  private
+    FChildControls: TList; // children reference themselves here; not owned
+    function GetControlCount: Integer;
+    function GetControlByIndex(Index: Integer): TControl;
+  public
+    destructor Destroy; override;
+    procedure AddChildControl(AControl: TControl);
+    procedure RemoveChildControl(AControl: TControl);
+    // Real LCL child enumeration used by umain's shutdown-screen sweep
+    property ControlCount: Integer read GetControlCount;
+    property Controls[Index: Integer]: TControl read GetControlByIndex;
   end;
 
   // Windowless control; in the real LCL it paints onto the parent's canvas.
@@ -246,11 +258,60 @@ end;
 
 destructor TControl.Destroy;
 begin
+  if Assigned(FParent) then
+    FParent.RemoveChildControl(Self);
   if Assigned(FCanvas) then
     FCanvas.Free;
   if Assigned(FFont) then
     FFont.Free;
   inherited Destroy;
+end;
+
+procedure TControl.SetParentControl(AValue: TWinControl);
+begin
+  if FParent = AValue then
+    Exit;
+  if Assigned(FParent) then
+    FParent.RemoveChildControl(Self);
+  FParent := AValue;
+  if Assigned(FParent) then
+    FParent.AddChildControl(Self);
+end;
+
+{ TWinControl }
+
+destructor TWinControl.Destroy;
+begin
+  FChildControls.Free; // entries are not owned
+  FChildControls := nil;
+  inherited Destroy;
+end;
+
+procedure TWinControl.AddChildControl(AControl: TControl);
+begin
+  if FChildControls = nil then
+    FChildControls := TList.Create;
+  if FChildControls.IndexOf(AControl) < 0 then
+    FChildControls.Add(AControl);
+end;
+
+procedure TWinControl.RemoveChildControl(AControl: TControl);
+begin
+  if Assigned(FChildControls) then
+    FChildControls.Remove(AControl);
+end;
+
+function TWinControl.GetControlCount: Integer;
+begin
+  if Assigned(FChildControls) then
+    Result := FChildControls.Count
+  else
+    Result := 0;
+end;
+
+function TWinControl.GetControlByIndex(Index: Integer): TControl;
+begin
+  Result := TControl(FChildControls[Index]);
 end;
 
 function TControl.ClientRect: TRect;
