@@ -93,7 +93,25 @@ TColor = Graphics.TColor;
     COLORFGBG or a terminal query). }
 function DefaultIsDarkMode: boolean;
 
+{** Perceptual luminance (BT.601-style rounded coefficients) of an RGB
+    colour value. Expects an actual RGB value — run system colours through
+    @code(ColorToRGB) first. Bit-ops rather than the LCL's Red/Green/Blue
+    helpers so it exists in @code(X_CONSOLE) builds too. }
+function ColorLuminance(C: TColor): double;
+
 implementation
+
+{------------------------------------------------------------------------------
+  ColorLuminance
+  --------------
+  Weighted RGB brightness; the shared helper behind DefaultIsDarkMode and the
+  platform units' own light-vs-dark comparisons.
+ ------------------------------------------------------------------------------}
+function ColorLuminance(C: TColor): double;
+begin
+  Result := ((C and $FF) * 0.3) + (((C shr 8) and $FF) * 0.59) +
+    (((C shr 16) and $FF) * 0.11);
+end;
 
 {------------------------------------------------------------------------------
   DefaultIsDarkMode
@@ -102,19 +120,12 @@ implementation
   trndi.native.base so that unit has one unconditional implementation.
  ------------------------------------------------------------------------------}
 function DefaultIsDarkMode: boolean;
-{$ifndef X_CONSOLE}
-
-function Brightness(C: TColor): double;
-  begin
-    Result := (Red(C) * 0.3) + (Green(C) * 0.59) + (Blue(C) * 0.11);
-  end;
-
-{$endif}
 begin
 {$ifdef X_CONSOLE}
   Result := false;
 {$else}
-  Result := (Brightness(ColorToRGB(clWindow)) < Brightness(ColorToRGB(clWindowText)));
+  Result := ColorLuminance(ColorToRGB(clWindow)) <
+    ColorLuminance(ColorToRGB(clWindowText));
 {$endif}
 end;
 
