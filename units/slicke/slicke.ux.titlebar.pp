@@ -157,7 +157,8 @@ public
     {** Remove the identity chip. }
   procedure ClearUserBadge;
     {** Show a hamburger (☰) button at the left end of the bar, drawn in the
-        caption buttons' flat style. Clicking it fires @link(OnMenuClick) —
+        caption buttons' flat style — ghosted at rest, full contrast under
+        the cursor. Clicking it fires @link(OnMenuClick) —
         meant for the host's settings/app menu, mirroring the native
         title-bar hamburger platforms with colorable decorations offer. }
   property ShowMenuButton: boolean read FMenuBtn write SetShowMenuButton;
@@ -782,8 +783,9 @@ begin
   end;
 
   // Hamburger button at the left end, in the same flat style as the caption
-  // buttons below: bare glyph at rest, soft rounded-square highlight behind
-  // it on hover/press.
+  // buttons below: hover/press shows a soft rounded-square highlight. At rest
+  // the glyph is ghosted (blended well toward the bar) so it doesn't compete
+  // with the reading; hovering restores the full caption color.
   if mr.Right > mr.Left then
   begin
     cx := (mr.Left + mr.Right) div 2;
@@ -804,7 +806,10 @@ begin
     end;
     gs := Max(8, Height div 3);
     gr := Rect(cx - gs div 2, cy - gs div 2, cx - gs div 2 + gs, cy - gs div 2 + gs);
-    Canvas.Pen.Color := FText;
+    if FMenuHover or FMenuPressed then
+      Canvas.Pen.Color := FText
+    else
+      Canvas.Pen.Color := MixColors(FBg, FText, 0.40);
     Canvas.Pen.Width := Max(1, Height div 24);
     Canvas.Brush.Style := bsClear;
     Canvas.Line(gr.Left, gr.Top, gr.Right, gr.Top);
