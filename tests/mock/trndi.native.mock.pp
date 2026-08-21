@@ -34,6 +34,12 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: setDarkMode follows the unified base signature (one
+ *   override); the private proxy normalizer was replaced by base's
+ *   IPv6-aware NormalizeProxyHostPort; dead commented declarations
+ *   removed.
  *)
 unit trndi.native.mock;
 

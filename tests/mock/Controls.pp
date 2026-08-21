@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: Parenting now tracks children so ControlCount/Controls[]
+ *   (used by umain's shutdown-screen sweep) enumerate something real.
  *)
 (* MODIFICATION NOTICE (2026-08-05): Added Screen.Fonts to mirror the LCL
    screen font list used by Linux-specific UI initialization in headless tests. *)

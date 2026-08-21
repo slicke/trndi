@@ -15,6 +15,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * GitHub: https://github.com/slicke/trndi
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: The process-wide settings cache moved here from
+ *   trndi.native.base as unit-level machinery (created in initialization;
+ *   never freed - see the cache comment block). SetDarkMode is now an
+ *   override of the base contract taking a PtrUInt handle (0 = nothing to
+ *   theme). The local TWakeBridge class was replaced by the shared
+ *   trndi.native.wakebridge unit.
  *)
 unit trndi.native.win;
 

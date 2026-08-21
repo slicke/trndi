@@ -18,6 +18,15 @@
  * GitHub: https://github.com/slicke/trndi
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: Structural refactor. SafeThreadJoin/Release moved to the new
+ *   trndi.native.threading unit and the Windows-only settings cache into
+ *   trndi.native.win, removing this unit's platform {$IFDEF}s (the Haiku
+ *   branch inside RequestExWait became the virtual SupportsAsyncRequest).
+ *   The contract gained virtual setDarkMode and DetectWSL (the WSL types
+ *   are now unconditional) and start/done became virtual. ImportSettings
+ *   is a concrete template with Begin/Key/End hooks. FindExecutableInPath
+ *   (the shared POSIX PATH walker) is exported here. Dead DWMWA_* consts
+ *   removed.
  * - 2026-08-16: The LCL Graphics dependency was replaced by the new
  *   trndi.native.colors unit, which owns the TColor definition (re-exported
  *   here) and the default isDarkMode heuristic. This unit keeps no build-mode

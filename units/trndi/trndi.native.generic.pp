@@ -20,6 +20,10 @@
 
 (*
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: The INI settings backend moved verbatim to the shared
+ *   trndi.native.settings.ini store (the six overrides are now delegates;
+ *   ResolveIniPath stays). ToolAvailable walks PATH in-process via base's
+ *   FindExecutableInPath instead of spawning `which`.
  * - 2026-08-20: The INI settings store is now class-wide with a lock, one
  *   snapshot per process — per-instance TIniFile stores clobbered each
  *   other's writes (see the matching note in trndi.native.linux).
