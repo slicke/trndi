@@ -2368,12 +2368,10 @@ begin
       IfThen(IsLightColor(fBG.Color), clBlack, clWhite)) then
       Exit(true);
 
+  // The handle is used by per-window theming (Windows DWM) and ignored by
+  // platforms that theme the whole app or not at all.
   if native.isDarkMode then
-    native.setDarkMode
-  {$ifdef windows}
-    (self.Handle)
-  {$endif}
-  ;
+    native.setDarkMode(PtrUInt(self.Handle));
 
   Result := false;
 end;

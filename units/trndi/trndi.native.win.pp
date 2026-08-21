@@ -79,7 +79,10 @@ public
   class function GetRandomBytes(Buf: PByte; Count: integer): boolean; override;
   {** Microsecond monotonic clock via QueryPerformanceCounter. }
   class function MonotonicMicroseconds: int64; override;
-  class function SetDarkMode(win: HWND; Enable: boolean = true): boolean;
+    {** Toggle DWM immersive dark mode on one window. @param(winHandle) is the
+        HWND; 0 is rejected (no window to theme). }
+  class function SetDarkMode(winHandle: PtrUInt = 0;
+    Enable: boolean = true): boolean; override;
     {** Opt the entire process into Windows' dark popup-menu / scrollbar / tooltip
         theme via the undocumented uxtheme.dll ordinal 135 (SetPreferredAppMode).
         Requires Windows 10 1809+ (build >= 17763); silently no-ops elsewhere.
@@ -1293,12 +1296,15 @@ end;
   -----------
   Toggle immersive dark mode for a window (Windows 10 1809+ required).
  ------------------------------------------------------------------------------}
-class function TTrndiNativeWindows.SetDarkMode(win: HWND;
-Enable: boolean = true): boolean;
+class function TTrndiNativeWindows.SetDarkMode(winHandle: PtrUInt;
+Enable: boolean): boolean;
 begin
+  // No window handle means nothing to theme — Windows darkens per-window.
+  if winHandle = 0 then
+    Exit(false);
   // Immersive dark mode lives in slicke.wintools.menutheme so the popup-menu
   // hook can share it without a native<->slicke dependency cycle.
-  Result := WinApplyImmersiveDark(win, Enable);
+  Result := WinApplyImmersiveDark(HWND(winHandle), Enable);
 end;
 
 class function TTrndiNativeWindows.SetPreferredDarkMode: boolean;

@@ -72,10 +72,8 @@ type
 TColor = trndi.native.colors.TColor;
 
 type
-{$ifdef X_LINUXBSD}
   {** WSL version detection result. }
 TWSLVersion = (wslNone, wslVersion1, wslVersion2, wslUnknown);
-{$endif}
   {** Ternary-style boolean with Unset/Unknown states for user overrides. }
 TTrndiBool = (tbUnset, tbTrue, tbFalse, tbUnknown);
 
@@ -100,7 +98,6 @@ TTitleColorSink = procedure(bg, Text: TColor) of object;
       value. }
 TTitleColorHandleProvider = function: PtrUInt of object;
 
-{$ifdef X_LINUXBSD}
   {** Information about a WSL environment (Windows Subsystem for Linux). }
 TWSLInfo = record
   IsWSL: boolean;       // True when running under WSL
@@ -108,7 +105,6 @@ TWSLInfo = record
   DistroName: string;   // Optional distro name (if available)
   KernelVersion: string;// Kernel string as reported by /proc/version
 end;
-{$endif}
 
   {** Enhanced HTTP response with headers, cookies, and redirect information. }
 THTTPResponse = record
@@ -304,6 +300,14 @@ class var touchOverride: TTrndiBool;
     // Theme/Env
     {** Determine if the OS/theme uses a dark appearance. Platforms override. }
   class function isDarkMode: boolean; virtual;
+    {** Ask the platform to apply a dark appearance. @param(winHandle) is the
+        native window handle for platforms that theme per-window (Windows
+        DWM); 0 targets nothing/the app default — the same PtrUInt
+        convention as @link(SetTitleColor). Platforms without programmatic
+        dark-mode switching ignore both parameters and return False.
+        @returns(True when a change was applied.) }
+  class function setDarkMode(winHandle: PtrUInt = 0;
+    Enable: boolean = true): boolean; virtual;
   {** Check whether native text-to-speech is available on this platform. }
   class function SpeakAvailable: boolean; virtual;
   {** Returns the name of the software used for speech on this platform (e.g., 'spd-say', 'SAPI', 'say'). }
@@ -369,6 +373,10 @@ class var touchOverride: TTrndiBool;
     out res: string): boolean; virtual;
   class function GetOSLanguage: string; virtual;
   class function HasDangerousChars(const FileName: string): boolean; virtual;
+    {** Detect Windows Subsystem for Linux. Base: not WSL — only the Linux
+        unit overrides with a real probe, so call sites need no platform
+        conditionals. }
+  class function DetectWSL: TWSLInfo; virtual;
     // Notifications
     {** True if a native notification system is available (override per platform). }
   class function isNotificationSystemAvailable: boolean; virtual;
@@ -403,9 +411,9 @@ class var touchOverride: TTrndiBool;
     // Lifecycle and UI
   destructor Destroy; override;
     {** Optional startup hook; platform units may override. }
-  procedure start;
+  procedure start; virtual;
     {** Optional shutdown hook; platform units may override. }
-  procedure done;
+  procedure done; virtual;
     {** Register a callback to be fired on OS wake-from-sleep. Only one
         callback may be active at a time; a second call replaces the first.
         Pass @code(nil) (or call @link(UnregisterWakeCallback)) to stop
@@ -1787,6 +1795,27 @@ end;
 class function TTrndiNativeBase.isDarkMode: boolean;
 begin
   Result := DefaultIsDarkMode;
+end;
+
+{------------------------------------------------------------------------------
+  DetectWSL (class, virtual)
+  --------------------------
+  Base: not running under WSL. The Linux unit overrides with a real probe.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.DetectWSL: TWSLInfo;
+begin
+  Result := Default(TWSLInfo); // IsWSL = false, Version = wslNone
+end;
+
+{------------------------------------------------------------------------------
+  setDarkMode (class, virtual)
+  ----------------------------
+  Base: no programmatic dark-mode switching; returns False (no change made).
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.setDarkMode(winHandle: PtrUInt;
+Enable: boolean): boolean;
+begin
+  Result := false;
 end;
 
 {------------------------------------------------------------------------------
