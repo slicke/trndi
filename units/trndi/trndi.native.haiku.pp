@@ -87,7 +87,8 @@ public
   {** Window manager name for Haiku. }
   class function GetWindowManagerName: string; override;
   {** Placeholder for dark mode toggling on Haiku. }
-  class function setDarkMode: boolean;
+  class function setDarkMode(winHandle: PtrUInt = 0;
+    Enable: boolean = true): boolean; override;
   {** No worker thread for RequestExWait on Haiku. FPC 3.2.2's TThread is
       unusable there: TThread.Destroy calls WaitFor for a thread it has not
       reaped, and WaitFor hits the same join-after-detach access violation
@@ -363,7 +364,8 @@ end;
   -----------
   Placeholder for dark mode toggling on Haiku.
  ------------------------------------------------------------------------------}
-class function TTrndiNativeHaiku.setDarkMode: boolean;
+class function TTrndiNativeHaiku.setDarkMode(winHandle: PtrUInt;
+Enable: boolean): boolean;
 begin
   // No-op placeholder for Haiku
   Result := false;

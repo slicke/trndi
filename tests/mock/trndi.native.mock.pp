@@ -87,8 +87,8 @@ type
     procedure Speak(const Text: string); override;
     procedure attention(topic, message: string); override;
     class function isDarkMode: boolean; override;
-    class function setDarkMode: boolean; overload;
-    class function setDarkMode(win: PtrUInt; Enable: boolean = true): boolean; overload;
+    class function setDarkMode(winHandle: PtrUInt = 0;
+      Enable: boolean = true): boolean; override;
     class function isNotificationSystemAvailable: boolean; override;
     class function getNotificationSystem: string; override;
     class function SpeakAvailable: boolean; override;
@@ -359,14 +359,10 @@ begin
   Result := False;
 end;
 
-class function TTrndiNativeMock.setDarkMode: boolean;
+class function TTrndiNativeMock.setDarkMode(winHandle: PtrUInt;
+Enable: boolean): boolean;
 begin
-  Result := False;
-end;
-
-class function TTrndiNativeMock.setDarkMode(win: PtrUInt; Enable: boolean = true): boolean;
-begin
-  // Mock: no-op; accept the window handle parameter like the real Windows implementation
+  // Mock: no-op regardless of platform, keeping tests deterministic
   Result := False;
 end;
 

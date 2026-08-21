@@ -200,7 +200,8 @@ public
   procedure WriteCurrentIndicatorCache(const Value: string;
     const ReadingTime: TDateTime; FreshMinutes: integer); override;
     {** Placeholder for desktop-specific dark mode. Return False for now. }
-  class function setDarkMode: boolean; // no-op placeholder
+  class function setDarkMode(winHandle: PtrUInt = 0;
+    Enable: boolean = true): boolean; override; // no-op placeholder
 
     // Settings API overrides
     {** Read setting from INI (multi-section + legacy key=value fallback). }
@@ -316,7 +317,7 @@ public
   class procedure PlaySound(const FileName: string); override;
     {** Detect Windows Subsystem for Linux: checks /proc/version, kernel osrelease,
         and WSL_* environment variables. Returns IsWSL=false on non-WSL Linux. }
-  class function DetectWSL: TWSLInfo;
+  class function DetectWSL: TWSLInfo; override;
     {** Spawn a background thread that watches systemd-logind's
         @code(org.freedesktop.login1.Manager.PrepareForSleep) signal — over
         libdbus on a private system-bus connection, or by parsing
@@ -2295,7 +2296,8 @@ end;
   -----------
   Placeholder; currently returns False on Linux.
  ------------------------------------------------------------------------------}
-class function TTrndiNativeLinux.setDarkMode: boolean;
+class function TTrndiNativeLinux.setDarkMode(winHandle: PtrUInt;
+Enable: boolean): boolean;
 begin
   // Placeholder: switching dark mode programmatically is DE-specific and not supported here.
   // Return False to indicate no change was made.
