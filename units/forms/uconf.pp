@@ -39,6 +39,9 @@
 
 (*
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: The {$ifndef X_WIN} around setDarkMode is documented as
+ *   purely behavioral - the call compiles everywhere now that the method
+ *   is in the base contract.
  * - 2026-01-11: Added settings UI controls for configuring Razer Chroma behavior
  *   separately for high/low alerts (dropdowns), in addition to the existing enable
  *   + normal-state options.

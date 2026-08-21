@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: Added DrawText (fixed one-line height) and IsRectEmpty for
+ *   the splash screen's layout code.
  *)
 unit LclIntf;
 

@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: setDarkMode is in the native base contract now, so the
+ *   {$ifdef windows} argument splice is gone - the handle is passed
+ *   unconditionally and ignored off-Windows.
  *)
 (* MODIFICATION NOTICE (2026-08-11): The alert engine is now evaluated once
    per update, before the threshold routing, so its hysteresis band and

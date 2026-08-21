@@ -36,6 +36,13 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: Structural refactor. The INI settings backend moved verbatim
+ *   to the shared trndi.native.settings.ini store (the six overrides are
+ *   now delegates; ResolveIniPath stays). FindInPath delegates to base's
+ *   FindExecutableInPath; SaveStringListAtomic was nested twice and is one
+ *   unit-level helper now; the local TWakeBridge class was replaced by the
+ *   shared trndi.native.wakebridge unit; setDarkMode and DetectWSL follow
+ *   the new base contract signatures.
  * - 2026-08-20: The INI settings store is now class-wide with a lock, one
  *   snapshot per process. Per-instance TIniFile stores clobbered each other:
  *   every UpdateFile rewrites the whole file from that instance's memory, so

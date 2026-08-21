@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: The WSL width tweak is guarded by LCLQt6 alone - isWSL is
+ *   always false off Linux now that DetectWSL is in the base contract.
  *)
 (* MODIFICATION NOTICE (2026-08-18): tAgoTimer no longer rewrites the "last
    update" caption while the data is stale. The timer runs for the whole

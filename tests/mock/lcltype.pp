@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: Added DT_WORDBREAK/DT_CALCRECT and crHourGlass for the
+ *   splash and shutdown screens.
  *)
 unit LCLType;
 
