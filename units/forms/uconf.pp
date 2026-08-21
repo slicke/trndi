@@ -3020,11 +3020,13 @@ begin
   {$endif}
   tnative := TrndiNative.Create;
   tnative.noFree := true;
-  // Windows is deliberately excluded: setDarkMode there only darkens the DWM
-  // caption, and LCL/Win32 renders this dialog's buttons, check boxes, group
-  // boxes and tab headers through uxtheme, where Color/Font.Color never reach
-  // the painted text or glyph. A dark caption over a light body reads as a
-  // bug, so Settings stays light on Windows until the whole dialog can follow.
+  // Windows is deliberately excluded (behavioral, not a compile need since
+  // setDarkMode is in the base contract): setDarkMode there only darkens the
+  // DWM caption, and LCL/Win32 renders this dialog's buttons, check boxes,
+  // group boxes and tab headers through uxtheme, where Color/Font.Color never
+  // reach the painted text or glyph. A dark caption over a light body reads
+  // as a bug, so Settings stays light on Windows until the whole dialog can
+  // follow.
   {$ifndef X_WIN}
   if tnative.isDarkMode then
     tnative.setDarkMode;

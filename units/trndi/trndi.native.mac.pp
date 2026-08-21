@@ -68,8 +68,10 @@ type
         process; the call returns immediately. }
     procedure Speak(const Text: string); override;
     {** Enable dark appearance for the app UI via SimpleDarkMode.
+        The window handle is ignored — the whole app is themed.
         @returns(True once the request is made) }
-    class function setDarkMode: boolean;
+    class function setDarkMode(winHandle: PtrUInt = 0;
+      Enable: boolean = true): boolean; override;
     {** Tint the window's title bar to match a custom color, mirroring the
         Windows DWMWA_CAPTION_COLOR behavior. The form body's color is left
         untouched so it can keep encoding the blood-glucose reading.
@@ -126,7 +128,8 @@ type
     {** Check whether platform TTS is available. }
     class function SpeakAvailable: boolean; override;
     {** Request notification authorization and perform other per-launch setup. }
-    procedure start;    {** Name of the software used for speech on macOS (e.g., 'say'). }
+    procedure start; override;
+    {** Name of the software used for speech on macOS (e.g., 'say'). }
     class function SpeakSoftwareName: string; override;
     {** Best-effort window manager name for macOS. }
     class function GetWindowManagerName: string; override;
@@ -934,7 +937,8 @@ end;
   -----------
   Enable dark appearance for the app using SimpleDarkMode.
  ------------------------------------------------------------------------------}
-class function TTrndiNativeMac.setDarkMode: boolean;
+class function TTrndiNativeMac.setDarkMode(winHandle: PtrUInt;
+Enable: boolean): boolean;
 begin
   // Enable dark appearance for the app's UI via SimpleDarkMode
   nsutils.simpledarkmode.EnableAppDarkMode;

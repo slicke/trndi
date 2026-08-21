@@ -740,8 +740,8 @@ begin
     Free;
   end;
 
-  {$if DEFINED(LCLQt6) AND DEFINED(X_LINUXBSD)}
-  if isWSL then
+  {$ifdef LCLQt6}
+  if isWSL then // isWSL is always false off Linux (base DetectWSL stub)
     lTir.Width := 50;
   {$endif}
   lTir.top := TitleBarOffset;
