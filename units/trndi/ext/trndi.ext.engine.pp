@@ -1824,6 +1824,26 @@ begin
   // skip ALL cleanup operations and let OS handle memory deallocation
   if Application.Terminated or IsGlobalShutdown then
   begin
+    // The fptimer threads must still be told to stop: TFPTimerThread parks in
+    // an event wait it never leaves on its own, and a thread still parked
+    // there when the RTL tears down its thread mutexes dies in
+    // pthread_mutex_lock — invisible in a plain run (the process is exiting)
+    // but a SIGSEGV stop under a debugger. Enabled := false only terminates
+    // and signals the thread (StopTimer never joins), so it cannot deadlock,
+    // and it makes no QuickJS calls.
+    try
+      if Assigned(eventTimer) then
+        eventTimer.Enabled := false;
+    except
+    end;
+    try
+      if Assigned(FJSTimers) then
+        for i := 0 to FJSTimers.Count - 1 do
+          if (FJSTimers.Data[i] <> nil) and Assigned(FJSTimers.Data[i]^.Timer) then
+            FJSTimers.Data[i]^.Timer.Enabled := false;
+    except
+    end;
+
     // Clear references only - no QuickJS API calls whatsoever
     FContext := nil;
     FRuntime := nil;
