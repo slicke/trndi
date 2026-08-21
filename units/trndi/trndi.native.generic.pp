@@ -52,7 +52,7 @@ unit trndi.native.generic;
 interface
 
 uses
-Classes, SysUtils, IniFiles, trndi.native.base;
+Classes, SysUtils, trndi.native.base, trndi.native.settings.ini;
 
 type
   {!
@@ -62,21 +62,14 @@ type
   }
 TTrndiNativeGeneric = class(TTrndiNativeBase)
 protected
-    // INI-backed settings store. Class var: every instance in the process
-    // shares one snapshot — TIniFile rewrites the whole file from memory on
-    // UpdateFile, so per-instance stores clobber each other's writes (see the
-    // matching note in trndi.native.linux). Guarded by inilock.
-class var inistore: TIniFile;
-class var inilock: TRTLCriticalSection;
-var
+    // Settings live in the shared process-wide store — see
+    // trndi.native.settings.ini for the why.
     {** Resolve the INI file path. Default: GetAppConfigDir + trndi.ini.
         Platforms override to follow their own conventions (e.g. Haiku's
         ~/config/settings/Trndi). }
   function ResolveIniPath: string; virtual;
-    {** Ensure the INI store is created and directory exists. }
-  procedure EnsureIni; inline;
 public
-    {** Free resources and close INI store. }
+    {** Free resources; the settings store is shared and stays. }
   destructor Destroy; override;
 
     // Settings API overrides
@@ -309,201 +302,56 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  EnsureIni
-  ---------
-  Create INI store if not present.
- ------------------------------------------------------------------------------}
-procedure TTrndiNativeGeneric.EnsureIni;
-begin
-  if inistore = nil then
-    inistore := TIniFile.Create(ResolveIniPath);
-end;
-
-{------------------------------------------------------------------------------
   Destroy
   -------
-  Clean up INI store.
+  Nothing to clean: the settings store is shared and owned by
+  trndi.native.settings.ini.
  ------------------------------------------------------------------------------}
 destructor TTrndiNativeGeneric.Destroy;
 begin
-  // inistore is class-wide and deliberately NOT freed here — other instances
-  // keep using it. Freed in the unit's finalization.
   inherited Destroy;
 end;
 
 {------------------------------------------------------------------------------
-  GetSetting
-  ----------
-  Read a setting from INI file.
+  Settings
+  --------
+  All six operations delegate to the shared process-wide INI store
+  (trndi.native.settings.ini); only ResolveIniPath is this class's own.
  ------------------------------------------------------------------------------}
 function TTrndiNativeGeneric.GetSetting(const keyname: string; def: string = '';
   global: boolean = false): string;
-var
-  key: string;
 begin
-  EnterCriticalSection(inilock);
-  try
-    EnsureIni;
-    key := buildKey(keyname, global);
-    Result := inistore.ReadString('trndi', key, def);
-  finally
-    LeaveCriticalSection(inilock);
-  end;
+  Result := IniSettingsGet(@ResolveIniPath, buildKey(keyname, global), def);
 end;
 
-{------------------------------------------------------------------------------
-  SetSetting
-  ----------
-  Write a setting to INI file.
- ------------------------------------------------------------------------------}
 procedure TTrndiNativeGeneric.SetSetting(const keyname: string; const val: string;
   global: boolean = false);
-var
-  key: string;
 begin
-  EnterCriticalSection(inilock);
-  try
-    EnsureIni;
-    key := buildKey(keyname, global);
-    inistore.WriteString('trndi', key, val);
-    inistore.UpdateFile;
-  finally
-    LeaveCriticalSection(inilock);
-  end;
+  IniSettingsSet(@ResolveIniPath, buildKey(keyname, global), val);
 end;
 
-{------------------------------------------------------------------------------
-  DeleteSetting
-  -------------
-  Delete a setting from INI file.
- ------------------------------------------------------------------------------}
 procedure TTrndiNativeGeneric.DeleteSetting(const keyname: string;
   global: boolean = false);
-var
-  key: string;
 begin
-  EnterCriticalSection(inilock);
-  try
-    EnsureIni;
-    key := buildKey(keyname, global);
-    inistore.DeleteKey('trndi', key);
-    inistore.UpdateFile;
-  finally
-    LeaveCriticalSection(inilock);
-  end;
+  IniSettingsDelete(@ResolveIniPath, buildKey(keyname, global));
 end;
 
-{------------------------------------------------------------------------------
-  ReloadSettings
-  --------------
-  Drop and recreate INI store.
- ------------------------------------------------------------------------------}
 procedure TTrndiNativeGeneric.ReloadSettings;
 begin
-  EnterCriticalSection(inilock);
-  try
-    if inistore <> nil then
-      FreeAndNil(inistore);
-  finally
-    LeaveCriticalSection(inilock);
-  end;
+  IniSettingsReload;
 end;
 
-{------------------------------------------------------------------------------
-  ExportSettings
-  --------------
-  Export all settings from the INI file to a string.
- ------------------------------------------------------------------------------}
 function TTrndiNativeGeneric.ExportSettings: string;
-var
-  sl: TStringList;
-  sections, keys: TStringList;
-  i, j: integer;
-  section, key, value: string;
 begin
-  EnterCriticalSection(inilock);
-  sl := TStringList.Create;
-  sections := TStringList.Create;
-  keys := TStringList.Create;
-  try
-    EnsureIni;
-    inistore.ReadSections(sections);
-    for i := 0 to sections.Count - 1 do
-    begin
-      section := sections[i];
-      sl.Add('[' + section + ']');
-      inistore.ReadSection(section, keys);
-      for j := 0 to keys.Count - 1 do
-      begin
-        key := keys[j];
-        value := inistore.ReadString(section, key, '');
-        sl.Add(key + '=' + value);
-      end;
-      if i < sections.Count - 1 then
-        sl.Add(''); // Add blank line between sections
-    end;
-    Result := sl.Text;
-  finally
-    keys.Free;
-    sections.Free;
-    sl.Free;
-    LeaveCriticalSection(inilock);
-  end;
+  Result := IniSettingsExport(@ResolveIniPath);
 end;
 
-{------------------------------------------------------------------------------
-  ImportSettings
-  ---------------
-  Import settings from INI format string.
- ------------------------------------------------------------------------------}
+// Import goes through the shared store (section-preserving, single flush)
+// rather than the base template, which would flatten sections into [trndi]
+// and flush once per key.
 procedure TTrndiNativeGeneric.ImportSettings(const iniData: string);
-var
-  sl: TStringList;
-  mem: TMemoryStream;
-  ini: TMemIniFile;
-  sections, keys: TStringList;
-  i, j: integer;
-  section, key, value: string;
 begin
-  if iniData = '' then
-    Exit;
-  EnterCriticalSection(inilock);
-  sl := TStringList.Create;
-  mem := TMemoryStream.Create;
-  ini := nil;
-  sections := TStringList.Create;
-  keys := TStringList.Create;
-  try
-    EnsureIni;
-    mem.WriteBuffer(iniData[1], Length(iniData));
-    mem.Position := 0;
-    sl.LoadFromStream(mem);
-
-    // Create a temporary INI file in memory
-    ini := TMemIniFile.Create('');
-    ini.SetStrings(sl);
-
-    ini.ReadSections(sections);
-    for i := 0 to sections.Count - 1 do
-    begin
-      section := sections[i];
-      ini.ReadSection(section, keys);
-      for j := 0 to keys.Count - 1 do
-      begin
-        key := keys[j];
-        value := ini.ReadString(section, key, '');
-        inistore.WriteString(section, key, value);
-      end;
-    end;
-    inistore.UpdateFile;
-  finally
-    keys.Free;
-    sections.Free;
-    ini.Free;
-    mem.Free;
-    sl.Free;
-    LeaveCriticalSection(inilock);
-  end;
+  IniSettingsImport(@ResolveIniPath, iniData);
 end;
 
 {------------------------------------------------------------------------------
@@ -1228,13 +1076,6 @@ begin
     PerformRequest(false, Result);
 end;
 
-initialization
-  InitCriticalSection(TTrndiNativeGeneric.inilock);
-
-finalization
-  // The settings store is class-wide (see the inistore declaration); freed
-  // here rather than in any instance destructor.
-  FreeAndNil(TTrndiNativeGeneric.inistore);
-  DoneCriticalSection(TTrndiNativeGeneric.inilock);
-
+// The settings store's lifetime is managed by trndi.native.settings.ini's
+// own initialization/finalization.
 end.
