@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-21: The shutdown screen's accent gradients call Classes.Rect
+ *   explicitly - on Darwin, MacOSAll's QuickDraw Rect type shadows the RTL
+ *   function, which broke the macOS build.
  *)
 (* Paint event handlers for TfBG panels and the main form.
    Extracted from units/forms/umain.pp.
@@ -539,9 +544,11 @@ begin
     cnv.Brush.Style := bsSolid;
     cnv.Brush.Color := Self.Color;
     cnv.FillRect(0, 0, Self.ClientWidth, Self.ClientHeight);
-    cnv.GradientFill(Rect(0, 0, Self.ClientWidth div 2, Scale96ToForm(3)),
+    // Classes.Rect: on Darwin, MacOSAll's QuickDraw Rect type shadows the
+    // RTL function, turning a bare Rect(a,b,c,d) into a failed typecast.
+    cnv.GradientFill(Classes.Rect(0, 0, Self.ClientWidth div 2, Scale96ToForm(3)),
       $00002214, $0000DC84, gdHorizontal);
-    cnv.GradientFill(Rect(Self.ClientWidth div 2, 0, Self.ClientWidth,
+    cnv.GradientFill(Classes.Rect(Self.ClientWidth div 2, 0, Self.ClientWidth,
       Scale96ToForm(3)), $0000DC84, $00002214, gdHorizontal);
     Exit;
   end;
