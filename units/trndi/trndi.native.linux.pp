@@ -2297,11 +2297,6 @@ end;
  ------------------------------------------------------------------------------}
 class function TTrndiNativeLinux.setDarkMode: boolean;
 begin
-{------------------------------------------------------------------------------
-  setDarkMode
-  -----------
-  Placeholder; currently returns False on Linux.
- ------------------------------------------------------------------------------}
   // Placeholder: switching dark mode programmatically is DE-specific and not supported here.
   // Return False to indicate no change was made.
   Result := false;

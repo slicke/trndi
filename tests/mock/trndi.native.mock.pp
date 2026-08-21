@@ -75,12 +75,6 @@ type
   private
     class var FMockSettings: TStringList;
   public
-    // HTTP helpers
-    //class function getURL(const url: string; out res: string): boolean; override;
-    //class function TestProxyURL(const url: string; const proxyHost: string;
-    //  const proxyPort: string; const proxyUser: string; const proxyPass: string;
-    //  out res: string): boolean; override;
-
     // Settings API (simple in-memory store for tests)
     procedure SetSetting(const keyname: string; const val: string; global: boolean = false); override;
     function GetSetting(const keyname: string; def: string = ''; global: boolean = false): string; override;

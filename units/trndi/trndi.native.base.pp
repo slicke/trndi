@@ -552,12 +552,7 @@ class var touchOverride: TTrndiBool;
 
 end;
 
-  //procedure QWindow_setWindowBadge(window: QWindowH; badge: PChar); cdecl; external 'libQt6Gui.so.6';
-
 const
-DWMWA_CAPTION_COLOR = 35;
-DWMWA_TEXT_COLOR = 36;
-DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
   // Default badge rendering parameters
 DEFAULT_BADGE_SIZE_RATIO = 0.8;
 DEFAULT_MIN_FONT_SIZE = 8;
