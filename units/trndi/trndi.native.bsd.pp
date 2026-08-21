@@ -94,7 +94,8 @@ TTrndiNativeBSD = class(TTrndiNativeLinux)
 implementation
 
 uses
-  Classes, SysUtils, DateUtils, Forms, Dialogs, trndi.log, trndi.native.async;
+  Classes, SysUtils, DateUtils, Forms, Dialogs, trndi.log, trndi.native.async,
+  trndi.native.wakebridge;
 
 {------------------------------------------------------------------------------
   BSD: TTS fallback + small helpers.
@@ -331,12 +332,6 @@ end;
   DST transitions don't fake a jump.
 ------------------------------------------------------------------------------}
 type
-  TBSDWakeBridge = class
-    Callback: TTrndiWakeCallback;
-    Pending: boolean;
-    procedure Fire(Data: PtrInt);
-  end;
-
   TClockJumpMonitorThread = class(TThread)
   protected
     procedure Execute; override;
@@ -344,18 +339,10 @@ type
 
 var
   gBsdWakeThread: TClockJumpMonitorThread = nil;
-  gBsdWakeBridge: TBSDWakeBridge = nil;
-
-procedure TBSDWakeBridge.Fire(Data: PtrInt);
-begin
-  Pending := false;
-  if Assigned(Callback) then
-    try
-      Callback();
-    except
-      // Don't propagate user callback exceptions through the message loop
-    end;
-end;
+  // Shared bridge class (trndi.native.wakebridge); this is BSD's own
+  // instance — deliberately separate from the Linux logind bridge, which
+  // never fires here (see RegisterWakeCallback below).
+  gBsdWakeBridge: TTrndiWakeBridge = nil;
 
 procedure TClockJumpMonitorThread.Execute;
 const
@@ -380,10 +367,9 @@ begin
     if elapsedMS > int64(SliceMS) * SlicesPerCheck + JumpThresholdMS then
       if Assigned(gBsdWakeBridge) and (not gBsdWakeBridge.Pending) then
       begin
-        gBsdWakeBridge.Pending := true;
         TrndiDLog(Format('Wake detected: clock jumped %d ms during a %d ms sleep',
           [elapsedMS, SliceMS * SlicesPerCheck]));
-        Application.QueueAsyncCall(@gBsdWakeBridge.Fire, 0);
+        gBsdWakeBridge.Queue;
       end;
   end;
 end;
@@ -395,7 +381,7 @@ begin
   // callback (all the base implementation does) and run our own detector.
   FWakeCallback := Callback;
   if gBsdWakeBridge = nil then
-    gBsdWakeBridge := TBSDWakeBridge.Create;
+    gBsdWakeBridge := TTrndiWakeBridge.Create;
   gBsdWakeBridge.Callback := Callback;
   if not Assigned(Callback) then
   begin

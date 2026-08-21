@@ -39,7 +39,7 @@ interface
 uses
   Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
   nsutils.nshelpers, nsutils.cocoahelpers, IniFiles, dialogs, StrUtils, Forms,
-  ctypes, trndi.native.base,
+  ctypes, trndi.native.base, trndi.native.wakebridge,
   Process; // TProcess field (kiosk keep-awake caffeinate child)
 
 type
@@ -1721,45 +1721,25 @@ end;
   from.
  ------------------------------------------------------------------------------}
 type
-  TWakeBridge = class
-    Callback: TTrndiWakeCallback;
-    Pending: boolean;
-    procedure Fire(Data: PtrInt);
-  end;
-
   TWakeObserver = objcclass(NSObject)
     procedure systemDidWake(notification: NSNotification); message 'systemDidWake:';
   end;
 
 var
   gWakeObserver: TWakeObserver = nil;
-  gWakeBridge: TWakeBridge = nil;
-
-procedure TWakeBridge.Fire(Data: PtrInt);
-begin
-  Pending := false;
-  if Assigned(Callback) then
-    try
-      Callback();
-    except
-      // Swallow — never let user code crash the run loop
-    end;
-end;
+  gWakeBridge: TTrndiWakeBridge = nil; // shared class, this unit's instance
 
 procedure TWakeObserver.systemDidWake(notification: NSNotification);
 begin
-  if Assigned(gWakeBridge) and (not gWakeBridge.Pending) then
-  begin
-    gWakeBridge.Pending := true;
-    Application.QueueAsyncCall(@gWakeBridge.Fire, 0);
-  end;
+  if Assigned(gWakeBridge) then
+    gWakeBridge.Queue;
 end;
 
 procedure TTrndiNativeMac.RegisterWakeCallback(const Callback: TTrndiWakeCallback);
 begin
   inherited RegisterWakeCallback(Callback);
   if gWakeBridge = nil then
-    gWakeBridge := TWakeBridge.Create;
+    gWakeBridge := TTrndiWakeBridge.Create;
   gWakeBridge.Callback := Callback;
   if not Assigned(Callback) then
   begin
@@ -1834,7 +1814,7 @@ var
   gUserBadgeVC: NSTitlebarAccessoryViewController = nil;
   gUserBadgeView: TTrndiUserBadgeView = nil;
   gUserBadgeWindow: NSWindow = nil;
-  gUserBadgeBridge: TWakeBridge = nil;
+  gUserBadgeBridge: TTrndiWakeBridge = nil; // shared class, this unit's instance
   gUserBadgeNick: string = '';
   gUserBadgeBg: TColor = clBlack;
   gUserBadgeFg: TColor = clWhite;
@@ -1911,11 +1891,8 @@ procedure TTrndiUserBadgeView.mouseDown(theEvent: NSEvent);
 begin
   // Swallowed on purpose: no inherited call, so the click opens Settings
   // instead of starting a title-bar window drag.
-  if Assigned(gUserBadgeBridge) and (not gUserBadgeBridge.Pending) then
-  begin
-    gUserBadgeBridge.Pending := true;
-    Application.QueueAsyncCall(@gUserBadgeBridge.Fire, 0);
-  end;
+  if Assigned(gUserBadgeBridge) then
+    gUserBadgeBridge.Queue;
 end;
 
 function TTrndiUserBadgeView.mouseDownCanMoveWindow: ObjCBOOL;
@@ -2008,7 +1985,7 @@ begin
   gUserBadgeFg := textColor;
 
   if gUserBadgeBridge = nil then
-    gUserBadgeBridge := TWakeBridge.Create;
+    gUserBadgeBridge := TTrndiWakeBridge.Create;
   gUserBadgeBridge.Callback := onClick;
   gUserBadgeBridge.Pending := false;
 

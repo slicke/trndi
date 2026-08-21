@@ -45,7 +45,8 @@ interface
 uses
 Classes, SysUtils, Graphics, Windows, Registry, Dialogs, StrUtils,
 winutils.httpclient, winutils.wintaskbar, shellapi,
-Forms, variants, trndi.native.base, ExtCtrls, IniFiles, trndi.log,
+Forms, variants, trndi.native.base, trndi.native.wakebridge, ExtCtrls,
+IniFiles, trndi.log,
 slicke.wintools.dwm, slicke.wintools.menutheme;
 
 type
@@ -3495,28 +3496,10 @@ function RegisterSuspendResumeNotification(hRecipient: THandle;
 function UnregisterSuspendResumeNotification(Handle: THandle): BOOL; stdcall;
   external 'user32.dll' name 'UnregisterSuspendResumeNotification';
 
-type
-  // Tiny bridge object so we can hand Application.QueueAsyncCall a real
-  // method-of-object pointer from the global WndProc.
-  TWakeBridge = class
-    Callback: TTrndiWakeCallback;
-    Pending: boolean;
-    procedure Fire(Data: PtrInt);
-  end;
-
-procedure TWakeBridge.Fire(Data: PtrInt);
-begin
-  Pending := false;
-  if Assigned(Callback) then
-    try
-      Callback();
-    except
-      // Never let a callback exception unwind into the message loop
-    end;
-end;
-
 var
-  gWakeBridge: TWakeBridge = nil;
+  // Shared bridge class (trndi.native.wakebridge) so the global WndProc can
+  // hand Application.QueueAsyncCall a real method-of-object pointer.
+  gWakeBridge: TTrndiWakeBridge = nil;
   gOldWndProc: PtrInt = 0;
   gHookedHWnd: HWND = 0;
   gPowerNotify: THandle = 0;
@@ -3528,12 +3511,8 @@ begin
      ((wParam = PBT_APMRESUMESUSPEND) or (wParam = PBT_APMRESUMEAUTOMATIC)) then
   begin
     // Coalesce: Windows may deliver both RESUMEAUTOMATIC and RESUMESUSPEND.
-    // Re-arm only after the previous async fire completes.
-    if Assigned(gWakeBridge) and (not gWakeBridge.Pending) then
-    begin
-      gWakeBridge.Pending := true;
-      Application.QueueAsyncCall(@gWakeBridge.Fire, 0);
-    end;
+    if Assigned(gWakeBridge) then
+      gWakeBridge.Queue;
   end;
   Result := CallWindowProc(Windows.WNDPROC(gOldWndProc), hWnd, uMsg, wParam, lParam);
 end;
@@ -3563,7 +3542,7 @@ var
 begin
   inherited RegisterWakeCallback(Callback);
   if gWakeBridge = nil then
-    gWakeBridge := TWakeBridge.Create;
+    gWakeBridge := TTrndiWakeBridge.Create;
   gWakeBridge.Callback := Callback;
   if not Assigned(Callback) then
   begin
@@ -3632,7 +3611,7 @@ var
   gBadgeOwner: HWND = 0;
   gBadgeOwnerOldProc: PtrInt = 0;
   gBadgeClassReg: boolean = false;
-  gBadgeBridge: TWakeBridge = nil;
+  gBadgeBridge: TTrndiWakeBridge = nil;
   gBadgeW: integer = 0;
   gBadgeH: integer = 0;
   gBadgeNick: string = '';
@@ -3868,12 +3847,9 @@ begin
   case uMsg of
     WM_LBUTTONUP:
     begin
-      if Assigned(gBadgeBridge) and Assigned(gBadgeBridge.Callback)
-        and (not gBadgeBridge.Pending) then
-      begin
-        gBadgeBridge.Pending := true;
-        Application.QueueAsyncCall(@gBadgeBridge.Fire, 0);
-      end;
+      // The extra Callback guard skips queueing for a badge nobody wired.
+      if Assigned(gBadgeBridge) and Assigned(gBadgeBridge.Callback) then
+        gBadgeBridge.Queue;
       Exit(0);
     end;
     WM_SETCURSOR:
@@ -3980,7 +3956,7 @@ begin
   end;
 
   if gBadgeBridge = nil then
-    gBadgeBridge := TWakeBridge.Create;
+    gBadgeBridge := TTrndiWakeBridge.Create;
   gBadgeBridge.Callback := onClick;
   gBadgeBridge.Pending := false;
 
