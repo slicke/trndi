@@ -81,7 +81,7 @@ unit trndi.native.linux;
 interface
 
 uses
-Classes, SysUtils, Graphics, IniFiles, Dialogs, StrUtils,
+Classes, SysUtils, Graphics, Dialogs, StrUtils,
 ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, linutils.dbus,
 trndi.native.base, trndi.native.async, FileUtil, Menus,
 {$ifndef TEST}
@@ -90,7 +90,8 @@ trndi.native.base, trndi.native.async, FileUtil, Menus,
   // paint on. SetTray is a no-op there — no test asserts on the tray icon.
 trndi.badgeicon,
 {$endif}
-trndi.native.request.curl, DateUtils, ctypes, trndi.log,
+trndi.native.request.curl, trndi.native.settings.ini, DateUtils, ctypes,
+trndi.log,
 Process; // TProcess field (kiosk keep-awake inhibitor child)
 
 type
@@ -108,16 +109,9 @@ protected
     // slow to redo on every reading.
   FTrayPainter: TTrndiBadgeIcon;
   {$endif}
-    // Settings store. Class var: every TrndiNative instance in the process
-    // shares one snapshot. TIniFile rewrites the WHOLE file from memory on
-    // UpdateFile, so with per-instance stores two instances clobbered each
-    // other's keys — the settings dialog's own TrndiNative (uconf.tnative)
-    // wrote user.nick/user.color, and umain's native erased them again with
-    // its next write (and vice versa). Guarded by inilock: the fetch thread
-    // writes rotated tokens while the GUI reads and writes.
-class var inistore: TIniFile;
-class var inilock: TRTLCriticalSection;
-var
+    // Settings live in the shared process-wide store — see
+    // trndi.native.settings.ini for the why (TIniFile rewrites the whole
+    // file on UpdateFile, so per-instance stores clobbered each other).
     // Flashing support
   FFlashTimer: TTimer;
   FFlashEnd: TDateTime;
@@ -163,8 +157,6 @@ var
     {** Resolve the INI/CFG file path with backward compatibility.
         Preference order: Lazarus app config, ~/.config/Trndi/trndi.ini, legacy ~/.config/Trndi.cfg }
   function ResolveIniPath: string; virtual;
-    {** Ensure the INI store is created and directory exists. }
-  procedure EnsureIni; inline;
 public
   {** Prefer session-bus notifications under Qt6 — libdbus first, the gdbus
       tool second; fall back to notify-send when neither answers. }
@@ -1158,24 +1150,6 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  EnsureIni
-  ---------
-  Ensure the INI store is created and directory exists.
- ------------------------------------------------------------------------------}
-procedure TTrndiNativeLinux.EnsureIni;
-var
-  path: string;
-begin
-  if not Assigned(inistore) then
-  begin
-    path := ResolveIniPath;
-    if ExtractFilePath(path) <> '' then
-      ForceDirectories(ExtractFilePath(path));
-    inistore := TIniFile.Create(path);
-  end;
-end;
-
-{------------------------------------------------------------------------------
   attention
   ---------
   Send a desktop notification. Under Qt6 on KDE/GNOME-like desktops this goes
@@ -1739,9 +1713,9 @@ begin
     FreeAndNil(FNotifyPumpTimer);
   if Assigned(FNotifyConn) then
     FreeAndNil(FNotifyConn);
-  // inistore is class-wide and deliberately NOT freed here: the settings
-  // dialog's TrndiNative is destroyed while umain's lives on. Freed in the
-  // unit's finalization.
+  // The settings store is process-wide and deliberately not touched here:
+  // the settings dialog's TrndiNative is destroyed while umain's lives on.
+  // It is owned by trndi.native.settings.ini.
   inherited Destroy;
 end;
 
@@ -2277,177 +2251,44 @@ end;
 {------------------------------------------------------------------------------
   Settings
   --------
-  Read/write settings using Lazarus app config file under a single [trndi] section.
+  All six operations delegate to the shared process-wide INI store
+  (trndi.native.settings.ini); only ResolveIniPath is this class's own.
+  NOTE: keys live under one canonical [trndi] section — the win registry and
+  macOS defaults are flat.
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.GetSetting(const keyname: string; def: string;
 global: boolean): string;
-var
-  key: string;
 begin
-  EnterCriticalSection(inilock);
-  try
-    EnsureIni;
-    key := buildKey(keyname, global);
-    Result := inistore.ReadString('trndi', key, def);
-  finally
-    LeaveCriticalSection(inilock);
-  end;
+  Result := IniSettingsGet(@ResolveIniPath, buildKey(keyname, global), def);
 end;
 
-{------------------------------------------------------------------------------
-  SetSetting
-  ----------
-  Write setting to canonical [trndi] section and flush to disk.
-  NOTE: we use [trndi] as the format in the win registry and macOS are flat
- ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.SetSetting(const keyname: string;
 const val: string; global: boolean);
-var
-  key: string;
 begin
-  EnterCriticalSection(inilock);
-  try
-    EnsureIni;
-    key := buildKey(keyname, global);
-    // Write under a canonical section
-    inistore.WriteString('trndi', key, val);
-    inistore.UpdateFile;
-  finally
-    LeaveCriticalSection(inilock);
-  end;
+  IniSettingsSet(@ResolveIniPath, buildKey(keyname, global), val);
 end;
 
-{------------------------------------------------------------------------------
-  DeleteSetting
-  -------------
-  Delete setting across known sections for completeness.
- ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.DeleteSetting(const keyname: string; global: boolean);
-var
-  key: string;
 begin
-  EnterCriticalSection(inilock);
-  try
-    EnsureIni;
-    key := buildKey(keyname, global);
-    inistore.DeleteKey('trndi', key);
-    inistore.UpdateFile;
-  finally
-    LeaveCriticalSection(inilock);
-  end;
+  IniSettingsDelete(@ResolveIniPath, buildKey(keyname, global));
 end;
 
-{------------------------------------------------------------------------------
-  ReloadSettings
-  --------------
-  Drop INI handle; it will be lazily re-created on next access.
- ------------------------------------------------------------------------------}
 procedure TTrndiNativeLinux.ReloadSettings;
 begin
-  EnterCriticalSection(inilock);
-  try
-    FreeAndNil(inistore);
-    // will be recreated on next access
-  finally
-    LeaveCriticalSection(inilock);
-  end;
+  IniSettingsReload;
 end;
 
-{------------------------------------------------------------------------------
-  ExportSettings
-  --------------
-  Export all settings from the INI file to a string.
- ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.ExportSettings: string;
-var
-  sl: TStringList;
-  sections, keys: TStringList;
-  i, j: integer;
-  section, key, value: string;
 begin
-  EnterCriticalSection(inilock);
-  sl := TStringList.Create;
-  sections := TStringList.Create;
-  keys := TStringList.Create;
-  try
-    EnsureIni;
-    inistore.ReadSections(sections);
-    for i := 0 to sections.Count - 1 do
-    begin
-      section := sections[i];
-      sl.Add('[' + section + ']');
-      inistore.ReadSection(section, keys);
-      for j := 0 to keys.Count - 1 do
-      begin
-        key := keys[j];
-        value := inistore.ReadString(section, key, '');
-        sl.Add(key + '=' + value);
-      end;
-      if i < sections.Count - 1 then
-        sl.Add(''); // Add blank line between sections
-    end;
-    Result := sl.Text;
-  finally
-    keys.Free;
-    sections.Free;
-    sl.Free;
-    LeaveCriticalSection(inilock);
-  end;
+  Result := IniSettingsExport(@ResolveIniPath);
 end;
 
-{------------------------------------------------------------------------------
-  ImportSettings
-  ---------------
-  Import settings from INI format string.
- ------------------------------------------------------------------------------}
+// Import goes through the shared store (section-preserving, single flush)
+// rather than the base template, which would flatten sections into [trndi]
+// and flush once per key.
 procedure TTrndiNativeLinux.ImportSettings(const iniData: string);
-var
-  sl: TStringList;
-  mem: TMemoryStream;
-  ini: TMemIniFile;
-  sections, keys: TStringList;
-  i, j: integer;
-  section, key, value: string;
 begin
-  if iniData = '' then
-    Exit;
-  EnterCriticalSection(inilock);
-  sl := TStringList.Create;
-  mem := TMemoryStream.Create;
-  ini := nil;
-  sections := TStringList.Create;
-  keys := TStringList.Create;
-  try
-    EnsureIni;
-    mem.WriteBuffer(iniData[1], Length(iniData));
-    mem.Position := 0;
-    sl.LoadFromStream(mem);
-    
-    // Create a temporary INI file in memory
-    ini := TMemIniFile.Create('');
-    ini.SetStrings(sl);
-    
-    ini.ReadSections(sections);
-    for i := 0 to sections.Count - 1 do
-    begin
-      section := sections[i];
-      ini.ReadSection(section, keys);
-      for j := 0 to keys.Count - 1 do
-      begin
-        key := keys[j];
-        value := ini.ReadString(section, key, '');
-        inistore.WriteString(section, key, value);
-      end;
-    end;
-    inistore.UpdateFile;
-  finally
-    keys.Free;
-    sections.Free;
-    ini.Free;
-    mem.Free;
-    sl.Free;
-    LeaveCriticalSection(inilock);
-  end;
+  IniSettingsImport(@ResolveIniPath, iniData);
 end;
 
 // The C-compatible libcurl callbacks moved to trndi.native.request.curl
@@ -3178,14 +3019,10 @@ end;
 // libcurl's one-shot global init lives in trndi.native.request.curl's
 // initialization section, shared with every curl-backed native class.
 
-initialization
-  InitCriticalSection(TTrndiNativeLinux.inilock);
+// The settings store's lifetime is managed by trndi.native.settings.ini's
+// own initialization/finalization.
 
 finalization
-  // The settings store is class-wide (see the inistore declaration); freed
-  // here rather than in any instance destructor.
-  FreeAndNil(TTrndiNativeLinux.inistore);
-  DoneCriticalSection(TTrndiNativeLinux.inilock);
   if gWakeThread <> nil then
   begin
     try

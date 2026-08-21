@@ -60,8 +60,8 @@ interface
 }
 
 uses
-  Classes, SysUtils, trndi.native.colors, trndi.native.threading, trndi.log,
-  SyncObjs, StrUtils;
+  Classes, SysUtils, IniFiles, trndi.native.colors, trndi.native.threading,
+  trndi.log, SyncObjs, StrUtils;
 
 type
   {** Re-export of @link(trndi.native.colors.TColor) so consumers of this unit
@@ -150,6 +150,17 @@ protected
     // composites it into the taskbar icon, macOS appends it to the dock
     // badge label).
   FBadgeTrend: string;
+    {** Parse INI text into an in-memory ini (caller frees); nil for ''. }
+  class function ParseImportIni(const iniData: string): TMemIniFile;
+    {** Hook run once before the @link(ImportSettings) template walks the
+        parsed keys. Default: nothing. }
+  procedure ImportSettingsBegin; virtual;
+    {** Hook run for each imported key. Default stores via
+        @code(SetSetting(key, value, true)) — raw keys, no user scoping,
+        which flattens sections (the flat-store platforms carry none). }
+  procedure ImportSettingKey(const section, key, value: string); virtual;
+    {** Hook run once after the walk. Default: nothing. }
+  procedure ImportSettingsEnd; virtual;
 public
     // Config
   noFree: boolean;
@@ -294,8 +305,11 @@ class var touchOverride: TTrndiBool;
 
     {** Export all settings to INI format string. }
   function ExportSettings: string; virtual; abstract;
-    {** Import settings from INI format string. }
-  procedure ImportSettings(const iniData: string); virtual; abstract;
+    {** Import settings from INI format string. The base implementation is a
+        template: parse, then walk every section/key through the protected
+        Import* hooks. Backends whose store keeps sections (the shared INI
+        store) override the whole method instead. }
+  procedure ImportSettings(const iniData: string); virtual;
 
     // Theme/Env
     {** Determine if the OS/theme uses a dark appearance. Platforms override. }
@@ -700,6 +714,84 @@ begin
     Result := Format('%s_%s', [cfguser, key])
   else
     Result := key;
+end;
+
+{------------------------------------------------------------------------------
+  ImportSettings template
+  -----------------------
+  Shared scaffold: INI text -> in-memory ini -> walk sections/keys through
+  the Import* hooks. The write step is what differs per platform, so that is
+  all the hooks carry (macOS: raw defaults writes bracketed by migration and
+  synchronize; the base default stores via SetSetting). Windows overrides the
+  whole method for its single-transaction registry write; the INI-backed
+  classes override it too, to preserve sections and flush once.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.ParseImportIni(const iniData: string): TMemIniFile;
+var
+  sl: TStringList;
+  mem: TMemoryStream;
+begin
+  Result := nil;
+  if iniData = '' then
+    Exit;
+  sl := TStringList.Create;
+  mem := TMemoryStream.Create;
+  try
+    mem.WriteBuffer(iniData[1], Length(iniData));
+    mem.Position := 0;
+    sl.LoadFromStream(mem);
+    Result := TMemIniFile.Create('');
+    Result.SetStrings(sl);
+  finally
+    mem.Free;
+    sl.Free;
+  end;
+end;
+
+procedure TTrndiNativeBase.ImportSettingsBegin;
+begin
+  // Default: nothing to prepare.
+end;
+
+procedure TTrndiNativeBase.ImportSettingKey(const section, key, value: string);
+begin
+  // Raw key, no user scoping — matches what every backend's import does.
+  SetSetting(key, value, true);
+end;
+
+procedure TTrndiNativeBase.ImportSettingsEnd;
+begin
+  // Default: nothing to flush.
+end;
+
+procedure TTrndiNativeBase.ImportSettings(const iniData: string);
+var
+  ini: TMemIniFile;
+  sections, keys: TStringList;
+  i, j: integer;
+  section: string;
+begin
+  ini := ParseImportIni(iniData);
+  if ini = nil then
+    Exit;
+  sections := TStringList.Create;
+  keys := TStringList.Create;
+  try
+    ImportSettingsBegin;
+    ini.ReadSections(sections);
+    for i := 0 to sections.Count - 1 do
+    begin
+      section := sections[i];
+      ini.ReadSection(section, keys);
+      for j := 0 to keys.Count - 1 do
+        ImportSettingKey(section, keys[j], ini.ReadString(section, keys[j], ''));
+    end;
+    ImportSettingsEnd;
+  finally
+    keys.Free;
+    sections.Free;
+    ini.Free;
+  end;
 end;
 
 {------------------------------------------------------------------------------
