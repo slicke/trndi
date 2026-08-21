@@ -177,11 +177,16 @@ var
   i, j: integer;
   section, key, value: string;
 begin
+  // Allocate inside the try block: should a Create raise, the finally must
+  // still release the lock (Free on the nil ones is safe).
+  sl := nil;
+  sections := nil;
+  keys := nil;
   EnterCriticalSection(gIniLock);
-  sl := TStringList.Create;
-  sections := TStringList.Create;
-  keys := TStringList.Create;
   try
+    sl := TStringList.Create;
+    sections := TStringList.Create;
+    keys := TStringList.Create;
     EnsureIni(resolver);
     gIniStore.ReadSections(sections);
     for i := 0 to sections.Count - 1 do
@@ -219,13 +224,19 @@ var
 begin
   if iniData = '' then
     Exit;
-  EnterCriticalSection(gIniLock);
-  sl := TStringList.Create;
-  mem := TMemoryStream.Create;
+  // Allocate inside the try block: should a Create raise, the finally must
+  // still release the lock (Free on the nil ones is safe).
+  sl := nil;
+  mem := nil;
   ini := nil;
-  sections := TStringList.Create;
-  keys := TStringList.Create;
+  sections := nil;
+  keys := nil;
+  EnterCriticalSection(gIniLock);
   try
+    sl := TStringList.Create;
+    mem := TMemoryStream.Create;
+    sections := TStringList.Create;
+    keys := TStringList.Create;
     EnsureIni(resolver);
     mem.WriteBuffer(iniData[1], Length(iniData));
     mem.Position := 0;
