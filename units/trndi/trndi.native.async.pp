@@ -49,7 +49,7 @@ unit trndi.native.async;
 interface
 
 uses
-Classes, SysUtils, SyncObjs, process, trndi.native.base;
+Classes, SysUtils, SyncObjs, process, trndi.native.base, trndi.native.threading;
 
 type
   {

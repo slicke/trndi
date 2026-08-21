@@ -40,7 +40,7 @@ unit trndi.native;
 interface
 
 uses
-Classes, trndi.native.base
+Classes, trndi.native.base, trndi.native.threading
 {$IFDEF TEST}, trndi.native.mock
 {$ENDIF}
 {$IFNDEF TEST}
@@ -104,7 +104,7 @@ function nobuttonsVM: boolean;
 function GetSpeakSoftwareName: string;
 
 // Re-export: join a finished worker thread without TThread.WaitFor's
-// join-after-detach crash on Haiku (see trndi.native.base.SafeThreadJoin).
+// join-after-detach crash on Haiku (see trndi.native.threading.SafeThreadJoin).
 procedure SafeThreadJoin(T: TThread);
 
 // Re-export: join and dispose of a finished worker thread. Free is unsafe on
@@ -130,12 +130,12 @@ end;
 
 procedure SafeThreadJoin(T: TThread);
 begin
-  trndi.native.base.SafeThreadJoin(T);
+  trndi.native.threading.SafeThreadJoin(T);
 end;
 
 procedure SafeThreadRelease(T: TThread);
 begin
-  trndi.native.base.SafeThreadRelease(T);
+  trndi.native.threading.SafeThreadRelease(T);
 end;
 
 end.
