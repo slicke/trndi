@@ -237,7 +237,7 @@ Nightscout v3 site whose uploader publishes one), Trndi shows a desktop
 notification as the cartridge runs down — once each as it passes 30, 25, 20, 15,
 10 and 5 units. Filling the pump arms the warnings again for the new cartridge.
 
-**Where to turn it off**: Right-click → Settings → Customization tab →
+**Where to turn it off**: Right-click → Settings → Alerts page →
 Notifications → "Alert me when the pump's insulin is running low"
 
 Other backends do not report insulin at all, so nothing is shown for them. Trndi
@@ -250,7 +250,7 @@ each at roughly 24, 8, 4, 2 and 1 hours of sensor life left, so a sensor change
 lands when it suits you rather than when the sensor decides. Changing the sensor
 arms the warnings again for the new session.
 
-**Where to turn it off**: Right-click → Settings → Customization tab →
+**Where to turn it off**: Right-click → Settings → Alerts page →
 Notifications → "Alert me when the sensor is about to expire"
 
 Tandem Source does not report sensor life — its CGM data carries no session age
@@ -269,7 +269,7 @@ percent. Charging the pump, or fitting a fresh battery, arms the warnings again;
 briefly topping it up does not, so a few minutes on the charger will not replay a
 warning you have already seen.
 
-**Where to turn it off**: Right-click → Settings → Customization tab →
+**Where to turn it off**: Right-click → Settings → Alerts page →
 Notifications → "Alert me when the pump battery is running low"
 
 Other backends do not report a pump battery at all, so nothing is shown for them.
@@ -287,7 +287,7 @@ These are YOUR personal limits. Everyone's different!
 - **Low threshold**: Below this, Trndi shows warnings (e.g., 4.0 mmol/L or 70 mg/dL)
 - **High threshold**: Above this, Trndi shows warnings (e.g., 10.0 mmol/L or 180 mg/dL)
 
-**Where to set them**: Right-click → Settings → Customization tab
+**Where to set them**: Right-click → Settings → Glucose & ranges page
 
 ### Custom Range (Optional)
 Want tighter control? Set a "preferred range" within your safe range:
@@ -384,15 +384,15 @@ Look for:
 4. That's it - readings should start appearing!
 
 ### Making It Yours
-- **Change colors**: Settings → Colors tab
-- **Change fonts**: Settings → Display tab. The miniature window at the top is
+- **Change colors**: Settings → Colors page
+- **Change fonts**: Settings → Display page. The miniature window at the top is
   a live mock of the main screen — it shows your current reading with the
   fonts, colors and dot mode you are picking (before you save), and the
   dropdown next to the font buttons switches it between the in-range, high
   and low looks. Click the reading, arrow or time in the miniature to change
   that item's font
 - **Add JavaScript extensions**: See the Extensions guide for advanced features
-- **Keyboard shortcuts**: Settings → General tab
+- **Keyboard shortcuts**: press "i" for Settings, "s" to hear the current reading
 
 ### Best Practices
 - ✅ Keep Trndi running in the background

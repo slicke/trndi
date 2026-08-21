@@ -97,7 +97,7 @@ unit uconf;
 interface
 
 uses
-Classes, Types, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls,
+Classes, Types, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls, LazUTF8,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
 slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, trndi.theme, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
@@ -482,6 +482,13 @@ TfConf = class(TForm)
   pnHelp: TPanel;
 
   pcMain: TPageControl;
+  pnContent: TPanel;
+  pnPageHeader: TPanel;
+  pnSidebar: TPanel;
+  lPageTitle: TLabel;
+  lPageDesc: TLabel;
+  edSearch: TEdit;
+  tvNav: TTreeView;
   pnDisplay: TPanel;
   cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
@@ -509,6 +516,7 @@ TfConf = class(TForm)
   tsBackgrounds: TTabSheet;
   tsTexts: TTabSheet;
   tsCustomRange: TTabSheet;
+  tsGraphColors: TTabSheet;
   tsColors: TTabSheet;
   tsCustom: TTabSheet;
   tsDisplay: TTabSheet;
@@ -636,6 +644,8 @@ TfConf = class(TForm)
   procedure tsAccessShow({%H-}Sender: TObject);
   procedure tsChromaShow({%H-}Sender: TObject);
   procedure tsCommonShow(Sender: TObject);
+  procedure tvNavChange({%H-}Sender: TObject; Node: TTreeNode);
+  procedure edSearchChange({%H-}Sender: TObject);
   procedure tsExtShow({%H-}Sender: TObject);
   procedure tsProxyShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
@@ -710,6 +720,20 @@ private
   {** Pixels by which a tab's alTop stack runs past the tab's alBottom band
       (or past the tab itself, when it has none); <= 0 when the page fits. }
   function PageOverflow(APage: TTabSheet): integer;
+  {** (Re)populate the sidebar tree: category nodes with the pages as child
+      nodes, each page node's Data pointing at its TTabSheet. }
+  procedure BuildNavTree;
+  {** One-line explanation shown under the page title in the header. }
+  function PageDescription(APage: TTabSheet): string;
+  {** True when the page's caption, description or any visible control
+      caption on it contains Query (case-insensitive). }
+  function PageMatchesSearch(APage: TTabSheet; const Query: string): boolean;
+  {** Flip the page control to APage and rewrite the header title and
+      description. Idempotent; the one place a nav choice takes effect. }
+  procedure ActivateNavPage(APage: TTabSheet);
+  {** Activate a page through the sidebar, keeping tree selection, page
+      control and header in step. }
+  procedure SelectPage(APage: TTabSheet);
 public
   chroma: TRazerChromaBase;
   {** Saved TTS voice selection, applied by EnsureTTSVoices once the voice
@@ -798,6 +822,49 @@ const
 USER_KEY_DEFAULT = '-';
 
 resourcestring
+// Sidebar navigation: category rows, page names and the one-line description
+// shown under the page title. The page names double as the tab sheet captions
+// (assigned in ApplyCaptionsFromResources — .lfm captions are placeholders,
+// see the note above that procedure).
+RS_NAV_SEARCH = 'Search settings';
+RS_NAV_CONNECTION = 'Connection';
+RS_NAV_GLUCOSE = 'Glucose';
+RS_NAV_APPEARANCE = 'Appearance';
+RS_NAV_FEATURES = 'Integrations';
+RS_NAV_APP = 'App & system';
+RS_PAGE_ESSENTIALS = 'Essentials';
+RS_PAGE_DATASOURCE = 'Data source';
+RS_PAGE_PROXY = 'Proxy';
+RS_PAGE_RANGES = 'Glucose & ranges';
+RS_PAGE_ALERTS = 'Alerts';
+RS_PAGE_PREDICTIONS = 'Predictions';
+RS_PAGE_DISPLAY = 'Display';
+RS_PAGE_COLORS = 'Colors';
+RS_PAGE_FINETUNE = 'Fine-tuning';
+RS_PAGE_INTEGRATIONS = 'Music & links';
+RS_PAGE_CHROMA = 'Razer Chroma';
+RS_PAGE_EXTENSIONS = 'Extensions';
+RS_PAGE_ACCESS = 'Accessibility';
+RS_PAGE_ACCOUNTS = 'Accounts';
+RS_PAGE_SYSTEM = 'System';
+RS_PAGE_GRAPH_COLORS = 'Graph';
+RS_PD_ESSENTIALS = 'The settings most people look for, collected in one place.';
+RS_PD_DATASOURCE = 'Where Trndi fetches your readings from, and the login it uses.';
+RS_PD_PROXY = 'Route Trndi''s network traffic through a proxy server.';
+RS_PD_RANGES = 'Your unit, your high/low limits and your ideal target range.';
+RS_PD_ALERTS = 'When and how Trndi warns you about highs, lows and missing readings.';
+RS_PD_PREDICTIONS = 'Experimental: let Trndi estimate where your glucose is heading.';
+RS_PD_DISPLAY = 'Fonts and what is shown in the main window.';
+RS_PD_COLORS = 'The colors used for high, OK and low readings.';
+RS_PD_FINETUNE = 'Sizes, scales and other tweaks most people never need.';
+RS_PD_INTEGRATIONS = 'Play music or call a web address when readings go high or low.';
+RS_PD_CHROMA = 'Light up Razer keyboards and mice with your readings.';
+RS_PD_EXTENSIONS = 'JavaScript plugins that extend Trndi.';
+RS_PD_ACCESS = 'Text-to-speech, high contrast and in-app explanations.';
+RS_PD_ACCOUNTS = 'Track more than one person from the same Trndi.';
+RS_PD_SYSTEM = 'System information, autostart, web access and settings backup.';
+RS_ESSENTIALS_INTRO = 'The settings most people look for. Each one also lives on its own page in the list to the left.';
+
 RS_HINTS_ENABLE = 'Explain parts of the window when they are clicked';
 RS_HINTS_RESET_BTN = 'Show hidden explanations';
 RS_HINTS_RESET = 'The explanations you hid will be shown again.';
@@ -1220,6 +1287,28 @@ procedure TfConf.ApplyCaptionsFromResources;
 var
   keep: integer;
 begin
+  // Page names live here rather than in the .lfm so `make` alone keeps the
+  // translation files complete (see the note above). The sidebar tree shows
+  // whatever these captions say — BuildNavTree reads them back.
+  tsCommon.Caption := RS_PAGE_ESSENTIALS;
+  tsGeneral.Caption := RS_PAGE_DATASOURCE;
+  tsProxy.Caption := RS_PAGE_PROXY;
+  tsTir.Caption := RS_PAGE_RANGES;
+  tsCustom.Caption := RS_PAGE_ALERTS;
+  tsPredictions.Caption := RS_PAGE_PREDICTIONS;
+  tsDisplay.Caption := RS_PAGE_DISPLAY;
+  tsColors.Caption := RS_PAGE_COLORS;
+  tsAdvanced.Caption := RS_PAGE_FINETUNE;
+  tsIntegration.Caption := RS_PAGE_INTEGRATIONS;
+  tsChroma.Caption := RS_PAGE_CHROMA;
+  tsExt.Caption := RS_PAGE_EXTENSIONS;
+  tsAccess.Caption := RS_PAGE_ACCESS;
+  tsMulti.Caption := RS_PAGE_ACCOUNTS;
+  tsSystem.Caption := RS_PAGE_SYSTEM;
+  tsGraphColors.Caption := RS_PAGE_GRAPH_COLORS;
+  Label17.Caption := RS_ESSENTIALS_INTRO;
+  edSearch.TextHint := RS_NAV_SEARCH;
+
   bExtResetPerms.Caption := RS_EXT_RESET_BTN;
   cbHints.Caption := RS_HINTS_ENABLE;
   bResetHints.Caption := RS_HINTS_RESET_BTN;
@@ -1293,6 +1382,230 @@ begin
     cbPreviewState.ItemIndex := 0;
   cbPreviewState.Hint := RS_PREVIEW_STATE_HINT;
   pbDisplayPreview.Hint := RS_PREVIEW_CLICK_HINT;
+end;
+
+{------------------------------------------------------------------------------
+  Sidebar navigation
+  ------------------
+  The page control's tab bar is hidden (ShowTabs = false); the tree in the
+  sidebar is the only navigation. Category rows carry no Data and just forward
+  the selection to their first child; page rows carry the TTabSheet in Data.
+  Page activation still goes through TPageControl.ActivePage, so the lazy
+  OnShow loaders (TTS voices, Chroma, extensions, proxy, system probing) fire
+  exactly as they did with visible tabs.
+------------------------------------------------------------------------------}
+procedure TfConf.BuildNavTree;
+
+function AddPage(AParent: TTreeNode; APage: TTabSheet): TTreeNode;
+  begin
+    Result := tvNav.Items.AddChildObject(AParent, APage.Caption, APage);
+  end;
+var
+  grp: TTreeNode;
+begin
+  tvNav.Items.BeginUpdate;
+  try
+    tvNav.Items.Clear;
+    AddPage(nil, tsCommon);
+    grp := tvNav.Items.Add(nil, RS_NAV_CONNECTION);
+    AddPage(grp, tsGeneral);
+    AddPage(grp, tsProxy);
+    grp := tvNav.Items.Add(nil, RS_NAV_GLUCOSE);
+    AddPage(grp, tsTir);
+    AddPage(grp, tsCustom);
+    AddPage(grp, tsPredictions);
+    grp := tvNav.Items.Add(nil, RS_NAV_APPEARANCE);
+    AddPage(grp, tsDisplay);
+    AddPage(grp, tsColors);
+    AddPage(grp, tsAdvanced);
+    grp := tvNav.Items.Add(nil, RS_NAV_FEATURES);
+    AddPage(grp, tsIntegration);
+    AddPage(grp, tsChroma);
+    {$ifdef TrndiExt}
+    // Without extension support the page is hidden (see umain's
+    // SetupExtensions); a dead nav entry would just puzzle people.
+    AddPage(grp, tsExt);
+    {$endif}
+    grp := tvNav.Items.Add(nil, RS_NAV_APP);
+    AddPage(grp, tsAccess);
+    AddPage(grp, tsMulti);
+    AddPage(grp, tsSystem);
+  finally
+    tvNav.Items.EndUpdate;
+  end;
+  tvNav.FullExpand;
+end;
+
+function TfConf.PageDescription(APage: TTabSheet): string;
+begin
+  if APage = tsCommon then
+    Result := RS_PD_ESSENTIALS
+  else
+  if APage = tsGeneral then
+    Result := RS_PD_DATASOURCE
+  else
+  if APage = tsProxy then
+    Result := RS_PD_PROXY
+  else
+  if APage = tsTir then
+    Result := RS_PD_RANGES
+  else
+  if APage = tsCustom then
+    Result := RS_PD_ALERTS
+  else
+  if APage = tsPredictions then
+    Result := RS_PD_PREDICTIONS
+  else
+  if APage = tsDisplay then
+    Result := RS_PD_DISPLAY
+  else
+  if APage = tsColors then
+    Result := RS_PD_COLORS
+  else
+  if APage = tsAdvanced then
+    Result := RS_PD_FINETUNE
+  else
+  if APage = tsIntegration then
+    Result := RS_PD_INTEGRATIONS
+  else
+  if APage = tsChroma then
+    Result := RS_PD_CHROMA
+  else
+  if APage = tsExt then
+    Result := RS_PD_EXTENSIONS
+  else
+  if APage = tsAccess then
+    Result := RS_PD_ACCESS
+  else
+  if APage = tsMulti then
+    Result := RS_PD_ACCOUNTS
+  else
+  if APage = tsSystem then
+    Result := RS_PD_SYSTEM
+  else
+    Result := '';
+end;
+
+procedure TfConf.ActivateNavPage(APage: TTabSheet);
+begin
+  pcMain.ActivePage := APage;
+  lPageTitle.Caption := APage.Caption;
+  lPageDesc.Caption := PageDescription(APage);
+end;
+
+procedure TfConf.tvNavChange(Sender: TObject; Node: TTreeNode);
+begin
+  if Node = nil then
+    Exit;
+  if Node.Data = nil then
+  begin
+    // Category row: show its first page instead. Assigning Selected from
+    // inside OnChange does not re-fire the event in LCL, so the page is
+    // activated explicitly rather than through the handler.
+    Node := Node.GetFirstChild;
+    if Node = nil then
+      Exit;
+    tvNav.Selected := Node;
+  end;
+  ActivateNavPage(TTabSheet(Node.Data));
+end;
+
+procedure TfConf.SelectPage(APage: TTabSheet);
+var
+  node: TTreeNode;
+begin
+  for node in tvNav.Items do
+    if node.Data = Pointer(APage) then
+    begin
+      tvNav.Selected := node; // tvNavChange flips the page and the header
+      Exit;
+    end;
+  // Not in the tree (extensions build without the page): fall back to
+  // activating it directly so a caller can never end up on a stale page.
+  ActivateNavPage(APage);
+end;
+
+{------------------------------------------------------------------------------
+  Settings search: type a word, and only pages mentioning it stay in the
+  sidebar. Matching runs over the translated captions the user actually sees
+  (labels, check boxes, group boxes, radio/check group items), so it works in
+  every language without a keyword table to maintain.
+------------------------------------------------------------------------------}
+function TfConf.PageMatchesSearch(APage: TTabSheet; const Query: string): boolean;
+
+function ControlMatches(AControl: TControl): boolean;
+  var
+    i: integer;
+    wc: TWinControl;
+  begin
+    Result := true;
+    if (not (AControl is TCustomEdit)) and
+      (UTF8Pos(Query, UTF8LowerCase(AControl.Caption)) > 0) then
+      Exit;
+    if (AControl is TCustomRadioGroup) and
+      (UTF8Pos(Query, UTF8LowerCase(TCustomRadioGroup(AControl).Items.Text)) > 0) then
+      Exit;
+    if (AControl is TCheckGroup) and
+      (UTF8Pos(Query, UTF8LowerCase(TCheckGroup(AControl).Items.Text)) > 0) then
+      Exit;
+    if AControl is TWinControl then
+    begin
+      wc := TWinControl(AControl);
+      for i := 0 to wc.ControlCount - 1 do
+        if ControlMatches(wc.Controls[i]) then
+          Exit;
+    end;
+    Result := false;
+  end;
+begin
+  Result := (UTF8Pos(Query, UTF8LowerCase(APage.Caption)) > 0) or
+    (UTF8Pos(Query, UTF8LowerCase(PageDescription(APage))) > 0) or
+    ControlMatches(APage);
+end;
+
+procedure TfConf.edSearchChange(Sender: TObject);
+var
+  node, child, hit: TTreeNode;
+  q: string;
+  anyChild: boolean;
+begin
+  q := UTF8LowerCase(Trim(edSearch.Text));
+  hit := nil;
+  tvNav.Items.BeginUpdate;
+  try
+    // Page rows first...
+    for node in tvNav.Items do
+      if node.Data <> nil then
+      begin
+        node.Visible := (q = '') or
+          PageMatchesSearch(TTabSheet(node.Data), q);
+        if node.Visible and (hit = nil) then
+          hit := node;
+      end;
+    // ...then hide category rows whose pages are all filtered out.
+    for node in tvNav.Items do
+      if node.Data = nil then
+      begin
+        anyChild := node.GetFirstChild = nil; // childless: leave visible
+        child := node.GetFirstChild;
+        while child <> nil do
+        begin
+          if child.Visible then
+          begin
+            anyChild := true;
+            break;
+          end;
+          child := child.GetNextSibling;
+        end;
+        node.Visible := anyChild;
+      end;
+  finally
+    tvNav.Items.EndUpdate;
+  end;
+  // Keep the shown page among the matches, so the filter reads as "these
+  // pages mention it" rather than a dead list.
+  if (hit <> nil) and ((tvNav.Selected = nil) or not tvNav.Selected.Visible) then
+    tvNav.Selected := hit;
 end;
 
 procedure TfConf.ClearExtensionInfo;
@@ -1638,7 +1951,7 @@ end;
 
 procedure TfConf.lConfigPredictClick(Sender: TObject);
 begin
-  pcMain.ActivePage := tsPredictions;
+  SelectPage(tsPredictions);
 end;
 
 procedure TfConf.getAPILabels(out user, pass: string);
@@ -2040,10 +2353,7 @@ end;
 
 procedure TfConf.bCommonClick(Sender: TObject);
 begin
-  {$ifdef x_mac}
-  tsCommon.tabvisible := true;
-  {$endif}
-  pcMain.ActivePage := tsCommon;
+  SelectPage(tsCommon);
 end;
 
 procedure TfConf.bCustomRangeHelpClick(Sender: TObject);
@@ -3001,7 +3311,13 @@ begin
   {$POP}
   lversion.left := lversion.left - 20;
 
-  pcMain.ActivePage := tsGeneral;
+  // Sidebar navigation: header typography, the tree itself, and the landing
+  // page.
+  lPageTitle.Font.Style := [fsBold];
+  lPageTitle.Font.Size := 14;
+  lPageDesc.Font.Color := clGrayText;
+  BuildNavTree;
+  SelectPage(tsCommon);
   {$ifdef X_MAC}
   self.width := self.width + (self.width div 9);
   {$endif}
@@ -3040,9 +3356,6 @@ begin
 
   // Initialize parameter labels for current backend selection
   cbSysChange(Self);
-
-  // Encode the gear glyph explicitly so the concat stays UTF-8 throughout
-  bcommon.Caption := UTF8Encode(WideString(WChar(2699))) + ' ' + bCommon.Caption;
 
   {$IFNDEF TRNDIEXT}
   lExtName.Caption := RS_NO_EXTENSIONS;
@@ -3420,9 +3733,7 @@ end;
 
 procedure TfConf.pcMainChange(Sender: TObject);
 begin
-  {$ifdef x_mac}
-  tsCommon.tabvisible := false;
-  {$endif}
+
 end;
 
 procedure TfConf.rbUnitClick(Sender: TObject);

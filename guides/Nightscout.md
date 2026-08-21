@@ -70,7 +70,7 @@ Right-click the reading (or the "Setup" text) → **Settings**, then:
 `settings.thresholds` from your Nightscout status and takes `bgHigh` / `bgLow`
 as your high and low limits, and `bgTargetTop` / `bgTargetBottom` as your
 personal range. You do not need to set these in Trndi — though you still can,
-under Settings → Customization, if you want Trndi to disagree with your site.
+under Settings → Glucose & ranges, if you want Trndi to disagree with your site.
 
 **The clock is taken from the server.** Trndi compares your site's reported
 time against the local one and works in the difference, so readings land at the
@@ -155,4 +155,4 @@ Nightscout.
 
 **Thresholds are not what you set in Nightscout.** They are read once on
 connecting. Restart Trndi after changing them on the site, or override them in
-Settings → Customization.
+Settings → Glucose & ranges.

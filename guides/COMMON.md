@@ -25,7 +25,7 @@ This adds a color on tuop of the graph, that shows your range (what's high and l
 ### Override Custom Range
 This allows you to set which range/values you think are the most desireable. This is a smaller range than your high/low levels.
 
-## Customization
+## Glucose & ranges
 ### Override high / Low limits
 These are the values you consider high/low
 
