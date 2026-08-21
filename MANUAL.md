@@ -282,12 +282,6 @@ before you rely on it.
 
 ## Settings You Should Know
 
-### Opening the Menu
-Right-click anywhere in the window to open Trndi's menu. On Windows, macOS
-and Linux (Wayland), a hamburger button (☰) at the left end of the title bar
-opens the same menu with a single click — handy on touch screens. The button
-sits dimmed until you point at it, so it stays out of the reading's way.
-
 ### High and Low Thresholds
 These are YOUR personal limits. Everyone's different!
 - **Low threshold**: Below this, Trndi shows warnings (e.g., 4.0 mmol/L or 70 mg/dL)

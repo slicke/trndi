@@ -108,16 +108,6 @@ public
     const onClick: TTrndiWakeCallback): boolean; override;
     {** Destroy the layered title-bar badge if present. }
   procedure HideUserBadge; override;
-    {** @true — a layered hamburger button can sit at the caption's left end. }
-  class function SupportsTitleMenuButton: boolean; override;
-    {** Create/refresh the clickable layered hamburger button. See base. }
-  function ShowTitleMenuButton(bg, glyphColor: TColor;
-    const onClick: TTrndiWakeCallback): boolean; override;
-    {** Destroy the layered hamburger button if present. }
-  procedure HideTitleMenuButton; override;
-    {** Spaces the caption needs so its left-aligned text clears the
-        hamburger button. See base. }
-  function TitleMenuCaptionPad: string; override;
     {** Draw a badge with @param(Value) on the application icon.
         @param(BadgeColor Color of the badge circle/rounded rect)
         @param(badge_size_ratio Badge diameter relative to icon size)
@@ -1338,17 +1328,6 @@ end;
   -------------
   Apply caption and text colors to a window using DWM attributes.
  ------------------------------------------------------------------------------}
-var
-  // Last caption colors successfully applied, and to which window: the
-  // title-bar hamburger pill sits on the caption, so it mirrors these (see
-  // SyncTitleMenuToCaption below) instead of keeping its theme fallback.
-  gLastTitleHWnd: HWND = 0;
-  gLastTitleBg: TColor = clNone;
-  gLastTitleText: TColor = clNone;
-
-// Implemented in the hamburger section at the bottom of the unit.
-procedure SyncTitleMenuToCaption(owner: HWND; bg, txt: TColor); forward;
-
 class function TTrndiNativeWindows.SetTitleColor(form: PtrUInt;
 bg, Text: TColor): boolean;
 const
@@ -1371,16 +1350,6 @@ begin
   hrText := SetDwmAttr(form, DWMWA_TEXT_COLOR, textColor, SizeOf(textColor));
 
   Result := HrSucceeded(hrCaption) and HrSucceeded(hrText);
-
-  // Keep the hamburger pill flush with the caption it sits on: remember the
-  // colors (so a pill created later starts right) and repaint a live one.
-  if Result then
-  begin
-    gLastTitleHWnd := HWND(form);
-    gLastTitleBg := bg;
-    gLastTitleText := Text;
-    SyncTitleMenuToCaption(HWND(form), bg, Text);
-  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -3638,7 +3607,6 @@ end;
  ==============================================================================}
 const
   BADGE_CLASS_NAME         = 'TrndiUserBadgeWnd';
-  MENU_CLASS_NAME          = 'TrndiTitleMenuWnd';
   DWMWA_CAPTION_BTN_BOUNDS = 5;      // DWMWA_CAPTION_BUTTON_BOUNDS
   BADGE_GAP                = 8;      // px between the pill and the caption buttons
   WM_DPICHANGED_MSG        = $02E0;
@@ -3648,8 +3616,6 @@ const
 
 var
   gBadgeHWnd: HWND = 0;
-  // Owner-subclass state, shared by the badge and the hamburger button: one
-  // WndProc keeps both overlays glued to the caption.
   gBadgeOwner: HWND = 0;
   gBadgeOwnerOldProc: PtrInt = 0;
   gBadgeClassReg: boolean = false;
@@ -3659,16 +3625,6 @@ var
   gBadgeNick: string = '';
   gBadgeBg: TColor = clBlack;
   gBadgeText: TColor = clWhite;
-  // Hamburger (settings-menu) button: a second layered pill at the left end
-  // of the caption, reusing the badge's painting technique and owner subclass.
-  gMenuHWnd: HWND = 0;
-  gMenuClassReg: boolean = false;
-  gMenuBridge: TTrndiWakeBridge = nil;
-  gMenuW: integer = 0;
-  gMenuH: integer = 0;
-  gMenuBg: TColor = clBlack;
-  gMenuGlyph: TColor = clWhite;
-  gMenuHover: boolean = false;
 
 // True when device pixel (px,py) lies inside a w×h rounded rectangle with the
 // given corner radius. Mirrors the corner test used by SetBadge.FixBadgeAlpha.
@@ -3930,262 +3886,6 @@ begin
   gBadgeClassReg := true;
 end;
 
-{------------------------------------------------------------------------------
-  Hamburger (settings-menu) button — the badge's left-end counterpart
- ------------------------------------------------------------------------------}
-
-procedure DestroyMenuWindow;
-begin
-  if gMenuHWnd <> 0 then
-  begin
-    DestroyWindow(gMenuHWnd);
-    gMenuHWnd := 0;
-  end;
-  gMenuHover := false;
-end;
-
-// Resting glyph color: the caption text blended mostly into the caption, so
-// the bars sit back instead of competing with the reading. Hover (tracked in
-// MenuWndProc) repaints with the full-contrast gMenuGlyph.
-function MenuRestGlyphColor: TColor;
-const
-  // /255 ≈ 10% of the glyph color survives at rest. Far lower than the drawn
-  // Wayland bar's 40%: these bars are several px thick (h div 9, against the
-  // Wayland bar's hairlines), so the same blend reads much heavier.
-  KEEP = 26;
-var
-  cb, cf, r, g, b: longint;
-begin
-  cb := ColorToRGB(gMenuBg);
-  cf := ColorToRGB(gMenuGlyph);
-  r := ((cb and $FF) * (255 - KEEP) + (cf and $FF) * KEEP) div 255;
-  g := (((cb shr 8) and $FF) * (255 - KEEP) + ((cf shr 8) and $FF) * KEEP) div 255;
-  b := (((cb shr 16) and $FF) * (255 - KEEP) + ((cf shr 16) and $FF) * KEEP) div 255;
-  Result := TColor(r or (g shl 8) or (b shl 16));
-end;
-
-// Move the hamburger to the caption's left end, vertically centred. The main
-// form is a tool window, so no system icon competes for the spot; the caption
-// text keeps clear via TitleMenuCaptionPad.
-procedure RepositionTitleMenu;
-var
-  wr: TRect;
-  rightX, capTop, capBottom, x, y: integer;
-begin
-  if (gMenuHWnd = 0) or (gBadgeOwner = 0) then
-    Exit;
-  if not BadgeCaptionGeom(rightX, capTop, capBottom) then
-    Exit;
-  if not GetWindowRect(gBadgeOwner, wr) then
-    Exit;
-  x := wr.Left + GetSystemMetrics(SM_CXFRAME) +
-    GetSystemMetrics(SM_CXPADDEDBORDER) + BADGE_GAP;
-  y := capTop + ((capBottom - capTop) - gMenuH) div 2;
-  SetWindowPos(gMenuHWnd, 0, x, y, 0, 0,
-    SWP_NOSIZE or SWP_NOZORDER or SWP_NOACTIVATE);
-end;
-
-// Paint the hamburger pill into a 32-bit DIB and push it to the layered
-// window — the same one-DIB surface discipline as PaintBadge (GDI draw,
-// alpha pass and blit all on the same bits, so they cannot desync).
-procedure PaintTitleMenu;
-var
-  brush, pen, oldBrush, oldPen: HGDIOBJ;
-  bi: BITMAPINFO;
-  dib: HBITMAP;
-  oldDib: HGDIOBJ;
-  bits: Pointer;
-  memDC, screenDC: HDC;
-  w, h, radius, capH, yy, xx: integer;
-  rightX, capTop, capBottom: integer;
-  gw, gx, cy, gap, penW, i: integer;
-  glyph: TColor;
-  blend: BLENDFUNCTION;
-  ptSrc: TPoint;
-  sz: TSize;
-  pRow: PByte;
-begin
-  if gMenuHWnd = 0 then
-    Exit;
-
-  // Same height rule as the badge pill, width a fixed proportion of it.
-  if BadgeCaptionGeom(rightX, capTop, capBottom) then
-    capH := capBottom - capTop
-  else
-    capH := GetSystemMetrics(SM_CYSMCAPTION);
-  h := Max(14, capH - 4);
-  w := Round(h * 1.6);
-  radius := h div 2;
-  gMenuW := w;
-  gMenuH := h;
-
-  memDC := CreateCompatibleDC(0);
-  if memDC = 0 then
-    Exit;
-  try
-    FillChar(bi, SizeOf(bi), 0);
-    bi.bmiHeader.biSize := SizeOf(BITMAPINFOHEADER);
-    bi.bmiHeader.biWidth := w;
-    bi.bmiHeader.biHeight := -h;        // negative => top-down rows
-    bi.bmiHeader.biPlanes := 1;
-    bi.bmiHeader.biBitCount := 32;
-    bi.bmiHeader.biCompression := BI_RGB;
-    bits := nil;
-    dib := CreateDIBSection(memDC, bi, DIB_RGB_COLORS, bits, 0, 0);
-    if (dib = 0) or (bits = nil) then
-      Exit;
-    oldDib := SelectObject(memDC, dib);
-    try
-      FillChar(bits^, w * h * 4, 0);
-
-      // Pill body.
-      brush := CreateSolidBrush(DWORD(ColorToRGB(gMenuBg)));
-      pen := CreatePen(PS_SOLID, 1, DWORD(ColorToRGB(gMenuBg)));
-      oldBrush := SelectObject(memDC, brush);
-      oldPen := SelectObject(memDC, pen);
-      RoundRect(memDC, 0, 0, w, h, radius * 2, radius * 2);
-      SelectObject(memDC, oldBrush);
-      SelectObject(memDC, oldPen);
-      DeleteObject(brush);
-      DeleteObject(pen);
-
-      // Three bars, centred — ghosted at rest, full caption-text color while
-      // the cursor is over the pill.
-      if gMenuHover then
-        glyph := gMenuGlyph
-      else
-        glyph := MenuRestGlyphColor;
-      penW := Max(1, h div 9);
-      pen := CreatePen(PS_SOLID, penW, DWORD(ColorToRGB(glyph)));
-      oldPen := SelectObject(memDC, pen);
-      gw := Round(h * 0.62);
-      gx := (w - gw) div 2;
-      cy := h div 2;
-      gap := Max(2, Round(h * 0.22));
-      // Additive stepping, not cy + i*gap over i in -1..1: the negative-based
-      // loop variable becomes a narrow subrange, and its widening multiply
-      // makes ppcx64 3.2.2 -O3 abort with internal error 200306031
-      // (check_register_size) under this function's register pressure.
-      yy := cy - gap;
-      for i := 0 to 2 do
-      begin
-        MoveToEx(memDC, gx, yy, nil);
-        LineTo(memDC, gx + gw, yy);
-        Inc(yy, gap);
-      end;
-      SelectObject(memDC, oldPen);
-      DeleteObject(pen);
-
-      GdiFlush;
-
-      // Alpha pass: opaque inside the rounded shape, cleared corners — same
-      // rule as PaintBadge.
-      for yy := 0 to h - 1 do
-      begin
-        pRow := PByte(bits) + yy * w * 4;
-        for xx := 0 to w - 1 do
-          if BadgePixelInside(xx, yy, w, h, radius) then
-            (pRow + xx * 4 + 3)^ := 255
-          else
-            PDWord(pRow + xx * 4)^ := 0;
-      end;
-
-      screenDC := GetDC(0);
-      try
-        blend.BlendOp := AC_SRC_OVER;
-        blend.BlendFlags := 0;
-        blend.SourceConstantAlpha := 255;
-        blend.AlphaFormat := AC_SRC_ALPHA;
-        sz.cx := w;
-        sz.cy := h;
-        ptSrc.x := 0;
-        ptSrc.y := 0;
-        UpdateLayeredWindow(gMenuHWnd, screenDC, nil, @sz, memDC,
-          @ptSrc, 0, @blend, ULW_ALPHA);
-      finally
-        ReleaseDC(0, screenDC);
-      end;
-    finally
-      SelectObject(memDC, oldDib);
-      DeleteObject(dib);
-    end;
-  finally
-    DeleteDC(memDC);
-  end;
-end;
-
-// Recolor the pill to the caption colors DWM was just given, so it reads as
-// part of the caption (three bars, no visible chip) rather than a grey pill
-// on a colored bar. In full-color mode this fires with every reading.
-procedure SyncTitleMenuToCaption(owner: HWND; bg, txt: TColor);
-begin
-  if (gMenuHWnd = 0) or (owner <> gBadgeOwner) then
-    Exit;
-  if (gMenuBg = bg) and (gMenuGlyph = txt) then
-    Exit;
-  gMenuBg := bg;
-  gMenuGlyph := txt;
-  PaintTitleMenu;
-end;
-
-// WndProc of the hamburger window: clicks and the hand cursor, like the
-// badge, plus hover tracking — the pill rests ghosted and repaints to full
-// contrast while the cursor is over it (TrackMouseEvent supplies the leave).
-function MenuWndProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM;
-  lParam: LPARAM): LRESULT; stdcall;
-var
-  tme: TTrackMouseEvent;
-begin
-  case uMsg of
-    WM_LBUTTONUP:
-    begin
-      if Assigned(gMenuBridge) and Assigned(gMenuBridge.Callback) then
-        gMenuBridge.Queue;
-      Exit(0);
-    end;
-    WM_MOUSEMOVE:
-      if not gMenuHover then
-      begin
-        gMenuHover := true;
-        FillChar(tme, SizeOf(tme), 0);
-        tme.cbSize := SizeOf(tme);
-        tme.dwFlags := TME_LEAVE;
-        tme.hwndTrack := hWnd;
-        TrackMouseEvent(tme);
-        PaintTitleMenu;
-      end;
-    WM_MOUSELEAVE:
-      if gMenuHover then
-      begin
-        gMenuHover := false;
-        PaintTitleMenu;
-      end;
-    WM_SETCURSOR:
-    begin
-      Windows.SetCursor(Windows.LoadCursor(0, IDC_HAND));
-      Exit(1);
-    end;
-    WM_NCHITTEST:
-      Exit(HTCLIENT);
-  end;
-  Result := DefWindowProc(hWnd, uMsg, wParam, lParam);
-end;
-
-procedure EnsureMenuClass;
-var
-  wc: WNDCLASS;
-begin
-  if gMenuClassReg then
-    Exit;
-  FillChar(wc, SizeOf(wc), 0);
-  wc.lpfnWndProc := WNDPROC(@MenuWndProc);
-  wc.hInstance := GetModuleHandle(nil);
-  wc.hCursor := LoadCursor(0, IDC_HAND);
-  wc.lpszClassName := MENU_CLASS_NAME;
-  RegisterClass(wc);
-  gMenuClassReg := true;
-end;
-
 // Subclass of the owner form: reposition the pill on move/resize, repaint on
 // DPI change, and tear the pill down with the window.
 function BadgeOwnerWndProc(hWnd: HWND; uMsg: UINT; wParam: WPARAM;
@@ -4194,73 +3894,40 @@ begin
   Result := CallWindowProc(Windows.WNDPROC(gBadgeOwnerOldProc), hWnd, uMsg,
     wParam, lParam);
   case uMsg of
-    // The pills are separate owned popups, so they cannot be glued to the
-    // caption during an interactive move/resize — they would trail a frame
-    // behind and leave a lagging outline outside the window. Hide them for
-    // the duration of the modal move/resize loop and snap back on release.
+    // The pill is a separate owned popup, so it cannot be glued to the caption
+    // during an interactive move/resize — it would trail a frame behind and
+    // leave a lagging outline outside the window. Hide it for the duration of
+    // the modal move/resize loop and snap it back into place on release.
     WM_ENTERSIZEMOVE_MSG:
-    begin
       if gBadgeHWnd <> 0 then
         ShowWindow(gBadgeHWnd, SW_HIDE);
-      if gMenuHWnd <> 0 then
-        ShowWindow(gMenuHWnd, SW_HIDE);
-    end;
     WM_EXITSIZEMOVE_MSG:
-    begin
       if gBadgeHWnd <> 0 then
       begin
         RepositionBadge;
         ShowWindow(gBadgeHWnd, SW_SHOWNOACTIVATE);
       end;
-      if gMenuHWnd <> 0 then
-      begin
-        RepositionTitleMenu;
-        ShowWindow(gMenuHWnd, SW_SHOWNOACTIVATE);
-      end;
-    end;
     WM_WINDOWPOSCHANGED:
-    begin
       // Reposition for non-drag moves (Aero snap, maximise, programmatic). While
-      // an interactive drag is in progress the pills are hidden, so this just
-      // moves invisible windows and reshows nothing.
+      // an interactive drag is in progress the pill is hidden, so this just moves
+      // an invisible window and reshows nothing.
       if gBadgeHWnd <> 0 then
         RepositionBadge;
-      if gMenuHWnd <> 0 then
-        RepositionTitleMenu;
-    end;
     WM_DPICHANGED_MSG:
-    begin
       if gBadgeHWnd <> 0 then
       begin
         PaintBadge;
         RepositionBadge;
       end;
-      if gMenuHWnd <> 0 then
-      begin
-        PaintTitleMenu;
-        RepositionTitleMenu;
-      end;
-    end;
     WM_NCDESTROY:
     begin
       if (gBadgeOwner <> 0) and (gBadgeOwnerOldProc <> 0) then
         SetWindowLongPtr(gBadgeOwner, GWL_WNDPROC, gBadgeOwnerOldProc);
       DestroyBadgeWindow;
-      DestroyMenuWindow;
       gBadgeOwner := 0;
       gBadgeOwnerOldProc := 0;
     end;
   end;
-end;
-
-// Install the shared owner subclass (badge + hamburger) once, and remember
-// the owner both overlays position against.
-procedure EnsureOverlayOwnerHook(owner: HWND);
-begin
-  gBadgeOwner := owner;
-  if gBadgeOwnerOldProc = 0 then
-    gBadgeOwnerOldProc := SetWindowLongPtr(owner, GWL_WNDPROC,
-      PtrInt(@BadgeOwnerWndProc));
 end;
 
 class function TTrndiNativeWindows.SupportsUserBadge: boolean;
@@ -4284,7 +3951,7 @@ begin
   gBadgeText := textColor;
 
   EnsureBadgeClass;
-  EnsureOverlayOwnerHook(owner);
+  gBadgeOwner := owner;
 
   if gBadgeHWnd = 0 then
   begin
@@ -4302,6 +3969,12 @@ begin
   gBadgeBridge.Pending := false;
 
   PaintBadge;
+
+  // Subclass the owner once so the pill follows the window.
+  if gBadgeOwnerOldProc = 0 then
+    gBadgeOwnerOldProc := SetWindowLongPtr(owner, GWL_WNDPROC,
+      PtrInt(@BadgeOwnerWndProc));
+
   RepositionBadge;
   ShowWindow(gBadgeHWnd, SW_SHOWNOACTIVATE);
   Result := true;
@@ -4312,115 +3985,6 @@ begin
   // Destroy the pill but keep the (harmless) owner subclass; it is removed on
   // the owner's WM_NCDESTROY. Leaving it avoids WndProc-chain corruption.
   DestroyBadgeWindow;
-end;
-
-class function TTrndiNativeWindows.SupportsTitleMenuButton: boolean;
-begin
-  Result := true;
-end;
-
-function TTrndiNativeWindows.ShowTitleMenuButton(bg, glyphColor: TColor;
-const onClick: TTrndiWakeCallback): boolean;
-var
-  owner: HWND;
-begin
-  Result := false;
-  if (Application = nil) or (Application.MainForm = nil)
-    or (not Application.MainForm.HandleAllocated) then
-    Exit;
-  owner := Application.MainForm.Handle;
-
-  // The caller's colors are a theme fallback; when Trndi has already colored
-  // this window's caption (full-color mode, the default), the pill adopts
-  // the caption colors instead so it blends into the bar.
-  if (gLastTitleHWnd = owner) and (gLastTitleBg <> clNone) then
-  begin
-    gMenuBg := gLastTitleBg;
-    gMenuGlyph := gLastTitleText;
-  end
-  else
-  begin
-    gMenuBg := bg;
-    gMenuGlyph := glyphColor;
-  end;
-
-  EnsureMenuClass;
-  EnsureOverlayOwnerHook(owner);
-
-  if gMenuHWnd = 0 then
-  begin
-    gMenuHWnd := CreateWindowEx(
-      WS_EX_LAYERED or WS_EX_NOACTIVATE or WS_EX_TOOLWINDOW,
-      MENU_CLASS_NAME, nil, WS_POPUP,
-      0, 0, 16, 16, owner, 0, GetModuleHandle(nil), nil);
-    if gMenuHWnd = 0 then
-      Exit;
-  end;
-
-  if gMenuBridge = nil then
-    gMenuBridge := TTrndiWakeBridge.Create;
-  gMenuBridge.Callback := onClick;
-  gMenuBridge.Pending := false;
-
-  PaintTitleMenu;
-  RepositionTitleMenu;
-  ShowWindow(gMenuHWnd, SW_SHOWNOACTIVATE);
-  Result := true;
-end;
-
-procedure TTrndiNativeWindows.HideTitleMenuButton;
-begin
-  // Same teardown contract as HideUserBadge: the shared owner subclass stays
-  // until the owner's WM_NCDESTROY.
-  DestroyMenuWindow;
-end;
-
-// The tool window's caption text starts at the left edge — exactly where the
-// hamburger sits — so the caption indents itself with spaces. The space is
-// measured in the same Segoe UI size the pills derive from the caption
-// height, so the count tracks DPI; a slight overshoot is harmless.
-function TTrndiNativeWindows.TitleMenuCaptionPad: string;
-const
-  spc: WideString = ' ';
-var
-  memDC: HDC;
-  hf, oldFont: HGDIOBJ;
-  faceName: WideString;
-  sp: TSize;
-  rightX, capTop, capBottom, capH, fontH, n: integer;
-begin
-  Result := '';
-  if gMenuHWnd = 0 then
-    Exit;
-  if BadgeCaptionGeom(rightX, capTop, capBottom) then
-    capH := capBottom - capTop
-  else
-    capH := GetSystemMetrics(SM_CYSMCAPTION);
-  fontH := Max(9, Max(14, capH - 4) - 6);
-  memDC := CreateCompatibleDC(0);
-  if memDC = 0 then
-    Exit;
-  try
-    faceName := 'Segoe UI';
-    hf := CreateFontW(-fontH, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET,
-      OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUAL,
-      DEFAULT_PITCH or FF_DONTCARE, PWideChar(faceName));
-    oldFont := SelectObject(memDC, hf);
-    try
-      sp.cx := 0;
-      sp.cy := 0;
-      GetTextExtentPoint32W(memDC, PWideChar(spc), 1, sp);
-      if sp.cx <= 0 then
-        Exit;
-      n := (gMenuW + 2 * BADGE_GAP + sp.cx - 1) div sp.cx;
-      Result := StringOfChar(' ', Min(n, 32));
-    finally
-      SelectObject(memDC, oldFont);
-      DeleteObject(hf);
-    end;
-  finally
-    DeleteDC(memDC);
-  end;
 end;
 
 initialization
@@ -4450,13 +4014,8 @@ finalization
     DestroyBadgeWindow;
   except
   end;
-  try
-    DestroyMenuWindow;
-  except
-  end;
   FreeAndNil(gWakeBridge);
   FreeAndNil(gBadgeBridge);
-  FreeAndNil(gMenuBridge);
   FreeAndNil(gOriginalAppIcon);
   if gLastBadgeIcon <> 0 then
   begin

@@ -523,27 +523,6 @@ class var touchOverride: TTrndiBool;
     const onClick: TTrndiWakeCallback): boolean; virtual;
     {** Remove any active user badge. Base: no-op. }
   procedure HideUserBadge; virtual;
-    {** True when the platform can render a hamburger (☰) button at the left
-        end of the native title bar (the settings-menu counterpart of the
-        user badge on the right). Base: @false. }
-  class function SupportsTitleMenuButton: boolean; virtual;
-    {** Show a clickable hamburger button at the left end of the title bar,
-        painted as a @param(bg)-filled pill with @param(glyphColor) bars.
-        The colors are a fallback — a platform that colors its caption via
-        @link(SetTitleColor) may substitute the live caption colors so the
-        button blends into the bar (Windows does).
-        @param(onClick) fires on the main thread when it is clicked.
-        @returns(@true when the button was shown.)
-        Base: no-op returning @false. }
-  function ShowTitleMenuButton(bg, glyphColor: TColor;
-    const onClick: TTrndiWakeCallback): boolean; virtual;
-    {** Remove any active title-bar hamburger button. Base: no-op. }
-  procedure HideTitleMenuButton; virtual;
-    {** Leading whitespace the window caption should carry so its text clears
-        the hamburger button. Only platforms that overlay the button on a
-        caption that starts at the left edge (Windows) return spaces; the
-        base returns ''. }
-  function TitleMenuCaptionPad: string; virtual;
     {** Play an audio file using native facilities (safe file check included).
         Default base implementation is a no-op; platform units override to spawn
         the appropriate player (mplay32/aplay/afplay). }
@@ -2132,27 +2111,6 @@ end;
 procedure TTrndiNativeBase.HideUserBadge;
 begin
   // No title-bar badge support on the base class.
-end;
-
-class function TTrndiNativeBase.SupportsTitleMenuButton: boolean;
-begin
-  Result := false;
-end;
-
-function TTrndiNativeBase.ShowTitleMenuButton(bg, glyphColor: TColor;
-const onClick: TTrndiWakeCallback): boolean;
-begin
-  Result := false;
-end;
-
-procedure TTrndiNativeBase.HideTitleMenuButton;
-begin
-  // No title-bar hamburger support on the base class.
-end;
-
-function TTrndiNativeBase.TitleMenuCaptionPad: string;
-begin
-  Result := '';
 end;
 
 end.

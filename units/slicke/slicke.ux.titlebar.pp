@@ -96,10 +96,6 @@ private
   FBadgeHover: boolean;
   FBadgePressed: boolean;
   FOnBadgeClick: TNotifyEvent;
-  FMenuBtn: boolean;    // hamburger (settings) button at the left end
-  FMenuHover: boolean;
-  FMenuPressed: boolean;
-  FOnMenuClick: TNotifyEvent;
   FHoverBtn: integer;   // index into visible-button order, -1 = none
   FPressedBtn: integer; // button armed by mouse-down, -1 = none
   FMaybeDrag: boolean;  // left button down outside the buttons, slop not yet left
@@ -118,9 +114,6 @@ private
   function BadgeRect: TRect;
   function BadgeAt(X, Y: integer): boolean;
   procedure MeasureBadge;
-  function MenuButtonRect: TRect;
-  function MenuButtonAt(X, Y: integer): boolean;
-  procedure SetShowMenuButton(const AValue: boolean);
   procedure DoButtonAction(AKind: TSlickeTitleBarButton);
   procedure SetTitle(const AValue: string);
   procedure SetTitleAlignment(const AValue: TAlignment);
@@ -156,14 +149,6 @@ public
     ATextColor: TColor = clNone);
     {** Remove the identity chip. }
   procedure ClearUserBadge;
-    {** Show a hamburger (☰) button at the left end of the bar, drawn in the
-        caption buttons' flat style — ghosted at rest, full contrast under
-        the cursor. Clicking it fires @link(OnMenuClick) —
-        meant for the host's settings/app menu, mirroring the native
-        title-bar hamburger platforms with colorable decorations offer. }
-  property ShowMenuButton: boolean read FMenuBtn write SetShowMenuButton;
-    {** Fired when the hamburger button is clicked. }
-  property OnMenuClick: TNotifyEvent read FOnMenuClick write FOnMenuClick;
     {** Bar text; when empty the parent form's Caption is drawn. }
   property Title: string read FTitle write SetTitle;
     {** How the caption text sits in the bar. Default left-justified, the
@@ -650,45 +635,10 @@ begin
   Invalidate;
 end;
 
-{------------------------------------------------------------------------------
-  Hamburger button
- ------------------------------------------------------------------------------}
-
-// Hamburger hit zone: the caption buttons' full-height sizing, mirrored to
-// the left end of the bar with the same small edge margin.
-function TSlickeTitleBar.MenuButtonRect: TRect;
-var
-  bw: integer;
-begin
-  Result := Rect(0, 0, 0, 0);
-  if not FMenuBtn then
-    Exit;
-  bw := Round(Height * 1.15);
-  Result := Rect(Height div 6, 0, Height div 6 + bw, Height);
-end;
-
-function TSlickeTitleBar.MenuButtonAt(X, Y: integer): boolean;
-var
-  r: TRect;
-begin
-  r := MenuButtonRect;
-  Result := (r.Right > r.Left) and PtInRect(r, Point(X, Y));
-end;
-
-procedure TSlickeTitleBar.SetShowMenuButton(const AValue: boolean);
-begin
-  if FMenuBtn = AValue then
-    Exit;
-  FMenuBtn := AValue;
-  FMenuHover := false;
-  FMenuPressed := false;
-  Invalidate;
-end;
-
 procedure TSlickeTitleBar.Paint;
 var
-  i, gs, ds, cx, cy, capLeft: integer;
-  r, gr, br, mr: TRect;
+  i, gs, ds, cx, cy: integer;
+  r, gr, br: TRect;
   kind: TSlickeTitleBarButton;
   fillC, glyphC, badgeBg, badgeTxt: TColor;
   s: string;
@@ -699,14 +649,6 @@ begin
   Canvas.FillRect(ClientRect);
 
   br := BadgeRect;
-  mr := MenuButtonRect;
-
-  // The caption keeps clear of the hamburger button when one is shown, else
-  // just of the bar's rounded left edge.
-  if mr.Right > mr.Left then
-    capLeft := mr.Right + BADGE_GAP
-  else
-    capLeft := Height div 2;
 
   // Caption text, centered over the whole bar but clipped clear of the buttons
   // (and of the identity chip when one is shown).
@@ -726,9 +668,9 @@ begin
     ts.Clipping := true;
     ts.EndEllipsis := true;
     if br.Right > br.Left then
-      r := Rect(capLeft, 0, br.Left - BADGE_GAP, Height)
+      r := Rect(Height div 2, 0, br.Left - BADGE_GAP, Height)
     else
-      r := Rect(capLeft, 0,
+      r := Rect(Height div 2, 0,
         ClientWidth - ButtonCount * Round(Height * 1.15) - Height div 4, Height);
     if r.Right > r.Left then
       Canvas.TextRect(r, r.Left, 0, s, ts);
@@ -779,42 +721,6 @@ begin
     ts.EndEllipsis := true;
     r := Rect(br.Left + ds div 4, br.Top, br.Right - ds div 4, br.Bottom);
     Canvas.TextRect(r, r.Left, r.Top, FBadgeText, ts);
-    Canvas.Brush.Style := bsSolid;
-  end;
-
-  // Hamburger button at the left end, in the same flat style as the caption
-  // buttons below: hover/press shows a soft rounded-square highlight. At rest
-  // the glyph is ghosted (blended well toward the bar) so it doesn't compete
-  // with the reading; hovering restores the full caption color.
-  if mr.Right > mr.Left then
-  begin
-    cx := (mr.Left + mr.Right) div 2;
-    cy := Height div 2;
-    if FMenuHover or FMenuPressed then
-    begin
-      if FMenuPressed then
-        fillC := MixColors(FBg, FText, 0.26)
-      else
-        fillC := MixColors(FBg, FText, 0.16);
-      ds := Round(Height * 0.72);
-      Canvas.Brush.Style := bsSolid;
-      Canvas.Brush.Color := fillC;
-      Canvas.Pen.Style := psClear;
-      Canvas.RoundRect(cx - ds div 2, cy - ds div 2,
-        cx - ds div 2 + ds, cy - ds div 2 + ds, ds div 4, ds div 4);
-      Canvas.Pen.Style := psSolid;
-    end;
-    gs := Max(8, Height div 3);
-    gr := Rect(cx - gs div 2, cy - gs div 2, cx - gs div 2 + gs, cy - gs div 2 + gs);
-    if FMenuHover or FMenuPressed then
-      Canvas.Pen.Color := FText
-    else
-      Canvas.Pen.Color := MixColors(FBg, FText, 0.40);
-    Canvas.Pen.Width := Max(1, Height div 24);
-    Canvas.Brush.Style := bsClear;
-    Canvas.Line(gr.Left, gr.Top, gr.Right, gr.Top);
-    Canvas.Line(gr.Left, cy, gr.Right, cy);
-    Canvas.Line(gr.Left, gr.Bottom, gr.Right, gr.Bottom);
     Canvas.Brush.Style := bsSolid;
   end;
 
@@ -955,13 +861,6 @@ begin
     Invalidate;
     Exit;
   end;
-  // Same for the hamburger button.
-  if MenuButtonAt(X, Y) then
-  begin
-    FMenuPressed := true;
-    Invalidate;
-    Exit;
-  end;
   frm := GetParentForm(Self);
   if frm = nil then
     Exit;
@@ -975,7 +874,7 @@ var
   p: TPoint;
   frm: TCustomForm;
   hov: integer;
-  hovBadge, hovMenu: boolean;
+  hovBadge: boolean;
 begin
   inherited MouseMove(Shift, X, Y);
   frm := GetParentForm(Self);
@@ -1025,13 +924,6 @@ begin
       Cursor := crDefault;
     Invalidate;
   end;
-
-  hovMenu := MenuButtonAt(X, Y);
-  if hovMenu <> FMenuHover then
-  begin
-    FMenuHover := hovMenu;
-    Invalidate;
-  end;
 end;
 
 procedure TSlickeTitleBar.MouseUp(Button: TMouseButton; Shift: TShiftState;
@@ -1059,29 +951,18 @@ begin
     Invalidate;
     if BadgeAt(X, Y) and Assigned(FOnBadgeClick) then
       FOnBadgeClick(Self);
-    Exit;
-  end;
-  if FMenuPressed then
-  begin
-    FMenuPressed := false;
-    Invalidate;
-    if MenuButtonAt(X, Y) and Assigned(FOnMenuClick) then
-      FOnMenuClick(Self);
   end;
 end;
 
 procedure TSlickeTitleBar.MouseLeave;
 begin
   inherited MouseLeave;
-  if (FHoverBtn >= 0) or (FPressedBtn >= 0) or FBadgeHover or FBadgePressed
-    or FMenuHover or FMenuPressed then
+  if (FHoverBtn >= 0) or (FPressedBtn >= 0) or FBadgeHover or FBadgePressed then
   begin
     FHoverBtn := -1;
     FPressedBtn := -1;
     FBadgeHover := false;
     FBadgePressed := false;
-    FMenuHover := false;
-    FMenuPressed := false;
     Cursor := crDefault;
     Invalidate;
   end;
@@ -1098,7 +979,7 @@ begin
   if FPressedBtn >= 0 then
     Exit;
   p := ScreenToClient(Mouse.CursorPos);
-  if not (BadgeAt(p.x, p.y) or MenuButtonAt(p.x, p.y)) then
+  if not BadgeAt(p.x, p.y) then
     DoButtonAction(stbMaximize);
 end;
 
