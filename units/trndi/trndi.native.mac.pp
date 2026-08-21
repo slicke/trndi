@@ -93,6 +93,15 @@ type
       const onClick: TTrndiWakeCallback): boolean; override;
     {** Detach the title-bar accessory if present. }
     procedure HideUserBadge; override;
+    {** @true — a hamburger button rides a left title-bar accessory view. }
+    class function SupportsTitleMenuButton: boolean; override;
+    {** Create/refresh a clickable hamburger pill after the traffic lights,
+        carried by an @code(NSTitlebarAccessoryViewController) with
+        @code(layoutAttribute = left). See base. }
+    function ShowTitleMenuButton(bg, glyphColor: TColor;
+      const onClick: TTrndiWakeCallback): boolean; override;
+    {** Detach the hamburger accessory if present. }
+    procedure HideTitleMenuButton; override;
 
     // Settings API overrides (NSUserDefaults/CFPreferences)
     {** Read a string from preferences; returns @param(def) when missing.
@@ -2041,6 +2050,200 @@ begin
   gUserBadgeNick := '';
   if Assigned(gUserBadgeBridge) then
     gUserBadgeBridge.Callback := nil;
+end;
+
+{------------------------------------------------------------------------------
+  Title-bar hamburger button
+  --------------------------
+  The settings-menu counterpart of the user badge above: a hamburger pill at
+  the left end of the title bar, right after the traffic lights, carried by a
+  second NSTitlebarAccessoryViewController with layoutAttribute = left. Same
+  drawing/marshalling rules as the badge — hand-drawn pill (so it can carry
+  theme colours) and a click queued to the main thread.
+ ------------------------------------------------------------------------------}
+const
+  TMENU_V_INSET  = 4;   // px between the pill and the title bar's edges
+  TMENU_EDGE_GAP = 8;   // px between the traffic lights and the pill
+  TMENU_MIN_H    = 16;  // floor for the pill height on short title bars
+
+type
+  // Content view of the accessory: draws the hamburger pill and turns a
+  // click into the caller's callback.
+  TTrndiTitleMenuView = objcclass(NSView)
+    procedure drawRect(dirtyRect: NSRect); override;
+    procedure mouseDown(theEvent: NSEvent); override;
+    function mouseDownCanMoveWindow: ObjCBOOL; override;
+    function acceptsFirstMouse(theEvent: NSEvent): ObjCBOOL; override;
+  end;
+
+var
+  gTitleMenuVC: NSTitlebarAccessoryViewController = nil;
+  gTitleMenuView: TTrndiTitleMenuView = nil;
+  gTitleMenuWindow: NSWindow = nil;
+  gTitleMenuBridge: TTrndiWakeBridge = nil; // shared class, this unit's instance
+  gTitleMenuBg: TColor = clBlack;
+  gTitleMenuFg: TColor = clWhite;
+
+procedure TTrndiTitleMenuView.drawRect(dirtyRect: NSRect);
+var
+  b, pill: NSRect;
+  cy, barW, barT, gap: CGFloat;
+  i: integer;
+begin
+  b := bounds;
+  pill := NSMakeRect(TMENU_EDGE_GAP, TMENU_V_INSET,
+    b.size.width - TMENU_EDGE_GAP, b.size.height - 2 * TMENU_V_INSET);
+  if (pill.size.width <= 0) or (pill.size.height <= 0) then
+    Exit;
+
+  UserBadgeColor(gTitleMenuBg).setFill;
+  NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(pill,
+    pill.size.height / 2, pill.size.height / 2).fill;
+
+  // Three bars, centred in the pill.
+  UserBadgeColor(gTitleMenuFg).setFill;
+  barW := pill.size.width * 0.5;
+  barT := pill.size.height * 0.11;
+  if barT < 1.5 then
+    barT := 1.5;
+  gap := pill.size.height * 0.24;
+  cy := pill.origin.y + pill.size.height / 2;
+  for i := -1 to 1 do
+    NSBezierPath.fillRect(NSMakeRect(
+      pill.origin.x + (pill.size.width - barW) / 2,
+      cy + i * gap - barT / 2, barW, barT));
+end;
+
+procedure TTrndiTitleMenuView.mouseDown(theEvent: NSEvent);
+begin
+  // Swallowed on purpose, like the badge: no inherited call, so the click
+  // opens the menu instead of starting a title-bar window drag.
+  if Assigned(gTitleMenuBridge) then
+    gTitleMenuBridge.Queue;
+end;
+
+function TTrndiTitleMenuView.mouseDownCanMoveWindow: ObjCBOOL;
+begin
+  Result := false;
+end;
+
+function TTrndiTitleMenuView.acceptsFirstMouse(theEvent: NSEvent): ObjCBOOL;
+begin
+  Result := true;
+end;
+
+// Attachment tracking mirrors the badge: asked rather than remembered,
+// because AppKit drops accessories whenever the titled style mask goes away.
+function TitleMenuAttachedTo(AWindow: NSWindow): boolean;
+var
+  list: NSArray;
+begin
+  Result := false;
+  if (gTitleMenuVC = nil) or (AWindow = nil) then
+    Exit;
+  list := AWindow.titlebarAccessoryViewControllers;
+  Result := (list <> nil) and (list.indexOfObject(gTitleMenuVC) <> NSUInteger(NSNotFound));
+end;
+
+procedure DetachTitleMenu;
+var
+  list: NSArray;
+  idx: NSUInteger;
+begin
+  if (gTitleMenuVC <> nil) and (gTitleMenuWindow <> nil) then
+  begin
+    list := gTitleMenuWindow.titlebarAccessoryViewControllers;
+    if list <> nil then
+    begin
+      idx := list.indexOfObject(gTitleMenuVC);
+      if idx <> NSUInteger(NSNotFound) then
+        gTitleMenuWindow.removeTitlebarAccessoryViewControllerAtIndex(NSInteger(idx));
+    end;
+  end;
+  gTitleMenuWindow := nil;
+end;
+
+class function TTrndiNativeMac.SupportsTitleMenuButton: boolean;
+begin
+  Result := true;
+end;
+
+function TTrndiNativeMac.ShowTitleMenuButton(bg, glyphColor: TColor;
+const onClick: TTrndiWakeCallback): boolean;
+var
+  view: NSView;
+  win: NSWindow;
+  barH, pillW: CGFloat;
+begin
+  Result := false;
+  if (Application = nil) or (Application.MainForm = nil)
+    or (not Application.MainForm.HandleAllocated) then
+  begin
+    HideTitleMenuButton;
+    Exit;
+  end;
+
+  view := NSView(Application.MainForm.Handle);
+  if view = nil then
+    Exit;
+  win := view.window;
+  if win = nil then
+    Exit;
+
+  // No title bar to hang the pill on (fullscreen/kiosk): drop the accessory
+  // and report failure, like the badge.
+  if (win.styleMask and NSTitledWindowMask) = 0 then
+  begin
+    HideTitleMenuButton;
+    Exit;
+  end;
+
+  gTitleMenuBg := bg;
+  gTitleMenuFg := glyphColor;
+
+  if gTitleMenuBridge = nil then
+    gTitleMenuBridge := TTrndiWakeBridge.Create;
+  gTitleMenuBridge.Callback := onClick;
+  gTitleMenuBridge.Pending := false;
+
+  // Match the real title-bar height so AppKit doesn't grow the bar; the pill
+  // is a fixed proportion of it.
+  barH := win.frame.size.height - win.contentRectForFrameRect(win.frame).size.height;
+  if barH < TMENU_MIN_H + 2 * TMENU_V_INSET then
+    barH := TMENU_MIN_H + 2 * TMENU_V_INSET;
+  pillW := (barH - 2 * TMENU_V_INSET) * 1.6;
+
+  if gTitleMenuView = nil then
+    gTitleMenuView := TTrndiTitleMenuView.alloc.initWithFrame(
+      NSMakeRect(0, 0, pillW + TMENU_EDGE_GAP, barH))
+  else
+    gTitleMenuView.setFrame(NSMakeRect(0, 0, pillW + TMENU_EDGE_GAP, barH));
+
+  if gTitleMenuVC = nil then
+  begin
+    gTitleMenuVC := NSTitlebarAccessoryViewController.alloc.init;
+    gTitleMenuVC.setLayoutAttribute(NSLayoutAttributeLeft);
+    // 0 = follow the auto-hiding title bar in full screen.
+    gTitleMenuVC.setFullScreenMinHeight(0);
+    gTitleMenuVC.setView(gTitleMenuView);
+  end;
+
+  if not TitleMenuAttachedTo(win) then
+  begin
+    if gTitleMenuWindow <> win then
+      DetachTitleMenu;
+    win.addTitlebarAccessoryViewController(gTitleMenuVC);
+  end;
+  gTitleMenuWindow := win;
+  gTitleMenuView.setNeedsDisplay_(true);
+  Result := true;
+end;
+
+procedure TTrndiNativeMac.HideTitleMenuButton;
+begin
+  DetachTitleMenu;
+  if Assigned(gTitleMenuBridge) then
+    gTitleMenuBridge.Callback := nil;
 end;
 
 end.

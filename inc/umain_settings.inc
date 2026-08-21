@@ -297,8 +297,10 @@ begin
   if Assigned(fFloat) then
     UpdateFloatingWindow;
 
-  // Repaint the title-bar user badge so a toggled dark/light theme updates the
-  // fallback chip colour (no-op when unsupported or not in multi-user mode).
+  // Repaint the settings hamburger and the title-bar user badge so a toggled
+  // dark/light theme updates their fallback colours (hamburger first — the
+  // badge refresh re-applies the caption, which carries its Windows pad).
+  RefreshTitleMenu;
   RefreshUserBadge;
 
   Self.Invalidate;
