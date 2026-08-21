@@ -3949,10 +3949,10 @@ end;
 // MenuWndProc) repaints with the full-contrast gMenuGlyph.
 function MenuRestGlyphColor: TColor;
 const
-  // /255 ≈ 30% of the glyph color survives at rest. Lower than the drawn
+  // /255 ≈ 10% of the glyph color survives at rest. Far lower than the drawn
   // Wayland bar's 40%: these bars are several px thick (h div 9, against the
   // Wayland bar's hairlines), so the same blend reads much heavier.
-  KEEP = 77;
+  KEEP = 26;
 var
   cb, cf, r, g, b: longint;
 begin
