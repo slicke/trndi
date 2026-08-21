@@ -38,6 +38,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-21: Added DT_WORDBREAK/DT_CALCRECT and crHourGlass for the
  *   splash and shutdown screens.
+ * - 2026-08-22: Added DT_EXPANDTABS for the warning panel's tab-expanding
+ *   measurement in umain_alerts.inc.
  *)
 unit LCLType;
 
@@ -70,6 +72,7 @@ const
 
 // DrawText flags (Win32 values, as in real LCLType) used by usplash
   DT_WORDBREAK = $10;
+  DT_EXPANDTABS = $40;
   DT_CALCRECT = $400;
 
 // Minimal Mouse global used by umain
