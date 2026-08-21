@@ -1175,8 +1175,7 @@ private
       and macOS, the drawn bar's identity chip on Wayland — from the current
       nickname and user colour, and put the name in the caption text where
       none of those exists.
-      Outside multi-user mode it only re-applies the plain caption (which
-      carries the Windows hamburger pad, see ApplyUserCaption). }
+      No-op outside multi-user mode. }
   procedure RefreshUserBadge;
   {** True while the active user's name rides in a title-bar badge instead of
       the "[name] Trndi" caption prefix. }
@@ -1186,13 +1185,6 @@ private
   procedure ApplyUserCaption(const withNick: boolean);
   {** Click handler for the title-bar badge — opens Settings. }
   procedure UserBadgeClicked;
-  {** (Re)create the settings hamburger (☰) button at the title bar's left
-      end — the native layered pill/accessory on Windows and macOS, the drawn
-      bar's own button on Wayland. Clicking it pops up pmSettings. }
-  procedure RefreshTitleMenu;
-  {** Click handler for the title-bar hamburger — pops up the settings menu
-      at the pointer. }
-  procedure TitleMenuClicked;
   procedure CheckAndAcceptLicense;
   function InitializeAPI: boolean;
   {** Seed the level-based alert rules (high, low, urgent low) from the active
@@ -1230,8 +1222,6 @@ private
     {** Drawn bar's identity chip was clicked — same target as the Windows
         badge: Settings. }
   procedure TitleBarBadgeClick({%H-}Sender: TObject);
-    {** Drawn bar's hamburger was clicked — pops up the settings menu. }
-  procedure TitleBarMenuClick({%H-}Sender: TObject);
     {** Create/tear down the bar per platform capability and settings. }
   procedure ApplyOwnTitleBar;
     {** Give a modal helper form (Settings, wizard) the drawn title bar on
@@ -2159,13 +2149,9 @@ begin
   if Assigned(native) then
     native.RegisterNoticeClickCallback(@OnNoticeClick);
 
-  // Show the settings hamburger at the caption's left end (all users, not
-  // just multi-user setups), then the multi-user name as a native title-bar
-  // badge (Windows). Done here so the handle is allocated and the overlays'
-  // owner-subclass chains on top of the wake hook registered just above.
-  // Order matters: the badge refresh re-applies the caption, which carries
-  // the hamburger's Windows caption pad.
-  RefreshTitleMenu;
+  // Show the multi-user name as a native title-bar badge (Windows). Done here
+  // so the handle is allocated and the badge's owner-subclass chains on top of
+  // the wake hook registered just above.
   RefreshUserBadge;
 end;
 {$ifdef DARWIN}
@@ -2327,9 +2313,6 @@ begin
   // the way in, which ShowUserBadge does when it finds no title bar). Only
   // macOS: on Windows the flip recreates the window handle, and the layered
   // badge there deliberately keeps its owner subclass until WM_NCDESTROY.
-  // The hamburger accessory is dropped the same way, so re-attach it first
-  // (the badge refresh then re-applies the caption).
-  RefreshTitleMenu;
   RefreshUserBadge;
   {$endif}
 

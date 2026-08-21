@@ -60,10 +60,7 @@
 // Owning the bar also means the multi-user name can live in it: the bar draws
 // an identity chip (TSlickeTitleBar.SetUserBadge) where Windows and macOS put
 // a native title-bar badge, so Wayland gets the same "[name] Trndi" prefix-free
-// caption. RefreshUserBadge in umain_glucose.inc picks between the two. The
-// bar likewise hosts the settings hamburger at its left end (ShowMenuButton),
-// mirroring the native title-bar hamburger those platforms get — see
-// RefreshTitleMenu in umain_menu.inc.
+// caption. RefreshUserBadge in umain_glucose.inc picks between the two.
 
 {------------------------------------------------------------------------------
   State queries
@@ -127,13 +124,6 @@ end;
 procedure TfBG.TitleBarBadgeClick({%H-}Sender: TObject);
 begin
   UserBadgeClicked;
-end;
-
-// The drawn bar's hamburger is the counterpart to the native title-bar
-// hamburger on Windows/macOS: both pop up the settings menu.
-procedure TfBG.TitleBarMenuClick({%H-}Sender: TObject);
-begin
-  TitleMenuClicked;
 end;
 
 // Helper forms shown modally (Settings, first-run wizard) are plain TForms,
@@ -211,10 +201,8 @@ begin
     // the bar is off; nothing to restore here.
   end;
 
-  // The bar carries the settings hamburger and the multi-user identity chip,
-  // so its arrival or departure decides where both live (hamburger first —
-  // the badge refresh re-applies the caption, which carries its Windows pad).
-  RefreshTitleMenu;
+  // The bar carries the multi-user identity chip, so its arrival or departure
+  // decides whether the name sits in the bar or back in the caption text.
   RefreshUserBadge;
 end;
 
