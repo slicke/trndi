@@ -41,6 +41,12 @@
    high/low/urgent-low rules from the API's thresholds. The boot path used to
    inline this before Connect, pinning every alert to initCGMCore's 401/40
    placeholders. *)
+(* MODIFICATION NOTICE (2026-08-21): MeasureWrappedHeight now measures with
+   DrawText(DT_CALCRECT or DT_WORDBREAK), matching TLabel's own wrapping; the
+   old row estimate came up short and clipped the warning card's last line.
+   fixWarningPanel shrinks the detail font before truncating the expanded card
+   text, truncates on whole-line boundaries only, and sizes the banner's
+   expanded row from a measurement instead of a guess. *)
 (* Warning overlay panel, connection badge, and alert snooze for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -78,47 +84,55 @@ begin
   end;
 end;
 
-// Height a word-wrapped AText needs at AFontSize inside AMaxW. Counts each hard
-// line's wrapped runs rather than assuming one row per line, so the card's
-// detail area is sized from real metrics instead of a guessed multiplier.
-// ASlack is appended to the last line for measurement only — the caller uses it
-// to reserve room for text that grows in place (a retry countdown gaining a
-// digit) without paying for a whole spare row.
+// Height a word-wrapped AText needs at AFontSize inside AMaxW. Measured with
+// the same DrawText(DT_WORDBREAK) call TCustomLabel paints with, so the text
+// wraps at the word boundaries the label will actually use — estimating rows
+// as ceil(pixel-width / max-width) ignored word breaks and could come up a
+// row short, slicing the card's bottom line in half. ASlack is appended for
+// measurement only — the caller uses it to reserve room for text that grows
+// in place (a retry countdown gaining a digit) without paying for a whole
+// spare row.
 function MeasureWrappedHeight(const AFont: TFont; const AText: string;
   AMaxW, AFontSize: integer; const ASlack: string = ''): integer;
 var
   bmp: TBitmap;
   lines: TStringList;
-  i, rows, lineW, lineH: integer;
+  lineH: integer;
   measured: string;
+  R: TRect;
 begin
   Result := 0;
   if (AText = '') or (AMaxW <= 0) then
     Exit;
 
+  measured := AText + ASlack;
+  // Measure on a temp TBitmap — TLabel.Canvas outside paint is unsafe on
+  // Cocoa, and a 0x0 bitmap yields zero metrics on GTK3.
   bmp := TBitmap.Create;
-  lines := TStringList.Create;
   try
     bmp.SetSize(1, 1);
     bmp.Canvas.Font.Assign(AFont);
     bmp.Canvas.Font.Size := AFontSize;
-    lineH := bmp.Canvas.TextHeight('Hg');
-    if lineH <= 0 then
-      lineH := AFontSize * 2;
+    R := Classes.Rect(0, 0, AMaxW, 0);
+    DrawText(bmp.Canvas.Handle, PChar(measured), Length(measured), R,
+      DT_CALCRECT or DT_WORDBREAK or DT_EXPANDTABS);
+    Result := R.Bottom - R.Top;
 
-    lines.Text := AText;
-    rows := 0;
-    for i := 0 to lines.Count - 1 do
+    if Result <= 0 then
     begin
-      measured := lines[i];
-      if i = lines.Count - 1 then
-        measured := measured + ASlack;
-      lineW := bmp.Canvas.TextWidth(measured);
-      rows := rows + Max(1, (lineW + AMaxW - 1) div AMaxW);
+      // The widgetset couldn't measure: fall back to one row per hard line.
+      lineH := bmp.Canvas.TextHeight('Hg');
+      if lineH <= 0 then
+        lineH := AFontSize * 2;
+      lines := TStringList.Create;
+      try
+        lines.Text := measured;
+        Result := Max(1, lines.Count) * lineH;
+      finally
+        lines.Free;
+      end;
     end;
-    Result := Max(1, rows) * lineH;
   finally
-    lines.Free;
     bmp.Free;
   end;
 end;
@@ -806,7 +820,7 @@ var
   detailCaption: string;
   headText, detailText, extraText: string;
   cardW, cardH, headH, detailH, extraH, glyphW, cardPad, detailW: integer;
-  headFont, detailFont: integer;
+  headFont, detailFont, maxCardH, lineH: integer;
 begin
   // Nothing to lay out while the panel is hidden — and the wlStatusCard branch
   // below does more than position the card: it shrinks lVal to the band left
@@ -872,12 +886,32 @@ begin
 
     cardH := (cardPad * 2) + headH + detailH + extraH;
     // A small window (or a tall expanded row) must not push the card over the
-    // value it is meant to annotate: cap it at 48% of the form and let the
-    // expanded text clip instead.
-    if cardH > round(ClientHeight * 0.48) then
+    // value it is meant to annotate: cap it at 48% of the form. The user asked
+    // to see the expanded text, so before giving any of it up, step the detail
+    // type down a few sizes — that is usually enough to fit everything.
+    maxCardH := Max(48, round(ClientHeight * 0.48));
+    while (cardH > maxCardH) and (extraH > 0) and (detailFont > 8) do
     begin
-      cardH := Max(48, round(ClientHeight * 0.48));
-      extraH := Max(0, cardH - (cardPad * 2) - headH - detailH);
+      Dec(detailFont);
+      detailH := MeasureWrappedHeight(pnWarnLast.Font, detailText, detailW,
+        detailFont, '00');
+      extraH := MeasureWrappedHeight(pnWarnLast.Font, extraText, detailW,
+        detailFont);
+      cardH := (cardPad * 2) + headH + detailH + extraH;
+    end;
+    if cardH > maxCardH then
+    begin
+      // Still too tall: give up rows from the expanded text, but only whole
+      // ones — a last line sliced through mid-glyph reads as a rendering bug,
+      // not as deliberate truncation.
+      extraH := Max(0, maxCardH - (cardPad * 2) - headH - detailH);
+      if extraH > 0 then
+      begin
+        lineH := Max(1, MeasureWrappedHeight(pnWarnLast.Font, 'Hg', detailW,
+          detailFont));
+        extraH := (extraH div lineH) * lineH;
+      end;
+      cardH := Min(maxCardH, (cardPad * 2) + headH + detailH + extraH);
     end;
 
     pnWarning.Width  := cardW;
@@ -964,14 +998,10 @@ begin
 
     padding := Max(8, ClientWidth div 40);
     baseBannerH := Max(56, ClientHeight div 9);
-    expandedExtraH := 0;
-    if FWarnExpanded and WarnShowDetails and (detailCaption <> '') then
-      expandedExtraH := Max(36, baseBannerH div 2);
 
     pnWarning.Width  := ClientWidth - (padding * 2);
     pnWarning.Left   := padding;
     pnWarning.Top    := padding + TitleBarOffset;
-    pnWarning.Height := baseBannerH + expandedExtraH;
     FWarnBannerBaseH := baseBannerH;
 
     lMissing.Caption := FWarnMessage;
@@ -985,6 +1015,22 @@ begin
     lMissing.Height := baseBannerH - 12;
     ScaleLbl(lMissing, taLeftJustify, tlCenter);
     calculatedFontSize := lMissing.Font.Size;
+
+    // The expanded row is sized from a measurement of its wrapped text rather
+    // than a fixed fraction of the banner height — the old guess ran out of
+    // room on narrow windows and cut the last line in half. Capped at 40% of
+    // the form so a tiny window keeps its banner a banner. Measured after
+    // ScaleLbl because the detail type is derived from the headline's size.
+    expandedExtraH := 0;
+    if FWarnExpanded and WarnShowDetails and (detailCaption <> '') then
+    begin
+      pnWarnLast.Font.Size := Max(8, Min(14, calculatedFontSize div 2));
+      expandedExtraH := Max(Max(36, baseBannerH div 2),
+        MeasureWrappedHeight(pnWarnLast.Font, detailCaption,
+          pnWarning.Width - GLYPH_AREA_W - 8, pnWarnLast.Font.Size) + 8);
+      expandedExtraH := Min(expandedExtraH, Max(36, round(ClientHeight * 0.4)));
+    end;
+    pnWarning.Height := baseBannerH + expandedExtraH;
 
     if WarnShowDetails and (detailCaption <> '') then
     begin
