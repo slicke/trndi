@@ -14,15 +14,17 @@ Trndi writes that file on Linux whenever it updates the tray/badge.
 
 It copies the extension into `~/.local/share/gnome-shell/extensions/`, adds
 your running Shell's major version to the installed `metadata.json` if it is
-not listed, and enables the extension.
+not listed, compiles the settings schema, and tries to enable the extension.
 
-Then reload GNOME Shell:
+On a **first install** that enable step always fails quietly, because the
+Shell has not rescanned its extensions directory yet. So the order is:
 
-- X11: press `Alt+F2`, type `r`, press Enter
-- Wayland: log out/in
+1. Reload GNOME Shell — X11: press `Alt+F2`, type `r`, press Enter; Wayland:
+   log out and back in.
+2. Enable it — with the Extensions app, or
+   `gnome-extensions enable trndi-current@slicke.com`.
 
-If enabling failed because the Shell had not rescanned yet, enable it with the
-Extensions app (or `gnome-extensions enable trndi-current@slicke.com`).
+(When upgrading an already-enabled install, the reload alone is enough.)
 
 Manual equivalent:
 

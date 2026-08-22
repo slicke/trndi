@@ -159,7 +159,7 @@ Both indicators read the same cache file: `${XDG_CACHE_HOME:-$HOME/.cache}/trndi
 Both offer the same settings — update interval, hide threshold, trend arrow and a "reading age" display. Configure the GNOME extension from the Extensions app (or `gnome-extensions prefs trndi-current@slicke.com`), and the plasmoid via its *Configure* dialog.
 
 **Installation:**
-- **DEB/RPM packages**: Extensions install automatically to `/usr/local/share/trndi/`
+- **DEB/RPM packages**: installed system-wide for you (to `/usr/share/gnome-shell/extensions/` and `/usr/share/plasma/plasmoids/`)
 - **From a source checkout**: run the installer next to each indicator — `./gnome-shell-extension/install.sh` or `./kde-plasmoid/install.sh` (add `--system` for all users, `--uninstall` to remove)
 - **AppImage**: Extensions are bundled but require manual installation:
   ```bash
@@ -186,6 +186,12 @@ Both offer the same settings — update interval, hide threshold, trend arrow an
   # - Restart (optional): kquitapp6 plasmashell &&  plasmashell (Plasma 5) or log out/in
   # - Add the "Trndi Current" widget via *Add Widgets*
   ```
+
+**Turning it on** — installing (any of the ways above) is not enough; each user activates the indicator themselves:
+- **GNOME**: reload the Shell first so it discovers the extension — log out and back in on Wayland, or `Alt+F2`, `r`, Enter on Xorg — then enable it in the Extensions app or with `gnome-extensions enable trndi-current@slicke.com`. (`install.sh` tries to enable it for you, but on a first install the Shell has not rescanned yet, so the enable comes after the reload.)
+- **KDE Plasma**: right-click the panel → *Add Widgets…* → search for "Trndi Current" and drag it onto the panel.
+
+The indicators only show a value while Trndi is running — they hide themselves when the cache file goes stale (by default after 11 minutes, configurable).
 
 ## macOS
 Download `Trndi-macos-silicon.dmg` from the [latest release](https://github.com/slicke/trndi/releases).
