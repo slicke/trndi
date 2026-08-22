@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+
+  Part of Trndi - https://github.com/slicke/trndi
+  Copyright (c) Björn Lindh
+
+  This program is distributed under the terms of the GNU General Public
+  License, Version 3, as published by the Free Software Foundation. See
+  LICENSE.md in the Trndi repository, or <https://www.gnu.org/licenses/gpl-3.0>.
+
+  MEDICAL DISCLAIMER: Trndi is NOT a medical device. Readings shown may be
+  delayed, inaccurate, or unavailable - never make medical decisions based on
+  them. See DISCLAIMER.md.
+-->
+<component type="desktop-application">
+  <id>com.slicke.trndi</id>
+  <name>Trndi</name>
+  <summary>Follow your CGM glucose readings on the desktop</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <developer id="com.slicke">
+    <name>Björn Lindh</name>
+  </developer>
+  <description>
+    <p>
+      Trndi shows readings from your continuous glucose monitor (CGM) in a
+      resizable desktop window, in the tray, and in optional GNOME Shell and
+      KDE Plasma panel indicators. It supports Nightscout, Dexcom, Tandem
+      Source, CareLink and xDrip as data sources, and can be extended with
+      JavaScript extensions.
+    </p>
+    <p>
+      Trndi is NOT a medical device and must not replace official CGM systems
+      or any healthcare decision-making. Readings may be delayed, inaccurate,
+      or unavailable — never make medical decisions based on this software.
+    </p>
+  </description>
+  <launchable type="desktop-id">trndi.desktop</launchable>
+  <url type="homepage">https://github.com/slicke/trndi</url>
+  <url type="bugtracker">https://github.com/slicke/trndi/issues</url>
+  <url type="help">https://github.com/slicke/trndi/blob/main/MANUAL.md</url>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <keywords>
+    <keyword>cgm</keyword>
+    <keyword>glucose</keyword>
+    <keyword>diabetes</keyword>
+    <keyword>nightscout</keyword>
+    <keyword>dexcom</keyword>
+  </keywords>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Trndi showing a reading with the range band on Linux</caption>
+      <image>https://raw.githubusercontent.com/slicke/trndi/main/doc/img/img_lin_range.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="18.0" date="2026-08-22"/>
+  </releases>
+  <provides>
+    <binary>Trndi</binary>
+  </provides>
+</component>

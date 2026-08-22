@@ -156,6 +156,8 @@ chmod +x Trndi-x86_64.AppImage
 
 Both indicators read the same cache file: `${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt`.
 
+Both offer the same settings — update interval, hide threshold, trend arrow and a "reading age" display. Configure the GNOME extension from the Extensions app (or `gnome-extensions prefs trndi-current@slicke.com`), and the plasmoid via its *Configure* dialog.
+
 **Installation:**
 - **DEB/RPM packages**: Extensions install automatically to `/usr/local/share/trndi/`
 - **From a source checkout**: run the installer next to each indicator — `./gnome-shell-extension/install.sh` or `./kde-plasmoid/install.sh` (add `--system` for all users, `--uninstall` to remove)
@@ -168,6 +170,8 @@ Both indicators read the same cache file: `${XDG_CACHE_HOME:-$HOME/.cache}/trndi
   mkdir -p ~/.local/share/gnome-shell/extensions
   cp -r squashfs-root/usr/share/trndi/gnome-shell-extension/trndi-current@slicke.com \
     ~/.local/share/gnome-shell/extensions/
+  # GNOME: compile the settings schema (optional; defaults are used without it)
+  glib-compile-schemas ~/.local/share/gnome-shell/extensions/trndi-current@slicke.com/schemas
   # GNOME: enable / reload the extension
   # - Use the Extensions app or run:
   #   gnome-extensions enable trndi-current@slicke.com

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+
+  Part of Trndi - https://github.com/slicke/trndi
+  Copyright (c) Björn Lindh
+
+  This program is distributed under the terms of the GNU General Public
+  License, Version 3, as published by the Free Software Foundation. See
+  LICENSE.md in the Trndi repository, or <https://www.gnu.org/licenses/gpl-3.0>.
+
+  MEDICAL DISCLAIMER: Trndi is NOT a medical device. Readings shown may be
+  delayed, inaccurate, or unavailable - never make medical decisions based on
+  them. See DISCLAIMER.md.
+
+  Keys mirror the KDE plasmoid's config (kde-plasmoid/trndi-current/
+  contents/config/main.xml) so both indicators offer the same knobs.
+-->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.trndi-current"
+          path="/org/gnome/shell/extensions/trndi-current/">
+    <key name="show-age" type="b">
+      <default>false</default>
+      <summary>Show reading age</summary>
+      <description>Append how many minutes ago the reading arrived.</description>
+    </key>
+    <key name="show-trend-arrow" type="b">
+      <default>true</default>
+      <summary>Show trend arrow</summary>
+      <description>Trndi only publishes an arrow while its own "trend arrow on the badge" setting is on; this hides it for this indicator alone.</description>
+    </key>
+    <key name="update-interval-seconds" type="i">
+      <range min="2" max="120"/>
+      <default>5</default>
+      <summary>Update interval</summary>
+      <description>How often to re-read Trndi's cache file, in seconds.</description>
+    </key>
+    <key name="hide-after-minutes" type="i">
+      <range min="1" max="120"/>
+      <default>11</default>
+      <summary>Hide threshold</summary>
+      <description>Hide the reading when the cache file is older than this many minutes (Trndi is likely not running).</description>
+    </key>
+  </schema>
+</schemalist>

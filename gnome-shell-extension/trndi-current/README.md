@@ -30,6 +30,8 @@ Manual equivalent:
 mkdir -p ~/.local/share/gnome-shell/extensions
 rm -rf ~/.local/share/gnome-shell/extensions/trndi-current@slicke.com
 cp -r gnome-shell-extension/trndi-current ~/.local/share/gnome-shell/extensions/trndi-current@slicke.com
+# Compile the settings schema (optional; built-in defaults are used without it)
+glib-compile-schemas ~/.local/share/gnome-shell/extensions/trndi-current@slicke.com/schemas
 ```
 
 ## Install (system-wide)
@@ -51,14 +53,28 @@ overwrite the package's copy.
 sudo ./gnome-shell-extension/install.sh --uninstall --system
 ```
 
+## Settings
+
+Open them from the Extensions app, or with
+`gnome-extensions prefs trndi-current@slicke.com`. The knobs mirror the KDE
+plasmoid's:
+
+- **Show trend arrow** (default on) — the arrow is only available while
+  Trndi's own *trend arrow on the badge* setting is on; this hides it for the
+  indicator alone.
+- **Show reading age** (default off) — appends how many minutes ago the
+  reading arrived, e.g. `5.6 ↘ · 3m`.
+- **Update interval** (default 5 s) — how often the cache file is re-read.
+- **Hide threshold** (default 11 min) — hide the indicator when the cache
+  file stops updating, i.e. Trndi is likely not running.
+
+Settings need the GSettings schema compiled next to the extension
+(`schemas/gschemas.compiled`); `install.sh` and the DEB/RPM packages do this
+for you. A plain manual copy without it still works, using the defaults above.
+
 ## Notes
 
-- The indicator updates every 5 seconds.
-- If no value is available it shows `--`.
-- The trend arrow is appended to the reading when Trndi publishes one on line 4
-  of the cache file — that is, while Trndi's own *trend arrow on the badge*
-  setting is on. The extension has no settings of its own; turn the arrow off
-  in Trndi if you do not want it.
+- If a reading is stale it shows `--`.
 - GNOME requires the extension `metadata.json` to list your GNOME Shell major version in `shell-version`.
 	The DEB/RPM installer auto-adds your current version during install.
 

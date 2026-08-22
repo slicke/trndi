@@ -239,7 +239,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install uninstall run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
 
 all: release
 
@@ -268,7 +268,8 @@ help:
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
 	@echo "  dist       Create a minimal tarball in $(OUTDIR)"
 	@echo "  run        Build (if needed) and run the built binary (use RUN_ARGS to pass args)"
-	@echo "  install    Install built binary to /usr/local/bin (requires sudo)"
+	@echo "  install    Install binary plus (on Linux/BSD) desktop entry, icon and AppStream metadata to PREFIX (default /usr/local; requires sudo)"
+	@echo "  uninstall  Remove everything 'make install' put under PREFIX (requires sudo)"
 	@echo "Variables:" 
 	@echo "  LAZBUILD (default: lazbuild)"
 	@echo "  WIDGETSET (default: $(WIDGETSET))"
@@ -550,8 +551,10 @@ dist: build
 	@mkdir -p $(OUTDIR)
 	@TSTAMP=$$(date +%Y%m%d%H%M%S); echo "Creating $(OUTDIR)/trndi-$${TSTAMP}.tar.gz"; tar czf "$(OUTDIR)/trndi-$${TSTAMP}.tar.gz" README.md Trndi.lpi || true
 
+PREFIX ?= /usr/local
+
 install: build
-	@echo "Installing binary to /usr/local/bin (requires sudo)"
+	@echo "Installing to $(PREFIX) (requires sudo)"
 	@set -e; \
 	NAME="$(basename $(LPI))"; \
 	SRC=""; \
@@ -561,4 +564,32 @@ install: build
 	elif [ -x "./$$NAME" ]; then SRC="./$$NAME"; \
 	elif [ -f "./$$NAME.exe" ]; then SRC="./$$NAME.exe"; \
 	else echo "Binary not found. Run 'make release' and ensure lazbuild produced an executable in the project dir."; exit 1; fi; \
-	sudo install -m 755 "$$SRC" /usr/local/bin/
+	sudo install -m 755 "$$SRC" "$(PREFIX)/bin/"; \
+	case "$$(uname -s)" in \
+	Linux|*BSD|DragonFly) \
+	  echo "Installing desktop entry, icon and AppStream metadata..."; \
+	  sudo install -d -m 755 "$(PREFIX)/share/applications" "$(PREFIX)/share/metainfo" "$(PREFIX)/share/icons/hicolor/256x256/apps"; \
+	  sudo install -m 644 dist/linux/trndi.desktop "$(PREFIX)/share/applications/trndi.desktop"; \
+	  sudo install -m 644 dist/linux/com.slicke.trndi.metainfo.xml "$(PREFIX)/share/metainfo/"; \
+	  TMPDIR_ICON=$$(mktemp -d); \
+	  if command -v magick >/dev/null 2>&1; then magick Trndi.png -resize 256x256 "$$TMPDIR_ICON/trndi.png"; \
+	  elif command -v convert >/dev/null 2>&1; then convert Trndi.png -resize 256x256 "$$TMPDIR_ICON/trndi.png"; \
+	  else cp Trndi.png "$$TMPDIR_ICON/trndi.png"; fi; \
+	  sudo install -m 644 "$$TMPDIR_ICON/trndi.png" "$(PREFIX)/share/icons/hicolor/256x256/apps/trndi.png"; \
+	  rm -rf "$$TMPDIR_ICON"; \
+	  if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q "$(PREFIX)/share/icons/hicolor" || true; fi; \
+	  if command -v update-desktop-database >/dev/null 2>&1; then sudo update-desktop-database -q "$(PREFIX)/share/applications" || true; fi; \
+	  echo "Optional panel indicators: ./gnome-shell-extension/install.sh or ./kde-plasmoid/install.sh"; \
+	  ;; \
+	esac
+
+uninstall:
+	@echo "Removing Trndi from $(PREFIX) (requires sudo)"
+	@set -e; \
+	NAME="$(basename $(LPI))"; \
+	sudo rm -f "$(PREFIX)/bin/$$NAME"; \
+	sudo rm -f "$(PREFIX)/share/applications/trndi.desktop"; \
+	sudo rm -f "$(PREFIX)/share/metainfo/com.slicke.trndi.metainfo.xml"; \
+	sudo rm -f "$(PREFIX)/share/icons/hicolor/256x256/apps/trndi.png"; \
+	if command -v gtk-update-icon-cache >/dev/null 2>&1; then sudo gtk-update-icon-cache -q "$(PREFIX)/share/icons/hicolor" || true; fi; \
+	if command -v update-desktop-database >/dev/null 2>&1; then sudo update-desktop-database -q "$(PREFIX)/share/applications" || true; fi

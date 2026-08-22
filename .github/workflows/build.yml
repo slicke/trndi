@@ -279,24 +279,23 @@ jobs:
               cp -r "kde-plasmoid/trndi-current" \
                 "$PKG_DIR/usr/local/share/trndi/kde-plasmoid/com.slicke.trndi.current"
             fi
-            mkdir -p "$PKG_DIR/usr/share/pixmaps"
-            if [ -f "Trndi.png" ]; then cp Trndi.png "$PKG_DIR/usr/share/pixmaps/"; fi
-            ICON=Trndi
+            # Icon goes into the hicolor theme as lowercase "trndi" so the
+            # desktop entry, the autostart entry and the notification
+            # desktop-entry hint all resolve the same name. Trndi.png is
+            # 1024x1024; hicolor has no such size bucket, so resize to 256.
+            mkdir -p "$PKG_DIR/usr/share/icons/hicolor/256x256/apps"
+            if [ -f "Trndi.png" ]; then
+              convert Trndi.png -resize 256x256 "$PKG_DIR/usr/share/icons/hicolor/256x256/apps/trndi.png" \
+                || cp Trndi.png "$PKG_DIR/usr/share/icons/hicolor/256x256/apps/trndi.png"
+            fi
+            # Canonical desktop entry from dist/linux/, with Exec rewritten to
+            # the packaged binary path. AppStream metadata ships alongside so
+            # GNOME Software / KDE Discover can present the app.
             mkdir -p "$PKG_DIR/usr/share/applications"
-            echo "[Desktop Entry]
-            Name=Trndi
-            GenericName=GCM Viewer
-            X-GNOME-FullName=Trndi
-            X-KDE-FullName=Trndi
-            X-Unity-FullName=Trndi
-            X-KDE-Keywords=trndi;gcm;glucose;monitoring;
-            X-DBUS-ServiceName=com.slicke.trndi
-            X-DBUS-StartupType=Multi
-            Comment=Blood glucose monitoring application
-            Exec=/usr/local/trndi/Trndi %U
-            Icon=${ICON}
-            Type=Application
-            Categories=Utility;" > "$PKG_DIR/usr/share/applications/trndi.desktop"
+            sed 's|^Exec=.*|Exec=/usr/local/trndi/Trndi %U|' dist/linux/trndi.desktop \
+              > "$PKG_DIR/usr/share/applications/trndi.desktop"
+            mkdir -p "$PKG_DIR/usr/share/metainfo"
+            cp dist/linux/com.slicke.trndi.metainfo.xml "$PKG_DIR/usr/share/metainfo/"
             # Determine package version from Trndi.lpi (Major.Minor.<build>)
             MAJOR=$(sed -n -E 's/.*<MajorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
             MINOR=$(sed -n -E 's/.*<MinorVersionNr[^>]*Value="([0-9]+)".*/\1/p' Trndi.lpi | head -n1)
