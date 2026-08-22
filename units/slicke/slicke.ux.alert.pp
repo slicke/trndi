@@ -4499,11 +4499,33 @@ end;
 { Give the dialog an explicit popup owner so X11/Wayland window managers can
   treat it as transient for the initiating window (some WMs, common on
   Raspberry Pi/embedded setups, otherwise ignore the hint entirely). Prefer
-  the currently active form - most likely the initiator - then the Owner,
-  then the main form. }
+  the topmost visible modal form - the window this dialog stacks over - then
+  the currently active form, then the Owner, then the main form. }
 procedure TDialogForm.ApplyPopupParent;
+var
+  zi: integer;
+  cand: TCustomForm;
 begin
   try
+    // Prefer the topmost form visibly sitting in a modal loop over
+    // Screen.ActiveForm. When dialogs are chained (extension alert followed
+    // by the reload confirmation), this runs while activation is bouncing
+    // through the previous dialog's teardown, and ActiveForm then points at
+    // the main window rather than the modal dialog underneath - on Wayland a
+    // window made transient to the wrong parent never maps: invisible but
+    // modal, holding the keyboard, wedging every close request behind it.
+    if Assigned(Screen) then
+      for zi := 0 to Screen.CustomFormCount - 1 do
+      begin
+        cand := Screen.CustomFormsZOrdered[zi];
+        if (cand <> Self) and cand.Visible and (fsModal in cand.FormState) and
+          not (csDestroying in cand.ComponentState) then
+        begin
+          PopupMode := pmExplicit;
+          PopupParent := cand;
+          Exit;
+        end;
+      end;
     if Assigned(Screen) and Assigned(Screen.ActiveForm) then
     begin
       PopupMode := pmExplicit;
