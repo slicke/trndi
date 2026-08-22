@@ -143,8 +143,21 @@ begin
   DotColorMode := DotColorModeFromSetting(
     native.GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT)));
 
-  tir_bg := native.GetColorSetting('ux.tir_color', tir_bg);
-  tir_custom_bg := native.GetColorSetting('ux.tir_color_custom', tir_custom_bg);
+  // Gate on the *_on flags exactly like the startup load (umain_init.inc):
+  // the save path always writes ux.tir_color/ux.tir_color_custom, so reading
+  // them unconditionally here turned "adjust color based on background" into
+  // a stored-color blend (black by default) right after every save — the
+  // range band darkened until the next restart re-gated it. -1 is the
+  // painter's "derive from background" marker, restored here so switching
+  // back to the auto mode also applies instantly.
+  if native.GetBoolSetting('ux.tir_color_on') then
+    tir_bg := native.GetColorSetting('ux.tir_color')
+  else
+    tir_bg := -1;
+  if native.GetBoolSetting('ux.tir_color_custom_on') then
+    tir_custom_bg := native.GetColorSetting('ux.tir_color_custom')
+  else
+    tir_custom_bg := -1;
   titlecolor := native.GetBoolSetting('ux.title_color', true);
 
   PredictGlucoseReading := native.GetBoolSetting('predictions.enable', false);
