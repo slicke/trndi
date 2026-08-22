@@ -30,6 +30,8 @@ PlasmoidItem {
     property string ageText: ""
     property bool showAgeRow: plasmoid.configuration.ShowAgeRow
     property bool showTrendArrow: plasmoid.configuration.ShowTrendArrow
+    property int updateIntervalSeconds: Math.max(2, plasmoid.configuration.UpdateIntervalSeconds || 5)
+    property int hideAfterMinutes: Math.max(1, plasmoid.configuration.HideAfterMinutes || 11)
 
     // The reading with the trend arrow appended, when Trndi published one and
     // this widget is set to show it.
@@ -109,16 +111,20 @@ PlasmoidItem {
 
     toolTipMainText: "Trndi"
     toolTipSubText: root.displayText.length > 0 ? root.displayText
-                                                : (root.lastErrorText.length > 0 ? root.lastErrorText : "No current value")
+                                                : (root.lastErrorText.length > 0 ? root.lastErrorText : i18n("No current value"))
 
     Timer {
-        interval: 5000
+        interval: root.updateIntervalSeconds * 1000
         running: true
         repeat: true
         onTriggered: exec.run(root.readCmd())
     }
 
     Component.onCompleted: exec.run(root.readCmd())
+
+    // Re-read right away when the hide threshold changes, so a widget that was
+    // hidden by the old threshold doesn't stay blank until the next tick.
+    onHideAfterMinutesChanged: exec.run(readCmd())
 
 
     Plasma5Support.DataSource {
@@ -214,7 +220,7 @@ PlasmoidItem {
 
             if (root.lastReadingEpochSec > 0 && root.readingText.length > 0) {
                 var ageMinutes = Math.max(0, Math.floor((nowS - root.lastReadingEpochSec) / 60));
-                root.ageText = ageMinutes + " min ago";
+                root.ageText = i18n("%1 min ago", ageMinutes);
             } else {
                 root.ageText = "";
             }
@@ -235,7 +241,9 @@ PlasmoidItem {
         //   line3: freshness threshold minutes
         //   line4: trend arrow ('' when Trndi's badge trend setting is off)
                 // Output a single line with tab-separated fields for easy parsing.
-        return "bash -lc '" +
+        // Plain "bash -c" (not a login shell) — this runs every tick and only
+        // needs coreutils, so skip sourcing the user's profile each time.
+        return "bash -c '" +
                "f=\"${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt\"; " +
                "if [ -f \"$f\" ]; then " +
              "now=$(date +%s); mt=$(stat -c %Y \"$f\" 2>/dev/null || echo 0); " +
@@ -243,8 +251,8 @@ PlasmoidItem {
              "t=$(sed -n 2p \"$f\" 2>/dev/null); " +
              "m=$(sed -n 3p \"$f\" 2>/dev/null); " +
              "a=$(sed -n 4p \"$f\" 2>/dev/null); " +
-             // Hide if cache file is old (Trndi likely not running). Fixed 11 minutes.
-             "age=$((now-mt)); thr=$((11*60)); " +
+             // Hide if cache file is old (Trndi likely not running).
+             "age=$((now-mt)); thr=$((" + root.hideAfterMinutes + "*60)); " +
              "if [ $mt -gt 0 ] && [ $age -gt $thr ]; then exit 0; fi; " +
                          "printf \"%s\\t%s\\t%s\\t%s\\t%s\\n\" \"$v\" \"$t\" \"$m\" \"$mt\" \"$a\"; " +
                "fi'";

@@ -11,5 +11,17 @@
       <label>Show trend arrow</label>
       <default>true</default>
     </entry>
+    <entry name="UpdateIntervalSeconds" type="Int">
+      <label>How often to re-read Trndi's cache file, in seconds</label>
+      <default>5</default>
+      <min>2</min>
+      <max>120</max>
+    </entry>
+    <entry name="HideAfterMinutes" type="Int">
+      <label>Hide the reading when the cache file is older than this many minutes</label>
+      <default>11</default>
+      <min>1</min>
+      <max>120</max>
+    </entry>
   </group>
 </kcfg>

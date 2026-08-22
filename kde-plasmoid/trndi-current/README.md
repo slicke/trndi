@@ -22,10 +22,14 @@ Right click the widget → **Configure…**:
   own *trend arrow on the badge* setting is on; this hides it for this widget
   alone.
 - **Show “X ago” row** (default off) — a second line with the reading's age.
+- **Check for new readings every** (default 5 seconds) — how often the widget
+  re-reads the cache file. Trndi itself only writes a new value every few
+  minutes, so raising this just makes the widget react a little later.
+- **Hide when Trndi stops updating for** (default 11 minutes) — when the cache
+  file itself is older than this, the widget shows nothing and assumes Trndi
+  is not running.
 
 If the reading is older than the freshness threshold, the plasmoid keeps showing the last value but with strike-through (like the main Trndi UI).
-
-If the cache file itself is older than the freshness threshold (default 11 minutes when unknown), the plasmoid shows nothing (assumes Trndi is not running).
 
 ## Install (Plasma 6)
 ```bash

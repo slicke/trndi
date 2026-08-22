@@ -18,18 +18,48 @@ import org.kde.kirigami as Kirigami
 KCM.SimpleKCM {
     property alias cfg_ShowAgeRow: showAgeRow.checked
     property alias cfg_ShowTrendArrow: showTrendArrow.checked
+    property alias cfg_UpdateIntervalSeconds: updateInterval.value
+    property alias cfg_HideAfterMinutes: hideAfter.value
 
     Kirigami.FormLayout {
         QQC2.CheckBox {
             id: showAgeRow
-            text: "Show “X ago” row"
+            text: i18n("Show “X ago” row")
         }
 
         QQC2.CheckBox {
             id: showTrendArrow
             // Trndi only publishes an arrow while its own "trend arrow on the
             // badge" setting is on; this hides it for this widget alone.
-            text: "Show trend arrow"
+            text: i18n("Show trend arrow")
+        }
+
+        QQC2.SpinBox {
+            id: updateInterval
+            Kirigami.FormData.label: i18n("Check for new readings every:")
+            from: 2
+            to: 120
+            textFromValue: function (value) {
+                return i18np("%1 second", "%1 seconds", value)
+            }
+            valueFromText: function (text) {
+                return parseInt(text, 10) || 5
+            }
+        }
+
+        QQC2.SpinBox {
+            id: hideAfter
+            // Matches the reading-hiding done in main.qml's readCmd(): when the
+            // cache file itself is this old, Trndi is likely not running.
+            Kirigami.FormData.label: i18n("Hide when Trndi stops updating for:")
+            from: 1
+            to: 120
+            textFromValue: function (value) {
+                return i18np("%1 minute", "%1 minutes", value)
+            }
+            valueFromText: function (text) {
+                return parseInt(text, 10) || 11
+            }
         }
     }
 }
