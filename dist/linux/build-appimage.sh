@@ -72,6 +72,12 @@ if [ -d "kde-plasmoid/trndi-current" ]; then
     "${APP_DIR}/usr/share/trndi/kde-plasmoid/com.slicke.trndi.current"
 fi
 
+# Copy Waybar module (Hyprland/sway) if present
+if [ -d "waybar-module" ]; then
+  echo "Copying Waybar module..."
+  cp -r waybar-module "${APP_DIR}/usr/share/trndi/waybar-module"
+fi
+
 # Copy icon
 echo "Copying icon..."
 if [ -f "Trndi.png" ]; then

@@ -279,6 +279,12 @@ jobs:
               cp -r "kde-plasmoid/trndi-current" \
                 "$PKG_DIR/usr/local/share/trndi/kde-plasmoid/com.slicke.trndi.current"
             fi
+
+            # Optional Waybar module (Hyprland/sway); user-config, so it only
+            # ships as a reference copy - no maintainer-script install.
+            if [ -d "waybar-module" ]; then
+              cp -r waybar-module "$PKG_DIR/usr/local/share/trndi/waybar-module"
+            fi
             # Icon goes into the hicolor theme as lowercase "trndi" so the
             # desktop entry, the autostart entry and the notification
             # desktop-entry hint all resolve the same name. Trndi.png is
