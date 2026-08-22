@@ -807,6 +807,20 @@ begin
     (Pos('gnome', d) > 0) or (Pos('ubuntu', d) > 0) or (Pos('unity', d) > 0);
 end;
 
+// True for the wlroots-style Wayland compositors (Hyprland, sway, ...) whose
+// setups run a freedesktop notification daemon (mako/dunst/swaync) rather
+// than a desktop shell. They speak org.freedesktop.Notifications like
+// KDE/GNOME do, and a missing daemon is harmless — the D-Bus call fails and
+// the notify-send fallback takes over, same as before.
+function IsWlrootsLike: boolean; inline;
+var
+  d: string;
+begin
+  d := LowerCase(DesktopHint);
+  Result := (Pos('hyprland', d) > 0) or (Pos('sway', d) > 0) or
+    (Pos('river', d) > 0) or (Pos('niri', d) > 0) or (Pos('wayfire', d) > 0);
+end;
+
 // True when we can talk to the bus at all: libdbus-1 directly, or the gdbus
 // command-line tool as the legacy fallback for systems missing the library.
 function HasDBusTransport: boolean; inline;
@@ -814,11 +828,12 @@ begin
   Result := DBusAvailable or (FindInPath('gdbus') <> '');
 end;
 
-// Decide whether we should use D-Bus for notifications (Qt6 + bus + KDE/GNOME-like)
+// Decide whether we should use D-Bus for notifications
+// (Qt6 + bus + a desktop known to serve org.freedesktop.Notifications)
 function UseDBusForNotifications: boolean; inline;
 begin
   {$IFDEF LCLQt6}
-  Result := HasDBusTransport and IsKdeOrGnomeLike;
+  Result := HasDBusTransport and (IsKdeOrGnomeLike or IsWlrootsLike);
   {$ELSE}
   Result := false;
   {$ENDIF}

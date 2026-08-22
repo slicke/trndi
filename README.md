@@ -153,6 +153,7 @@ chmod +x Trndi-x86_64.AppImage
 ### Linux desktop indicators (optional)
 - **GNOME**: includes a GNOME Shell top-bar extension (`trndi-current@slicke.com`) that shows the current reading.
 - **KDE Plasma 6**: includes a panel widget ("Trndi Current") you can add via *Add Widgets*.
+- **Hyprland / sway (Waybar)**: includes a Waybar custom-module script — see [waybar-module/README.md](waybar-module/README.md) for the config snippet and Hyprland window rules.
 
 Both indicators read the same cache file: `${XDG_CACHE_HOME:-$HOME/.cache}/trndi/current.txt`.
 
