@@ -2091,8 +2091,10 @@ badge_size_ratio: double; min_font_size: integer);
 var
   f: double;
 begin
+  // The id must match the installed launcher entry (packaging ships
+  // trndi.desktop), or the panel cannot associate the badge with a launcher.
   if linutils.KDEBadge.GDesktopId = '' then
-    InitializeBadge('com.slicke.trndi.desktop', 150, nil, UseDBusForNotifications);
+    InitializeBadge('trndi.desktop', 150, nil, UseDBusForNotifications);
   ClearBadge;
   
   // Only set numeric badge if value can be parsed as a number
