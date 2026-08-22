@@ -27,12 +27,33 @@ export default class TrndiCurrentExtension extends Extension {
     this._label = null;
     this._timeoutId = null;
     this._lastDebugKey = null;
+    this._settings = null;
+    this._settingsChangedIds = [];
+  }
+
+  // Settings mirror the KDE plasmoid's config. A manual copy of the extension
+  // may lack a compiled schema, so fall back to the historical defaults
+  // instead of failing to load.
+  _settingBool(key, fallback) {
+    try {
+      return this._settings ? this._settings.get_boolean(key) : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  _settingInt(key, fallback) {
+    try {
+      return this._settings ? this._settings.get_int(key) : fallback;
+    } catch (_) {
+      return fallback;
+    }
   }
 
   _staleAfterSeconds() {
-    // Default hide threshold for the cache file mtime.
-    // If the cache provides an explicit threshold, we use that instead.
-    return 11 * 60;
+    // Hide threshold for the cache file mtime; when the file is older than
+    // this, Trndi is likely not running.
+    return this._settingInt('hide-after-minutes', 11) * 60;
   }
 
   _cachePath() {
@@ -72,7 +93,9 @@ export default class TrndiCurrentExtension extends Extension {
         return null;
 
       // Hide when the cache file itself is old (e.g. Trndi not running).
-      // Important: this is NOT the same as reading freshness; keep it fixed at 11 minutes.
+      // Important: this is NOT the same as reading freshness — that threshold
+      // comes from the cache file (line 3); this one is the extension's own
+      // hide-after-minutes setting.
       const hideAfterSeconds = this._staleAfterSeconds();
       if (mtimeAge > 0 && mtimeAge > hideAfterSeconds) {
         log(`[TrndiCurrent] File too old: mtime=${mtime}, age=${mtimeAge}s, threshold=${hideAfterSeconds}s`);
@@ -107,8 +130,16 @@ export default class TrndiCurrentExtension extends Extension {
         isStale = (now - epoch) > (freshMin * 60);
       }
 
+      // Age of the reading in whole minutes, from the reading epoch when it
+      // is usable and the file mtime otherwise (same fallback as the KDE
+      // plasmoid); null when neither is known.
+      let ageMin = null;
+      const ageBasis = (!Number.isNaN(epoch) && epoch > 0) ? epoch : mtime;
+      if (ageBasis > 0)
+        ageMin = Math.max(0, Math.floor((now - ageBasis) / 60));
+
       log(`[TrndiCurrent] Read: value=${value}, arrow=${arrow}, isStale=${isStale}, epoch=${epoch}, freshMin=${freshMin}, mtimeAge=${mtimeAge}`);
-      return { value, arrow, isStale, epoch, freshMin };
+      return { value, arrow, isStale, epoch, freshMin, ageMin };
     } catch (e) {
       log(`[TrndiCurrent] Error reading file: ${e}`);
       return null;
@@ -145,13 +176,20 @@ export default class TrndiCurrentExtension extends Extension {
 
     // GNOME Shell panel rendering for strike-through is inconsistent across
     // versions/themes. Use a clear, robust stale indicator instead.
-    if (state.isStale) {
-      this._label.set_text('--');
-    } else if (state.arrow) {
-      this._label.set_text(`${state.value} ${state.arrow}`);
-    } else {
-      this._label.set_text(state.value);
-    }
+    let text;
+    if (state.isStale)
+      text = '--';
+    else if (state.arrow && this._settingBool('show-trend-arrow', true))
+      text = `${state.value} ${state.arrow}`;
+    else
+      text = state.value;
+
+    // The plasmoid shows "X min ago" as its own row; a panel label is a
+    // single line, so append a compact form instead.
+    if (this._settingBool('show-age', false) && state.ageMin !== null)
+      text += ` · ${state.ageMin}m`;
+
+    this._label.set_text(text);
 
     // Low-noise debug: log only when value/stale changes.
     try {
@@ -165,6 +203,15 @@ export default class TrndiCurrentExtension extends Extension {
     return GLib.SOURCE_CONTINUE;
   }
 
+  _armTimer() {
+    if (this._timeoutId) {
+      GLib.source_remove(this._timeoutId);
+      this._timeoutId = null;
+    }
+    const interval = Math.max(2, this._settingInt('update-interval-seconds', 5));
+    this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, interval, this._tick.bind(this));
+  }
+
   enable() {
     if (this._button)
       return;
@@ -174,8 +221,26 @@ export default class TrndiCurrentExtension extends Extension {
     } catch (_) {
     }
 
-    // Poll every 5 seconds; Trndi writes the file when readings update.
-    this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 5, this._tick.bind(this));
+    // getSettings() throws when the schema is missing (a hand-copied install
+    // without glib-compile-schemas); run with the defaults in that case.
+    try {
+      this._settings = this.getSettings();
+      for (const key of ['show-age', 'show-trend-arrow', 'hide-after-minutes']) {
+        this._settingsChangedIds.push(
+          this._settings.connect(`changed::${key}`, () => this._tick()));
+      }
+      this._settingsChangedIds.push(
+        this._settings.connect('changed::update-interval-seconds', () => {
+          this._armTimer();
+          this._tick();
+        }));
+    } catch (e) {
+      log(`[TrndiCurrent] Settings unavailable, using defaults: ${e}`);
+      this._settings = null;
+    }
+
+    // Poll the cache file; Trndi writes it when readings update.
+    this._armTimer();
     this._tick();
   }
 
@@ -188,6 +253,13 @@ export default class TrndiCurrentExtension extends Extension {
       GLib.source_remove(this._timeoutId);
       this._timeoutId = null;
     }
+
+    if (this._settings) {
+      for (const id of this._settingsChangedIds)
+        this._settings.disconnect(id);
+      this._settings = null;
+    }
+    this._settingsChangedIds = [];
 
     if (this._button) {
       this._button.destroy();

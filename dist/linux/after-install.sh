@@ -15,6 +15,12 @@ if [ -d "$GNOME_SRC" ] && [ -d "/usr/share/gnome-shell" ]; then
   rm -rf "$GNOME_DST"
   cp -a "$GNOME_SRC" "$GNOME_DST"
 
+  # The extension's settings need a compiled schema next to the XML;
+  # best-effort, it falls back to built-in defaults without one.
+  if [ -d "$GNOME_DST/schemas" ] && command -v glib-compile-schemas >/dev/null 2>&1; then
+    glib-compile-schemas "$GNOME_DST/schemas" || true
+  fi
+
   # Ensure metadata.json declares support for the currently installed GNOME Shell.
   # GNOME requires an explicit match in "shell-version".
   if command -v gnome-shell >/dev/null 2>&1; then
@@ -60,6 +66,15 @@ if [ -d "$KDE_SRC" ]; then
     cp -a "$KDE_SRC" "$KDE_DST"
     echo "KDE Plasma plasmoid installed to $KDE_DST"
   fi
+fi
+
+# fpm packages carry no distro triggers, so refresh the icon cache and
+# desktop database ourselves; best-effort, the tools may be absent.
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+  gtk-update-icon-cache -q /usr/share/icons/hicolor || true
+fi
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database -q /usr/share/applications || true
 fi
 
 # Note: enabling is per-user; users can enable via Extensions app.

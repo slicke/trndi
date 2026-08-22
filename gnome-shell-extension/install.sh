@@ -106,6 +106,12 @@ copy_tree() {
   rm -rf "$dest"
   cp -a "$SRC" "$dest"
   add_shell_version "$dest"
+  # getSettings() needs a compiled schema next to the XML; without it the
+  # extension falls back to its built-in defaults and prefs cannot open.
+  if [ -d "$dest/schemas" ] && have glib-compile-schemas; then
+    glib-compile-schemas "$dest/schemas" 2>/dev/null \
+      || echo "Warning: could not compile GSettings schemas; settings will use defaults." >&2
+  fi
   echo "Installed to $dest"
 }
 

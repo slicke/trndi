@@ -81,23 +81,15 @@ else
   echo "Warning: Trndi.png not found"
 fi
 
-# Create .desktop file
-echo "Creating desktop entry..."
-cat > "${APP_DIR}/usr/share/applications/trndi.desktop" <<'EOF'
-[Desktop Entry]
-Name=Trndi
-GenericName=CGM Viewer
-Comment=Blood glucose monitoring application
-Exec=Trndi %U
-Icon=trndi
-Type=Application
-Categories=Utility;
-X-GNOME-FullName=Trndi
-X-KDE-FullName=Trndi
-X-DBUS-ServiceName=com.slicke.trndi
-X-DBUS-StartupType=Multi
-Keywords=trndi;cgm;glucose;monitoring;diabetes;
-EOF
+# Desktop entry and AppStream metadata come from the canonical copies in
+# dist/linux/ so all package formats stay in sync. The comment lines are
+# stripped: appimagetool's desktop-file check predates them, and the metainfo
+# license comment is not part of the metadata itself.
+echo "Copying desktop entry and AppStream metadata..."
+grep -v '^#' "$(dirname "$0")/trndi.desktop" \
+  > "${APP_DIR}/usr/share/applications/trndi.desktop"
+mkdir -p "${APP_DIR}/usr/share/metainfo"
+cp -v "$(dirname "$0")/com.slicke.trndi.metainfo.xml" "${APP_DIR}/usr/share/metainfo/"
 
 # Symlink .desktop file to AppDir root (required for AppImage)
 ln -sf usr/share/applications/trndi.desktop "${APP_DIR}/trndi.desktop"

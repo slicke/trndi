@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Part of Trndi - https://github.com/slicke/trndi
+# Copyright (c) Björn Lindh
+#
+# Canonical desktop entry. AppImage and `make install` use it as-is
+# (Exec resolves via PATH); the DEB/RPM packaging rewrites the Exec line to
+# the packaged binary path. Keep Icon/StartupWMClass in sync with the
+# autostart entry and notification desktop-entry hint in
+# units/trndi/trndi.native.linux.pp.
+[Desktop Entry]
+Name=Trndi
+GenericName=CGM Viewer
+Comment=Blood glucose monitoring application
+Exec=Trndi %U
+Icon=trndi
+Type=Application
+Categories=Utility;
+StartupWMClass=Trndi
+X-GNOME-FullName=Trndi
+X-KDE-FullName=Trndi
+X-DBUS-ServiceName=com.slicke.trndi
+X-DBUS-StartupType=Multi
+Keywords=trndi;cgm;glucose;monitoring;diabetes;
