@@ -67,11 +67,15 @@ private
   FProgress: integer;    // Target percentage set by incProgress
   FShown: double;        // Displayed percentage, eased toward FProgress
   FCardRect: TRect;      // Warning card, computed from the scaled label bounds
+  FDividerY: integer;    // Divider under the warning heading, inside the card
   FUseFade: boolean;     // AlphaBlend fades enabled (skipped on problematic WMs)
   FFadedIn: boolean;     // Fade-in already ran (Show is called more than once)
   FCentered: boolean;    // Re-centered after the dynamic height was applied
+  lWarnTitle: TLabel;    // Heading split off the translated warning caption
+  lPct: TLabel;          // Percentage readout beside the status line
   tAnim: TTimer;
   procedure AnimTick(Sender: TObject);
+  procedure SplitWarning;
   procedure UpdateLayout;
 public
   procedure incProgress(const proc: integer; const title: string);
@@ -100,6 +104,8 @@ const
   COL_TRACK   = $00262626;
   COL_ACCENT  = $0000DC84; // Trndi green, matches the progress fill
   COL_ACCENT_DIM = $00002214;
+  COL_BG_TOP  = $001A1A1A; // Depth gradient, fades to black at the bottom
+  COL_WARN    = $0020B0FF; // Amber, for the medical-warning heading
 
 { TfSplash }
 
@@ -114,6 +120,28 @@ begin
     FProgress := 100;
   tAnim.Enabled := true;
   Application.ProcessMessages;
+end;
+
+// The warning text ships as one translated caption (heading, blank line,
+// body). Move the heading into its own styled label so it can be emphasized
+// without splitting the .po string into separate translation units.
+procedure TfSplash.SplitWarning;
+var
+  s, first, rest: string;
+  p: integer;
+begin
+  s := StringReplace(lSplashWarn.Caption, #13, '', [rfReplaceAll]);
+  p := Pos(#10, s);
+  if p = 0 then
+    Exit;
+  first := Trim(Copy(s, 1, p - 1));
+  rest := s;
+  Delete(rest, 1, p);
+  rest := TrimLeft(rest);
+  if (first = '') or (rest = '') then
+    Exit;
+  lWarnTitle.Caption := first;
+  lSplashWarn.Caption := rest;
 end;
 
 // Ease the displayed bar toward the target so progress glides instead of
@@ -131,6 +159,7 @@ begin
   end
   else
     FShown := FShown + Max(1.0, diff * 0.25) * Sign(diff);
+  lPct.Caption := IntToStr(Round(FShown)) + '%';
   pbProgress.Invalidate;
 end;
 
@@ -140,12 +169,18 @@ end;
 // derived from the scaled label bounds instead of design-time constants.
 procedure TfSplash.UpdateLayout;
 var
-  pad, gap, inner, cardL, cardR, cardT, cardB, warnH, infoH, contentB: integer;
+  pad, gap, inner, cardL, cardR, cardT, cardB, warnH, infoH, titleH,
+  contentB, pctW: integer;
   r: TRect;
   txt: string;
 begin
   if not lSplashWarn.Visible then
-    Exit; // Problematic-WM mini splash lays itself out in umain_init
+  begin
+    // Problematic-WM mini splash lays itself out in umain_init
+    lWarnTitle.Visible := false;
+    lPct.Visible := false;
+    Exit;
+  end;
 
   pad   := Scale96ToForm(EDGE_PAD);
   gap   := Scale96ToForm(10);
@@ -164,10 +199,17 @@ begin
 
   cardT := lVersion.Top + lVersion.Height + gap;
 
+  // Heading centered at the top of the card, divider below it
+  Canvas.Font.Assign(lWarnTitle.Font);
+  titleH := Canvas.TextHeight(lWarnTitle.Caption) + Scale96ToForm(2);
+  lWarnTitle.SetBounds(cardL + inner, cardT + inner,
+    cardR - cardL - 2 * inner, titleH);
+  FDividerY := lWarnTitle.Top + titleH + gap;
+
   // Measure the (possibly translated) warning at its wrap width
   lSplashWarn.Left  := cardL + inner;
   lSplashWarn.Width := cardR - cardL - 2 * inner;
-  lSplashWarn.Top   := cardT + inner;
+  lSplashWarn.Top   := FDividerY + gap;
   txt := lSplashWarn.Caption;
   r := Rect(0, 0, lSplashWarn.Width, 0);
   Canvas.Font.Assign(lSplashWarn.Font);
@@ -188,6 +230,8 @@ begin
   ClientHeight := contentB + gap + infoH + Scale96ToForm(8) + pbProgress.Height;
   lInfo.Left := pad;
   lInfo.Top  := contentB + gap;
+  pctW := Scale96ToForm(48);
+  lPct.SetBounds(ClientWidth - pad - pctW, lInfo.Top, pctW, infoH);
 
   // poDesktopCenter used the design height; re-center once with the real one
   if not FCentered then
@@ -200,8 +244,18 @@ end;
 
 procedure TfSplash.FormPaint({%H-}Sender: TObject);
 var
-  corner, accentH, mid: integer;
+  corner, accentH, mid, fadeB: integer;
 begin
+  // Subtle depth gradient behind the title so the form isn't a flat black
+  // slab. It must reach pure black before the logo starts: the logo PNG has
+  // its background baked in as solid black, so any lighter backdrop there
+  // would show as a square around it.
+  if Image1.Visible then
+    fadeB := Image1.Top
+  else
+    fadeB := Height div 3;
+  Canvas.GradientFill(Rect(0, 0, Width, fadeB), COL_BG_TOP, clBlack, gdVertical);
+
   // Accent glow along the very top, brightest in the middle
   accentH := Scale96ToForm(3);
   mid := Width div 2;
@@ -226,6 +280,14 @@ begin
   Canvas.Pen.Color := COL_HILIGHT;
   Canvas.MoveTo(FCardRect.Left + corner div 2, FCardRect.Top + 1);
   Canvas.LineTo(FCardRect.Right - corner div 2, FCardRect.Top + 1);
+
+  // Divider between the heading and the warning body
+  if FDividerY > 0 then
+  begin
+    Canvas.Pen.Color := COL_BORDER;
+    Canvas.MoveTo(FCardRect.Left + Scale96ToForm(CARD_PAD), FDividerY);
+    Canvas.LineTo(FCardRect.Right - Scale96ToForm(CARD_PAD), FDividerY);
+  end;
 end;
 
 procedure TfSplash.FormShow({%H-}Sender: TObject);
@@ -309,6 +371,29 @@ begin
   FProgress := 0;
   FShown := 0;
   FCardRect := Rect(0, 0, 0, 0);
+  FDividerY := 0;
+
+  // Heading label styled from the body font: bold amber, one step larger.
+  // Created in code so the .lfm (and its translations) stay untouched.
+  lWarnTitle := TLabel.Create(Self);
+  lWarnTitle.Parent := Self;
+  lWarnTitle.AutoSize := false;
+  lWarnTitle.Alignment := taCenter;
+  lWarnTitle.Transparent := true;
+  lWarnTitle.Font.Assign(lSplashWarn.Font);
+  lWarnTitle.Font.Color := COL_WARN;
+  lWarnTitle.Font.Style := [fsBold];
+  lWarnTitle.Font.Height := (lSplashWarn.Font.Height * 7) div 6;
+  SplitWarning;
+
+  lPct := TLabel.Create(Self);
+  lPct.Parent := Self;
+  lPct.AutoSize := false;
+  lPct.Alignment := taRightJustify;
+  lPct.Transparent := true;
+  lPct.Font.Assign(lInfo.Font);
+  lPct.Font.Color := COL_ACCENT;
+  lPct.Caption := '0%';
 
   tAnim := TTimer.Create(Self);
   tAnim.Interval := 16;
