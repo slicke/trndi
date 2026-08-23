@@ -47,6 +47,11 @@
    fixWarningPanel shrinks the detail font before truncating the expanded card
    text, truncates on whole-line boundaries only, and sizes the banner's
    expanded row from a measurement instead of a guess. *)
+(* MODIFICATION NOTICE (2026-08-23): The stale status card now asserts lVal's
+   centered alignment/layout before fitting the dimmed hero. A cold boot that
+   lands straight on stale data reached this layout before ScaleLbl had ever
+   run, leaving the LFM-default tlTop layout and pinning the value to the top
+   edge of the window. *)
 (* Warning overlay panel, connection badge, and alert snooze for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -965,6 +970,13 @@ begin
     // centered, so it can only be as tall as the band left above the card —
     // counted on both sides of center. ResizeUIElements' ScaleLbl takes the
     // font back over once fresh data restores the normal layout.
+    // The centering is asserted rather than assumed: a cold boot that lands
+    // straight on stale data gets here before ScaleLbl has ever touched lVal
+    // (tResizeTimer bails out while bgs is empty), so the label still has its
+    // LFM default tlTop layout and the fitted value would render pinned to
+    // the top edge, under the connection badge, instead of in the band.
+    lVal.Alignment := taCenter;
+    lVal.Layout := tlCenter;
     lVal.Font.Size := FitFontSize(lVal.Font, lVal.Caption,
       Max(20, ClientWidth - 16),
       Max(24, ClientHeight - (2 * (cardH + padding))), 150, 8);
