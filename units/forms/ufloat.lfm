@@ -13,11 +13,8 @@ object fFloat: TfFloat
   LCLVersion = '4.6.0.0'
   OnKeyDown = FormKeyDown
   OnMouseDown = FormMouseDown
-  OnMouseEnter = FormMouseEnter
-  OnMouseLeave = FormMouseLeave
   OnMouseMove = FormMouseMove
   OnMouseUp = FormMouseUp
-  OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
   object lVal: TLabel
@@ -36,8 +33,6 @@ object fFloat: TfFloat
     ParentFont = False
     PopupMenu = pMain
     OnMouseDown = FormMouseDown
-    OnMouseEnter = FormMouseEnter
-    OnMouseLeave = FormMouseLeave
     OnMouseMove = FormMouseMove
     OnMouseUp = FormMouseUp
   end
@@ -85,8 +80,6 @@ object fFloat: TfFloat
     ParentFont = False
     PopupMenu = pMain
     OnMouseDown = FormMouseDown
-    OnMouseEnter = FormMouseEnter
-    OnMouseLeave = FormMouseLeave
     OnMouseMove = FormMouseMove
     OnMouseUp = FormMouseUp
   end
@@ -165,6 +158,7 @@ object fFloat: TfFloat
       end
       object miCustomSize: TMenuItem
         Caption = 'Custom'
+        RadioItem = True
         OnClick = miCustomSizeClick
       end
     end
@@ -190,6 +184,7 @@ object fFloat: TfFloat
         AutoCheck = True
         Caption = 'Main Window Color'
         RadioItem = True
+        OnClick = miFontMainClick
       end
     end
     object miSplit: TMenuItem
@@ -213,12 +208,5 @@ object fFloat: TfFloat
     OnTimer = tClockTimer
     Left = 145
     Top = 100
-  end
-  object tTitlebar: TTimer
-    Enabled = False
-    Interval = 2000
-    OnTimer = tTitlebarTimer
-    Left = 145
-    Top = 60
   end
 end
