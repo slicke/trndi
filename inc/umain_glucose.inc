@@ -1672,6 +1672,12 @@ begin
   begin
     pnOffRange.Visible := false;
     pnOffRangeBar.Visible := false;
+    // Back in personal range: clear the float's off-range markers too
+    if Assigned(fFloat) then
+    begin
+      fFloat.lRangeDown.Visible := false;
+      fFloat.lRangeUp.Visible := false;
+    end;
     on := false;
   end;
 
@@ -1800,9 +1806,9 @@ begin
 
   if Assigned(fFloat) then
   begin
-    if not UseRangeColor then
-      ffloat.lRangeDown.Visible := true;
-    ffloat.Font.color := bg_rel_color_lo_txt;
+    fFloat.lRangeDown.Visible := not UseRangeColor;
+    fFloat.lRangeUp.Visible := false;
+    fFloat.Font.color := bg_rel_color_lo_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;
@@ -1827,9 +1833,9 @@ begin
 
   if Assigned(fFloat) then
   begin
-    if not UseRangeColor then
-      ffloat.lRangeUp.Visible := true;
-    ffloat.Font.color := bg_rel_color_hi_txt;
+    fFloat.lRangeUp.Visible := not UseRangeColor;
+    fFloat.lRangeDown.Visible := false;
+    fFloat.Font.color := bg_rel_color_hi_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;

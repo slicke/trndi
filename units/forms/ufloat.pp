@@ -58,11 +58,6 @@ CocoaAll
 qt6, qtwidgets
 {$ENDIF};
 
-{$ifdef LCLQt6}
-type
-BGValLevel = (BGHigh, BGLOW, BGOFF);    // Range = depending on API
-{$endif}
-
 type
 
   { TfFloat }
@@ -99,17 +94,13 @@ TfFloat = class(TForm)
   pMain: TPopupMenu;
   pnMultiUser: TPanel;
   tClock: TTimer;
-  tTitlebar: TTimer;
   procedure FormCreate(Sender: TObject);
   procedure FormKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
   procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: integer);
-  procedure FormMouseEnter({%H-}Sender: TObject);
-  procedure FormMouseLeave({%H-}Sender: TObject);
   procedure FormMouseMove({%H-}Sender: TObject; {%H-}Shift: TShiftState; X, Y: integer);
   procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: integer);
-  procedure FormPaint({%H-}Sender: TObject);
   procedure FormResize({%H-}Sender: TObject);
   procedure FormShow({%H-}Sender: TObject);
   procedure MenuItem1Click({%H-}Sender: TObject);
@@ -118,12 +109,12 @@ TfFloat = class(TForm)
   procedure miCustomVisibleClick({%H-}Sender: TObject);
   procedure miFontBlackClick({%H-}Sender: TObject);
   procedure miFontWhiteClick({%H-}Sender: TObject);
+  procedure miFontMainClick({%H-}Sender: TObject);
   procedure miMainClick({%H-}Sender: TObject);
   procedure miNormalClick({%H-}Sender: TMenuItem);
   procedure miNormalClick({%H-}Sender: TObject);
   procedure miOp100Click({%H-}Sender: TObject);
   procedure tClockTimer({%H-}Sender: TObject);
-  procedure tTitlebarTimer({%H-}Sender: TObject);
 private
   FDragStartX: integer;
   FDragStartY: integer;
@@ -131,11 +122,11 @@ private
   FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (mirrors the main window)
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
-  procedure CreateRoundedCorners;
+  procedure ApplyClock(AEnabled: boolean);
+  procedure SetFixedFontColor(AColor: TColor);
+  procedure SyncSizeMenu;
+  procedure SyncOpacityMenu(AOpacity: single);
 public
-  {$ifdef LCLQt6}
-  lvl: BGValLevel;
-  {$endif}
   {** Mirror the main window's rotating trend arrow.
       @param(AEnabled Whether the rotating arrow replaces the glyph.)
       @param(AAngle Rotation in degrees (0 = flat, + = up, - = down).)
@@ -341,10 +332,8 @@ begin
   {$ELSEIF DEFINED(LCLQT6)}
   StyleStr := 'border-radius: 10px; background-color: rgba(240, 240, 240, 255);';
   Self.BorderStyle := bsNone; // Remove border
-  //self.borderstyle := bsToolWindow;
   if HandleAllocated then
     QWidget_setStyleSheet(TQtWidget(Handle).Widget, @stylestr);
-  CreateRoundedCorners;
   {$ELSE}
   Self.BorderStyle := bsNone; // Remove border
   // Use LCL stuff when Windows (or not Qt really)
@@ -435,6 +424,55 @@ begin
   // Set the opacity (persisted or default)
   storedOp := ReadFloatSetting('ux.float.opacity', 0.5);
   SetFormOpacity(storedOp);
+
+  // Reflect the restored size/opacity in the menu checkmarks
+  SyncSizeMenu;
+  SyncOpacityMenu(storedOp);
+
+  // Restore the font color choice (0 = black, 1 = white, 2 = follow main window)
+  case ReadIntSetting('ux.float.fontcolor', 0) of
+  1:
+    begin
+      miFontWhite.Checked := true;
+      SetFixedFontColor(clWhite);
+    end;
+  2:
+    miFontMain.Checked := true; // colors arrive with the next main-window sync
+  else
+    begin
+      miFontBlack.Checked := true;
+      SetFixedFontColor(clBlack);
+    end;
+  end;
+
+  // Restore the clock
+  ApplyClock(ReadIntSetting('ux.float.clock', 0) = 1);
+end;
+
+procedure TfFloat.SyncSizeMenu;
+begin
+  miXL.Checked := Height = Screen.DesktopHeight div 5;
+  miBig.Checked := Height = Screen.DesktopHeight div 10;
+  miNormal.Checked := Height = Screen.DesktopHeight div 25;
+  miSmall.Checked := Height = Screen.DesktopHeight div 50;
+  miCustomSize.Checked := not (miXL.Checked or miBig.Checked or miNormal.Checked or
+    miSmall.Checked);
+end;
+
+procedure TfFloat.SyncOpacityMenu(AOpacity: single);
+
+  function Near(v: single): boolean;
+  begin
+    Result := Abs(AOpacity - v) < 0.01;
+  end;
+
+begin
+  miOp25.Checked := Near(0.25);
+  miOp50.Checked := Near(0.5);
+  miOp75.Checked := Near(0.75);
+  miOp100.Checked := Near(1);
+  miCustomVisible.Checked := not (miOp25.Checked or miOp50.Checked or
+    miOp75.Checked or miOp100.Checked);
 end;
 
 procedure TfFloat.MenuItem1Click({%H-}Sender: TObject);
@@ -442,17 +480,19 @@ begin
   Hide;
 end;
 
+procedure TfFloat.ApplyClock(AEnabled: boolean);
+begin
+  miClock.Checked := AEnabled;
+  lTime.Visible := AEnabled;
+  tClock.Enabled := AEnabled;
+  if AEnabled then
+    tClockTimer(tClock);
+end;
+
 procedure TfFloat.miClockClick(Sender: TObject);
 begin
-  miClock.Checked := not miClock.Checked;
-  lTime.Visible := miClock.Checked;
-  if lTime.Visible then
-  begin
-    tClock.OnTimer(tClock);
-    tClock.Enabled := true;
-  end;
-  if not lTime.Visible then
-    tClock.Enabled := false;
+  ApplyClock(not miClock.Checked);
+  SaveSetting('ux.float.clock', ord(miClock.Checked));
 end;
 
 procedure TfFloat.miCustomSizeClick(Sender: TObject);
@@ -465,16 +505,30 @@ begin
   ShowMessage(RS_CUSTOM_OP);
 end;
 
+procedure TfFloat.SetFixedFontColor(AColor: TColor);
+begin
+  lVal.Font.Color := AColor;
+  lArrow.Font.Color := AColor;
+  if Assigned(FTrendArrow) then
+    FTrendArrow.ArrowColor := AColor;
+end;
+
 procedure TfFloat.miFontBlackClick(Sender: TObject);
 begin
-  lVal.font.color := clBlack;
-  lArrow.font.color := clBlack;
+  SetFixedFontColor(clBlack);
+  SaveSetting('ux.float.fontcolor', 0);
 end;
 
 procedure TfFloat.miFontWhiteClick(Sender: TObject);
 begin
-  lVal.font.color := clwhite;
-  lArrow.font.color := clWhite;
+  SetFixedFontColor(clWhite);
+  SaveSetting('ux.float.fontcolor', 1);
+end;
+
+procedure TfFloat.miFontMainClick(Sender: TObject);
+begin
+  // Colors are picked up from the main window on its next sync
+  SaveSetting('ux.float.fontcolor', 2);
 end;
 
 
@@ -491,37 +545,18 @@ var
   h: integer;
 begin
   h := Height;
-  miBig.Checked := false;
-  miNormal.Checked := false;
-  miSmall.Checked := false;
-  miXL.Checked := false;
 
   if Sender = miXL then
-  begin
-    miXL.Checked := true;
-    h := Screen.DesktopHeight div 5;
-  end
+    h := Screen.DesktopHeight div 5
   else
   if Sender = miBig then
-  begin
-    miBig.Checked := true;
-    h := Screen.DesktopHeight div 10;
-  end
+    h := Screen.DesktopHeight div 10
   else
   if Sender = miNormal then
-  begin
-    miNormal.Checked := true;
-    h := Screen.DesktopHeight div 25;
-  end
+    h := Screen.DesktopHeight div 25
   else
   if Sender = miSmall then
-  begin
-    miSmall.Checked := true;
     h := Screen.DesktopHeight div 50;
-  end
-  else
-  if Sender = miCustomSize then
-    h := Height;
 
   Height := h;
   Width := round(Height * 1.55);
@@ -529,6 +564,7 @@ begin
   lArrow.Width := round(clientwidth * 0.25);
   //---
   ApplyRoundedCorners;
+  SyncSizeMenu;
   // Persist selected size
   SaveSetting('size.float.height', Height);
   SaveSetting('size.float.width', Width);
@@ -556,16 +592,11 @@ end;
 procedure TfFloat.tClockTimer(Sender: TObject);
 begin
   lTime.Caption := FormatDateTime(DefaultFormatSettings.ShortTimeFormat, Now);
+  // Re-anchor to the top-right corner; the caption width just changed
+  lTime.AdjustSize;
+  lTime.Left := ClientWidth - lTime.Width - 8;
   if lTime.Visible = false then
     (Sender as TTimer).Enabled := false;
-end;
-
-procedure TfFloat.tTitlebarTimer(Sender: TObject);
-begin
-  {$IF NOT DEFINED(DARWIN)}
-  // On non-macOS, keep float always borderless; timer does nothing
-  tTitlebar.Enabled := false;
-  {$ENDIF}
 end;
 
 procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
@@ -602,98 +633,6 @@ begin
   // Persist current position
   SaveSetting('position.float.left', Left);
   SaveSetting('position.float.top', Top);
-  {$IFDEF DARWIN}
-  // On macOS, restore borderless immediately after dragging
-  BorderStyle := bsNone;
-  {$ENDIF}
-end;
-
-
-procedure TfFloat.CreateRoundedCorners;
-{$IFDEF LCLQt6}
-var
-  Path: QPainterPathH;
-  Painter: QPainterH;
-  QtWidget: TQtWidget;
-  XBrush: QBrushH;
-  Pen: QPenH;
-  WidgetHandle: QWidgetH;
-  BlackColor: QColorH;
-  PaintDevice: QPaintDeviceH;
-  bgcol: QtGlobalColor;
-{$endif}
-begin
-  {$IFDEF LCLQt6_DISABLED}
-  case lvl of
-  BGHigh:
-    bgcol := QtYellow;
-  BGLOW:
-    bgcol := Qtblue;
-  BGOff:
-    bgcol := Qtblack;
-  else
-    bgcol := QtGreen;
-  end;
-  // Convert LCL handle to Qt widget
-  QtWidget := TQtWidget(Handle);
-  WidgetHandle := QtWidget.GetContainerWidget;
-
-  // Ensure the widget has a transparent background
-  QWidget_setAttribute(WidgetHandle, QtWA_TranslucentBackground, true);
-
-
-  // Create QColor for black
-  BlackColor := QColor_create(0, 0, 0);
-
-  // Get paint device from widget
-  PaintDevice := QWidget_to_QPaintDevice(WidgetHandle);
-
-  // Create painter directly on the widget
-  Painter := QPainter_create();
-  QPainter_begin(Painter, PaintDevice);
-
-  // Enable antialiasing
-  QPainter_setRenderHint(Painter, QPainterAntialiasing, true);
-
-  // Create a path for rounded corners
-  Path := QPainterPath_create();
-  QPainterPath_addRoundedRect(Path, 0, 0, Width, Height, 20, 20);
-
-  // Create brush for filling
-  XBrush := QBrush_create();
-  QBrush_setStyle(XBrush, QtSolidPattern);
-  // For QBrush_setColor, QtGlobalColor enum is used
-  QBrush_setColor(XBrush, bgcol);
-
-  // Create pen for outline
-  Pen := QPen_create();
-  QPen_setStyle(Pen, QtSolidLine);
-  // For QPen_setColor, PQColor (QColorH) is used
-  QPen_setColor(Pen, @BlackColor);
-  QPen_setWidth(Pen, 1);
-
-  // Draw directly on the widget
-  QPainter_setPen(Painter, Pen);
-  QPainter_setBrush(Painter, XBrush);
-  QPainter_drawPath(Painter, Path);
-
-  // End painting
-  QPainter_end(Painter);
-
-  // Clean up
-  QPainterPath_destroy(Path);
-  QBrush_destroy(XBrush);
-  QPen_destroy(Pen);
-  QColor_destroy(BlackColor);
-  QPainter_destroy(Painter);
-  {$ENDIF}
-end;
-
-
-
-procedure TfFloat.FormPaint(Sender: TObject);
-begin
-  CreateRoundedCorners;
 end;
 
 procedure TfFloat.FormResize(Sender: TObject);
@@ -710,8 +649,22 @@ begin
 
   ScaleLbl(lVal, taLeftJustify, tlCenter);
   ScaleLbl(lArrow, taCenter, tlCenter);
-  lTime.Font.Size := lArrow.font.size div 3;
-  lTime.left := larrow.left - (lTime.Width div 2);
+
+  // Keep the clock tucked into the top-right corner, above the arrow
+  lTime.Font.Size := lArrow.Font.Size div 3;
+  lTime.AdjustSize;
+  lTime.Left := ClientWidth - lTime.Width - 8;
+  lTime.Top := 4;
+
+  // Off-range markers live in the top-left corner, mirroring the clock
+  lRangeDown.Font.Size := lTime.Font.Size;
+  lRangeUp.Font.Size := lTime.Font.Size;
+  lRangeDown.AdjustSize;
+  lRangeUp.AdjustSize;
+  lRangeDown.Left := 8;
+  lRangeDown.Top := 4;
+  lRangeUp.Left := 8;
+  lRangeUp.Top := 4;
 
   // Keep the rotating arrow overlay tracking lArrow's bounds. ScaleLbl re-shows
   // lArrow, so re-hide the glyph while the vector arrow is active.
@@ -791,22 +744,6 @@ begin
     FDragStartX := ScreenPt.X;
     FDragStartY := ScreenPt.Y;
   end;
-end;
-
-procedure TfFloat.FormMouseEnter(Sender: TObject);
-begin
-  {$IF NOT DEFINED(DARWIN)}
-  // On Linux/Windows keep the form borderless; no hover titlebar
-  Exit;
-  {$ENDIF}
-end;
-
-procedure TfFloat.FormMouseLeave(Sender: TObject);
-begin
-  {$IF NOT DEFINED(DARWIN)}
-  // No hover titlebar on non-macOS
-  Exit;
-  {$ENDIF}
 end;
 
 procedure TfFloat.FormKeyDown({%H-}Sender: TObject; var Key: word; Shift: TShiftState);

@@ -362,6 +362,7 @@ Right-click → Position, then choose:
 - **Main window**: Full featured with all options
 - **Floating window**: Smaller, simplified view you can position anywhere
 - Both show the same data from your selected account
+- Right-click the floating window to set its size, visibility (transparency), font color and an optional clock — all choices are remembered between sessions, along with its position
 
 ### The app disappeared from my screen!
 Right-click the tray icon (near your clock) and select "Show Trndi" or try clicking Reset Position in settings.
