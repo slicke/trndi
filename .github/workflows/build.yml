@@ -448,10 +448,13 @@ jobs:
             11) OSNAME="11-BigSur" ;;
             *) echo "Unsupported macOS version: ${OSMAJOR}" >&2; exit 1 ;;
           esac
-          # Fetch MacPorts installer directly from official site
-          PKG_URL="$(curl -fsSL https://www.macports.org/install.php | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" | head -n1 || true)"
+          # Fetch MacPorts installer directly from official site. Retry hard:
+          # a transient failure here kills the whole leg (see setup-lazarus for
+          # the same treatment of the SourceForge downloads).
+          CURL_RETRY="--retry 5 --retry-delay 5 --retry-all-errors"
+          PKG_URL="$(curl -fsSL $CURL_RETRY https://www.macports.org/install.php | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" | head -n1 || true)"
           [ -n "$PKG_URL" ] || { echo "Failed to resolve MacPorts pkg URL" >&2; exit 1; }
-          curl -fsSL -o MacPorts.pkg "$PKG_URL"
+          curl -fsSL $CURL_RETRY -o MacPorts.pkg "$PKG_URL"
           sudo installer -pkg MacPorts.pkg -target /
           export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
           sudo port -v selfupdate
@@ -552,7 +555,9 @@ jobs:
           # Invoke-WebRequest can do this too, but only with an explicit
           # -UserAgent holding a non-browser token — easy to "clean up" later
           # and silently start downloading a web page, hence the MZ check below.
-          curl.exe -L --fail -o lazarus-4.8.exe "https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.8/lazarus-4.8-fpc-3.2.2-win64.exe/download"
+          # Retry hard: SourceForge mirrors flake, and a transient failure here
+          # kills the whole leg (same treatment as setup-lazarus on Linux).
+          curl.exe -L --fail --retry 5 --retry-delay 5 --retry-all-errors -o lazarus-4.8.exe "https://sourceforge.net/projects/lazarus/files/Lazarus%20Windows%2064%20bits/Lazarus%204.8/lazarus-4.8-fpc-3.2.2-win64.exe/download"
           # --fail rejects HTTP errors, but a mirror answering 200 with an HTML
           # page would still land here and fail confusingly at install time.
           # Check the MZ header so a bad download fails loudly and immediately.

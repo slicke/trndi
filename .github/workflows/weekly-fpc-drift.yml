@@ -105,7 +105,7 @@ jobs:
         # to upload on failure too — otherwise the report is missing in exactly
         # the case someone needs to read it.
         if: ${{ always() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: weekly-fpc-drift-report
           path: build/weekly-drift-report.txt
