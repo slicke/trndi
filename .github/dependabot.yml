@@ -1,0 +1,13 @@
+# Keep the actions used by .github/workflows/ current and on one version
+# (upload-artifact once sat on v5 in one workflow and v7 in another). The
+# composite actions in .github/actions/ contain no `uses:` steps, so scanning
+# the workflow directory ("/") covers everything. Toolchain download URLs are
+# watched separately by the weekly-fpc-drift workflow, not by Dependabot.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # PRs land on develop first, like all other changes (see CLAUDE.md).
+    target-branch: develop
