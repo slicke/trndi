@@ -104,6 +104,48 @@ begin
   native.attention(title, s);
 end;
 
+// Show or extend a stacking notification window (SlickeNotify):
+// notify(title, message) or notify(id, title, message)
+procedure JSNotify(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+argc: integer; argv: PJSValues; magic: integer);
+var
+  id, title, msg: string;
+begin
+  res^ := JS_UNDEFINED;
+  if not (argc in [2, 3]) then
+  begin
+    ExtError(sdsAuto, '[notify] Expected notify(title, message) or notify(id, title, message); got ' +
+      IntToStr(argc) + ' parameter(s)');
+    Exit;
+  end;
+
+  if argc = 3 then
+  begin
+    id := ctx^.ToUtf8(argv^[0]);
+    title := ctx^.ToUtf8(argv^[1]);
+    msg := ctx^.ToUtf8(argv^[2]);
+  end
+  else
+  begin
+    id := '';
+    title := ctx^.ToUtf8(argv^[0]);
+    msg := ctx^.ToUtf8(argv^[1]);
+  end;
+
+  // Default the window id (and thereby its caption) to the calling extension,
+  // so each extension stacks its messages in its own window — the same
+  // attribution the shared console buffer uses.
+  if id = '' then
+  begin
+    if Assigned(ConsoleExtIdLookup) then
+      id := ConsoleExtIdLookup(ctx);
+    if id = '' then
+      id := 'extension';
+  end;
+
+  SlickeNotify(id, title, msg);
+end;
+
 // Display an HTML message dialog
 procedure JSHTMLMsg(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);

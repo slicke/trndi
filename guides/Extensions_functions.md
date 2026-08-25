@@ -8,7 +8,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
 >
 > Group quick-reference for the functions on this page:
 > - **`data`**: `getReading`, `getCurrentReading`, `getReadings`, `getLimits`, `getStatistics`, `getBasalRate`, `getUnit`, `getLocale`, `getBuild`, `getCurrentAPI`, `getCurrentUser`, `getCurrentNickname`, `predictReadings`
-> - **`ui`**: `alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`
+> - **`ui`**: `alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `notify`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`
 > - **`timers`**: `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`
 > - **`net`** (declare): `Trndi.net.fetch`
 > - **`exec`** (declare): `runCMD`
@@ -30,6 +30,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [htmlMsg](#htmlmsg)
    - [htmlDlg](#htmldlg)   
    - [htmlYesNo](#htmlyesno)      
+   - [notify](#notify)
    - [setBadgeSize](#setbadgesize)
    - [setDotSize](#setdotsize)
    - [setDotAdjust](#setdotadjust)
@@ -479,6 +480,26 @@ the first is the notification title.
 Trndi.attention("Hello there!")
 Trndi.attention("Glucose alert", "Trending low — check your CGM")
 ```
+
+### notify
+Shows a message in a non-modal, stay-on-top notification window — the polite
+alternative to `alert`/`htmlDlg`: it never blocks your script or the app, and
+it cannot spam the screen. The first call opens the window; while it stays
+open, every further call **appends** its title + message (with a timestamp) to
+the same window instead of opening a new one. The window is independent of the
+main Trndi window, so it is seen even when Trndi is minimized. The user
+dismisses it with its Close button, Esc, or the title bar.
+
+By default all of an extension's messages stack in one window captioned with
+the extension's id. Pass an explicit id as a first argument to group messages
+into separate windows (or share one window between cooperating extensions).
+```javascript
+Trndi.notify("Trending low", "Predicted 3.9 within 30 minutes");
+Trndi.notify("Update", "Now predicting 3.7");          // appends to the same window
+
+Trndi.notify("stats", "TIR today", "94% in range");    // own window with id "stats"
+```
+**Returns:** none
 
 <a name="overridemins"></a>
 ### setOverrideThresholdMinutes

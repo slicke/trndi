@@ -213,6 +213,10 @@ protected
   hasHTML: boolean;
   buttons: TStringArray;
   FUXTitleBar: TSlickeTitleBar; // Drawn title bar on Wayland (see PrepareOwnTitleBar)
+  // Leave PopupMode/PopupParent alone. Set for windows that must stay
+  // independent of the main window — a notification popup made transient to a
+  // minimized main window would minimize (or never map) right along with it.
+  FSkipPopupParent: boolean;
 
   function getContent: string;
     {** Sets PopupMode/PopupParent so window managers treat the dialog as
@@ -333,6 +337,74 @@ TSlickeMsgDlgLayout = (smdlAuto, smdlAffirmativeFirst, smdlAffirmativeLast);
 
   {** Mapping of @link(TSlickeMsgDlgBtn) to localized captions. }
 ButtonLangs = array[TSlickeMsgDlgBtn] of string;
+
+  {**
+    Non-modal stacking message window used by @link(SlickeNotify).
+
+    One window exists per caller-chosen id; while a window is visible, further
+    @link(SlickeNotify) calls with the same id append their title+message as a
+    new entry instead of opening another dialog. The window stays on top of
+    other applications (it must be noticeable even when the main window is
+    minimized), anchors to the bottom-right of the work area, grows downward-
+    anchored until half the screen height and then scrolls, and closes via its
+    Close button, Esc or the title bar.
+
+    @remarks Main-thread only, like every other dialog in this unit. Create
+    through @link(SlickeNotify) — the registry there is what makes ids stack.
+  }
+TSlickeStackForm = class(TDialogForm)
+protected
+  FScroll: TScrollBox;
+  FBtnPanel: TPanel;
+  FCloseBtn: TButton;
+  FLayoutSize: TSlickeDialogSize;
+  FNextTop: integer;     // Next free y position inside the scroll area
+  FEntryCount: integer;
+  FBaseCaption: string;  // Caption without the "(n)" entry-count suffix
+  procedure CloseBtnClick(Sender: TObject);
+  procedure StackKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
+  procedure HandleClose(Sender: TObject; var CloseAction: TCloseAction);
+    {** Grow the window to its content (capped at half the work area) and keep
+        it anchored: bottom edge in place on appends, bottom-right corner of
+        the work area on first layout. }
+  procedure FitToContent(const KeepBottom: boolean);
+public
+    {** Append one titled message (with timestamp and icon) and reveal it. }
+  procedure AddEntry(const ATitle, AMessage: string; const AIcon: SlickeUXImage);
+  property EntryCount: integer read FEntryCount;
+end;
+
+  {**
+    Show — or extend — a non-modal stacking notification window.
+
+    The first call for an id creates a stay-on-top window in the bottom-right
+    of the work area showing title+message. While that window remains visible,
+    every further call with the same id appends its title+message (plus a
+    timestamp) to the same window instead of opening a new dialog, so a chatty
+    caller can never spam the screen with popups. Closing the window resets
+    the id; the next call creates a fresh window.
+
+    @param id Registry key: which window the message stacks into. Also the
+      window caption unless @code(ACaption) is given.
+    @param title Bold heading of this entry (may be empty).
+    @param message Body text of this entry.
+    @param icon Emoji icon shown next to this entry.
+    @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
+    @param ACaption Window caption override, used only when the call creates
+      the window.
+    @returns The window, or @nil when the application is shutting down.
+    @remarks Non-modal and never blocks. Main-thread only.
+  }
+function SlickeNotify(const id, title, message: string;
+  const icon: SlickeUXImage = uxmtInformation;
+  const dialogsize: TSlickeDialogSize = sdsAuto;
+  const ACaption: string = ''): TSlickeStackForm;
+
+  {** @returns @true when a @link(SlickeNotify) window for @code(id) is visible. }
+function SlickeNotifyVisible(const id: string): boolean;
+
+  {** Close (and free) the @link(SlickeNotify) window for @code(id), if any. }
+procedure SlickeNotifyClose(const id: string);
 
   {**
     Show a simple message dialog, optionally inline on a form in @code(sdsOnForm) mode.
@@ -4506,6 +4578,8 @@ var
   zi: integer;
   cand: TCustomForm;
 begin
+  if FSkipPopupParent then
+    Exit;
   try
     // Prefer the topmost form visibly sitting in a modal loop over
     // Screen.ActiveForm. When dialogs are chained (extension alert followed
@@ -5129,6 +5203,312 @@ begin
   end;
 end;
 
+{------------------------------------------------------------------------------
+  SlickeNotify / TSlickeStackForm
+  Non-modal stacking notification windows, one per id. The registry below maps
+  id -> live window; windows unregister themselves on close (caFree), and
+  whatever is still open at shutdown is freed in this unit's finalization.
+  Main-thread only, like the rest of the unit.
+ ------------------------------------------------------------------------------}
+const
+  StackPad = 12;     // Inner padding between stack entries and their parts
+  StackMargin = 24;  // Gap between the window and the work-area edge
 
+var
+  NotifyWindows: TStringList = nil; // id -> TSlickeStackForm
 
+function FindNotifyWindow(const id: string): TSlickeStackForm;
+var
+  i: integer;
+begin
+  Result := nil;
+  if NotifyWindows = nil then
+    Exit;
+  i := NotifyWindows.IndexOf(id);
+  if i >= 0 then
+    Result := TSlickeStackForm(NotifyWindows.Objects[i]);
+end;
+
+procedure TSlickeStackForm.CloseBtnClick(Sender: TObject);
+begin
+  Close;
+end;
+
+procedure TSlickeStackForm.StackKeyDown(Sender: TObject; var Key: word;
+Shift: TShiftState);
+begin
+  if Key = VK_ESCAPE then
+  begin
+    Key := 0;
+    Close;
+  end;
+end;
+
+procedure TSlickeStackForm.HandleClose(Sender: TObject;
+var CloseAction: TCloseAction);
+var
+  i: integer;
+begin
+  // Unregister first so finalization (and a re-used id) never sees a form
+  // that caFree is about to release.
+  if NotifyWindows <> nil then
+  begin
+    i := NotifyWindows.IndexOfObject(Self);
+    if i >= 0 then
+      NotifyWindows.Delete(i);
+  end;
+  CloseAction := caFree;
+end;
+
+procedure TSlickeStackForm.FitToContent(const KeepBottom: boolean);
+var
+  chrome, oldBottom: integer;
+begin
+  oldBottom := Top + Height;
+  // Everything wrapped around the scroll area: the button panel, and the
+  // drawn Wayland title bar when PrepareOwnTitleBar installed one. Computed
+  // from those controls directly — before the first Show, the aligned scroll
+  // box still has its default bounds and cannot be measured.
+  chrome := FBtnPanel.Height;
+  if Assigned(FUXTitleBar) then
+    chrome := chrome + FUXTitleBar.Height;
+  ClientHeight := Min(FNextTop + chrome, ScreenUsableHeight div 2);
+
+  if KeepBottom then
+    // Appends grow the window upward so the Close button stays put.
+    Top := oldBottom - Height
+  else
+  begin
+    Left := ScreenUsableLeft + ScreenUsableWidth - Width - StackMargin;
+    Top := ScreenUsableTop + ScreenUsableHeight - Height - StackMargin;
+  end;
+  if Top < ScreenUsableTop then
+    Top := ScreenUsableTop;
+end;
+
+procedure TSlickeStackForm.AddEntry(const ATitle, AMessage: string;
+const AIcon: SlickeUXImage);
+var
+  ico: TImage;
+  lTitle, lMsg, lTime: TLabel;
+  sep: TBevel;
+  icoSize, textLeft, textWidth, timeWidth, msgTop: integer;
+begin
+  Inc(FEntryCount);
+  if FEntryCount = 1 then
+    FNextTop := StackPad;
+
+  if FEntryCount > 1 then
+  begin
+    sep := TBevel.Create(Self);
+    sep.Parent := FScroll;
+    sep.Shape := bsTopLine;
+    sep.SetBounds(StackPad, FNextTop, ClientWidth - StackPad * 2, 2);
+    FNextTop := FNextTop + sep.Height + StackPad;
+  end;
+
+  case FLayoutSize of
+  sdsBig:
+    icoSize := 40;
+  sdsMedium:
+    icoSize := 32;
+  else
+    icoSize := 24;
+  end;
+  ico := TImage.Create(Self);
+  ico.Parent := FScroll;
+  ico.SetBounds(StackPad, FNextTop, icoSize, icoSize);
+  AssignEmoji(ico, AIcon, Color);
+
+  textLeft := StackPad * 2 + icoSize;
+  // Measure against the form, not FScroll: before the first Show the aligned
+  // scroll box still has its default designer width. Reserve room for the
+  // vertical scrollbar that appears once the window has hit its height cap,
+  // so earlier entries don't end up clipped beneath it.
+  textWidth := ClientWidth - textLeft - StackPad * 2;
+
+  // Timestamp, right-aligned on the heading row
+  lTime := TLabel.Create(Self);
+  lTime.Parent := FScroll;
+  lTime.Caption := FormatDateTime('hh:nn', Now);
+  ApplyDialogFont(lTime.Font, FLayoutSize, 14);
+  lTime.Font.Color := $00909090; // Secondary text; readable on both schemes
+  timeWidth := MeasureTextWidth(lTime.Caption, lTime.Font);
+  lTime.Left := textLeft + textWidth - timeWidth;
+  lTime.Top := FNextTop;
+
+  msgTop := FNextTop;
+  if ATitle <> '' then
+  begin
+    lTitle := TLabel.Create(Self);
+    lTitle.Parent := FScroll;
+    lTitle.WordWrap := true;
+    lTitle.AutoSize := false;
+    lTitle.Font.Style := [fsBold];
+    ApplyDialogFont(lTitle.Font, FLayoutSize, 18);
+    lTitle.Font.Color := getBaseColor;
+    lTitle.Left := textLeft;
+    lTitle.Top := FNextTop;
+    lTitle.Width := textWidth - timeWidth - StackPad;
+    lTitle.Caption := ATitle;
+    lTitle.Height := CalcWrappedHeight(lTitle);
+    msgTop := lTitle.Top + lTitle.Height + (StackPad div 2);
+  end;
+
+  lMsg := TLabel.Create(Self);
+  lMsg.Parent := FScroll;
+  lMsg.WordWrap := true;
+  lMsg.AutoSize := false;
+  ApplyDialogFont(lMsg.Font, FLayoutSize, 16);
+  lMsg.Font.Color := getBaseColor;
+  lMsg.Left := textLeft;
+  lMsg.Top := msgTop;
+  lMsg.Width := textWidth;
+  lMsg.Caption := AMessage;
+  lMsg.Height := CalcWrappedHeight(lMsg);
+
+  FNextTop := Max(lMsg.Top + lMsg.Height, ico.Top + ico.Height) + StackPad;
+
+  if FEntryCount > 1 then
+    Caption := Format('%s (%d)', [FBaseCaption, FEntryCount]);
+
+  FitToContent(FEntryCount > 1);
+
+  // Bring the newest entry into view once the height cap makes us scroll
+  FScroll.VertScrollBar.Position := FScroll.VertScrollBar.Range;
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeNotify(const id, title, message: string;
+const icon: SlickeUXImage = uxmtInformation;
+const dialogsize: TSlickeDialogSize = sdsAuto;
+const ACaption: string = ''): TSlickeStackForm;
+var
+  size: TSlickeDialogSize;
+  w: TSlickeStackForm;
+  cascade: integer;
+begin
+  Result := nil;
+  if (Application = nil) or Application.Terminated then
+    Exit;
+
+  w := FindNotifyWindow(id);
+  if (w <> nil) and w.Visible then
+  begin
+    w.AddEntry(title, message, icon);
+    w.BringToFront;
+    Exit(w);
+  end;
+  if w <> nil then // Registered but not visible: stale; replace it
+    w.Close;
+
+  size := GetSlickeDialogSize(dialogsize);
+
+  w := TSlickeStackForm.CreateNew(nil);
+  w.FLayoutSize := size;
+  w.FSkipPopupParent := true;       // Independent of a possibly-minimized main window
+  w.FormStyle := fsSystemStayOnTop; // Must be noticeable even when Trndi is not
+  w.BorderStyle := bsDialog;
+  w.Color := getBackground;
+  if ACaption <> '' then
+    w.FBaseCaption := ACaption
+  else
+    w.FBaseCaption := id;
+  w.Caption := w.FBaseCaption;
+  w.OnClose := @w.HandleClose;
+  w.OnKeyDown := @w.StackKeyDown; // KeyPreview is set in CreateWnd
+  case size of
+  sdsBig:
+    w.ClientWidth := FitDialogWidth(640);
+  sdsMedium:
+    w.ClientWidth := FitDialogWidth(520);
+  else
+    w.ClientWidth := FitDialogWidth(420);
+  end;
+
+  w.FBtnPanel := TPanel.Create(w);
+  w.FBtnPanel.Parent := w;
+  w.FBtnPanel.Align := alBottom;
+  w.FBtnPanel.BevelOuter := bvNone;
+  w.FBtnPanel.Caption := '';
+  w.FBtnPanel.Color := w.Color;
+
+  // A plain TButton everywhere: on Windows, DoShow's WinDarkThemeTree walk
+  // switches it to the comctl dark classes like every other native child.
+  w.FCloseBtn := TButton.Create(w);
+  w.FCloseBtn.Parent := w.FBtnPanel;
+  w.FCloseBtn.Caption := smbUXClose;
+  {$ifdef LCLGTK2}w.FCloseBtn.Font.Color := clBlack;{$endif}
+  if ButtonFontSize(size) > 0 then
+    w.FCloseBtn.Font.Size := ButtonFontSize(size);
+  w.FCloseBtn.Width := Max(IfThen(size = sdsBig, 160,
+    IfThen(size = sdsMedium, 120, 80)),
+    MeasureTextWidth(smbUXClose, w.FCloseBtn.Font) + 30);
+  w.FCloseBtn.Height := Max(w.FCloseBtn.Height,
+    DialogInputHeight(w.FCloseBtn.Font, size));
+  w.FCloseBtn.OnClick := @w.CloseBtnClick;
+  w.FBtnPanel.Height := w.FCloseBtn.Height + StackPad * 2;
+  w.FCloseBtn.AnchorHorizontalCenterTo(w.FBtnPanel);
+  w.FCloseBtn.AnchorVerticalCenterTo(w.FBtnPanel);
+
+  w.FScroll := TScrollBox.Create(w);
+  w.FScroll.Parent := w;
+  w.FScroll.Align := alClient;
+  w.FScroll.BorderStyle := bsNone;
+  w.FScroll.Color := w.Color;
+  w.FScroll.HorzScrollBar.Visible := false;
+  w.FScroll.VertScrollBar.Increment := 40;
+
+  // Wayland: install the drawn title bar before layout so FitToContent
+  // measures the scroll area with the bar's spacing already applied.
+  w.PrepareOwnTitleBar;
+  w.AddEntry(title, message, icon); // Also sizes and places the window
+
+  // Several ids open at once would otherwise sit exactly on top of each
+  // other; cascade each new window up-left of the previous ones.
+  if NotifyWindows = nil then
+    NotifyWindows := TStringList.Create;
+  cascade := NotifyWindows.Count * 36;
+  w.Left := w.Left - cascade;
+  w.Top := Max(w.Top - cascade, ScreenUsableTop);
+  NotifyWindows.AddObject(id, w);
+
+  w.Show;
+  Result := w;
+end;
+
+{** See interface docs for behavior and parameters. }
+function SlickeNotifyVisible(const id: string): boolean;
+var
+  w: TSlickeStackForm;
+begin
+  w := FindNotifyWindow(id);
+  Result := (w <> nil) and w.Visible;
+end;
+
+{** See interface docs for behavior and parameters. }
+procedure SlickeNotifyClose(const id: string);
+var
+  w: TSlickeStackForm;
+begin
+  w := FindNotifyWindow(id);
+  if w <> nil then
+    w.Close; // Unregisters and frees via HandleClose/caFree
+end;
+
+initialization
+
+finalization
+  // Windows are owned by nil (like every dialog here), so whatever is still
+  // open at shutdown must be freed by hand. Free() skips OnClose, so empty
+  // the registry first rather than letting HandleClose mutate it mid-loop.
+  if NotifyWindows <> nil then
+  begin
+    while NotifyWindows.Count > 0 do
+    begin
+      NotifyWindows.Objects[0].Free;
+      NotifyWindows.Delete(0);
+    end;
+    FreeAndNil(NotifyWindows);
+  end;
 end.
