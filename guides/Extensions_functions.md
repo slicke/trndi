@@ -25,6 +25,7 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [log](#log)
    - [console.log](#consolelog)
    - [console.push](#consolepush)
+   - [console.pop](#consolepop)
    - [console.logs](#consolelogs)
    - [console.error / warn / info / debug](#consoleerror--warn--info--debug)
    - [htmlMsg](#htmlmsg)
@@ -140,7 +141,7 @@ Prints out data to the user. Non-string arguments (objects, arrays, errors) are 
 console.push("message 1");
 console.push("message 2");
 ```
-Accumulates messages in an internal buffer without showing a popup. Use this when you want to collect multiple log messages and display them all at once with `console.logs()`.
+Accumulates messages in an internal buffer without showing a popup. Use this when you want to collect multiple log messages and display them all at once with `console.pop()`.
 
 The buffer is shared by all loaded extensions (like a browser console shared by all scripts on a page); each entry is prefixed with the id of the extension that pushed it, e.g. `[my-extension] message 1`.
 
@@ -154,22 +155,28 @@ The buffer is shared by all loaded extensions (like a browser console shared by 
 console.push("Starting process...");
 console.push("Step 1 complete");
 console.push("Step 2 complete");
-console.logs();  // Shows all 3 messages in one popup
+console.pop();  // Shows all 3 messages in one non-modal window
 ```
 
-### console.logs
+### console.pop
 ```javascript
-console.logs();
+const count = console.pop();
 ```
-Displays all buffered messages (accumulated via `console.push()`) in a single popup, then clears the buffer. If no messages are buffered, displays "(no messages buffered)".
+Displays all buffered messages (accumulated via `console.push()` and the level methods below) as one entry in the non-modal, stay-on-top [notify](#notify)-style window (id `console`), then clears the buffer. Repeated pops append to the same window while it is open. If no messages are buffered, nothing is shown.
 
 Since the buffer is shared, this shows (and clears) messages from **every** loaded extension, each prefixed with its extension id — one chronological stream for debugging a whole setup.
 
 **Parameters:** none
 
-**Returns:** none
+**Returns:** the number of buffered lines that were shown (`0` when the buffer was empty)
 
-**Use case:** Avoids multiple popups when logging multiple messages during extension execution.
+**Use case:** Avoids multiple popups when logging multiple messages during extension execution, and never blocks the script or the user.
+
+### console.logs
+```javascript
+console.logs();
+```
+**Deprecated** alias of [console.pop](#consolepop) — it now behaves identically (non-modal window, returns the line count, silent when empty) instead of opening a modal dialog. Kept for older extensions; use `console.pop()` in new code.
 
 ### console.error / warn / info / debug
 ```javascript
@@ -178,7 +185,7 @@ console.warn("Value looks off");
 console.info("Started");
 console.debug("state =", state);
 ```
-Web-style level logging. Unlike `console.log` (which opens a popup per call), these buffer the message with a level prefix — `[my-extension] [error] Something went wrong: ...` — exactly like `console.push()`, so a script that logs in a loop can't spam dialogs. Buffered messages are shown on the next `console.logs()`.
+Web-style level logging. Unlike `console.log` (which opens a popup per call), these buffer the message with a level prefix — `[my-extension] [error] Something went wrong: ...` — exactly like `console.push()`, so a script that logs in a loop can't spam dialogs. Buffered messages are shown on the next `console.pop()`.
 
 **Parameters:**
 - Message(s), concatenated with spaces (same as `console.push`)
