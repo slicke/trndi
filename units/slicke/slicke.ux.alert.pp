@@ -89,6 +89,14 @@ sValue = 'Value';
 const
   FLOAT_NONE = -999.66; // < For use in dialogs where a float value is unlimited
   {**
+    In @link(TSlickeStackForm.AddEntry) separate-lines mode, a row of the form
+    @code(tag + UXRowTagSep + text) renders @code(tag) as a small bold source
+    label in front of the text — for naming whatever produced the row (a
+    module, a sender, a subsystem). Rows without the separator render as plain
+    text; flowing-text mode ignores it.
+  }
+  UXRowTagSep = #31; // ASCII unit separator: never occurs in normal text
+  {**
     @name Emoji-based dialog icons
     @desc
     Unicode codepoints rendered as emoji or symbols on supported platforms.
@@ -372,7 +380,9 @@ public
     {** Append one titled message (with timestamp and icon) and reveal it.
         With @code(ASeparateLines) each line of @code(AMessage) becomes its own
         row, divided by thin rules — for list-like content such as a flushed
-        console buffer. Off (flowing text) by default. }
+        console buffer. A row may name its source by starting with
+        @code(tag + UXRowTagSep): the tag renders as a small bold label in
+        front of the text. Off (flowing text) by default. }
   procedure AddEntry(const ATitle, AMessage: string; const AIcon: SlickeUXImage;
     const ASeparateLines: boolean = false);
   property EntryCount: integer read FEntryCount;
@@ -397,7 +407,8 @@ end;
     @param ACaption Window caption override, used only when the call creates
       the window.
     @param separateLines Render each line of @code(message) as its own row
-      with a thin divider between rows (see @link(TSlickeStackForm.AddEntry)).
+      with a thin divider between rows; rows may carry a @link(UXRowTagSep)
+      source tag (see @link(TSlickeStackForm.AddEntry)).
     @returns The window, or @nil when the application is shutting down.
     @remarks Non-modal and never blocks. Main-thread only.
   }
@@ -5302,7 +5313,7 @@ var
   lines: TStringList;
   i, icoSize, textLeft, textWidth, timeWidth, msgTop, msgBottom: integer;
 
-procedure PlaceMessageLabel(const AText: string; const ATop: integer);
+procedure PlaceMessageLabel(const AText: string; const ATop, ALeft, AWidth: integer);
 begin
   lMsg := TLabel.Create(Self);
   lMsg.Parent := FScroll;
@@ -5310,11 +5321,42 @@ begin
   lMsg.AutoSize := false;
   ApplyDialogFont(lMsg.Font, FLayoutSize, 16);
   lMsg.Font.Color := getBaseColor;
-  lMsg.Left := textLeft;
+  lMsg.Left := ALeft;
   lMsg.Top := ATop;
-  lMsg.Width := textWidth;
+  lMsg.Width := AWidth;
   lMsg.Caption := AText;
   lMsg.Height := CalcWrappedHeight(lMsg);
+end;
+
+// One separate-lines row: an optional UXRowTagSep-delimited source tag becomes
+// a small bold label, with the text laid out to its right (wrapped lines align
+// under the text, keeping the tag column clean).
+procedure PlaceTaggedRow(const ARow: string; const ATop: integer);
+var
+  lTag: TLabel;
+  tag: string;
+  p, rowLeft, rowWidth: integer;
+begin
+  rowLeft := textLeft;
+  rowWidth := textWidth;
+  p := Pos(UXRowTagSep, ARow);
+  if p > 1 then
+  begin
+    tag := Copy(ARow, 1, p - 1);
+    lTag := TLabel.Create(Self);
+    lTag.Parent := FScroll;
+    ApplyDialogFont(lTag.Font, FLayoutSize, 14);
+    lTag.Font.Style := [fsBold];
+    lTag.Font.Color := $00909090; // Secondary text, matching the timestamp
+    lTag.Caption := tag;
+    lTag.Left := textLeft;
+    lTag.Top := ATop + 1; // Optical baseline alignment with the larger text
+    // A runaway tag must not squeeze the text out of the row
+    rowLeft := textLeft + Min(MeasureTextWidth(tag, lTag.Font) + StackPad,
+      textWidth div 2);
+    rowWidth := textWidth - (rowLeft - textLeft);
+  end;
+  PlaceMessageLabel(Copy(ARow, p + 1, MaxInt), ATop, rowLeft, rowWidth);
 end;
 
 begin
@@ -5398,7 +5440,7 @@ begin
           sep.SetBounds(textLeft, msgBottom + (StackPad div 2), textWidth, 2);
           msgBottom := sep.Top + sep.Height + (StackPad div 2);
         end;
-        PlaceMessageLabel(lines[i], msgBottom);
+        PlaceTaggedRow(lines[i], msgBottom);
         msgBottom := lMsg.Top + lMsg.Height;
       end;
     finally
@@ -5407,7 +5449,7 @@ begin
   end
   else
   begin
-    PlaceMessageLabel(AMessage, msgTop);
+    PlaceMessageLabel(AMessage, msgTop, textLeft, textWidth);
     msgBottom := lMsg.Top + lMsg.Height;
   end;
 

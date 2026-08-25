@@ -137,8 +137,8 @@ begin
   // attribution the shared console buffer uses.
   if id = '' then
   begin
-    if Assigned(ConsoleExtIdLookup) then
-      id := ConsoleExtIdLookup(ctx);
+    if Assigned(ConsoleExtNameLookup) then
+      id := ConsoleExtNameLookup(ctx);
     if id = '' then
       id := 'extension';
   end;
