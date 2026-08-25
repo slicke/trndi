@@ -56,16 +56,17 @@ Classes, SysUtils, trndi.ext.quickjs, strutils, fgl,
 Forms, Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
 
 type
-  {** Resolves the extension id that owns a JS context. Wired up by
-      @code(TTrndiExtEngine) so buffered console entries can be attributed
-      to the extension that pushed them (the buffer is shared engine-wide). }
-TExtIdLookup = function(ctx: JSContext): string of object;
+  {** Resolves the display name of the extension that owns a JS context.
+      Wired up by @code(TTrndiExtEngine) so buffered console entries can be
+      attributed to the extension that pushed them (the buffer is shared
+      engine-wide). }
+TExtNameLookup = function(ctx: JSContext): string of object;
 
 var
 ConsoleBuffer: TStringList;
   {** Set by the engine at startup and cleared on teardown; nil means no
-      attribution (entries are buffered unprefixed, as before). }
-ConsoleExtIdLookup: TExtIdLookup;
+      attribution (entries are buffered untagged, as before). }
+ConsoleExtNameLookup: TExtNameLookup;
 
 (*
   Resource strings (can be translated if needed):
@@ -1057,16 +1058,19 @@ end;
 {------------------------------------------------------------------------------
   ConsoleAttribution
   The console buffer is shared by every extension, so tag each buffered entry
-  with the id of the context that pushed it. Empty for the admin/template
-  context (or before the engine wires up the lookup) — no prefix then.
+  with the display name of the extension that pushed it, using the notify
+  window's generic UXRowTagSep row-tag convention — console.pop() then shows
+  the name as a small label in front of each line. Empty for the
+  admin/template context (or before the engine wires up the lookup) — the
+  entry is buffered untagged then.
 -------------------------------------------------------------------------------}
 function ConsoleAttribution(ctx: JSContext): string;
 begin
   Result := '';
-  if Assigned(ConsoleExtIdLookup) then
-    Result := ConsoleExtIdLookup(ctx);
+  if Assigned(ConsoleExtNameLookup) then
+    Result := ConsoleExtNameLookup(ctx);
   if Result <> '' then
-    Result := '[' + Result + '] ';
+    Result := Result + UXRowTagSep;
 end;
 
 procedure JSConsolePush(res: PJSValue; ctx: JSContext; this_val: PJSValue;
@@ -1279,7 +1283,7 @@ end;
 
 initialization
 ConsoleBuffer := nil;
-ConsoleExtIdLookup := nil;
+ConsoleExtNameLookup := nil;
 
 finalization
 if ConsoleBuffer <> nil then

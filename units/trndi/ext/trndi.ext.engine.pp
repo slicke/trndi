@@ -594,10 +594,11 @@ public
   function ExtensionCount: integer;
   function ExtensionAt(idx: integer): PExtContextInfo;
 
-    {** Id of the extension owning @code(ctx), or '' for the admin/template
-        context. Wired into @code(ConsoleExtIdLookup) so the shared console
+    {** Display name (@code(@name) header, falling back to the filename id)
+        of the extension owning @code(ctx), or '' for the admin/template
+        context. Wired into @code(ConsoleExtNameLookup) so the shared console
         buffer can attribute entries to their extension. }
-  function ExtensionIdForContext(ctx: JSContext): string;
+  function ExtensionNameForContext(ctx: JSContext): string;
 
     {** Tear down every per-extension context: cancel JS timers, drain pending
         jobs, free each @code(JSContext) and clear the registry. The shared
@@ -1275,7 +1276,7 @@ begin
   FCurrentRegPerms := [];
 
   // Let the shared console buffer attribute entries to their extension
-  ConsoleExtIdLookup := @ExtensionIdForContext;
+  ConsoleExtNameLookup := @ExtensionNameForContext;
 
   // Register baseline engine-internal functions into FContext (admin/template).
   // Per-extension contexts will re-run this gated to their grants in NewExtensionContext.
@@ -1818,7 +1819,7 @@ var
 begin
   // Detach the console-attribution hook before anything else so no buffered
   // log can call back into a dying engine (runs on both shutdown paths)
-  ConsoleExtIdLookup := nil;
+  ConsoleExtNameLookup := nil;
 
   // ULTRA-EARLY EXIT: If application is terminating or global shutdown flag is set,
   // skip ALL cleanup operations and let OS handle memory deallocation
@@ -2199,7 +2200,7 @@ begin
   Result := FExtContexts[idx];
 end;
 
-function TTrndiExtEngine.ExtensionIdForContext(ctx: JSContext): string;
+function TTrndiExtEngine.ExtensionNameForContext(ctx: JSContext): string;
 var
   i: integer;
 begin
@@ -2208,7 +2209,12 @@ begin
     Exit;
   for i := 0 to FExtContexts.Count - 1 do
     if (FExtContexts[i] <> nil) and (FExtContexts[i]^.Ctx = ctx) then
-      Exit(FExtContexts[i]^.ExtId);
+    begin
+      Result := FExtContexts[i]^.DisplayName;
+      if Result = '' then
+        Result := FExtContexts[i]^.ExtId;
+      Exit;
+    end;
 end;
 
 procedure TTrndiExtEngine.NotifyUnloadAll;
