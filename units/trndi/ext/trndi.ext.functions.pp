@@ -290,7 +290,7 @@ procedure JSConsoleLog(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
 procedure JSConsolePush(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
-procedure JSConsoleLogs(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+procedure JSConsolePop(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
 procedure RegisterConsoleLog(ctx: PJSContext);
 function JSValueValToValue(ctx: JSContext; val: JSValueVal): JSValue;
@@ -1108,7 +1108,8 @@ end;
   console.error/warn/info/debug for web-style scripts. Unlike console.log
   (which opens a dialog per call), these buffer like console.push — with a
   level prefix — so a pasted script logging in a loop can't spam modals.
-  The messages surface on the next console.logs().
+  The messages surface on the next console.pop() (or its deprecated alias
+  console.logs()).
 -------------------------------------------------------------------------------}
 function JSConsoleLevelImpl(ctx: JSContext; argc: integer;
 argv: PJSValueConstArr; const level: string): JSValueRaw;
@@ -1164,23 +1165,31 @@ begin
   res^ := JSConsoleLevelImpl(ctx, argc, argv, 'debug');
 end;
 
-procedure JSConsoleLogs(res: PJSValue; ctx: JSContext; this_val: PJSValue;
+{------------------------------------------------------------------------------
+  JSConsolePop
+  console.pop(): flush the shared console buffer into the non-modal
+  SlickeNotify stacking window (id 'console') instead of a modal dialog.
+  Returns the number of buffered lines shown; an empty buffer shows nothing
+  and returns 0. console.logs() is a deprecated alias registered to this
+  same native.
+-------------------------------------------------------------------------------}
+procedure JSConsolePop(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
 var
   fullMsg: string;
+  Count: integer;
 begin
-  // Display all buffered messages
+  Count := 0;
   if (ConsoleBuffer <> nil) and (ConsoleBuffer.Count > 0) then
   begin
-    fullMsg := ConsoleBuffer.Text;
-    SlickeLog(sdsAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
+    Count := ConsoleBuffer.Count;
+    fullMsg := TrimRight(ConsoleBuffer.Text);
     ConsoleBuffer.Clear;
-  end
-  else
-    ShowMessage(RS_LOG_NO_BUFFERED);
+    SlickeNotify('console', RS_LOG_POP_TITLE, fullMsg, uxmtInformation,
+      sdsAuto, RS_LOG_POP_CAPTION);
+  end;
 
-  // Return undefined
-  res^ := JS_UNDEFINED;
+  res^ := JS_NewInt32(ctx, Count);
 end;
 
 { Attach one native to the console object. Registration hands the callback to
@@ -1224,7 +1233,10 @@ begin
     AddConsoleFunc(ctx^, consoleObj, 'debug', 1, @JSConsoleDebug);
 
     AddConsoleFunc(ctx^, consoleObj, 'push', 1, @JSConsolePush);
-    AddConsoleFunc(ctx^, consoleObj, 'logs', 0, @JSConsoleLogs);
+    AddConsoleFunc(ctx^, consoleObj, 'pop', 0, @JSConsolePop);
+    // Deprecated alias for pop: kept so existing extensions calling
+    // console.logs() keep working (now non-modal like pop).
+    AddConsoleFunc(ctx^, consoleObj, 'logs', 0, @JSConsolePop);
   finally
     JS_FreeValue(ctx^, consoleObj);
   end;
