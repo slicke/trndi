@@ -188,7 +188,7 @@ the user the first time the extension is loaded.
 
 ## Baseline (always granted, no prompt)
 - **`data`** — read glucose data and app info (`getReading`, `getCurrentReading`, `getLimits`, `getStatistics`, `getBasalRate`, `getUnit`, `getLocale`, `getBuild`, `getCurrentAPI`, `getCurrentUser`, `getCurrentNickname`, `predictReadings`)
-- **`ui`**  — dialogs and visual changes (`alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`)
+- **`ui`**  — dialogs and visual changes (`alert`, `confirm`, `prompt`, `select`, `log`, `console.*`, `htmlMsg`, `htmlDlg`, `htmlYesNo`, `attention`, `notify`, `playSound`, `sayText`, `setBadgeSize`, `setDotSize`, `setDotAdjust`, `setLevelColor`, `setClockInterval`, `uxProp`)
 - **`timers`** — schedule callbacks (`setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`)
 
 ## Promptable (must be declared; user approves on first load)

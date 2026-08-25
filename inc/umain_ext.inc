@@ -279,6 +279,7 @@ begin
     addClassFunctionIf(epUI, 'htmlYesNo',        @JSHTMLYesNo,       -1);
     addClassFunctionIf(epUI, 'setClockInterval', @JSvar_ClockInterval,1);
     addClassFunctionIf(epUI, 'attention',        @JSAttention,       -1);
+    addClassFunctionIf(epUI, 'notify',           @JSNotify,          -1);
 
     // Settings group (promptable). Both reads and writes go through here because
     // settings keys (incl. extval.*) carry user-private data.
