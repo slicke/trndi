@@ -162,7 +162,7 @@ console.pop();  // Shows all 3 messages in one non-modal window
 ```javascript
 const count = console.pop();
 ```
-Displays all buffered messages (accumulated via `console.push()` and the level methods below) as one entry in the non-modal, stay-on-top [notify](#notify)-style window (id `console`), then clears the buffer. Repeated pops append to the same window while it is open. If no messages are buffered, nothing is shown.
+Displays all buffered messages (accumulated via `console.push()` and the level methods below) as one entry in the non-modal, stay-on-top [notify](#notify)-style window (id `console`) — each buffered message on its own row with a divider between them — then clears the buffer. Repeated pops append to the same window while it is open. If no messages are buffered, nothing is shown.
 
 Since the buffer is shared, this shows (and clears) messages from **every** loaded extension, each prefixed with its extension id — one chronological stream for debugging a whole setup.
 
