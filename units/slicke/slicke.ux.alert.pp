@@ -369,8 +369,12 @@ protected
         the work area on first layout. }
   procedure FitToContent(const KeepBottom: boolean);
 public
-    {** Append one titled message (with timestamp and icon) and reveal it. }
-  procedure AddEntry(const ATitle, AMessage: string; const AIcon: SlickeUXImage);
+    {** Append one titled message (with timestamp and icon) and reveal it.
+        With @code(ASeparateLines) each line of @code(AMessage) becomes its own
+        row, divided by thin rules — for list-like content such as a flushed
+        console buffer. Off (flowing text) by default. }
+  procedure AddEntry(const ATitle, AMessage: string; const AIcon: SlickeUXImage;
+    const ASeparateLines: boolean = false);
   property EntryCount: integer read FEntryCount;
 end;
 
@@ -392,13 +396,16 @@ end;
     @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
     @param ACaption Window caption override, used only when the call creates
       the window.
+    @param separateLines Render each line of @code(message) as its own row
+      with a thin divider between rows (see @link(TSlickeStackForm.AddEntry)).
     @returns The window, or @nil when the application is shutting down.
     @remarks Non-modal and never blocks. Main-thread only.
   }
 function SlickeNotify(const id, title, message: string;
   const icon: SlickeUXImage = uxmtInformation;
   const dialogsize: TSlickeDialogSize = sdsAuto;
-  const ACaption: string = ''): TSlickeStackForm;
+  const ACaption: string = '';
+  const separateLines: boolean = false): TSlickeStackForm;
 
   {** @returns @true when a @link(SlickeNotify) window for @code(id) is visible. }
 function SlickeNotifyVisible(const id: string): boolean;
@@ -5287,12 +5294,29 @@ begin
 end;
 
 procedure TSlickeStackForm.AddEntry(const ATitle, AMessage: string;
-const AIcon: SlickeUXImage);
+const AIcon: SlickeUXImage; const ASeparateLines: boolean);
 var
   ico: TImage;
   lTitle, lMsg, lTime: TLabel;
   sep: TBevel;
-  icoSize, textLeft, textWidth, timeWidth, msgTop: integer;
+  lines: TStringList;
+  i, icoSize, textLeft, textWidth, timeWidth, msgTop, msgBottom: integer;
+
+procedure PlaceMessageLabel(const AText: string; const ATop: integer);
+begin
+  lMsg := TLabel.Create(Self);
+  lMsg.Parent := FScroll;
+  lMsg.WordWrap := true;
+  lMsg.AutoSize := false;
+  ApplyDialogFont(lMsg.Font, FLayoutSize, 16);
+  lMsg.Font.Color := getBaseColor;
+  lMsg.Left := textLeft;
+  lMsg.Top := ATop;
+  lMsg.Width := textWidth;
+  lMsg.Caption := AText;
+  lMsg.Height := CalcWrappedHeight(lMsg);
+end;
+
 begin
   Inc(FEntryCount);
   if FEntryCount = 1 then
@@ -5355,19 +5379,39 @@ begin
     msgTop := lTitle.Top + lTitle.Height + (StackPad div 2);
   end;
 
-  lMsg := TLabel.Create(Self);
-  lMsg.Parent := FScroll;
-  lMsg.WordWrap := true;
-  lMsg.AutoSize := false;
-  ApplyDialogFont(lMsg.Font, FLayoutSize, 16);
-  lMsg.Font.Color := getBaseColor;
-  lMsg.Left := textLeft;
-  lMsg.Top := msgTop;
-  lMsg.Width := textWidth;
-  lMsg.Caption := AMessage;
-  lMsg.Height := CalcWrappedHeight(lMsg);
+  if ASeparateLines then
+  begin
+    // List-like content (e.g. a flushed console buffer): one row per line,
+    // divided by thin rules indented to the text column so they read as part
+    // of the entry rather than as entry separators.
+    msgBottom := msgTop;
+    lines := TStringList.Create;
+    try
+      lines.Text := AMessage;
+      for i := 0 to lines.Count - 1 do
+      begin
+        if i > 0 then
+        begin
+          sep := TBevel.Create(Self);
+          sep.Parent := FScroll;
+          sep.Shape := bsTopLine;
+          sep.SetBounds(textLeft, msgBottom + (StackPad div 2), textWidth, 2);
+          msgBottom := sep.Top + sep.Height + (StackPad div 2);
+        end;
+        PlaceMessageLabel(lines[i], msgBottom);
+        msgBottom := lMsg.Top + lMsg.Height;
+      end;
+    finally
+      lines.Free;
+    end;
+  end
+  else
+  begin
+    PlaceMessageLabel(AMessage, msgTop);
+    msgBottom := lMsg.Top + lMsg.Height;
+  end;
 
-  FNextTop := Max(lMsg.Top + lMsg.Height, ico.Top + ico.Height) + StackPad;
+  FNextTop := Max(msgBottom, ico.Top + ico.Height) + StackPad;
 
   if FEntryCount > 1 then
     Caption := Format('%s (%d)', [FBaseCaption, FEntryCount]);
@@ -5382,7 +5426,8 @@ end;
 function SlickeNotify(const id, title, message: string;
 const icon: SlickeUXImage = uxmtInformation;
 const dialogsize: TSlickeDialogSize = sdsAuto;
-const ACaption: string = ''): TSlickeStackForm;
+const ACaption: string = '';
+const separateLines: boolean = false): TSlickeStackForm;
 var
   size: TSlickeDialogSize;
   w: TSlickeStackForm;
@@ -5395,7 +5440,7 @@ begin
   w := FindNotifyWindow(id);
   if (w <> nil) and w.Visible then
   begin
-    w.AddEntry(title, message, icon);
+    w.AddEntry(title, message, icon, separateLines);
     w.BringToFront;
     Exit(w);
   end;
@@ -5462,7 +5507,7 @@ begin
   // Wayland: install the drawn title bar before layout so FitToContent
   // measures the scroll area with the bar's spacing already applied.
   w.PrepareOwnTitleBar;
-  w.AddEntry(title, message, icon); // Also sizes and places the window
+  w.AddEntry(title, message, icon, separateLines); // Also sizes and places the window
 
   // Several ids open at once would otherwise sit exactly on top of each
   // other; cascade each new window up-left of the previous ones.

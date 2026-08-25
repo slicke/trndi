@@ -1186,7 +1186,7 @@ begin
     fullMsg := TrimRight(ConsoleBuffer.Text);
     ConsoleBuffer.Clear;
     SlickeNotify('console', RS_LOG_POP_TITLE, fullMsg, uxmtInformation,
-      sdsAuto, RS_LOG_POP_CAPTION);
+      sdsAuto, RS_LOG_POP_CAPTION, true); // One divided row per buffered line
   end;
 
   res^ := JS_NewInt32(ctx, Count);
