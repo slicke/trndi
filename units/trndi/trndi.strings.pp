@@ -199,6 +199,7 @@ RS_SPLASH_LOADING = 'Loading Extension: ';
 RS_SPLASH_LOADING_INIT  = 'Loading Extensions...';
 
 RS_EXTFAILED = 'The following extension file returned an error while loading: %s';
+RS_EXT_DUP_ID = 'The extension file "%s" was not loaded: apart from letter case, its name matches "%s", so both would share the same settings and permissions. Rename one of the files.';
 
 RS_INIT_TRNDI = 'Starting Trndi...';
 RS_INIT_MEDIA = 'Starting Media Backend...';
