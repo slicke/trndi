@@ -1684,7 +1684,11 @@ begin
   // edited file shows as pending. A stored hash is also the only thing the
   // reset button has to clear.
   storedHash := tnative.GetSetting('ext.perm.' + extId + '.hash', '');
-  bExtResetPerms.Enabled := storedHash <> '';
+  // Only the row owning its id may reset: the ext.perm.* keys are shared
+  // with a case-twin's, so resetting from a loser row (ItemEnabled false,
+  // see LoadExtensionList) would clear the winning file's grant.
+  bExtResetPerms.Enabled := (storedHash <> '') and
+    lbExtensions.ItemEnabled[lbExtensions.ItemIndex];
 
   if manifest.DisplayName <> '' then
     lExtName.Caption := manifest.DisplayName
@@ -1856,6 +1860,21 @@ begin
         // been toggled — matches the load-skip default in inc/umain_ext.inc.
         lbExtensions.Checked[addedIdx] :=
           tnative.GetBoolSetting('ext.enabled.' + extId, true);
+      end;
+
+      // A row's checkbox is actionable only when the row owns its
+      // ext.enabled key — i.e. it is the file whose claim of the id the
+      // loader accepts. Any other row folding to a claimed id (a valid
+      // loser twin, or an invalid file whose case-twin is valid, in either
+      // sort order) would silently toggle the winner's flag.
+      // lbExtensionsClickCheck guards on ItemEnabled too, in case a
+      // widgetset toggles a disabled item anyway.
+      for i := 0 to FExtPaths.Count - 1 do
+      begin
+        dupIdx := seenIds.IndexOf(ExtIdFromPath(FExtPaths[i]));
+        if (dupIdx >= 0) and
+          (seenFiles[dupIdx] <> ExtractFileName(FExtPaths[i])) then
+          lbExtensions.ItemEnabled[i] := false;
       end;
     finally
       seenFiles.Free;
@@ -2423,6 +2442,15 @@ begin
   if (FExtPaths = nil) or (idx < 0) or (idx >= FExtPaths.Count) then
     Exit;
   extId := ExtIdFromPath(FExtPaths[idx]);
+  // A case-twin loser row is disabled because its extId — and so this very
+  // key — belongs to the winning file; if the widgetset toggled it anyway,
+  // restore the stored state instead of writing over the winner's flag.
+  if not lbExtensions.ItemEnabled[idx] then
+  begin
+    lbExtensions.Checked[idx] :=
+      tnative.GetBoolSetting('ext.enabled.' + extId, true);
+    Exit;
+  end;
   tnative.SetSetting('ext.enabled.' + extId, lbExtensions.Checked[idx]);
   {$endif}
 end;

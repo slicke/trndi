@@ -600,6 +600,11 @@ public
         buffer can attribute entries to their extension. }
   function ExtensionNameForContext(ctx: JSContext): string;
 
+    {** Stable filename-derived id of the extension owning @code(ctx), or ''
+        for the admin/template context. Unlike the display name this is
+        unique per loaded extension, so it is safe to key registries on. }
+  function ExtensionIdForContext(ctx: JSContext): string;
+
     {** Tear down every per-extension context: cancel JS timers, drain pending
         jobs, free each @code(JSContext) and clear the registry. The shared
         runtime stays alive so a fresh @code(LoadExtensions) can repopulate
@@ -2215,6 +2220,18 @@ begin
         Result := FExtContexts[i]^.ExtId;
       Exit;
     end;
+end;
+
+function TTrndiExtEngine.ExtensionIdForContext(ctx: JSContext): string;
+var
+  i: integer;
+begin
+  Result := '';
+  if (ctx = nil) or (not Assigned(FExtContexts)) then
+    Exit;
+  for i := 0 to FExtContexts.Count - 1 do
+    if (FExtContexts[i] <> nil) and (FExtContexts[i]^.Ctx = ctx) then
+      Exit(FExtContexts[i]^.ExtId);
 end;
 
 procedure TTrndiExtEngine.NotifyUnloadAll;

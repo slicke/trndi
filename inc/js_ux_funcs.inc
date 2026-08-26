@@ -109,7 +109,7 @@ end;
 procedure JSNotify(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
 var
-  id, title, msg: string;
+  id, title, msg, extUid, extName: string;
 begin
   res^ := JS_UNDEFINED;
   if not (argc in [2, 3]) then
@@ -132,18 +132,27 @@ begin
     msg := ctx^.ToUtf8(argv^[1]);
   end;
 
-  // Default the window id (and thereby its caption) to the calling extension,
-  // so each extension stacks its messages in its own window — the same
-  // attribution the shared console buffer uses.
-  if id = '' then
+  // Namespace the registry id with the calling extension's unique filename
+  // id — caller-supplied ids included — so two extensions using the same id
+  // never share a window, and no crafted id can reach a window the extension
+  // does not own (the reserved 'console' window carries no 'ext:' prefix).
+  // The display name is not part of the key (it is neither unique nor
+  // trusted); it only captions the window, mirroring the console buffer's
+  // attribution.
+  extUid := '';
+  extName := '';
+  if TTrndiExtEngine.Instance <> nil then
   begin
-    if Assigned(ConsoleExtNameLookup) then
-      id := ConsoleExtNameLookup(ctx);
-    if id = '' then
-      id := 'extension';
+    extUid := TTrndiExtEngine.Instance.ExtensionIdForContext(ctx);
+    extName := TTrndiExtEngine.Instance.ExtensionNameForContext(ctx);
   end;
+  if extUid = '' then
+    extUid := 'extension';
+  if extName = '' then
+    extName := extUid;
+  id := 'ext:' + extUid + ':' + id;
 
-  SlickeNotify(id, title, msg);
+  SlickeNotify(id, title, msg, uxmtInformation, sdsAuto, extName);
 end;
 
 // Display an HTML message dialog
