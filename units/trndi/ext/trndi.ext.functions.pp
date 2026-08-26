@@ -1030,7 +1030,7 @@ argc: integer; argv: PJSValues; magic: integer);
 var
   msg: pchar;
   i: integer;
-  fullMsg: string;
+  fullMsg, extName, desc: string;
 begin
   // Concatenate all arguments into a single string
   fullMsg := '';
@@ -1049,7 +1049,16 @@ begin
   // Log via external logging function
   if fullMsg = '' then
     fullMsg := RS_LOG_EMPTY_MSG;
-  SlickeLog(sdsAuto, RS_LOG_RECEIVE, RS_LOG_DESC, fullMsg);
+  // Name the sending extension like the buffered console paths do; the
+  // admin/template context has no list entry and keeps the generic text.
+  extName := '';
+  if Assigned(ConsoleExtNameLookup) then
+    extName := ConsoleExtNameLookup(ctx);
+  if extName <> '' then
+    desc := Format(RS_LOG_DESC_FROM, [extName])
+  else
+    desc := RS_LOG_DESC;
+  SlickeLog(sdsAuto, RS_LOG_RECEIVE, desc, fullMsg);
 
   // Return undefined
   res^ := JS_UNDEFINED;

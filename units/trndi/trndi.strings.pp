@@ -281,6 +281,7 @@ RS_UNKNOWN_ERR   = 'Unknown error';
 RS_STACK_ERR_MSG  = 'Error: %s '#13#10'Stack: %s %s';
 RS_LOG_RECEIVE  = 'Output through console.log has been received';
 RS_LOG_DESC      = 'Trndi has captured data sent to console.log in a JavaScript extension';
+RS_LOG_DESC_FROM = 'Trndi has captured data sent to console.log in the "%s" extension';
 RS_LOG_EMPTY_MSG  = '<No message provided>';
 RS_LOG_POP_TITLE  = 'Console output';
 RS_LOG_POP_CAPTION = 'Extension console';
