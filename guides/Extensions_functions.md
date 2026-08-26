@@ -499,8 +499,11 @@ dismisses it with its Close button, Esc, or the title bar.
 
 By default all of an extension's messages stack in one window captioned with
 the extension's name (its `@name` header, falling back to the filename). Pass
-an explicit id as a first argument to group messages
-into separate windows (or share one window between cooperating extensions).
+an explicit id as a first argument to group messages into separate windows.
+Ids are private to the calling extension — Trndi namespaces every id with the
+extension's identity, so another extension using the same id gets its own
+window and no extension can append into a window it does not own (including
+the `console.pop()` window).
 ```javascript
 Trndi.notify("Trending low", "Predicted 3.9 within 30 minutes");
 Trndi.notify("Update", "Now predicting 3.7");          // appends to the same window
