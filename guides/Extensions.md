@@ -17,6 +17,13 @@ Trndi can be built without plugin support aswell; if so, the box is grayed-out:
 To create, or install, a plugin - create/move a ```.js``` file in/to the plugin folder. It will automatically load on the next start of Trndi.
 > If you are using multiple users in Trndi, plugins will run independently, "sandboxed", per user.
 
+The file name (lowercased, without `.js`) is the plugin's identity — it keys
+the enable toggle and the stored permission decision. Two files whose names
+differ only in letter case (`Test.js` and `test.js`, possible on
+case-sensitive file systems) would collide, so Trndi loads only the first
+one in alphabetical order and skips the other with a message; the settings
+list marks the skipped file. Rename one of the files to load both.
+
 # Writing an extension
  See the full reference of functions in [Extensions Functions](Extensions_functions.md)
 

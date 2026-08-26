@@ -329,7 +329,8 @@ end;
 // only the functions allowed by the file's manifest + user-stored grant.
 procedure TfBG.LoadExtensions;
 var
-  exts: TStringList;
+  exts, seenIds, seenFiles: TStringList;
+  dupIdx: integer;
   extFile, extdir, stmp: string;
   fileSrc: RawUtf8;
   fileStream: TFileStream;
@@ -351,6 +352,12 @@ begin
   extdir := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
   ForceDirectoriesUTF8(extdir);
   exts := FindAllFiles(extdir, '*.js', false);
+  // Ids are case-folded file names, so Test.js and test.js collide (possible
+  // on case-sensitive file systems) and would share settings and grant keys.
+  // Sort so "first file wins" is deterministic, not directory-scan order;
+  // uconf's LoadExtensionList sorts the same way to flag the same loser.
+  exts.CaseSensitive := true;
+  exts.Sort;
 
   if Assigned(fSplash) then
     fSplash.incProgress(79, 'Initializing extensions backend..');
@@ -364,6 +371,8 @@ begin
   end;
 
   nativeRef := TrndiNative.Create;
+  seenIds := TStringList.Create;
+  seenFiles := TStringList.Create;
   try
     if Assigned(fSplash) then
       fSplash.incProgress(80, 'Loading extensions...');
@@ -407,6 +416,19 @@ begin
       if not nativeRef.GetBoolSetting('ext.enabled.' + extId, true) then
         Continue;
 
+      // Refuse a second file mapping to an already-claimed id (a case-twin
+      // like Test.js next to test.js). Loading both would let them fight over
+      // the shared grant hash, re-prompting for permissions on every launch.
+      dupIdx := seenIds.IndexOf(extId);
+      if dupIdx >= 0 then
+      begin
+        ShowMessage(Format(RS_EXT_DUP_ID,
+          [ExtractFileName(extFile), seenFiles[dupIdx]]));
+        Continue;
+      end;
+      seenIds.Add(extId);
+      seenFiles.Add(ExtractFileName(extFile));
+
       // Ask the user (or load remembered decision) for the promptable groups.
       granted := GrantPermissionsFor(extId, extFile, hash, manifest, nativeRef);
       if granted = [] then
@@ -449,6 +471,8 @@ begin
         {$endif}
     end;
   finally
+    seenFiles.Free;
+    seenIds.Free;
     nativeRef.Free;
     exts.Free;
   end;

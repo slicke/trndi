@@ -1086,6 +1086,9 @@ RS_EXT_CHANGED = ' (changed since approval — Trndi will ask again)';
   at startup, so the list must not present them as ready to run. }
 RS_EXT_INVALID_MARK = '⚠ ';
 RS_EXT_INVALID = 'Invalid manifest, will not load: ';
+{ Appended to entries whose file name folds to the same extension id as an
+  earlier file (case-twins like Test.js/test.js); the loader skips them. }
+RS_EXT_DUP_MARK = ' (name clashes with %s — will not load)';
 
 { Trend window options. These live here rather than in rbTrendWindow.Items in
   the .lfm because TStrings items are never extracted for translation. Order is
@@ -1787,10 +1790,10 @@ end;
 procedure TfConf.LoadExtensionList(const ExtensionsPath: string);
 {$ifdef TrndiExt}
 var
-  extFiles, scriptBuf: TStringList;
+  extFiles, scriptBuf, seenIds, seenFiles: TStringList;
   scriptPath, displayName, extId: string;
   manifest: TExtManifest;
-  i, addedIdx: integer;
+  i, addedIdx, dupIdx: integer;
 {$endif}
 begin
   {$ifdef TrndiExt}
@@ -1802,7 +1805,13 @@ begin
 
   extFiles := FindAllFiles(ExtensionsPath, '*.js', false);
   try
+    // Same deterministic order as LoadExtensions in umain_ext.inc, so the
+    // case-twin id check below flags the same file the loader will skip.
+    extFiles.CaseSensitive := true;
+    extFiles.Sort;
     scriptBuf := TStringList.Create;
+    seenIds := TStringList.Create;
+    seenFiles := TStringList.Create;
     try
       for i := 0 to extFiles.Count - 1 do
       begin
@@ -1820,19 +1829,37 @@ begin
           displayName := manifest.DisplayName
         else
           displayName := ExtractFileName(scriptPath);
+        extId := ExtIdFromPath(scriptPath);
         // Flag what the loader will refuse; the checkbox only reflects the
         // user's own enable flag and would otherwise look ready to run.
         if not manifest.IsValid then
-          displayName := RS_EXT_INVALID_MARK + displayName;
+          displayName := RS_EXT_INVALID_MARK + displayName
+        else
+        begin
+          // Ids are case-folded file names, so Test.js and test.js collide.
+          // The loader accepts only the first (in this sorted order) — mark
+          // the losing twin. Invalid files never claim an id, mirroring the
+          // loader, which skips them before its duplicate check.
+          dupIdx := seenIds.IndexOf(extId);
+          if dupIdx >= 0 then
+            displayName := RS_EXT_INVALID_MARK + displayName +
+              Format(RS_EXT_DUP_MARK, [seenFiles[dupIdx]])
+          else
+          begin
+            seenIds.Add(extId);
+            seenFiles.Add(ExtractFileName(scriptPath));
+          end;
+        end;
         addedIdx := lbExtensions.Items.Add(displayName);
         FExtPaths.Add(scriptPath);
-        extId := ExtIdFromPath(scriptPath);
         // Default true so the box is checked for extensions that have never
         // been toggled — matches the load-skip default in inc/umain_ext.inc.
         lbExtensions.Checked[addedIdx] :=
           tnative.GetBoolSetting('ext.enabled.' + extId, true);
       end;
     finally
+      seenFiles.Free;
+      seenIds.Free;
       scriptBuf.Free;
     end;
   finally
