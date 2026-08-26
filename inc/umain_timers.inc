@@ -556,6 +556,8 @@ var
   resizeWarnTint: TColor;
   resizeWarnAlpha: byte;
   resizeWarnLayout: TWarnLayout;
+  dotProbe: TDotControl;
+  i: integer;
 begin
   tResize.Enabled := false;
 
@@ -619,8 +621,22 @@ begin
   // Collapse expanded (value-text) dots back to markers after a relayout.
   // DOT_FRESH counts as a marker too — with a 1-dot window TrendDots[1] is the
   // latest dot and may carry the fresh ring rather than the plain dot.
-  if (Length(TrendDots) > 1) and (TrendDots[1].Caption <> DOT_GRAPH)
-    and (TrendDots[1].Caption <> DOT_FRESH) then
+  // Probe the first slot holding a real reading rather than TrendDots[1]
+  // blindly: a leading DOT_GAP marker (or an empty slot's stale caption) is
+  // neither marker nor value text, and reading it as "expanded" made every
+  // relayout toggle the real dots into their value text — and made the
+  // click-collapse path re-expand them immediately.
+  dotProbe := nil;
+  if Length(TrendDots) > 1 then
+    for i := 1 to High(TrendDots) do
+      if Assigned(TrendDots[i]) and (TrendDots[i].Hint <> '') and
+        (TrendDots[i].Caption <> DOT_GAP) then
+      begin
+        dotProbe := TrendDots[i];
+        break;
+      end;
+  if Assigned(dotProbe) and (dotProbe.Caption <> DOT_GRAPH) and
+    (dotProbe.Caption <> DOT_FRESH) then
     actOnTrend(@ExpandDot);
 end;
 
