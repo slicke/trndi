@@ -540,14 +540,16 @@ begin
   AIndex := -1;
   for i := 1 to Min(High(TrendSlots), High(FTrendLayout)) do
     if (i <= High(FTrendVisible)) and FTrendVisible[i]
-      and PtInRect(FTrendLayout[i], P) then
+      // Types-qualified: MacOSAll's QuickDraw PtInRect (args swapped)
+      // shadows the RTL one on Darwin, like Point/Rect elsewhere in here.
+      and Types.PtInRect(FTrendLayout[i], P) then
     begin
       AIndex := i;
       Exit(@TrendSlots[i]);
     end;
   for i := 0 to Min(High(PredictionSlots), High(FPredictLayout)) do
     if (i <= High(FPredictVisible)) and FPredictVisible[i]
-      and PtInRect(FPredictLayout[i], P) then
+      and Types.PtInRect(FPredictLayout[i], P) then
     begin
       AIsPredict := true;
       AIndex := i;
