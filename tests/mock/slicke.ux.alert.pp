@@ -42,6 +42,7 @@ const
   mrSlickeCustom = 110;
   mrSlickeNever = 111;
   sSuccTitle  = 'Information';
+  sErrTitle   = 'Error';
   uxclWhite = $00FFFFFF;
   uxclRed = $000000FF;
   uxclLightBlue = $00E0FFFF;

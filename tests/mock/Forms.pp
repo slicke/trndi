@@ -123,6 +123,7 @@ type
     FMainFormOnTaskBar: Boolean;
     FShowMainForm: Boolean;
     FHandle: PtrUInt;
+    FTerminated: Boolean;
   public
     constructor Create(AOwner: TComponent = nil); virtual;
     property ExeName: string read FExeName write FExeName;
@@ -135,6 +136,7 @@ type
     property MainFormOnTaskBar: Boolean read FMainFormOnTaskBar write FMainFormOnTaskBar;
     property ShowMainForm: Boolean read FShowMainForm write FShowMainForm;
     property Handle: PtrUInt read FHandle write FHandle;
+    property Terminated: Boolean read FTerminated;
     procedure ProcessMessages; virtual;
     procedure Terminate; virtual;
     procedure BringToFront; virtual;
@@ -167,7 +169,7 @@ end;
 
 procedure TApplication.Terminate;
 begin
-  // no-op in test environment
+  FTerminated := True;
 end;
 
 procedure TApplication.BringToFront;
