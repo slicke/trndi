@@ -38,11 +38,15 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-27: Trend/prediction dot state moved into a proper model
  *   (TDotKind/TTrendSlot, TrendSlots/PredictionSlots, FDotsExpanded). The
- *   paint boxes are views only; their Tag now holds the slot index. The old
- *   encoding — sentinel control chars in Caption, the value as a locale
+ *   old encoding — sentinel control chars in Caption, the value as a locale
  *   string in Hint, the time as H*100+M in Tag, the range color in
- *   Font.Color, FPredictionLow — is retired. Hint is still written as the
- *   hover tooltip but is never parsed back.
+ *   Font.Color, FPredictionLow — is retired.
+ * - 2026-08-27 (second pass): The per-dot TPaintBox controls, the lDot1..10
+ *   aliases, TTrendProc/actOnTrend and the control-based layout helpers are
+ *   gone. The whole trend renders on one client-sized TTrendSurface that is
+ *   mouse-transparent outside the dots (CM_HITTEST); UpdateTrendDots computes
+ *   the layout (FTrendLayout/FPredictLayout) in one pass and interaction goes
+ *   through DotHitAt. The surface's Hint carries the hover tooltip.
  * - 2026-08-27: ShutdownBackgroundThreads no longer sets FreeOnTerminate on
  *   a worker that outlived its shutdown wait: the RTL latches that flag
  *   before publishing Finished, so the write could miss the latch. The
@@ -78,7 +82,7 @@ unit umain;
 interface
 
 uses
-trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
+trndi.strings, LCLTranslator, Types, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
@@ -244,7 +248,22 @@ protected
 public
   constructor Create(AOwner: TfBG; ShowUpToDateMessage: boolean);
 end;
-TDotControl = TPaintBox;
+  // Single paint surface for the whole trend: every history/prediction dot is
+  // drawn onto this one client-sized control instead of one TPaintBox per dot.
+  // It sits above the labels (so the trace overlays the digits, as the per-dot
+  // controls did) but is transparent to the mouse everywhere except over a
+  // dot: LCL's ControlAtPos consults CM_HITTEST per control, so returning
+  // "miss" outside the dots leaves every label/form handler (window drag on
+  // lVal, the explain-clicks, the popup menu) untouched.
+TSurfaceHitTest = function(const P: TPoint): boolean of object;
+TTrendSurface = class(TPaintBox)
+private
+  FOnHitTest: TSurfaceHitTest;
+protected
+  procedure CMHitTest(var Message: TCMHitTest); message CM_HITTEST;
+public
+  property OnHitTest: TSurfaceHitTest read FOnHitTest write FOnHitTest;
+end;
   // Severity of an active warning. Drives panel layout, colors, and opacity.
   // wsInfo:     soft prediction (look-ahead, > 3 min)        — slim amber banner
   // wsSoon:     imminent prediction (≤ 3 min)                — slim orange banner with pulse
@@ -264,10 +283,6 @@ TWarnLayout = (wlBanner, wlStatusCard);
   // stLate:    past STALE_LATE_MINUTES      — amber
   // stLost:    past STALE_LOST_MINUTES      — red, "connection lost"
 TStaleStage = (stDelayed, stLate, stLost);
-  // Procedures which are applied to the trend drawing
-TTrendProc = procedure(l: TDotControl; c, ix: integer) of object;
-TTrendProcLoop = procedure(l: TDotControl; c, ix: integer;
-  ls: array of TDotControl) of object;
 TrndiPos = (tpoCenter = 0, tpoBottomLeft = 1, tpoBottomRight = 2,
   tpoCustom = 3, tpoTopRight = 4);
 TPONames = array[TrndiPos] of string;
@@ -371,13 +386,13 @@ TDotInfo = record
   Visible: boolean;
 end;
 
-  // What a trend/prediction slot holds. The paint boxes in TrendDots and
-  // PredictionDots are views only; everything DotPaint, the popup menu, the
-  // click handlers and the JS bridge need to know about a slot lives in a
-  // TTrendSlot, found via the control's Tag (see TfBG.DotSlot). Replaces the
-  // old encoding that smeared this state over control properties: sentinel
-  // control chars in Caption, the value as a locale string in Hint, the time
-  // as H*100+M in Tag and the range color in Font.Color.
+  // What a trend/prediction slot holds. Everything the trend surface's paint,
+  // the popup menu, the click handlers and the JS bridge need to know about a
+  // slot lives in a TTrendSlot; where it renders is the layout pass's business
+  // (FTrendLayout/FPredictLayout). Replaces the old encoding that smeared this
+  // state over per-dot control properties: sentinel control chars in Caption,
+  // the value as a locale string in Hint, the time as H*100+M in Tag and the
+  // range color in Font.Color.
 TDotKind = (
   dkEmpty,   // no reading in this slot — nothing is drawn
   dkReading, // a real reading (solid disc; ringed while fresh)
@@ -421,15 +436,6 @@ TfBG = class(TForm)
   pnTouchMenu: TPanel;
   pnWarnlast: TLabel;
   lRef: TLabel;
-  lDot10: TDotControl;
-  lDot2: TDotControl;
-  lDot3: TDotControl;
-  lDot4: TDotControl;
-  lDot5: TDotControl;
-  lDot6: TDotControl;
-  lDot7: TDotControl;
-  lDot8: TDotControl;
-  lDot9: TDotControl;
   lMissing: TLabel;
   lInternet: TLabel;
   lTir: TLabel;
@@ -447,7 +453,6 @@ TfBG = class(TForm)
   miADots: TMenuItem;
   miATouch: TMenuItem;
   miAdvanced: TMenuItem;
-  lDot1: TDotControl;
   miSplit6: TMenuItem;
   miSplit5: TMenuItem;
   miHistory: TMenuItem;
@@ -500,11 +505,6 @@ TfBG = class(TForm)
   miAlertSnoozeOff: TMenuItem;
   procedure APIReceiver(const msg: string; etype: TrndiAPIMsg);
   procedure APICredentialsChanged(const newCreds: string);
-    {** Recompute and apply layout offsets for all graph elements.
-      This adjusts trend dots, labels and other elements when the UI size or
-      dot-count changes to keep everything visually aligned.
-     }
-  procedure AdjustGraph;
   procedure bSettingsClick({%H-}Sender: TObject);
   procedure pnTouchButtonClick({%H-}Sender: TObject);
   procedure pnTouchButtonMouseDown({%H-}Sender: TObject; {%H-}Button: TMouseButton;
@@ -526,7 +526,6 @@ TfBG = class(TForm)
    }
   procedure FormDestroy({%H-}Sender: TObject);
   procedure FormKeyPress({%H-}Sender: TObject; var Key: char);
-  procedure DotPaint({%H-}Sender: TObject);
   procedure lDiffClick({%H-}Sender: TObject);
   procedure lPredictClick({%H-}Sender: TObject);
   procedure miBasalRateClick({%H-}Sender: TObject);
@@ -572,7 +571,6 @@ TfBG = class(TForm)
   procedure lAgoClick({%H-}Sender: TObject);
   procedure lArrowClick({%H-}Sender: TObject);
   procedure lDiffDblClick({%H-}Sender: TObject);
-  procedure lDot7DblClick({%H-}Sender: TObject);
   procedure lgMainClick({%H-}Sender: TObject);
   procedure lTirClick({%H-}Sender: TObject);
   procedure lValClick({%H-}Sender: TObject);
@@ -598,8 +596,6 @@ TfBG = class(TForm)
   procedure ShowAboutDialog({%H-}Sender: TObject);
   procedure CheckForUpdatesMenuClick({%H-}Sender: TObject);
   {$endif}
-  procedure onTrendClick({%H-}Sender: TObject);
-  procedure PredictionDotClick({%H-}Sender: TObject);
   procedure pnOffReadingPaint({%H-}Sender: TObject);
   procedure pmSettingsMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
     var AWidth, AHeight: integer);
@@ -764,18 +760,29 @@ private
 
   FReadingsLock: TRTLCriticalSection; // Protect cached readings shared with web server thread
 
-    // Dynamic array; allocated 1-based (index 0 unused). Size = ACTIVE_DOTS+1.
-  TrendDots: array of TDotControl;
-    // Slot data behind TrendDots, same 1-based indexing. Each dot's Tag holds
-    // its index here, so DotSlot can map a control back to its data.
+    // History-slot data. Dynamic array; allocated 1-based (index 0 unused),
+    // size ACTIVE_DOTS+1. TrendSlots[ACTIVE_DOTS] is the newest slot.
   TrendSlots: array of TTrendSlot;
-    // Future-prediction markers (drawn as X) shown to the right of the trend
-    // when dot mode is enabled. 0-based, fixed length PREDICTION_DOT_COUNT.
-  PredictionDots: array of TDotControl;
-    // Slot data behind PredictionDots, same 0-based indexing. A prediction
-    // dot's Tag is -(index + 1), so history and prediction slots stay
-    // distinguishable through the one Tag field.
+    // Forecast-slot data (drawn as ×) shown to the right of the trend when
+    // dot mode is enabled. 0-based, fixed length PREDICTION_DOT_COUNT.
   PredictionSlots: array of TTrendSlot;
+    // The one control the whole trend paints on (see TTrendSurface).
+  FTrendSurface: TTrendSurface;
+    // Where each slot renders, recomputed by UpdateTrendDots: the marker's
+    // square box (or the expanded value-text box) in surface/client
+    // coordinates, and whether the slot draws at all (data present + narrow-
+    // window stride). Parallel to TrendSlots (1-based) / PredictionSlots.
+  FTrendLayout: array of TRect;
+  FTrendVisible: array of boolean;
+  FPredictLayout: array of TRect;
+  FPredictVisible: array of boolean;
+    // Uniform history-dot diameter of the last layout pass; FormPaint anchors
+    // the threshold lines against it.
+  FTrendDotDiameter: integer;
+    // Which dot the last surface mouse-press landed on, so release-on-the-
+    // same-dot can be required before acting (mirrors per-control Click).
+  FDownIsPredict: boolean;
+  FDownDotIx: integer;
     // All reading dots expand together into their value text on click; this is
     // that shared state. Relayouts collapse it (see tResizeTimer).
   FDotsExpanded: boolean;
@@ -821,7 +828,6 @@ private
   procedure OnNoticeClick;
   procedure DeferredPostFetchResize(Data: PtrInt);
 
-  function dotsInView: integer;
   function setColorMode: boolean;
   function setColorMode(bg: tColor; const nocolor: boolean = false): boolean;
   {** True while the night-dim window (ux.night_dim + from/to hours) covers the
@@ -866,7 +872,7 @@ private
   function updateReading(boot: boolean = false): boolean;
   {** Map incoming readings to the visual trend slots. This function sorts and
       anchors readings to a fixed grid (5-minute intervals) and updates the
-      state of `TrendDots` accordingly.
+      state of `TrendSlots` accordingly.
       @param(Readings The array of BGReading to map.)
       @returns(True when the slots were actually re-placed; False when the call
         short-circuited because neither the readings nor the wall-clock slot
@@ -887,25 +893,27 @@ private
         readings in `bgs`.
       Returns empty string when no readings are available. */}
   function BGMean(const UnitPref: BGUnit = BGUnit.mmol; const NumReadings: integer = NUM_DOTS): string;
-  procedure actOnTrend(proc: TTrendProc);
-  procedure actOnTrend(proc: TTrendProcLoop);
-  procedure setDotWidth(l: TDotControl; c, ix: integer; {%H-}ls: array of TDotControl);
-  procedure HideDot(l: TDotControl; {%H-}c, {%H-}ix: integer);
-  procedure showDot(l: TDotControl; {%H-}c, ix: integer);
-  procedure ResizeDot(l: TDotControl; {%H-}c, ix: integer);
-  procedure initDot(l: TDotControl; c, ix: integer);
-  procedure ExpandDot(l: TDotControl; c, ix: integer);
-  {** The slot data behind a trend or prediction dot, via the control's Tag
-      (positive = TrendSlots index, negative = PredictionSlots). nil when the
-      Tag maps to no live slot. The pointer aims into a dynamic array — use it
-      transiently and never across CreateTrendDots/FreeTrendDotControls. }
-  function DotSlot(l: TDotControl): PTrendSlot;
-  procedure ApplyTrendDotCenterShift;
-  procedure ApplyTrendDotTopOffset(const Offset: integer);
-  procedure RepaintVisibleTrendDots;
-  procedure CreateTrendDots;
-  procedure FreeTrendDotControls;
+  {** (Re)allocate TrendSlots for the current ACTIVE_DOTS and PredictionSlots
+      for PREDICTION_DOT_COUNT, and make sure the trend surface exists. Slot
+      data is cleared; PlaceTrendDots refills it. }
+  procedure InitTrendModel;
   procedure ApplyTrendDotCount(newCount: integer);
+  {** Slot data of the dot whose on-screen box contains P (surface/client
+      coords), or nil. AIsPredict/AIndex report which array and index matched.
+      The pointer aims into a dynamic array — use it transiently and never
+      across InitTrendModel. }
+  function DotHitAt(const P: TPoint; out AIsPredict: boolean;
+    out AIndex: integer): PTrendSlot;
+  {** Hit-test callback for the trend surface's CM_HITTEST: true only over a
+      visible dot, so the surface stays mouse-transparent elsewhere. }
+  function TrendSurfaceHit(const P: TPoint): boolean;
+  procedure TrendSurfacePaint({%H-}Sender: TObject);
+  procedure TrendSurfaceMouseDown({%H-}Sender: TObject; {%H-}Button: TMouseButton;
+    {%H-}Shift: TShiftState; X, Y: integer);
+  procedure TrendSurfaceMouseUp({%H-}Sender: TObject; Button: TMouseButton;
+    {%H-}Shift: TShiftState; X, Y: integer);
+  procedure TrendSurfaceMouseMove({%H-}Sender: TObject; {%H-}Shift: TShiftState;
+    X, Y: integer);
   {** Mark empty trend slots that provably sit between two real readings as
       sensor gaps (dkGap). Interior emptiness always qualifies; a leading run
       (the oldest slots) qualifies when AHasOlder reports a reading beyond the
@@ -918,8 +926,8 @@ private
   procedure MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double;
     AAnchor: TDateTime);
     {** Ring color/width marking the freshest reading's dot, per dot-coloring
-        mode. Shared by DotPaint and the settings-dialog preview so the two
-        cannot drift apart. }
+        mode. Shared by the trend surface's paint and the settings-dialog
+        preview so the two cannot drift apart. }
   procedure FreshDotRing(AMode: TDotColorMode; ADotColor, ABackground: TColor;
     ADiameter: integer; out ARingColor: TColor; out ARingWidth: integer);
     {** Paint the sample strip under the settings dialog's dot-coloring options:
@@ -1091,11 +1099,6 @@ private
   function WebServerActive: boolean;
   procedure tWebServerStartTimer(Sender: TObject);
 
-  {** Refresh trend-related UI elements like labels and trend markers.
-      Called after readings are processed to ensure the trend visuals match
-      the calculated BGTrend values.
-   }
-  procedure UpdateTrendElements;
   {** Recalculate left of lTir when next progress bar is visible }
   procedure nextProgressChange;
   {** Refresh labels and menu captions that display API-derived thresholds
@@ -1111,9 +1114,11 @@ private
       "Setup" label and Settings button to the current window size.
    }
   procedure LayoutSetupScreen;
-  {** Iterate over all trend dots and update their position and visibility
-      from their `TrendSlots[]` data. This only adjusts visuals and doesn't
-      fetch data from backends.
+  {** Recompute every dot's on-screen box from the slot model and the current
+      window size — column grid, diameter, value-Y, the DOT_ADJUST offset and
+      the keep-in-view correction — into FTrendLayout/FPredictLayout, then
+      repaint the trend surface. The whole layout pipeline in one pass; only
+      adjusts visuals and doesn't fetch data from backends.
    }
   procedure UpdateTrendDots;
   {** Scale a TLabel font size to fit within its bounds using a binary search.
@@ -1148,8 +1153,7 @@ private
     CurrentTime: TDateTime);
   procedure ProcessTimeIntervals(const SortedReadings: array of BGReading;
     CurrentTime: TDateTime);
-  {** Update a specific UI trend label (slot) to reflect a BGReading.
-      Sets hint, caption, tag and positions the label according to its value.
+  {** Write a BGReading into its trend slot (kind, value, text, time, color).
       @param(SlotIndex Index of the visual slot to update (0=rightmost/most recent)).
       @param(Reading The BGReading to display.)
       @returns(True when the slot was successfully updated.)
@@ -1187,18 +1191,11 @@ private
   {** True when predictions should render as hollow dots on the main trend
       (predictions enabled AND the dot view selected) rather than as text. }
   function PredictionDotsActive: boolean;
-  {** Create the fixed set of hollow prediction-dot paint boxes (once). }
-  procedure CreatePredictionDots;
-  {** Size and horizontally position the prediction dots in the trailing
-      trend slots. }
-  procedure LayoutPredictionDots;
-  {** Re-apply vertical positions to visible prediction dots from their cached
-      values (mirrors UpdateTrendDots for the history dots). }
-  procedure UpdatePredictionDotHeights;
-  {** Hide all prediction dots (used when the dot view is off/unavailable). }
+  {** Take the forecast marks off the trend by clearing the prediction slots
+      (used when data goes stale or predictions are disabled). }
   procedure HidePredictionDots;
-  {** Populate the prediction dots from the 5/10/15-minute matches in a
-      prediction result set and lay them out on the trend. }
+  {** Populate the prediction slots from the 5/10/15-minute matches in a
+      prediction result set and relayout the trend. }
   procedure RenderPredictionDots(const bgr: BGResults;
     Closest5, Closest10, Closest15: integer);
   {$ifdef DARWIN}

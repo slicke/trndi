@@ -41,38 +41,10 @@
 (* MODIFICATION NOTICE (2026-08-18): The UI-state cache seeds FLastTirHint in
    place of the removed FLastTirColor, following ShouldUpdateUI's switch to the
    time-in-range hint. *)
+(* MODIFICATION NOTICE (2026-08-27): actOnTrend and the per-dot init are gone
+   with the per-dot controls; FormCreate now calls InitTrendModel, which
+   allocates the slot arrays and the single trend paint surface. *)
 // Main form helper functions for trend dots and UI initialization
-
-// Apply a procedure to all active trend dots; also provides count and index
-procedure TfBG.actOnTrend(proc: TTrendProcLoop);
-var
-  ix: integer;
-begin
-  if Length(TrendDots) <= ACTIVE_DOTS then Exit;
-  for ix := 1 to ACTIVE_DOTS do
-  begin
-    proc(TrendDots[ix], ACTIVE_DOTS, ix, TrendDots);
-    // Skip Repaint when the dot isn't on screen — early-init paths (e.g.
-    // applying initDot before the first reading) leave dots hidden, so the
-    // paint would be discarded anyway.
-    if TrendDots[ix].Visible then
-      TrendDots[ix].Repaint;
-  end;
-end;
-
-// Apply a procedure to all active trend dots
-procedure TfBG.actOnTrend(proc: TTrendProc);
-var
-  ix: integer;
-begin
-  if Length(TrendDots) <= ACTIVE_DOTS then Exit;
-  for ix := 1 to ACTIVE_DOTS do
-  begin
-    proc(TrendDots[ix], ACTIVE_DOTS, ix);
-    if TrendDots[ix].Visible then
-      TrendDots[ix].Repaint;
-  end;
-end;
 
 procedure tfBG.SetLang;
 var
@@ -235,13 +207,13 @@ begin
 
   tir_icon := native.GetBoolSetting('range.tir_icon', false);
 
-  // Read dot count before CreateTrendDots so the right number of slots is allocated
+  // Read dot count before InitTrendModel so the right number of slots is allocated
   ACTIVE_DOTS := native.GetIntSetting('ux.dot_count', NUM_DOTS);
   if ACTIVE_DOTS < 1 then ACTIVE_DOTS := 1;
   if ACTIVE_DOTS > MAX_DOT_COUNT then ACTIVE_DOTS := MAX_DOT_COUNT;
 
-  // Create trend dots dynamically (TLabel on Darwin, TPaintBox elsewhere)
-  CreateTrendDots;
+  // Allocate the trend slot model and its paint surface
+  InitTrendModel;
 
   // Check touch screen
   HasTouch := native.HasTouchScreen(HasMultiTouch);
@@ -249,8 +221,6 @@ begin
     touchHelper := TTouchDetector.Create;
 
   miATouch.Checked := hastouch;
-
-  actOnTrend(@initDot);
 
   //--- Colors
   bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
@@ -894,8 +864,7 @@ begin
           // InitializeAPI will scale this up by the reporting interval below.
           if MAX_RESULT < ACTIVE_DOTS then
             MAX_RESULT := ACTIVE_DOTS;
-          FreeTrendDotControls;
-          CreateTrendDots;
+          InitTrendModel;
 
           fSplash.Show;
         end

@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: FormPaint anchors the threshold lines on the layout pass's
+ *   FTrendDotDiameter instead of probing the removed per-dot controls.
  * - 2026-08-21: The shutdown screen's accent gradients call Classes.Rect
  *   explicitly - on Darwin, MacOSAll's QuickDraw Rect type shadows the RTL
  *   function, which broke the macOS build.
@@ -566,11 +568,9 @@ begin
   cnv.FillRect(0, 0, Self.ClientWidth, Self.ClientHeight);
   {$endif}
 
-  if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) and
-    Assigned(TrendDots[1].Parent) then
-    clientH := TrendDots[1].Parent.ClientHeight
-  else
-    clientH := Self.ClientHeight;
+  // The dots render on the client-sized trend surface, so the form's own
+  // client height is the value axis they share.
+  clientH := Self.ClientHeight;
 
   // High contrast drops the range overlay, and the range overlay can be turned
   // off entirely -- but the guide lines are their own menu item, so they still
@@ -582,11 +582,9 @@ begin
     Exit;
   end;
 
-  dotHeight := 0;
-  if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) then
-    // Drawn dots are sized as a square in ResizeDot; the control's Height
-    // *is* the diameter, so we can read it directly.
-    dotHeight := Max(TrendDots[1].Height, TrendDots[1].Font.Size);
+  // The uniform history-dot diameter of the last layout pass; 0 until the
+  // first pass has run.
+  dotHeight := FTrendDotDiameter;
 
   // ValueToY returns the dot *center*; threshold lines and band edges need to
   // sit at the dot bottom so a dot whose value equals the threshold rests

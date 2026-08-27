@@ -39,7 +39,9 @@
  * - 2026-08-27: UpdateTrendDots reads slot values from the TTrendSlot model
  *   instead of parsing them back out of the dots' Hint strings, and the
  *   resize pass clears the shared FDotsExpanded flag up front instead of
- *   probing captions to collapse expanded dots afterwards.
+ *   probing captions to collapse expanded dots afterwards. Second pass, same
+ *   date: UpdateTrendDots and UpdateTrendElements moved out of this file —
+ *   the resize pass now calls the single-surface layout in umain_dots once.
  * - 2026-08-27: tBootFetchTimer routes through updateReading(true) instead of
  *   calling RequestAsyncFetch directly, so the boot fetch shares the same
  *   wrapper semantics as every other fetch trigger.
@@ -592,14 +594,9 @@ begin
     Exit;
   end;
 
-  actOnTrend(@HideDot);
-
-  // A relayout renders markers: drop the shared expanded-value state up front
-  // so ResizeDot sizes every dot as a circle in the passes below, instead of
-  // sizing them as text first and collapsing them again afterwards.
+  // A relayout renders markers: drop the shared expanded-value state so the
+  // layout pass sizes every dot as a circle again.
   FDotsExpanded := false;
-
-  UpdateTrendElements;
 
   if not Assigned(api) then
   begin
@@ -622,18 +619,8 @@ begin
   ResizeUIElements;
 
   UpdateTrendDots;
-  actOnTrend(@showDot);
-
-  AdjustGraph;
 
   fixWarningPanel;
-end;
-
-procedure TfBG.UpdateTrendElements;
-begin
-  actOnTrend(@ResizeDot);
-  actOnTrend(@SetDotWidth);
-  LayoutPredictionDots;
 end;
 
 procedure TfBG.UpdateApiInformation;
@@ -815,46 +802,6 @@ begin
   // Keep the fullscreen clock's band and font in step with the labels that
   // were just re-laid out (it mirrors lAgo's font).
   UpdateClockOverlay(true);
-end;
-
-procedure TfBG.UpdateTrendDots;
-var
-  Dot: TDotControl;
-  ix: integer;
-begin
-  // Indexed rather than a for-in: showing a dot needs its slot number so the
-  // narrow-window clamp can decide whether this slot is one of the rendered
-  // ones. TrendDots is 1-based with index 0 left nil.
-  for ix := Low(TrendDots) to High(TrendDots) do
-  begin
-    Dot := TrendDots[ix];
-    if not Assigned(Dot) then Continue;
-
-    if (ix < Length(TrendSlots)) and (TrendSlots[ix].kind <> dkEmpty) then
-    begin
-      // Slot values are stored in mmol — SetPointHeight's unit.
-      if Assigned(Dot.Parent) then
-        SetPointHeight(Dot, TrendSlots[ix].value, Dot.Parent.ClientHeight)
-      else
-        SetPointHeight(Dot, TrendSlots[ix].value, fBG.ClientHeight);
-
-      // Position the dot regardless — only its visibility is clamped, so
-      // widening the window brings it back already in the right place.
-      Dot.Visible := DotSlotVisible(ix);
-    end
-    else
-      Dot.Visible := false;
-  end;
-
-  // Keep prediction dots positioned alongside the history dots, or hidden when
-  // the dot view is off so they never linger after the mode is disabled.
-  if PredictionDotsActive then
-    UpdatePredictionDotHeights
-  else
-    HidePredictionDots;
-
-  if pnWarning.Visible then
-    pnWarning.Refresh;
 end;
 
 procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;

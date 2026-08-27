@@ -75,7 +75,11 @@
    clear in ProcessTimeIntervals and RenderPredictionDots now write the
    TTrendSlot model (TrendSlots/PredictionSlots) instead of encoding state
    into the dots' Caption/Hint/Tag/Font.Color; slot values are stored in
-   mmol, and MarkTrendGaps' older-reading anchor is passed in mmol too. *)
+   mmol, and MarkTrendGaps' older-reading anchor is passed in mmol too.
+   Second pass, same date: the per-dot controls are gone entirely — the
+   placement pipeline writes slots only, HandleLatestReadingFreshness no
+   longer touches a control, and ApplyFetchedReadings relays out via
+   UpdateTrendDots (the single-surface layout pass in umain_dots). *)
 (* Glucose update pipeline, data fetching, UI state and color logic for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -974,43 +978,31 @@ procedure TfBG.RenderPredictionDots(const bgr: BGResults;
   Closest5, Closest10, Closest15: integer);
 
   procedure ApplyDot(Slot, Idx: integer);
-  var
-    l: TDotControl;
   begin
-    if (Slot < 0) or (Slot > High(PredictionDots))
-      or (Slot > High(PredictionSlots)) then
-      Exit;
-    l := PredictionDots[Slot];
-    if not Assigned(l) then
+    if (Slot < 0) or (Slot > High(PredictionSlots)) then
       Exit;
 
     if (Idx >= 0) and (Idx <= High(bgr)) then
-    begin
       with PredictionSlots[Slot] do
       begin
         kind := dkPredict;
         value := bgr[Idx].convert(mmol);
+        // Hover shows this via the surface's tooltip, like the history dots;
+        // clicking still shows the confidence.
         text := bgr[Idx].format(un, BG_MSG_SHORT, BGPrimary);
         // The predicted time, so the right-click menu can show it.
         time := bgr[Idx].date;
         ident := DetermineColorForReading(bgr[Idx]);
-        // A forecast at or below the low threshold gets full visual weight in
-        // DotPaint (no confidence/horizon fade), so an incoming low stands out.
+        // A forecast at or below the low threshold gets full visual weight
+        // when painted (no confidence/horizon fade), so an incoming low
+        // stands out.
         lowPredict := Assigned(api) and (bgr[Idx].val <= api.cgmLo);
-      end;
-      // Hover shows the predicted value, like the history dots' tooltips;
-      // clicking still shows the confidence. Suppressed in privacy mode.
-      l.Hint := PredictionSlots[Slot].text;
-      l.ShowHint := not privacyMode;
-      l.Visible := true;
-    end
+      end
     else
     begin
       PredictionSlots[Slot].kind := dkEmpty;
       PredictionSlots[Slot].text := '';
       PredictionSlots[Slot].lowPredict := false;
-      l.Hint := '';
-      l.Visible := false;
     end;
   end;
 
@@ -1021,13 +1013,9 @@ begin
   ApplyDot(1, Closest10);
   ApplyDot(2, Closest15);
 
-  // Re-run the shared dot layout so the new prediction dots are sized,
-  // positioned in their trailing slots, and aligned to the same value axis as
-  // the history dots (UpdateTrendDots sets value-based tops, AdjustGraph then
-  // applies the trend's vertical offsets to every dot).
-  LayoutPredictionDots;
+  // Re-run the shared layout so the new prediction slots land in their
+  // trailing columns on the same value axis as the history dots.
   UpdateTrendDots;
-  AdjustGraph;
 end;
 
 procedure TfBG.FinalizeUIUpdate;
@@ -1534,6 +1522,9 @@ begin
   TrndiDLog(Format('ApplyFetchedReadings: Got %d readings', [Length(bgs)]));
 
   PlaceTrendDots(bgs);
+  // Show the new placement right away; FinalizeUpdate's deferred resize will
+  // still run the full pass once the labels have settled.
+  UpdateTrendDots;
   Result := true;
 end;
 
@@ -1920,18 +1911,11 @@ begin
   isFresh := MinutesBetween(CurrentTime, LatestReading.date) <=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
   // The ringed fresh marker is optional (ux.dot_fresh); when disabled the
-  // newest dot stays a plain disc even while the reading is fresh.
+  // newest dot stays a plain disc even while the reading is fresh. Whether
+  // the newest slot draws at all is the slot's own business: a stale reading
+  // never lands in the newest slot's time window, so the slot placement
+  // below empties it without needing an explicit hide here.
   FLatestIsFresh := isFresh and native.GetBoolSetting('ux.dot_fresh', false);
-
-  if (Length(TrendDots) > ACTIVE_DOTS) and Assigned(TrendDots[ACTIVE_DOTS]) then
-  begin
-    TrendDots[ACTIVE_DOTS].Visible := isFresh;
-
-    if isFresh then
-      TrndiDLog(Format('TrendDots[%d] shown as latest reading is fresh.', [ACTIVE_DOTS]))
-    else
-      TrndiDLog(Format('TrendDots[%d] hidden due to outdated reading.', [ACTIVE_DOTS]));
-  end;
 end;
 
 procedure TfBG.ProcessTimeIntervals(const SortedReadings: array of BGReading;
@@ -1942,7 +1926,6 @@ var
   slotEpsilon, olderPos, olderVal: double;
   found, hasOlder: boolean;
   reading: BGReading;
-  l: TDotControl;
 const
   TIME_EPSILON_DAYS      = 10 / 86400;
   RECENT_SLOT_GRACE_DAYS = 60 / 86400;
@@ -1987,7 +1970,7 @@ begin
 
     found := false;
 
-    TrndiDLog(Format('Searching slot %d (TrendDots[%d]): %s to %s',
+    TrndiDLog(Format('Searching slot %d (TrendSlots[%d]): %s to %s',
       [slotIndex, ACTIVE_DOTS - slotIndex, DateTimeToStr(slotStart), DateTimeToStr(slotEnd)]));
 
     for i := searchStart to High(SortedReadings) do
@@ -2031,18 +2014,12 @@ begin
     if not found then
     begin
       labelNumber := ACTIVE_DOTS - slotIndex;
-      if Length(TrendDots) <= labelNumber then Continue;
-      l := TrendDots[labelNumber];
+      if Length(TrendSlots) <= labelNumber then Continue;
 
-      if Assigned(l) then
-      begin
-        l.Visible := false;
-        l.Hint := '';
-        TrendSlots[labelNumber].kind := dkEmpty;
-        TrendSlots[labelNumber].text := '';
-        TrndiDLog(Format('TrendDots[%d] hidden as no reading found in interval.',
-          [labelNumber]));
-      end;
+      TrendSlots[labelNumber].kind := dkEmpty;
+      TrendSlots[labelNumber].text := '';
+      TrndiDLog(Format('TrendSlots[%d] emptied as no reading found in interval.',
+        [labelNumber]));
     end;
   end;
 
@@ -2173,46 +2150,26 @@ function TfBG.UpdateLabelForReading(SlotIndex: integer;
 const Reading: BGReading): boolean;
 var
   labelNumber: integer;
-  l: TDotControl;
 begin
   Result := false;
   if firstboot then
     Exit;
 
   labelNumber := ACTIVE_DOTS - SlotIndex;
-  if Length(TrendDots) <= labelNumber then Exit;
-  l := TrendDots[labelNumber];
+  if Length(TrendSlots) <= labelNumber then Exit;
 
-  if Assigned(l) then
+  with TrendSlots[labelNumber] do
   begin
-    with TrendSlots[labelNumber] do
-    begin
-      kind := dkReading;
-      value := Reading.convert(mmol);
-      text := Reading.format(un, BG_MSG_SHORT, BGPrimary);
-      time := Reading.date;
-      ident := DetermineColorForReading(Reading);
-    end;
-
-    // The slot is filled either way (Result below drives PlaceTrendDots'
-    // search cursor) — a narrow window only withholds the dot from view.
-    l.Visible := DotSlotVisible(labelNumber);
-    // Presentation only, never read back: the hover tooltip shows the reading
-    // without the click-expand dance — unless privacy mode hides values.
-    l.Hint := TrendSlots[labelNumber].text;
-    l.ShowHint := not privacyMode;
-
-    {$ifdef DARWIN}
-    l.AdjustSize;
-    {$endif}
-
-    setPointHeight(l, TrendSlots[labelNumber].value, l.Parent.ClientHeight);
-
-    TrndiDLog(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
-      [labelNumber, DateTimeToStr(Reading.date), Reading.val]));
-    l.BringToFront;
-    Result := true;
+    kind := dkReading;
+    value := Reading.convert(mmol);
+    text := Reading.format(un, BG_MSG_SHORT, BGPrimary);
+    time := Reading.date;
+    ident := DetermineColorForReading(Reading);
   end;
+
+  TrndiDLog(Format('TrendSlots[%d] updated with reading at %s (Value: %.2f).',
+    [labelNumber, DateTimeToStr(Reading.date), Reading.val]));
+  Result := true;
 end;
 
 function TfBG.DetermineColorForReading(const Reading: BGReading): TColor;
@@ -2248,9 +2205,9 @@ begin
   end;
 
   // No blanket darkening here any more: the result is the dot's *identity*
-  // color, and DotPaint lifts it to DOT_MIN_CONTRAST against whatever
-  // background it actually lands on. That has to happen at paint time — the
-  // dots are colored from PlaceTrendDots, which runs before
+  // color, and the trend surface's paint lifts it to DOT_MIN_CONTRAST against
+  // whatever background it actually lands on. That has to happen at paint
+  // time — the dots are colored from PlaceTrendDots, which runs before
   // UpdateUIBasedOnGlucose picks the new background, so fBG.Color is still the
   // previous reading's color at this point.
 

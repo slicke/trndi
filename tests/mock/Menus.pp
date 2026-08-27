@@ -89,6 +89,7 @@ type
   TPopupMenu = class(TComponent)
   private
     FPopupComponent: Controls.TComponent;
+    FPopupPoint: TPoint;
     FItems: TMenuItem;
     FOnDrawItem: TMenuDrawItemEvent;
     FOnMeasureItem: TMenuMeasureItemEvent;
@@ -97,6 +98,8 @@ type
     destructor Destroy; override;
     procedure PopUp(X, Y: Integer); virtual;
     property PopupComponent: Controls.TComponent read FPopupComponent write FPopupComponent;
+    // Screen point the menu last opened at (LCL sets it in PopUp)
+    property PopupPoint: TPoint read FPopupPoint write FPopupPoint;
     property Items: TMenuItem read FItems;
     property OnDrawItem: TMenuDrawItemEvent read FOnDrawItem write FOnDrawItem;
     property OnMeasureItem: TMenuMeasureItemEvent read FOnMeasureItem write FOnMeasureItem;

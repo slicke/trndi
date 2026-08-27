@@ -239,7 +239,6 @@ begin
     ACTIVE_DOTS := newDotCount;
     if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
       MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
-    FreeTrendDotControls;
     // MAX_RESULT is a reading count, not minutes. Mirror InitializeAPI's
     // reporting-interval scaling with ACTIVE_DOTS as the base.
     if Assigned(api) then
@@ -248,9 +247,8 @@ begin
                      div api.getReportingInterval))
     else if MAX_RESULT < ACTIVE_DOTS then
       MAX_RESULT := ACTIVE_DOTS;
-    CreateTrendDots;
+    InitTrendModel;
     BuildDotWindowMenu;
-    Application.ProcessMessages;
     tResize.OnTimer(Self);
   end;
 
@@ -258,17 +256,13 @@ begin
   // count changed: per-slot state depends on settings too (e.g. the
   // ux.dot_fresh marker and the display unit behind each slot's text), and
   // PlaceTrendDots would otherwise dedupe on the unchanged readings hash and
-  // skip the pass.
+  // skip the pass. UpdateTrendDots then runs the whole layout pass (value
+  // tops, centring, in-view correction) and repaints the trend surface.
   FLastReadingsHash := 0;
   if Length(bgs) > 0 then
     PlaceTrendDots(bgs);
 
-  // UpdateTrendDots sets value-based tops; AdjustGraph must always follow to
-  // apply the trend row's vertical offsets (half-diameter centring + in-view
-  // correction) — same pairing as tResizeTimer. Without it the whole row sits
-  // visibly lower until the next full relayout. It also repaints the dots.
   UpdateTrendDots;
-  AdjustGraph;
 
   // UpdateUIBasedOnGlucose below re-applies the window color with the dim
   // rule live, so sync the boundary watcher rather than letting the next

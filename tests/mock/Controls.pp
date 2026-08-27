@@ -65,6 +65,31 @@ type
   TShiftStateEnum = (ssShift, ssAlt, ssCtrl, ssMeta, ssLeft, ssRight, ssMiddle);
   TShiftState = set of TShiftStateEnum;
 
+  TMouseEvent = procedure(Sender: TObject; Button: TMouseButton;
+    Shift: TShiftState; X, Y: Integer) of object;
+  TMouseMoveEvent = procedure(Sender: TObject; Shift: TShiftState;
+    X, Y: Integer) of object;
+
+  // Mirrors LCL's CM_HITTEST plumbing (controls.pp/controlconsts.inc): the
+  // trend surface overrides the hit-test message handler to stay mouse-
+  // transparent between the dots. The mock never dispatches the message —
+  // the declaration only has to compile.
+  TCMHitTest = record
+    Msg: Cardinal;
+{$ifdef cpu64}
+    UnusedMsg: Cardinal;
+{$endif}
+    Unused: PtrInt;
+    XPos: SmallInt;
+    YPos: SmallInt;
+    Result: PtrInt;
+  end;
+
+const
+  CM_HITTEST = $B000 + 10; // matches LCL's CM_BASE + 10
+
+type
+
   TAnchorKind = (akTop, akLeft, akRight, akBottom);
   TAnchors = set of TAnchorKind;
 
@@ -87,6 +112,9 @@ type
     FColor: TColor;
     FAlign: TAlign;
     FOnClick: TNotifyEvent;
+    FOnMouseDown: TMouseEvent;
+    FOnMouseUp: TMouseEvent;
+    FOnMouseMove: TMouseMoveEvent;
     FCursor: Integer;
     FAutoSize: Boolean;
     FPopupMenu: TComponent;
@@ -120,6 +148,9 @@ type
     property Color: TColor read FColor write FColor;
     property Align: TAlign read FAlign write FAlign;
     property OnClick: TNotifyEvent read FOnClick write FOnClick;
+    property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
+    property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
+    property OnMouseMove: TMouseMoveEvent read FOnMouseMove write FOnMouseMove;
     property Visible: Boolean read FVisible write FVisible;
     property Cursor: Integer read FCursor write FCursor;
     property PopupMenu: TComponent read FPopupMenu write FPopupMenu;
@@ -164,6 +195,8 @@ type
 
     procedure Invalidate; virtual;
     procedure BringToFront; virtual;
+    // Headless: no screen, so control and screen coordinates coincide
+    function ScreenToClient(const P: TPoint): TPoint; virtual;
   end;
 
 
@@ -403,6 +436,11 @@ end;
 procedure TControl.BringToFront;
 begin
   // no-op in headless tests
+end;
+
+function TControl.ScreenToClient(const P: TPoint): TPoint;
+begin
+  Result := P;
 end;
 
 procedure TControl.Update;

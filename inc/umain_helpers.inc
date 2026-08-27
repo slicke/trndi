@@ -109,23 +109,23 @@ begin
     end;
   end;
 
-  // Top overflow takes priority so AdjustGraph's second pass can handle bottom.
+  // Top overflow takes priority so the layout's second pass can handle bottom.
   if topResult < 0 then
     Result := topResult
   else
     Result := bottomResult;
 end;
 
-// Smallest circle DotPaint will draw. The analytic rasterizers bail out below
-// 2 px; 3 still reads as a dot rather than a smudge. This is the floor that
-// decides how many dots a window can hold — a larger one does not make a
+// Smallest circle the trend will draw. The analytic rasterizers bail out
+// below 2 px; 3 still reads as a dot rather than a smudge. This is the floor
+// that decides how many dots a window can hold — a larger one does not make a
 // crowded trend more legible, it just makes the dots overlap sooner.
 const
   MIN_DOT_DIAMETER_PX = 3;
 
 // Horizontal room (px) one trend column needs before its dots start to crowd.
 //
-// ResizeDot draws a dot at 0.6 * column width, floored at MIN_DOT_DIAMETER_PX,
+// The layout sizes a dot at 0.6 * column width, floored at MIN_DOT_DIAMETER_PX,
 // so the two rules cross at 3 / 0.6 = 5 px. Above that the 40% gap between
 // neighbours scales with the window; below it the dot can no longer shrink and
 // the gap collapses into overlap — which is what smears the trend into a solid
@@ -244,7 +244,8 @@ end;
 // Map a dot's identity color — the range color DetermineColorForReading picked
 // for the reading — to the color it is actually drawn in, per the user's dot
 // coloring mode. Partner is DotBandPartner(Identity), or clNone when the dot
-// belongs to no range. Called from DotPaint, where the background is final.
+// belongs to no range. Called from the trend surface's paint, where the
+// background is final.
 //
 // Every mode except dcmClassic ends at EnsureContrast, so the dot is never
 // allowed to sink into the background: Lighter and Darker say which way the
@@ -324,8 +325,8 @@ begin
       Result := clWhite;
   dcmOutline:
     // The exact color the range was given, whatever the window is doing. The
-    // fill carries no visibility burden here because DotPaint rims every dot
-    // in this mode, which is what makes it the only mode that can keep a
+    // fill carries no visibility burden here because this mode rims every dot
+    // when painted, which is what makes it the only mode that can keep a
     // range's hue: a high dot stays amber instead of darkening to olive or
     // giving way to the red-orange half of the pair, neither of which reads as
     // "high" to someone who set high to orange.
@@ -366,39 +367,6 @@ begin
 end;
 
 
-
-function TfBG.dotsInView: integer;
-var
-  x: TDotControl;
-  infos: array of TDotInfo;
-  idx, cnt: integer;
-  parentHeight: integer;
-begin
-  // Pre-count valid dots and allocate once to avoid repeated reallocations
-  cnt := 0;
-  for x in TrendDots do
-    if Assigned(x) then
-      Inc(cnt);
-  SetLength(infos, cnt);
-  idx := 0;
-  parentHeight := 0;
-  for x in TrendDots do
-  begin
-    if not Assigned(x) then
-      Continue;
-
-    // Capture first valid parent height (most UIs use a single parent for dots)
-    if (parentHeight = 0) and Assigned(x.Parent) and (x.Parent is TControl) then
-      parentHeight := TControl(x.Parent).ClientHeight;
-
-    infos[idx].Top := x.Top;
-    infos[idx].Height := x.Height;
-    infos[idx].Visible := x.Visible;
-    Inc(idx);
-  end;
-
-  Result := DotsInViewFromInfos(infos, parentHeight);
-end;
 
 procedure TfBG.onGH({%H-}Sender: TObject);
 begin

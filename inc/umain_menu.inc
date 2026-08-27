@@ -36,8 +36,10 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
 (* MODIFICATION NOTICE (2026-08-27): The dot popup entry reads the clicked
-   dot's kind/text/time from its TTrendSlot (via DotSlot) instead of the old
-   Caption-sentinel/Hint/Tag encoding. *)
+   dot's kind/text/time from its TTrendSlot instead of the old
+   Caption-sentinel/Hint/Tag encoding; with the per-dot controls gone it now
+   maps the popup's screen point back to a slot via DotHitAt, and the
+   dots-in-view debug entry probes the layout arrays. *)
 (* Menu event handlers and UI click handlers for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -180,9 +182,19 @@ end;
 
 procedure TfBG.miDotsInViewClick(Sender: TObject);
 var
-  i: integer;
+  i, ix: integer;
+  infos: array of TDotInfo;
 begin
-  i := dotsInView;
+  // Probe the last layout pass: 0 means every visible dot sits inside the
+  // window, anything else is the offset the keep-in-view pass would apply.
+  SetLength({%H-}infos, Max(0, Length(FTrendLayout) - 1));
+  for ix := 1 to High(FTrendLayout) do
+  begin
+    infos[ix - 1].Top := FTrendLayout[ix].Top;
+    infos[ix - 1].Height := FTrendLayout[ix].Height;
+    infos[ix - 1].Visible := (ix <= High(FTrendVisible)) and FTrendVisible[ix];
+  end;
+  i := DotsInViewFromInfos(infos, ClientHeight);
   ShowMessage(IfThen(i = 0, 'Yes', 'Offset: ' + i.toString));
 end;
 
@@ -512,10 +524,6 @@ begin
 end;
 
 procedure TfBG.lArrowClick(Sender: TObject);
-begin
-end;
-
-procedure TfBG.lDot7DblClick(Sender: TObject);
 begin
 end;
 
@@ -920,8 +928,9 @@ function ShiftKeyPressed: boolean;
   end;
 {$endif}
 var
-  tpb: TDotControl;
   dotSlotData: PTrendSlot;
+  dotIsPredict: boolean;
+  dotIx: integer;
   H, M, S, MS: word;
 begin
   Application.ProcessMessages;
@@ -940,11 +949,15 @@ begin
 
   BuildDotWindowMenu;
 
+  // A popup that came in through the trend surface was right-clicked on a
+  // dot (the surface is hit-transparent everywhere else). The menu itself
+  // only knows the screen point it opened at — map it back to the slot.
   miDotVal.Visible := false;
-  if (Sender as TPopupMenu).PopupComponent is TDotControl then
+  if (Sender as TPopupMenu).PopupComponent = FTrendSurface then
   begin
-    tpb := (Sender as TPopupMenu).PopupComponent as TDotControl;
-    dotSlotData := DotSlot(tpb);
+    dotSlotData := DotHitAt(
+      FTrendSurface.ScreenToClient((Sender as TPopupMenu).PopupPoint),
+      dotIsPredict, dotIx);
     if Assigned(dotSlotData) and (dotSlotData^.kind <> dkEmpty) then
     begin
       DecodeTime(dotSlotData^.time, H, M, S, MS);
