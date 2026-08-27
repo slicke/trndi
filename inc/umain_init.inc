@@ -259,6 +259,8 @@ begin
   // once and cached: DotPaint runs per dot on every paint pass.
   DotColorMode := DotColorModeFromSetting(
     native.GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT)));
+  // Optional connecting line between the dots, cached for the same reason.
+  TrendLineEnabled := native.GetBoolSetting('ux.dot_line', false);
 
   // Color title bar (on Windows?)
   titlecolor := native.GetBoolSetting('ux.title_color', true);

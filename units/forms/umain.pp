@@ -1346,6 +1346,7 @@ ShowBolusOverlay: boolean = false; // Draw insulin deliveries on the history gra
 ShowAutoBolusOverlay: boolean = false; // Include the pump's own micro-deliveries in that overlay
 ShowCarbOverlay: boolean = false; // Draw carbohydrate entries on the history graph
 DotColorMode: TDotColorMode = DOT_COLOR_MODE_DEFAULT; // ux.dot_color_mode — cached here because DotPaint runs per dot, per paint
+TrendLineEnabled: boolean = false; // ux.dot_line — cached like DotColorMode: the trend surface reads it on every paint
 RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the actual rate of change instead of the 8-direction glyph
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings
@@ -1469,6 +1470,12 @@ PREDICTION_HORIZON_FADE = 0.15; // opacity step per horizon slot further out
 // window's text tone — enough to say "a reading is missing here" without
 // competing with the real dots around it.
 GAP_DOT_BLEND = 0.4;
+// The optional connecting line wears the dots' own display colors, each dot
+// owning the half-segment on either side of it; this is how much of the dot
+// color survives the blend toward the window background. High enough that
+// the ranges stay recognizable in the trace, low enough that the line reads
+// as support for the dots rather than a second row of data.
+TREND_LINE_BLEND = 0.65;
 // Night dim keeps this much of the in-range color; the rest goes to black.
 // Text, dots and every other on-window color derive from the background at
 // paint time, so they mute along with it for free.
@@ -2504,6 +2511,7 @@ initialization
 
 finalization
   FreeAndNil(DotImageCache); // rendered-dot cache from inc/umain_dots.inc
+  FreeAndNil(TrendLineImage); // cached connecting-line raster, same file
 
 end.
 

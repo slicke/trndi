@@ -142,6 +142,7 @@ begin
   // without waiting for the next reading.
   DotColorMode := DotColorModeFromSetting(
     native.GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT)));
+  TrendLineEnabled := native.GetBoolSetting('ux.dot_line', false);
 
   // Gate on the *_on flags exactly like the startup load (umain_init.inc):
   // the save path always writes ux.tir_color/ux.tir_color_custom, so reading
@@ -480,6 +481,7 @@ procedure LoadUserSettings(f: TfConf);
       cbCarbOverlay.Checked := GetBoolSetting('display.carb_overlay');
       cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', false);
       cbDotGaps.Checked := GetBoolSetting('ux.dot_gaps', true);
+      cbDotLine.Checked := GetBoolSetting('ux.dot_line', false);
       cbNightDim.Checked := GetBoolSetting('ux.night_dim', false);
       seNightDimFrom.Value := GetIntSetting('ux.night_dim_from', 22);
       seNightDimTo.Value := GetIntSetting('ux.night_dim_to', 7);
@@ -920,6 +922,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('display.carb_overlay', cbCarbOverlay.Checked);
       SetSetting('ux.dot_fresh', cbDotFresh.Checked);
       SetSetting('ux.dot_gaps', cbDotGaps.Checked);
+      SetSetting('ux.dot_line', cbDotLine.Checked);
       SetSetting('ux.night_dim', cbNightDim.Checked);
       SetSetting('ux.night_dim_from', seNightDimFrom.Value);
       SetSetting('ux.night_dim_to', seNightDimTo.Value);

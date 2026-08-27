@@ -120,6 +120,7 @@ TDisplayPreviewData = record
   State: integer;                      // 0 = in range, 1 = high, 2 = low
   FreshRing: boolean;                  // cbDotFresh as currently checked
   GapRing: boolean;                    // cbDotGaps as currently checked
+  TrendLine: boolean;                  // cbDotLine as currently checked
   PredictDots: boolean;                // predictions + dot mode as currently checked
   DecimalSep: string;                  // edCommaSep as currently typed
 end;
@@ -214,6 +215,7 @@ TfConf = class(TForm)
   cbCustRange: TCheckBox;
   cbDotFresh: TCheckBox;
   cbDotGaps: TCheckBox;
+  cbDotLine: TCheckBox;
   cbNightDim: TCheckBox;
   seNightDimFrom: TSpinEdit;
   seNightDimTo: TSpinEdit;
@@ -3340,6 +3342,7 @@ begin
   cbPreviewState.ShowHint := true;
   cbDotFresh.OnChange := @RefreshDotPreview;
   cbDotGaps.OnChange := @RefreshDotPreview;
+  cbDotLine.OnChange := @RefreshDotPreview;
   cbPredictDots.OnChange := @RefreshDotPreview;
   rgDots.OnClick := @RefreshDotPreview;
   cl_ok_bg.OnColorChanged := @RefreshDotPreview;
@@ -3754,6 +3757,7 @@ begin
   data.State := Max(0, cbPreviewState.ItemIndex);
   data.FreshRing := cbDotFresh.Checked;
   data.GapRing := cbDotGaps.Checked;
+  data.TrendLine := cbDotLine.Checked;
   data.PredictDots := cbPredictions.Checked and cbPredictDots.Checked;
   data.DecimalSep := edCommaSep.Text;
   FOnDisplayPreview(pbDisplayPreview.Canvas,

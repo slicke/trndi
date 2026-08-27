@@ -300,6 +300,154 @@ begin
   end;
 end;
 
+var
+  // Cached raster of the last connecting line drawn (ux.dot_line). One slot,
+  // not the dot dictionary: the image is trace-sized (potentially megabytes at
+  // large windows) and only one geometry is live at a time, so a dictionary
+  // would just hoard stale traces until its wholesale clear. Keyed by the
+  // bbox-relative points, so the vertical keep-in-view shifts and window moves
+  // that don't change the trace's shape still hit. Main-thread only (paint
+  // handlers); freed in the unit finalization of umain.pp.
+  TrendLineImage: TAlphaImage = nil;
+  TrendLineKey: string = '';
+  TrendLineW: integer = 0;
+  TrendLineH: integer = 0;
+
+// Antialiased polyline through APts, same analytic-coverage approach as the
+// dot rasterizers above (GDI/Qt canvas lines are aliased). AColors runs
+// parallel to APts: each point's color extends halfway toward both of its
+// neighbors, so the trace switches color mid-segment — every reading owns
+// the piece of line on either side of its dot. Round joints and caps fall
+// out of the per-stroke capsule distance, and overlapping strokes keep the
+// strongest coverage in a shared buffer so the joints don't double-blend
+// (the two strokes meeting at a dot share that dot's color anyway; at the
+// midpoint seam the winner rule cuts cleanly between the two colors).
+procedure DrawSmoothPolyline(ACanvas: TCanvas; const APts: array of TPoint;
+  const AColors: array of TColor; AThickness: integer);
+var
+  intf: TLazIntfImage;
+  cov: array of single;
+  col: array of TColor;
+  i, x, y, minX, minY, maxX, maxY, w, h, pad: integer;
+  halfT, mx, my: double;
+  c: TColor;
+  key: string;
+
+  // Max-combine one capsule stroke from (ax,ay) to (bx,by), raster-relative,
+  // in AColor. Only the stroke's own padded bbox is visited, so the cost
+  // tracks the trace's length rather than the raster's area.
+  procedure RasterStroke(ax, ay, bx, by: double; AColor: TColor);
+  var
+    px, py, sx0, sy0, sx1, sy1: integer;
+    dx, dy, len2, t, ddx, ddy, dist, a: double;
+  begin
+    dx := bx - ax;
+    dy := by - ay;
+    len2 := dx * dx + dy * dy;
+    sx0 := Max(0, Math.Floor(Min(ax, bx)) - pad);
+    sx1 := Min(w - 1, Math.Ceil(Max(ax, bx)) + pad);
+    sy0 := Max(0, Math.Floor(Min(ay, by)) - pad);
+    sy1 := Min(h - 1, Math.Ceil(Max(ay, by)) + pad);
+
+    for py := sy0 to sy1 do
+      for px := sx0 to sx1 do
+      begin
+        if len2 > 0 then
+          t := EnsureRange(((px - ax) * dx + (py - ay) * dy) / len2, 0.0, 1.0)
+        else
+          t := 0;
+        ddx := px - (ax + t * dx);
+        ddy := py - (ay + t * dy);
+        dist := Sqrt(ddx * ddx + ddy * ddy);
+
+        if dist <= halfT - 0.5 then
+          a := 1.0
+        else if dist >= halfT + 0.5 then
+          a := 0.0
+        else
+          a := halfT + 0.5 - dist;
+
+        if a > cov[py * w + px] then
+        begin
+          cov[py * w + px] := a;
+          col[py * w + px] := AColor;
+        end;
+      end;
+  end;
+
+begin
+  if (Length(APts) < 2) or (Length(AColors) <> Length(APts))
+    or (AThickness < 1) then
+    Exit;
+
+  minX := APts[0].X;
+  maxX := APts[0].X;
+  minY := APts[0].Y;
+  maxY := APts[0].Y;
+  for i := 1 to High(APts) do
+  begin
+    minX := Min(minX, APts[i].X);
+    maxX := Max(maxX, APts[i].X);
+    minY := Min(minY, APts[i].Y);
+    maxY := Max(maxY, APts[i].Y);
+  end;
+  pad := AThickness div 2 + 2;
+  Dec(minX, pad);
+  Dec(minY, pad);
+  w := maxX + pad - minX + 1;
+  h := maxY + pad - minY + 1;
+  if (w < 1) or (h < 1) then
+    Exit;
+
+  // The rendered image depends only on the trace's shape, colors and stroke —
+  // position lands at blit time — so a repaint with an unmoved trace (hover,
+  // overlapping window) reuses the finished raster.
+  key := Format('pl|%d', [AThickness]);
+  for i := 0 to High(APts) do
+    key := key + Format('|%d;%d;%d', [APts[i].X - minX, APts[i].Y - minY,
+      integer(AColors[i])]);
+  if (TrendLineImage <> nil) and (key = TrendLineKey) then
+  begin
+    BlitAlphaImage(ACanvas, TrendLineImage, TrendLineW, TrendLineH,
+      minX, minY, TrendLineW, TrendLineH);
+    Exit;
+  end;
+
+  halfT := AThickness / 2.0;
+  SetLength({%H-}cov, w * h); // fresh dynarrays: zero-initialized
+  SetLength({%H-}col, w * h);
+
+  for i := 0 to High(APts) - 1 do
+  begin
+    // The color break sits halfway between the dots: two strokes per
+    // segment, each running from its dot's center to the midpoint in that
+    // dot's color.
+    mx := (APts[i].X + APts[i + 1].X) / 2.0 - minX;
+    my := (APts[i].Y + APts[i + 1].Y) / 2.0 - minY;
+    RasterStroke(APts[i].X - minX, APts[i].Y - minY, mx, my, AColors[i]);
+    RasterStroke(mx, my, APts[i + 1].X - minX, APts[i + 1].Y - minY,
+      AColors[i + 1]);
+  end;
+
+  intf := NewAlphaRaster(w, h);
+  try
+    for y := 0 to h - 1 do
+      for x := 0 to w - 1 do
+      begin
+        c := ColorToRGB(col[y * w + x]);
+        PutAlphaPixel(intf, x, y, Red(c), Green(c), Blue(c), cov[y * w + x]);
+      end;
+    FreeAndNil(TrendLineImage);
+    TrendLineImage := AlphaImageFromIntf(intf, w, h);
+    TrendLineKey := key;
+    TrendLineW := w;
+    TrendLineH := h;
+  finally
+    intf.Free;
+  end;
+  BlitAlphaImage(ACanvas, TrendLineImage, w, h, minX, minY, w, h);
+end;
+
 // Ring marking the newest reading's dot. Rim it in a contrasting tone of its
 // range color; a same-color ring over a solid disc would be invisible. The
 // step is taken in the same direction the dot itself was pushed (away from the
@@ -403,13 +551,52 @@ var
   fontn: string;
   slot: PTrendSlot;
   r: TRect;
-  ix, d, ringWidth, xSize, xOff, xThick, fs: integer;
+  ix, d, ringWidth, xSize, xOff, xThick, fs, nPts: integer;
   dotColor, ringColor: TColor;
   xAlpha: double;
+  linePts: array of TPoint;
+  lineCols: array of TColor;
 begin
   if FTrendSurface = nil then
     Exit;
   cnv := FTrendSurface.Canvas;
+
+  // The optional connecting line (ux.dot_line): consecutive visible history
+  // slots joined center to center, drawn first so the dots sit on top of it.
+  // Gap markers keep the trace continuous — their interpolated height is on
+  // the straight line between the flanking readings anyway — and the
+  // prediction × marks stay unconnected: a forecast is not a trace. Skipped
+  // while the dots are expanded into their value text.
+  if TrendLineEnabled and not FDotsExpanded then
+  begin
+    SetLength({%H-}linePts, Length(FTrendLayout));
+    SetLength({%H-}lineCols, Length(FTrendLayout));
+    nPts := 0;
+    for ix := 1 to Min(High(TrendSlots), High(FTrendLayout)) do
+      if FTrendVisible[ix] then
+      begin
+        r := FTrendLayout[ix];
+        linePts[nPts] := Point(r.Left + r.Width div 2, r.Top + r.Height div 2);
+        // The line wears the dots' own colors — through the same mode
+        // pipeline as the dots, softened toward the window so the trace
+        // stays quieter than the readings it connects. A gap slot has no
+        // reading and thus no range color: its stretch of line takes the
+        // same background-derived tone as the gap ring it runs through.
+        if TrendSlots[ix].kind = dkGap then
+          lineCols[nPts] := BlendColors(GetTextColorForBackground(fBG.Color),
+            fBG.Color, GAP_DOT_BLEND)
+        else
+          lineCols[nPts] := BlendColors(DotDisplayColor(TrendSlots[ix].ident,
+            DotBandPartner(TrendSlots[ix].ident), fBG.Color, lVal.Font.Color,
+            DotColorMode), fBG.Color, TREND_LINE_BLEND);
+        Inc(nPts);
+      end;
+    SetLength(linePts, nPts);
+    SetLength(lineCols, nPts);
+    if nPts >= 2 then
+      DrawSmoothPolyline(cnv, linePts, lineCols,
+        Max(2, FTrendDotDiameter div 6));
+  end;
 
   for ix := 1 to Min(High(TrendSlots), High(FTrendLayout)) do
   begin
@@ -766,6 +953,8 @@ var
   dotColor, ringColor, ident, partner: TColor;
   valText, arrowText, agoText, diffText, tirText: string;
   w, h, i, d, x, y, tw, th, ringWidth, r, cols, gs: integer;
+  linePts: array of TPoint;
+  lineCols: array of TColor;
 
 function HasDigit(const s: string): boolean;
   var
@@ -912,6 +1101,35 @@ begin
   if AData.PredictDots then
     Inc(cols, PREDICTION_DOT_COUNT);
   d := Max(MIN_DOT_DIAMETER_PX, Min(h div 8, (w * 6) div (cols * 10)));
+
+  // The connecting line, when the option previews it: the climb's dot
+  // centers joined in the dots' own softened colors, with the same
+  // mid-segment color breaks and under-the-dots order as the live surface,
+  // so ticking the box shows exactly what the graph will do. The gap slot's
+  // stretch takes the gap-ring tone, like DotPaint's.
+  if AData.TrendLine then
+  begin
+    SetLength({%H-}linePts, DOT_COUNT);
+    SetLength({%H-}lineCols, DOT_COUNT);
+    for i := 0 to DOT_COUNT - 1 do
+    begin
+      linePts[i] := Point(
+        ARect.Left + Round((i + 0.5) * w / cols),
+        ARect.Top + PAD + (((DOT_COUNT - 1 - i) * (h - 2 * PAD - d))
+        div (DOT_COUNT - 1) * 3) div 4 + d div 2);
+      if AData.GapRing and (i = DOT_COUNT div 2) then
+        lineCols[i] := BlendColors(GetTextColorForBackground(bg), bg,
+          GAP_DOT_BLEND)
+      else
+      begin
+        PreviewBandColors(ATheme, i div 2, ident, partner);
+        lineCols[i] := BlendColors(DotDisplayColor(ident, partner, bg,
+          valColor, mode), bg, TREND_LINE_BLEND);
+      end;
+    end;
+    DrawSmoothPolyline(ACanvas, linePts, lineCols, Max(2, d div 6));
+  end;
+
   for i := 0 to DOT_COUNT - 1 do
   begin
     x := ARect.Left + Round((i + 0.5) * w / cols) - d div 2;

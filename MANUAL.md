@@ -118,6 +118,15 @@ Those small dots you see across the screen show your recent readings over time:
 **How to use them**: Hover over a dot to see its value in a tooltip, or click it
 to swap the dot for the actual number. (Both are disabled in privacy mode.)
 
+**Connecting the dots**: If you prefer a continuous trace, *Settings → Display →
+Draw a line connecting the trend dots* joins the dots with a subtle line drawn
+underneath them. The line wears the dots' own colors, slightly softened: each
+dot's color extends halfway toward its neighbors, so the trace switches color
+midway between two dots of different ranges. It runs through gap markers (see
+below) at the height the trace would pass — in the gap ring's quiet tone, since
+a missing reading has no range — and never extends into the predicted ✕ marks:
+a forecast is not a measurement.
+
 **Missing readings**: If the sensor skipped a reading between two known ones,
 that slot shows a faint hollow ring at the height the trace would pass through —
 so a sensor gap is visible instead of the dots just sitting further apart. This

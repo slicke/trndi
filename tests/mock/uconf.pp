@@ -69,6 +69,7 @@ type
     State: integer;
     FreshRing: boolean;
     GapRing: boolean;
+    TrendLine: boolean;
     PredictDots: boolean;
     DecimalSep: string;
   end;
@@ -218,6 +219,7 @@ type
     cbConnectivityButton: TCheckBox;
     cbShowSensorExpiry: TCheckBox;
     cbDotGaps: TCheckBox;
+    cbDotLine: TCheckBox;
     cbNightDim: TCheckBox;
     seNightDimFrom: TSpinEdit;
     seNightDimTo: TSpinEdit;
@@ -450,6 +452,7 @@ begin
   cbConnectivityButton := TCheckBox.Create(nil);
   cbShowSensorExpiry := TCheckBox.Create(nil);
   cbDotGaps := TCheckBox.Create(nil);
+  cbDotLine := TCheckBox.Create(nil);
   cbNightDim := TCheckBox.Create(nil);
   seNightDimFrom := TSpinEdit.Create;
   seNightDimTo := TSpinEdit.Create;
@@ -528,6 +531,7 @@ begin
   seNightDimTo.Free;
   seNightDimFrom.Free;
   cbNightDim.Free;
+  cbDotLine.Free;
   cbDotGaps.Free;
   fsAlertHystUrg.Free;
   fsAlertHystLo.Free;
