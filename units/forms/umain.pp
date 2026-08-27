@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: FApiCallInFlight's comment now documents that the prediction
+ *   worker runs outside the flag and is guarded separately in the Request*
+ *   methods (see umain_glucose).
  * - 2026-08-27: AppExceptionHandler is no longer a silent no-op; TfBG gains
  *   FLastExceptionMsg/FExceptionDialogActive so the handler can log every
  *   unhandled exception and show each distinct one once (see umain_helpers).
@@ -662,6 +665,9 @@ private
   // would cross-wire error state. Reads/writes happen on the main thread
   // only (Request* sets it, Apply*Result clears it via Synchronize), which
   // serializes worker creation and keeps only one worker on api at a time.
+  // TPredictionThread also calls into api but cannot take this flag - it is
+  // spawned from the glucose worker's ApplyResult while that fetch still
+  // holds it - so both Request* methods check FPredictionThread separately.
   FApiCallInFlight: boolean;
   FFetchThreadDetached: boolean; // Set when shutdown gave up waiting on the
                                  // fetch worker and detached it; gates the

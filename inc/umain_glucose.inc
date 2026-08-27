@@ -65,6 +65,12 @@
    longer force-shows the off-range bar that its range-colour branch just hid;
    setColorMode takes back a title-bar tint it lent from the off-range banner,
    and restores the multi-user colour bar when the title-bar badge goes away. *)
+(* MODIFICATION NOTICE (2026-08-27): RequestAsyncFetch and RequestHistoryFetch
+   now decline to start while FPredictionThread is live. The prediction worker
+   calls api.predictReadings on the shared api object but runs outside
+   FApiCallInFlight (it is spawned from the glucose worker's ApplyResult,
+   while that fetch still holds the flag), so a periodic or manual fetch could
+   land on api concurrently with it and cross-wire api.lastErr. *)
 (* Glucose update pipeline, data fetching, UI state and color logic for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -1562,6 +1568,17 @@ begin
     Exit;
   end;
 
+  // The prediction worker talks to the same api object but runs outside
+  // FApiCallInFlight — it is spawned from the glucose worker's ApplyResult,
+  // while that fetch still holds the flag, so it can never take it. Starting
+  // a new worker while it is live would put two HTTP conversations - and
+  // their api.lastErr - on one TrndiAPI instance.
+  if Assigned(FPredictionThread) and (not FPredictionThread.Finished) then
+  begin
+    TrndiDLog('RequestAsyncFetch: dropped — prediction call in flight');
+    Exit;
+  end;
+
   // Second guard: ApplyResult clears FApiCallInFlight from inside Synchronize,
   // which returns before the worker's Execute has finished unwinding. In that
   // brief window FGlucoseFetchThread.Finished is still false even though
@@ -1619,6 +1636,14 @@ begin
   if FApiCallInFlight then
   begin
     TrndiDLog('RequestHistoryFetch: dropped — api call already in flight');
+    Exit;
+  end;
+
+  // Mirror RequestAsyncFetch's prediction-worker guard: api.predictReadings
+  // runs on FPredictionThread outside FApiCallInFlight.
+  if Assigned(FPredictionThread) and (not FPredictionThread.Finished) then
+  begin
+    TrndiDLog('RequestHistoryFetch: dropped — prediction call in flight');
     Exit;
   end;
 
