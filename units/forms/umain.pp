@@ -36,6 +36,11 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: ShutdownBackgroundThreads no longer sets FreeOnTerminate on
+ *   a worker that outlived its shutdown wait: the RTL latches that flag
+ *   before publishing Finished, so the write could miss the latch. The
+ *   detached worker object is now leaked deliberately (the process is
+ *   exiting), matching how FormDestroy already leaks api/native on detach.
  * - 2026-08-27: FApiCallInFlight's comment now documents that the prediction
  *   worker runs outside the flag and is guarded separately in the Request*
  *   methods (see umain_glucose).
@@ -1871,7 +1876,12 @@ begin
     else
     begin
       TrndiDLog('ShutdownBackgroundThreads: update-check worker still in getURL after timeout; detaching');
-      FUpdateCheckThread.FreeOnTerminate := true;
+      // Deliberately leak the worker object: the process is exiting and the
+      // OS reclaims it. Setting FreeOnTerminate from here instead would race
+      // the RTL, which latches the flag BEFORE publishing Finished — a worker
+      // finishing right now can miss the write and never self-free, and no
+      // post-write re-check can tell "missed the latch" from "self-freeing
+      // right now" without risking a double free.
       FUpdateCheckThread := nil;
     end;
   end;
@@ -1928,7 +1938,8 @@ begin
     else
     begin
       TrndiDLog('ShutdownBackgroundThreads: fetch worker still in api.getReadings after timeout; detaching');
-      FGlucoseFetchThread.FreeOnTerminate := true;
+      // Same deliberate leak as the update-check worker above: FreeOnTerminate
+      // set from here races the RTL's latch of it.
       FGlucoseFetchThread := nil;
       FFetchThreadDetached := true;
     end;
@@ -1955,7 +1966,7 @@ begin
     else
     begin
       TrndiDLog('ShutdownBackgroundThreads: history worker still in api.getReadings after timeout; detaching');
-      FHistoryFetchThread.FreeOnTerminate := true;
+      // Same deliberate leak as the update-check worker above.
       FHistoryFetchThread := nil;
       FFetchThreadDetached := true;
     end;
