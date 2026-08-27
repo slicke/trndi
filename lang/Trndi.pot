@@ -2721,6 +2721,14 @@ msgstr ""
 msgid "under"
 msgstr ""
 
+#: trndi.strings.rs_unhandled_error
+msgid "Trndi hit an unexpected error"
+msgstr ""
+
+#: trndi.strings.rs_unhandled_error_desc
+msgid "The app keeps running, but what's on screen may lag behind until the next reading arrives. The details below are useful in a bug report."
+msgstr ""
+
 #: trndi.strings.rs_unknown_err
 msgctxt "trndi.strings.rs_unknown_err"
 msgid "Unknown error"
