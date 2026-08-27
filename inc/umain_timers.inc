@@ -36,6 +36,10 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: UpdateTrendDots reads slot values from the TTrendSlot model
+ *   instead of parsing them back out of the dots' Hint strings, and the
+ *   resize pass clears the shared FDotsExpanded flag up front instead of
+ *   probing captions to collapse expanded dots afterwards.
  * - 2026-08-27: tBootFetchTimer routes through updateReading(true) instead of
  *   calling RequestAsyncFetch directly, so the boot fetch shares the same
  *   wrapper semantics as every other fetch trigger.
@@ -559,8 +563,6 @@ var
   resizeWarnTint: TColor;
   resizeWarnAlpha: byte;
   resizeWarnLayout: TWarnLayout;
-  dotProbe: TDotControl;
-  i: integer;
 begin
   tResize.Enabled := false;
 
@@ -592,6 +594,11 @@ begin
 
   actOnTrend(@HideDot);
 
+  // A relayout renders markers: drop the shared expanded-value state up front
+  // so ResizeDot sizes every dot as a circle in the passes below, instead of
+  // sizing them as text first and collapsing them again afterwards.
+  FDotsExpanded := false;
+
   UpdateTrendElements;
 
   if not Assigned(api) then
@@ -620,27 +627,6 @@ begin
   AdjustGraph;
 
   fixWarningPanel;
-
-  // Collapse expanded (value-text) dots back to markers after a relayout.
-  // DOT_FRESH counts as a marker too — with a 1-dot window TrendDots[1] is the
-  // latest dot and may carry the fresh ring rather than the plain dot.
-  // Probe the first slot holding a real reading rather than TrendDots[1]
-  // blindly: a leading DOT_GAP marker (or an empty slot's stale caption) is
-  // neither marker nor value text, and reading it as "expanded" made every
-  // relayout toggle the real dots into their value text — and made the
-  // click-collapse path re-expand them immediately.
-  dotProbe := nil;
-  if Length(TrendDots) > 1 then
-    for i := 1 to High(TrendDots) do
-      if Assigned(TrendDots[i]) and (TrendDots[i].Hint <> '') and
-        (TrendDots[i].Caption <> DOT_GAP) then
-      begin
-        dotProbe := TrendDots[i];
-        break;
-      end;
-  if Assigned(dotProbe) and (dotProbe.Caption <> DOT_GRAPH) and
-    (dotProbe.Caption <> DOT_FRESH) then
-    actOnTrend(@ExpandDot);
 end;
 
 procedure TfBG.UpdateTrendElements;
@@ -834,9 +820,6 @@ end;
 procedure TfBG.UpdateTrendDots;
 var
   Dot: TDotControl;
-  Value: glucose;
-  ok: boolean;
-  wasVisible: boolean;
   ix: integer;
 begin
   // Indexed rather than a for-in: showing a dot needs its slot number so the
@@ -846,30 +829,18 @@ begin
   begin
     Dot := TrendDots[ix];
     if not Assigned(Dot) then Continue;
-    wasVisible := Dot.Visible;
 
-    ok := TryStrToFloat(Dot.Hint, Value, native.locale);
-
-    if ok then
+    if (ix < Length(TrendSlots)) and (TrendSlots[ix].kind <> dkEmpty) then
     begin
-      if un = mgdl then
-        Value := Value * BG_CONVERTIONS[mmol][mgdl];
-
+      // Slot values are stored in mmol — SetPointHeight's unit.
       if Assigned(Dot.Parent) then
-        SetPointHeight(Dot, Value, Dot.Parent.ClientHeight)
+        SetPointHeight(Dot, TrendSlots[ix].value, Dot.Parent.ClientHeight)
       else
-        SetPointHeight(Dot, Value, fBG.ClientHeight);
+        SetPointHeight(Dot, TrendSlots[ix].value, fBG.ClientHeight);
 
       // Position the dot regardless — only its visibility is clamped, so
       // widening the window brings it back already in the right place.
       Dot.Visible := DotSlotVisible(ix);
-    end
-    else
-    if Dot.Hint <> '' then
-    begin
-      TrndiDLog(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
-        [Dot.Hint, BoolToStr(wasVisible, true)]));
-      Dot.Visible := wasVisible and DotSlotVisible(ix);
     end
     else
       Dot.Visible := false;

@@ -71,6 +71,11 @@
    FApiCallInFlight (it is spawned from the glucose worker's ApplyResult,
    while that fetch still holds the flag), so a periodic or manual fetch could
    land on api concurrently with it and cross-wire api.lastErr. *)
+(* MODIFICATION NOTICE (2026-08-27): UpdateLabelForReading, the empty-slot
+   clear in ProcessTimeIntervals and RenderPredictionDots now write the
+   TTrendSlot model (TrendSlots/PredictionSlots) instead of encoding state
+   into the dots' Caption/Hint/Tag/Font.Color; slot values are stored in
+   mmol, and MarkTrendGaps' older-reading anchor is passed in mmol too. *)
 (* Glucose update pipeline, data fetching, UI state and color logic for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -971,9 +976,9 @@ procedure TfBG.RenderPredictionDots(const bgr: BGResults;
   procedure ApplyDot(Slot, Idx: integer);
   var
     l: TDotControl;
-    H, M, S, MS: word;
   begin
-    if (Slot < 0) or (Slot > High(PredictionDots)) then
+    if (Slot < 0) or (Slot > High(PredictionDots))
+      or (Slot > High(PredictionSlots)) then
       Exit;
     l := PredictionDots[Slot];
     if not Assigned(l) then
@@ -981,29 +986,31 @@ procedure TfBG.RenderPredictionDots(const bgr: BGResults;
 
     if (Idx >= 0) and (Idx <= High(bgr)) then
     begin
-      l.Caption := DOT_PREDICT;
-      // Store the value in the display unit so UpdatePredictionDotHeights can
-      // parse it the same way the history dots are parsed.
-      l.Hint := bgr[Idx].format(un, BG_MSG_SHORT, BGPrimary);
+      with PredictionSlots[Slot] do
+      begin
+        kind := dkPredict;
+        value := bgr[Idx].convert(mmol);
+        text := bgr[Idx].format(un, BG_MSG_SHORT, BGPrimary);
+        // The predicted time, so the right-click menu can show it.
+        time := bgr[Idx].date;
+        ident := DetermineColorForReading(bgr[Idx]);
+        // A forecast at or below the low threshold gets full visual weight in
+        // DotPaint (no confidence/horizon fade), so an incoming low stands out.
+        lowPredict := Assigned(api) and (bgr[Idx].val <= api.cgmLo);
+      end;
       // Hover shows the predicted value, like the history dots' tooltips;
       // clicking still shows the confidence. Suppressed in privacy mode.
+      l.Hint := PredictionSlots[Slot].text;
       l.ShowHint := not privacyMode;
-      // Encode the predicted time so the right-click menu can show it.
-      DecodeTime(bgr[Idx].date, H, M, S, MS);
-      l.Tag := H * 100 + M;
-      l.Font.Color := DetermineColorForReading(bgr[Idx]);
-      // A forecast at or below the low threshold gets full visual weight in
-      // DotPaint (no confidence/horizon fade), so an incoming low stands out.
-      if Slot <= High(FPredictionLow) then
-        FPredictionLow[Slot] := Assigned(api) and (bgr[Idx].val <= api.cgmLo);
       l.Visible := true;
     end
     else
     begin
+      PredictionSlots[Slot].kind := dkEmpty;
+      PredictionSlots[Slot].text := '';
+      PredictionSlots[Slot].lowPredict := false;
       l.Hint := '';
       l.Visible := false;
-      if Slot <= High(FPredictionLow) then
-        FPredictionLow[Slot] := false;
     end;
   end;
 
@@ -1912,8 +1919,8 @@ var
 begin
   isFresh := MinutesBetween(CurrentTime, LatestReading.date) <=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
-  // The ringed DOT_FRESH marker is optional (ux.dot_fresh); when disabled the
-  // newest dot stays a plain DOT_GRAPH even while the reading is fresh.
+  // The ringed fresh marker is optional (ux.dot_fresh); when disabled the
+  // newest dot stays a plain disc even while the reading is fresh.
   FLatestIsFresh := isFresh and native.GetBoolSetting('ux.dot_fresh', false);
 
   if (Length(TrendDots) > ACTIVE_DOTS) and Assigned(TrendDots[ACTIVE_DOTS]) then
@@ -2031,6 +2038,8 @@ begin
       begin
         l.Visible := false;
         l.Hint := '';
+        TrendSlots[labelNumber].kind := dkEmpty;
+        TrendSlots[labelNumber].text := '';
         TrndiDLog(Format('TrendDots[%d] hidden as no reading found in interval.',
           [labelNumber]));
       end;
@@ -2059,7 +2068,8 @@ begin
       // over the reading's true distance in time.
       olderPos := ACTIVE_DOTS
         - (anchorTime - reading.date) * MinsPerDay / INTERVAL_MINUTES;
-      olderVal := reading.convert(un);
+      // In mmol, like every slot value the gap interpolation runs over.
+      olderVal := reading.convert(mmol);
       Break;
     end;
   end;
@@ -2164,7 +2174,6 @@ const Reading: BGReading): boolean;
 var
   labelNumber: integer;
   l: TDotControl;
-  H, M, S, MS: word;
 begin
   Result := false;
   if firstboot then
@@ -2176,31 +2185,28 @@ begin
 
   if Assigned(l) then
   begin
+    with TrendSlots[labelNumber] do
+    begin
+      kind := dkReading;
+      value := Reading.convert(mmol);
+      text := Reading.format(un, BG_MSG_SHORT, BGPrimary);
+      time := Reading.date;
+      ident := DetermineColorForReading(Reading);
+    end;
+
     // The slot is filled either way (Result below drives PlaceTrendDots'
     // search cursor) — a narrow window only withholds the dot from view.
     l.Visible := DotSlotVisible(labelNumber);
-    l.Hint := Reading.format(un, BG_MSG_SHORT, BGPrimary);
-    // The Hint doubles as the hover tooltip, so the reading shows on hover
+    // Presentation only, never read back: the hover tooltip shows the reading
     // without the click-expand dance — unless privacy mode hides values.
+    l.Hint := TrendSlots[labelNumber].text;
     l.ShowHint := not privacyMode;
-
-    DecodeTime(reading.date, H, M, S, MS);
-    l.Tag := H * 100 + M;
-
-    // The newest slot's dot gets the ringed "fresh" marker while the reading
-    // is within the freshness threshold; history slots stay plain dots.
-    if (labelNumber = ACTIVE_DOTS) and FLatestIsFresh then
-      l.Caption := DOT_FRESH
-    else
-      l.Caption := DOT_GRAPH;
 
     {$ifdef DARWIN}
     l.AdjustSize;
     {$endif}
 
-    setPointHeight(l, Reading.convert(mmol), l.Parent.ClientHeight);
-
-    l.Font.Color := DetermineColorForReading(Reading);
+    setPointHeight(l, TrendSlots[labelNumber].value, l.Parent.ClientHeight);
 
     TrndiDLog(Format('TrendDots[%d] updated with reading at %s (Value: %.2f).',
       [labelNumber, DateTimeToStr(Reading.date), Reading.val]));

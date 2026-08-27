@@ -35,6 +35,9 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-27): The dot popup entry reads the clicked
+   dot's kind/text/time from its TTrendSlot (via DotSlot) instead of the old
+   Caption-sentinel/Hint/Tag encoding. *)
 (* Menu event handlers and UI click handlers for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -918,7 +921,8 @@ function ShiftKeyPressed: boolean;
 {$endif}
 var
   tpb: TDotControl;
-  H, M: integer;
+  dotSlotData: PTrendSlot;
+  H, M, S, MS: word;
 begin
   Application.ProcessMessages;
   try
@@ -936,25 +940,29 @@ begin
 
   BuildDotWindowMenu;
 
+  miDotVal.Visible := false;
   if (Sender as TPopupMenu).PopupComponent is TDotControl then
   begin
     tpb := (Sender as TPopupMenu).PopupComponent as TDotControl;
-    H := tpb.Tag div 100;
-    M := tpb.Tag mod 100;
-
-    miDotVal.Visible := true;
-    if tpb.Caption = DOT_GAP then
-      // A gap marker's Hint is a synthetic placement value, not a reading —
-      // say when the reading is missing instead of quoting the Hint.
-      miDotVal.Caption := Format(RS_UX_GAP_HERE, [H, M])
-    else
-    if tpb.Caption = DOT_PREDICT then
-      miDotVal.Caption := Format(RS_UX_PREDICTION_HERE, [tpb.hint, H, M])
-    else
-      miDotVal.Caption := Format(RS_UX_READING_HERE, [tpb.hint, H, M]);
-  end
-  else
-    miDotVal.Visible := false;
+    dotSlotData := DotSlot(tpb);
+    if Assigned(dotSlotData) and (dotSlotData^.kind <> dkEmpty) then
+    begin
+      DecodeTime(dotSlotData^.time, H, M, S, MS);
+      miDotVal.Visible := true;
+      case dotSlotData^.kind of
+      dkGap:
+        // A gap marker's value is a synthetic placement aid, not a reading —
+        // say when the reading is missing instead of quoting it.
+        miDotVal.Caption := Format(RS_UX_GAP_HERE, [H, M]);
+      dkPredict:
+        miDotVal.Caption := Format(RS_UX_PREDICTION_HERE,
+          [dotSlotData^.text, H, M]);
+      else
+        miDotVal.Caption := Format(RS_UX_READING_HERE,
+          [dotSlotData^.text, H, M]);
+      end;
+    end;
+  end;
 
   UpdateAlertSnoozeMenu;
   last_popup := now;

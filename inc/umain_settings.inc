@@ -255,9 +255,10 @@ begin
   end;
 
   // Re-place the dots from the cached readings regardless of whether the dot
-  // count changed: per-slot captions depend on settings too (e.g. the
-  // ux.dot_fresh marker), and PlaceTrendDots would otherwise dedupe on the
-  // unchanged readings hash and skip the pass.
+  // count changed: per-slot state depends on settings too (e.g. the
+  // ux.dot_fresh marker and the display unit behind each slot's text), and
+  // PlaceTrendDots would otherwise dedupe on the unchanged readings hash and
+  // skip the pass.
   FLastReadingsHash := 0;
   if Length(bgs) > 0 then
     PlaceTrendDots(bgs);

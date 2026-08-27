@@ -39,6 +39,12 @@
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
 *)
+(* MODIFICATION NOTICE (2026-08-27): Dot state now lives in the TTrendSlot
+   model (TrendSlots/PredictionSlots on TfBG) instead of being encoded into
+   the controls' Caption/Hint/Tag/Font.Color. Tag holds the slot index and
+   DotSlot maps a control back to its slot; Hint is written as the hover
+   tooltip only and is never parsed back. Click-expansion is the shared
+   FDotsExpanded flag rather than a caption swap. *)
 
 // Trend-dot rasterizers. GDI's TCanvas.Ellipse is not antialiased even with
 // AntialiasingMode := amOn — it calls the standard Ellipse() API which is
@@ -334,18 +340,41 @@ begin
     ARingColor := LightenColor(ADotColor, 0.55);
 end;
 
+// Map a dot control back to its slot data via the Tag it was created with.
+// Transient use only — the pointer aims into a dynamic array that
+// CreateTrendDots/FreeTrendDotControls reallocate.
+function TfBG.DotSlot(l: TDotControl): PTrendSlot;
+var
+  ix: integer;
+begin
+  Result := nil;
+  if l = nil then
+    Exit;
+  ix := l.Tag;
+  if (ix >= 1) and (ix < Length(TrendSlots)) then
+    Result := @TrendSlots[ix]
+  else
+  if (ix < 0) and (-ix <= Length(PredictionSlots)) then
+    Result := @PredictionSlots[-ix - 1];
+end;
+
 procedure TfBG.DotPaint(Sender: TObject);
 var
-  S, fontn: string;
+  fontn: string;
   L: TDotControl;
-  d, ringWidth, xSize, xOff, xThick, i, slot: integer;
+  slot: PTrendSlot;
+  d, ringWidth, xSize, xOff, xThick, horizon: integer;
   dotColor, ringColor: TColor;
   xAlpha: double;
 begin
   L := Sender as TDotControl;
-  S := L.Caption;
+  slot := DotSlot(L);
+  if (slot = nil) or (slot^.kind = dkEmpty) then
+    Exit;
 
-  if (S = DOT_GRAPH) or (S = DOT_FRESH) or (S = DOT_PREDICT) or (S = DOT_GAP) then
+  // Reading dots expand into their value text on click; gap and prediction
+  // markers never do.
+  if not (FDotsExpanded and (slot^.kind = dkReading)) then
   begin
     // Square the bounds — ResizeDot pre-sized to a square slot. Use the smaller
     // edge so a sloppy resize round can't crop the circle.
@@ -353,7 +382,7 @@ begin
     if d < 2 then
       Exit;
 
-    if S = DOT_GAP then
+    if slot^.kind = dkGap then
     begin
       // A gap marker is deliberately quiet: a thin hollow ring sunk most of
       // the way into the background, sitting at the trace's interpolated
@@ -375,9 +404,9 @@ begin
     // final (see the note there). fBG.Color is the reference even inside a
     // range band: the bands composite at a low alpha and only ever darken, so
     // a dot cleared against the untinted color is cleared against the band too.
-    dotColor := DotDisplayColor(L.Font.Color, DotBandPartner(L.Font.Color),
+    dotColor := DotDisplayColor(slot^.ident, DotBandPartner(slot^.ident),
       fBG.Color, lVal.Font.Color, DotColorMode);
-    if S = DOT_PREDICT then
+    if slot^.kind = dkPredict then
     begin
       // A × is strokes, not a disc, and nothing rims it — so the one mode
       // that leaves the fill unlifted has to lift it here or the forecast
@@ -390,16 +419,10 @@ begin
       // 15-minute mark always reads as less certain than the 5-minute one.
       // PREDICTION_ALPHA_MIN keeps the mark findable even at zero confidence;
       // clicking the dot still shows the exact percentage.
-      slot := 0;
-      for i := 0 to High(PredictionDots) do
-        if PredictionDots[i] = L then
-        begin
-          slot := i;
-          break;
-        end;
+      horizon := -L.Tag - 1;
       xAlpha := (PREDICTION_ALPHA_MIN + (1.0 - PREDICTION_ALPHA_MIN)
         * EnsureRange(PredictionConfidence, 0.0, 1.0))
-        * (1.0 - slot * PREDICTION_HORIZON_FADE);
+        * (1.0 - horizon * PREDICTION_HORIZON_FADE);
 
       // Compact × (multiplication-sign) shape: shorter, thinner strokes inset
       // from the slot edges, centred in the same square the history dot would
@@ -415,7 +438,7 @@ begin
       // must not fade into the background: full opacity and a heavier stroke,
       // whatever the confidence fade would otherwise have done to it, so an
       // incoming low stands out at a glance.
-      if (slot <= High(FPredictionLow)) and FPredictionLow[slot] then
+      if slot^.lowPredict then
       begin
         xAlpha := 1.0;
         xThick := Max(3, xSize div 5);
@@ -424,7 +447,9 @@ begin
       Exit;
     end;
 
-    if S = DOT_FRESH then
+    // The newest reading carries the fresh ring while the data is fresh —
+    // derived here rather than stored, so a freshness flip repaints right.
+    if (L.Tag = ACTIVE_DOTS) and FLatestIsFresh then
       FreshDotRing(DotColorMode, dotColor, fBG.Color, d, ringColor, ringWidth)
     else
     if DotColorMode = dcmOutline then
@@ -446,16 +471,16 @@ begin
     Exit;
   end;
 
-  // Expanded display: render the BG value (or other text caption) directly.
-  // Width/Height are set in ResizeDot — never resize the control inside its
-  // own OnPaint. On macOS Cocoa, doing so re-enters paint with a stale DC and
-  // crashes inside TCocoaGDIUtil.checkDC.
+  // Expanded display: render the BG value directly. Width/Height are set in
+  // ResizeDot — never resize the control inside its own OnPaint. On macOS
+  // Cocoa, doing so re-enters paint with a stale DC and crashes inside
+  // TCocoaGDIUtil.checkDC.
   //
-  // The color has to be set here. TGraphicControl seeds Canvas.Font from the
-  // control's Font, and that carries the dot's *identity* color — the range
-  // color, which is the window background's own color whenever the reading
-  // falls in the band the window is currently showing. A high reading clicked
-  // open on a high background was drawn in the background color exactly.
+  // The color has to be set here: the slot carries the dot's *identity* color
+  // — the range color, which is the window background's own color whenever
+  // the reading falls in the band the window is currently showing. A high
+  // reading clicked open on a high background would otherwise be drawn in the
+  // background color exactly.
   //
   // Run the mode's transform first so a clicked dot keeps the look the user
   // picked, then apply the text floor on top: whichever mode is active, a
@@ -468,9 +493,9 @@ begin
       Font.Name := fontn;
     Font.Size := L.Font.Size;
     Font.Color := EnsureContrast(
-      DotDisplayColor(L.Font.Color, DotBandPartner(L.Font.Color), fBG.Color,
+      DotDisplayColor(slot^.ident, DotBandPartner(slot^.ident), fBG.Color,
       lVal.Font.Color, DotColorMode), fBG.Color, DOT_TEXT_MIN_CONTRAST);
-    TextOut(0, 0, S);
+    TextOut(0, 0, slot^.text);
   end;
 end;
 
@@ -802,7 +827,7 @@ begin
   end;
 
   // Prediction × marks in the trailing slots, colored through the same
-  // pipeline as DotPaint's DOT_PREDICT branch and carrying the same
+  // pipeline as DotPaint's dkPredict branch and carrying the same
   // per-horizon fade (at full confidence — the preview has no engine to ask).
   // Flat, at the newest dot's height: the preview forecasts "steady".
   if AData.PredictDots then
@@ -897,6 +922,7 @@ begin
       TrendDots[i] := nil;
     end;
   SetLength(TrendDots, 0);
+  SetLength(TrendSlots, 0);
 end;
 
 // Apply a new main-trend dot count: persist it, rebuild the dot controls and
@@ -993,20 +1019,20 @@ begin
 end;
 
 // Mark empty trend slots that provably sit between two real readings as
-// sensor gaps. The gap dot carries a linearly interpolated value in its Hint
-// so the shared layout pipeline (UpdateTrendDots → SetPointHeight →
-// AdjustGraph) places it where the trace would pass; the DOT_GAP caption
-// keeps that synthetic value out of tooltips, click-expansion and the JS
-// bridge. An empty slot only becomes a gap when readings on both sides prove
-// one is missing between them: interior emptiness always qualifies, and a
-// leading run (the oldest slots) qualifies when the caller found a reading
-// beyond the window's left edge — AOlderPos/AOlderVal then anchor the
-// interpolation at that reading's fractional slot position (≤ 0), so the
-// leading gaps ride the true time span instead of pretending the outside
-// reading sits one slot away. Trailing emptiness (an outage marching the
-// trace left) is never a gap — the stale UI owns that story. Runs at the end
-// of every placement pass, which fully rebuilds slot state first, so stale
-// gap markers from the previous pass cannot survive here.
+// sensor gaps. The gap slot carries a linearly interpolated value so the
+// shared layout pipeline (UpdateTrendDots → SetPointHeight → AdjustGraph)
+// places it where the trace would pass; the dkGap kind keeps that synthetic
+// value out of tooltips, click-expansion and the JS bridge. An empty slot
+// only becomes a gap when readings on both sides prove one is missing
+// between them: interior emptiness always qualifies, and a leading run (the
+// oldest slots) qualifies when the caller found a reading beyond the
+// window's left edge — AOlderPos/AOlderVal then anchor the interpolation at
+// that reading's fractional slot position (≤ 0), so the leading gaps ride
+// the true time span instead of pretending the outside reading sits one slot
+// away. Trailing emptiness (an outage marching the trace left) is never a
+// gap — the stale UI owns that story. Runs at the end of every placement
+// pass, which fully rebuilds slot state first, so stale gap markers from the
+// previous pass cannot survive here.
 procedure TfBG.MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double;
   AAnchor: TDateTime);
 var
@@ -1014,15 +1040,15 @@ var
   prevPos, vPrev, vNext: double;
   havePrev: boolean;
   l: TDotControl;
-  H, M, S, MS: word;
 
-  // A slot counts as filled only when it holds a real reading: gap dots are
-  // excluded by caption so a previous pass's markers can't seed new ones.
+  // A slot counts as filled only when it holds a real reading: gap slots are
+  // excluded by kind so a previous pass's markers can't seed new ones.
   function ParseSlot(i: integer; out v: double): boolean;
   begin
-    Result := Assigned(TrendDots[i]) and (TrendDots[i].Caption <> DOT_GAP)
-      and (TrendDots[i].Hint <> '')
-      and TryStrToFloat(TrendDots[i].Hint, v, native.locale);
+    v := 0;
+    Result := Assigned(TrendDots[i]) and (TrendSlots[i].kind = dkReading);
+    if Result then
+      v := TrendSlots[i].value;
   end;
 
 begin
@@ -1050,18 +1076,20 @@ begin
       begin
         l := TrendDots[g];
         if not Assigned(l) then Continue;
-        l.Caption := DOT_GAP;
-        // Interpolated in the display unit the hints are stored in; linear in
-        // slot position, which is linear in time on the fixed slot grid.
-        l.Hint := FloatToStr(vPrev + (vNext - vPrev) * (g - prevPos)
-          / (ix - prevPos), native.locale);
-        // The synthetic value must never show as a tooltip.
+        TrendSlots[g].kind := dkGap;
+        // Interpolated in mmol like every slot value; linear in slot
+        // position, which is linear in time on the fixed slot grid.
+        TrendSlots[g].value := vPrev + (vNext - vPrev) * (g - prevPos)
+          / (ix - prevPos);
+        // A gap has no reading: no text, and the synthetic value must never
+        // show as a tooltip.
+        TrendSlots[g].text := '';
+        l.Hint := '';
         l.ShowHint := false;
-        // The slot's nominal reading time, encoded like the real dots' Tags
-        // (H*100+M), so the popup menu can say *when* the reading is missing.
-        DecodeTime(IncMinute(AAnchor, -INTERVAL_MINUTES * (ACTIVE_DOTS - g)),
-          H, M, S, MS);
-        l.Tag := H * 100 + M;
+        // The slot's nominal reading time, so the popup menu and the click
+        // message can say *when* the reading is missing.
+        TrendSlots[g].time :=
+          IncMinute(AAnchor, -INTERVAL_MINUTES * (ACTIVE_DOTS - g));
         l.Visible := DotSlotVisible(g);
       end;
 
@@ -1122,10 +1150,13 @@ begin
       ApplyTrendDotTopOffset(-da);
   end;
 
-  if (Length(TrendDots) > 1) and TrendDots[1].Visible then
+  // Reading slots only: a gap slot's value is synthetic and has no text, so
+  // the reference label stays blank rather than quoting an interpolation.
+  if (Length(TrendDots) > 1) and TrendDots[1].Visible
+    and (Length(TrendSlots) > 1) and (TrendSlots[1].kind = dkReading) then
   begin
     lRef.Top     := TrendDots[1].Top;
-    lRef.Caption := TrendDots[1].Hint;
+    lRef.Caption := TrendSlots[1].text;
   end
   else
     lRef.Caption := '';
@@ -1157,6 +1188,9 @@ begin
   namedDots[10] := @lDot10;
 
   SetLength(TrendDots, ACTIVE_DOTS + 1);
+  // Fresh SetLength after the SetLength(..., 0) in FreeTrendDotControls, so
+  // every slot arrives zeroed: kind = dkEmpty, text = ''.
+  SetLength(TrendSlots, ACTIVE_DOTS + 1);
 
   for i := 1 to ACTIVE_DOTS do
   begin
@@ -1178,7 +1212,8 @@ begin
       // if it runs (via UpdateLabelForReading) before ResizeDot has sized the dot.
       Font.Size := 24;
       Visible := false;
-      Caption := DOT_GRAPH;
+      // The dot's permanent link to its TrendSlots entry (see DotSlot).
+      Tag := i;
       PopupMenu := pmSettings;
       OnClick := @onTrendClick;
     end;
@@ -1208,29 +1243,12 @@ begin
   {$endif}
 end;
 
-// Toggles a trend dot between its marker (dot/fresh ring) and its bg value.
+// Re-apply the shared marker/value view state (FDotsExpanded) to one dot.
+// The callers own the flag: onTrendClick flips it before running this over
+// the trend, and the relayout path clears it first. Gap slots have no
+// reading and always stay markers; DotPaint enforces the same rule.
 procedure TfBG.ExpandDot(l: TDotControl; c, ix: integer);
-var
-  isDot: boolean;
 begin
-  if privacyMode then
-    exit;
-
-  // A gap dot's Hint is an interpolated placement value, not a reading —
-  // never expand it into visible text.
-  if (l.hint = '') or (l.Caption = DOT_GAP) then
-    Exit;
-
-  isDot := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);
-
-  if isDot then
-    l.Caption := l.Hint
-  else
-  if (ix = ACTIVE_DOTS) and FLatestIsFresh then
-    l.Caption := DOT_FRESH
-  else
-    l.Caption := DOT_GRAPH;
-
   // Always size the dot here, never inside DotPaint. Resizing during paint
   // re-enters with a stale DC on Cocoa and crashes in TCocoaGDIUtil.checkDC.
   ResizeDot(l, c, ix);
@@ -1349,7 +1367,8 @@ begin
     Exit;
 
   SetLength(PredictionDots, PREDICTION_DOT_COUNT);
-  SetLength(FPredictionLow, PREDICTION_DOT_COUNT);
+  // Zeroed by SetLength: kind = dkEmpty until RenderPredictionDots fills it.
+  SetLength(PredictionSlots, PREDICTION_DOT_COUNT);
   for i := 0 to PREDICTION_DOT_COUNT - 1 do
   begin
     PredictionDots[i] := TPaintBox.Create(Self);
@@ -1364,7 +1383,9 @@ begin
       Height := 33;
       Font.Size := 24;
       Visible := false;
-      Caption := DOT_PREDICT;
+      // Negative Tags link to PredictionSlots (see DotSlot); they survive the
+      // history-dot rebuilds, unlike an ACTIVE_DOTS-relative index.
+      Tag := -(i + 1);
       PopupMenu := pmSettings;
       OnClick := @PredictionDotClick;
     end;
@@ -1406,32 +1427,31 @@ begin
 end;
 
 // Re-apply value-based vertical positions to the prediction dots from their
-// cached Hint values (mirrors UpdateTrendDots for the history dots).
+// slot values (mirrors UpdateTrendDots for the history dots).
 procedure TfBG.UpdatePredictionDotHeights;
 var
+  i: integer;
   l: TDotControl;
-  Value: glucose;
 begin
   if not PredictionDotsActive then
     Exit;
 
-  for l in PredictionDots do
+  for i := 0 to High(PredictionDots) do
   begin
+    l := PredictionDots[i];
     if not Assigned(l) then Continue;
     // Reposition hidden dots too. ApplyTrendDotTopOffset/CenterShift move every
     // prediction dot regardless of visibility, so skipping the hidden ones here
     // would let those offsets pile up on a stale Top for as long as the dot is
     // hidden — mirrors UpdateTrendDots, which also places invisible history
     // dots so they are already correct when they come back.
-    if TryStrToFloat(l.Hint, Value, native.locale) then
+    if (i < Length(PredictionSlots))
+      and (PredictionSlots[i].kind = dkPredict) then
     begin
-      if un = mgdl then
-        Value := Value * BG_CONVERTIONS[mmol][mgdl];
-
       if Assigned(l.Parent) then
-        SetPointHeight(l, Value, l.Parent.ClientHeight)
+        SetPointHeight(l, PredictionSlots[i].value, l.Parent.ClientHeight)
       else
-        SetPointHeight(l, Value, fBG.ClientHeight);
+        SetPointHeight(l, PredictionSlots[i].value, fBG.ClientHeight);
     end;
   end;
 end;
@@ -1445,17 +1465,19 @@ begin
       l.Visible := false;
 end;
 
-// Shows a dot only if it has valid data (non-empty Hint) and the current
-// window is wide enough to render its slot (see DotSlotVisible).
+// Shows a dot only if its slot holds data (a reading or a gap marker) and
+// the current window is wide enough to render it (see DotSlotVisible).
 procedure TfBG.ShowDot(l: TDotControl; c, ix: integer);
 begin
-  if (l.Hint <> '') and DotSlotVisible(ix) then
+  if (ix < Length(TrendSlots)) and (TrendSlots[ix].kind <> dkEmpty)
+    and DotSlotVisible(ix) then
     l.Visible := true;
 end;
 
 // Scales a dot to fill ~85% of its slot width so adjacent dots never overlap.
 procedure TfBG.ResizeDot(l: TDotControl; c, ix: integer);
 var
+  slot: PTrendSlot;
   slotW, d: integer;
   fontn, s: string;
 begin
@@ -1469,8 +1491,8 @@ begin
   if ix <= ACTIVE_DOTS then
     slotW := slotW * DotStride;
   l.AutoSize := false;
-  if (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH) or
-    (l.Caption = DOT_PREDICT) or (l.Caption = DOT_GAP) then
+  slot := DotSlot(l);
+  if (slot = nil) or (slot^.kind <> dkReading) or not FDotsExpanded then
   begin
     // Square sizing — DotPaint draws a circle inscribed in this box. 0.6
     // matches the visible disc area of the legacy ● glyph at 85% slot width.
@@ -1487,12 +1509,12 @@ begin
   else
   begin
     // Expanded numeric display — derive font size from lVal so the dot text
-    // tracks the main BG display, then size Width/Height to fit the caption.
+    // tracks the main BG display, then size Width/Height to fit the text.
     // Measure via a temp TBitmap rather than the control's Canvas: doing the
     // resize here (not in DotPaint) avoids re-entering paint with a stale DC
     // on Cocoa, which crashes in TCocoaGDIUtil.checkDC.
     l.Font.Size := Max(8, lVal.Font.Size div Max(c, 1));
-    s := l.Caption;
+    s := slot^.text;
     with TBitmap.Create do
     try
       SetSize(1, 1);
@@ -1533,33 +1555,40 @@ procedure TfBG.onTrendClick(Sender: TObject);
 var
   isdot: boolean;
   l: TDotControl;
-  {$ifdef TrndiExt}
-  hintVal: double;
-  {$endif}
+  slot: PTrendSlot;
+  H, M, S, MS: word;
 begin
   l := Sender as TDotControl;
+  slot := DotSlot(l);
+  if slot = nil then
+    Exit;
 
-  // A gap marker has no reading behind it: nothing to expand, and its Hint is
-  // a synthetic placement value that must not reach the JS bridge. Explain
-  // the hole instead — the Tag carries the slot's nominal time.
-  if l.Caption = DOT_GAP then
+  DecodeTime(slot^.time, H, M, S, MS);
+
+  // A gap marker has no reading behind it: nothing to expand, and its
+  // synthetic placement value must not reach the JS bridge. Explain the hole
+  // instead — the slot carries its nominal time.
+  if slot^.kind = dkGap then
   begin
-    ShowMessage(Format(RS_UX_GAP_HERE, [l.Tag div 100, l.Tag mod 100]));
+    ShowMessage(Format(RS_UX_GAP_HERE, [H, M]));
     Exit;
   end;
 
+  // All reading dots expand or collapse together; privacy mode keeps the
+  // values hidden, so the view state stays put there.
+  if not privacyMode then
+    FDotsExpanded := not FDotsExpanded;
   actOnTrend(@ExpandDot);
-  isDot := (l.Caption = DOT_GRAPH) or (l.Caption = DOT_FRESH);
+  isDot := not FDotsExpanded;
 
   {$ifdef TrndiExt}
-  // The Hint is written with the app-wide format settings (updateLocale keeps
-  // DefaultFormatSettings and native.locale in sync), so parse with the same.
-  if TryStrToFloat(l.Hint, hintVal, native.locale) then
+  if slot^.kind = dkReading then
     callFunc('dotClicked',[
       isDot,
-      hintVal * BG_CONVERTIONS[mgdl][un],
-      hintVal * BG_CONVERTIONS[mmol][un],
-      l.tag
+      slot^.value * BG_CONVERTIONS[mgdl][mmol],
+      slot^.value,
+      // The bridge's historical time encoding — keep it stable for extensions.
+      H * 100 + M
       ]);
   {$endif}
 

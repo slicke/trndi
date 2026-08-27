@@ -36,6 +36,13 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: Trend/prediction dot state moved into a proper model
+ *   (TDotKind/TTrendSlot, TrendSlots/PredictionSlots, FDotsExpanded). The
+ *   paint boxes are views only; their Tag now holds the slot index. The old
+ *   encoding — sentinel control chars in Caption, the value as a locale
+ *   string in Hint, the time as H*100+M in Tag, the range color in
+ *   Font.Color, FPredictionLow — is retired. Hint is still written as the
+ *   hover tooltip but is never parsed back.
  * - 2026-08-27: ShutdownBackgroundThreads no longer sets FreeOnTerminate on
  *   a worker that outlived its shutdown wait: the RTL latches that flag
  *   before publishing Finished, so the write could miss the latch. The
@@ -364,6 +371,29 @@ TDotInfo = record
   Visible: boolean;
 end;
 
+  // What a trend/prediction slot holds. The paint boxes in TrendDots and
+  // PredictionDots are views only; everything DotPaint, the popup menu, the
+  // click handlers and the JS bridge need to know about a slot lives in a
+  // TTrendSlot, found via the control's Tag (see TfBG.DotSlot). Replaces the
+  // old encoding that smeared this state over control properties: sentinel
+  // control chars in Caption, the value as a locale string in Hint, the time
+  // as H*100+M in Tag and the range color in Font.Color.
+TDotKind = (
+  dkEmpty,   // no reading in this slot — nothing is drawn
+  dkReading, // a real reading (solid disc; ringed while fresh)
+  dkGap,     // provably missing reading between two known ones (faint hollow ring)
+  dkPredict);// forecast value (× mark)
+
+TTrendSlot = record
+  kind: TDotKind;
+  value: single;       // mmol/L (SetPointHeight's unit); interpolated for gaps
+  text: string;        // reading formatted in the display unit; '' for gaps
+  time: TDateTime;     // reading/forecast timestamp; nominal slot time for gaps
+  ident: TColor;       // range identity color (DetermineColorForReading)
+  lowPredict: boolean; // forecast at/below the low threshold (dkPredict only)
+end;
+PTrendSlot = ^TTrendSlot;
+
 // TDotColorMode and DOT_COLOR_MODE_DEFAULT live in trndi.types, where uconf can
 // see them too. The modes themselves are implemented in DotDisplayColor.
 
@@ -636,7 +666,7 @@ private
     // Performance optimization fields
   FLastReadingsHash: cardinal; // Hash of last readings for change detection
   FLastDotTimeBucket: int64; // 5-min wall-clock bucket of the last dot placement
-  FLatestIsFresh: boolean; // Latest reading within the freshness threshold (drives DOT_FRESH)
+  FLatestIsFresh: boolean; // Latest reading within the freshness threshold (draws the newest dot ringed)
   FTrendDataStale: boolean; // Latest fetch was not fresh — fades the trend dots
                             // (DetermineColorForReading) so the frozen trace
                             // doesn't read as a live plot. Set by
@@ -736,12 +766,19 @@ private
 
     // Dynamic array; allocated 1-based (index 0 unused). Size = ACTIVE_DOTS+1.
   TrendDots: array of TDotControl;
+    // Slot data behind TrendDots, same 1-based indexing. Each dot's Tag holds
+    // its index here, so DotSlot can map a control back to its data.
+  TrendSlots: array of TTrendSlot;
     // Future-prediction markers (drawn as X) shown to the right of the trend
     // when dot mode is enabled. 0-based, fixed length PREDICTION_DOT_COUNT.
   PredictionDots: array of TDotControl;
-    // Parallel to PredictionDots: true when that slot's forecast is at or
-    // below the low threshold, so DotPaint gives the mark full weight.
-  FPredictionLow: array of boolean;
+    // Slot data behind PredictionDots, same 0-based indexing. A prediction
+    // dot's Tag is -(index + 1), so history and prediction slots stay
+    // distinguishable through the one Tag field.
+  PredictionSlots: array of TTrendSlot;
+    // All reading dots expand together into their value text on click; this is
+    // that shared state. Relayouts collapse it (see tResizeTimer).
+  FDotsExpanded: boolean;
   FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user
   multinick: string;
@@ -858,6 +895,11 @@ private
   procedure ResizeDot(l: TDotControl; {%H-}c, ix: integer);
   procedure initDot(l: TDotControl; c, ix: integer);
   procedure ExpandDot(l: TDotControl; c, ix: integer);
+  {** The slot data behind a trend or prediction dot, via the control's Tag
+      (positive = TrendSlots index, negative = PredictionSlots). nil when the
+      Tag maps to no live slot. The pointer aims into a dynamic array — use it
+      transiently and never across CreateTrendDots/FreeTrendDotControls. }
+  function DotSlot(l: TDotControl): PTrendSlot;
   procedure ApplyTrendDotCenterShift;
   procedure ApplyTrendDotTopOffset(const Offset: integer);
   procedure RepaintVisibleTrendDots;
@@ -865,13 +907,13 @@ private
   procedure FreeTrendDotControls;
   procedure ApplyTrendDotCount(newCount: integer);
   {** Mark empty trend slots that provably sit between two real readings as
-      sensor gaps (DOT_GAP). Interior emptiness always qualifies; a leading run
+      sensor gaps (dkGap). Interior emptiness always qualifies; a leading run
       (the oldest slots) qualifies when AHasOlder reports a reading beyond the
       window's left edge, with AOlderPos/AOlderVal anchoring the interpolation
-      (fractional slot position ≤ 0 and value in the display unit). Trailing
-      emptiness (an outage marching the trace left) is never a gap — the stale
-      UI owns that story. AAnchor is the placement pass's slot anchor, used to
-      stamp each gap's nominal slot time into its Tag for the popup menu.
+      (fractional slot position ≤ 0 and value in mmol/L). Trailing emptiness
+      (an outage marching the trace left) is never a gap — the stale UI owns
+      that story. AAnchor is the placement pass's slot anchor, used to stamp
+      each gap's nominal slot time into its slot for the popup menu.
       Honors the ux.dot_gaps setting. Runs after every placement pass. }
   procedure MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double;
     AAnchor: TDateTime);
@@ -1070,8 +1112,8 @@ private
    }
   procedure LayoutSetupScreen;
   {** Iterate over all trend dots and update their position and visibility
-      based on the data in `TrendDots[].Hint`. This only adjusts visuals and
-      doesn't fetch data from backends.
+      from their `TrendSlots[]` data. This only adjusts visuals and doesn't
+      fetch data from backends.
    }
   procedure UpdateTrendDots;
   {** Scale a TLabel font size to fit within its bounds using a binary search.
