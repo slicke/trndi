@@ -1483,6 +1483,17 @@ TREND_LINE_BLEND = 0.65;
 NIGHT_DIM_KEEP = 0.25;
 
 // Standalone helpers referenced by multiple include files below.
+
+// MacOSAll exports a classic-Mac `Point` record type that shadows
+// Types.Point(x, y), turning `Point(a, b)` into a one-arg type cast and
+// breaking the build on Darwin. MkPoint sidesteps the name clash. Declared
+// here, before the includes, because both umain_dots and umain_paint need it.
+function MkPoint(AX, AY: integer): TPoint; inline;
+begin
+  Result.X := AX;
+  Result.Y := AY;
+end;
+
 function CaptionStartsWithDigit(const S: string): boolean;
 begin
   Result := false;

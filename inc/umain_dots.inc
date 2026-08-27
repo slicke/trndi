@@ -520,7 +520,8 @@ end;
 // so it is also a form-client point.
 procedure TTrendSurface.CMHitTest(var Message: TCMHitTest);
 begin
-  if Assigned(FOnHitTest) and FOnHitTest(Point(Message.XPos, Message.YPos)) then
+  if Assigned(FOnHitTest)
+    and FOnHitTest(MkPoint(Message.XPos, Message.YPos)) then
     Message.Result := 1
   else
     Message.Result := 0;
@@ -593,7 +594,8 @@ begin
       if FTrendVisible[ix] then
       begin
         r := FTrendLayout[ix];
-        linePts[nPts] := Point(r.Left + r.Width div 2, r.Top + r.Height div 2);
+        linePts[nPts] := MkPoint(r.Left + r.Width div 2,
+          r.Top + r.Height div 2);
         // The line wears the dots' own colors — through the same mode
         // pipeline as the dots, softened toward the window so the trace
         // stays quieter than the readings it connects. A gap slot has no
@@ -752,7 +754,7 @@ procedure TfBG.TrendSurfaceMouseDown(Sender: TObject; Button: TMouseButton;
 begin
   // Remember which dot the press landed on: release must hit the same dot to
   // count as a click (mirrors the old per-control Click semantics).
-  DotHitAt(Point(X, Y), FDownIsPredict, FDownDotIx);
+  DotHitAt(MkPoint(X, Y), FDownIsPredict, FDownDotIx);
 end;
 
 procedure TfBG.TrendSurfaceMouseUp(Sender: TObject; Button: TMouseButton;
@@ -765,7 +767,7 @@ var
 begin
   if Button <> mbLeft then
     Exit;
-  slot := DotHitAt(Point(X, Y), isPredict, ix);
+  slot := DotHitAt(MkPoint(X, Y), isPredict, ix);
   if (slot = nil) or (isPredict <> FDownIsPredict) or (ix <> FDownDotIx) then
     Exit;
 
@@ -817,7 +819,7 @@ var
 begin
   if FTrendSurface = nil then
     Exit;
-  slot := DotHitAt(Point(X, Y), isPredict, ix);
+  slot := DotHitAt(MkPoint(X, Y), isPredict, ix);
   if (slot <> nil) and (slot^.text <> '') and not privacyMode then
   begin
     FTrendSurface.Hint := slot^.text;
@@ -1130,7 +1132,7 @@ begin
     SetLength({%H-}lineCols, DOT_COUNT);
     for i := 0 to DOT_COUNT - 1 do
     begin
-      linePts[i] := Point(
+      linePts[i] := MkPoint(
         ARect.Left + Round((i + 0.5) * w / cols),
         ARect.Top + PAD + (((DOT_COUNT - 1 - i) * (h - 2 * PAD - d))
         div (DOT_COUNT - 1) * 3) div 4 + d div 2);

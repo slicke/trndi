@@ -47,15 +47,6 @@
    Included in the implementation section of umain.pp only.
 *)
 
-// MacOSAll exports a classic-Mac `Point` record type that shadows
-// Types.Point(x, y), turning `Point(a, b)` into a one-arg type cast and
-// breaking the build on Darwin. MkPoint sidesteps the name clash.
-function MkPoint(AX, AY: integer): TPoint; inline;
-begin
-  Result.X := AX;
-  Result.Y := AY;
-end;
-
 // Draw a warning-triangle vector glyph (equilateral triangle with rounded tip
 // and a centered exclamation bar+dot). Replaces the previous "⚠️" emoji in
 // captions so the panel renders identically across platforms.
