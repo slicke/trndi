@@ -35,6 +35,11 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-27): AppExceptionHandler was an empty body that
+   silently discarded every unhandled exception app-wide. It now logs via
+   TrndiELog and shows each distinct exception once in an error dialog; it
+   stays silent during shutdown, and repeats or faults raised while the dialog
+   is up are logged but not re-shown. *)
 // Main form helper functions
 
 
@@ -461,9 +466,42 @@ begin
 end;
 {$ENDIF}
 
+{------------------------------------------------------------------------------
+  Application-wide fallback for exceptions nothing else caught. Installed as
+  Application.OnException for the whole process lifetime, so it must log and
+  surface — an empty body here silently discards every unhandled fault in a
+  glucose monitor.
+ ------------------------------------------------------------------------------}
 procedure TfBG.AppExceptionHandler({%H-}Sender: TObject; E: Exception);
+var
+  msg: string;
 begin
-  // Handle exceptions during shutdown gracefully
+  msg := E.ClassName + ': ' + E.Message;
+  TrndiELog('Unhandled exception: ' + msg);
+
+  // Teardown-order faults keep the old silence: with the form closing there
+  // is nowhere useful to surface them.
+  if FShuttingDown or Application.Terminated then
+    Exit;
+
+  // A fault inside a timer re-raises every tick: a message the user has
+  // already seen stays in the log, and anything raised while the dialog
+  // itself is up is dropped rather than stacking modals.
+  if FExceptionDialogActive or (msg = FLastExceptionMsg) then
+    Exit;
+
+  FLastExceptionMsg := msg;
+  FExceptionDialogActive := true;
+  try
+    try
+      SlickeMsg(sdsAuto, sErrTitle, RS_UNHANDLED_ERROR, RS_UNHANDLED_ERROR_DESC,
+        msg, uxclWhite, uxclRed, [mbOK], uxmtWarning);
+    except
+      // The dialog machinery failing must not feed back into this handler
+    end;
+  finally
+    FExceptionDialogActive := false;
+  end;
 end;
 
 procedure ShowMessage(const str: string);

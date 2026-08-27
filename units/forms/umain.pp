@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: AppExceptionHandler is no longer a silent no-op; TfBG gains
+ *   FLastExceptionMsg/FExceptionDialogActive so the handler can log every
+ *   unhandled exception and show each distinct one once (see umain_helpers).
  * - 2026-08-21: isWSL is declared unconditionally (default false) now that
  *   DetectWSL is part of the native base contract - Qt6 builds outside
  *   Linux/BSD (Haiku) reference it in umain_timers.
@@ -617,6 +620,8 @@ private
     end;
   titlecolor: boolean;
   FShuttingDown: boolean; // Flag to prevent recursive shutdown calls
+  FLastExceptionMsg: string; // Unhandled-exception text already shown once; repeats go to the log only
+  FExceptionDialogActive: boolean; // An unhandled-exception dialog is up; faults raised meanwhile are dropped
   FShutdownScreen: boolean; // Shutdown screen is up: skip normal paint/resize work
   FCloseAfterFormCreate: boolean; // Flag to close form after initialization completes
 
@@ -1234,7 +1239,7 @@ public
     {** Generic application exception handler used for reporting unhandled
       exceptions during runtime to a unified error dialog.
      }
-  procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
+  procedure AppExceptionHandler(Sender: TObject; E: Exception);
   procedure onGH({%H-}Sender: TObject);
     {** Return the most recent reading (the newest element in `bgs`).
       Caller should ensure `bgs` is not empty (use `tryLastReading` first).

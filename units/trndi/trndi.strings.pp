@@ -35,6 +35,9 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-27): Added RS_UNHANDLED_ERROR and
+   RS_UNHANDLED_ERROR_DESC for the unhandled-exception dialog shown by
+   TfBG.AppExceptionHandler. *)
 
 unit trndi.strings;
 
@@ -56,6 +59,8 @@ RS_RANGE_HI_UNSUPPORTED = 'Hi range not supported by API';
 RS_RANGE_LO_UNSUPPORTED = 'Lo range not supported by API';
 
   // Error messages
+RS_UNHANDLED_ERROR = 'Trndi hit an unexpected error';
+RS_UNHANDLED_ERROR_DESC = 'The app keeps running, but what''s on screen may lag behind until the next reading arrives. The details below are useful in a bug report.';
 RS_SETUP = 'Setup';
 RS_NO_BACKEND = 'No readings received.'+sLineBreak+sLineBreak+'Has your CGM synced recently? '+sLineBreak+'Is the remote server working?';
 RS_LAST_RECIEVE = 'Last reading was %s (%s)';
