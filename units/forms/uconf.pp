@@ -121,6 +121,7 @@ TDisplayPreviewData = record
   FreshRing: boolean;                  // cbDotFresh as currently checked
   GapRing: boolean;                    // cbDotGaps as currently checked
   TrendLine: boolean;                  // cbDotLine as currently checked
+  LineWidth: integer;                  // cbDotLineWidth as currently picked (1..3)
   PredictDots: boolean;                // predictions + dot mode as currently checked
   DecimalSep: string;                  // edCommaSep as currently typed
 end;
@@ -216,6 +217,7 @@ TfConf = class(TForm)
   cbDotFresh: TCheckBox;
   cbDotGaps: TCheckBox;
   cbDotLine: TCheckBox;
+  cbDotLineWidth: TComboBox;
   cbNightDim: TCheckBox;
   seNightDimFrom: TSpinEdit;
   seNightDimTo: TSpinEdit;
@@ -534,6 +536,7 @@ TfConf = class(TForm)
   procedure bDisplayGeneralHelpClick(Sender: TObject);
   procedure bDisplayWindowHelpClick(Sender: TObject);
   procedure cbBolusOverlayChange(Sender: TObject);
+  procedure cbDotLineChange(Sender: TObject);
   procedure bFullArrowSetHelpClick(Sender: TObject);
   procedure bRotatingArrowHelpClick(Sender: TObject);
   procedure bPredScaleHelpClick(Sender: TObject);
@@ -2290,6 +2293,14 @@ begin
   cbBolusOverlayAuto.Enabled := cbBolusOverlay.Checked;
 end;
 
+// The thickness pick only means something while the line is on, and the line
+// is part of what the Display miniature shows — so one handler does both.
+procedure TfConf.cbDotLineChange(Sender: TObject);
+begin
+  cbDotLineWidth.Enabled := cbDotLine.Checked;
+  RefreshDotPreview(Sender);
+end;
+
 procedure TfConf.bFullArrowSetHelpClick(Sender: TObject);
 begin
   ShowMessage(RS_Full_Arrow_Set_Help);
@@ -3342,7 +3353,8 @@ begin
   cbPreviewState.ShowHint := true;
   cbDotFresh.OnChange := @RefreshDotPreview;
   cbDotGaps.OnChange := @RefreshDotPreview;
-  cbDotLine.OnChange := @RefreshDotPreview;
+  cbDotLine.OnChange := @cbDotLineChange;
+  cbDotLineWidth.OnChange := @RefreshDotPreview;
   cbPredictDots.OnChange := @RefreshDotPreview;
   rgDots.OnClick := @RefreshDotPreview;
   cl_ok_bg.OnColorChanged := @RefreshDotPreview;
@@ -3758,6 +3770,7 @@ begin
   data.FreshRing := cbDotFresh.Checked;
   data.GapRing := cbDotGaps.Checked;
   data.TrendLine := cbDotLine.Checked;
+  data.LineWidth := cbDotLineWidth.ItemIndex + 1;
   data.PredictDots := cbPredictions.Checked and cbPredictDots.Checked;
   data.DecimalSep := edCommaSep.Text;
   FOnDisplayPreview(pbDisplayPreview.Canvas,

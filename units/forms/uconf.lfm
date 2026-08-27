@@ -1977,6 +1977,21 @@ object fConf: TfConf
             Caption = 'Draw a line connecting the trend dots'
             TabOrder = 12
           end
+          object cbDotLineWidth: TComboBox
+            Left = 360
+            Height = 24
+            Top = 133
+            Width = 110
+            ItemHeight = 25
+            ItemIndex = 1
+            Items.Strings = (
+              'Thin'
+              'Normal'
+              'Thick'
+            )
+            Style = csDropDownList
+            TabOrder = 13
+          end
           object bRotatingArrowHelp: TButton
             Left = 584
             Height = 22

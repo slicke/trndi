@@ -1347,6 +1347,7 @@ ShowAutoBolusOverlay: boolean = false; // Include the pump's own micro-deliverie
 ShowCarbOverlay: boolean = false; // Draw carbohydrate entries on the history graph
 DotColorMode: TDotColorMode = DOT_COLOR_MODE_DEFAULT; // ux.dot_color_mode — cached here because DotPaint runs per dot, per paint
 TrendLineEnabled: boolean = false; // ux.dot_line — cached like DotColorMode: the trend surface reads it on every paint
+TrendLineWidthStep: integer = 2; // ux.dot_line_width — 1 thin / 2 normal / 3 thick; cached with TrendLineEnabled
 RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the actual rate of change instead of the 8-direction glyph
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings

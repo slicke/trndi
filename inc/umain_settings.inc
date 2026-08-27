@@ -143,6 +143,8 @@ begin
   DotColorMode := DotColorModeFromSetting(
     native.GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT)));
   TrendLineEnabled := native.GetBoolSetting('ux.dot_line', false);
+  TrendLineWidthStep :=
+    EnsureRange(native.GetIntSetting('ux.dot_line_width', 2), 1, 3);
 
   // Gate on the *_on flags exactly like the startup load (umain_init.inc):
   // the save path always writes ux.tir_color/ux.tir_color_custom, so reading
@@ -482,6 +484,11 @@ procedure LoadUserSettings(f: TfConf);
       cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', false);
       cbDotGaps.Checked := GetBoolSetting('ux.dot_gaps', true);
       cbDotLine.Checked := GetBoolSetting('ux.dot_line', false);
+      cbDotLineWidth.ItemIndex :=
+        EnsureRange(GetIntSetting('ux.dot_line_width', 2), 1, 3) - 1;
+      // The dependent combo follows the parent from the moment the dialog
+      // opens, like cbBolusOverlayAuto does.
+      cbDotLineWidth.Enabled := cbDotLine.Checked;
       cbNightDim.Checked := GetBoolSetting('ux.night_dim', false);
       seNightDimFrom.Value := GetIntSetting('ux.night_dim_from', 22);
       seNightDimTo.Value := GetIntSetting('ux.night_dim_to', 7);
@@ -923,6 +930,7 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('ux.dot_fresh', cbDotFresh.Checked);
       SetSetting('ux.dot_gaps', cbDotGaps.Checked);
       SetSetting('ux.dot_line', cbDotLine.Checked);
+      SetSetting('ux.dot_line_width', cbDotLineWidth.ItemIndex + 1);
       SetSetting('ux.night_dim', cbNightDim.Checked);
       SetSetting('ux.night_dim_from', seNightDimFrom.Value);
       SetSetting('ux.night_dim_to', seNightDimTo.Value);

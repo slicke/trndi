@@ -261,6 +261,8 @@ begin
     native.GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT)));
   // Optional connecting line between the dots, cached for the same reason.
   TrendLineEnabled := native.GetBoolSetting('ux.dot_line', false);
+  TrendLineWidthStep :=
+    EnsureRange(native.GetIntSetting('ux.dot_line_width', 2), 1, 3);
 
   // Color title bar (on Windows?)
   titlecolor := native.GetBoolSetting('ux.title_color', true);

@@ -122,7 +122,9 @@ to swap the dot for the actual number. (Both are disabled in privacy mode.)
 Draw a line connecting the trend dots* joins the dots with a subtle line drawn
 underneath them. The line wears the dots' own colors, slightly softened: each
 dot's color extends halfway toward its neighbors, so the trace switches color
-midway between two dots of different ranges. It runs through gap markers (see
+midway between two dots of different ranges. The dropdown next to the option
+picks the stroke weight — thin, normal or thick, always relative to the dot
+size. It runs through gap markers (see
 below) at the height the trace would pass — in the gap ring's quiet tone, since
 a missing reading has no range — and never extends into the predicted ✕ marks:
 a forecast is not a measurement.

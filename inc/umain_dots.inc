@@ -448,6 +448,23 @@ begin
   BlitAlphaImage(ACanvas, TrendLineImage, w, h, minX, minY, w, h);
 end;
 
+// Stroke width in pixels for the connecting line at dot diameter ADiameter,
+// per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
+// dots, so the chosen weight holds up across window sizes; the floors keep
+// each step distinguishable even at the smallest dots. Takes the step as a
+// parameter so the settings preview can render the dialog's unsaved pick.
+function TrendLineStrokePx(ADiameter, AStep: integer): integer;
+begin
+  case AStep of
+  1:
+    Result := Max(1, ADiameter div 10);
+  3:
+    Result := Max(3, ADiameter div 4);
+  else
+    Result := Max(2, ADiameter div 6);
+  end;
+end;
+
 // Ring marking the newest reading's dot. Rim it in a contrasting tone of its
 // range color; a same-color ring over a solid disc would be invisible. The
 // step is taken in the same direction the dot itself was pushed (away from the
@@ -595,7 +612,7 @@ begin
     SetLength(lineCols, nPts);
     if nPts >= 2 then
       DrawSmoothPolyline(cnv, linePts, lineCols,
-        Max(2, FTrendDotDiameter div 6));
+        TrendLineStrokePx(FTrendDotDiameter, TrendLineWidthStep));
   end;
 
   for ix := 1 to Min(High(TrendSlots), High(FTrendLayout)) do
@@ -1127,7 +1144,8 @@ begin
           valColor, mode), bg, TREND_LINE_BLEND);
       end;
     end;
-    DrawSmoothPolyline(ACanvas, linePts, lineCols, Max(2, d div 6));
+    DrawSmoothPolyline(ACanvas, linePts, lineCols,
+      TrendLineStrokePx(d, AData.LineWidth));
   end;
 
   for i := 0 to DOT_COUNT - 1 do
