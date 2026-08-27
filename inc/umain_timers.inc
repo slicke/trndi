@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: tBootFetchTimer routes through updateReading(true) instead of
+ *   calling RequestAsyncFetch directly, so the boot fetch shares the same
+ *   wrapper semantics as every other fetch trigger.
  * - 2026-08-21: The WSL width tweak is guarded by LCLQt6 alone - isWSL is
  *   always false off Linux now that DetectWSL is in the base contract.
  *)
@@ -1143,7 +1146,10 @@ begin
     tBootFetch.Enabled := false;
     FreeAndNil(tBootFetch);
   end;
-  RequestAsyncFetch(true, false);
+  // Route through updateReading like every other fetch trigger, so the boot
+  // fetch gets the same wrapper semantics (native.start, the refresh caption,
+  // force-flag bookkeeping) instead of a bespoke direct call.
+  updateReading(true);
 end;
 
 // Animates the braille-spinner glyph in lVal while the very first fetch is
