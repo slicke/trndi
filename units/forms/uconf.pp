@@ -3671,7 +3671,9 @@ end;
 
 procedure TfConf.lLicenseClick(Sender: TObject);
 const
-  txt ={$ifndef HAIKU}'<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +{$endif}
+  // Pixie renders <img> at its natural size (1024x1024 for this logo) unless
+  // told otherwise, unlike the old iPro viewer which happened to clip it.
+  txt ={$ifndef HAIKU}'<img src="https://trndi.app/doc/img/trndi-logo.png" width="120" height="120">' + sHTMLLineBreak +{$endif}
     '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
     '<i>A re-imagination of TrayTrend by Björn Lindh</i>' + sHTMLLineBreak +
     'Copyright (C) 2017-2026 Björn Lindh' + sHTMLLineBreak + sHTMLLineBreak +
