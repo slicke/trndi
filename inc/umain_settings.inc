@@ -1155,7 +1155,9 @@ begin
   versionInfo := versionInfo + ' (macOS)';
   {$endif}
 
-  html := '<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +
+  // Pixie renders <img> at its natural size (1024x1024 for this logo) unless
+  // told otherwise, unlike the old iPro viewer which happened to clip it.
+  html := '<img src="https://trndi.app/doc/img/trndi-logo.png" width="120" height="120">' + sHTMLLineBreak +
     '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
     '<i>Continuous Glucose Monitor data display</i>' + sHTMLLineBreak +
     'for desktop and embedded devices' + sHTMLLineBreak + sHTMLLineBreak +
