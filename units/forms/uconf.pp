@@ -1252,6 +1252,7 @@ end;
 procedure TfConf.lAckClick(Sender: TObject);
 const
   txt = 'Trndi makes use of the following 3rd party libraries:' + sHTMLLineBreak +
+    'The in-app HTML dialogs (including this one) are rendered with <i>Pixie</i> by <i>SoftPerfect</i>.'#10 + sHTMLLineBreak +
     'macOS native code libraries by <i>Phil Hess</i>.'#10 + sHTMLLineBreak +
     'Windows DirectX headers by <i>CMC Development Team</i>.'#10 + sHTMLLineBreak + sHTMLLineBreak +
     'Extensions use the JavaScript engine <i>QuickJS</i> by <i>Fabrice Bellard</i> and <i>Charlie Gordon</i>.'#10 + sHTMLLineBreak +
