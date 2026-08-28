@@ -40,8 +40,10 @@ if [ -d "lang" ]; then
   cp -r lang "${APP_DIR}/usr/share/trndi/"
 fi
 
-# GPLv3 sections 4 and 6 require the license to accompany the binary; the MIT
-# notice ships whenever the quickjs-ng libraries were staged above.
+# GPLv3 sections 4 and 6 require the license to accompany the binary. The MIT
+# notices belong with the libraries they cover: quickjs-ng ships whenever its
+# libraries were staged above, Pixie is compiled straight into the binary so
+# it ships unconditionally.
 echo "Copying license files..."
 mkdir -p "${APP_DIR}/usr/share/doc/trndi"
 for LIC in LICENSE.md DISCLAIMER.md THIRD-PARTY.md; do
@@ -49,6 +51,9 @@ for LIC in LICENSE.md DISCLAIMER.md THIRD-PARTY.md; do
 done
 if [ -f "externals/quickjs/LICENSE.quickjs-ng" ] && [ -d "${QJS_DIR}" ]; then
   cp -v externals/quickjs/LICENSE.quickjs-ng "${APP_DIR}/usr/share/doc/trndi/"
+fi
+if [ -f "externals/pixie/LICENSE" ]; then
+  cp -v externals/pixie/LICENSE "${APP_DIR}/usr/share/doc/trndi/LICENSE.pixie"
 fi
 
 # The CareLink login helper is compiled into the binary (see
