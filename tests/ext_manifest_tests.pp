@@ -56,6 +56,7 @@ type
     procedure TestAsteriskDecorationIsStripped;
     procedure TestManifestMustStartTheFile;
     procedure TestUtf8BomIsAccepted;
+    procedure TestUseStrictPrologueIsSkipped;
   end;
 
 implementation
@@ -170,6 +171,31 @@ begin
 
   AssertTrue('manifest after BOM should be valid', manifest.IsValid);
   AssertEquals('name after BOM', 'BOM extension', manifest.DisplayName);
+end;
+
+procedure TExtensionManifestTests.TestUseStrictPrologueIsSkipped;
+var
+  manifest: TExtManifest;
+begin
+  // TypeScript (6.0+ unconditionally) and Babel prepend a strict-mode
+  // prologue when compiling an extension to a plain script; the manifest
+  // right after it must still be found.
+  manifest := ParseExtManifest('"use strict";' + LineEnding +
+    '/*' + LineEnding + '@name Compiled' + LineEnding + '@perms net' + LineEnding + '*/');
+  AssertTrue('manifest after "use strict"; should be valid', manifest.IsValid);
+  AssertEquals('name after prologue', 'Compiled', manifest.DisplayName);
+  AssertTrue('net requested after prologue', epNet in manifest.Requested);
+
+  // Single quotes and CRLF line endings are tolerated too.
+  manifest := ParseExtManifest('''use strict'';'#13#10'/* @name Compiled2 */');
+  AssertTrue('single-quoted prologue accepted', manifest.IsValid);
+  AssertEquals('name after single-quoted prologue', 'Compiled2', manifest.DisplayName);
+
+  // The prologue only excuses itself, nothing else before the manifest.
+  manifest := ParseExtManifest('"use strict"; var x = 1;' + LineEnding +
+    '/* @name Too late */');
+  AssertEquals('code between prologue and manifest still disqualifies it',
+    '', manifest.DisplayName);
 end;
 
 initialization

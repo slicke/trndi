@@ -83,8 +83,10 @@ const
      'Run external programs (runCMD)',
      'Read/write Trndi settings and CGM thresholds');
 
-{** Parse the leading /* ... */ block from an extension source. Invalid
-    directives make IsValid False and explain the reason in ErrorMessage. }
+{** Parse the leading /* ... */ block from an extension source. A UTF-8 BOM
+    and a single compiler-emitted "use strict"; prologue line are tolerated
+    before it. Invalid directives make IsValid False and explain the reason
+    in ErrorMessage. }
 function ParseExtManifest(const Script: string): TExtManifest;
 
 {** SHA-256 hex digest of the script source. Used to detect edits and force re-prompt. }
@@ -184,9 +186,13 @@ begin
 end;
 
 function ParseExtManifest(const Script: string): TExtManifest;
+const
+  STRICT_DQ = '"use strict"';
+  STRICT_SQ = '''use strict''';
 var
   s, body: string;
   startIdx, endIdx: integer;
+  prologueLen: integer;
   lines, parts: TStringArray;
   i, j: integer;
   trimmed, lc, value: string;
@@ -228,6 +234,24 @@ begin
   if s = '' then Exit;
   if Copy(s, 1, 3) = #$EF#$BB#$BF then
     Delete(s, 1, 3); // Permit UTF-8 files saved with a BOM.
+
+  // Permit a compiler-emitted strict-mode prologue before the manifest.
+  // TypeScript (unconditionally since 6.0) and Babel prepend '"use strict";'
+  // when emitting a plain script, which would otherwise push the manifest off
+  // byte one and silently strip a compiled extension of its name and perms.
+  prologueLen := 0;
+  if Copy(s, 1, Length(STRICT_DQ)) = STRICT_DQ then
+    prologueLen := Length(STRICT_DQ)
+  else if Copy(s, 1, Length(STRICT_SQ)) = STRICT_SQ then
+    prologueLen := Length(STRICT_SQ);
+  if prologueLen > 0 then
+  begin
+    Delete(s, 1, prologueLen);
+    if (s <> '') and (s[1] = ';') then
+      Delete(s, 1, 1);
+    while (s <> '') and (s[1] in [#13, #10]) do
+      Delete(s, 1, 1);
+  end;
 
   startIdx := Pos('/*', s);
   if startIdx <> 1 then Exit;

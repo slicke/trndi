@@ -1,6 +1,11 @@
 # Trndi Extensions API
 Trndi supports ES2023, and provides these functions in addition to it:
 
+> **Tip:** the whole API is also available as a TypeScript declaration file,
+> [extensions/trndi.d.ts](extensions/trndi.d.ts) — use it for editor
+> autocompletion in plain JavaScript or to write extensions in TypeScript.
+> See [Extensions.md](Extensions.md#typescript-and-editor-type-checking).
+
 > **Permissions:** Each function belongs to a permission group. `data`, `ui`,
 > and `timers` are always granted — anything else (`net`, `exec`, `settings`)
 > must be declared in your extension's `@perms` header and approved by the
