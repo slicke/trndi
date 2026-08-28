@@ -230,18 +230,13 @@ object fBG: TfBG
       Caption = '0,?'
     end
   end
-  object pnNextProgress: TPanel
+  object pbNextProgress: TPaintBox
     Left = 0
     Height = 240
     Top = 0
     Width = 8
     Align = alLeft
-    BevelOuter = bvNone
-    DoubleBuffered = True
-    ParentBackground = False
-    ParentDoubleBuffered = False
-    TabOrder = 7
-    OnPaint = pnNextProgressPaint
+    OnPaint = pbNextProgressPaint
   end
   object bSettings: TButton
     Left = 8

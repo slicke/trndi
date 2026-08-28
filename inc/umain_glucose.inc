@@ -522,6 +522,11 @@ begin
   if assigned(upmenu) then
     upMenu.Caption:= miRefresh.Caption;
   {$endif}
+
+  // A fresh reading resets the progress tube — animate the fill down to the
+  // new level instead of snapping between two frames (after FNextFetchAt above,
+  // so the drain converges on the schedule just programmed).
+  StartProgressDrain;
 end;
 
 // Calculate time in range
@@ -676,7 +681,7 @@ begin
 
   tAgo.Enabled := true;
   tAgo.OnTimer(self);
-  if Assigned(pnNextProgress) and pnNextProgress.Visible then
+  if Assigned(pbNextProgress) and pbNextProgress.Visible then
     tProgress.Enabled := true;
   // Defer the relayout — the synchronous Self.OnResize(lVal) chain runs
   // tResizeTimer (hide/resize/show across every trend dot + AdjustGraph's
@@ -1061,6 +1066,12 @@ begin
     // float is small enough that an arrow is most of what you read off it.
     fFloat.SetTrendArrow(RotatingArrow and (not FTrendDataStale),
       FLastArrowAngle, fFloat.lArrow.Font.Color);
+
+    // The float's progress strip lives and dies with the main bar: tProgress
+    // (which feeds it) only runs while the bar shows, so clear the strip here
+    // when the feature is off rather than leaving a frozen fill behind.
+    if not (Assigned(pbNextProgress) and pbNextProgress.Visible) then
+      fFloat.SetNextProgress(false, 0, clNone);
   end;
 end;
 

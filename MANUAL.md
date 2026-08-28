@@ -207,6 +207,24 @@ When enabled, Trndi can show where your blood sugar might be heading in the next
 
 **Important**: Predictions are estimates based on your current trend. They don't know about food you just ate, insulin you just took, or exercise. Use them as a guide, not a guarantee! While your data is outdated, predictions are hidden entirely — an old trend can't forecast anything.
 
+### Refresh Countdown Bar
+*Settings → Display → Display progress to next update on the left* (also offered
+during first-run setup): a slim line along the window's left edge that fills
+from the bottom.
+
+- The **primary line** covers one refresh cycle — **teal** for most of it,
+  warming to **amber** as the reading falls due. It is full exactly when Trndi
+  fetches the next reading.
+- If the reading runs late, a slimmer **overtime line** appears beside it and
+  fills in **red** across the retry window while Trndi keeps trying (it goes
+  away again once a reading lands). Both lines only ever rise — nothing jumps
+  back when a retry is rescheduled.
+- Once both lines are full the bar **breathes red** until a reading arrives.
+- When a fresh reading arrives the fill drains down with a short animation.
+- While the bar is enabled, the floating window mirrors it as a thin strip along
+  its left edge (the strip covers both lines end to end: its first half is the
+  cycle, its second half the retry window).
+
 ### Night Dimming
 *Settings → Colors → Backgrounds → Dim the window at night*: between the hours you
 pick, the in-range window blends most of the way to black so a bedside screen

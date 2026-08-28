@@ -1104,13 +1104,13 @@ begin
   tPing.Enabled := true;
 
   // Pulse on wsSoon: piggyback on tProgress (1 Hz) instead of allocating
-  // another timer. tProgressTimer handles both pnNextProgress and pnWarning.
+  // another timer. tProgressTimer handles both pbNextProgress and pnWarning.
   // When severity is not wsSoon, the pulse is no longer needed — disable the
-  // timer unless pnNextProgress is still relying on it (mirrors hideWarningPanel).
+  // timer unless pbNextProgress is still relying on it (mirrors hideWarningPanel).
   if severity = wsSoon then
     tProgress.Enabled := true
   else if Assigned(tProgress) and tProgress.Enabled and
-       (not (Assigned(pnNextProgress) and pnNextProgress.Visible)) then
+       (not (Assigned(pbNextProgress) and pbNextProgress.Visible)) then
     tProgress.Enabled := false;
 
   // On the stale card ApplyStaleDisplayState already owns lVal — it writes the
@@ -1136,9 +1136,9 @@ procedure TfBG.hideWarningPanel;
 begin
   pnWarning.Visible := false;
   FWarnExpanded := false;
-  // Stop tProgress only if pnNextProgress doesn't still need it. The pulse was
-  // the only reason it might be on while pnNextProgress was hidden.
+  // Stop tProgress only if pbNextProgress doesn't still need it. The pulse was
+  // the only reason it might be on while pbNextProgress was hidden.
   if Assigned(tProgress) and tProgress.Enabled and
-     (not (Assigned(pnNextProgress) and pnNextProgress.Visible)) then
+     (not (Assigned(pbNextProgress) and pbNextProgress.Visible)) then
     tProgress.Enabled := false;
 end;

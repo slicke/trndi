@@ -381,6 +381,14 @@ RS_WIZARD_THRESH_BODY =
   'These defaults are a common starting point — adjust to match your personal targets.';
 RS_WIZARD_THRESH_HI   = 'High alert';
 RS_WIZARD_THRESH_LO   = 'Low alert';
+RS_WIZARD_PROGRESS_HEAD = 'Refresh countdown';
+RS_WIZARD_PROGRESS_BODY =
+  'Trndi can show a slim bar along the left edge of the window that fills up ' +
+  'as the next reading approaches. If a reading runs late, a second line ' +
+  'beside it fills while Trndi retries.' +
+  sLineBreak + sLineBreak +
+  'You can change this later via right-click → Settings.';
+RS_WIZARD_PROGRESS_CHECK = 'Show the refresh countdown bar';
 
 implementation
 

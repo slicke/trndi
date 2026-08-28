@@ -349,19 +349,24 @@ begin
 end;
 
 procedure TfBG.tProgressTimer(Sender: TObject);
-const
-  PROGRESS_TICK_MS = 1000;   // enough to keep a 5-minute bar moving smoothly
-  PROGRESS_PULSE_MS = 125;   // frame rate for the overdue breathing pulse
 var
   wantMs, nowSec: integer;
 begin
   wantMs := PROGRESS_TICK_MS;
-  if Assigned(pnNextProgress) and pnNextProgress.Visible then
+  if Assigned(pbNextProgress) and pbNextProgress.Visible then
   begin
-    pnNextProgress.Repaint;
-    // pnNextProgressPaint sets FProgressPulsing while the reading is overdue;
-    // the pulse needs real frames, the rest of the cycle does not.
-    if FProgressPulsing then
+    // Skip frames that would reproduce the last painted image: at 1 Hz the
+    // fill often moves less than a pixel per tick (and not at all while both
+    // lines sit pegged full waiting on a reading).
+    if ProgressFrameChanged then
+      pbNextProgress.Repaint;
+    UpdateFloatProgress;
+    // pbNextProgressPaint sets FProgressPulsing while both lines are full;
+    // the pulse needs real frames, the rest of the cycle does not. The
+    // reading-arrival drain is shorter and faster still.
+    if FProgressDrainFrom > 0 then
+      wantMs := PROGRESS_DRAIN_TICK_MS
+    else if FProgressPulsing then
       wantMs := PROGRESS_PULSE_MS;
   end;
   if tProgress.Interval <> wantMs then
@@ -379,6 +384,30 @@ begin
       pnWarning.Repaint;
     end;
   end;
+end;
+
+// Mirror the bar onto the floating window's slim edge strip. Runs on the
+// same tick as the bar itself, so the strip only exists while the progress
+// bar feature (main.next_progress) is on — the float has no scheduler of its
+// own to drive it. SetNextProgress ignores calls that change nothing.
+// The strip is a single line, so it shows the combined 0..2 progress halved —
+// still monotone: first half is the cycle, second half the retry window.
+procedure TfBG.UpdateFloatProgress;
+var
+  frac1, frac2: double;
+  pulsing, draining: boolean;
+begin
+  if not (Assigned(fFloat) and fFloat.Visible) then
+    Exit;
+  if (bgs = nil) or (Length(bgs) = 0) then
+    Exit;
+  ComputeProgressState(frac1, frac2, pulsing, draining);
+  // Colour follows the stage: the cycle colours while the primary line is
+  // still filling, the overtime red once the retry window has opened.
+  if frac2 > 0 then
+    fFloat.SetNextProgress(true, (frac1 + frac2) / 2, ProgressOvertimeColor(pulsing))
+  else
+    fFloat.SetNextProgress(true, frac1 / 2, ProgressFillColor(frac1, pulsing));
 end;
 
 {------------------------------------------------------------------------------
@@ -650,10 +679,10 @@ end;
 
 procedure TfBG.nextProgressChange;
 begin
-  if not Assigned(pnNextProgress) then
+  if not Assigned(pbNextProgress) then
     Exit;
 
-  lTir.left := fBG.Width - lTir.Width - pnNextProgress.Width - 5;
+  lTir.left := fBG.Width - lTir.Width - pbNextProgress.Width - 5;
 end;
 
 procedure TfBG.ResizeUIElements;
@@ -693,7 +722,7 @@ begin
   lAgo.Transparent := true;
   // Leave the clock clear of the enabled left-side progress bar at every form width.
   ScaleLbl(lAgo, taLeftJustify, tlCenter, true,
-    IfThen(pnNextProgress.Visible, pnNextProgress.Width + 2, 0));
+    IfThen(pbNextProgress.Visible, pbNextProgress.Width + 2, 0));
   lAgo.BringToFront;
 
   lArrow.Height := ClientHeight;

@@ -49,8 +49,8 @@ unit ufloat;
 interface
 
 uses
-Classes, ExtCtrls, Menus, StdCtrls, SysUtils, Forms, Controls, Graphics, Dialogs,
-LCLIntf, LCLType, InterfaceBase, trndi.native, utrendarrow
+Classes, ExtCtrls, Menus, StdCtrls, SysUtils, Math, Forms, Controls, Graphics,
+Dialogs, LCLIntf, LCLType, InterfaceBase, trndi.native, trndi.shared, utrendarrow
 {$IFDEF DARWIN},
 CocoaAll
 {$ENDIF}
@@ -120,18 +120,29 @@ private
   FDragStartY: integer;
   FDraggingWin: boolean;
   FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (mirrors the main window)
+  FProgressBox: TPaintBox;  // Slim next-refresh strip along the left edge (mirrors the main tube)
+  FProgFrac: double;        // Fill fraction the strip currently shows
+  FProgFill: TColor;        // Fill colour pushed from the main window
+  FProgLevel: integer;      // Quantised fill level (px) last shown — change gate
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
   procedure ApplyClock(AEnabled: boolean);
   procedure SetFixedFontColor(AColor: TColor);
   procedure SyncSizeMenu;
   procedure SyncOpacityMenu(AOpacity: single);
+  procedure ProgressBoxPaint({%H-}Sender: TObject);
 public
   {** Mirror the main window's rotating trend arrow.
       @param(AEnabled Whether the rotating arrow replaces the glyph.)
       @param(AAngle Rotation in degrees (0 = flat, + = up, - = down).)
       @param(AColor Stroke colour for the arrow.) }
   procedure SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor);
+  {** Mirror the main window's next-refresh progress onto the slim edge strip.
+      Pushed from TfBG.tProgressTimer; calls that change nothing are ignored.
+      @param(AShow Whether the strip is visible at all.)
+      @param(AFrac Fill fraction, 0..1.)
+      @param(AFill Fill colour, matching the main bar's current stage colour.) }
+  procedure SetNextProgress(AShow: boolean; AFrac: double; AFill: TColor);
 end;
 
 resourcestring
@@ -285,6 +296,16 @@ begin
   end;
   {$ENDIF}
 
+  // Next-refresh strip: created hidden; the main window shows and feeds it via
+  // SetNextProgress while the progress-bar feature is on. Mouse events forward
+  // to the form handlers so the strip doesn't punch a hole in window dragging.
+  FProgressBox := TPaintBox.Create(Self);
+  FProgressBox.Parent := Self;
+  FProgressBox.Visible := false;
+  FProgressBox.OnPaint := @ProgressBoxPaint;
+  FProgressBox.OnMouseDown := @FormMouseDown;
+  FProgressBox.OnMouseMove := @FormMouseMove;
+  FProgressBox.OnMouseUp := @FormMouseUp;
 end;
 
 procedure TfFloat.ApplyRoundedCorners;
@@ -674,6 +695,12 @@ begin
     if FTrendArrow.Visible then
       lArrow.Visible := false;
   end;
+
+  // Keep the next-refresh strip hugging the left edge, inset past the rounded
+  // corners so it never pokes out of the window shape.
+  if Assigned(FProgressBox) then
+    FProgressBox.SetBounds(2, 8, Max(3, ClientWidth div 60),
+      Max(4, ClientHeight - 16));
 end;
 
 procedure TfFloat.SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor);
@@ -697,6 +724,59 @@ begin
   FTrendArrow.Angle := AAngle;
   lArrow.Visible := false;
   FTrendArrow.Visible := true;
+end;
+
+procedure TfFloat.SetNextProgress(AShow: boolean; AFrac: double; AFill: TColor);
+var
+  lvl: integer;
+begin
+  if not Assigned(FProgressBox) then
+    Exit;
+  if not AShow then
+  begin
+    FProgressBox.Visible := false;
+    Exit;
+  end;
+
+  // Only repaint on a visible change: at a few pixels wide the level moves
+  // roughly once per handful of seconds, and the caller ticks every second.
+  lvl := Round(AFrac * FProgressBox.Height);
+  if FProgressBox.Visible and (lvl = FProgLevel) and (AFill = FProgFill) then
+    Exit;
+
+  FProgFrac := AFrac;
+  FProgFill := AFill;
+  FProgLevel := lvl;
+  FProgressBox.Visible := true;
+  FProgressBox.Invalidate;
+end;
+
+procedure TfFloat.ProgressBoxPaint(Sender: TObject);
+var
+  w, h, lvl: integer;
+  track: TColor;
+begin
+  w := FProgressBox.Width;
+  h := FProgressBox.Height;
+  // Recessed track against the float's own background — the float mirrors the
+  // main window's range colour, so derive per paint rather than caching.
+  if IsLightColor(Color) then
+    track := BlendColors(clBlack, Color, 0.14)
+  else
+    track := BlendColors(clWhite, Color, 0.10);
+  with FProgressBox.Canvas do
+  begin
+    Brush.Style := bsSolid;
+    Pen.Style := psClear;
+    Brush.Color := track;
+    FillRect(Classes.Rect(0, 0, w, h));
+    lvl := Round(FProgFrac * h);
+    if lvl > 0 then
+    begin
+      Brush.Color := FProgFill;
+      FillRect(Classes.Rect(0, h - lvl, w, h));
+    end;
+  end;
 end;
 
 procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton;

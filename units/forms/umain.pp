@@ -459,7 +459,7 @@ TfBG = class(TForm)
   miPref: TMenuItem;
   miFloatOn: TMenuItem;
   pnOffReading: TPanel;
-  pnNextProgress: TPanel;
+  pbNextProgress: TPaintBox;
   pnWarning: TPanel;
   pnMultiUser: TPanel;
   pnOffRangeBar: TPanel;
@@ -555,7 +555,7 @@ TfBG = class(TForm)
   procedure pmSettingsClose({%H-}Sender: TObject);
   procedure pnWarningClick({%H-}Sender: TObject);
   procedure pnWarningPaint({%H-}Sender: TObject);
-  procedure pnNextProgressPaint({%H-}Sender: TObject);
+  procedure pbNextProgressPaint({%H-}Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave({%H-}Sender: TObject);
   procedure FormMouseMove(Sender: TObject;{%H-}Shift: TShiftState; X, Y: integer);
@@ -750,7 +750,15 @@ private
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
   FWarnPulseSecond: integer;    // Second the wsSoon pulse last repainted on
-  FProgressPulsing: boolean;    // Set by pnNextProgressPaint while a reading is overdue
+  FProgressPulsing: boolean;    // Set by pbNextProgressPaint while both lines are full
+  FProgressDrainFrom: double;   // Combined progress (0..2) the arrival drain animates down from (0 = no drain running)
+  FProgressDrainStart: QWord;   // GetTickCount64 when the arrival drain started
+  FProgressPaintedFrac: double; // Combined progress (0..2) of the last frame actually painted
+  FProgressPaintedLvl1: integer;   // Quantised primary-line fill (px) of the last painted frame
+  FProgressPaintedLvl2: integer;   // Quantised overtime-line fill (px) of the last painted frame
+  FProgressPaintedColor: TColor;   // Primary-line colour of the last painted frame
+  FProgressPaintedW: integer;      // Box size the last frame was painted at — a
+  FProgressPaintedH: integer;      // resize means the frame on screen may be partial
   FResizePending: boolean;      // A relayout was requested while minimized; replayed on restore
   FStaleStage: TStaleStage;     // Escalation step of the active stale card
   FNextFetchAt: TDateTime;      // When tMain will fire next; drives the retry countdown
@@ -1101,6 +1109,25 @@ private
 
   {** Recalculate left of lTir when next progress bar is visible }
   procedure nextProgressChange;
+  {** Compute the progress bar's current state: the primary line's fill
+      fraction (one refresh cycle), the overtime line's fill fraction (the
+      retry window after it), whether the both-full pulse is active, and
+      whether the reading-arrival drain animation is running. }
+  procedure ComputeProgressState(out AFrac1, AFrac2: double;
+    out APulsing, ADraining: boolean);
+  {** Fill colour of the primary line at the given fill fraction. }
+  function ProgressFillColor(const AFrac: double; const APulsing: boolean): TColor;
+  {** Colour of the overtime line — the retry window's red, breathing once
+      both lines are full, steady before that. }
+  function ProgressOvertimeColor(const APulsing: boolean): TColor;
+  {** True when the bar would paint differently from its last painted frame —
+      lets tProgressTimer skip repaints that would reproduce the same pixels. }
+  function ProgressFrameChanged: boolean;
+  {** Start the short drain animation from the last painted fill level down to
+      the level of the reading that just arrived. }
+  procedure StartProgressDrain;
+  {** Mirror the bar's state onto the floating window's slim progress strip. }
+  procedure UpdateFloatProgress;
   {** Refresh labels and menu captions that display API-derived thresholds
       and other backend metadata (e.g., cgmHi/cgmLo values).
    }
@@ -1461,6 +1488,13 @@ RAPID_POLL_INTERVAL_MS = 20000; // 20 seconds
 // Once the newest reading is this old the outage is a gap, not a late upload;
 // rapid mode stands down and the normal retry clamp takes over.
 RAPID_POLL_MAX_OVERDUE_MS = 1800000; // 30 minutes
+// Repaint cadences for the left-side progress bar (tProgressTimer): the slow
+// tick covers the normal fill, the pulse tick keeps the overdue breathing
+// smooth, and the drain tick gives the short reading-arrival animation enough
+// frames to read as motion rather than a flicker.
+PROGRESS_TICK_MS = 1000;
+PROGRESS_PULSE_MS = 125;
+PROGRESS_DRAIN_TICK_MS = 40;
 DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
 // Prediction-dot × opacity: the mark fades as the engine's confidence drops
 // (never below the base, so it stays findable) and steps down once per horizon
@@ -2152,11 +2186,14 @@ begin
     end;
 
     // Keep the thin left-side progress bar sized with the form
-    if Assigned(pnNextProgress) then
+    if Assigned(pbNextProgress) then
     begin
-      pnNextProgress.Height := ClientHeight;
-      pnNextProgress.Width := Max(6, ClientWidth div 40);
-      pnNextProgress.Left := 0;
+      pbNextProgress.Height := ClientHeight;
+      pbNextProgress.Width := Max(6, ClientWidth div 40);
+      pbNextProgress.Left := 0;
+      // Full invalidate: a grow only marks the newly exposed strip dirty, and
+      // a partially repainted capsule shows seams from the old size.
+      pbNextProgress.Invalidate;
       nextProgressChange;
     end;
 
@@ -2172,13 +2209,15 @@ begin
   lVal.font.Quality := fqCleartype;
 
   // Ensure the next-reading progress panel is correctly positioned
-  if Assigned(pnNextProgress) then
+  if Assigned(pbNextProgress) then
   begin
-    pnNextProgress.Height := ClientHeight;
-    pnNextProgress.Width := Max(6, ClientWidth div 40);
-    pnNextProgress.Left := 0;
-    pnNextProgress.BringToFront;
-    pnNextProgress.Visible := native.GetBoolSetting('main.next_progress', false);
+    pbNextProgress.Height := ClientHeight;
+    pbNextProgress.Width := Max(6, ClientWidth div 40);
+    pbNextProgress.Left := 0;
+    pbNextProgress.BringToFront;
+    pbNextProgress.Visible := native.GetBoolSetting('main.next_progress', false);
+    // Full invalidate — see FormResize: partial exposure repaints leave seams.
+    pbNextProgress.Invalidate;
   end;
   
   // Check if we need to close after FormCreate completed (e.g., fresh install with no config)

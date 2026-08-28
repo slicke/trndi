@@ -627,8 +627,8 @@ begin
   pnOffReading.Visible := false;
   pnOffRange.Visible := false;
   pnOffRangeBar.Visible := false;
-  if Assigned(pnNextProgress) then
-    pnNextProgress.Visible := false;
+  if Assigned(pbNextProgress) then
+    pbNextProgress.Visible := false;
   if Assigned(lPredict) then
     lPredict.Visible := false;
   lArrow.Caption := '';
@@ -1072,8 +1072,8 @@ begin
     pnOffRange.Visible := false;
   if Assigned(pnOffRangeBar) then
     pnOffRangeBar.Visible := false;
-  if Assigned(pnNextProgress) then
-    pnNextProgress.Visible := false;
+  if Assigned(pbNextProgress) then
+    pbNextProgress.Visible := false;
   fBG.Color := clBlack;
   if Assigned(lPredict) then
     lPredict.Visible := false;

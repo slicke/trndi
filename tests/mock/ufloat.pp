@@ -52,6 +52,7 @@ type
   public
     // Lightweight placeholders for commonly-used properties
     Showing: Boolean;
+    Visible: Boolean;
     OnHide: TNotifyEvent;
     Color: TColor;
     Font: TFont;
@@ -65,6 +66,7 @@ type
     procedure Show; virtual;
     procedure Hide; virtual;
     procedure SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor); virtual;
+    procedure SetNextProgress(AShow: boolean; AFrac: double; AFill: TColor); virtual;
     class function Instance: TfFloat; static;
   end;
 
@@ -94,6 +96,11 @@ begin
 end;
 
 procedure TfFloat.SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor);
+begin
+  // no-op for headless tests
+end;
+
+procedure TfFloat.SetNextProgress(AShow: boolean; AFrac: double; AFill: TColor);
 begin
   // no-op for headless tests
 end;
