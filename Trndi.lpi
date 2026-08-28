@@ -105,7 +105,7 @@
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -151,7 +151,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -194,7 +194,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -238,7 +238,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -279,7 +279,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -322,7 +322,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -366,7 +366,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -406,7 +406,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -449,7 +449,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -491,7 +491,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
             <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+            <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
@@ -537,9 +537,6 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
       <FormatVersion Value="2"/>
     </RunParams>
     <RequiredPackages>
-      <Item>
-        <PackageName Value="TurboPowerIPro"/>
-      </Item>
       <Item>
         <PackageName Value="LazControls"/>
       </Item>
@@ -796,7 +793,7 @@ if TargetOS=&apos;darwin&apos; then CustomOptions += &apos; -k-rpath -k@loader_p
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
       <Libraries Value="externals\quickjs\prebuilt\$(TargetCPU)-$(TargetOS)"/>
-      <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma"/>
+      <OtherUnitFiles Value="units\misc\linutils;units\misc\winutils;units\misc\winutils\directx;units\misc\nsutils;units\trndi\ext;units\forms;units\trndi\api;units\trndi;units\slicke;units\misc;units\misc\razer;units\misc\razer\chroma;externals\pixie\common;externals\pixie\htmlview"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Conditionals Value="if TargetOS=&apos;linux&apos; then CustomOptions += &apos; -k-rpath=\$ORIGIN&apos;;
