@@ -3701,17 +3701,42 @@ const
     '- The developers assume NO LIABILITY for any harm, injury, or damages' + sHTMLLineBreak +
     '- You use this app entirely at your own risk' + sHTMLLineBreak +
     '- This app may contain bugs or errors that could display incorrect data' + sHTMLLineBreak + sHTMLLineBreak +
-    '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>'
+    '<b><i>- IF YOU DO NOT AGREE WITH THESE TERMS, DO NOT USE THIS APP. -</i></b>' +
+
+    // Bundled MIT components carry their notices here rather than as files
+    // beside the binary: "included in all copies" is satisfied by text compiled
+    // into the program itself, and one in-app copy cannot drift out of sync
+    // across six packaging layouts the way six copied files can. Trndi's own
+    // GPLv3 is the exception — section 4 wants the full license text, which is
+    // far too long to embed, so LICENSE.md still ships beside the binary.
+    '<hr>' +
+    '<h3>Additional component licenses</h3>' +
+
+    'The in-app HTML dialogs are rendered with <b>Pixie</b>, used under the MIT ' +
+    'license. Pixie is compiled into every build, so this notice is unconditional:' +
+    sHTMLLineBreak + sHTMLLineBreak +
+    'The MIT License (MIT)' + sHTMLLineBreak + sHTMLLineBreak +
+    'Copyright (c) 2026 SoftPerfect Pty Ltd (https://www.softperfect.com)' + sHTMLLineBreak + sHTMLLineBreak +
+    'Permission is hereby granted, free of charge, to any person obtaining a copy ' +
+    'of this software and associated documentation files (the "Software"), to deal ' +
+    'in the Software without restriction, including without limitation the rights ' +
+    'to use, copy, modify, merge, publish, distribute, sublicense, and/or sell ' +
+    'copies of the Software, and to permit persons to whom the Software is ' +
+    'furnished to do so, subject to the following conditions:' + sHTMLLineBreak + sHTMLLineBreak +
+    'The above copyright notice and this permission notice shall be included in ' +
+    'all copies or substantial portions of the Software.' + sHTMLLineBreak + sHTMLLineBreak +
+    'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR ' +
+    'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, ' +
+    'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE ' +
+    'AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER ' +
+    'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, ' +
+    'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE ' +
+    'SOFTWARE.'
     {$ifdef TrndiExt}
-    // The extension engine links quickjs-ng, whose MIT license requires its
-    // copyright and permission notice to accompany every copy. It ships as a
-    // separate, extractable binary, so the notice is reproduced here as well
-    // as in the package; no-ext builds don't ship the library, so the notice
-    // is omitted there. Libraries compiled straight into Trndi are credited
-    // under Settings > Libraries instead, and their notices travel with the
-    // package (Pixie as LICENSE.pixie) — see THIRD-PARTY.md.
-    + '<h3>THIRD-PARTY SOFTWARE</h3>' +
-    'The extension engine includes quickjs-ng, used under the MIT license:' + sHTMLLineBreak + sHTMLLineBreak +
+    // No-ext builds never ship quickjs-ng, so its notice is omitted there.
+    + sHTMLLineBreak + sHTMLLineBreak +
+    'The extension engine includes <b>quickjs-ng</b>, used under the MIT license:' +
+    sHTMLLineBreak + sHTMLLineBreak +
     'The MIT License (MIT)' + sHTMLLineBreak + sHTMLLineBreak +
     'Copyright (c) 2017-2026 Fabrice Bellard' + sHTMLLineBreak +
     'Copyright (c) 2017-2024 Charlie Gordon' + sHTMLLineBreak +
