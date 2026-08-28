@@ -494,27 +494,23 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
   @param caption Window caption.
   @param desc Description of dialog.
   @param micon Icon for the dialog
-  @param scale Size for the actual dialog
   @returns @true when the user chose Yes; @false otherwise.
 }
 function SlickeMsgYesNo(
 const dialogsize: TSlickeDialogSize;
 const caption, desc: string;
-const micon: SlickeUXImage = uxmtConfirmation;
-const scale: single = 1): boolean;
+const micon: SlickeUXImage = uxmtConfirmation): boolean;
 
 {**
   Simplified Extended message dialog for displaying yes/no dialogs
   @param caption Window caption.
   @param desc Description of dialog.
   @param micon Icon for the dialog
-  @param scale The size of the actual dialog
   @returns @true when the user chose Yes; @false otherwise.
 }
 function SlickeMsgYesNo(
 const caption, desc: string;
-const micon: SlickeUXImage = uxmtConfirmation;
-const scale: single = 1): boolean;
+const micon: SlickeUXImage = uxmtConfirmation): boolean;
 
 {**
   Extended message dialog supporting an optional log/dump panel with custom colors.
@@ -568,15 +564,15 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
     @param html HTML content to display in the dialog.
     @param buttons Buttons to display, in left-to-right order (default [mbAbort]).
     @param icon Emoji icon (default gear).
-    @param scale Content height multiplier (default 1).
     @returns Modal result based on user button selection.
     @remarks This variant displays only HTML content without title/description sections.
+      The dialog sizes itself to the rendered content.
   }
 function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1; hpadding: single = 1;
+hpadding: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {**
@@ -586,7 +582,6 @@ function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 
   {**
@@ -596,7 +591,6 @@ function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 
   {**
@@ -680,7 +674,7 @@ function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1; hpadding: single = 1;
+hpadding: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(SlickeHTMLMsg). }
@@ -688,7 +682,6 @@ function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(SlickePrompt). }
@@ -696,7 +689,6 @@ function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {** Row-aware @link(SlickeMsgEx). }
@@ -989,7 +981,12 @@ type
 
 function TSlickeHtmlView.MeasureHeight(AWidth: integer): integer;
 begin
-  Result := Round(Core.Document.Render(AWidth));
+  // Render's return value is the root box's height, which stretches to the
+  // containing block (the control's current, pre-show size). Document.Height
+  // after the layout pass is the actual content extent, matching what the
+  // paint path publishes as ContentHeight.
+  Core.Document.Render(AWidth);
+  Result := Round(Core.Document.Height);
 end;
 
 var
@@ -1163,11 +1160,11 @@ function SlickeMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1; hpadding: single = 1;
+hpadding: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeMsg(dialogsize, caption, html,
-    SlickeResolveButtonRow(buttons), icon, scale, hpadding, RowDefault(buttons, ADefault));
+    SlickeResolveButtonRow(buttons), icon, hpadding, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -1175,11 +1172,10 @@ function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickeHTMLMsg(dialogsize, caption, html,
-    SlickeResolveButtonRow(buttons), icon, scale, RowDefault(buttons, ADefault));
+    SlickeResolveButtonRow(buttons), icon, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -1187,11 +1183,10 @@ function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
 const buttons: TSlickeMsgDlgBtnRows;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   Result := SlickePrompt(dialogsize, caption, text,
-    SlickeResolveButtonRow(buttons), icon, scale, RowDefault(buttons, ADefault));
+    SlickeResolveButtonRow(buttons), icon, RowDefault(buttons, ADefault));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -3677,20 +3672,18 @@ end;
 
 function SlickeMsgYesNo(
 const caption, desc: string;
-const micon: SlickeUXImage = uxmtConfirmation;
-const scale: single = 1): boolean;
+const micon: SlickeUXImage = uxmtConfirmation): boolean;
 begin
-  result :=SlickeMsgYesNo(sdsAuto, caption, desc, micon, scale);
+  result :=SlickeMsgYesNo(sdsAuto, caption, desc, micon);
 end;
 
 function SlickeMsgYesNo(
 const dialogsize: TSlickeDialogSize;
 const caption, desc: string;
-const micon: SlickeUXImage = uxmtConfirmation;
-const scale: single = 1): boolean;
+const micon: SlickeUXImage = uxmtConfirmation): boolean;
 begin
   result := SlickeMsg(dialogsize, caption, desc,
-    [[mbYes, mbNo], [mbNo, mbYes]], micon, scale) = mrYes;
+    [[mbYes, mbNo], [mbNo, mbYes]], micon) = mrYes;
 end;
 
 function SlickeMsg(
@@ -3732,12 +3725,11 @@ function SlickePrompt(const dialogsize: TSlickeDialogSize;
 const caption, text: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   if Length(buttons) = 0 then
     buttons := [mbOK];
-  result := SlickeMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons, icon, scale, ADefault);
+  result := SlickeMsg(dialogsize, 'Trndi', caption, text, '', uxclWhite, uxclRed, buttons, icon, 1, ADefault);
 end;
 
 {** Alias for SlickeMsg. }
@@ -3746,12 +3738,11 @@ const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtInformation;
-scale: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 begin
   if Length(buttons) = 0 then
     buttons := [mbOK];
-  result := SlickeMsg(dialogsize, caption, html, buttons, icon, scale, 1, ADefault);
+  result := SlickeMsg(dialogsize, caption, html, buttons, icon, 1, ADefault);
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -3760,7 +3751,6 @@ const dialogsize: TSlickeDialogSize;
 const caption, html: string;
 buttons: TSlickeMsgDlgBtns = nil;
 const icon: SlickeUXImage = uxmtCog;
-scale: single = 1;
 hpadding: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 const
@@ -3896,7 +3886,7 @@ begin
     maxHeight := Round(ScreenUsableHeight * 0.8);
     // Pixie computes ContentHeight lazily on paint, which has not happened
     // yet - lay the document out at the panel width to measure it instead.
-    contentHeight := Round((HtmlViewer.MeasureHeight(HtmlViewer.Width) + 20) * scale);  // Apply scale multiplier to height
+    contentHeight := HtmlViewer.MeasureHeight(HtmlViewer.Width) + 20;
     // Was a flat "maxHeight - 200", which silently underestimated once the
     // button block could be several stacked touch-sized rows tall.
     availableHeight := maxHeight - HtmlPanel.Top - buttonBlockHeight - (padding * 2);

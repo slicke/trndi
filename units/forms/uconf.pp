@@ -1264,7 +1264,7 @@ const
     'Built in <b>Object Pascal</b>, using the <b>Lazarus</b> component library (LCL) and <b>FreePascal</b>.' + sHTMLLineBreak + sHTMLLineBreak +
     'Follow Trndi on Discord and Github! Contributions of code and translations are very welcome!';
 begin
-  SlickeHTMLMsg(sdsAuto, 'Trndi', txt,[mbOK],uxmtInformation,25);
+  SlickeHTMLMsg(sdsAuto, 'Trndi', txt,[mbOK],uxmtInformation);
 end;
 
 { Only http(s) links are offered as clickable; a manifest must not be able to
@@ -2583,7 +2583,7 @@ begin
   if s <> '' then
   begin
     s := s + sHTMLLineBreak + sHTMLLineBreak + x + sHTMLLineBreak + RS_DRIVER_CONTRIBUTOR + c;
-    SlickeMsg(sdsAuto, 'API', s, [mbClose],uxmtInformation,20, 1.2);
+    SlickeMsg(sdsAuto, 'API', s, [mbClose],uxmtInformation, 1.2);
   end;
 
 end;
@@ -3728,7 +3728,7 @@ const
     {$endif};
 begin
   if SlickeMsg(sdsAuto, 'License', txt,
-    [[mbOK, mbSlickeRead], [mbSlickeRead, mbOK]], uxmtOK, uxscHuge) <> mrOk then
+    [[mbOK, mbSlickeRead], [mbSlickeRead, mbOK]], uxmtOK) <> mrOk then
     OpenURL('https://github.com/slicke/trndi/blob/main/LICENSE.md');
 end;
 
