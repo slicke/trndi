@@ -84,7 +84,7 @@ interface
 uses
 trndi.strings, LCLTranslator, Types, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
-trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.carelink, trndi.types,
+trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow,
 Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
