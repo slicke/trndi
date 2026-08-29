@@ -3687,17 +3687,15 @@ const
     'medical app before acting on any shown data!' + sHTMLLineBreak +
     'This app is NOT a medical device and is NOT intended for:' + sHTMLLineBreak +
     '- Medical diagnosis, treatment, or prevention'#10 + '- Making medical decisions' + sHTMLLineBreak +
-    '- Replacing your CGM app or medical devices'#10 + '- Emergency medical situations' +
-    // Headings are real <h3> elements: they are block-level and bring their
-    // own margins, so no surrounding <br> is needed (or wanted).
-    '<h3>IMPORTANT WARNINGS</h3>' +
+    '- Replacing your CGM app or medical devices'#10 + '- Emergency medical situations' + sHTMLLineBreak + sHTMLLineBreak +
+    '<b>### IMPORTANT WARNINGS ###</b>' + sHTMLLineBreak +
     '<ul>'+
     '<li>Data displayed may be inaccurate, delayed, or unavailable</li>' +
     '<li> Always verify readings with your official CGM device</li>' +
     '<li> Never make medical decisions based solely on this app</li>' +
     '<li> Consult healthcare professionals for medical advice</li>'+
-    '</ul>' +
-    '<h3>BY USING THIS APP, YOU ACKNOWLEDGE THAT</h3>' +
+    '</ul>' + sHTMLLineBreak +
+    '<b>### BY USING THIS APP, YOU ACKNOWLEDGE THAT ###</b>' + sHTMLLineBreak +
     '- The developers assume NO LIABILITY for any harm, injury, or damages' + sHTMLLineBreak +
     '- You use this app entirely at your own risk' + sHTMLLineBreak +
     '- This app may contain bugs or errors that could display incorrect data' + sHTMLLineBreak + sHTMLLineBreak +
@@ -3710,7 +3708,8 @@ const
     // is omitted there. Libraries compiled straight into Trndi are credited
     // under Settings > Libraries instead, and their notices travel with the
     // package (Pixie as LICENSE.pixie) — see THIRD-PARTY.md.
-    + '<h3>THIRD-PARTY SOFTWARE</h3>' +
+    + sHTMLLineBreak + sHTMLLineBreak +
+    '<b>### THIRD-PARTY SOFTWARE ###</b>' + sHTMLLineBreak +
     'The extension engine includes quickjs-ng, used under the MIT license:' + sHTMLLineBreak + sHTMLLineBreak +
     'The MIT License (MIT)' + sHTMLLineBreak + sHTMLLineBreak +
     'Copyright (c) 2017-2026 Fabrice Bellard' + sHTMLLineBreak +
