@@ -2144,7 +2144,7 @@ msgid ""
 "Δ Difference: %s\n"
 "↔ Trend: %s\n"
 "📻 RSSI: %s\n"
-"🔊 Noise: %s\n"
+"𐩘 Noise: %s\n"
 "ℹ Source: %s\n"
 "💻 Device: %s"
 msgstr ""
@@ -2152,7 +2152,7 @@ msgstr ""
 "Δ Différence : %s\n"
 "↔ Tendance : %s\n"
 "📻 RSSI : %s\n"
-"🔊 Bruit : %s\n"
+"𐩘 Bruit : %s\n"
 "ℹ Source : %s\n"
 "💻 Appareil : %s"
 
@@ -2941,8 +2941,8 @@ msgstr ""
 #: trndi.strings.rs_ux_noise
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
-msgid "🔊 Noise: %d"
-msgstr "🔊 Bruit : %d"
+msgid "𐩘 Noise: %d"
+msgstr "𐩘 Bruit : %d"
 
 #: trndi.strings.rs_ux_prediction_here
 #, object-pascal-format

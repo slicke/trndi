@@ -181,7 +181,7 @@ RS_RH_READING = 'Reading';
 RS_RH_TIME = 'Time';
 RS_RH_UNKNOWN = 'Unknown';
 
-RS_HISTORY_ITEM = '» Selected Reading: %s'+sLineBreak+'Δ Difference: %s'+sLineBreak+'↔ Trend: %s'+sLineBreak+'📻 RSSI: %s'+sLineBreak+'🔊 Noise: %s'+sLineBreak+'ℹ Source: %s'+sLineBreak+'💻 Device: %s';
+RS_HISTORY_ITEM = '» Selected Reading: %s'+sLineBreak+'Δ Difference: %s'+sLineBreak+'↔ Trend: %s'+sLineBreak+'📻 RSSI: %s'+sLineBreak+'𐩘 Noise: %s'+sLineBreak+'ℹ Source: %s'+sLineBreak+'💻 Device: %s';
 
 RS_PREDICTIONS_UNAVAILABLE = 'Predictions unavailable';
 RS_PREDICTIONS_STABLE = 'No change predicted →';
@@ -296,7 +296,7 @@ RS_DATA_TYPE_ERR_POS = 'Datatype %s was not expected, expected in function %s, p
 RS_DATA_TYOE_ERR_FUNC = 'Datatype "%s" was not expected, in function "%s". Expected "%s"';
 
 RS_UX_RSSI = '📻 RSSI (Signal Strength): %d%%';
-RS_UX_NOISE = '🔊 Noise: %d';
+RS_UX_NOISE = '𐩘 Noise: %d';
 RS_UX_DEVICE = '💻 Device: %s';
 RS_UX_SENSOR_EXPIRY = '⏱️ Sensor: %s';
 RS_UX_SENSOR_LEFT_DH = 'about %dd %dh left';
