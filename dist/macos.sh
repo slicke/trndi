@@ -39,11 +39,6 @@ done
 if [ -f "../externals/quickjs/LICENSE.quickjs-ng" ] && [ -d "${QJS_DIR}" ]; then
   cp ../externals/quickjs/LICENSE.quickjs-ng macos/Trndi.app/Contents/Resources/
 fi
-# Pixie is compiled straight into the binary (no separate library staged
-# above), so its MIT notice ships unconditionally, unlike quickjs-ng's.
-if [ -f "../externals/pixie/LICENSE" ]; then
-  cp ../externals/pixie/LICENSE macos/Trndi.app/Contents/Resources/LICENSE.pixie
-fi
 
 # The CareLink login helper is compiled into the binary (see
 # assets/carelink_assets.lrs) and written to the user's writable
