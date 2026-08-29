@@ -48,7 +48,7 @@ unit trndi.api.debug_sensorexpiry;
 interface
 
 uses
-  Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs.core,
+  Classes, SysUtils, trndi.types, trndi.api, trndi.funcs.core,
   fpjson, jsonparser, dateutils, trndi.api.debug;
 
 type

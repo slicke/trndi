@@ -84,7 +84,7 @@ interface
 uses
 trndi.strings, LCLTranslator, Types, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
-trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
+trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.carelink, trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow,
 Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
@@ -120,7 +120,7 @@ BaseUnix,
 winsock,
 {$endif}
 LazFileUtils, uconf, uwizard, trndi.native, Trndi.API, trndi.api.registry,
-trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing,{$endif}
+{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma,
 trndi.alert.engine,

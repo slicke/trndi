@@ -60,10 +60,9 @@ Forms,
 Controls,
 Graphics,
 Math,
-StdCtrls,
 slicke.ux.alert,
 trndi.strings,
-fpimage, IntfGraphics, GraphType, EasyLazFreeType, LazFreeTypeIntfDrawer;
+fpimage, IntfGraphics, GraphType, EasyLazFreeType;
 
 type
   {** Callback signature invoked when JavaScript code emits output via this engine. }

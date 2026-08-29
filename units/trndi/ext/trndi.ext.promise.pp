@@ -45,7 +45,7 @@ interface
 
 uses
 Classes, SysUtils, trndi.ext.quickjs, Dialogs,
-trndi.ext.functions, slicke.ux.alert, fgl, trndi.strings, trndi.native;
+trndi.ext.functions, slicke.ux.alert, trndi.strings;
 
 type
   {** Pair holding QuickJS resolve/reject functions for a Promise.

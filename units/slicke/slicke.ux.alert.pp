@@ -38,7 +38,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, slicke.ux.titlebar, SpinEx, LCLIntf,
+IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, IpHtml, Iphttpbroker, slicke.ux.native, slicke.ux.titlebar, SpinEx, LCLIntf,
 EditBtn, Clipbrd,
 {$ifdef X_MAC}
 CocoaAll, nsutils.cocoahelpers,

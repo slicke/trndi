@@ -58,8 +58,8 @@ interface
 
 uses
 Classes, SysUtils, // Trndi units
-trndi.types, trndi.api, trndi.native, trndi.native.base, trndi.funcs.core,
-{$ifdef debug} trndi.log,{$endif}
+trndi.types, trndi.api, trndi.native, trndi.native.base,
+{$ifdef debug} trndi.log, trndi.funcs.core,{$endif}
 // FPC units
 fpjson, jsonparser, dateutils, StrUtils;
 
