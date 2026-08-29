@@ -234,14 +234,6 @@ jobs:
           sh dist/linux/stage-qjs.sh "$QJS_DIR" artifacts
           # The CareLink login helper is compiled into the binary and written to
           # the user's writable settings folder on demand — nothing to bundle.
-          # GPLv3 sections 4 and 6 apply to the portable ZIP exactly as they do
-          # to the installers: this archive is the only layout a user can get
-          # without a package manager, so the license has to travel in it too.
-          # Bundled MIT notices are not files — they are compiled into the
-          # binary and shown under Settings > License.
-          for LIC in LICENSE.md DISCLAIMER.md THIRD-PARTY.md; do
-            if [ -f "$LIC" ]; then cp "$LIC" artifacts/; fi
-          done
           7z a -tzip Trndi-linux-${{ matrix.arch }}.zip ./artifacts/* >/dev/null
 
           # DEB/RPM installers are built on every event (incl. PRs) so packaging
@@ -265,12 +257,19 @@ jobs:
             # bundle next to it.
 
             # GPLv3 sections 4 and 6: the license has to accompany the binary.
-            # Bundled MIT notices are not files — they are compiled into the
-            # binary and shown under Settings > License.
+            # The MIT notices belong with the libraries they cover: quickjs-ng
+            # ships whenever its libraries were staged above, Pixie is
+            # compiled straight into the binary so it ships unconditionally.
             mkdir -p "$PKG_DIR/usr/share/doc/trndi"
             for LIC in LICENSE.md DISCLAIMER.md THIRD-PARTY.md; do
               [ -f "$LIC" ] && cp "$LIC" "$PKG_DIR/usr/share/doc/trndi/"
             done
+            if [ -f externals/quickjs/LICENSE.quickjs-ng ] && [ -d "$QJS_DIR" ]; then
+              cp externals/quickjs/LICENSE.quickjs-ng "$PKG_DIR/usr/share/doc/trndi/"
+            fi
+            if [ -f externals/pixie/LICENSE ]; then
+              cp externals/pixie/LICENSE "$PKG_DIR/usr/share/doc/trndi/LICENSE.pixie"
+            fi
 
             # Optional GNOME Shell top-bar indicator extension source
             if [ -d "gnome-shell-extension/trndi-current" ]; then
@@ -602,14 +601,6 @@ jobs:
           if (Test-Path '.\lang') { Copy-Item '.\lang' -Destination '.\artifacts\lang' -Recurse }
           # The CareLink login helper is compiled into Trndi.exe and written to
           # the user's writable settings folder on demand — nothing to bundle.
-          # GPLv3 sections 4 and 6 apply to the portable ZIP exactly as they do
-          # to the installer: this archive is the only layout a user can get
-          # without running the installer, so the license has to travel in it
-          # too. Bundled MIT notices are not files — they are compiled into the
-          # binary and shown under Settings > License.
-          foreach ($lic in @('LICENSE.md', 'DISCLAIMER.md', 'THIRD-PARTY.md')) {
-            if (Test-Path ".\$lic") { Copy-Item ".\$lic" -Destination '.\artifacts\' }
-          }
           # 7-Zip ships on the runner image; install only if a future image drops it.
           $sevenzip = 'C:\Program Files\7-Zip\7z.exe'
           if (-not (Test-Path $sevenzip)) { choco install 7zip -y }

@@ -31,13 +31,19 @@ if [ -d "../lang" ]; then
 fi
 
 # GPLv3 sections 4 and 6 require the license to travel with the binary, so put
-# it in the bundle's Resources (unsigned data, safe for codesign). Bundled MIT
-# notices are not files — they are compiled into the binary and shown under
-# Settings > License.
+# it in the bundle's Resources (unsigned data, safe for codesign).
 mkdir -p macos/Trndi.app/Contents/Resources
 for LIC in LICENSE.md DISCLAIMER.md THIRD-PARTY.md; do
   [ -f "../${LIC}" ] && cp "../${LIC}" macos/Trndi.app/Contents/Resources/
 done
+if [ -f "../externals/quickjs/LICENSE.quickjs-ng" ] && [ -d "${QJS_DIR}" ]; then
+  cp ../externals/quickjs/LICENSE.quickjs-ng macos/Trndi.app/Contents/Resources/
+fi
+# Pixie is compiled straight into the binary (no separate library staged
+# above), so its MIT notice ships unconditionally, unlike quickjs-ng's.
+if [ -f "../externals/pixie/LICENSE" ]; then
+  cp ../externals/pixie/LICENSE macos/Trndi.app/Contents/Resources/LICENSE.pixie
+fi
 
 # The CareLink login helper is compiled into the binary (see
 # assets/carelink_assets.lrs) and written to the user's writable
