@@ -365,7 +365,7 @@ begin
   // Safe mode: holding Ctrl during startup skips all extension loading.
   if ssCtrl in GetKeyShiftState then
   begin
-    SlickeHTMLMsg(sdsAuto, RS_SAFEMODE, RS_SAFEMODE_DESC, [mbOK], uxmtInformation);
+    SlickeHTMLMsg(sdsAuto, RS_SAFEMODE, RS_SAFEMODE_DESC, [mbOK], uxmtInformation, uxscLarge);
     exts.Free;
     Exit;
   end;

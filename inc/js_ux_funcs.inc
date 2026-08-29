@@ -184,30 +184,50 @@ end;
 // Display an HTML message dialog
 procedure JSHTMLDlg(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
+var
+  vbs: variant; //Variant box size
 begin
   res^ := JS_UNDEFINED;
-  if argc <> 2 then
+  if argc <> 3 then
   begin
-    ExtError(sdsAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 2');
+    ExtError(sdsAuto, '[htmlDlg] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
     exit;
   end;
 
- // Title, html. The dialog sizes itself to the rendered content.
-  SlickeMsg(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), [mbOK], uxmtOk);
+  ctx^.ToVariant(argv^[2], vbs);
+
+  if not VarIsNumeric(vbs) then
+  begin
+    ExtError(sdsAuto, 'Box Size must be a float or integer');
+    exit;
+  end;
+
+ // Title, Desc, html, size
+  SlickeMsg(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), [mbOK], uxmtOk, vbs);
 end;
 
 procedure JSHTMLYesNo(res: PJSValue; ctx: JSContext; this_val: PJSValue;
 argc: integer; argv: PJSValues; magic: integer);
+var
+  vbs: variant; //Variant box size
 begin
   res^ := JS_FALSE;
-  if argc <> 2 then
+  if argc <> 3 then
   begin
-    ExtError(sdsAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 2');
+    ExtError(sdsAuto, '[htmlYesNo] A dialog box could not be displayed, as the parameter count was wrong; got' + IntToStr(argc) + ', expected 3');
     exit;
   end;
 
- // Title, html. The dialog sizes itself to the rendered content.
-  if SlickeMsg(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), [[mbYes, mbNo], [mbNo, mbYes]], uxmtOk) = mrYes then
+  ctx^.ToVariant(argv^[2], vbs);
+
+  if not VarIsNumeric(vbs) then
+  begin
+    ExtError(sdsAuto, 'Box Size must be a float or integer');
+    exit;
+  end;
+
+ // Title, Desc, html, size
+  if SlickeMsg(sdsAuto, ctx^.ToUtf8(argv^[0]), ctx^.ToUtf8(argv^[1]), [[mbYes, mbNo], [mbNo, mbYes]], uxmtOk, vbs) = mrYes then
     res^ := JS_TRUE
   else
     res^ := JS_FALSE;
