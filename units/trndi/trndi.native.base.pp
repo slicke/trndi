@@ -70,7 +70,7 @@ interface
 
 uses
   Classes, SysUtils, IniFiles, trndi.native.colors, trndi.native.threading,
-  trndi.log, SyncObjs, StrUtils;
+  SyncObjs, StrUtils;
 
 type
   {** Re-export of @link(trndi.native.colors.TColor) so consumers of this unit

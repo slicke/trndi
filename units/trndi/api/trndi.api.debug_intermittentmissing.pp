@@ -52,8 +52,8 @@ unit trndi.api.debug_intermittentmissing;
 interface
 
 uses
-  Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs.core,
-  fpjson, jsonparser, dateutils, trndi.api.debug, trndi.log;
+  Classes, SysUtils, trndi.types, trndi.api,
+  fpjson, jsonparser, dateutils, trndi.api.debug;
 
 type
   // Main class

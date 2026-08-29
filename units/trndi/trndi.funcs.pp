@@ -53,7 +53,8 @@ unit trndi.funcs;
 interface
 
 uses
-Classes, SysUtils, Controls, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms, Math,
+Classes, SysUtils, Controls, ExtCtrls, StdCtrls, Graphics, trndi.types, Forms,
+Math, // hinted unused on Linux, but Min/Max are called in a platform-gated block
 fpjson, jsonparser, dateutils, buildinfo, trndi.log
 {$ifdef TrndiExt},trndi.ext.engine, trndi.ext.quickjs{$endif}
 {$ifdef DARWIN}, CocoaAll, nsutils.nshelpers{$endif}

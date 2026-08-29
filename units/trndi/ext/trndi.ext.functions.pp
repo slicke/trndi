@@ -53,7 +53,7 @@ interface
 
 uses
 Classes, SysUtils, trndi.ext.quickjs, strutils, fgl,
-Forms, Dialogs, slicke.ux.alert, Math, types, trndi.strings, trndi.native;
+Forms, Dialogs, slicke.ux.alert, Math, trndi.strings;
 
 type
   {** Resolves the display name of the extension that owns a JS context.

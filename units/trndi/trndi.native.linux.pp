@@ -89,7 +89,7 @@ interface
 
 uses
 Classes, SysUtils, Graphics, Dialogs, StrUtils,
-ExtCtrls, Forms, Math, LCLIntf, linutils.kdebadge, linutils.dbus,
+ExtCtrls, Forms, LCLIntf, linutils.kdebadge, linutils.dbus,
 trndi.native.base, trndi.native.async, trndi.native.colors, FileUtil, Menus,
 {$ifndef TEST}
   // The tray painter rasterizes through the real LCL image types; the console
@@ -343,7 +343,7 @@ end;
 implementation
 
 uses
-Types, LCLType;
+LCLType;
 
 resourcestring
 RS_NOTICE_SHOW = 'Show Trndi';

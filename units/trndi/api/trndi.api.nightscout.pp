@@ -49,8 +49,8 @@ unit trndi.api.nightscout;
 interface
 
 uses
-Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs.core,
-fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner, trndi.log;
+Classes, SysUtils, trndi.types, trndi.api, trndi.native, {$ifdef debug} trndi.log, trndi.funcs.core,{$endif}
+fpjson, jsonparser, dateutils, StrUtils, sha1, Math, jsonscanner;
 
 const
   {** Relative filename for the Nightscout status endpoint used to probe
