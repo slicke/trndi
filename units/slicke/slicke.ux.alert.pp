@@ -38,7 +38,7 @@ interface
 
 uses
 Classes, SysUtils, Dialogs, Forms, ExtCtrls, StdCtrls, Controls, Graphics, Math,
-IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, Pixie.HtmlView, Pixie.HtmlView.Core, Pixie.Document, slicke.ux.native, slicke.ux.titlebar, SpinEx, LCLIntf,
+IntfGraphics, FPImage, graphtype, lcltype, Trndi.Native, Grids, Spin, IpHtml, Iphttpbroker, slicke.ux.native, slicke.ux.titlebar, SpinEx, LCLIntf,
 EditBtn, Clipbrd,
 {$ifdef X_MAC}
 CocoaAll, nsutils.cocoahelpers,
@@ -205,7 +205,7 @@ public
   // For log message expansion
   LogExpandWrapper: TPanel;
   LogExpandMemo: TMemo;
-  LogExpandHtmlPanel: TPixieHtmlView;
+  LogExpandHtmlPanel: TIpHtmlPanel;
   LogExpandButton: TControl;
   LogIsHTML: boolean;
 
@@ -259,8 +259,9 @@ public
   property extraText: string write extra;
     {** OnChange handler for font combo box in SlickeFontPicker. }
   procedure FontComboChange(Sender: TObject);
-  procedure HTMLFetchUrl(Sender: TObject; const Url: string; Stream: TStream; var Success: boolean);
-  procedure HTMLAnchorClick(Sender: TObject; El: TObject; const Url: string);
+  procedure HTMLGetImageX(Sender: TIpHtmlNode; const URL: string; var Picture: TPicture);
+  procedure HTMLHotClick(Sender: TObject);
+  procedure ElementKeyDown(Sender: TObject; var Key: char);
 end;
 
 {$ifdef X_WIN}
@@ -606,14 +607,14 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
     @param title Title text (bold).
     @param desc Description text.
     @param logmsg Log or dump text (can be plain text or HTML).
-    @param isHTML If @true, logmsg is interpreted as HTML data using TPixieHtmlView; otherwise plain text with TMemo.
+    @param isHTML If @true, logmsg is interpreted as HTML data using TIpHtmlPanel; otherwise plain text with TMemo.
     @param dumpbg Background color for log panel (default white).
     @param dumptext Text color for log panel (default red, ignored if HTML is used).
     @param buttons Buttons to display, in left-to-right order (default [mbAbort]).
     @param icon Emoji icon (default gear).
     @param scale Log panel vertical scale multiplier.
     @returns Modal result based on user button selection.
-    @remarks HTML rendering is supported cross-platform via TPixieHtmlView (vendored Pixie engine, externals/pixie). Standard HTML5 tags and CSS3 are supported.
+    @remarks HTML rendering is supported cross-platform via TIpHtmlPanel from IpHtml unit. Use standard HTML tags like &lt;b&gt;, &lt;i&gt;, &lt;font color="red"&gt;, etc.
   }
 function SlickeMsgEx(const dialogsize: TSlickeDialogSize;
 const caption, title, desc, logmsg: string;
@@ -977,20 +978,6 @@ implementation
 {$ifdef X_WIN}
 function DwmSetWindowAttribute(hwnd: HWND; dwAttribute: DWORD; pvAttribute: Pointer; cbAttribute: DWORD): HRESULT; stdcall; external 'dwmapi.dll';
 {$endif}
-
-type
-  { Pixie computes ContentHeight lazily on first paint, but the dialogs must
-    size themselves before ShowModal. The view's Core is protected, so this
-    descendant exposes an explicit pre-show layout pass at a given width. }
-  TSlickeHtmlView = class(TPixieHtmlView)
-  public
-    function MeasureHeight(AWidth: integer): integer;
-  end;
-
-function TSlickeHtmlView.MeasureHeight(AWidth: integer): integer;
-begin
-  Result := Round(Core.Document.Render(AWidth));
-end;
 
 var
   { Resolved once — the desktop cannot change under a running process. }
@@ -3770,7 +3757,7 @@ var
   Dialog: TDialogForm;
   HtmlPanel: TPanel;
   IconBox: TImage;
-  HtmlViewer: TSlickeHtmlView;
+  HtmlViewer: TIpHtmlPanel;
   {$ifdef X_WIN}
   OkButton:TDarkButton;
   {$else}
@@ -3785,6 +3772,7 @@ var
   size: TSlickeDialogSize;
   sysfont, htmlstr: string;
   contentHeight, maxHeight, finalHeight: integer;
+  hpd: TIpHttpDataProvider;
   htmldata: string;
 begin
   // An empty list would leave OkButton unassigned when the dialog height is
@@ -3835,33 +3823,35 @@ begin
     HtmlPanel.Color := bgcol;
     HtmlPanel.BevelOuter := bvNone;
 
-    HtmlViewer := TSlickeHtmlView.Create(HtmlPanel);
+    HtmlViewer := TIpHtmlPanel.Create(HtmlPanel);
     HtmlViewer.Name := 'HtmlViewer';
 
-    // Images resolve through Trndi's own HTTP layer; links prompt before
-    // opening. Pixie itself never touches the network.
-    HtmlViewer.OnFetchUrl := @dialog.HTMLFetchUrl;
-    HtmlViewer.OnAnchorClick := @dialog.HTMLAnchorClick;
+    hpd := TIpHttpDataProvider.Create(Dialog);
+    HtmlViewer.DataProvider := hpd;
+    hpd.OnGetImage := @dialog.HTMLGetImageX;
+    HtmlViewer.OnHotClick := @dialog.HTMLHotClick;
+    HtmlViewer.OnKeyPress := @dialog.ElementKeyDown;
 
     HtmlViewer.Parent := HtmlPanel;
     HtmlViewer.Left := 0;
     HtmlViewer.Top := 0;
     HtmlViewer.Width := HtmlPanel.Width;
-    HtmlViewer.BorderStyle := bsNone;
+    HtmlViewer.FixedTypeface := 'Courier New';
+    HtmlViewer.DefaultTypeFace := ifthen((size = sdsBig) , 'Segoe UI', 'Tahoma');
+    HtmlViewer.DefaultFontSize := ifthen((size = sdsBig) , 16, 12);
+    HtmlViewer.FlagErrors := false;
     HtmlViewer.Color := bgcol;
-
-    // Load HTML content with system font and colors. user-select:none keeps
-    // the text label-like, as AllowTextSelect=false did under TIpHtmlPanel.
+    HtmlViewer.AllowTextSelect := false;  // Prevent text selection like TLabel
+    
+    // Load HTML content with system font and colors
     FontTXTInList(sysfont);
     htmlstr := DecorateLinks(html, TColorToHTML(getBaseColor));
-    htmldata := '<html><body style="background:' + TColorToHTML(bgcol) +
-      ';color:' + TColorToHTML(getBaseColor) +
-      ';font-family:' + sysfont +
-      ';font-size:' + IntToStr(ifthen((size = sdsBig) , 16, 12)) + 'px' +
-      ';user-select:none">' +
+    htmldata := '<html><body bgcolor="' + TColorToHTML(bgcol) + '" text="' + TColorToHTML(getBaseColor) + '" style="font-family: ' + sysfont + ';">' +
       htmlstr +
       '</body></html>';
-    HtmlViewer.LoadFromString(htmldata);
+    HtmlViewer.SetHtmlFromStr(
+      htmldata
+      );
 
     // --- Button metrics, settled before the content is sized ----------------
     // The buttons are the part that must never be pushed off the bottom, so
@@ -3894,9 +3884,7 @@ begin
 
     // --- Content gets the height left over after the icon row and buttons ---
     maxHeight := Round(ScreenUsableHeight * 0.8);
-    // Pixie computes ContentHeight lazily on paint, which has not happened
-    // yet - lay the document out at the panel width to measure it instead.
-    contentHeight := Round((HtmlViewer.MeasureHeight(HtmlViewer.Width) + 20) * scale);  // Apply scale multiplier to height
+    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
     // Was a flat "maxHeight - 200", which silently underestimated once the
     // button block could be several stacked touch-sized rows tall.
     availableHeight := maxHeight - HtmlPanel.Top - buttonBlockHeight - (padding * 2);
@@ -3987,7 +3975,7 @@ var
   TitleLabel, MsgLabel: TLabel;
   MsgScroll: TScrollBox;
   LogMemo: TMemo;
-  LogHtmlPanel: TSlickeHtmlView;
+  LogHtmlPanel: TIpHtmlPanel;
   {$ifdef X_WIN}
   OkButton:TDarkButton;
   {$else}
@@ -4004,6 +3992,7 @@ var
   size: TSlickeDialogSize;
   MemoWrapper: TPanel;
   sysfont, htmlstr: string;
+  hpd: TIpHttpDataProvider;
 begin
   // An empty list would leave OkButton unassigned when the button panel height
   // is computed below; fall back to this function's documented default.
@@ -4329,11 +4318,14 @@ begin
 
     if isHTML then
     begin
-      // Use TPixieHtmlView for HTML content (cross-platform)
-      LogHtmlPanel := TSlickeHtmlView.Create(MemoWrapper);
+      // Use TIpHtmlPanel for HTML content (cross-platform)
+      LogHtmlPanel := TIpHtmlPanel.Create(MemoWrapper);
       LogHtmlPanel.Name := 'HtmlViewer';
-      LogHtmlPanel.OnFetchUrl := @dialog.HTMLFetchUrl;
-      LogHtmlPanel.OnAnchorClick := @dialog.HTMLAnchorClick;
+      hpd := TIpHttpDataProvider.Create(Dialog);
+      LogHtmlPanel.DataProvider := hpd;
+      hpd.OnGetImage := @dialog.HTMLGetImageX;
+      LogHTMLPanel.OnHotClick := @dialog.HTMLHotClick;
+      LogHtmlPanel.OnKeyPress := @dialog.ElementKeyDown;
       LogHtmlPanel.Parent := MemoWrapper;
       LogHtmlPanel.Left := MemoPadLeft;
       LogHtmlPanel.Top := MemoPadTop;
@@ -4343,19 +4335,18 @@ begin
       LogHtmlPanel.Color := dumpbg;
       LogHtmlPanel.BorderStyle := bsNone;
       LogHtmlPanel.TabStop := false;  // Prevent focus
-      // Load HTML content with body tag for background color. margin:0
-      // replaces TIpHtmlPanel's MarginHeight/MarginWidth = 0.
+      LogHtmlPanel.OnKeyDown := @Dialog.FormKeyDown;
+      LogHTMLPanel.MarginHeight:=0;
+      LogHTMLPanel.MarginWidth:=0;
+      // Load HTML content with body tag for background color
       try
         // Wrap content in HTML structure with background color from dumpbg
         FontTXTInList(sysfont);
         htmlstr := DecorateLinks(logmsg, TColorToHTML(getBaseColor));
-        htmlstr := '<html><body style="background:' + TColorToHTML(dumpbg) +
-          ';color:' + TColorToHTML(dumptext) +
-          ';font-family:' + sysfont +
-          ';margin:0">' +
+        htmlstr :=           '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: ' + sysfont + ';">' +
           htmlstr +
           '</body></html>';
-        LogHtmlPanel.LoadFromString(
+        LogHtmlPanel.SetHtmlFromStr(
           htmlstr
           );
         dialog.contentText := htmlstr;
@@ -4364,8 +4355,8 @@ begin
         on E: Exception do
         begin
           // Fallback to plain text if HTML parsing fails
-          LogHtmlPanel.LoadFromString(
-            '<html><body style="background:' + TColorToHTML(dumpbg) + ';color:' + TColorToHTML(dumptext) + ';font-family:Verdana,Arial,sans-serif;margin:0"><pre>' +
+          LogHtmlPanel.SetHtmlFromStr(
+            '<html><body bgcolor="' + TColorToHTML(dumpbg) + '" text="' + TColorToHTML(dumptext) + '" style="font-family: Verdana, Arial, sans-serif;"><pre>' +
             logmsg +
             '</pre></body></html>'
             );
@@ -4419,7 +4410,7 @@ begin
     // Position it independently on the left side
     if (logmsg <> '') and 
       ((not isHTML and (LogMemo.Lines.Count > 3)) or
-      (isHTML and (LogHtmlPanel.MeasureHeight(LogHtmlPanel.Width) > LogPanel.Height))) then
+      (isHTML and (LogHtmlPanel.GetContentSize.cy > LogPanel.Height))) then
     begin
       {$ifdef X_WIN}
       OkButton := TDarkButton.Create(ButtonPanel);
@@ -5195,28 +5186,39 @@ begin
     FontPickerPreview.Font.Name := Combo.Items[Combo.ItemIndex];
 end;
 
-procedure TDialogForm.HTMLAnchorClick(Sender: TObject; El: TObject; const Url: string);
+procedure TDialogForm.ElementKeyDown(Sender: TObject; var Key: char);
 begin
-  if SlickePrompt(sdsAuto, sURLTitle, sURL, [[mbYes, mbNo], [mbNo, mbYes]]) = mrYes then
-    OpenURL(Url);
+  key := #0;
 end;
 
-procedure TDialogForm.HTMLFetchUrl(Sender: TObject; const Url: string;
-Stream: TStream; var Success: boolean);
+procedure TDialogForm.HTMLHotClick(Sender: TObject);
+begin
+  if SlickePrompt(sdsAuto, sURLTitle, sURL, [[mbYes, mbNo], [mbNo, mbYes]]) = mrYes then
+    OpenURL((sender as TIpHtmlPanel).HotURL);
+end;
+
+procedure TDialogForm.HTMLGetImageX(Sender: TIpHtmlNode; const URL: string;
+var Picture: TPicture);
 var
   res: string;
+  ms: TStringStream;
 begin
-  // Pixie itself never touches the network: every external resource in the
-  // dialog HTML resolves through Trndi's own HTTP layer here. Success=false
-  // renders the image as missing; never let a fetch failure escape into the
-  // HTML layout code.
-  Success := false;
-  if not TrndiNative.getURL(Url, res) then
+  // A nil Picture tells TIpHtmlPanel to render the image as missing; never
+  // let a fetch/decode failure escape into the HTML layout code.
+  Picture := nil;
+  if not TrndiNative.getURL(url, res) then
     Exit;
-  if res = '' then
-    Exit;
-  Stream.WriteBuffer(res[1], Length(res));
-  Success := true;
+  ms := TStringStream.Create(res);
+  try
+    Picture := TPicture.Create;
+    try
+      Picture.LoadFromStream(ms);
+    except
+      FreeAndNil(Picture);
+    end;
+  finally
+    ms.Free;
+  end;
 end;
 
 {------------------------------------------------------------------------------
