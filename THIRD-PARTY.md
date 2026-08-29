@@ -16,19 +16,13 @@ combined work is conveyed under GPLv3.
 
 ## Notices in shipped builds
 
-Bundled MIT components carry their notices **inside the program**, not as files
-beside it. "Included in all copies" is satisfied by text compiled into the
-binary, and one in-app copy cannot drift out of sync across six packaging
-layouts the way six copied files can:
-
-- Every component above is credited by name under **Settings → Libraries**.
-- The Pixie and quickjs-ng MIT texts are reproduced in full under
-  **Settings → License**, below the "Additional component licenses" rule. The
-  quickjs-ng half is compiled in only for `Extensions` builds, which are the
-  only ones that ship it; the Pixie half is unconditional.
-
-Trndi's own GPLv3 is the exception: section 4 wants the full license text, which
-is far too long to embed, so `LICENSE.md` still ships as a file — together with
-`DISCLAIMER.md` and this document — in every package layout: Windows installer,
-macOS app bundle (`Trndi.app/Contents/Resources/`), AppImage, deb/rpm, and the
-portable ZIPs.
+- The quickjs-ng MIT notice is reproduced in full in Trndi's own License dialog
+  (Settings → License) in `Extensions` builds, and as `LICENSE.quickjs-ng`
+  installed alongside the prebuilt binaries. It gets both because it ships as a
+  separate, extractable binary rather than being compiled into Trndi.
+- Components compiled straight into the binary are credited by name under
+  Settings → Libraries, and their notices travel with the package: the Pixie
+  MIT notice installs as `LICENSE.pixie`.
+- `LICENSE.md`, `DISCLAIMER.md`, and this file are installed with every binary
+  package (Windows installer, macOS app bundle, AppImage, deb/rpm), as are the
+  license files named above.

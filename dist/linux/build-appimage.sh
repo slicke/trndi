@@ -40,14 +40,21 @@ if [ -d "lang" ]; then
   cp -r lang "${APP_DIR}/usr/share/trndi/"
 fi
 
-# GPLv3 sections 4 and 6 require the license to accompany the binary. Bundled
-# MIT notices are not files — they are compiled into the binary and shown under
-# Settings > License.
+# GPLv3 sections 4 and 6 require the license to accompany the binary. The MIT
+# notices belong with the libraries they cover: quickjs-ng ships whenever its
+# libraries were staged above, Pixie is compiled straight into the binary so
+# it ships unconditionally.
 echo "Copying license files..."
 mkdir -p "${APP_DIR}/usr/share/doc/trndi"
 for LIC in LICENSE.md DISCLAIMER.md THIRD-PARTY.md; do
   [ -f "${LIC}" ] && cp -v "${LIC}" "${APP_DIR}/usr/share/doc/trndi/"
 done
+if [ -f "externals/quickjs/LICENSE.quickjs-ng" ] && [ -d "${QJS_DIR}" ]; then
+  cp -v externals/quickjs/LICENSE.quickjs-ng "${APP_DIR}/usr/share/doc/trndi/"
+fi
+if [ -f "externals/pixie/LICENSE" ]; then
+  cp -v externals/pixie/LICENSE "${APP_DIR}/usr/share/doc/trndi/LICENSE.pixie"
+fi
 
 # The CareLink login helper is compiled into the binary (see
 # assets/carelink_assets.lrs) and written to the user's writable

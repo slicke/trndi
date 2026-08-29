@@ -80,12 +80,14 @@ Source: "..\lang\*"; DestDir: "{app}\lang"; Flags: ignoreversion recursesubdirs 
 ; The JavaScript extension engine (quickjs-ng) and its ABI shim, which Windows
 ; resolves from the executable's own directory. See externals/quickjs/README.md.
 Source: "..\externals\quickjs\prebuilt\x86_64-win64\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-; GPLv3 sections 4 and 6 require the license to accompany the binary. Bundled
-; MIT notices are not files — they are compiled into {#MyAppExeName} and shown
-; under Settings > License.
+; GPLv3 sections 4 and 6 require the license to accompany the binary; the MIT
+; notices belong with the libraries they cover: quickjs-ng ships as the DLLs
+; installed above, Pixie is compiled straight into {#MyAppExeName}.
 Source: "..\LICENSE.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\DISCLAIMER.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\THIRD-PARTY.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\externals\quickjs\LICENSE.quickjs-ng"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\externals\pixie\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.pixie"; Flags: ignoreversion
 ; NOTE: The CareLink login helper is no longer shipped as loose files — it is
 ; compiled into Trndi.exe and written to the user's writable settings folder on
 ; demand (see assets/carelink_assets.lrs).
