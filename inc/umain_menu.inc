@@ -520,7 +520,7 @@ begin
 
   displayMsg += sHTMLLineBreak + Format(RS_UX_API, [api.systemName]);
 
-  SlickeHTMLMsg(sdsAuto, RS_UX_TRANSMITTER_INFO, displayMsg, [mbOK], uxmtInformation);
+  SlickeHTMLMsg(sdsAuto, RS_UX_TRANSMITTER_INFO, displayMsg, [mbOK], uxmtInformation, 10);
 end;
 
 procedure TfBG.lArrowClick(Sender: TObject);

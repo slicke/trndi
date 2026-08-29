@@ -1613,7 +1613,7 @@ begin
     except
       on E: Exception do
         SlickeHTMLMsg(sdsAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
-          [mbOK], uxmtError);
+          [mbOK], uxmtError, 12.5);
     end;
   finally
     saveDialog.Free;
@@ -1698,7 +1698,7 @@ begin
       begin
         CloseFile(csvFile);
         SlickeHTMLMsg(sdsAuto, 'Error', Format(RS_HISTORY_GRAPH_SAVE_ERROR, [E.Message]),
-          [mbOK], uxmtError);
+          [mbOK], uxmtError, 12.5);
       end;
     end;
   finally
@@ -1728,7 +1728,7 @@ begin
     StringReplace(Format(RS_HISTORY_ITEM,
     [Reading.format(FUnit, BG_MSG_SHORT, BGPrimary),
     Reading.format(FUnit, BG_MSG_SIG_SHORT, BGDelta),
-    Reading.trend.Img, rssi, noise, Reading.Source, Reading.sensor]), sLineBreak, sHTMLLineBreak, [rfReplaceAll]), [mbOK],uxmtInformation);
+    Reading.trend.Img, rssi, noise, Reading.Source, Reading.sensor]), sLineBreak, sHTMLLineBreak, [rfReplaceAll]), [mbOK],uxmtInformation,12.5);
 end;
 
 procedure TfHistoryGraph.SortPointsByTime;

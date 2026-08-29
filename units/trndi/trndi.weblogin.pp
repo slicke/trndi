@@ -461,7 +461,7 @@ begin
     cmd := 'npm install && node carelink-login.mjs';
   end;
 
-  if SlickeMsgYesNo(T.HelpTitle, Format(T.HelpBody, [helperDir, cmd]), uxmtInformation) then
+  if SlickeMsgYesNo(T.HelpTitle, Format(T.HelpBody, [helperDir, cmd]), uxmtInformation, 20) then
   begin
     if DirectoryExists(helperDir) then
       OpenDocument(helperDir)
@@ -504,7 +504,7 @@ begin
   end;
 
   // Heads-up before we open a browser and (on first run) install dependencies.
-  if not SlickeMsgYesNo(T.RunTitle, T.RunPrompt, uxmtInformation) then
+  if not SlickeMsgYesNo(T.RunTitle, T.RunPrompt, uxmtInformation, 20) then
     Exit;
 
   progress := TButtonProgressAdapter.Create;

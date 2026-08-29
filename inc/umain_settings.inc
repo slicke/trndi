@@ -1162,7 +1162,7 @@ begin
     versionInfo + sHTMLLineBreak +
     'https://github.com/slicke/trndi';
 
-  SlickeHTMLMsg(sdsAuto, 'About Trndi', html, [mbOK], uxmtInformation);
+  SlickeHTMLMsg(sdsAuto, 'About Trndi', html, [mbOK], uxmtInformation, 25);
 end;
 
 procedure TfBG.CheckForUpdatesMenuClick(Sender: TObject);

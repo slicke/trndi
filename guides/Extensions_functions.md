@@ -204,12 +204,12 @@ Trndi.htmlMsg('Window Title', 'Title', 'Description', '<b>HTML</b> box content',
 Shows a HTML content box, last parameter is the scale of the window (it can be scrolled, but you might want to scale it too)
 ### htmlDlg
 ```javascript
-Trndi.htmlDlg('Window Title', '<b>HTML</b> box content')
+Trndi.htmlDlg('Window Title', '<b>HTML</b> box content', 1)
 ```
-Shows a full HTML dialog with all content HTML. The dialog sizes itself to the content.
+Shows a full HTML dialog with all content HTML. Last parameter is scale.
 ### htmlYesNo
 ```javascript
-const res = Trndi.htmlYesNo('Window Title', '<b>Load config?</b><br>Load configuration again?')
+const res = Trndi.htmlYesNo('Window Title', '<b>Load config?</b><br>Load configuration again?', 1)
 console.log("Response was yes?" + (res ? 'yes' : 'no'))
 ```
 Shows a full HTML dialog with all content HTML. User can click yes or no

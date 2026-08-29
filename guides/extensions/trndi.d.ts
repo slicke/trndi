@@ -268,10 +268,10 @@ declare const Trndi: {
   log(message: string): void;
   /** HTML content box: window title, title, description, HTML body, window scale. */
   htmlMsg(windowTitle: string, title: string, description: string, html: string, scale: number): void;
-  /** HTML dialog: window title, HTML body. Sizes itself to the content. */
-  htmlDlg(windowTitle: string, html: string): void;
-  /** HTML yes/no dialog; true when the user answers yes. Sizes itself to the content. */
-  htmlYesNo(windowTitle: string, html: string): boolean;
+  /** HTML dialog: window title, HTML body, window scale. */
+  htmlDlg(windowTitle: string, html: string, scale: number): void;
+  /** HTML yes/no dialog; true when the user answers yes. */
+  htmlYesNo(windowTitle: string, html: string, scale: number): boolean;
   /** System notification: `attention(message)` or `attention(title, message)`. */
   attention(message: string): void;
   attention(title: string, message: string): void;
