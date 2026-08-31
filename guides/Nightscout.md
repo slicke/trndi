@@ -97,7 +97,7 @@ session detail, and a site fed only by a CGM bridge publishes none of it. A
 blank figure means "nothing was uploaded", never "zero".
 
 Insulin doses and carbohydrates are off by default — turn them on under
-Settings → Display. Doses an uploader marked as loop-initiated (`isSMB`,
+Settings → Trend graph. Doses an uploader marked as loop-initiated (`isSMB`,
 `automatic`, or an `SMB` event type) are treated as automatic, so a looping
 site's constant micro-boluses can be shown or hidden separately from the doses
 you gave yourself.

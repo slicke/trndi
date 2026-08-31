@@ -27,13 +27,13 @@ Now close the window, then close Trndi (if it doesn't close itself) and start it
 The pump-logs payload the readings come from carries a good deal more than glucose, and Trndi now reads some of it:
 
 - **Sensor glucose values** from the CGM the pump is paired with (Dexcom G6/G7, FreeStyle Libre 2/3)
-- **Insulin doses on the history graph**, if you turn them on (Settings → Display → *Show insulin doses on the history graph*). Doses appear as stems along the bottom of the graph, labelled in units.
+- **Insulin doses on the history graph**, if you turn them on (Settings → Trend graph → *Show insulin doses on the history graph*). Doses appear as stems along the bottom of the graph, labelled in units.
 
   A bolus is reported as what the pump actually delivered, not what was asked for, so an interrupted bolus shows the smaller real figure. Stem heights are relative to the largest dose on screen rather than a fixed scale — read the labels, not the heights. The graph only shows doses for the period the last fetch covered, so an empty stretch means "nothing was reported", never "no insulin was given".
 
   Note that the second checkbox, for the pump's own automatic doses, does nothing on Tandem yet — see below.
 
-- **Carbohydrates on the history graph** (Settings → Display → *Show carbohydrates on the history graph*), as discs in their own lane above the bottom axis, labelled in grams. These are the carbs you entered into the bolus calculator; Tandem has no separate meal entry, so unlike CareLink there is no double-counting to reconcile. Carbs entered for a bolus that was never delivered are not shown.
+- **Carbohydrates on the history graph** (Settings → Trend graph → *Show carbohydrates on the history graph*), as discs in their own lane above the bottom axis, labelled in grams. These are the carbs you entered into the bolus calculator; Tandem has no separate meal entry, so unlike CareLink there is no double-counting to reconcile. Carbs entered for a bolus that was never delivered are not shown.
 - **Basal rate** (Menu → Service Menu → *Current Basal*), in U/hr. Two rates are shown, because the pump reports two and they routinely disagree: *Commanded* is the rate Control-IQ last told the pump to run, and *Programmed* is the rate your basal profile has in force. On a looping pump the commanded rate is generally not your profile rate, so the dialog also gives the time both figures were recorded and the pump event they came from — if the commanded rate is hours old, Control-IQ has stopped commanding and your profile has likely moved on to the next segment since.
 
 The `ibc` property on the pump's status and battery events drives the pump-battery notifications (20/15/10/5/2 percent) described in [Notifications.md](Notifications.md). It is a true fine-grained percentage — a live fetch carries values like 80, 45 and 35 — with 255 meaning the pump could not read it.

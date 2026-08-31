@@ -3515,6 +3515,14 @@ msgstr "Du kan ändra typsnittet på avläsning, tid och pil. Klicka på respekt
 msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
 msgstr "Detta kommer visa alla förutspåelsepilar, som standard visar Trndi bara om värdet förutspås bli lågt, högt eller rakt"
 
+#: uconf.rs_gb_graph_overlays
+msgid "Overlays"
+msgstr "Överlägg"
+
+#: uconf.rs_gb_trend_dots
+msgid "Trend dots"
+msgstr "Trendpunkter"
+
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Visar om Trndi upptäckt en pekskärm"
@@ -3765,6 +3773,10 @@ msgctxt "uconf.rs_page_system"
 msgid "System"
 msgstr "System"
 
+#: uconf.rs_page_trendgraph
+msgid "Trend graph"
+msgstr "Trendgraf"
+
 #: uconf.rs_pd_access
 msgid "Text-to-speech, high contrast and in-app explanations."
 msgstr "Text-till-tal, hög kontrast och i-appen-förklaringar."
@@ -3824,6 +3836,10 @@ msgstr "Din enhet, dina höga/låga nivåer och önskvärda område."
 #: uconf.rs_pd_system
 msgid "System information, autostart, web access and settings backup."
 msgstr "Systeminformation, autostart, webbåtkomst och inställningsbackup."
+
+#: uconf.rs_pd_trendgraph
+msgid "How much history the trend dots show, and what is drawn on them."
+msgstr "Hur mycket historik trendpunkterna visar och vad som ritas ovanpå dem."
 
 #: uconf.rs_pos
 #, object-pascal-format

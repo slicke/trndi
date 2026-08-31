@@ -3341,6 +3341,14 @@ msgstr "Sie können die Schriftart für Messwert, Zeit und Pfeil ändern. Klicke
 msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
 msgstr "Dies zeigt alle Prognosepfeile an; standardmäßig zeigt Trndi nur aufwärts, abwärts oder konstant"
 
+#: uconf.rs_gb_graph_overlays
+msgid "Overlays"
+msgstr ""
+
+#: uconf.rs_gb_trend_dots
+msgid "Trend dots"
+msgstr ""
+
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Zeigt, ob Trndi einen Touchscreen erkannt hat"
@@ -3591,6 +3599,10 @@ msgctxt "uconf.rs_page_system"
 msgid "System"
 msgstr "System"
 
+#: uconf.rs_page_trendgraph
+msgid "Trend graph"
+msgstr ""
+
 #: uconf.rs_pd_access
 msgid "Text-to-speech, high contrast and in-app explanations."
 msgstr ""
@@ -3649,6 +3661,10 @@ msgstr ""
 
 #: uconf.rs_pd_system
 msgid "System information, autostart, web access and settings backup."
+msgstr ""
+
+#: uconf.rs_pd_trendgraph
+msgid "How much history the trend dots show, and what is drawn on them."
 msgstr ""
 
 #: uconf.rs_pos

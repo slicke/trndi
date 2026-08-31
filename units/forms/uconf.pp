@@ -313,6 +313,7 @@ TfConf = class(TForm)
   pHints: TPanel;
   pbDotPreview: TPaintBox;
   pbDisplayPreview: TPaintBox;
+  pbGraphPreview: TPaintBox;
   cbPreviewState: TComboBox;
   pnDeltaMax: TPanel;
   pnFontButtons: TPanel;
@@ -378,6 +379,8 @@ TfConf = class(TForm)
   fsLo: TFloatSpinEdit;
   fsLoRange: TFloatSpinEdit;
   gbDisplayPrefs: TGroupBox;
+  gbGraphDots: TGroupBox;
+  gbGraphOverlays: TGroupBox;
   gbMulti: TGroupBox;
   gbUsers: TGroupBox;
   gbOverride: TGroupBox;
@@ -494,6 +497,7 @@ TfConf = class(TForm)
   edSearch: TEdit;
   tvNav: TTreeView;
   pnDisplay: TPanel;
+  pnGraphPreview: TPanel;
   cbTirColorBg: TRadioButton;
   rbUnit: TRadioGroup;
   rbTrendWindow: TRadioGroup;
@@ -524,6 +528,7 @@ TfConf = class(TForm)
   tsColors: TTabSheet;
   tsCustom: TTabSheet;
   tsDisplay: TTabSheet;
+  tsTrendGraph: TTabSheet;
   tsGeneral: TTabSheet;
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
@@ -844,6 +849,7 @@ RS_PAGE_RANGES = 'Glucose & ranges';
 RS_PAGE_ALERTS = 'Alerts';
 RS_PAGE_PREDICTIONS = 'Predictions';
 RS_PAGE_DISPLAY = 'Display';
+RS_PAGE_TRENDGRAPH = 'Trend graph';
 RS_PAGE_COLORS = 'Colors';
 RS_PAGE_FINETUNE = 'Fine-tuning';
 RS_PAGE_INTEGRATIONS = 'Music & links';
@@ -860,6 +866,7 @@ RS_PD_RANGES = 'Your unit, your high/low limits and your ideal target range.';
 RS_PD_ALERTS = 'When and how Trndi warns you about highs, lows and missing readings.';
 RS_PD_PREDICTIONS = 'Experimental: let Trndi estimate where your glucose is heading.';
 RS_PD_DISPLAY = 'Fonts and what is shown in the main window.';
+RS_PD_TRENDGRAPH = 'How much history the trend dots show, and what is drawn on them.';
 RS_PD_COLORS = 'The colors used for high, OK and low readings.';
 RS_PD_FINETUNE = 'Sizes, scales and other tweaks most people never need.';
 RS_PD_INTEGRATIONS = 'Play music or call a web address when readings go high or low.';
@@ -869,6 +876,9 @@ RS_PD_ACCESS = 'Text-to-speech, high contrast and in-app explanations.';
 RS_PD_ACCOUNTS = 'Track more than one person from the same Trndi.';
 RS_PD_SYSTEM = 'System information, autostart, web access and settings backup.';
 RS_ESSENTIALS_INTRO = 'The settings most people look for. Each one also lives on its own page in the list to the left.';
+
+RS_GB_TREND_DOTS = 'Trend dots';
+RS_GB_GRAPH_OVERLAYS = 'Overlays';
 
 RS_HINTS_ENABLE = 'Explain parts of the window when they are clicked';
 RS_HINTS_RESET_BTN = 'Show hidden explanations';
@@ -1305,6 +1315,7 @@ begin
   tsCustom.Caption := RS_PAGE_ALERTS;
   tsPredictions.Caption := RS_PAGE_PREDICTIONS;
   tsDisplay.Caption := RS_PAGE_DISPLAY;
+  tsTrendGraph.Caption := RS_PAGE_TRENDGRAPH;
   tsColors.Caption := RS_PAGE_COLORS;
   tsAdvanced.Caption := RS_PAGE_FINETUNE;
   tsIntegration.Caption := RS_PAGE_INTEGRATIONS;
@@ -1316,6 +1327,8 @@ begin
   tsGraphColors.Caption := RS_PAGE_GRAPH_COLORS;
   Label17.Caption := RS_ESSENTIALS_INTRO;
   edSearch.TextHint := RS_NAV_SEARCH;
+  gbGraphDots.Caption := RS_GB_TREND_DOTS;
+  gbGraphOverlays.Caption := RS_GB_GRAPH_OVERLAYS;
 
   bExtResetPerms.Caption := RS_EXT_RESET_BTN;
   cbHints.Caption := RS_HINTS_ENABLE;
@@ -1424,6 +1437,7 @@ begin
     AddPage(grp, tsPredictions);
     grp := tvNav.Items.Add(nil, RS_NAV_APPEARANCE);
     AddPage(grp, tsDisplay);
+    AddPage(grp, tsTrendGraph);
     AddPage(grp, tsColors);
     AddPage(grp, tsAdvanced);
     grp := tvNav.Items.Add(nil, RS_NAV_FEATURES);
@@ -1466,6 +1480,9 @@ begin
   else
   if APage = tsDisplay then
     Result := RS_PD_DISPLAY
+  else
+  if APage = tsTrendGraph then
+    Result := RS_PD_TRENDGRAPH
   else
   if APage = tsColors then
     Result := RS_PD_COLORS
@@ -3038,9 +3055,10 @@ end;
 procedure TfConf.RefreshDotPreview(Sender: TObject);
 begin
   pbDotPreview.Invalidate;
-  // The Display miniature draws with the same pickers and mode, so whatever
-  // repaints one repaints the other.
+  // The Display and Trend graph miniatures draw with the same pickers and
+  // mode, so whatever repaints one repaints the others.
   pbDisplayPreview.Invalidate;
+  pbGraphPreview.Invalidate;
 end;
 
 procedure TfConf.pbDotPreviewPaint(Sender: TObject);
@@ -3349,6 +3367,8 @@ begin
   pbDisplayPreview.OnPaint := @pbDisplayPreviewPaint;
   pbDisplayPreview.OnMouseDown := @pbDisplayPreviewMouseDown;
   pbDisplayPreview.ShowHint := true;
+  // The Trend graph copy is view-only: same painter, no font-pick clicks.
+  pbGraphPreview.OnPaint := @pbDisplayPreviewPaint;
   cbPreviewState.OnChange := @RefreshDotPreview;
   cbPreviewState.ShowHint := true;
   cbDotFresh.OnChange := @RefreshDotPreview;
@@ -3757,12 +3777,17 @@ begin
   RefreshDotPreview(nil);
 end;
 
+// Shared by the Display and Trend graph miniatures; only the Display one is
+// clickable, so the font-picking zones are captured from that paint alone.
 procedure TfConf.pbDisplayPreviewPaint(Sender: TObject);
 var
   data: TDisplayPreviewData;
+  pb: TPaintBox;
+  zones: TDisplayPreviewZones;
 begin
   if not Assigned(FOnDisplayPreview) then
     Exit;
+  pb := Sender as TPaintBox;
   data.ValFont := FFontVal.Name;
   data.ArrowFont := FFontArrow.Name;
   data.AgoFont := FFontAgo.Name;
@@ -3773,9 +3798,11 @@ begin
   data.LineWidth := cbDotLineWidth.ItemIndex + 1;
   data.PredictDots := cbPredictions.Checked and cbPredictDots.Checked;
   data.DecimalSep := edCommaSep.Text;
-  FOnDisplayPreview(pbDisplayPreview.Canvas,
-    Rect(0, 0, pbDisplayPreview.Width, pbDisplayPreview.Height),
-    rgDots.ItemIndex, ThemeFromPickers, data, FPreviewZones);
+  FOnDisplayPreview(pb.Canvas,
+    Rect(0, 0, pb.Width, pb.Height),
+    rgDots.ItemIndex, ThemeFromPickers, data, zones);
+  if pb = pbDisplayPreview then
+    FPreviewZones := zones;
 end;
 
 // The miniature doubles as the font picker surface, like the labels it

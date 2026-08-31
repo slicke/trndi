@@ -118,7 +118,7 @@ Those small dots you see across the screen show your recent readings over time:
 **How to use them**: Hover over a dot to see its value in a tooltip, or click it
 to swap the dot for the actual number. (Both are disabled in privacy mode.)
 
-**Connecting the dots**: If you prefer a continuous trace, *Settings → Display →
+**Connecting the dots**: If you prefer a continuous trace, *Settings → Trend graph →
 Draw a line connecting the trend dots* joins the dots with a subtle line drawn
 underneath them. The line wears the dots' own colors, slightly softened: each
 dot's color extends halfway toward its neighbors, so the trace switches color
@@ -137,7 +137,7 @@ the window. Slots are only left truly empty when nothing proves a reading is
 missing: before your history starts, or on the right while data is outdated
 (the stale warning covers that case). Click or right-click a ring to see when
 the missing reading would have been. The rings can be turned off under
-*Settings → Display → Mark missing readings*.
+*Settings → Trend graph → Mark missing readings*.
 
 **Changing how the dots are coloured**: *Settings → Colors → Backgrounds → Trend
 dot coloring*. A preview strip under the options shows how the selected mode
