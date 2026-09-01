@@ -298,7 +298,10 @@ end;
     @value sdsNormal Standard dialog layout.
     @value sdsBig Larger layout suitable for touch/TV screens.
     @value sdsAuto Auto-detect (big if touch screen available).
-    @value sdsOnForm Render message inline on an existing form (used by @link(SlickeMessage)).
+    @value sdsOnForm A presentation mode rather than a size: render the message
+      as a full-screen overlay on an existing form. Honoured only by
+      @link(SlickeMessage), and only with a visible sender on a touch screen;
+      every other helper (and every fallback) treats it as @code(sdsAuto).
   }
 TSlickeDialogSize = (sdsNormal = 0, sdsBig = 1, sdsAuto = 3, sdsOnForm = 4, sdsMedium = 5);
 
@@ -429,8 +432,10 @@ procedure SlickeNotifyClose(const id: string);
     @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
     @param title Dialog title text (top label).
     @param message Main message body.
-    @param icon Emoji icon; defaults to @code(uxmtOK).
+    @param icon Emoji icon; defaults to @code(uxmtOK). Ignored by the overlay.
     @param sender Optional form used when @code(dialogsize = sdsOnForm) to render a full-screen overlay.
+    @remarks In overlay mode only one message shows at a time: a new message
+      replaces an overlay that is still up (newest wins).
   }
 procedure SlickeMessage(const dialogsize: TSlickeDialogSize; const title, message: string; const icon: SlickeUXImage = uxmtOK; sender: TForm = nil);
 
@@ -3194,15 +3199,31 @@ begin
   SlickeMessage(sdsAuto, title, message, icon, sender);
 end;
 
-{**
-  See interface docs. Renders inline panel when @code(dialogsize = sdsOnForm) and a sender is available.
-}
-procedure SlickeMessage(const dialogsize: TSlickeDialogSize; const title, message: string;
 const
-icon: SlickeUXImage = uxmtOK;
-sender: TForm = nil);
+  { Component name of the full-screen overlay panel SlickeMessage draws on a
+    form in sdsOnForm mode. One overlay per form at a time. }
+  UXOverlayName = 'uxd_on_form';
+
+{ Tear down a SlickeMessage overlay panel. The name is cleared so the next
+  overlay can be created before the deferred release has run. Never free
+  directly — in Qt, destroying a QWidget from inside its own clicked() signal
+  makes the signal dispatch touch freed memory. Hide now and let the LCL
+  release it from the message loop once dispatch has unwound; that also frees
+  the child labels, the button and the handler form. }
+procedure ReleaseOverlayPanel(P: TPanel);
+begin
+  P.Name := '';
+  P.Hide;
+  Application.ReleaseComponent(P);
+end;
+
+{ The full-screen overlay behind SlickeMessage's sdsOnForm mode: title, a
+  scrollable message and a full-width dismiss button drawn as a child panel on
+  AForm itself. Being in-window is the point — it needs nothing from the
+  window manager, which on the embedded compositors small touch panels run is
+  not guaranteed to map a modal dialog at all. }
+procedure ShowOverlayMessage(AForm: TForm; const title, message: string);
 const
-  onFormName: string = 'uxd_on_form';
   Margin = 5;
   Gap = 10;
   { Height the scrollable message area keeps even when the title wants it all. }
@@ -3220,125 +3241,142 @@ begin
   // every inline message a full-screen flash of light.
   ovBg   := TColor(IfThen(TrndiNative.isDarkMode, uxclDarkBg, uxclLightBlue));
   ovText := TColor(IfThen(TrndiNative.isDarkMode, uxclDarkText, uxclBlue));
-  if (dialogsize = sdsOnForm) and ((sender <> nil) and (sender.FindComponent(onFormName) = nil)) then
+
+  // Child coordinates are in the parent's client space, and all four sides are
+  // anchored so the overlay keeps covering the form when it is resized or the
+  // screen rotates.
+  tp := TPanel.Create(AForm);
+  tp.Name := UXOverlayName;
+  tp.caption := '';
+  tp.Parent := AForm;
+  tp.Top := 0;
+  tp.Left := 0;
+  tp.Width := AForm.ClientWidth;
+  tp.Height := AForm.ClientHeight;
+  tp.Anchors := [akLeft, akTop, akRight, akBottom];
+  tp.BringToFront;
+  tp.Color := ovBg;
+
+  // --- Title: measured, not guessed, so the body never lands on top of it ---
+  tt := TLabel.Create(tp);
+  tt.parent := tp;
+  tt.autosize := false;
+  tt.WordWrap := true;
+  tt.Font.Color := ovText;
+  tt.Font.Style := [fsBold];
+  tt.Font.Size := tp.Width div 20;
+  tt.left := Margin;
+  tt.top := Margin;
+  tt.width := tp.Width - (Margin * 2);
+  tt.Anchors := [akLeft, akTop, akRight];
+  tt.Caption := title;
+  tt.Height := MeasureWrappedHeight(title, tt.Font, tt.Width);
+
+  // Button created first so we know its final Top before sizing the message
+  // area below.
+  tb := TButton.Create(tp);
+  tb.Parent := tp;
+  tb.AutoSize := true;
+  tb.Caption := smbUXOK;
+
+  if tb.Height < (tp.Height div 5) then
   begin
+    tb.AutoSize := false;
+    tb.Height := tp.Height div 5;
+  end;
 
-    // Gate on touch, not on the resolved layout size: small touch panels now
-    // resolve to sdsMedium, and the full-screen overlay is wanted most exactly
-    // there. This is the original meaning of the test.
-    if (sender <> nil) and (sender.Showing) and DialogsAreTouch then
-    begin
-      // On e.g. touch screens display a full screen message. Child coordinates
-      // are in the parent's client space, and all four sides are anchored so the
-      // overlay keeps covering the form when it is resized or the screen rotates.
-      tp := TPanel.Create(sender); // Create a panel to cover the screen
-      tp.Name := onFormName;
-      tp.caption := '';
-      tp.Parent := sender;
-      tp.Top := 0;
-      tp.Left := 0;
-      tp.Width := sender.ClientWidth;
-      tp.Height := sender.ClientHeight;
-      tp.Anchors := [akLeft, akTop, akRight, akBottom];
-      tp.BringToFront;
-      tp.Color := ovBg;
+  tb.Left := 0;
+  tb.Width := tp.Width;
+  tb.Top := tp.Height - tb.Height - Gap;
+  tb.Anchors := [akLeft, akRight, akBottom];
+  tb.Font.Color := AForm.Font.Color;
 
-      // --- Title: measured, not guessed, so the body never lands on top of it ---
-      tt := TLabel.Create(tp);
-      tt.parent := tp;
-      tt.autosize := false;
-      tt.WordWrap := true;
-      tt.Font.Color := ovText;
-      tt.Font.Style := [fsBold];
-      tt.Font.Size := tp.Width div 20;
-      tt.left := Margin;
-      tt.top := Margin;
-      tt.width := tp.Width - (Margin * 2);
-      tt.Anchors := [akLeft, akTop, akRight];
-      tt.Caption := title;
-      tt.Height := MeasureWrappedHeight(title, tt.Font, tt.Width);
+  // --- Message: scrollable, so a long text is reachable instead of clipped ---
+  ts := TScrollBox.Create(tp);
+  ts.Parent := tp;
+  ts.BorderStyle := bsNone;
+  ts.ParentColor := false;
+  ts.Color := ovBg;
+  ts.Left := Margin;
+  ts.Top := tt.Top + tt.Height + Margin;
+  ts.Width := tp.Width - (Margin * 2);
+  // A title long enough to wrap past the button leaves no room at all, which
+  // would give a negative height (an LCL range error, or a zero-size widget
+  // that hides the message). Give the message area its minimum and let the
+  // title be the part that gets cut instead.
+  if (tb.Top - ts.Top - Margin) < MinMessageHeight then
+  begin
+    ts.Top := Max(tt.Top, tb.Top - Margin - MinMessageHeight);
+    tt.Height := Max(0, ts.Top - tt.Top - Margin);
+  end;
+  ts.Height := Max(0, tb.Top - ts.Top - Margin);
+  ts.Anchors := [akLeft, akTop, akRight, akBottom];
+  ts.HorzScrollBar.Visible := false;
+  ts.VertScrollBar.Visible := true;
+  // Realise the handle so ClientWidth below excludes the vertical scroll
+  // bar; without it the label is measured too wide and clips on the right.
+  ts.HandleNeeded;
 
-      // Button created first so we know its final Top before sizing the message
-      // area below.
-      tb := TButton.Create(tp);
-      tb.Parent := tp;
-      tb.AutoSize := true;
-      tb.Caption := smbUXOK;
+  tl := TLabel.Create(ts);
+  tl.parent := ts;
+  tl.autosize := false;
+  tl.Font.Color := ovText;
+  tl.Font.Size := tp.Width div 20;
+  if IsProblematicWM then
+    tl.Font.size := 38;
+  tl.WordWrap := true;
+  tl.top := 0;
+  tl.left := 0;
+  tl.width := ts.ClientWidth;
+  tl.Anchors := [akLeft, akTop, akRight];
+  tl.Caption := message;
+  // Font is final before measuring; the scroll box supplies whatever height
+  // the wrapped text needs beyond the visible area.
+  tl.Height := MeasureWrappedHeight(message, tl.Font, tl.Width);
 
-      if tb.Height < (tp.Height div 5) then
-      begin
-        tb.AutoSize := false;
-        tb.Height := tp.Height div 5;
-      end;
+  // BringToFront is essential: in Qt the last-created sibling has the
+  // highest z-order, so without it the message area (created after) sits on
+  // top and its widget intercepts touch events over the button area.
+  tb.BringToFront;
 
-      tb.Left := 0;
-      tb.Width := tp.Width;
-      tb.Top := tp.Height - tb.Height - Gap;
-      tb.Anchors := [akLeft, akRight, akBottom];
-      tb.Font.Color := sender.Font.Color;
+  // Owned by the overlay panel, not by AForm: releasing the panel disposes
+  // of the handler host too, so repeated messages don't accumulate hidden
+  // forms on the main window for the lifetime of the app.
+  df := TDialogForm.CreateNew(tp);
+  tb.OnClick := @df.SlickeMessageOnClick;
+  tb.OnMouseDown := @df.SlickeMessageOnMouseDown;
+end;
 
-      // --- Message: scrollable, so a long text is reachable instead of clipped ---
-      ts := TScrollBox.Create(tp);
-      ts.Parent := tp;
-      ts.BorderStyle := bsNone;
-      ts.ParentColor := false;
-      ts.Color := ovBg;
-      ts.Left := Margin;
-      ts.Top := tt.Top + tt.Height + Margin;
-      ts.Width := tp.Width - (Margin * 2);
-      // A title long enough to wrap past the button leaves no room at all, which
-      // would give a negative height (an LCL range error, or a zero-size widget
-      // that hides the message). Give the message area its minimum and let the
-      // title be the part that gets cut instead.
-      if (tb.Top - ts.Top - Margin) < MinMessageHeight then
-      begin
-        ts.Top := Max(tt.Top, tb.Top - Margin - MinMessageHeight);
-        tt.Height := Max(0, ts.Top - tt.Top - Margin);
-      end;
-      ts.Height := Max(0, tb.Top - ts.Top - Margin);
-      ts.Anchors := [akLeft, akTop, akRight, akBottom];
-      ts.HorzScrollBar.Visible := false;
-      ts.VertScrollBar.Visible := true;
-      // Realise the handle so ClientWidth below excludes the vertical scroll
-      // bar; without it the label is measured too wide and clips on the right.
-      ts.HandleNeeded;
-
-      tl := TLabel.Create(ts);
-      tl.parent := ts;
-      tl.autosize := false;
-      tl.Font.Color := ovText;
-      tl.Font.Size := tp.Width div 20;
-      if IsProblematicWM then
-        tl.Font.size := 38;
-      tl.WordWrap := true;
-      tl.top := 0;
-      tl.left := 0;
-      tl.width := ts.ClientWidth;
-      tl.Anchors := [akLeft, akTop, akRight];
-      tl.Caption := message;
-      // Font is final before measuring; the scroll box supplies whatever height
-      // the wrapped text needs beyond the visible area.
-      tl.Height := MeasureWrappedHeight(message, tl.Font, tl.Width);
-
-      // BringToFront is essential: in Qt the last-created sibling has the
-      // highest z-order, so without it the message area (created after) sits on
-      // top and its widget intercepts touch events over the button area.
-      tb.BringToFront;
-
-      // Owned by the overlay panel, not by sender: releasing the panel disposes
-      // of the handler host too, so repeated messages don't accumulate hidden
-      // forms on the main window for the lifetime of the app.
-      df := TDialogForm.CreateNew(tp);
-      tb.OnClick := @df.SlickeMessageOnClick;
-      tb.OnMouseDown := @df.SlickeMessageOnMouseDown;
-    end
-    else
-      SlickeMsg(sdsAuto, sMsgTitle, title, message, '',
-        uxclBlue, uxclLightBlue, [mbOK], WChar(icon))
+{**
+  See interface docs. sdsOnForm is a presentation mode, not a size: with a
+  visible sender on a touch screen the message renders as a full-screen
+  overlay on the sender itself; every other case is a regular modal dialog.
+}
+procedure SlickeMessage(const dialogsize: TSlickeDialogSize; const title, message: string;
+const
+icon: SlickeUXImage = uxmtOK;
+sender: TForm = nil);
+var
+  existing: TComponent;
+begin
+  // Gate on touch, not on the resolved layout size: small touch panels resolve
+  // to sdsMedium, and the full-screen overlay is wanted most exactly there.
+  if (dialogsize = sdsOnForm) and Assigned(sender) and sender.Showing and
+    DialogsAreTouch then
+  begin
+    // A message can arrive while an earlier overlay is still up (an extension
+    // may post one at any time). Newest wins: replace the overlay — this used
+    // to fall through to the modal branch and stack a dialog on top of it.
+    existing := sender.FindComponent(UXOverlayName);
+    if existing is TPanel then
+      ReleaseOverlayPanel(TPanel(existing));
+    ShowOverlayMessage(sender, title, message);
   end
   else
+    // A desktop pointer, a hidden or absent sender, or any other size preset.
+    // GetSlickeDialogSize maps sdsOnForm itself to sdsAuto.
     SlickeMsg(dialogsize, sMsgTitle, title, message, '',
-      uxclBlue, uxclLightBlue, [mbOK], WChar(icon))
+      uxclBlue, uxclLightBlue, [mbOK], WChar(icon));
 end;
 
 {** See interface docs for behavior and parameters. }
@@ -5164,18 +5202,10 @@ end;
 
 {** Close handler for full-screen overlay messages created by @link(SlickeMessage). }
 procedure TDialogForm.SlickeMessageOnClick(sender: TObject);
-var
-  P: TPanel;
 begin
-  P := (sender as TButton).parent as TPanel;
-  // Clear the name so the next SlickeMessage call can create a new overlay.
-  // Never free directly here — in Qt, destroying a QWidget from inside its own
-  // clicked() signal makes the signal dispatch touch freed memory. Hide now and
-  // let the LCL release it from the message loop once dispatch has unwound;
-  // that also frees the child labels, the button and the handler form.
-  P.Name := '';
-  P.Hide;
-  Application.ReleaseComponent(P);
+  // The Qt-safe deferred teardown lives in ReleaseOverlayPanel, shared with
+  // the replace-on-new-message path in SlickeMessage.
+  ReleaseOverlayPanel((sender as TButton).parent as TPanel);
 end;
 
 {** OnChange handler for font combo in SlickeFontPicker - updates live preview. }
