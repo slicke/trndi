@@ -493,7 +493,10 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
   Simplified Extended message dialog for displaying yes/no dialogs
   @param dialogsize Layout preset; @seealso(TSlickeDialogSize)
   @param caption Window caption.
-  @param desc Description of dialog.
+  @param desc Description of dialog. Rendered as HTML (the dialog goes through
+    the HTML @link(SlickeMsg) overload): use @code(sHTMLLineBreak) for line
+    breaks — @code(#13#10) collapses to a space — and escape a literal
+    @code(<) or @code(&).
   @param micon Icon for the dialog
   @param scale Size for the actual dialog
   @returns @true when the user chose Yes; @false otherwise.
@@ -507,7 +510,8 @@ const scale: single = 1): boolean;
 {**
   Simplified Extended message dialog for displaying yes/no dialogs
   @param caption Window caption.
-  @param desc Description of dialog.
+  @param desc Description of dialog; rendered as HTML — see the
+    @code(dialogsize) overload above.
   @param micon Icon for the dialog
   @param scale The size of the actual dialog
   @returns @true when the user chose Yes; @false otherwise.
@@ -2215,13 +2219,45 @@ begin
   Result.A := Alpha;
 end;
 
-{**
-  Render an emoji into a @code(TImage) using Direct2D/DirectWrite on Windows.
-  @param Image Target image control.
-  @param Emoji Emoji text (usually a single codepoint).
-  @param bgcol Background color (fills the bitmap).
-}
-procedure AssignEmoji(Image: TImage; const Emoji: widestring; bgcol: TColor = clWhite);
+{ Plain-GDI fallback for AssignEmoji: the glyph drawn as canvas text, which on
+  GDI comes out monochrome. Used when any Direct2D/DirectWrite object cannot be
+  created (remote desktop sessions, broken display drivers) — a plainer icon
+  beats an access violation raised while showing the error dialog itself. }
+procedure AssignEmojiGDI(Image: TImage; const Emoji: widestring; bgcol: TColor);
+var
+  Bitmap: Graphics.TBitmap;
+  Inset: integer;
+  es: string;
+begin
+  Bitmap := Graphics.TBitmap.Create;
+  try
+    Bitmap.SetSize(Image.Width, Image.Height);
+    Bitmap.Canvas.Brush.Color := bgcol;
+    Bitmap.Canvas.FillRect(0, 0, Bitmap.Width, Bitmap.Height);
+    Inset := Round(Image.Width * 0.20);
+    Bitmap.Canvas.Font.Name := 'Segoe UI Emoji';
+    // Only reaches monochrome rendering, so it must not be hardcoded black on
+    // a dark dialog background.
+    Bitmap.Canvas.Font.Color := getBaseColor;
+    Bitmap.Canvas.Font.Size := Max(Image.Height - (Inset * 2), 8);
+    es := UTF8Encode(Emoji);
+    Bitmap.Canvas.TextOut(
+      (Bitmap.Width - Bitmap.Canvas.TextWidth(es)) div 2,
+      (Bitmap.Height - Bitmap.Canvas.TextHeight(es)) div 2,
+      es);
+    Image.Picture.Assign(Bitmap);
+    Image.Transparent := true;
+  finally
+    Bitmap.Free;
+  end;
+end;
+
+{ The Direct2D/DirectWrite rendering behind AssignEmoji. Every COM object
+  creation is checked: each can fail where hardware acceleration is unavailable
+  (remote desktop, broken drivers), and an unchecked nil interface here turned
+  the message dialog itself into an access violation. Returns false so the
+  caller falls back to AssignEmojiGDI. }
+function TryAssignEmojiD2D(Image: TImage; const Emoji: widestring; bgcol: TColor): boolean;
 var
   D2DFactory: ID2D1Factory;
   DWFactory: IDWriteFactory;
@@ -2235,72 +2271,97 @@ var
   R: TRect;
   Inset: single;
 begin
+  Result := false;
+  Bitmap := Graphics.TBitmap.Create;
+  try
+    Bitmap.SetSize(Image.Width, Image.Height);
+    Bitmap.PixelFormat := pf32bit;
+    Bitmap.Canvas.Brush.Color := bgcol;
+    Bitmap.Canvas.FillRect(0, 0, Bitmap.Width, Bitmap.Height);
+
+    // Create Direct2D factory
+    if (D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, ID2D1Factory,
+      nil, D2DFactory) < 0) or (D2DFactory = nil) then
+      Exit;
+
+    // Render target properties
+    FillChar(TargetProps, SizeOf(TargetProps), 0);
+    TargetProps._type := D2D1_RENDER_TARGET_TYPE_DEFAULT;
+    TargetProps.pixelFormat.format := DXGI_FORMAT_B8G8R8A8_UNORM;
+    TargetProps.pixelFormat.alphaMode := D2D1_ALPHA_MODE_IGNORE;
+    TargetProps.dpiX := 96;
+    TargetProps.dpiY := 96;
+
+    // Create DC render target
+    if (D2DFactory.CreateDCRenderTarget(@TargetProps, RT) < 0) or (RT = nil) then
+      Exit;
+
+    // Bind Direct2D target to Lazarus DC
+    R := Classes.Rect(0, 0, Bitmap.Width, Bitmap.Height);
+    if RT.BindDC(Bitmap.Canvas.Handle, @R) < 0 then
+      Exit;
+
+    // Create DirectWrite factory & text format
+    if (DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, IDWriteFactory,
+      IUnknown(DWFactory)) < 0) or (DWFactory = nil) then
+      Exit;
+
+    // Add 20% inset for padding
+    Inset := Image.Width * 0.20;
+
+    if (DWFactory.CreateTextFormat(
+      pwidechar('Segoe UI Emoji'), nil,
+      DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
+      DWRITE_FONT_STRETCH_NORMAL,
+      Image.Height - Trunc(Inset * 2),
+      'en-us', TextFormat) < 0) or (TextFormat = nil) then
+      Exit;
+
+    // Brush for text rendering. Colour glyphs carry their own layers and
+    // ignore it, but a codepoint Segoe UI Emoji lacks falls back to a
+    // monochrome face -- drawing that in the background colour hides it.
+    BG := TColorToColorF(bgcol, 1.0);
+    FG := TColorToColorF(getBaseColor, 1.0);
+    if (RT.CreateSolidColorBrush(@FG, nil, Brush) < 0) or (Brush = nil) then
+      Exit;
+
+    // Drawing area with inset
+    TextRect := RectF(Inset, Inset, Image.Width - Inset, Image.Height - Inset);
+
+    // Draw
+    RT.BeginDraw;
+    RT.Clear(BG);
+    RT.DrawText(pwidechar(Emoji), Length(Emoji), TextFormat,
+      @TextRect, Brush,
+      D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
+      DWRITE_MEASURING_MODE_NATURAL);
+    // A failed EndDraw (e.g. D2DERR_RECREATE_TARGET) leaves the bitmap
+    // undefined; fall back rather than show garbage.
+    if RT.EndDraw() < 0 then
+      Exit;
+
+    // Assign to TImage
+    Image.Picture.Assign(Bitmap);
+    Image.Transparent := true;
+    Result := true;
+  finally
+    Bitmap.Free;
+  end;
+end;
+
+{**
+  Render an emoji into a @code(TImage) using Direct2D/DirectWrite on Windows,
+  falling back to a plain-GDI monochrome glyph when Direct2D is unavailable.
+  @param Image Target image control.
+  @param Emoji Emoji text (usually a single codepoint).
+  @param bgcol Background color (fills the bitmap).
+}
+procedure AssignEmoji(Image: TImage; const Emoji: widestring; bgcol: TColor = clWhite);
+begin
   CoInitialize(nil);
   try
-    Bitmap := Graphics.TBitmap.Create;
-    try
-      Bitmap.SetSize(Image.Width, Image.Height);
-      Bitmap.PixelFormat := pf32bit;
-      Bitmap.Canvas.Brush.Color := bgcol;
-      Bitmap.Canvas.FillRect(0, 0, Bitmap.Width, Bitmap.Height);
-
-      // Create Direct2D factory
-      D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, ID2D1Factory, nil, D2DFactory);
-
-      // Render target properties
-      FillChar(TargetProps, SizeOf(TargetProps), 0);
-      TargetProps._type := D2D1_RENDER_TARGET_TYPE_DEFAULT;
-      TargetProps.pixelFormat.format := DXGI_FORMAT_B8G8R8A8_UNORM;
-      TargetProps.pixelFormat.alphaMode := D2D1_ALPHA_MODE_IGNORE;
-      TargetProps.dpiX := 96;
-      TargetProps.dpiY := 96;
-
-      // Create DC render target
-      D2DFactory.CreateDCRenderTarget(@TargetProps, RT);
-
-      // Bind Direct2D target to Lazarus DC
-      R := Classes.Rect(0, 0, Bitmap.Width, Bitmap.Height);
-      RT.BindDC(Bitmap.Canvas.Handle, @R);
-
-      // Create DirectWrite factory & text format
-      DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, IDWriteFactory, IUnknown(DWFactory));
-
-      // Add 20% inset for padding
-      Inset := Image.Width * 0.20;
-
-      DWFactory.CreateTextFormat(
-        pwidechar('Segoe UI Emoji'), nil,
-        DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL,
-        DWRITE_FONT_STRETCH_NORMAL,
-        Image.Height - Trunc(Inset * 2),
-        'en-us', TextFormat
-        );
-
-      // Brush for text rendering. Colour glyphs carry their own layers and
-      // ignore it, but a codepoint Segoe UI Emoji lacks falls back to a
-      // monochrome face -- drawing that in the background colour hides it.
-      BG := TColorToColorF(bgcol, 1.0);
-      FG := TColorToColorF(getBaseColor, 1.0);
-      RT.CreateSolidColorBrush(@FG, nil, Brush);
-
-      // Drawing area with inset
-      TextRect := RectF(Inset, Inset, Image.Width - Inset, Image.Height - Inset);
-
-      // Draw
-      RT.BeginDraw;
-      RT.Clear(BG);
-      RT.DrawText(pwidechar(Emoji), Length(Emoji), TextFormat,
-        @TextRect, Brush,
-        D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
-        DWRITE_MEASURING_MODE_NATURAL);
-      RT.EndDraw;
-
-      // Assign to TImage
-      Image.Picture.Assign(Bitmap);
-      Image.Transparent := true;
-    finally
-      Bitmap.Free;
-    end;
+    if not TryAssignEmojiD2D(Image, Emoji, bgcol) then
+      AssignEmojiGDI(Image, Emoji, bgcol);
   finally
     CoUninitialize;
   end;
@@ -3020,11 +3081,7 @@ var
   tp: TPanel;
   tl, tt: TLabel;
   ts: TScrollBox;
-  {$ifdef X_WIN}
-  tb: TButton; // TDarkButton;
-  {$else}
   tb: TButton;
-  {$endif}
   df: TDialogForm;
   ovBg, ovText: TColor;
 begin
@@ -3073,7 +3130,7 @@ begin
 
       // Button created first so we know its final Top before sizing the message
       // area below.
-      {$ifdef X_WIN}tb := TButton.Create(tp);{$else}tb := TButton.Create(tp);{$endif}
+      tb := TButton.Create(tp);
       tb.Parent := tp;
       tb.AutoSize := true;
       tb.Caption := smbUXOK;
@@ -3424,6 +3481,9 @@ begin
     OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
     CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
     CenterButtons(Dialog, OkButton, CancelButton, Grid.Top + Grid.Height, size, Padding);
+    // Like the other input dialogs: focus starts on the answer control, so the
+    // keyboard can move the selection without tabbing away from a button first.
+    Dialog.ActiveControl := Grid;
 
     if ShowModalSafe(Dialog) = mrOk then
       // Grid.Row counts the fixed header row, so the first data row is 1;
@@ -3676,6 +3736,10 @@ const caption, desc: string;
 const micon: SlickeUXImage = uxmtConfirmation;
 const scale: single = 1): boolean;
 begin
+  // Two strings + a row list resolves to the HTML-only SlickeMsg overload, so
+  // desc is deliberately rendered as HTML — callers rely on sHTMLLineBreak
+  // (see the interface docs). Adding a string parameter here can silently
+  // rebind this call to a different overload; re-check if the signature moves.
   result := SlickeMsg(dialogsize, caption, desc,
     [[mbYes, mbNo], [mbNo, mbYes]], micon, scale) = mrYes;
 end;
@@ -4381,7 +4445,7 @@ begin
       LogMemo.BorderStyle := bsNone;
       LogMemo.Text := TrimSet(logmsg, [#10, #13]);
       LogMemo.OnKeyDown := @Dialog.FormKeyDown;
-      dialog.extraText := LOgMemo.Text;
+      dialog.extraText := LogMemo.Text;
     end;
 
     // BUTTON PANEL
@@ -4731,13 +4795,8 @@ function GetModalResult(comp: TComponent): TModalResult;
     {$endif};
   end;
 
-procedure ClickButton(idx: integer);
-  var
-    comp: TComponent;
+procedure ClickComp(comp: TComponent);
   begin
-    if idx < 0 then
-      Exit;
-    comp := target.Components[idx];
     if comp is TCustomButton then
       (comp as TCustomButton).Click
     {$ifdef Windows}
@@ -4746,6 +4805,12 @@ procedure ClickButton(idx: integer);
     {$endif};
     // Consume the key: the default button would otherwise fire a second time
     Key := 0;
+  end;
+
+procedure ClickButton(idx: integer);
+  begin
+    if idx >= 0 then
+      ClickComp(target.Components[idx]);
   end;
 
 begin
@@ -4763,6 +4828,21 @@ begin
 
   if not (key in [VK_ESCAPE, VK_RETURN]) then
     Exit;
+
+  // Enter with the focus on a button activates that button: the explicit
+  // ADefault (ApplyDefaultButton focuses it) or wherever the user tabbed.
+  // Without this the OK/Yes scan below overrode the chosen default — a dialog
+  // defaulting to Snooze drew its focus ring on Snooze and then answered
+  // Close to Enter.
+  if Key = VK_RETURN then
+  begin
+    modalRes := GetModalResult(ActiveControl);
+    if modalRes <> mrNone then
+    begin
+      ClickComp(ActiveControl);
+      Exit;
+    end;
+  end;
 
   cancel := -1;
   no := -1;

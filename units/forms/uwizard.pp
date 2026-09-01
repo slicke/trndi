@@ -159,22 +159,24 @@ resourcestring
   WZ_TEST_NO_SUPPORT = 'Connection testing is not supported for this service.';
   WZ_WEBLOGIN_BUTTON = 'Get CareLink token…';
   WZ_WEBLOGIN_TITLE = 'CareLink login helper';
+  // sHTMLLineBreak, not #13#10: these two strings are shown via SlickeMsgYesNo,
+  // which renders its message as HTML — CRLFs collapse to spaces there.
   WZ_WEBLOGIN_HELP =
     'CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small ' +
-    'login helper to capture your token.'#13#10#13#10 +
-    'It needs Node.js installed. In a terminal, run:'#13#10#13#10 +
-    '    cd "%s"'#13#10 +
-    '    npm install'#13#10 +
-    '    %s'#13#10#13#10 +
+    'login helper to capture your token.' + sHTMLLineBreak + sHTMLLineBreak +
+    'It needs Node.js installed. In a terminal, run:' + sHTMLLineBreak + sHTMLLineBreak +
+    '> cd "%s"' + sHTMLLineBreak +
+    '> npm install' + sHTMLLineBreak +
+    '> %s' + sHTMLLineBreak + sHTMLLineBreak +
     'A browser opens — sign in with your Care Partner account and solve the CAPTCHA. ' +
-    'The helper then prints a block of JSON: copy it into the token field and click Test.'#13#10#13#10 +
+    'The helper then prints a block of JSON: copy it into the token field and click Test.' + sHTMLLineBreak + sHTMLLineBreak +
     'Open the helper folder now?';
   WZ_WEBLOGIN_RUN_TITLE = 'CareLink login';
   WZ_WEBLOGIN_RUN_PROMPT =
     'Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), ' +
-    'then capture the token automatically.'#13#10#13#10 +
+    'then capture the token automatically.' + sHTMLLineBreak + sHTMLLineBreak +
     'The first run also downloads the login helper''s dependencies, which can take a ' +
-    'minute. Keep this window open and complete the sign-in in the browser.'#13#10#13#10 +
+    'minute. Keep this window open and complete the sign-in in the browser.' + sHTMLLineBreak + sHTMLLineBreak +
     'Start now?';
   WZ_WEBLOGIN_INSTALLING = 'Installing login helper dependencies (first run only)…';
   WZ_WEBLOGIN_WAITING = 'Waiting for the browser sign-in to complete…';
