@@ -2822,11 +2822,14 @@ begin
   DescLabel.Height := CalcWrappedHeight(DescLabel);
 end;
 
-{ Create a platform-appropriate dialog button (TDarkButton on Windows, TButton elsewhere),
-  apply big-mode scaling, and optionally register it in the dialog's button list. }
-function MakeDialogButton(Dialog: TDialogForm; const size: TSlickeDialogSize;
+{ Create a bare platform dialog button (TDarkButton on Windows, TButton
+  elsewhere): caption, modal result, the size preset's caption font, and
+  registration in the dialog's Ctrl+C content dump. Owned by AParent so
+  FormKeyDown's owner scan finds it whether the buttons live on the form or on
+  the 'pnButtons' panel. Sizing and placement stay with the caller. }
+function NewDialogButton(Dialog: TDialogForm; AParent: TWinControl;
   const ACaption: string; AModalResult: TModalResult;
-  AddToButtons: boolean = true): TWinControl;
+  const size: TSlickeDialogSize): TWinControl;
 var
   {$ifdef X_WIN}
   Btn: TDarkButton;
@@ -2834,13 +2837,96 @@ var
   Btn: TButton;
   {$endif}
 begin
-  {$ifdef X_WIN}Btn := TDarkButton.Create(Dialog);{$else}Btn := TButton.Create(Dialog);{$endif}
-  Btn.Parent := Dialog;
+  {$ifdef X_WIN}Btn := TDarkButton.Create(AParent);{$else}Btn := TButton.Create(AParent);{$endif}
+  Btn.Parent := AParent;
   {$ifdef LCLGTK2}Btn.Font.Color := clBlack;{$endif}
   Btn.Caption := ACaption;
   Btn.ModalResult := AModalResult;
   if ButtonFontSize(size) > 0 then
     Btn.Font.Size := ButtonFontSize(size);
+  Dialog.addButton(ACaption);
+  Result := Btn;
+end;
+
+{ Create the dialog's answer buttons on AParent as one centered row starting at
+  ATop — or, when AStack, as full-width buttons stacked downward from ATop,
+  for rows that cannot fit the display. Every button gets AWidth; AHeight > 0
+  gives them all that height, AHeight = 0 grows each from its widgetset
+  default by the size preset (what the log dialogs always did), with the touch
+  floor applied either way. Applies the default-button choice and returns the
+  bottom-most button so the caller can size the dialog under it.
+
+  This loop used to be spelled out separately in the HTML dialog and the log
+  dialog, and the two had already drifted apart in button heights. }
+function BuildButtonRow(Dialog: TDialogForm; AParent: TWinControl;
+  const buttons: TSlickeMsgDlgBtns; const size: TSlickeDialogSize;
+  const ADefault: TSlickeMsgDlgBtn; const AWidth, AHeight: integer;
+  const ATop, APadding: integer; const AStack: boolean): TWinControl;
+var
+  mr, defBtn: TSlickeMsgDlgBtn;
+  Btn, DefaultCtrl: TWinControl;
+  posX, rowTop, totalWidth: integer;
+begin
+  defBtn := PickDefaultButton(buttons, ADefault);
+  DefaultCtrl := nil;
+  Result := nil;
+  totalWidth := (Length(buttons) * AWidth) + ((Length(buttons) - 1) * APadding);
+  posX := Max((Dialog.ClientWidth - totalWidth) div 2, APadding);
+  rowTop := ATop;
+  for mr in buttons do
+  begin
+    Btn := NewDialogButton(Dialog, AParent, langs[mr],
+      UXButtonToModalResult(mr), size);
+    if AHeight > 0 then
+      Btn.Height := AHeight
+    else
+    begin
+      case size of
+      sdsBig:
+        Btn.Height := Btn.Height * 2;
+      sdsMedium:
+        Btn.Height := Ceil(Btn.Height * 1.5);
+      end;
+      Btn.Height := TouchMin(Btn.Height);
+    end;
+    if AStack then
+    begin
+      Btn.Width := Dialog.ClientWidth - (APadding * 2);
+      Btn.Left  := APadding;
+      Btn.Top   := rowTop;
+      Inc(rowTop, Btn.Height + APadding);
+    end
+    else
+    begin
+      Btn.Width := AWidth;
+      Btn.Left  := posX;
+      Btn.Top   := ATop;
+      Inc(posX, AWidth + APadding);
+    end;
+    // Default is chosen by identity, not position, so it survives a reversed row
+    if (mr = defBtn) and (DefaultCtrl = nil) then
+      DefaultCtrl := Btn;
+    Result := Btn;
+  end;
+  ApplyDefaultButton(Dialog, DefaultCtrl);
+end;
+
+{ Create a dialog button with the input dialogs' preset sizing: the size
+  preset's width/height floors, grown to fit the caption and the touch target. }
+function MakeDialogButton(Dialog: TDialogForm; const size: TSlickeDialogSize;
+  const ACaption: string; AModalResult: TModalResult): TWinControl;
+var
+  {$ifdef X_WIN}
+  Btn: TDarkButton;
+  {$else}
+  Btn: TButton;
+  {$endif}
+begin
+  {$ifdef X_WIN}
+  Btn := TDarkButton(NewDialogButton(Dialog, Dialog, ACaption, AModalResult, size));
+  {$else}
+  Btn := TButton(NewDialogButton(Dialog, Dialog, ACaption, AModalResult, size));
+  {$endif}
   case size of
   sdsBig:
   begin
@@ -2865,8 +2951,6 @@ begin
   // same rule sizes the input controls, so a button and the edit above it end
   // up within a few pixels of each other instead of visibly mismatched.
   Btn.Height := Max(Btn.Height, DialogInputHeight(Btn.Font, size));
-  if AddToButtons then
-    Dialog.addButton(ACaption);
   Result := Btn;
 end;
 
@@ -2915,6 +2999,80 @@ begin
     second.Top + second.Height) + Padding);
 end;
 
+const
+  { Inner spacing used by every input dialog; was a per-function const. }
+  InputDialogPadding = 16;
+
+{ Shared scaffold for the input dialogs (text, numeric, list, table, font,
+  date): the modal form with keyboard handling and work-area centring, plus
+  the icon/title/description header. The caller adds its answer control below
+  ADescLabel (see InputContentTop) and finishes with RunInputDialog.
+
+  Work area rather than the raw screen, matching the message dialogs and the
+  width/height clamps: on a display with a bottom panel, centring against the
+  full screen pushes the button row behind it - and a touch user has no
+  Alt+drag to pull the dialog back up. }
+function CreateInputDialog(const ACaption: string;
+  const size: TSlickeDialogSize; const icon: SlickeUXImage;
+  const ATitle, ADesc: string; out ADescLabel: TLabel): TDialogForm;
+var
+  IconBox: TImage;
+  TitleLabel: TLabel;
+begin
+  Result := TDialogForm.CreateNew(nil);
+  try
+    Result.KeyPreview := true;
+    Result.OnKeyDown := @Result.FormKeyDown;
+    Result.Caption := ACaption;
+    Result.BorderStyle := bsDialog;
+    Result.Position := poWorkAreaCenter;
+
+    IconBox := TImage.Create(Result);
+    TitleLabel := TLabel.Create(Result);
+    ADescLabel := TLabel.Create(Result);
+    SetupDialogTitleDesc(Result, size, icon, getBackground, ATitle, ADesc,
+      IconBox, TitleLabel, ADescLabel);
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+{ Top coordinate for an input dialog's answer control: below the description,
+  with the size preset's gap. }
+function InputContentTop(ADescLabel: TLabel; const size: TSlickeDialogSize): integer;
+begin
+  Result := ADescLabel.Top + ADescLabel.Height +
+    ifthen(size = sdsBig, InputDialogPadding * 2, InputDialogPadding);
+end;
+
+{ Finish an input dialog: the accept/cancel pair centered under the answer
+  control (AContent), initial focus on AFocus, and the modal loop. Empty
+  captions fall back to Select/Cancel. }
+function RunInputDialog(Dialog: TDialogForm; const size: TSlickeDialogSize;
+  AContent: TControl; AFocus: TWinControl;
+  const AOkCaption: string = ''; const ACancelCaption: string = ''): TModalResult;
+var
+  OkButton, CancelButton: TWinControl;
+  okCap, cancelCap: string;
+begin
+  okCap := AOkCaption;
+  if okCap = '' then
+    okCap := smbSelect;
+  cancelCap := ACancelCaption;
+  if cancelCap = '' then
+    cancelCap := smbUXCancel;
+
+  OkButton     := MakeDialogButton(Dialog, size, okCap, mrOk);
+  CancelButton := MakeDialogButton(Dialog, size, cancelCap, mrCancel);
+  CenterButtons(Dialog, OkButton, CancelButton,
+    AContent.Top + AContent.Height, size, InputDialogPadding);
+  if Assigned(AFocus) then
+    Dialog.ActiveControl := AFocus;
+
+  Result := ShowModalSafe(Dialog);
+end;
+
 {** See interface docs for behavior and parameters. }
 function SlickeIntInput(
 const dialogsize: TSlickeDialogSize;
@@ -2937,47 +3095,24 @@ float: boolean;
 var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog
 ): double;
-const
-  Padding = 16;
 var
   Dialog: TDialogForm;
-  IconBox: TImage;
-  TitleLabel, DescLabel: TLabel;
+  DescLabel: TLabel;
   Edit: TFloatSpinEditEx;
-  OkButton, CancelButton: TWinControl;
-  bgcol: TColor;
   size: TSlickeDialogSize;
 begin
   size := GetSlickeDialogSize(dialogsize);
   Result := ADefault;
   ModalResult := mrCancel;
-  bgcol := getBackground;
 
-  Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := true;
-  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  Dialog := CreateInputDialog(ACaption, size, icon, ATitle, ADesc, DescLabel);
   try
-    Dialog.Caption := ACaption;
-    Dialog.BorderStyle := bsDialog;
-    // Work area rather than the raw screen, matching the message dialogs and the
-    // width/height clamps: on a display with a bottom panel, centring against the
-    // full screen pushes the button row behind it - and a touch user has no
-    // Alt+drag to pull the dialog back up. The other input dialogs below follow.
-    Dialog.Position := poWorkAreaCenter;
-
-    IconBox := TImage.Create(Dialog);
-    TitleLabel := TLabel.Create(Dialog);
-    DescLabel := TLabel.Create(Dialog);
-
-    // Use shared helper for title + description
-    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
-
     // --- Numeric input ---
     Edit := TFloatSpinEditEx.Create(Dialog);
     Edit.Parent := Dialog;
     Edit.Left := DescLabel.Left;
     Edit.Width := DescLabel.Width;
-    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen(size = sdsBig, Padding * 2, Padding);
+    Edit.Top := InputContentTop(DescLabel, size);
     Edit.Value := ADefault;
     if AMin <> FLOAT_NONE then
       Edit.minvalue := AMin;
@@ -2996,12 +3131,7 @@ begin
     // whatever height the field gets, so this is the smallest target here.
     ApplyDialogInputHeight(Edit, size);
 
-    OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk,     false);
-    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
-    CenterButtons(Dialog, OkButton, CancelButton, Edit.Top + Edit.Height, size, Padding);
-    Dialog.ActiveControl := Edit;
-
-    ModalResult := ShowModalSafe(Dialog);
+    ModalResult := RunInputDialog(Dialog, size, Edit, Edit);
     if ModalResult = mrOk then
       Result := Edit.Value;
   finally
@@ -3219,43 +3349,24 @@ var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog;
 const AMasked: boolean = false
 ): string;
-const
-  Padding = 16;
 var
   Dialog: TDialogForm;
-  IconBox: TImage;
-  TitleLabel, DescLabel: TLabel;
+  DescLabel: TLabel;
   Edit: TEdit;
-  OkButton, CancelButton: TWinControl;
-  bgcol: TColor;
   size: TSlickeDialogSize;
 begin
   Result := ADefault;
   ModalResult := mrCancel;
   size := GetSlickeDialogSize(dialogsize);
-  bgcol := getBackground;
 
-  Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := true;
-  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  Dialog := CreateInputDialog(ACaption, size, icon, ATitle, ADesc, DescLabel);
   try
-    Dialog.Caption := ACaption;
-    Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
-
-    IconBox := TImage.Create(Dialog);
-    TitleLabel := TLabel.Create(Dialog);
-    DescLabel := TLabel.Create(Dialog);
-
-    // Use shared helper for consistent title/description layout
-    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
-
     // --- Input field ---
     Edit := TEdit.Create(Dialog);
     Edit.Parent := Dialog;
     Edit.Left := DescLabel.Left;
     Edit.Width := DescLabel.Width;
-    Edit.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig), Padding * 2, Padding);
+    Edit.Top := InputContentTop(DescLabel, size);
     Edit.Text := ADefault;
     if AMasked then
       Edit.EchoMode := emPassword;
@@ -3263,12 +3374,7 @@ begin
     ApplyDialogFont(Edit.Font, size, 20);
     ApplyDialogInputHeight(Edit, size);
 
-    OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
-    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
-    CenterButtons(Dialog, OkButton, CancelButton, Edit.Top + Edit.Height, size, Padding);
-    Dialog.ActiveControl := Edit;
-
-    ModalResult := ShowModalSafe(Dialog);
+    ModalResult := RunInputDialog(Dialog, size, Edit, Edit);
     if ModalResult = mrOk then
       Result := Edit.Text;
   finally
@@ -3314,36 +3420,18 @@ const Default: boolean = false;
 const icon: SlickeUXImage = uxmtCog;
 const Preselect: integer = 0
 ): integer;
-const
-  Padding = 16;
 var
   Dialog: TDialogForm;
-  IconBox: TImage;
-  TitleLabel, DescLabel: TLabel;
+  DescLabel: TLabel;
   Combo: TComboBox;
-  OkButton, CancelButton: TWinControl;
-  bgcol: TColor;
   i: integer;
   size: TSlickeDialogSize;
 begin
   Result := -1;
   size := GetSlickeDialogSize(dialogsize);
-  bgcol := getBackground;
 
-  Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := true;
-  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  Dialog := CreateInputDialog(ACaption, size, icon, ATitle, ADesc, DescLabel);
   try
-    Dialog.Caption := ACaption;
-    Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
-
-    IconBox := TImage.Create(Dialog);
-    TitleLabel := TLabel.Create(Dialog);
-    DescLabel := TLabel.Create(Dialog);
-
-    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
-
     // --- ComboBox ---
     Combo := TComboBox.Create(Dialog);
     Combo.Parent := Dialog;
@@ -3356,7 +3444,7 @@ begin
     ApplyInputColors(Combo);
     ApplyDialogFont(Combo.Font, size, 20);
     ApplyDialogInputHeight(Combo, size);
-    Combo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
+    Combo.Top := InputContentTop(DescLabel, size);
     // The caller's most likely answer (e.g. the account used last session)
     // rather than whichever entry happens to sort first. A stale or unknown
     // index is not an error here - fall back to the first entry.
@@ -3365,13 +3453,8 @@ begin
     else
       Combo.ItemIndex := 0;
 
-    OkButton     := MakeDialogButton(Dialog, size, smbSelect, mrOk);
-    CancelButton := MakeDialogButton(Dialog, size,
-      ifthen(Default, smbSlickeDefault, smbUXCancel), mrCancel);
-    CenterButtons(Dialog, OkButton, CancelButton, Combo.Top + Combo.Height, size, Padding);
-    Dialog.ActiveControl := Combo;
-
-    if ShowModalSafe(Dialog) = mrOk then
+    if RunInputDialog(Dialog, size, Combo, Combo, '',
+      ifthen(Default, smbSlickeDefault, smbUXCancel)) = mrOk then
       Result := Combo.ItemIndex
     else
       Result := -1;
@@ -3390,42 +3473,25 @@ const key: string = '';
 const value: string = ''
 ): integer;
 const
-  Padding = 16;
   GridHeight = 200;
 var
   Dialog: TDialogForm;
-  IconBox: TImage;
-  TitleLabel, DescLabel: TLabel;
+  DescLabel: TLabel;
   Grid: TStringGrid;
-  BgCol: TColor;
-  OkButton, CancelButton: TWinControl;
   i: integer;
   size: TSlickeDialogSize;
 begin
   Result := -1;
   size := GetSlickeDialogSize(dialogsize);
-  BgCol := getBackground;
 
-  Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := true;
-  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  Dialog := CreateInputDialog(ACaption, size, icon, ATitle, ADesc, DescLabel);
   try
-    Dialog.Caption := ACaption;
-    Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
-
-    IconBox := TImage.Create(Dialog);
-    TitleLabel := TLabel.Create(Dialog);
-    DescLabel := TLabel.Create(Dialog);
-
-    SetupDialogTitleDesc(Dialog, size, icon, BgCol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
-
     // --- Grid ---
     Grid := TStringGrid.Create(Dialog);
     Grid.Parent := Dialog;
     Grid.Left := DescLabel.Left;
     Grid.Width := DescLabel.Width;
-    Grid.Top := DescLabel.Top + DescLabel.Height + Padding;
+    Grid.Top := InputContentTop(DescLabel, size);
     Grid.Height := ifthen((size = sdsBig) , GridHeight + 80, GridHeight);
     // goRowSelect: this dialog answers with Grid.Row, so a tap anywhere in a row
     // should light up the row it is about to return - picking out a single cell
@@ -3478,14 +3544,7 @@ begin
         (Grid.BorderWidth * 2) + 2;
     end;
 
-    OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
-    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
-    CenterButtons(Dialog, OkButton, CancelButton, Grid.Top + Grid.Height, size, Padding);
-    // Like the other input dialogs: focus starts on the answer control, so the
-    // keyboard can move the selection without tabbing away from a button first.
-    Dialog.ActiveControl := Grid;
-
-    if ShowModalSafe(Dialog) = mrOk then
+    if RunInputDialog(Dialog, size, Grid, Grid) = mrOk then
       // Grid.Row counts the fixed header row, so the first data row is 1;
       // shift to the 0-based index into Keys/Values the docs promise.
       Result := Grid.Row - 1;
@@ -3503,50 +3562,30 @@ const AFontSample: string;
 var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog
 ): TFont;
-const
-  Padding = 16;
 var
   Dialog: TDialogForm;
-  IconBox: TImage;
-  TitleLabel, DescLabel: TLabel;
+  DescLabel: TLabel;
   PreviewLabel: TLabel;
   FontCombo: TComboBox;
-  OkButton, CancelButton: TWinControl;
-  bgcol: TColor;
   size: TSlickeDialogSize;
   SelectedFont: TFont;
-  i, initialIndex: integer;
-
+  initialIndex: integer;
 begin
   Result := TFont.Create;
   Result.Assign(ADefaultFont);
   ModalResult := mrCancel;
   size := GetSlickeDialogSize(dialogsize);
-  bgcol := getBackground;
 
-  Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := true;
-  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  Dialog := CreateInputDialog(ACaption, size, icon, ATitle, ADesc, DescLabel);
   SelectedFont := TFont.Create;
   SelectedFont.Assign(ADefaultFont);
   try
-    Dialog.Caption := ACaption;
-    Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
-
-    IconBox := TImage.Create(Dialog);
-    TitleLabel := TLabel.Create(Dialog);
-    DescLabel := TLabel.Create(Dialog);
-
-    // Use shared helper for consistent title/description layout
-    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
-
     // --- Font ComboBox ---
     FontCombo := TComboBox.Create(Dialog);
     FontCombo.Parent := Dialog;
     FontCombo.Left := DescLabel.Left;
     FontCombo.Width := DescLabel.Width;
-    FontCombo.Top := DescLabel.Top + DescLabel.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
+    FontCombo.Top := InputContentTop(DescLabel, size);
     FontCombo.Style := csDropDownList;
     FontCombo.Sorted := true;
     ApplyInputColors(FontCombo);
@@ -3572,7 +3611,8 @@ begin
     PreviewLabel.Parent := Dialog;
     PreviewLabel.Left := DescLabel.Left;
     PreviewLabel.Width := DescLabel.Width;
-    PreviewLabel.Top := FontCombo.Top + FontCombo.Height + ifthen((size = sdsBig) , Padding * 2, Padding);
+    PreviewLabel.Top := FontCombo.Top + FontCombo.Height +
+      ifthen(size = sdsBig, InputDialogPadding * 2, InputDialogPadding);
     PreviewLabel.Caption := AFontSample;
     PreviewLabel.AutoSize := false;
     PreviewLabel.Alignment := taCenter;
@@ -3603,12 +3643,7 @@ begin
     Dialog.FontPickerPreview := PreviewLabel;
     FontCombo.OnChange := @Dialog.FontComboChange;
 
-    OkButton     := MakeDialogButton(Dialog, size, smbUXOK,     mrOk);
-    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
-    CenterButtons(Dialog, OkButton, CancelButton,
-      PreviewLabel.Top + PreviewLabel.Height, size, Padding);
-
-    ModalResult := ShowModalSafe(Dialog);
+    ModalResult := RunInputDialog(Dialog, size, PreviewLabel, FontCombo, smbUXOK);
     if ModalResult = mrOk then
     begin
       // Get selected font name from combo box
@@ -3631,43 +3666,24 @@ AMaxDate: TDateTime;
 var ModalResult: TModalResult;
 const icon: SlickeUXImage = uxmtCog
 ): TDateTime;
-const
-  Padding = 16;
 var
   Dialog: TDialogForm;
-  IconBox: TImage;
-  TitleLabel, DescLabel: TLabel;
+  DescLabel: TLabel;
   DatePicker: TDateEdit;
-  OkButton, CancelButton: TWinControl;
-  bgcol: TColor;
   size: TSlickeDialogSize;
 begin
   size := GetSlickeDialogSize(dialogsize);
   Result := ADefault;
   ModalResult := mrCancel;
-  bgcol := getBackground;
 
-  Dialog := TDialogForm.CreateNew(nil);
-  Dialog.KeyPreview := true;
-  Dialog.OnKeyDown := @Dialog.FormKeyDown;
+  Dialog := CreateInputDialog(ACaption, size, icon, ATitle, ADesc, DescLabel);
   try
-    Dialog.Caption := ACaption;
-    Dialog.BorderStyle := bsDialog;
-    Dialog.Position := poWorkAreaCenter;  // work area: see SlickeNumericInput
-
-    IconBox := TImage.Create(Dialog);
-    TitleLabel := TLabel.Create(Dialog);
-    DescLabel := TLabel.Create(Dialog);
-
-    // Use shared helper for title + description
-    SetupDialogTitleDesc(Dialog, size, icon, bgcol, ATitle, ADesc, IconBox, TitleLabel, DescLabel);
-
     // --- Date picker ---
     DatePicker := TDateEdit.Create(Dialog);
     DatePicker.Parent := Dialog;
     DatePicker.Left := DescLabel.Left;
     DatePicker.Width := DescLabel.Width;
-    DatePicker.Top := DescLabel.Top + DescLabel.Height + ifthen(size = sdsBig, Padding * 2, Padding);
+    DatePicker.Top := InputContentTop(DescLabel, size);
     DatePicker.Date := ADefault;
     
     // Set min/max dates if specified (non-zero values)
@@ -3696,13 +3712,7 @@ begin
     end;
     {$endif}
 
-    OkButton     := MakeDialogButton(Dialog, size, smbSelect,   mrOk);
-    CancelButton := MakeDialogButton(Dialog, size, smbUXCancel, mrCancel);
-    CenterButtons(Dialog, OkButton, CancelButton,
-      DatePicker.Top + DatePicker.Height, size, Padding);
-    Dialog.ActiveControl := DatePicker;
-
-    ModalResult := ShowModalSafe(Dialog);
+    ModalResult := RunInputDialog(Dialog, size, DatePicker, DatePicker);
     if ModalResult = mrOk then
       Result := DatePicker.Date;
   finally
@@ -3822,15 +3832,9 @@ var
   HtmlPanel: TPanel;
   IconBox: TImage;
   HtmlViewer: TIpHtmlPanel;
-  {$ifdef X_WIN}
-  OkButton:TDarkButton;
-  {$else}
-  OkButton: TButton;
-  {$endif}
-  mr, defBtn: TSlickeMsgDlgBtn;
-  DefaultCtrl: TWinControl;
-  ButtonActualWidth, posX, ProposedWidth, btnCount, totalBtnWidth: integer;
-  ButtonHeight, buttonBlockHeight, rowTop, availableHeight: integer;
+  LastBtn: TWinControl;
+  ButtonActualWidth, ProposedWidth, btnCount, totalBtnWidth: integer;
+  ButtonHeight, buttonBlockHeight, availableHeight: integer;
   stackButtons: boolean;
   bgcol: TColor;
   size: TSlickeDialogSize;
@@ -3921,8 +3925,6 @@ begin
     // The buttons are the part that must never be pushed off the bottom, so
     // they claim their space first and the message area takes what is left.
     btnCount := Length(buttons);
-    defBtn := PickDefaultButton(buttons, ADefault);
-    DefaultCtrl := nil;
 
     // Grow the row to its widest caption; the preset stays the floor. The font
     // size mirrors the one applied to the buttons themselves below.
@@ -3961,50 +3963,13 @@ begin
     HtmlPanel.Height := contentHeight;
 
     // --- Create buttons -----------------------------------------------------
-    rowTop := HtmlPanel.Top + HtmlPanel.Height + padding;
-    posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
-    if posX < padding then
-      posX := padding;
+    LastBtn := BuildButtonRow(Dialog, Dialog, buttons, size, ADefault,
+      ButtonActualWidth, ButtonHeight,
+      HtmlPanel.Top + HtmlPanel.Height + padding, padding, stackButtons);
 
-    for mr in buttons do
-    begin
-      {$ifdef X_WIN}
-      OkButton := TDarkButton.Create(Dialog);
-      {$else}
-      OkButton := TButton.Create(Dialog);
-      {$endif}
-      OkButton.Parent := Dialog;
-      {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
-      OkButton.Caption := langs[mr];
-      dialog.addButton(okbutton.caption);
-      OkButton.Height := ButtonHeight;
-      if ButtonFontSize(size) > 0 then
-        OkButton.Font.Size := ButtonFontSize(size);
-      if stackButtons then
-      begin
-        OkButton.Width := Dialog.ClientWidth - (padding * 2);
-        OkButton.Left  := padding;
-        OkButton.Top   := rowTop;
-        Inc(rowTop, ButtonHeight + padding);
-      end
-      else
-      begin
-        OkButton.Width := ButtonActualWidth;
-        OkButton.Left  := posX;
-        OkButton.Top   := rowTop;
-        Inc(posX, ButtonActualWidth + padding);
-      end;
-      OkButton.ModalResult := UXButtonToModalResult(mr);
-      // Default is chosen by identity, not position, so it survives a reversed row
-      if (mr = defBtn) and (DefaultCtrl = nil) then
-        DefaultCtrl := OkButton;
-    end;
-
-    ApplyDefaultButton(Dialog, DefaultCtrl);
-
-    // Set final dialog height based on content. OkButton is the last one
-    // created, which is the bottom-most whether the row was stacked or not.
-    finalHeight := OkButton.Top + OkButton.Height + padding;
+    // Set final dialog height based on content; BuildButtonRow returns the
+    // bottom-most button whether the row was stacked or not.
+    finalHeight := LastBtn.Top + LastBtn.Height + padding;
     Dialog.ClientHeight := FitDialogHeight(finalHeight);
 
     dialog.setContent(caption, htmldata);
@@ -4045,11 +4010,10 @@ var
   {$else}
   OkButton: TButton;
   {$endif}
-  mr, defBtn: TSlickeMsgDlgBtn;
-  DefaultCtrl: TWinControl;
+  LastBtn: TWinControl;
   ButtonActualWidth, MaxDialogHeight, MsgWidth, NeededHeight,
   TitlePixelWidth, DescPixelWidth, TextPixelWidth,
-  posX, ProposedWidth, btnCount, totalBtnWidth, rowTop: integer;
+  ProposedWidth, btnCount, totalBtnWidth, rowTop: integer;
   stackButtons: boolean;
   bgcol: TColor;
   TempFont: TFont;
@@ -4465,11 +4429,6 @@ begin
     stackButtons := not ButtonRowFits(Dialog.ClientWidth, btnCount,
       ButtonActualWidth, padding);
 
-    // Always center the action buttons
-    posX := (Dialog.ClientWidth - totalBtnWidth) div 2;
-    if posX < padding then
-      posX := padding;
-    
     // Add expand button only if log content is truncated/needs scrolling
     // Position it independently on the left side
     if (logmsg <> '') and 
@@ -4510,53 +4469,16 @@ begin
       Dialog.LogIsHTML := isHTML;
     end;
 
-    defBtn := PickDefaultButton(buttons, ADefault);
-    DefaultCtrl := nil;
-
     rowTop := padding;
     // The expand button occupies the panel's top-left corner. A centered row
     // clears it, but a full-width stacked one would be drawn straight over it.
     if stackButtons and Assigned(Dialog.LogExpandButton) then
       rowTop := Dialog.LogExpandButton.Top + Dialog.LogExpandButton.Height + padding;
 
-    for mr in buttons do
-    begin
-      {$ifdef X_WIN}OkButton := TDarkButton.Create(ButtonPanel);{$else}OkButton := TButton.Create(ButtonPanel);{$endif}
-      OkButton.Parent := ButtonPanel;
-      {$ifdef LCLGTK2}OkButton.Font.Color := clBlack;{$endif}
-      OkButton.Caption := langs[mr];
-      dialog.addButton(okbutton.caption);
-      OkButton.ModalResult := UXButtonToModalResult(mr);
-      if ButtonFontSize(size) > 0 then
-        OkButton.Font.Size := ButtonFontSize(size);
-      case size of
-      sdsBig:
-        OkButton.Height := OkButton.Height * 2;
-      sdsMedium:
-        OkButton.Height := ceil(OkButton.Height * 1.5);
-      end;
-      OkButton.Height := TouchMin(OkButton.Height);
-      if stackButtons then
-      begin
-        OkButton.Width := Dialog.ClientWidth - (padding * 2);
-        OkButton.Left  := padding;
-        OkButton.Top   := rowTop;
-        Inc(rowTop, OkButton.Height + padding);
-      end
-      else
-      begin
-        OkButton.Width := ButtonActualWidth;
-        OkButton.Left  := posX;
-        OkButton.Top   := padding;
-        posX := posX + OkButton.Width + padding;
-      end;
-      // Default is chosen by identity, not position, so it survives a reversed row
-      if (mr = defBtn) and (DefaultCtrl = nil) then
-        DefaultCtrl := OkButton;
-    end;
+    LastBtn := BuildButtonRow(Dialog, ButtonPanel, buttons, size, ADefault,
+      ButtonActualWidth, 0, rowTop, padding, stackButtons);
 
-    ButtonPanel.Height := OkButton.Top + OkButton.Height + (padding * 2);
-    ApplyDefaultButton(Dialog, DefaultCtrl);
+    ButtonPanel.Height := LastBtn.Top + LastBtn.Height + (padding * 2);
 
     if Dialog.Height > MaxDialogHeight then
       Dialog.Height := MaxDialogHeight;
