@@ -1546,6 +1546,14 @@ begin
   Result.Unknown := RGBToColor(180, 180, 180);
 end;
 
+// The unit-local ShowMessage wrappers (inc/umain_helpers.inc) route messages
+// to the slicke.ux.alert dialogs. Declared ahead of the includes so that the
+// calls in umain_ext.inc and umain_async.inc bind to them as well; without
+// this they resolved to the LCL Dialogs.ShowMessage, showing a native message
+// box with the platform's own title bar.
+procedure ShowMessage(const str: string); forward;
+procedure ShowMessage(const title, str: string); forward;
+
 {$I ../../inc/umain_ext.inc}
 {$I ../../inc/umain_async.inc}
 {$I ../../inc/umain_helpers.inc}
