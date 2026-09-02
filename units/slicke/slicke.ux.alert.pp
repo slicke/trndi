@@ -3235,12 +3235,23 @@ var
   tb: TButton;
   df: TDialogForm;
   ovBg, ovText: TColor;
+  barOff, i: integer;
 begin
   // The overlay was the one dialog in this unit that never learned dark mode:
   // it hardcoded the light-blue scheme, which on a dark-mode touch device made
   // every inline message a full-screen flash of light.
   ovBg   := TColor(IfThen(TrndiNative.isDarkMode, uxclDarkBg, uxclLightBlue));
   ovText := TColor(IfThen(TrndiNative.isDarkMode, uxclDarkText, uxclBlue));
+
+  // A frameless host (Wayland) carries its own drawn title bar. The modal
+  // dialogs get the same bar from PrepareOwnTitleBar; this overlay used to
+  // cover the host's bar instead, so the window lost its caption, close
+  // button and drag handle for as long as the message was up. Start below
+  // the bar and leave it in use.
+  barOff := 0;
+  for i := 0 to AForm.ControlCount - 1 do
+    if (AForm.Controls[i] is TSlickeTitleBar) and AForm.Controls[i].Visible then
+      barOff := Max(barOff, AForm.Controls[i].Top + AForm.Controls[i].Height);
 
   // Child coordinates are in the parent's client space, and all four sides are
   // anchored so the overlay keeps covering the form when it is resized or the
@@ -3249,10 +3260,10 @@ begin
   tp.Name := UXOverlayName;
   tp.caption := '';
   tp.Parent := AForm;
-  tp.Top := 0;
+  tp.Top := barOff;
   tp.Left := 0;
   tp.Width := AForm.ClientWidth;
-  tp.Height := AForm.ClientHeight;
+  tp.Height := AForm.ClientHeight - barOff;
   tp.Anchors := [akLeft, akTop, akRight, akBottom];
   tp.BringToFront;
   tp.Color := ovBg;
