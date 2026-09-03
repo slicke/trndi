@@ -209,7 +209,10 @@ begin
     gapMin := MaxInt;
 
   if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * DELTA_MAX)) then
-    lDiff.Caption := '--'
+  begin
+    lDiff.Caption := '--';
+    FDiffRateKnown := false;
+  end
   else
   begin
     // Show the change over one reporting interval, not the raw difference
@@ -230,6 +233,10 @@ begin
     // than usual can't amplify a small drift into a large-looking delta.
     deltaVal := deltaVal * INTERVAL_MINUTES / Max(gapMin, INTERVAL_MINUTES);
     lDiff.Caption := FormatSigned(deltaVal);
+    // The same rate in mg/dL, for the tint: DiffLabelColor classifies it
+    // with the arrow's thresholds, which are mg/dL per interval.
+    FDiffRateMgdl := deltaVal * BG_CONVERTIONS[mgdl][un];
+    FDiffRateKnown := true;
   end;
   lArrow.Caption := reading.trend.Img;
   UpdateTrendArrow(reading, havePrev, gapMin);
@@ -392,6 +399,7 @@ begin
   // the fresh path, so without this it would sit on the boot caption for the
   // whole outage.
   lDiff.Caption := '';
+  FDiffRateKnown := false;
   lAgo.Caption := '';
   // Same reasoning for time-in-range, which CalcRangeTime only recomputes on
   // the fresh path: it is a percentage over a window that has stopped
@@ -700,6 +708,10 @@ begin
     UpdateUIColors;
     CacheUIState(fBG.Color, lVal.Caption, lTir.Caption, lTir.Hint);
   end;
+  // The change can move from steady to fast while the value, colour and TIR
+  // that gate UpdateUIColors all stay put, so its tint is refreshed on every
+  // reading regardless. Cheap: the caption just changed, so it repaints anyway.
+  lDiff.Font.Color := DiffLabelColor;
 
   // Optional trend arrow next to the reading (Windows taskbar icon /
   // macOS dock badge)
@@ -1721,6 +1733,29 @@ begin
     SetColorMode(pnOffRange.Color);
 end;
 
+function TfBG.DiffLabelColor: TColor;
+const
+  // Text needs more separation from the window colour than a dot does; the
+  // same floor the prediction strip uses for its range-coloured values.
+  DIFF_TEXT_CONTRAST = 4.5;
+begin
+  Result := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  // No rate to judge, a struck-out trend, or the accessibility mode whose
+  // point is the plain text colour: stay muted.
+  if (not FDiffRateKnown) or FTrendDataStale or
+    native.GetBoolSetting('main.high_contrast', false) then
+    Exit;
+  // Only the rates the arrow calls fast (single/double up or down) get the
+  // range colour; a gentle drift keeps the sub-text tone, so the tint means
+  // something when it appears.
+  case CalculateTrendFromDelta(FDiffRateMgdl) of
+  TdSingleUp, TdDoubleUp:
+    Result := EnsureContrast(bg_color_hi, fBG.Color, DIFF_TEXT_CONTRAST);
+  TdSingleDown, TdDoubleDown:
+    Result := EnsureContrast(bg_color_lo, fBG.Color, DIFF_TEXT_CONTRAST);
+  end;
+end;
+
 procedure TfBG.UpdateUIColors;
 const
   clGoodGreen = $00005900;
@@ -1736,7 +1771,7 @@ begin
     if FTrendArrow.Visible then
       FTrendArrow.SendToBack;
   end;
-  lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  lDiff.Font.Color := DiffLabelColor;
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   // The strip: values in the same tone the label used, headers a step

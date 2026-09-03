@@ -748,6 +748,8 @@ private
   FPredictAnchor: TDateTime;   // Time the strip's countdown headers were last measured from
   FPredictAnchorMin: integer;  // Minimum minutes past that anchor a prediction had to lie
   FLastArrowAngle: single;  // Last computed trend-arrow angle (shared with the float window)
+  FDiffRateMgdl: double;    // The change lDiff shows, as mg/dL per interval (drives its tint)
+  FDiffRateKnown: boolean;  // False while lDiff shows the '--' placeholder or is cleared
   FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
@@ -1037,6 +1039,10 @@ private
   procedure FinalizeUpdate;
   procedure UpdateFloatingWindow;
   procedure UpdateUIColors;
+  {** Colour for the change label: the muted sub-text tone, or the high/low
+      colour (lifted for contrast) when the reading is moving fast enough
+      for the trend arrow to call it a single/double up or down. }
+  function DiffLabelColor: TColor;
   {** Apply configuration changes that can take effect immediately without restart.
       This includes fonts, colors, display options, predictions, and UI preferences.
       Called after saving settings to provide instant feedback to the user.

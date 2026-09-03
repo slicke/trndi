@@ -58,6 +58,14 @@ This is your current blood sugar reading, shown in your preferred unit (mmol/L o
 - 🔴 **Red**: High - above your target
 - 🟡 **Orange/Yellow**: Low - below your target
 
+### The Change Line
+The small number along the bottom (e.g. `+0.3` or `-11`) is how much your
+reading moved over the last five minutes. It stays in the quiet sub-text
+colour while the change is gentle, and takes the high or low colour when you
+are rising or falling fast — the same speeds that give the trend arrow a
+straight up or down glyph. `--` means there was no usable previous reading
+to compare against.
+
 ### "Ago" Time
 Shows how old the reading is (e.g., "3 min ago"). If this number gets large (like "15 min ago"), it might mean:
 - Your sensor lost connection
