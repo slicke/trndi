@@ -1776,6 +1776,10 @@ begin
   lDiff.Font.Color := DiffLabelColor;
   // The age badge: value in the tone the label had, caption a step fainter.
   FAgoBadge.AccentColor := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  // The badge paints from AccentColor, not Font.Color — but the fullscreen
+  // clock overlay copies this Font wholesale, colour included, as it copied
+  // lAgo's. Without this it came up in the font's default white.
+  FAgoBadge.Font.Color := FAgoBadge.AccentColor;
   FAgoBadge.TextColor := GetTextColorForBackground(fBG.color, 0.5, 0.3);
   // The strip: values in the same tone the label used, headers a step
   // fainter, dividers half-way into the background. The cell colours were
