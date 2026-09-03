@@ -82,25 +82,6 @@ object fBG: TfBG
     OnDblClick = lDiffDblClick
     OnMouseMove = FormMouseMove
   end
-  object lAgo: TLabel
-    Left = 8
-    Height = 20
-    Top = 5
-    Width = 200
-    AutoSize = False
-    BorderSpacing.Bottom = 5
-    Caption = 'lAgo'
-    Color = clWhite
-    Font.Color = clWhite
-    Font.Height = 14
-    OptimalFill = True
-    ParentColor = False
-    ParentFont = False
-    PopupMenu = pmSettings
-    OnClick = lAgoClick
-    OnDblClick = lDiffDblClick
-    OnMouseMove = FormMouseMove
-  end
   object pnMultiUser: TPanel
     Left = 0
     Height = 18

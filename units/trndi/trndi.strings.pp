@@ -188,6 +188,7 @@ RS_PREDICTIONS_STABLE = 'No change predicted →';
 RS_PREDICT_HEADER = '+%d min'; // Countdown header over each forecast cell
 RS_TIR_CAPTION = 'in range'; // Muted caption before the time-in-range percentage
 RS_TIR_MEAN_CAPTION = 'avg'; // Muted caption before the mean shown with it
+RS_AGO_TIME_CAPTION = 'last reading'; // Muted caption under the reading time ("14:35")
 RS_PREDICTION_CONFIDENCE = 'Prediction confidence: %.0f%%'+sLineBreak+sLineBreak+'This score shows how cleanly the recent readings fit the trend model. Low values mean the data was noisy or contained outliers, so the forecast is less reliable than usual.';
 
 RS_CUSTOM_DOTS = 'Custom Size [%.2f]';

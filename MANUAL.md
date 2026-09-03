@@ -67,7 +67,9 @@ straight up or down glyph. `--` means there was no usable previous reading
 to compare against.
 
 ### "Ago" Time
-Shows how old the reading is (e.g., "3 min ago"). If this number gets large (like "15 min ago"), it might mean:
+The badge in the top-left corner shows how old the reading is: `3 min` (or
+the reading's clock time over a small `last reading` when the timestamp
+display is on). If this number gets large (like 15 min), it might mean:
 - Your sensor lost connection
 - Your phone/uploader is offline
 - Trndi can't reach the data source

@@ -86,7 +86,7 @@ trndi.strings, LCLTranslator, Types, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow, upredictionstrip, utirbadge,
+slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow, upredictionstrip, ustatbadge,
 Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
@@ -291,14 +291,6 @@ var
 TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
   RS_tpoBottomRight, RS_tpoCustom, RS_tpoTopRight);
 const
-  // Prefix on every "time since last reading" caption, trailing space included.
-  // GTK2 renders no colour emoji, so U+1F551 comes out as tofu there — fall back
-  // to the plain BMP watch character.
-{$ifndef lclgtk2}
-CLOCK_CAPTION_PREFIX = '🕑 ';
-{$else}
-CLOCK_CAPTION_PREFIX = '⌚ ';
-{$endif}
   // Public timing constants used across the unit/interface
 CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
   // Escalation boundaries for the stale-data card, in minutes since the last
@@ -437,7 +429,6 @@ TfBG = class(TForm)
   lRef: TLabel;
   lMissing: TLabel;
   lInternet: TLabel;
-  lAgo: TLabel;
   miADotAdjust: TMenuItem;
   miADotCount: TMenuItem;
   miDotsInView: TMenuItem;
@@ -744,7 +735,8 @@ private
   FInternetBadgeShadow: TShape;
   FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (created when RotatingArrow is on)
   FPredictStrip: TPredictionStrip; // Text rendering of the forecast, lower right (created in FormCreate)
-  FTirBadge: TTirBadge;            // Time-in-range readout, top right (created in FormCreate)
+  FTirBadge: TStatBadge;           // Time-in-range readout, top right (created in FormCreate)
+  FAgoBadge: TStatBadge;           // Reading-age readout, top left; its Font is the top band's face
   FPredictAnchor: TDateTime;   // Time the strip's countdown headers were last measured from
   FPredictAnchorMin: integer;  // Minimum minutes past that anchor a prediction had to lie
   FLastArrowAngle: single;  // Last computed trend-arrow angle (shared with the float window)
@@ -1117,9 +1109,17 @@ private
 
   {** Recalculate left of the TIR badge when next progress bar is visible }
   procedure nextProgressChange;
-  {** Size the TIR badge to its content in the "ago" label's font and park
+  {** Size the TIR badge to its content in the "ago" badge's font and park
       it in the top-right corner, clear of the progress bar. }
   procedure LayoutTirBadge;
+  {** Fit the top band's font to the window (the "ago" badge's Font, which
+      the TIR badge and the fullscreen clock mirror), then size and park the
+      "ago" badge top-left, clear of the progress bar. Re-lays the TIR badge
+      so it picks up the refitted font. }
+  procedure LayoutAgoBadge;
+  {** Put a value and caption on the "ago" badge ("3 min", or "14:35" over
+      "last reading") and re-layout, since its width just changed. }
+  procedure SetAgoText(const AValue, ACaption: string);
   {** Compute the progress bar's current state: the primary line's fill
       fraction (one refresh cycle), the overtime line's fill fraction (the
       retry window after it), whether the both-full pulse is active, and
@@ -2207,7 +2207,7 @@ begin
       // Only hide labels during resize if they don't have valid content
       if lVal.Caption = '' then
         lVal.Visible := false;
-      lAgo.Visible := false;
+      FAgoBadge.Visible := false;
       FTirBadge.Visible := false;
     end;
 

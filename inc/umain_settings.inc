@@ -108,7 +108,7 @@ begin
   fontName := native.GetSetting('font.ago', 'default');
   if fontName <> 'default' then
   begin
-    lAgo.Font.Name := fontName;
+    FAgoBadge.Font.Name := fontName;
     FTirBadge.Font.Name := fontName;
   end;
 
@@ -662,7 +662,7 @@ procedure SetupUIElements(f: TfConf);
       // keeps the default UI font so the dialog's font reset knows "stock".
       f.FontVal.Assign(Self.lVal.Font);
       f.FontArrow.Assign(Self.lArrow.Font);
-      f.FontAgo.Assign(Self.lAgo.Font);
+      f.FontAgo.Assign(Self.FAgoBadge.Font);
       pnDisplay.Color := Self.Color;
       pnDisplay.Font := fBG.Font;
 

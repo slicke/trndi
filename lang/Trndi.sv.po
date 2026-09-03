@@ -2467,6 +2467,10 @@ msgstr "inom mål"
 msgid "avg"
 msgstr "snitt"
 
+#: trndi.strings.rs_ago_time_caption
+msgid "last reading"
+msgstr "senaste"
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Förutspåelser otillgängliga"

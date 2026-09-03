@@ -175,7 +175,7 @@ begin
   // fetch. The rest of the tick still runs: the fullscreen clock below is
   // wall-clock, not reading age.
   if Length(bgs) < 1 then
-    lAgo.Caption := CLOCK_CAPTION_PREFIX + RS_COMPUTE_FAILED_AGO
+    SetAgoText(RS_COMPUTE_FAILED_AGO, '')
   else
   if not FTrendDataStale then
   try
@@ -185,21 +185,23 @@ begin
     if showTimestamp then
     begin
       timeStr := FormatDateTime('hh:nn', d);
-      lAgo.Caption := CLOCK_CAPTION_PREFIX + timeStr;
+      SetAgoText(timeStr, RS_AGO_TIME_CAPTION);
     end
     else
     begin
       min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;
       if min < 0 then
         min := 0;
-      lAgo.Caption := CLOCK_CAPTION_PREFIX + Format(RS_LAST_UPDATE, [min]);
+      // No caption: "3 min" says enough on its own, and the word under it
+      // was one thing too many in that corner.
+      SetAgoText(Format(RS_LAST_UPDATE, [min]), '');
     end;
 
     UpdatePredictionTimes;
 
     predictFuture;
   except
-    lAgo.Caption := CLOCK_CAPTION_PREFIX + RS_COMPUTE_FAILED_AGO;
+    SetAgoText(RS_COMPUTE_FAILED_AGO, '');
   end;
 
   // Catch-all activation for the fullscreen clock: covers fullscreen entered
@@ -337,12 +339,12 @@ begin
   {$endif}
   lClock.Caption := clockText;
 
-  // Top-center band, same strip lAgo (left) and lTir (right) occupy; the
-  // font mirrors lAgo so UpdateUIColors' color choices carry over.
+  // Top-center band, same strip the age (left) and TIR (right) badges occupy;
+  // the font mirrors the age badge so UpdateUIColors' color choices carry over.
   lClock.Width := ClientWidth div 4;
   lClock.Height := ClientHeight div 9;
   lClock.Top := TitleBarOffset + 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
-  lClock.Font.Assign(lAgo.Font);
+  lClock.Font.Assign(FAgoBadge.Font);
   lClock.Visible := true;
   ScaleLbl(lClock, taCenter, tlCenter, true);
   lClock.Left := (ClientWidth - lClock.Width) div 2;
@@ -546,16 +548,90 @@ begin
   FTirBadge.Left := fBG.Width - FTirBadge.Width - pbNextProgress.Width - 5;
 end;
 
+procedure TfBG.SetAgoText(const AValue, ACaption: string);
+begin
+  if not Assigned(FAgoBadge) then
+    Exit;
+  FAgoBadge.RangeCaption := ACaption;
+  FAgoBadge.SetState(-1, AValue, '');
+  LayoutAgoBadge;
+end;
+
+procedure TfBG.LayoutAgoBadge;
+var
+  maxW, maxH, padding, lo, hi, mid, best, w, h: integer;
+  scaleFactor: single;
+  bmp: TBitmap;
+begin
+  if not Assigned(FAgoBadge) then
+    Exit;
+
+  // The same box ScaleLbl fitted lAgo into: half the width, a ninth of the
+  // height, scaled by the ux.labels.lago.scale hook (see guides/Hacks.md).
+  // The margin mirrors the TIR badge's on the other side — the progress
+  // bar's width plus five — so the two sit the same distance from their
+  // edges, and the age stays clear of the bar when it is on.
+  padding := pbNextProgress.Width + 5;
+  maxW := ClientWidth div 2 - padding - 4;
+  maxH := ClientHeight div 9 - 4;
+  scaleFactor := native.GetFloatSetting('ux.labels.' + LowerCase(FAgoBadge.Name) + '.scale', 1);
+  if (scaleFactor > 0) and (scaleFactor <> 1) then
+  begin
+    maxW := Min(ClientWidth, Round(maxW * scaleFactor));
+    maxH := Min(ClientHeight, Round(maxH * scaleFactor));
+  end;
+
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    // Largest point size whose value text fits the box — the band's font.
+    // Only the value takes part: the caption under it sizes itself.
+    if FAgoBadge.Caption <> '' then
+    begin
+      bmp.Canvas.Font.Assign(FAgoBadge.Font);
+      best := 1;
+      lo := 1;
+      hi := 150;
+      while lo <= hi do
+      begin
+        mid := (lo + hi) div 2;
+        bmp.Canvas.Font.Size := mid;
+        if (bmp.Canvas.TextWidth(FAgoBadge.Caption) <= maxW) and
+          (bmp.Canvas.TextHeight(FAgoBadge.Caption) <= maxH) then
+        begin
+          best := mid;
+          lo := mid + 1;
+        end
+        else
+          hi := mid - 1;
+      end;
+      FAgoBadge.Font.Size := best;
+    end;
+    FAgoBadge.PreferredSize(bmp.Canvas, 0, w, h);
+  finally
+    bmp.Free;
+  end;
+
+  FAgoBadge.SetBounds(padding,
+    TitleBarOffset + 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3), w, h);
+  // Re-shown here after the resize handler hid it, as ScaleLbl did.
+  FAgoBadge.Visible := FAgoBadge.Caption <> '';
+  FAgoBadge.BringToFront;
+
+  // The TIR badge copies this font, so it has to follow a refit.
+  LayoutTirBadge;
+end;
+
 procedure TfBG.LayoutTirBadge;
 var
   w, h: integer;
 begin
   if not Assigned(FTirBadge) then
     Exit;
-  // Same face as the "ago" label on the other side of the band; the badge
+  // Same face as the age badge on the other side of the band; the badge
   // derives its caption size from it. Measure on a temp TBitmap — a control
   // canvas outside paint SIGABRTs on Cocoa.
-  FTirBadge.Font := lAgo.Font;
+  FTirBadge.Font := FAgoBadge.Font;
   with TBitmap.Create do
   try
     SetSize(1, 1);
@@ -570,7 +646,7 @@ begin
     w := 50;
   {$endif}
   FTirBadge.SetBounds(fBG.Width - w - pbNextProgress.Width - 5, TitleBarOffset, w, h);
-  // The resize handler hides the badge along with lAgo while the window is
+  // The resize handler hides the badge along with the age badge while the window is
   // being resized; ScaleLbl used to force the label back on, so this layout
   // pass has to do the same — unless there is nothing to show (stale data).
   FTirBadge.Visible := FTirBadge.Caption <> '';
@@ -658,15 +734,7 @@ begin
   lDiff.Top := ClientHeight - lDiff.Height + 1;
   ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
 
-  lAgo.Width := ClientWidth div 2;
-  lAgo.Height := ClientHeight div 9;
-  lAgo.Left := 0;
-  lAgo.Top := TitleBarOffset + 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
-  lAgo.Transparent := true;
-  // Leave the clock clear of the enabled left-side progress bar at every form width.
-  ScaleLbl(lAgo, taLeftJustify, tlCenter, true,
-    IfThen(pbNextProgress.Visible, pbNextProgress.Width + 2, 0));
-  lAgo.BringToFront;
+  LayoutAgoBadge;
 
   lArrow.Height := ClientHeight;
   lArrow.Width := ClientWidth;

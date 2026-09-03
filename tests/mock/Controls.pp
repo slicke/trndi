@@ -112,6 +112,7 @@ type
     FColor: TColor;
     FAlign: TAlign;
     FOnClick: TNotifyEvent;
+    FOnDblClick: TNotifyEvent;
     FOnMouseDown: TMouseEvent;
     FOnMouseUp: TMouseEvent;
     FOnMouseMove: TMouseMoveEvent;
@@ -148,6 +149,7 @@ type
     property Color: TColor read FColor write FColor;
     property Align: TAlign read FAlign write FAlign;
     property OnClick: TNotifyEvent read FOnClick write FOnClick;
+    property OnDblClick: TNotifyEvent read FOnDblClick write FOnDblClick;
     property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
     property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
     property OnMouseMove: TMouseMoveEvent read FOnMouseMove write FOnMouseMove;

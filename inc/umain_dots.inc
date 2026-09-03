@@ -1045,7 +1045,7 @@ begin
   arrowText := lArrow.Caption;
   if (arrowText = '') or (arrowText = 'lArrow') then
     arrowText := '→';
-  agoText := lAgo.Caption;
+  agoText := FAgoBadge.Caption;
   if (agoText = '') or (agoText = 'lAgo') then
     agoText := '10 min';
   diffText := lDiff.Caption;

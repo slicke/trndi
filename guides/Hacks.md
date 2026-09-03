@@ -69,7 +69,7 @@ Where lpredict maps to the predictions (named lPredict in the code)
 |:---:|------------|
 |lVal|the value|
 |lArrow|the arrow|
-|lAgo|the timne since last reading|
+|lAgo|the time since last reading (scales the box the badge is fitted to)|
 |lPredict|the predictions strip (scales the space it may use)|
 |lDiff|the reading difference|
 |lTir|the time in range|

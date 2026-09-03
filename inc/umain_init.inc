@@ -197,7 +197,7 @@ begin
   fontName := native.GetSetting('font.ago', 'default');
   if fontName <> 'default' then
   begin
-    lAgo.Font.Name := fontName;
+    FAgoBadge.Font.Name := fontName;
     FTirBadge.Font.Name := fontName;
   end;
 
@@ -633,7 +633,7 @@ begin
     FPredictStrip.Visible := false;
   lArrow.Caption := '';
   lDiff.Caption := '';
-  lAgo.Caption := '';
+  FAgoBadge.Clear;
   FTirBadge.Clear;
   lRef.Caption := '';
 
@@ -697,10 +697,24 @@ begin
   // Same story for time-in-range: a caption, a mean part and a fill bar are
   // beyond a TLabel. Named after the label it replaced for the extension
   // hook's sake.
-  FTirBadge := TTirBadge.Create(Self);
+  FTirBadge := TStatBadge.Create(Self);
   FTirBadge.Name := 'lTir';
   FTirBadge.Parent := Self;
   FTirBadge.OnClick := @lTirClick;
+
+  // And the reading age on the left, the mirror image: "3 min", or the clock
+  // time over "last reading".
+  // Its Font is the top band's face — the TIR badge and the fullscreen clock
+  // copy it, as they copied lAgo's. No bar: an age has no share to fill.
+  FAgoBadge := TStatBadge.Create(Self);
+  FAgoBadge.Name := 'lAgo';
+  FAgoBadge.Parent := Self;
+  FAgoBadge.Alignment := taLeftJustify;
+  FAgoBadge.ShowBar := false;
+  FAgoBadge.PopupMenu := pmSettings;
+  FAgoBadge.OnClick := @lAgoClick;
+  FAgoBadge.OnDblClick := @lDiffDblClick;
+  FAgoBadge.OnMouseMove := @FormMouseMove;
 
   // --kiosk: dedicated-display mode (RPi wall display, bedside screen).
   // FormShow schedules the actual activation: fullscreen, keep-awake, and no
@@ -1081,7 +1095,7 @@ begin
   lArrow.Caption := '';
   lDiff.Caption := '';
   lRef.Caption := '';
-  lAgo.Caption := RS_INIT_FETCH;
+  SetAgoText(RS_INIT_FETCH, '');
   FTirBadge.Clear;
   if Assigned(pnOffReading) then
     pnOffReading.Visible := false;

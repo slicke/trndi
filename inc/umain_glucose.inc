@@ -400,7 +400,7 @@ begin
   // whole outage.
   lDiff.Caption := '';
   FDiffRateKnown := false;
-  lAgo.Caption := '';
+  FAgoBadge.Clear;
   // Same reasoning for time-in-range, which CalcRangeTime only recomputes on
   // the fresh path: it is a percentage over a window that has stopped
   // collecting, so leaving it up reads as a live statistic. Cleared rather than
@@ -651,13 +651,13 @@ begin
   if debug_load_text then
     lVal.Caption := '<Updating>';
   {$endif}
-  lAgo.Caption := '⟳' + lAgo.Caption;
+  SetAgoText('⟳' + FAgoBadge.Caption, FAgoBadge.RangeCaption);
 
   native.start;
   lastup := 0;
 
   if not tAgo.Enabled then
-    lAgo.Caption := CLOCK_CAPTION_PREFIX + RS_UNKNOWN_TIME;
+    SetAgoText(RS_UNKNOWN_TIME, '');
 
   // The fetch now runs on TGlucoseFetchThread. The post-fetch UI flow
   // (ApplyFetchedReadings → ProcessCurrentReading → FinalizeReadingUpdate)
@@ -1774,7 +1774,9 @@ begin
       FTrendArrow.SendToBack;
   end;
   lDiff.Font.Color := DiffLabelColor;
-  lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  // The age badge: value in the tone the label had, caption a step fainter.
+  FAgoBadge.AccentColor := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  FAgoBadge.TextColor := GetTextColorForBackground(fBG.color, 0.5, 0.3);
   // The strip: values in the same tone the label used, headers a step
   // fainter, dividers half-way into the background. The cell colours were
   // picked against the background current at render time, so re-render them
@@ -1790,11 +1792,11 @@ begin
   // bar in the good/bad tint once a threshold is crossed — lifted to the
   // same contrast floor the delta and the forecast strip use, rather than
   // the fixed lightening that left green-on-green hard to read.
-  FTirBadge.TextColor := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  FTirBadge.TextColor := GetTextColorForBackground(fBG.color, 0.5, 0.3);
   FTirBadge.RangeCaption := RS_TIR_CAPTION;
   FTirBadge.MeanCaption := RS_TIR_MEAN_CAPTION;
   FTirBadge.TrackColor := BlendColors(FTirBadge.TextColor, fBG.Color, 0.35);
-  FTirBadge.AccentColor := FTirBadge.TextColor;
+  FTirBadge.AccentColor := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   if TryStrToInt(FTirBadge.Hint, r) then
     if r < bad_tir then
       FTirBadge.AccentColor := EnsureContrast(clMaroon, fBG.Color, TIR_TEXT_CONTRAST)

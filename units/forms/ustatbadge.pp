@@ -36,21 +36,21 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
 
-unit utirbadge;
+unit ustatbadge;
 
 {*
-  The time-in-range badge in the top-right corner of the main window. It
-  replaced a TLabel that showed a bare "85%" (or a mood emoji), optionally
-  prefixed with the mean as "6.4 | 85%".
+  A stacked statistic badge: a value with a muted caption under it, sized to
+  the value's width. Two live on the main window's top band — the reading
+  age on the left ("3 min", or the clock time over "last reading") and
+  time-in-range on the right ("85%" over "in range"). Each replaced a TLabel: "🕑 3 min", and a bare
+  "85%" (or a mood emoji) optionally prefixed with the mean as "6.4 | 85%".
 
-  The badge draws the percentage with a muted "in range" caption stacked
-  under it, sized to the percentage's width, and the optional mean as its
-  own muted "avg 6.4" part to the left. A thin bar under the text,
-  filled to the in-range share, appears only while the pointer is over the
-  badge — always on, it pulled the eye away from the reading. The percentage
-  and bar take an accent colour the form picks (good/bad tint,
-  contrast-lifted) or the plain text colour when neither threshold is
-  crossed.
+  Beyond the value and caption a badge can carry an optional mean as its
+  own muted "avg 6.4" part beside the stack, and a thin bar under the text
+  filled to a percentage — shown only while the pointer is over the badge,
+  since always on it pulled the eye away from the reading. The value and bar
+  take an accent colour the form picks (good/bad tint, contrast-lifted) or
+  the plain text colour otherwise. Alignment says which edge the stack hugs.
 
   TGraphicControl, like the prediction strip: no window handle, all drawing
   and measuring inside Paint or against a canvas the form hands in, never a
@@ -58,8 +58,8 @@ unit utirbadge;
   with a scratch bitmap canvas so the badge occupies exactly its content and
   the click target stays the size of what is shown.
 
-  Caption is kept in sync with the old label's text ("6.4 | 85%") because the
-  extension hook and the settings preview read it.
+  Caption is kept in sync with the old labels' text ("6.4 | 85%", "3 min")
+  because the extension hook and the settings preview read it.
 *}
 
 {$mode objfpc}{$H+}
@@ -70,8 +70,8 @@ uses
   Classes, SysUtils, Controls, Graphics, Math;
 
 type
-  {** Time-in-range readout with caption, optional mean and a fill bar. }
-  TTirBadge = class(TGraphicControl)
+  {** Value over caption, optional mean beside it, optional hover bar. }
+  TStatBadge = class(TGraphicControl)
   private
     FPercent: integer;      // -1 = nothing to measure (placeholder shown)
     FValueText: string;     // "85%", an emoji, "--%" — or '' to draw nothing
@@ -82,11 +82,15 @@ type
     FAccentColor: TColor;
     FTrackColor: TColor;
     FHover: boolean;        // Pointer over the badge: the bar is drawn
+    FShowBar: boolean;      // Whether a bar is drawn at all (on hover)
+    FAlignment: TAlignment; // Edge the stack hugs: taLeftJustify or taRightJustify
     procedure SetTextColor(AValue: TColor);
     procedure SetAccentColor(AValue: TColor);
     procedure SetTrackColor(AValue: TColor);
     procedure SetRangeCaption(const AValue: string);
     procedure SetMeanCaption(const AValue: string);
+    procedure SetShowBar(AValue: boolean);
+    procedure SetAlignment(AValue: TAlignment);
     procedure Measure(ACanvas: TCanvas; availW: integer; out valueW, valueH,
       capPx, capW, capH, meanPx, meanW, meanH, gap, barH, barGap, totalW,
       totalH: integer; out showMeanCaption, showMean: boolean);
@@ -118,15 +122,22 @@ type
     property AccentColor: TColor read FAccentColor write SetAccentColor;
     {** Colour of the unfilled part of the bar. }
     property TrackColor: TColor read FTrackColor write SetTrackColor;
-    {** The muted caption drawn under the percentage ("in range"). }
+    {** The muted caption drawn under the value ("in range", "ago"). }
     property RangeCaption: string read FRangeCaption write SetRangeCaption;
+    {** Draw the hover bar (time in range) or never (the ago readout). }
+    property ShowBar: boolean read FShowBar write SetShowBar;
+    {** Which edge the stack hugs inside the box. Right by default. }
+    property Alignment: TAlignment read FAlignment write SetAlignment;
     {** The muted caption drawn before the mean ("avg"). }
     property MeanCaption: string read FMeanCaption write SetMeanCaption;
     property Font;
     property Visible;
     property Caption;
     property Hint;
+    property PopupMenu;
     property OnClick;
+    property OnDblClick;
+    property OnMouseMove;
   end;
 
 implementation
@@ -140,7 +151,7 @@ const
   BAR_RATIO = 0.16;         // Bar height as a fraction of the value text height
   BAR_GAP_RATIO = 0.12;     // Space between caption and bar, likewise
 
-constructor TTirBadge.Create(AOwner: TComponent);
+constructor TStatBadge.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FPercent := -1;
@@ -152,10 +163,28 @@ begin
   FAccentColor := clWhite;
   FTrackColor := clGray;
   FHover := false;
+  FShowBar := true;
+  FAlignment := taRightJustify;
   ControlStyle := ControlStyle - [csOpaque];
 end;
 
-procedure TTirBadge.MouseEnter;
+procedure TStatBadge.SetShowBar(AValue: boolean);
+begin
+  if FShowBar = AValue then
+    Exit;
+  FShowBar := AValue;
+  Invalidate;
+end;
+
+procedure TStatBadge.SetAlignment(AValue: TAlignment);
+begin
+  if FAlignment = AValue then
+    Exit;
+  FAlignment := AValue;
+  Invalidate;
+end;
+
+procedure TStatBadge.MouseEnter;
 begin
   inherited MouseEnter;
   if FHover then
@@ -164,7 +193,7 @@ begin
   Invalidate;
 end;
 
-procedure TTirBadge.MouseLeave;
+procedure TStatBadge.MouseLeave;
 begin
   inherited MouseLeave;
   if not FHover then
@@ -173,7 +202,7 @@ begin
   Invalidate;
 end;
 
-procedure TTirBadge.SetState(APercent: integer; const AValueText, AMeanText: string);
+procedure TStatBadge.SetState(APercent: integer; const AValueText, AMeanText: string);
 begin
   if (FPercent = APercent) and (FValueText = AValueText) and (FMeanText = AMeanText) then
     Exit;
@@ -187,12 +216,12 @@ begin
   Invalidate;
 end;
 
-procedure TTirBadge.Clear;
+procedure TStatBadge.Clear;
 begin
   SetState(-1, '', '');
 end;
 
-procedure TTirBadge.SetTextColor(AValue: TColor);
+procedure TStatBadge.SetTextColor(AValue: TColor);
 begin
   if FTextColor = AValue then
     Exit;
@@ -200,7 +229,7 @@ begin
   Invalidate;
 end;
 
-procedure TTirBadge.SetAccentColor(AValue: TColor);
+procedure TStatBadge.SetAccentColor(AValue: TColor);
 begin
   if FAccentColor = AValue then
     Exit;
@@ -208,7 +237,7 @@ begin
   Invalidate;
 end;
 
-procedure TTirBadge.SetTrackColor(AValue: TColor);
+procedure TStatBadge.SetTrackColor(AValue: TColor);
 begin
   if FTrackColor = AValue then
     Exit;
@@ -216,7 +245,7 @@ begin
   Invalidate;
 end;
 
-procedure TTirBadge.SetRangeCaption(const AValue: string);
+procedure TStatBadge.SetRangeCaption(const AValue: string);
 begin
   if FRangeCaption = AValue then
     Exit;
@@ -224,7 +253,7 @@ begin
   Invalidate;
 end;
 
-procedure TTirBadge.SetMeanCaption(const AValue: string);
+procedure TStatBadge.SetMeanCaption(const AValue: string);
 begin
   if FMeanCaption = AValue then
     Exit;
@@ -237,7 +266,7 @@ end;
 // under it is sized so it spans the value's width, and the mean beside them
 // is a fixed fraction of the value font. When the row would exceed availW
 // (> 0), the "avg" word goes first and then the mean itself.
-procedure TTirBadge.Measure(ACanvas: TCanvas; availW: integer; out valueW, valueH,
+procedure TStatBadge.Measure(ACanvas: TCanvas; availW: integer; out valueW, valueH,
   capPx, capW, capH, meanPx, meanW, meanH, gap, barH, barGap, totalW,
   totalH: integer; out showMeanCaption, showMean: boolean);
 var
@@ -326,10 +355,11 @@ begin
   totalH := valueH;
   if capH > 0 then
     totalH := totalH + capH - Round(valueH * CAPTION_TUCK);
-  totalH := totalH + barGap + barH;
+  if FShowBar then
+    totalH := totalH + barGap + barH;
 end;
 
-procedure TTirBadge.PreferredSize(ACanvas: TCanvas; AvailWidth: integer;
+procedure TStatBadge.PreferredSize(ACanvas: TCanvas; AvailWidth: integer;
   out AWidth, AHeight: integer);
 var
   valueW, valueH, capPx, capW, capH, meanPx, meanW, meanH, gap, barH, barGap: integer;
@@ -345,7 +375,7 @@ begin
     meanH, gap, barH, barGap, AWidth, AHeight, showMeanCaption, showMean);
 end;
 
-procedure TTirBadge.Paint;
+procedure TStatBadge.Paint;
 var
   valueW, valueH, capPx, capW, capH, meanPx, meanW, meanH, gap, barH, barGap,
   totalW, totalH: integer;
@@ -361,9 +391,12 @@ begin
   Measure(Canvas, Width, valueW, valueH, capPx, capW, capH, meanPx, meanW, meanH,
     gap, barH, barGap, totalW, totalH, showMeanCaption, showMean);
 
-  // Right-aligned inside the box: the badge sits in the window's top-right
-  // corner, so a shorter text keeps its right edge put.
-  stackX := Width - valueW;
+  // The stack hugs the edge of the box the badge sits against: a shorter
+  // text keeps its outer edge put. The mean sits on the inner side.
+  if FAlignment = taLeftJustify then
+    stackX := 0
+  else
+    stackX := Width - valueW;
 
   // The percentage, in the value font and the accent colour.
   Canvas.Font.Assign(Font);
@@ -383,12 +416,15 @@ begin
     Inc(capY, capH);
   end;
 
-  // The mean, muted, to the left of the stack on the percentage's baseline.
+  // The mean, muted, beside the stack on the value's baseline.
   if showMean then
   begin
     Canvas.Font.Height := -meanPx;
     Canvas.Font.Color := FTextColor;
-    x := stackX - gap - meanW;
+    if FAlignment = taLeftJustify then
+      x := stackX + valueW + gap
+    else
+      x := stackX - gap - meanW;
     if showMeanCaption then
     begin
       Canvas.TextOut(x, valueH - meanH, FMeanCaption + ' ');
@@ -397,17 +433,17 @@ begin
     Canvas.TextOut(x, valueH - meanH, FMeanText);
   end;
 
-  // The bar, on hover only: a track as wide as the stack, filled from the
-  // left to the in-range share. An unmeasured window (-1) shows an empty
-  // track. Its row is always reserved so the badge doesn't jump when it
-  // appears.
-  if not FHover then
+  // The bar, on hover only and only where wanted: a track as wide as the
+  // stack, filled from the left to the percentage. An unmeasured window (-1)
+  // shows an empty track. Its row is always reserved so the badge doesn't
+  // jump when it appears.
+  if not (FHover and FShowBar) then
     Exit;
   barTop := Height - barH;
   Canvas.Brush.Style := bsSolid;
   Canvas.Pen.Style := psClear;
   Canvas.Brush.Color := FTrackColor;
-  Canvas.FillRect(stackX, barTop, Width, Height);
+  Canvas.FillRect(stackX, barTop, stackX + valueW, Height);
   if FPercent > 0 then
   begin
     fillW := Round(valueW * Min(FPercent, 100) / 100);
