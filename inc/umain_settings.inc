@@ -109,7 +109,7 @@ begin
   if fontName <> 'default' then
   begin
     lAgo.Font.Name := fontName;
-    lTir.Font.Name := fontName;
+    FTirBadge.Font.Name := fontName;
   end;
 
   bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);

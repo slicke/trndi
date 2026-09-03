@@ -198,7 +198,7 @@ begin
   if fontName <> 'default' then
   begin
     lAgo.Font.Name := fontName;
-    lTir.Font.Name := fontName;
+    FTirBadge.Font.Name := fontName;
   end;
 
   // Sensitive data
@@ -634,7 +634,7 @@ begin
   lArrow.Caption := '';
   lDiff.Caption := '';
   lAgo.Caption := '';
-  lTir.Caption := '';
+  FTirBadge.Clear;
   lRef.Caption := '';
 
   // "Setup" fills the window like a reading would; lVal is client-aligned so
@@ -693,6 +693,14 @@ begin
   FPredictStrip.Parent := Self;
   FPredictStrip.Visible := false;
   FPredictStrip.OnClick := @lPredictClick;
+
+  // Same story for time-in-range: a caption, a mean part and a fill bar are
+  // beyond a TLabel. Named after the label it replaced for the extension
+  // hook's sake.
+  FTirBadge := TTirBadge.Create(Self);
+  FTirBadge.Name := 'lTir';
+  FTirBadge.Parent := Self;
+  FTirBadge.OnClick := @lTirClick;
 
   // --kiosk: dedicated-display mode (RPi wall display, bedside screen).
   // FormShow schedules the actual activation: fullscreen, keep-awake, and no
@@ -1074,7 +1082,7 @@ begin
   lDiff.Caption := '';
   lRef.Caption := '';
   lAgo.Caption := RS_INIT_FETCH;
-  lTir.Caption := '';
+  FTirBadge.Clear;
   if Assigned(pnOffReading) then
     pnOffReading.Visible := false;
   if Assigned(pnOffRange) then

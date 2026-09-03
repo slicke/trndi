@@ -200,15 +200,6 @@ object fBG: TfBG
     OnClick = lArrowClick
     OnMouseMove = FormMouseMove
   end
-  object lTir: TLabel
-    Left = 88
-    Height = 15
-    Top = 32
-    Width = 76
-    AutoSize = False
-    Caption = 'Time In Range'
-    OnClick = lTirClick
-  end
   object pnOffReading: TPanel
     Left = 0
     Height = 194

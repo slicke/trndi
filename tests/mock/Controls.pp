@@ -191,6 +191,8 @@ type
     procedure Paint; virtual;
     procedure Resize; virtual;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
+    procedure MouseEnter; virtual;
+    procedure MouseLeave; virtual;
     procedure KeyDown(var Key: Word; Shift: TShiftState); virtual;
 
     procedure Invalidate; virtual;
@@ -415,6 +417,14 @@ procedure TControl.SetBoundsRect(const AValue: TRect);
 begin
   SetBounds(AValue.Left, AValue.Top,
     AValue.Right - AValue.Left, AValue.Bottom - AValue.Top);
+end;
+
+procedure TControl.MouseEnter;
+begin
+end;
+
+procedure TControl.MouseLeave;
+begin
 end;
 
 procedure TControl.Invalidate;

@@ -86,7 +86,7 @@ trndi.strings, LCLTranslator, Types, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow, upredictionstrip,
+slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow, upredictionstrip, utirbadge,
 Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
@@ -437,7 +437,6 @@ TfBG = class(TForm)
   lRef: TLabel;
   lMissing: TLabel;
   lInternet: TLabel;
-  lTir: TLabel;
   lAgo: TLabel;
   miADotAdjust: TMenuItem;
   miADotCount: TMenuItem;
@@ -745,6 +744,7 @@ private
   FInternetBadgeShadow: TShape;
   FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (created when RotatingArrow is on)
   FPredictStrip: TPredictionStrip; // Text rendering of the forecast, lower right (created in FormCreate)
+  FTirBadge: TTirBadge;            // Time-in-range readout, top right (created in FormCreate)
   FPredictAnchor: TDateTime;   // Time the strip's countdown headers were last measured from
   FPredictAnchorMin: integer;  // Minimum minutes past that anchor a prediction had to lie
   FLastArrowAngle: single;  // Last computed trend-arrow angle (shared with the float window)
@@ -1115,8 +1115,11 @@ private
   function WebServerActive: boolean;
   procedure tWebServerStartTimer(Sender: TObject);
 
-  {** Recalculate left of lTir when next progress bar is visible }
+  {** Recalculate left of the TIR badge when next progress bar is visible }
   procedure nextProgressChange;
+  {** Size the TIR badge to its content in the "ago" label's font and park
+      it in the top-right corner, clear of the progress bar. }
+  procedure LayoutTirBadge;
   {** Compute the progress bar's current state: the primary line's fill
       fraction (one refresh cycle), the overtime line's fill fraction (the
       retry window after it), whether the both-full pulse is active, and
@@ -2205,7 +2208,7 @@ begin
       if lVal.Caption = '' then
         lVal.Visible := false;
       lAgo.Visible := false;
-      lTir.Visible := false;
+      FTirBadge.Visible := false;
     end;
 
     // Apply alpha control only - rounded corners are handled by pnWarningPaint.

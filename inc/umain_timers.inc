@@ -543,7 +543,38 @@ begin
   if not Assigned(pbNextProgress) then
     Exit;
 
-  lTir.left := fBG.Width - lTir.Width - pbNextProgress.Width - 5;
+  FTirBadge.Left := fBG.Width - FTirBadge.Width - pbNextProgress.Width - 5;
+end;
+
+procedure TfBG.LayoutTirBadge;
+var
+  w, h: integer;
+begin
+  if not Assigned(FTirBadge) then
+    Exit;
+  // Same face as the "ago" label on the other side of the band; the badge
+  // derives its caption size from it. Measure on a temp TBitmap — a control
+  // canvas outside paint SIGABRTs on Cocoa.
+  FTirBadge.Font := lAgo.Font;
+  with TBitmap.Create do
+  try
+    SetSize(1, 1);
+    // At most half the window: the "ago" label owns the other half of the
+    // band, and the off-range banner sits between them.
+    FTirBadge.PreferredSize(Canvas, ClientWidth div 2 - pbNextProgress.Width - 5, w, h);
+  finally
+    Free;
+  end;
+  {$ifdef LCLQt6}
+  if isWSL then // isWSL is always false off Linux (base DetectWSL stub)
+    w := 50;
+  {$endif}
+  FTirBadge.SetBounds(fBG.Width - w - pbNextProgress.Width - 5, TitleBarOffset, w, h);
+  // The resize handler hides the badge along with lAgo while the window is
+  // being resized; ScaleLbl used to force the label back on, so this layout
+  // pass has to do the same — unless there is nothing to show (stale data).
+  FTirBadge.Visible := FTirBadge.Caption <> '';
+  FTirBadge.BringToFront;
 end;
 
 // The strip fits its own text to whatever box it gets, so this only decides
@@ -662,26 +693,7 @@ begin
     end;
   end;
 
-  ScaleLbl(lTir);
-  lTir.BringToFront;
-  lTir.AutoSize := false;
-  lTir.font := lAgo.Font;
-  // Measure on a temp TBitmap — TLabel.Canvas outside paint SIGABRTs on Cocoa.
-  with TBitmap.Create do
-  try
-    SetSize(1, 1);
-    Canvas.Font.Assign(lTir.Font);
-    lTir.Height := Canvas.TextHeight(lTir.Caption);
-    lTir.Width := Canvas.TextWidth(lTir.Caption);
-  finally
-    Free;
-  end;
-
-  {$ifdef LCLQt6}
-  if isWSL then // isWSL is always false off Linux (base DetectWSL stub)
-    lTir.Width := 50;
-  {$endif}
-  lTir.top := TitleBarOffset;
+  LayoutTirBadge;
 
   lArrow.OptimalFill := true;
 

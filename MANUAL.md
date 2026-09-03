@@ -252,7 +252,15 @@ Hides your actual numbers, showing only dots and arrows. Useful when:
 Enable it by right-clicking → Privacy Mode.
 
 ### Time In Range (TIR)
-Shows what percentage of time your blood sugar has been in your target range (e.g., "85% TIR" means you were in range 85% of the time).
+The badge in the top-right corner shows what percentage of time your blood
+sugar has been in your target range: the percentage with a small `in range`
+caption under it. With *Show mean* on, the average over the same window sits
+to its left as `avg 6.4`. The percentage turns green once you are above the
+good threshold and red below the bad one; in between it stays in the quiet
+sub-text colour. Hover over the badge to see a thin bar filled to the same
+share, and click it to see the window it covers and the limits it uses. In a
+narrow window the `avg` word and then the mean give way so the percentage
+always fits.
 - **Good**: Above 70% in range
 - **Needs work**: Below 70% in range
 

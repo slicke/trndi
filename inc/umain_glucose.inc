@@ -407,7 +407,7 @@ begin
   // hidden because ScaleLbl force-shows every label it touches on resize, but
   // returns immediately on an empty caption — the same way lDiff/lAgo stay
   // gone. CalcRangeTime fills it back in on recovery.
-  lTir.Caption := '';
+  FTirBadge.Clear;
   // Struck out as well as dimmed: the dimming alone reads as "de-emphasised",
   // which isn't the same claim as "do not act on this number". Only when a
   // value is actually there — a bare '--' with a line through it is noise.
@@ -547,7 +547,7 @@ var
   rangeMinutes: integer;
   cutoffTime: TDateTime;
   ranges: set of trndi.types.BGValLevel;
-  meanStr: string;
+  meanStr, valueText: string;
   meanSum: double;
   meanCount: integer;
 begin
@@ -586,20 +586,20 @@ begin
     if tir_icon then
       case range of
       100..MaxInt:
-        lTir.Caption := '👌';
+        valueText := '👌';
       80..99:
-        lTir.Caption := '😃';
+        valueText := '😃';
       50..79:
-        lTir.Caption := '😶';
+        valueText := '😶';
       30..49:
-        lTir.Caption := '😥';
+        valueText := '😥';
       10..29:
-        lTir.Caption := '😞';
-      0..9:
-        lTir.Caption := '😓';
+        valueText := '😞';
+      else
+        valueText := '😓';
       end
     else
-      lTir.Caption := range.toString + '%';
+      valueText := range.toString + '%';
   end
   else
   begin
@@ -609,7 +609,7 @@ begin
     // dialog's Display preview) tint good/bad by, and a stored 0 made an empty
     // window indistinguishable from a genuine, alarming 0% in range.
     range := -1;
-    lTir.Caption := '--%';
+    valueText := '--%';
   end;
 
   // The mean is computed over the same readings the percentage beside it was
@@ -617,28 +617,29 @@ begin
   // whole fetch window regardless of range.time — so once the window was
   // narrowed the label put a three-hour percentage next to a twenty-four-hour
   // average and presented the pair as one statistic.
+  meanStr := '';
   if native.GetBoolSetting('tir.displaymean', false) and (meanCount > 0) then
-  begin
     meanStr := Format(BG_MSG_SHORT[un], [meanSum / meanCount]);
-    if meanStr <> '' then
-      lTir.Caption := meanStr + ' | ' + lTir.Caption;
-  end;
 
+  FTirBadge.SetState(range, valueText, meanStr);
   if range >= 0 then
-    lTir.Hint := range.toString
+    FTirBadge.Hint := range.toString
   else
-    lTir.Hint := '';
-  lTir.Visible := true;
+    FTirBadge.Hint := '';
+  FTirBadge.Visible := true;
+  // The content just changed width; re-measure so the box (and with it the
+  // click target and the bar) matches what is drawn.
+  LayoutTirBadge;
 
   // UpdateUIColors turns this hint into the good/bad tint, but the gate that
   // decides whether to run it sits in FinalizeUpdate — which runs before this
   // procedure, so it can only ever see the previous cycle's percentage. Re-tint
   // here when the number actually moved, otherwise a crossing of good_tir or
   // bad_tir would not reach the label until the reading after next.
-  if lTir.Hint <> FLastTirHint then
+  if FTirBadge.Hint <> FLastTirHint then
   begin
     UpdateUIColors;
-    FLastTirHint := lTir.Hint;
+    FLastTirHint := FTirBadge.Hint;
   end;
 end;
 
@@ -703,10 +704,10 @@ begin
 
   UpdatePredictionLabel;
 
-  if ShouldUpdateUI(fBG.Color, lVal.Caption, lTir.Caption, lTir.Hint) then
+  if ShouldUpdateUI(fBG.Color, lVal.Caption, FTirBadge.Caption, FTirBadge.Hint) then
   begin
     UpdateUIColors;
-    CacheUIState(fBG.Color, lVal.Caption, lTir.Caption, lTir.Hint);
+    CacheUIState(fBG.Color, lVal.Caption, FTirBadge.Caption, FTirBadge.Hint);
   end;
   // The change can move from steady to fast while the value, colour and TIR
   // that gate UpdateUIColors all stay put, so its tint is refreshed on every
@@ -1759,6 +1760,7 @@ end;
 procedure TfBG.UpdateUIColors;
 const
   clGoodGreen = $00005900;
+  TIR_TEXT_CONTRAST = 4.5;
 var
   r: integer;
 begin
@@ -1773,7 +1775,6 @@ begin
   end;
   lDiff.Font.Color := DiffLabelColor;
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
-  lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   // The strip: values in the same tone the label used, headers a step
   // fainter, dividers half-way into the background. The cell colours were
   // picked against the background current at render time, so re-render them
@@ -1785,14 +1786,21 @@ begin
     (Length(PredictionCache) > 0) then
     RenderPredictionText(PredictionCache, FPredictAnchor, FPredictAnchorMin);
 
-  if TryStrToInt(lTir.hint, r) then
+  // The badge: captions and mean in the sub-text tone, the percentage and
+  // bar in the good/bad tint once a threshold is crossed — lifted to the
+  // same contrast floor the delta and the forecast strip use, rather than
+  // the fixed lightening that left green-on-green hard to read.
+  FTirBadge.TextColor := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  FTirBadge.RangeCaption := RS_TIR_CAPTION;
+  FTirBadge.MeanCaption := RS_TIR_MEAN_CAPTION;
+  FTirBadge.TrackColor := BlendColors(FTirBadge.TextColor, fBG.Color, 0.35);
+  FTirBadge.AccentColor := FTirBadge.TextColor;
+  if TryStrToInt(FTirBadge.Hint, r) then
     if r < bad_tir then
-      lTir.Font.color := GetAdjustedColorForBackground(clMaroon,
-        fBG.Color, 0.6, 0.4, true)
+      FTirBadge.AccentColor := EnsureContrast(clMaroon, fBG.Color, TIR_TEXT_CONTRAST)
     else
     if r >= good_tir then
-      lTir.Font.color := GetAdjustedColorForBackground(clGoodGreen,
-        fBG.Color, 0.6, 0.4, true);
+      FTirBadge.AccentColor := EnsureContrast(clGoodGreen, fBG.Color, TIR_TEXT_CONTRAST);
 end;
 
 function TfBG.GetTextColorForBackground(const BgColor: TColor;

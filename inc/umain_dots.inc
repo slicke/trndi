@@ -1052,7 +1052,7 @@ begin
   if (diffText = '') or (diffText = 'lDiff') then
     diffText := '+0.0';
   diffText := SwapSep(diffText);
-  tirText := lTir.Caption;
+  tirText := FTirBadge.Caption;
 
   ACanvas.Brush.Style := bsSolid;
   ACanvas.Brush.Color := bg;
@@ -1069,7 +1069,7 @@ begin
   if tirText <> '' then
   begin
     tirColor := subColor;
-    if TryStrToInt(lTir.Hint, r) then
+    if TryStrToInt(FTirBadge.Hint, r) then
       if r < bad_tir then
         tirColor := GetAdjustedColorForBackground(clMaroon, bg, 0.6, 0.4, true)
       else

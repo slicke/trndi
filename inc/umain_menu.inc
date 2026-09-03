@@ -548,7 +548,7 @@ begin
   if not funcBool('uxClick',[
     'tir',
     mintotal,
-    lTir.Caption
+    FTirBadge.Caption
     ], true) then
     Exit;
   {$endif}

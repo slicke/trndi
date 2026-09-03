@@ -2327,6 +2327,14 @@ msgstr "Ingen endring forutsagt →"
 msgid "+%d min"
 msgstr "+%d min"
 
+#: trndi.strings.rs_tir_caption
+msgid "in range"
+msgstr ""
+
+#: trndi.strings.rs_tir_mean_caption
+msgid "avg"
+msgstr ""
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Prediksjoner utilgjengelige"
