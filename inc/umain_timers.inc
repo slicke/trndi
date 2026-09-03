@@ -67,155 +67,16 @@ var
 
   // For prediction time updates
 procedure UpdatePredictionTimes;
-  var
-    i, closest5, closest10, closest15, closestTarget: integer;
-    diff5, diff10, diff15, diffTarget, currentDiffSigned: integer;
-    minutes, targetMinutes: integer;
-    delta: glucose;
-    trend: BGTrend;
-    pred1, pred2, pred3: string;
-    lastReadingValue: single;
-    validCount: integer;
-    prevCaption: string;
   begin
-    if not (PredictGlucoseReading and lPredict.Visible and (Length(PredictionCache) > 0)) then
+    if not (PredictGlucoseReading and Assigned(FPredictStrip) and
+      FPredictStrip.Visible and (Length(PredictionCache) > 0)) then
       Exit;
-
-    prevCaption := lPredict.Caption;
-    lastReadingValue := lastReading.convert(mgdl);
-
-    // Find predictions closest to 5, 10, 15 and the configured short horizon from NOW
-    closest5 := -1;
-    closest10 := -1;
-    closest15 := -1;
-    closestTarget := -1;
-    diff5 := MaxInt;
-    diff10 := MaxInt;
-    diff15 := MaxInt;
-    diffTarget := MaxInt;
-    targetMinutes := PredictShortMinutes;
-
-    for i := 0 to High(PredictionCache) do
-    begin
-      // Signed minutes from NOW: negative = past, positive = future.
-      // MinutesBetween is Abs()-based, so a stale past prediction would
-      // otherwise win "closest to N" against a real future one.
-      currentDiffSigned := Round((PredictionCache[i].date - Now) * MinsPerDay);
-
-      if (currentDiffSigned >= 0) and (Abs(currentDiffSigned - 5) < diff5) then
-      begin
-        diff5 := Abs(currentDiffSigned - 5);
-        closest5 := i;
-      end;
-
-      if (currentDiffSigned >= 0) and (i <> closest5) and (Abs(currentDiffSigned - 10) < diff10) then
-      begin
-        diff10 := Abs(currentDiffSigned - 10);
-        closest10 := i;
-      end;
-
-      if (currentDiffSigned >= 0) and (i <> closest5) and (i <> closest10) and (Abs(currentDiffSigned - 15) < diff15) then
-      begin
-        diff15 := Abs(currentDiffSigned - 15);
-        closest15 := i;
-      end;
-
-      if (currentDiffSigned >= 0) and (Abs(currentDiffSigned - targetMinutes) < diffTarget) then
-      begin
-        diffTarget := Abs(currentDiffSigned - targetMinutes);
-        closestTarget := i;
-      end;
-    end;
-
-    // Check if we have at least one valid prediction
-    validCount := 0;
-    if closest5 >= 0 then
-      Inc(validCount);
-    if closest10 >= 0 then
-      Inc(validCount);
-    if closest15 >= 0 then
-      Inc(validCount);
-
-    if validCount = 0 then
+    // Arrow-only short mode shows no time, so there is nothing to count down.
+    if PredictShortMode and not PredictShortShowValue then
       Exit;
-
-    // Update prediction display with current times
-    if PredictShortMode then
-    begin
-      // Short mode: show only configured-horizon prediction with arrow
-      if closestTarget >= 0 then
-      begin
-        delta := PredictionCache[closestTarget].convert(mgdl) - lastReadingValue;
-        trend := CalculateTrendFromDelta(delta);
-        minutes := Round(MinutesBetween(PredictionCache[closestTarget].date, Now));
-
-        if PredictShortShowValue then
-          if PredictShortFullArrows then
-            lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closestTarget].convert(un)])
-          else
-            case trend of
-            TdDoubleUp, TdSingleUp, TdFortyFiveUp:
-              lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, PredictionCache[closestTarget].convert(un)]);
-            TdFlat:
-              lPredict.Caption := Format('⏱%d'' → %.1f', [minutes, PredictionCache[closestTarget].convert(un)]);
-            TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-              lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, PredictionCache[closestTarget].convert(un)]);
-            else
-              lPredict.Caption := '?';
-            end;
-        // Arrow-only mode doesn't show time, so no update needed
-      end;
-    end
-    else
-    begin
-      // Full mode: show time, trend, and value for all three
-      if closest5 >= 0 then
-      begin
-        minutes := Round(MinutesBetween(PredictionCache[closest5].date, Now));
-        delta := PredictionCache[closest5].convert(mgdl) - lastReadingValue;
-        trend := CalculateTrendFromDelta(delta);
-        pred1 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest5].convert(un)]);
-      end
-      else
-        pred1 := '?';
-
-      if closest10 >= 0 then
-      begin
-        minutes := Round(MinutesBetween(PredictionCache[closest10].date, Now));
-        delta := PredictionCache[closest10].convert(mgdl) - lastReadingValue;
-        trend := CalculateTrendFromDelta(delta);
-        pred2 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest10].convert(un)]);
-      end
-      else
-        pred2 := '?';
-
-      if closest15 >= 0 then
-      begin
-        minutes := Round(MinutesBetween(PredictionCache[closest15].date, Now));
-        delta := PredictionCache[closest15].convert(mgdl) - lastReadingValue;
-        trend := CalculateTrendFromDelta(delta);
-        pred3 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest15].convert(un)]);
-      end
-      else
-        pred3 := '?';
-
-      lPredict.Caption := pred1 + ' | ' + pred2 + ' | ' + pred3;
-    end;
-
-    // Keep prediction label geometry in sync with dynamic caption updates.
-    // Only when the caption actually changed — ScaleLbl runs a binary-search
-    // font measurement plus a repaint, which is wasted work on the (common)
-    // ticks where the displayed minutes haven't moved yet.
-    if lPredict.Visible and (lPredict.Caption <> prevCaption) then
-    begin
-      if DIFF_ALIGN = taRightJustify then
-        ScaleLbl(lPredict, taCenter, tlBottom, false)
-      else
-        ScaleLbl(lPredict, taRightJustify, tlBottom, false);
-      // Keep horizontal anchoring stable during timer updates; Top is handled
-      // by the main resize/layout path to avoid small vertical jumps.
-      lPredict.Left := ClientWidth - lPredict.Width - 5;
-    end;
+    // Re-measure the countdown from now. The strip only repaints when a
+    // header actually changed, so the ticks between minutes cost nothing.
+    RenderPredictionText(PredictionCache, Now, 0);
   end;
 
 procedure predictFuture;
@@ -685,12 +546,63 @@ begin
   lTir.left := fBG.Width - lTir.Width - pbNextProgress.Width - 5;
 end;
 
-procedure TfBG.ResizeUIElements;
+// The strip fits its own text to whatever box it gets, so this only decides
+// how much of the corner the forecast may take: two rows' worth in full mode,
+// the user-picked arrow size in short mode. ux.labels.lpredict.scale scales
+// the box like it scaled the label (see guides/Hacks.md).
+procedure TfBG.LayoutPredictionStrip;
 const
   PRED_WIDTH_NUM: array[1..3] of integer = (6, 8, 9);
   PRED_HEIGHT_NUM: array[1..3] of integer = (2, 3, 4);
 var
-  wnum, hnum: integer;
+  size, w, h: integer;
+  scaleFactor: single;
+begin
+  if not (Assigned(FPredictStrip) and FPredictStrip.Visible) then
+    Exit;
+
+  if PredictShortMode then
+  begin
+    size := Max(Min(PredictShortSize, 3), 1);
+    // The largest short-prediction size gets a bold face so the glyph keeps
+    // its weight at the bigger footprint.
+    FPredictStrip.Bold := size >= 3;
+    w := (ClientWidth * PRED_WIDTH_NUM[size]) div 12;
+    h := (ClientHeight * PRED_HEIGHT_NUM[size]) div 12;
+    // With the countdown and value the cell is two rows and about twice as
+    // wide as a lone arrow — but not as tall as the arrow-only box, whose
+    // full height would push the header up into the trend dots.
+    if PredictShortShowValue then
+    begin
+      w := w * 2;
+      h := (h * 2) div 3;
+    end;
+  end
+  else
+  begin
+    FPredictStrip.Bold := false;
+    w := (ClientWidth * 2) div 5;
+    h := ClientHeight div 8;
+  end;
+
+  scaleFactor := native.GetFloatSetting('ux.labels.' + LowerCase(FPredictStrip.Name) + '.scale', 1);
+  if scaleFactor > 0 then
+  begin
+    w := Min(ClientWidth, Round(w * scaleFactor));
+    h := Min(ClientHeight, Round(h * scaleFactor));
+  end;
+
+  // Content hugs the corner unless the difference label is right-aligned
+  // there too, in which case it centres within its box like the label did.
+  if DIFF_ALIGN = taRightJustify then
+    FPredictStrip.Alignment := taCenter
+  else
+    FPredictStrip.Alignment := taRightJustify;
+
+  FPredictStrip.SetBounds(ClientWidth - w - 5, ClientHeight - h - 5, w, h);
+end;
+
+procedure TfBG.ResizeUIElements;
 begin
   pnOffReading.Height := ClientHeight;
   pnOffReading.ClientWidth := ClientWidth div 35;
@@ -778,47 +690,7 @@ begin
   pnMultiUser.top := TitleBarOffset;
   pnMultiUser.left := 0;
 
-  if Assigned(lPredict) and lPredict.Visible then
-  begin
-    if PredictShortMode then
-    begin
-      // The largest short-prediction size gets a bold face so the glyph keeps
-      // its weight at the bigger footprint.
-      if PredictShortSize >= 3 then
-        lPredict.Font.Style := [fsBold]
-      else
-        lPredict.Font.Style := [];
-      if PredictShortShowValue then
-      begin
-        wnum := PRED_WIDTH_NUM[Max(Min(PredictShortSize, 3), 1)];
-        hnum := PRED_HEIGHT_NUM[Max(Min(PredictShortSize, 3), 1)];
-        lPredict.Width := ((ClientWidth * wnum) div 12) * 2;
-        lPredict.Height := ((ClientHeight * hnum) div 12) div 2;
-      end
-      else
-      begin
-        wnum := PRED_WIDTH_NUM[Max(Min(PredictShortSize, 3), 1)];
-        hnum := PRED_HEIGHT_NUM[Max(Min(PredictShortSize, 3), 1)];
-        lPredict.Width := (ClientWidth * wnum) div 12;
-        lPredict.Height := (ClientHeight * hnum) div 12;
-      end;
-    end
-    else
-    begin
-      lPredict.Font.Style := [];
-      lPredict.Width := (ClientWidth * 2) div 5;
-      lPredict.Height := ClientHeight div 12;
-    end;
-
-    lPredict.Left := ClientWidth - lPredict.Width - 5;
-    lPredict.Top := ClientHeight - lPredict.Height - 5;
-
-    if DIFF_ALIGN = taRightJustify then
-      ScaleLbl(lPredict, taCenter, tlBottom, true)
-    else
-      ScaleLbl(lPredict, taRightJustify, tlBottom, true);
-    lPredict.Left := ClientWidth - lPredict.Width - 5;
-  end;
+  LayoutPredictionStrip;
   nextProgressChange;
 
   // The drawn title bar and its resize grips must stay above the controls the

@@ -2498,6 +2498,10 @@ msgstr "Detta er dina fôrutspodda avlesningar; Tidsskillnad: fôrutspodd-avlesn
 msgid "No change predicted →"
 msgstr "Ingen endring forutspos →"
 
+#: trndi.strings.rs_predict_header
+msgid "+%d min"
+msgstr "+%d min"
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Fôrutspoelser otillgengliga"

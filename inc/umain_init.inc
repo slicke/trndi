@@ -629,8 +629,8 @@ begin
   pnOffRangeBar.Visible := false;
   if Assigned(pbNextProgress) then
     pbNextProgress.Visible := false;
-  if Assigned(lPredict) then
-    lPredict.Visible := false;
+  if Assigned(FPredictStrip) then
+    FPredictStrip.Visible := false;
   lArrow.Caption := '';
   lDiff.Caption := '';
   lAgo.Caption := '';
@@ -684,6 +684,15 @@ begin
   // from *this* — never to an already-prefixed caption — as the title-bar
   // badge appears or disappears (see RefreshUserBadge).
   FBaseCaption := Caption;
+
+  // The forecast text lives in a custom-painted strip rather than an LFM
+  // label: it fits its own fonts and colours its cells by range, which a
+  // TLabel can't. Hidden until settings say otherwise (below).
+  FPredictStrip := TPredictionStrip.Create(Self);
+  FPredictStrip.Name := 'lPredict'; // ux.labels.lpredict.scale keys off this
+  FPredictStrip.Parent := Self;
+  FPredictStrip.Visible := false;
+  FPredictStrip.OnClick := @lPredictClick;
 
   // --kiosk: dedicated-display mode (RPi wall display, bedside screen).
   // FormShow schedules the actual activation: fullscreen, keep-awake, and no
@@ -1038,7 +1047,7 @@ begin
     if PredictShortSize > 3 then
       PredictShortSize := 3;
     // Hidden in dot mode — the predictions are drawn on the trend instead.
-    lPredict.Visible := PredictGlucoseReading and not PredictDotMode;
+    FPredictStrip.Visible := PredictGlucoseReading and not PredictDotMode;
   end;
 
   // Final initialization and first reading. The fetch is dispatched to a
@@ -1075,8 +1084,8 @@ begin
   if Assigned(pbNextProgress) then
     pbNextProgress.Visible := false;
   fBG.Color := clBlack;
-  if Assigned(lPredict) then
-    lPredict.Visible := false;
+  if Assigned(FPredictStrip) then
+    FPredictStrip.Visible := false;
 
   // The actual fetch is kicked off via a one-shot timer (tBootFetch) so the
   // worker thread is created only after Application.Run is pumping the

@@ -2309,6 +2309,10 @@ msgstr ""
 msgid "No change predicted →"
 msgstr ""
 
+#: trndi.strings.rs_predict_header
+msgid "+%d min"
+msgstr ""
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr ""

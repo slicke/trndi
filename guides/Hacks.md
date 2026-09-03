@@ -70,7 +70,7 @@ Where lpredict maps to the predictions (named lPredict in the code)
 |lVal|the value|
 |lArrow|the arrow|
 |lAgo|the timne since last reading|
-|lPredict|the predictions label|
+|lPredict|the predictions strip (scales the space it may use)|
 |lDiff|the reading difference|
 |lTir|the time in range|
 |lMissing|the warning when missing values|

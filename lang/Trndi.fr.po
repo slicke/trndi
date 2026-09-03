@@ -2444,6 +2444,10 @@ msgstr "Vos futures lectures prédites sont affichées en bas à droite de la fe
 msgid "No change predicted →"
 msgstr "Aucun changement prévu →"
 
+#: trndi.strings.rs_predict_header
+msgid "+%d min"
+msgstr "+%d min"
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Prédictions indisponibles"

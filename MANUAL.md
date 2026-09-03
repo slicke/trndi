@@ -191,10 +191,13 @@ reading is always among the dots kept. Widen the window and the rest come back.
 When enabled, Trndi can show where your blood sugar might be heading in the next 5-15 minutes.
 
 #### What you'll see:
-- **Full mode**: `⏱5' ↗ 145.2 | ⏱10' → 147.8 | ⏱15' ↘ 146.1`
-  - Shows predictions at 5, 10, and 15 minutes with values
-  
-- **Short mode**: Just an arrow or `⏱10' ↗ 145.2`
+- **Full mode**: a small strip in the lower-right corner with three cells,
+  one each for 5, 10 and 15 minutes ahead. Each cell has a countdown header
+  (`+5 min`, counting down between readings) over the arrow and predicted
+  value (`↗ 145`). The value takes the high or low colour when the forecast
+  leaves your range, so an incoming low stands out.
+
+- **Short mode**: Just an arrow, or one cell with the countdown and value
   - Shows just the 10-minute prediction
 
 - **Dot mode** (*Show predictions as dots on the trend*): Instead of text, three

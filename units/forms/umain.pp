@@ -86,7 +86,7 @@ trndi.strings, LCLTranslator, Types, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow,
+slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow, upredictionstrip,
 Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
@@ -422,7 +422,6 @@ TfBG = class(TForm)
   bTouchRefresh: TButton;
   bTouchHistory: TButton;
   bTouchExit: TButton;
-  lPredict: TLabel;
   miGuidelines: TMenuItem;
   miBasalRate: TMenuItem;
   miReadingsSince: TMenuItem;
@@ -745,6 +744,9 @@ private
   FInternetBadgeBg: TShape;
   FInternetBadgeShadow: TShape;
   FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (created when RotatingArrow is on)
+  FPredictStrip: TPredictionStrip; // Text rendering of the forecast, lower right (created in FormCreate)
+  FPredictAnchor: TDateTime;   // Time the strip's countdown headers were last measured from
+  FPredictAnchorMin: integer;  // Minimum minutes past that anchor a prediction had to lie
   FLastArrowAngle: single;  // Last computed trend-arrow angle (shared with the float window)
   FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
@@ -1198,11 +1200,26 @@ private
    }
   procedure DoFullScreen;
   {** Fetch and display short-term predictions (e.g., 5/10/15 minute values)
-      in `lPredict`. Predictions are optional and controlled by user settings;
-      when unavailable, the label is hidden.
+      in the forecast strip. Predictions are optional and controlled by user
+      settings; when unavailable, the strip is hidden.
    }
   procedure UpdatePredictionLabel;
   procedure RenderPredictionCache(const bgr: BGResults);
+  {** Pick, for the 5/10/15-minute horizons and the short-mode horizon, the
+      index of the prediction nearest to it, measured from `anchor`. Entries
+      closer than `minMinutes` to the anchor are ignored; a horizon whose best
+      match an earlier horizon already took comes back as -1. }
+  procedure MatchPredictionHorizons(const bgr: BGResults; anchor: TDateTime;
+    minMinutes: integer; out c5, c10, c15, cTarget: integer);
+  {** Fill the forecast strip from a prediction set: three cells (or one in
+      short mode) with countdown headers measured from `anchor`, or the
+      stable/unavailable message. Both the fetch and the clock tick go
+      through here, so the text is built in exactly one place. }
+  procedure RenderPredictionText(const bgr: BGResults; anchor: TDateTime;
+    minMinutes: integer);
+  {** Size and place the forecast strip in the lower-right corner for the
+      current window size and prediction mode. }
+  procedure LayoutPredictionStrip;
   {** Total horizontal trend slots. Equals ACTIVE_DOTS, plus
       PREDICTION_DOT_COUNT when the prediction-dot view is active, so the
       history dots compress to leave room for future dots on the right. }
@@ -1368,7 +1385,7 @@ PredictShortSize: integer = 1; // 1=small, 2=medium, 3=big
 PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
 PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
 PredictShortMinutes: integer = 10; // Prediction horizon (5, 10, or 15 minutes)
-PredictDotMode: boolean = false; // Render predictions as hollow dots on the trend instead of the lPredict label
+PredictDotMode: boolean = false; // Render predictions as hollow dots on the trend instead of the forecast strip
 ShowBolusOverlay: boolean = false; // Draw insulin deliveries on the history graph
 ShowAutoBolusOverlay: boolean = false; // Include the pump's own micro-deliveries in that overlay
 ShowCarbOverlay: boolean = false; // Draw carbohydrate entries on the history graph

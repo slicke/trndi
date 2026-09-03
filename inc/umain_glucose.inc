@@ -449,7 +449,7 @@ begin
   // from a trend that has stopped updating. Hide both prediction forms;
   // UpdatePredictionLabel is gated on the same flag so nothing re-arms them
   // until data is fresh again.
-  lPredict.Visible := false;
+  FPredictStrip.Visible := false;
   HidePredictionDots;
   // A dark slate rather than pure black: the stale card has to sit on top of
   // it and still read as a raised surface.
@@ -726,19 +726,19 @@ var
 begin
   if FShuttingDown then
   begin
-    lPredict.Visible := false;
+    FPredictStrip.Visible := false;
     Exit;
   end;
 
   if not Assigned(api) then
   begin
-    lPredict.Visible := false;
+    FPredictStrip.Visible := false;
     Exit;
   end;
 
   if not PredictGlucoseReading then
   begin
-    lPredict.Visible := false;
+    FPredictStrip.Visible := false;
     HidePredictionDots;
     Exit;
   end;
@@ -750,14 +750,14 @@ begin
   // this gate keeps the periodic label refresh from putting them back.
   if FTrendDataStale then
   begin
-    lPredict.Visible := false;
+    FPredictStrip.Visible := false;
     HidePredictionDots;
     Exit;
   end;
 
   // In dot mode the prediction is drawn as hollow dots on the trend, so the
-  // text label stays hidden; the prediction fetch still runs below to feed it.
-  lPredict.Visible := not PredictionDotsActive;
+  // text strip stays hidden; the prediction fetch still runs below to feed it.
+  FPredictStrip.Visible := not PredictionDotsActive;
 
   if (Length(PredictionCache) > 0) and (PredictionLastReadingTime = lastReading.date) then
   begin
@@ -774,70 +774,49 @@ begin
   end;
   predictionHorizon := native.GetIntSetting('predictions.future_limit', DEFAULT_PREDICTION_FUTURE_LIMIT);
   FPredictionThread := TPredictionThread.Create(Self, predictionHorizon);
-  lPredict.Caption := RS_PREDICTIONS_UNAVAILABLE;
+  FPredictStrip.Message := RS_PREDICTIONS_UNAVAILABLE;
 end;
 
-procedure TfBG.RenderPredictionCache(const bgr: BGResults);
+procedure TfBG.MatchPredictionHorizons(const bgr: BGResults; anchor: TDateTime;
+  minMinutes: integer; out c5, c10, c15, cTarget: integer);
 var
-  pred1, pred2, pred3: string;
-  lastReadingTime: TDateTime;
-  lastReadingValue: glucose;
-  i, closest5, closest10, closest15, closestTarget: integer;
-  diff5, diff10, diff15, diffTarget, currentDiff: integer;
-  delta: glucose;
-  trend: BGTrend;
-  minutes, targetMinutes: integer;
-  validCount: integer;
-
-// Predicted values follow the same per-unit precision as every other value on
-// screen. Formatting them as %.1f regardless of unit printed mg/dL as "142.0",
-// a decimal the scale doesn't carry and that appears nowhere else in the UI.
-function PredValue(idx: integer): string;
-  begin
-    Result := SysUtils.Format(BG_MSG_SHORT[un], [bgr[idx].convert(un)]);
-  end;
+  i, m, d5, d10, d15, dTarget, targetMinutes: integer;
 begin
-  if not Assigned(api) then
-    Exit;
-
-  if not PredictGlucoseReading then
-    Exit;
-
-  lastReadingTime := lastReading.date;
-  lastReadingValue := lastReading.convert(mgdl);
-
-  closest5 := -1; closest10 := -1; closest15 := -1; closestTarget := -1;
-  diff5 := MaxInt; diff10 := MaxInt; diff15 := MaxInt; diffTarget := MaxInt;
+  c5 := -1; c10 := -1; c15 := -1; cTarget := -1;
+  d5 := MaxInt; d10 := MaxInt; d15 := MaxInt; dTarget := MaxInt;
   targetMinutes := PredictShortMinutes;
 
   for i := 0 to High(bgr) do
   begin
-    currentDiff := Round(MinutesBetween(bgr[i].date, lastReadingTime));
-    if currentDiff < 2 then
+    // Signed minutes from the anchor: negative = already passed. MinutesBetween
+    // is Abs()-based, so with a Now anchor a stale past prediction would
+    // otherwise win "closest to N" against a real future one.
+    m := Round((bgr[i].date - anchor) * MinsPerDay);
+    if m < minMinutes then
       Continue;
 
-    if Abs(currentDiff - 5) < diff5 then
+    if Abs(m - 5) < d5 then
     begin
-      diff5 := Abs(currentDiff - 5);
-      closest5 := i;
+      d5 := Abs(m - 5);
+      c5 := i;
     end;
 
-    if Abs(currentDiff - 10) < diff10 then
+    if Abs(m - 10) < d10 then
     begin
-      diff10 := Abs(currentDiff - 10);
-      closest10 := i;
+      d10 := Abs(m - 10);
+      c10 := i;
     end;
 
-    if Abs(currentDiff - 15) < diff15 then
+    if Abs(m - 15) < d15 then
     begin
-      diff15 := Abs(currentDiff - 15);
-      closest15 := i;
+      d15 := Abs(m - 15);
+      c15 := i;
     end;
 
-    if Abs(currentDiff - targetMinutes) < diffTarget then
+    if Abs(m - targetMinutes) < dTarget then
     begin
-      diffTarget := Abs(currentDiff - targetMinutes);
-      closestTarget := i;
+      dTarget := Abs(m - targetMinutes);
+      cTarget := i;
     end;
   end;
 
@@ -850,133 +829,156 @@ begin
   // practice: on a 7.5-minute cadence the entry 15 minutes out was claimed by
   // the 10-minute slot in the same iteration it became eligible, and the
   // 15-minute slot rendered '?' with its exact match sitting right there.
-  if closest10 = closest5 then
-    closest10 := -1;
-  if (closest15 = closest5) or (closest15 = closest10) then
-    closest15 := -1;
+  if c10 = c5 then
+    c10 := -1;
+  if (c15 = c5) or (c15 = c10) then
+    c15 := -1;
+end;
 
-  validCount := 0;
-  if closest5 >= 0 then
-    Inc(validCount);
-  if closest10 >= 0 then
-    Inc(validCount);
-  if closest15 >= 0 then
-    Inc(validCount);
-  if validCount = 0 then
+procedure TfBG.RenderPredictionCache(const bgr: BGResults);
+var
+  closest5, closest10, closest15, closestTarget: integer;
+begin
+  if not Assigned(api) then
+    Exit;
+
+  if not PredictGlucoseReading then
+    Exit;
+
+  // Dot view: render the 5/10/15-minute predictions as hollow dots continuing
+  // the trend to the right, and keep the text strip hidden.
+  if PredictionDotsActive then
   begin
-    lPredict.Visible := false;
-    HidePredictionDots;
+    MatchPredictionHorizons(bgr, lastReading.date, 2,
+      closest5, closest10, closest15, closestTarget);
+    if (closest5 < 0) and (closest10 < 0) and (closest15 < 0) then
+    begin
+      FPredictStrip.Visible := false;
+      HidePredictionDots;
+      Exit;
+    end;
+    RenderPredictionDots(bgr, closest5, closest10, closest15);
     Exit;
   end;
 
-  // Dot view: render the 5/10/15-minute predictions as hollow dots continuing
-  // the trend to the right, and keep the text label hidden.
-  if PredictionDotsActive then
+  // Text view. The countdown headers start out measured from the reading the
+  // forecast extends; the clock tick (UpdatePredictionTimes) re-measures them
+  // from Now so they count down between readings.
+  RenderPredictionText(bgr, lastReading.date, 2);
+end;
+
+procedure TfBG.RenderPredictionText(const bgr: BGResults; anchor: TDateTime;
+  minMinutes: integer);
+const
+  // Text needs more separation from the window colour than a dot does: a
+  // predicted low drawn in the low range's red on the red low background
+  // would otherwise vanish exactly when it matters.
+  PREDICT_TEXT_CONTRAST = 4.5;
+var
+  closest5, closest10, closest15, closestTarget: integer;
+  cells: TPredictionCells;
+  lastReadingValue: glucose;
+  highContrast: boolean;
+
+  // The simplified three-arrow set collapses every rising trend to ↗ and every
+  // falling one to ↘, as short mode did in the label.
+  function Glyph(trend: BGTrend; fullSet: boolean): string;
   begin
-    RenderPredictionDots(bgr, closest5, closest10, closest15);
+    if fullSet then
+      Exit(BG_TREND_ARROWS_UTF[trend]);
+    case trend of
+    TdDoubleUp, TdSingleUp, TdFortyFiveUp:
+      Result := '↗';
+    TdFlat:
+      Result := '→';
+    TdFortyFiveDown, TdSingleDown, TdDoubleDown:
+      Result := '↘';
+    else
+      Result := '?';
+    end;
+  end;
+
+  // One cell for the prediction at `idx`, or an empty cell labelled with
+  // `horizon` when no prediction matched it. The arrow is always drawn; the
+  // countdown header and the reading itself are short-mode options.
+  function MakeCell(idx, horizon: integer;
+    withHeader, withValue, fullSet: boolean): TPredictionCell;
+  var
+    trend: BGTrend;
+    minutes: integer;
+  begin
+    Result.Valid := (idx >= 0) and (idx <= High(bgr));
+    Result.Header := '';
+    Result.Arrow := '';
+    Result.Value := '';
+    Result.Color := FPredictStrip.TextColor;
+
+    minutes := horizon;
+    if Result.Valid then
+      minutes := Max(0, Round((bgr[idx].date - anchor) * MinsPerDay));
+    if withHeader then
+      Result.Header := Format(RS_PREDICT_HEADER, [minutes]);
+    if not Result.Valid then
+      Exit;
+
+    trend := CalculateTrendFromDelta(bgr[idx].convert(mgdl) - lastReadingValue);
+    Result.Arrow := Glyph(trend, fullSet);
+    // Same per-unit precision as every other value on screen: mg/dL prints
+    // as "142", never "142.0".
+    if withValue then
+      Result.Value := SysUtils.Format(BG_MSG_SHORT[un], [bgr[idx].convert(un)]);
+    // Coloured by the range the prediction lands in, lifted until it reads
+    // against the current window colour. High contrast is an accessibility
+    // mode whose whole point is the plain text colour, so it keeps that.
+    if not highContrast then
+      Result.Color := EnsureContrast(DetermineColorForReading(bgr[idx]),
+        fBG.Color, PREDICT_TEXT_CONTRAST);
+  end;
+
+begin
+  if not Assigned(api) then
+    Exit;
+
+  if not PredictGlucoseReading then
+    Exit;
+
+  // Remembered so UpdateUIColors can rebuild the same cells against a new
+  // window colour without moving the countdown.
+  FPredictAnchor := anchor;
+  FPredictAnchorMin := minMinutes;
+
+  lastReadingValue := lastReading.convert(mgdl);
+  highContrast := native.GetBoolSetting('main.high_contrast', false);
+  MatchPredictionHorizons(bgr, anchor, minMinutes,
+    closest5, closest10, closest15, closestTarget);
+
+  if (closest5 < 0) and (closest10 < 0) and (closest15 < 0) then
+  begin
+    FPredictStrip.Visible := false;
+    HidePredictionDots;
     Exit;
   end;
 
   if api.stablePrediction and not PredictShortMode then
   begin
-    lPredict.Caption := RS_PREDICTIONS_STABLE;
-    if DIFF_ALIGN = taRightJustify then
-      ScaleLbl(lPredict, taCenter, tlBottom, false)
-    else
-      ScaleLbl(lPredict, taRightJustify, tlBottom, false);
-    lPredict.Left := ClientWidth - lPredict.Width - 5;
+    FPredictStrip.Message := RS_PREDICTIONS_STABLE;
     Exit;
   end;
 
   if PredictShortMode then
   begin
-    if closestTarget >= 0 then
-    begin
-      delta := bgr[closestTarget].convert(mgdl) - lastReadingValue;
-      trend := CalculateTrendFromDelta(delta);
-      minutes := Round(MinutesBetween(bgr[closestTarget].date, lastReadingTime));
-
-      if PredictShortShowValue then
-      begin
-        if PredictShortFullArrows then
-          lPredict.Caption := Format('⏱%d'' %s %s', [minutes, BG_TREND_ARROWS_UTF[trend], PredValue(closestTarget)])
-        else
-        begin
-          case trend of
-          TdDoubleUp, TdSingleUp, TdFortyFiveUp:
-            lPredict.Caption := Format('⏱%d'' ↗ %s', [minutes, PredValue(closestTarget)]);
-          TdFlat:
-            lPredict.Caption := Format('⏱%d'' → %s', [minutes, PredValue(closestTarget)]);
-          TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-            lPredict.Caption := Format('⏱%d'' ↘ %s', [minutes, PredValue(closestTarget)]);
-          else
-            lPredict.Caption := '?';
-          end;
-        end;
-      end
-      else
-      begin
-        if PredictShortFullArrows then
-          lPredict.Caption := BG_TREND_ARROWS_UTF[trend]
-        else
-          case trend of
-          TdDoubleUp, TdSingleUp, TdFortyFiveUp:
-            lPredict.Caption := '↗';
-          TdFlat:
-            lPredict.Caption := '→';
-          TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-            lPredict.Caption := '↘';
-          else
-            lPredict.Caption := '?';
-          end;
-      end;
-    end
-    else
-      lPredict.Caption := '?';
+    SetLength(cells, 1);
+    cells[0] := MakeCell(closestTarget, PredictShortMinutes,
+      PredictShortShowValue, PredictShortShowValue, PredictShortFullArrows);
   end
   else
   begin
-    if closest5 >= 0 then
-    begin
-      minutes := Round(MinutesBetween(bgr[closest5].date, lastReadingTime));
-      delta := bgr[closest5].convert(mgdl) - lastReadingValue;
-      trend := CalculateTrendFromDelta(delta);
-      pred1 := Format('⏱%d'' %s %s', [minutes, BG_TREND_ARROWS_UTF[trend], PredValue(closest5)]);
-    end
-    else
-      pred1 := '?';
-
-    if closest10 >= 0 then
-    begin
-      minutes := Round(MinutesBetween(bgr[closest10].date, lastReadingTime));
-      delta := bgr[closest10].convert(mgdl) - lastReadingValue;
-      trend := CalculateTrendFromDelta(delta);
-      pred2 := Format('⏱%d'' %s %s', [minutes, BG_TREND_ARROWS_UTF[trend], PredValue(closest10)]);
-    end
-    else
-      pred2 := '?';
-
-    if closest15 >= 0 then
-    begin
-      minutes := Round(MinutesBetween(bgr[closest15].date, lastReadingTime));
-      delta := bgr[closest15].convert(mgdl) - lastReadingValue;
-      trend := CalculateTrendFromDelta(delta);
-      pred3 := Format('⏱%d'' %s %s', [minutes, BG_TREND_ARROWS_UTF[trend], PredValue(closest15)]);
-    end
-    else
-      pred3 := '?';
-
-    lPredict.Caption := Format('%s | %s | %s', [pred1, pred2, pred3]);
+    SetLength(cells, 3);
+    cells[0] := MakeCell(closest5, 5, true, true, true);
+    cells[1] := MakeCell(closest10, 10, true, true, true);
+    cells[2] := MakeCell(closest15, 15, true, true, true);
   end;
-
-  if lPredict.Visible then
-  begin
-    if DIFF_ALIGN = taRightJustify then
-      ScaleLbl(lPredict, taCenter, tlBottom, false)
-    else
-      ScaleLbl(lPredict, taRightJustify, tlBottom, false);
-    lPredict.Left := ClientWidth - lPredict.Width - 5;
-  end;
+  FPredictStrip.SetCells(cells);
 end;
 
 procedure TfBG.RenderPredictionDots(const bgr: BGResults;
@@ -1012,7 +1014,7 @@ procedure TfBG.RenderPredictionDots(const bgr: BGResults;
   end;
 
 begin
-  lPredict.Visible := false;
+  FPredictStrip.Visible := false;
 
   ApplyDot(0, Closest5);
   ApplyDot(1, Closest10);
@@ -1510,7 +1512,7 @@ begin
     // hide it so the no-data warning isn't visually contradicted by X
     // marks that look like fresh predictions.
     HidePredictionDots;
-    lPredict.Visible := false;
+    FPredictStrip.Visible := false;
 
     // The history itself is still worth showing, but it has to keep moving:
     // re-place it here (and once a second from tMissed) so the dots slide out
@@ -1737,7 +1739,16 @@ begin
   lDiff.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lAgo.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
   lTir.Font.Color := GetTextColorForBackground(fBG.color, 0.6, 0.4);
-  lPredict.Font.Color := GetTextColorForBackground(fBG.color, 0.7, 0.4);
+  // The strip: values in the same tone the label used, headers a step
+  // fainter, dividers half-way into the background. The cell colours were
+  // picked against the background current at render time, so re-render them
+  // against this one.
+  FPredictStrip.TextColor := GetTextColorForBackground(fBG.color, 0.7, 0.4);
+  FPredictStrip.MutedColor := GetTextColorForBackground(fBG.color, 0.5, 0.3);
+  FPredictStrip.DividerColor := BlendColors(FPredictStrip.MutedColor, fBG.Color, 0.5);
+  if FPredictStrip.Visible and (Length(FPredictStrip.Cells) > 0) and
+    (Length(PredictionCache) > 0) then
+    RenderPredictionText(PredictionCache, FPredictAnchor, FPredictAnchorMin);
 
   if TryStrToInt(lTir.hint, r) then
     if r < bad_tir then

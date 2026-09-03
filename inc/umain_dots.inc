@@ -1695,7 +1695,7 @@ begin
 end;
 
 // True when predictions should be drawn as hollow dots on the trend rather
-// than written into the lPredict label. Requires the slots to exist.
+// than written into the forecast strip. Requires the slots to exist.
 function TfBG.PredictionDotsActive: boolean;
 begin
   Result := PredictGlucoseReading and PredictDotMode

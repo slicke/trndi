@@ -53,16 +53,25 @@ Predictions are classified into trend categories based on the rate of change (de
 
 ### Full Mode (Default)
 
-When predictions are enabled, the full mode displays detailed information for three time points:
+When predictions are enabled, the full mode shows a small forecast strip in
+the lower-right corner of the window with one cell per time point:
 
 ```
-⏱5' ↗ 145.2 | ⏱10' → 147.8 | ⏱15' ↘ 146.1
+ +5 min    +10 min    +15 min
+ ↗ 8.1   │  → 8.2   │  ↘ 8.0
 ```
 
-Each prediction shows:
-- ⏱ Clock icon with minutes ahead
+Each cell shows:
+- A small countdown header with the minutes until the prediction. It counts
+  down between readings, so it always says how far ahead the value is from now.
 - Trend arrow (detailed: ↑↑, ↑, ↗, →, ↘, ↓, ↓↓)
-- Predicted glucose value in your configured unit
+- Predicted glucose value in your configured unit, coloured by the range it
+  lands in: the ordinary text colour while in range, the high or low colour
+  when the forecast leaves it (lifted for contrast against the window). A
+  horizon with no matching prediction shows a dash.
+
+The strip sizes its own text to fit; `ux.labels.lpredict.scale` in the
+config file scales the space it may use (see [Hacks](Hacks.md)).
 
 ### Short Mode
 
@@ -77,7 +86,9 @@ The simplified arrows map multiple trend levels:
 - **Steady** (→): Includes Flat
 - **Falling** (↘): Includes FortyFiveDown, SingleDown, and DoubleDown
 
-The arrow is automatically scaled larger for better visibility.
+The arrow is automatically scaled larger for better visibility. With
+"Show time and value" on, the arrow gets the same countdown header and the
+predicted value as a full-mode cell, coloured by range in the same way.
 
 ## Configuration
 

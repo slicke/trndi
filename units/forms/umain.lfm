@@ -248,14 +248,6 @@ object fBG: TfBG
     Visible = False
     OnClick = bSettingsClick
   end
-  object lPredict: TLabel
-    Left = 224
-    Height = 16
-    Top = 214
-    Width = 62
-    Caption = 'Predictions'
-    OnClick = lPredictClick
-  end
   object pnTouchMenu: TPanel
     Left = 16
     Height = 260

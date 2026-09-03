@@ -2323,6 +2323,10 @@ msgstr "Dine forudsagte fremtidige aflæsninger vises i vinduets nedre højre hj
 msgid "No change predicted →"
 msgstr "Ingen ændring forudsagt →"
 
+#: trndi.strings.rs_predict_header
+msgid "+%d min"
+msgstr "+%d min"
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Forudsigelser utilgængelige"
