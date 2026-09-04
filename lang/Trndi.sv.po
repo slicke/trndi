@@ -3355,6 +3355,23 @@ msgstr ""
 "- Fönstret kan hållas över andra fönster\n"
 "- Fönstrets kanter kan döljas (kan bero på operativsystem)"
 
+#: uconf.rs_dot_line
+msgid "Draw a line connecting the trend dots"
+msgstr "Rita en linje mellan trendpunkterna"
+
+#: uconf.rs_dot_line_normal
+msgctxt "uconf.rs_dot_line_normal"
+msgid "Normal"
+msgstr "Normal"
+
+#: uconf.rs_dot_line_thick
+msgid "Thick"
+msgstr "Tjock"
+
+#: uconf.rs_dot_line_thin
+msgid "Thin"
+msgstr "Tunn"
+
 #: uconf.rs_dots_auto
 msgid "Adapt to background"
 msgstr "Anpassa till bakgrund"

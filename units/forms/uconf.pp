@@ -879,6 +879,11 @@ RS_ESSENTIALS_INTRO = 'The settings most people look for. Each one also lives on
 
 RS_GB_TREND_DOTS = 'Trend dots';
 RS_GB_GRAPH_OVERLAYS = 'Overlays';
+RS_DOT_LINE = 'Draw a line connecting the trend dots';
+// Order must match the ux.dot_line_width setting (1..3), see cbDotLineWidth.
+RS_DOT_LINE_THIN = 'Thin';
+RS_DOT_LINE_NORMAL = 'Normal';
+RS_DOT_LINE_THICK = 'Thick';
 
 RS_HINTS_ENABLE = 'Explain parts of the window when they are clicked';
 RS_HINTS_RESET_BTN = 'Show hidden explanations';
@@ -1329,6 +1334,23 @@ begin
   edSearch.TextHint := RS_NAV_SEARCH;
   gbGraphDots.Caption := RS_GB_TREND_DOTS;
   gbGraphOverlays.Caption := RS_GB_GRAPH_OVERLAYS;
+  cbDotLine.Caption := RS_DOT_LINE;
+
+  keep := cbDotLineWidth.ItemIndex;
+  cbDotLineWidth.Items.BeginUpdate;
+  try
+    cbDotLineWidth.Items.Clear;
+    // Index + 1 is the stored ux.dot_line_width value (1..3).
+    cbDotLineWidth.Items.Add(RS_DOT_LINE_THIN);
+    cbDotLineWidth.Items.Add(RS_DOT_LINE_NORMAL);
+    cbDotLineWidth.Items.Add(RS_DOT_LINE_THICK);
+  finally
+    cbDotLineWidth.Items.EndUpdate;
+  end;
+  if (keep >= 0) and (keep < cbDotLineWidth.Items.Count) then
+    cbDotLineWidth.ItemIndex := keep
+  else
+    cbDotLineWidth.ItemIndex := 1;
 
   bExtResetPerms.Caption := RS_EXT_RESET_BTN;
   cbHints.Caption := RS_HINTS_ENABLE;

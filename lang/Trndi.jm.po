@@ -3417,6 +3417,23 @@ msgid ""
 "- The window's borders can be hidden (may depend on operating system)"
 msgstr ""
 
+#: uconf.rs_dot_line
+msgid "Draw a line connecting the trend dots"
+msgstr ""
+
+#: uconf.rs_dot_line_normal
+msgctxt "uconf.rs_dot_line_normal"
+msgid "Normal"
+msgstr ""
+
+#: uconf.rs_dot_line_thick
+msgid "Thick"
+msgstr ""
+
+#: uconf.rs_dot_line_thin
+msgid "Thin"
+msgstr ""
+
 #: uconf.rs_dots_auto
 msgid "Adapt to background"
 msgstr ""

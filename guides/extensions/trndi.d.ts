@@ -15,7 +15,7 @@
  * TypeScript: author a `.ts` file next to this one and compile it to the
  * extensions folder — Trndi itself only loads `.js`:
  *
- *     tsc --target ES2022 --lib ES2023 --strict myextension.ts
+ *     tsc --target ES2022 --lib ES2023 --strict trndi.d.ts myextension.ts
  *
  * Rules for the emitted file:
  * - Keep the manifest block comment (the one with `@name` and `@perms`) as
@@ -213,9 +213,9 @@ declare const Trndi: {
 
   api: TrndiApiInfo;
   permissions: {
-    has(permission: TrndiPermission | string): boolean;
+    has(permission: TrndiPermission): boolean;
     /** Throws unless the permission is granted; returns true otherwise. */
-    require(permission: TrndiPermission | string): true;
+    require(permission: TrndiPermission): true;
   };
   data: {
     /** Current reading, or false when none is available. */

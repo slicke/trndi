@@ -57,6 +57,7 @@ type
     procedure TestManifestMustStartTheFile;
     procedure TestUtf8BomIsAccepted;
     procedure TestUseStrictPrologueIsSkipped;
+    procedure TestBlankLineAfterPrologueIsRejected;
   end;
 
 implementation
@@ -196,6 +197,32 @@ begin
     '/* @name Too late */');
   AssertEquals('code between prologue and manifest still disqualifies it',
     '', manifest.DisplayName);
+end;
+
+procedure TExtensionManifestTests.TestBlankLineAfterPrologueIsRejected;
+var
+  manifest: TExtManifest;
+begin
+  // The prologue excuses exactly one line ending. Two in a row is a blank
+  // line before the manifest, which disqualifies it just as it would in a
+  // file without a prologue - for LF, CRLF and CR alike.
+  manifest := ParseExtManifest('"use strict";'#10#10'/* @name Too late */');
+  AssertEquals('blank LF line after prologue disqualifies the manifest',
+    '', manifest.DisplayName);
+
+  manifest := ParseExtManifest('"use strict";'#13#10#13#10'/* @name Too late */');
+  AssertEquals('blank CRLF line after prologue disqualifies the manifest',
+    '', manifest.DisplayName);
+
+  manifest := ParseExtManifest('"use strict";'#13#13'/* @name Too late */');
+  AssertEquals('blank CR line after prologue disqualifies the manifest',
+    '', manifest.DisplayName);
+
+  // A single line ending of any flavour remains fine.
+  manifest := ParseExtManifest('"use strict";'#13'/* @name CR only */');
+  AssertEquals('single CR after prologue accepted', 'CR only', manifest.DisplayName);
+  manifest := ParseExtManifest('"use strict";'#10'/* @name LF only */');
+  AssertEquals('single LF after prologue accepted', 'LF only', manifest.DisplayName);
 end;
 
 initialization

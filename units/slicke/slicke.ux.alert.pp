@@ -4519,10 +4519,16 @@ begin
     end;
 
     rowTop := padding;
-    // The expand button occupies the panel's top-left corner. A centered row
-    // clears it, but a full-width stacked one would be drawn straight over it.
-    if stackButtons and Assigned(Dialog.LogExpandButton) then
-      rowTop := Dialog.LogExpandButton.Top + Dialog.LogExpandButton.Height + padding;
+    // The expand button occupies the panel's top-left corner. A full-width
+    // stacked row would be drawn straight over it, and so would a centered
+    // row whose left edge (the same Max(..., padding) BuildButtonRow uses)
+    // lands on it - the dialog is only guaranteed to be as wide as the row
+    // plus one padding per side. Drop the row below the button in both cases.
+    if Assigned(Dialog.LogExpandButton) then
+      if stackButtons or
+        (Max((Dialog.ClientWidth - totalBtnWidth) div 2, padding) <
+        Dialog.LogExpandButton.Left + Dialog.LogExpandButton.Width + padding) then
+        rowTop := Dialog.LogExpandButton.Top + Dialog.LogExpandButton.Height + padding;
 
     LastBtn := BuildButtonRow(Dialog, ButtonPanel, buttons, size, ADefault,
       ButtonActualWidth, 0, rowTop, padding, stackButtons);

@@ -249,7 +249,12 @@ begin
     Delete(s, 1, prologueLen);
     if (s <> '') and (s[1] = ';') then
       Delete(s, 1, 1);
-    while (s <> '') and (s[1] in [#13, #10]) do
+    // Consume exactly one line ending (CRLF, CR or LF): the prologue excuses
+    // its own line only. A blank line after it is still rejected, as it
+    // would be in a file without one.
+    if Copy(s, 1, 2) = #13#10 then
+      Delete(s, 1, 2)
+    else if (s <> '') and (s[1] in [#13, #10]) then
       Delete(s, 1, 1);
   end;
 
