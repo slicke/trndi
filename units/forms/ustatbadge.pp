@@ -46,9 +46,10 @@ unit ustatbadge;
   "85%" (or a mood emoji) optionally prefixed with the mean as "6.4 | 85%".
 
   Beyond the value and caption a badge can carry an optional mean as its
-  own muted "avg 6.4" part beside the stack, and a thin bar under the text
-  filled to a percentage — shown only while the pointer is over the badge,
-  since always on it pulled the eye away from the reading. The value and bar
+  own muted "avg 6.4" part beside the stack, and a thin upright bar on the
+  outer edge filled from the bottom to a percentage — shown only while the
+  pointer is over the badge, since always on it pulled the eye away from the
+  reading. The value and bar
   take an accent colour the form picks (good/bad tint, contrast-lifted) or
   the plain text colour otherwise. Alignment says which edge the stack hugs.
 
@@ -92,7 +93,7 @@ type
     procedure SetShowBar(AValue: boolean);
     procedure SetAlignment(AValue: TAlignment);
     procedure Measure(ACanvas: TCanvas; availW: integer; out valueW, valueH,
-      capPx, capW, capH, meanPx, meanW, meanH, gap, barH, barGap, totalW,
+      capPx, capW, capH, meanPx, meanW, meanH, gap, barW, barGap, totalW,
       totalH: integer; out showMeanCaption, showMean: boolean);
   protected
     procedure Paint; override;
@@ -148,8 +149,8 @@ const
   MEAN_RATIO = 0.62;        // Mean font height as a fraction of the value font
   WORD_GAP_RATIO = 0.4;     // Space between the mean and the stack, per value font px
   CAPTION_TUCK = 0.18;      // How far the caption rides up into the value's descender space
-  BAR_RATIO = 0.16;         // Bar height as a fraction of the value text height
-  BAR_GAP_RATIO = 0.12;     // Space between caption and bar, likewise
+  BAR_RATIO = 0.16;         // Bar thickness as a fraction of the value text height
+  BAR_GAP_RATIO = 0.12;     // Space between the stack and the bar, likewise
 
 constructor TStatBadge.Create(AOwner: TComponent);
 begin
@@ -267,7 +268,7 @@ end;
 // is a fixed fraction of the value font. When the row would exceed availW
 // (> 0), the "avg" word goes first and then the mean itself.
 procedure TStatBadge.Measure(ACanvas: TCanvas; availW: integer; out valueW, valueH,
-  capPx, capW, capH, meanPx, meanW, meanH, gap, barH, barGap, totalW,
+  capPx, capW, capH, meanPx, meanW, meanH, gap, barW, barGap, totalW,
   totalH: integer; out showMeanCaption, showMean: boolean);
 var
   valuePx, lo, hi, mid, meanOnlyW, meanCapW: integer;
@@ -284,6 +285,10 @@ var
     totalW := valueW;
     if meanW > 0 then
       totalW := totalW + meanW + gap;
+    // The bar's column is always reserved so the badge doesn't jump when
+    // it appears on hover.
+    if FShowBar then
+      totalW := totalW + barGap + barW;
   end;
 
 begin
@@ -335,7 +340,7 @@ begin
       meanCapW := ACanvas.TextWidth(FMeanCaption + ' ');
   end;
 
-  barH := Max(2, Round(valueH * BAR_RATIO));
+  barW := Max(2, Round(valueH * BAR_RATIO));
   barGap := Max(1, Round(valueH * BAR_GAP_RATIO));
 
   showMean := FMeanText <> '';
@@ -352,17 +357,16 @@ begin
     Total;
   end;
 
+  // The bar stands beside the stack, as tall as it, so it adds no height.
   totalH := valueH;
   if capH > 0 then
     totalH := totalH + capH - Round(valueH * CAPTION_TUCK);
-  if FShowBar then
-    totalH := totalH + barGap + barH;
 end;
 
 procedure TStatBadge.PreferredSize(ACanvas: TCanvas; AvailWidth: integer;
   out AWidth, AHeight: integer);
 var
-  valueW, valueH, capPx, capW, capH, meanPx, meanW, meanH, gap, barH, barGap: integer;
+  valueW, valueH, capPx, capW, capH, meanPx, meanW, meanH, gap, barW, barGap: integer;
   showMeanCaption, showMean: boolean;
 begin
   if FValueText = '' then
@@ -372,15 +376,15 @@ begin
     Exit;
   end;
   Measure(ACanvas, AvailWidth, valueW, valueH, capPx, capW, capH, meanPx, meanW,
-    meanH, gap, barH, barGap, AWidth, AHeight, showMeanCaption, showMean);
+    meanH, gap, barW, barGap, AWidth, AHeight, showMeanCaption, showMean);
 end;
 
 procedure TStatBadge.Paint;
 var
-  valueW, valueH, capPx, capW, capH, meanPx, meanW, meanH, gap, barH, barGap,
+  valueW, valueH, capPx, capW, capH, meanPx, meanW, meanH, gap, barW, barGap,
   totalW, totalH: integer;
   showMeanCaption, showMean: boolean;
-  stackX, x, capY, barTop, fillW: integer;
+  stackX, x, capY, barX, barCol, fillH: integer;
 begin
   inherited Paint;
   if (FValueText = '') or (Width <= 0) or (Height <= 0) then
@@ -389,14 +393,24 @@ begin
   Canvas.Brush.Style := bsClear;
   // Fit to the box the layout gave us: the same shedding PreferredSize did.
   Measure(Canvas, Width, valueW, valueH, capPx, capW, capH, meanPx, meanW, meanH,
-    gap, barH, barGap, totalW, totalH, showMeanCaption, showMean);
+    gap, barW, barGap, totalW, totalH, showMeanCaption, showMean);
 
-  // The stack hugs the edge of the box the badge sits against: a shorter
+  // The stack hugs the edge of the box the badge sits against, with the
+  // bar's column (reserved even while hidden) on its outer side: a shorter
   // text keeps its outer edge put. The mean sits on the inner side.
+  barCol := 0;
+  if FShowBar then
+    barCol := barGap + barW;
   if FAlignment = taLeftJustify then
-    stackX := 0
+  begin
+    barX := 0;
+    stackX := barCol;
+  end
   else
-    stackX := Width - valueW;
+  begin
+    barX := Width - barW;
+    stackX := Width - barCol - valueW;
+  end;
 
   // The percentage, in the value font and the accent colour.
   Canvas.Font.Assign(Font);
@@ -433,22 +447,21 @@ begin
     Canvas.TextOut(x, valueH - meanH, FMeanText);
   end;
 
-  // The bar, on hover only and only where wanted: a track as wide as the
-  // stack, filled from the left to the percentage. An unmeasured window (-1)
-  // shows an empty track. Its row is always reserved so the badge doesn't
-  // jump when it appears.
+  // The bar, on hover only and only where wanted: an upright track as tall
+  // as the stack on its outer edge, filled from the bottom up to the
+  // percentage like a level gauge. An unmeasured window (-1) shows an empty
+  // track.
   if not (FHover and FShowBar) then
     Exit;
-  barTop := Height - barH;
   Canvas.Brush.Style := bsSolid;
   Canvas.Pen.Style := psClear;
   Canvas.Brush.Color := FTrackColor;
-  Canvas.FillRect(stackX, barTop, stackX + valueW, Height);
+  Canvas.FillRect(barX, 0, barX + barW, Height);
   if FPercent > 0 then
   begin
-    fillW := Round(valueW * Min(FPercent, 100) / 100);
+    fillH := Round(Height * Min(FPercent, 100) / 100);
     Canvas.Brush.Color := FAccentColor;
-    Canvas.FillRect(stackX, barTop, stackX + fillW, Height);
+    Canvas.FillRect(barX, Height - fillH, barX + barW, Height);
   end;
   Canvas.Brush.Style := bsClear;
   Canvas.Pen.Style := psSolid;

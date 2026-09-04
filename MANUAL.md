@@ -259,8 +259,9 @@ sugar has been in your target range: the percentage with a small `in range`
 caption under it. With *Show mean* on, the average over the same window sits
 to its left as `avg 6.4`. The percentage turns green once you are above the
 good threshold and red below the bad one; in between it stays in the quiet
-sub-text colour. Hover over the badge to see a thin bar filled to the same
-share, and click it to see the window it covers and the limits it uses. In a
+sub-text colour. Hover over the badge to see a thin upright bar on its right
+edge filled from the bottom to the same share, and click it to see the window
+it covers and the limits it uses. In a
 narrow window the `avg` word and then the mean give way so the percentage
 always fits.
 - **Good**: Above 70% in range
