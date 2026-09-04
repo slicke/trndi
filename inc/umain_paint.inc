@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: FormPaint anchors the threshold lines on the layout pass's
+ *   FTrendDotDiameter instead of probing the removed per-dot controls.
  * - 2026-08-21: The shutdown screen's accent gradients call Classes.Rect
  *   explicitly - on Darwin, MacOSAll's QuickDraw Rect type shadows the RTL
  *   function, which broke the macOS build.
@@ -44,15 +46,6 @@
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
 *)
-
-// MacOSAll exports a classic-Mac `Point` record type that shadows
-// Types.Point(x, y), turning `Point(a, b)` into a one-arg type cast and
-// breaking the build on Darwin. MkPoint sidesteps the name clash.
-function MkPoint(AX, AY: integer): TPoint; inline;
-begin
-  Result.X := AX;
-  Result.Y := AY;
-end;
 
 // Draw a warning-triangle vector glyph (equilateral triangle with rounded tip
 // and a centered exclamation bar+dot). Replaces the previous "⚠️" emoji in
@@ -273,7 +266,7 @@ begin
 
     // For wsSoon, pulse the tint between base orange and a brighter shade on a
     // 2-second cadence. Driven by tProgressTimer; mirrors the alternation
-    // pattern already used in pnNextProgressPaint for overdue readings.
+    // pattern already used in pbNextProgressPaint for overdue readings.
     if FWarnSeverity = wsSoon then
     begin
       if (SecondOf(Now) mod 2) = 0 then
@@ -566,11 +559,9 @@ begin
   cnv.FillRect(0, 0, Self.ClientWidth, Self.ClientHeight);
   {$endif}
 
-  if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) and
-    Assigned(TrendDots[1].Parent) then
-    clientH := TrendDots[1].Parent.ClientHeight
-  else
-    clientH := Self.ClientHeight;
+  // The dots render on the client-sized trend surface, so the form's own
+  // client height is the value axis they share.
+  clientH := Self.ClientHeight;
 
   // High contrast drops the range overlay, and the range overlay can be turned
   // off entirely -- but the guide lines are their own menu item, so they still
@@ -582,11 +573,9 @@ begin
     Exit;
   end;
 
-  dotHeight := 0;
-  if (Length(TrendDots) > 1) and Assigned(TrendDots[1]) then
-    // Drawn dots are sized as a square in ResizeDot; the control's Height
-    // *is* the diameter, so we can read it directly.
-    dotHeight := Max(TrendDots[1].Height, TrendDots[1].Font.Size);
+  // The uniform history-dot diameter of the last layout pass; 0 until the
+  // first pass has run.
+  dotHeight := FTrendDotDiameter;
 
   // ValueToY returns the dot *center*; threshold lines and band edges need to
   // sit at the dot bottom so a dot whose value equals the threshold rests
@@ -800,83 +789,215 @@ begin
   end;
 end;
 
+// Shared state computation for the progress bar: the paint handler needs it
+// to draw, tProgressTimer needs it (via ProgressFrameChanged) to decide whether
+// drawing would change anything, and StartProgressDrain needs it to know the
+// level a fresh reading resets the bar to.
+//
+// The bar is two parallel lines on a shared time scale of one refresh cycle
+// each: the primary line fills over the cycle the scheduler targets (full
+// exactly when the next fetch fires), then the overtime line fills over a
+// second cycle-length — the retry window. Both are strictly monotone; v1's
+// stretched-scale-plus-marker rework of the level on every reschedule read as
+// the gauge running backwards.
+procedure TfBG.ComputeProgressState(out AFrac1, AFrac2: double;
+  out APulsing, ADraining: boolean);
+const
+  DRAIN_MS = 400;             // length of the reading-arrival drain animation
+var
+  elapsedMs, spanMs: int64;
+  total, t: double;
+begin
+  ADraining := false;
+
+  // Signed on purpose: MilliSecondsBetween is Abs()-based, which turns a
+  // future-dated reading (uploader clock ahead of ours — the same skew
+  // TrndiAPI.timeDiff exists for) into a large positive "age" and pegs the bar
+  // full. Subtracting directly keeps the sign so the clamp below can catch it.
+  elapsedMs := Round((Now - lastReading.date) * MSecsPerDay);
+  if elapsedMs < 0 then
+    elapsedMs := 0;
+
+  // Count the cycle the scheduler *targets*: BG_REFRESH plus the resync padding
+  // SetNextUpdateTimer adds to give the CGM time to report. A flat BG_REFRESH
+  // leaves the primary line pegged full through that padding every cycle.
+  spanMs := BG_REFRESH + REFRESH_RESYNC_BUFFER_MS;
+
+  // Combined progress on a 0..2 scale: 0..1 is the primary line, 1..2 the
+  // overtime line. Once both are full the bar breathes until a reading lands —
+  // no extra grace: the whole second line *was* the grace.
+  total := Min(2.0, elapsedMs / spanMs);
+  APulsing := total >= 2.0;
+
+  // Reading-arrival drain: instead of snapping from full to empty between two
+  // frames, ease from the level last painted down to the fresh level. The
+  // eased fraction converges on the real one, so the animation can never
+  // leave the bar out of sync with the schedule. Run on the combined scale,
+  // the drain empties the overtime line first, then the primary — the fill
+  // order in reverse.
+  if FProgressDrainFrom > 0 then
+  begin
+    t := (GetTickCount64 - FProgressDrainStart) / DRAIN_MS;
+    if t >= 1.0 then
+      FProgressDrainFrom := 0
+    else
+    begin
+      t := 1 - (1 - t) * (1 - t) * (1 - t);   // ease-out cubic
+      total := FProgressDrainFrom + (total - FProgressDrainFrom) * t;
+      ADraining := true;
+    end;
+  end;
+
+  AFrac1 := Min(1.0, total);
+  AFrac2 := Max(0.0, total - 1.0);
+end;
+
+// Fill colour: teal for most of the cycle → amber as the reading falls due →
+// pomegranate once it is late. The teal stage only brightens as it rises;
+// blending teal straight into amber across the whole cycle would spend
+// minutes in the muddy olive midpoint the two colours share.
+function TfBG.ProgressFillColor(const AFrac: double; const APulsing: boolean): TColor;
+const
+  WARM_FROM = 0.90;     // fraction at which the fill starts warming toward amber
+  PULSE_MS  = 1600;     // one full breath while the reading is overdue
+var
+  warmth, pulse: double;
+begin
+  if APulsing then
+  begin
+    // Breathe rather than flash: tProgressTimer speeds up while a reading is
+    // overdue, so this ramp is sampled often enough to read as continuous.
+    pulse := 0.5 - 0.5 * cos(2 * Pi * ((GetTickCount64 mod PULSE_MS) / PULSE_MS));
+    Result := BlendColors(RGBToColor(255, 105, 66), RGBToColor(183, 47, 36), pulse);
+  end
+  else if AFrac >= WARM_FROM then
+  begin
+    warmth := (AFrac - WARM_FROM) / (1.0 - WARM_FROM);
+    warmth := warmth * warmth * (3 - 2 * warmth);   // ease through the mixed shades
+    Result := BlendColors(RGBToColor(230, 126, 34), RGBToColor(42, 182, 166), warmth);
+  end
+  else
+    Result := BlendColors(RGBToColor(42, 182, 166), RGBToColor(34, 138, 138),
+      AFrac / WARM_FROM);
+end;
+
+// Colour of the overtime line — the retry window. Kept in the overdue palette
+// so it reads as "the late part", distinct from the primary line's cycle
+// colours. Steady mid-tone while it is still filling, the breathing blend once
+// both lines are full (the pulse ramp is the same one ProgressFillColor uses).
+function TfBG.ProgressOvertimeColor(const APulsing: boolean): TColor;
+begin
+  if APulsing then
+    Result := ProgressFillColor(1.0, true)
+  else
+    Result := BlendColors(RGBToColor(255, 105, 66), RGBToColor(183, 47, 36), 0.5);
+end;
+
+// Whether repainting the bar now would produce different pixels than the
+// frame pbNextProgressPaint last recorded. At 1 Hz the fill often moves less
+// than a pixel between ticks, so tProgressTimer uses this to skip repaints
+// that would reproduce the same image. Pulse and drain frames always differ.
+function TfBG.ProgressFrameChanged: boolean;
+var
+  frac1, frac2: double;
+  pulsing, draining: boolean;
+  span: integer;
+begin
+  if (bgs = nil) or (Length(bgs) = 0) then
+    Exit(false);
+  // A resize since the last full frame means what is on screen may be partial:
+  // widgetsets only redraw the newly exposed region when a control grows, so
+  // pixels from the old scale can survive next to the new ones (the boot-time
+  // layout does several such resizes). Force one full redraw per size. Recorded
+  // here and not in the paint handler — a system-triggered partial paint runs
+  // the same handler, and must not count as having covered the new size.
+  if (pbNextProgress.Width <> FProgressPaintedW) or
+     (pbNextProgress.Height <> FProgressPaintedH) then
+  begin
+    FProgressPaintedW := pbNextProgress.Width;
+    FProgressPaintedH := pbNextProgress.Height;
+    Exit(true);
+  end;
+  ComputeProgressState(frac1, frac2, pulsing, draining);
+  if pulsing or draining then
+    Exit(true);
+  // Same quantisation the paint records, so equal values mean equal frames.
+  span := pbNextProgress.Height - 2 * Max(1, pbNextProgress.Width div 10);
+  Result := (Round(frac1 * span) <> FProgressPaintedLvl1) or
+    (Round(frac2 * span) <> FProgressPaintedLvl2) or
+    (ProgressFillColor(frac1, false) <> FProgressPaintedColor);
+end;
+
+// Called from SetNextUpdateTimer when a fresh reading has landed: arm the
+// drain animation from the level the bar last showed. Skipped when the drop
+// is too small to read as motion (a re-applied unchanged reading, or a bar
+// that was nearly empty anyway).
+procedure TfBG.StartProgressDrain;
+var
+  frac1, frac2: double;
+  pulsing, draining: boolean;
+begin
+  if not (Assigned(pbNextProgress) and pbNextProgress.Visible) then
+    Exit;
+  FProgressDrainFrom := 0;   // measure the fresh level, not a still-running drain
+  ComputeProgressState(frac1, frac2, pulsing, draining);
+  if FProgressPaintedFrac < frac1 + frac2 + 0.05 then
+    Exit;
+  FProgressDrainFrom := FProgressPaintedFrac;
+  FProgressDrainStart := GetTickCount64;
+  // Queue the first frame rather than painting synchronously — this runs mid
+  // fetch-apply, before DeferredPostFetchResize has laid the panel out, and a
+  // forced paint at stale geometry would be wasted. The fast interval keeps
+  // the frames coming even when the timer is enabled slightly later on the
+  // fetch path (FinalizeUpdate).
+  if Assigned(tProgress) then
+    tProgress.Interval := PROGRESS_DRAIN_TICK_MS;
+  pbNextProgress.Invalidate;
+end;
+
 // Paint handler for the left-side "next reading" progress indicator.
 //
-// The indicator is a capsule-shaped tube that fills from the bottom as the next
-// reading approaches. Every pixel column is derived from the capsule's own
-// geometry instead of from Canvas.RoundRect: no widgetset gives us an
-// anti-aliased rounded rect — let alone a gradient clipped to one — so the caps
-// would be visibly stepped and the fill would push square corners out past the
-// rounded outline. Columns are emitted as vertical runs of equal colour, which
-// keeps a repaint at a few dozen FillRects rather than a per-pixel loop.
-procedure TfBG.pnNextProgressPaint(Sender: TObject);
-const
-  WARM_FROM  = 0.90;    // fraction at which the fill starts warming toward amber
-  MENISCUS_H = 2;       // px of bright surface line drawn on top of the liquid
-  SHADOW_H   = 6.0;     // px of contact shadow where the liquid meets the cap
-  PULSE_MS   = 1600;    // one full breath while the reading is overdue
-  OVERDUE_GRACE_MS = 60000;  // grace past the due time before the tube pulses
+// Two parallel vertical lines on recessed tracks, both filling bottom-up:
+// the wider primary line covers one refresh cycle (full exactly when the
+// next fetch fires), the slimmer overtime line beside it covers the retry
+// window after that. The overtime line is only drawn once it holds some fill —
+// during a normal cycle a permanently visible empty second channel just begs
+// the question of what it is for; its slot stays reserved so nothing shifts
+// when it appears. Flat FillRects only — the lines are a few pixels wide, so
+// any capsule/shading treatment just reads as noise at this size.
+procedure TfBG.pbNextProgressPaint(Sender: TObject);
 var
-  pnl: TPanel;
+  box: TPaintBox;
   cvs: TCanvas;
-  bgCol, trackCol, fillCol, runCol, rowCol: TColor;
-  elapsedMs, spanMs: int64;
-  frac, warmth, pulse: double;
-  trackW, cx, rad, dx, dy, capTop, capBot, xn, shade, lvlTop, lvlBot, cov: double;
-  m, w, h, x, y, runTop: integer;
+  bgCol, trackCol, fillCol, overCol: TColor;
+  frac1, frac2: double;
+  pulsing, draining: boolean;
+  m, w, h, span, iw, w1, w2: integer;
 
-  function Shaded(base: TColor; amt: double): TColor;
-  begin
-    if amt >= 0 then
-      Result := LightenColor(base, amt)
-    else
-      Result := DarkenColor(base, 1.0 + amt);
-  end;
-
-  // Colour of the tube at row yy of the column being painted, before the
-  // capsule's edge coverage is applied.
-  function SurfaceAt(yy: integer): TColor;
+  // One line: recessed track over the full span, fill from the bottom.
+  procedure DrawLine(x0, lineW: integer; const frac: double; col: TColor);
   var
-    below, depth: double;
+    lvl: integer;
   begin
-    // How much of this pixel row sits below the liquid surface
-    below := Min(1.0, Max(0.0, (yy + 1) - lvlTop));
-    if below <= 0 then
-      // Empty part of the tube: a hair darker down the middle, so the channel
-      // reads as recessed rather than as a flat stripe.
-      Exit(Shaded(trackCol, -0.06 * exp(-sqr(xn - 0.5) / 0.10)));
-
-    depth := Min(1.0, Max(0.0, (lvlBot - yy) / Max(1.0, lvlBot - lvlTop)));
-    Result := BlendColors(LightenColor(fillCol, 0.10 * depth), fillCol, 0.55);
-    // Contact shadow where the liquid sits in the bottom cap. Kept at a fixed
-    // few pixels: it is a lighting detail, not something that should grow with
-    // the fill — and every distinct row colour costs one more FillRect.
-    if lvlBot - yy < SHADOW_H then
-      Result := DarkenColor(Result, 0.90 + 0.10 * ((lvlBot - yy) / SHADOW_H));
-    if (yy < lvlTop + MENISCUS_H) and (lvlBot - lvlTop > 4) then
-      Result := LightenColor(Result, 0.38);     // bright meniscus at the surface
-    Result := Shaded(Result, shade);
-    if below < 1.0 then                         // the surface row is a blend of both
-      Result := BlendColors(Result, Shaded(trackCol, -0.06), below);
-  end;
-
-  procedure FlushRun(y0, y1: integer; col: TColor);
-  begin
-    if (y0 < 0) or (y1 <= y0) then
-      Exit;
-    cvs.Brush.Color := col;
-    cvs.FillRect(Classes.Rect(x, y0, x + 1, y1));
+    cvs.Brush.Color := trackCol;
+    cvs.FillRect(Classes.Rect(x0, m, x0 + lineW, h - m));
+    lvl := Round(frac * span);
+    if lvl > 0 then
+    begin
+      cvs.Brush.Color := col;
+      cvs.FillRect(Classes.Rect(x0, h - m - lvl, x0 + lineW, h - m));
+    end;
   end;
 
 begin
-  pnl := Sender as TPanel;
-  cvs := pnl.Canvas;
-  w := pnl.Width;
-  h := pnl.Height;
+  box := Sender as TPaintBox;
+  cvs := box.Canvas;
+  w := box.Width;
+  h := box.Height;
   bgCol := fBG.Color;
 
-  // The panel is painted edge to edge every time — the capsule is drawn onto
-  // the window colour, so nothing of the previous frame can survive around it.
+  // The box is painted edge to edge every time — the lines are drawn onto the
+  // window colour, so nothing of the previous frame can survive around them.
   cvs.Brush.Style := bsSolid;
   cvs.Pen.Style := psClear;
   cvs.Brush.Color := bgCol;
@@ -885,109 +1006,48 @@ begin
   if (bgs = nil) or (Length(bgs) = 0) then
     Exit;
 
-  m := Max(1, w div 10);          // margin, so the caps never touch the panel edge
-  trackW := w - 2 * m;
-  if (trackW < 2) or (h < 4 * m) then
+  m := Max(1, w div 10);          // margin, so the lines never touch the box edge
+  iw := w - 2 * m;                // inner width shared by both lines
+  span := h - 2 * m;              // full-fill height of either line
+  if (iw < 3) or (span < 8) then
     Exit;
-  cx := m + trackW / 2;
-  rad := trackW / 2;
+  // The lines sit flush against each other — they describe one continuous
+  // wait, so they should read as one unit. While the overtime line shows, the
+  // primary is always pegged full (amber/red against the recessed track), so
+  // the colours keep the two legible without a gap. The overtime line is a
+  // thin accent stroke beside the bar, not a second bar: overtime is the
+  // exception, and its width should say so.
+  w2 := Max(1, iw div 5);
+  w1 := iw - w2;
 
-  // Signed on purpose: MilliSecondsBetween is Abs()-based, which turns a
-  // future-dated reading (uploader clock ahead of ours — the same skew
-  // TrndiAPI.timeDiff exists for) into a large positive "age" and pegs the tube
-  // full. Subtracting directly keeps the sign so the guard below can catch it.
-  elapsedMs := Round((Now - lastReading.date) * MSecsPerDay);
-  if elapsedMs < 0 then
-    elapsedMs := 0;
-
-  // Count the cycle the scheduler *targets*: BG_REFRESH plus the resync padding
-  // SetNextUpdateTimer adds to give the CGM time to report. A flat BG_REFRESH
-  // leaves the tube pegged full through that padding every single cycle.
-  //
-  // Deliberately not the literal next-fetch time: when a reading lands already
-  // old, SetNextUpdateTimer clamps to a MIN_REFRESH_INTERVAL_MS retry, and
-  // stretching the fill to reach full at that retry would slow the tube down
-  // exactly when data is late — six minutes in and still filling. Late data
-  // should read as full and overdue; the retry countdown belongs to the stale
-  // card, which already shows it.
-  spanMs := BG_REFRESH + REFRESH_RESYNC_BUFFER_MS;
-
-  if spanMs > 0 then
-    frac := Min(1.0, elapsedMs / spanMs)
-  else
-    frac := 1.0;
-  // A minute past the top before the tube starts breathing red — the same grace
-  // as before, now counted from the end of the padded cycle rather than from a
-  // bare BG_REFRESH, so it lands 15 s later than it used to.
-  FProgressPulsing := elapsedMs > spanMs + OVERDUE_GRACE_MS;
+  // Elapsed/span/drain arithmetic lives in ComputeProgressState so the
+  // timer's skip check and the drain trigger see exactly what will be painted.
+  ComputeProgressState(frac1, frac2, pulsing, draining);
+  FProgressPulsing := pulsing;
 
   // Track: a recessed channel, darker than the window on light backgrounds and
-  // lighter on dark ones, so the empty part of the tube stays visible either way.
+  // lighter on dark ones, so the empty part of a line stays visible either way.
   if IsLightColor(bgCol) then
     trackCol := BlendColors(clBlack, bgCol, 0.16)
   else
     trackCol := BlendColors(clWhite, bgCol, 0.10);
 
-  // Fill: teal for most of the cycle → amber as the reading falls due →
-  // pomegranate once it is late. The teal stage only brightens as it rises;
-  // blending teal straight into amber across the whole cycle would spend
-  // minutes in the muddy olive midpoint the two colours share.
-  if FProgressPulsing then
-  begin
-    // Breathe rather than flash: tProgressTimer speeds up while a reading is
-    // overdue, so this ramp is sampled often enough to read as continuous.
-    pulse := 0.5 - 0.5 * cos(2 * Pi * ((GetTickCount64 mod PULSE_MS) / PULSE_MS));
-    fillCol := BlendColors(RGBToColor(255, 105, 66), RGBToColor(183, 47, 36), pulse);
-  end
-  else if frac >= WARM_FROM then
-  begin
-    warmth := (frac - WARM_FROM) / (1.0 - WARM_FROM);
-    warmth := warmth * warmth * (3 - 2 * warmth);   // ease through the mixed shades
-    fillCol := BlendColors(RGBToColor(230, 126, 34), RGBToColor(42, 182, 166), warmth);
-  end
-  else
-    fillCol := BlendColors(RGBToColor(42, 182, 166), RGBToColor(34, 138, 138),
-      frac / WARM_FROM);
+  // Primary carries the cycle colours (teal → amber as the reading falls due);
+  // the overtime line carries the retry red. Once both are full the same
+  // breathing blend takes both over, which is the whole "overdue" signal.
+  fillCol := ProgressFillColor(frac1, pulsing);
+  overCol := ProgressOvertimeColor(pulsing);
 
-  lvlBot := h - m;
-  lvlTop := lvlBot - frac * (h - 2 * m);
+  DrawLine(m, w1, frac1, fillCol);
+  // Same quantisation as the recorded level, so visibility and the frame-skip
+  // gate agree on when the line winks in and out.
+  if Round(frac2 * span) > 0 then
+    DrawLine(m + w1, w2, frac2, overCol);
 
-  for x := 0 to w - 1 do
-  begin
-    dx := (x + 0.5) - cx;
-    if Abs(dx) >= rad then
-      Continue;
-    // Where this column enters and leaves the capsule — the straight sides are
-    // pixel aligned, so only the caps need the circle.
-    dy := sqrt(rad * rad - dx * dx);
-    capTop := (m + rad) - dy;
-    capBot := (h - m - rad) + dy;
-
-    // Soft cylindrical shading: a specular band left of centre, a gentle
-    // falloff to the right, which is what makes the thin bar read as a tube.
-    xn := ((x + 0.5) - m) / trackW;
-    shade := 0.22 * exp(-sqr(xn - 0.30) / 0.07) - 0.18 * Max(0.0, xn - 0.55);
-
-    runTop := -1;
-    runCol := clNone;
-    // Qualified: MacOSAll re-exports C floor/ceil (Double), which would
-    // otherwise shadow Math's Integer-returning versions on macOS.
-    for y := Math.Floor(capTop) to Math.Ceil(capBot) - 1 do
-    begin
-      if (y < 0) or (y >= h) then
-        Continue;
-      cov := Max(0.0, Min(Min(1.0, (y + 1) - capTop), Min(1.0, capBot - y)));
-      if cov <= 0 then
-        Continue;
-      rowCol := SurfaceAt(y);
-      if cov < 1.0 then                  // anti-alias the cap against the window
-        rowCol := BlendColors(rowCol, bgCol, cov);
-      if (runTop >= 0) and (rowCol = runCol) then
-        Continue;
-      FlushRun(runTop, y, runCol);
-      runTop := y;
-      runCol := rowCol;
-    end;
-    FlushRun(runTop, Min(h, Math.Ceil(capBot)), runCol);
-  end;
+  // Record what this frame showed: ProgressFrameChanged compares against these
+  // to skip identical repaints, and StartProgressDrain animates from the total.
+  FProgressPaintedFrac := frac1 + frac2;
+  FProgressPaintedLvl1 := Round(frac1 * span);
+  FProgressPaintedLvl2 := Round(frac2 * span);
+  FProgressPaintedColor := ProgressFillColor(frac1, false);
 end;

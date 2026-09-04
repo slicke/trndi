@@ -57,7 +57,7 @@ interface
 
 uses
 Classes, SysUtils,   // Trndi units
-trndi.types, trndi.api, trndi.native, trndi.funcs.core, {$ifdef debug} trndi.log,{$endif}
+trndi.types, trndi.api, trndi.native, {$ifdef debug} trndi.log, trndi.funcs.core,{$endif}
   // FPC units
 fpjson, jsonparser, dateutils, StrUtils;
 
@@ -234,7 +234,7 @@ DexcomCustom = class(Dexcom);
 
 implementation
 
-uses trndi.api.dexcom_time, trndi.api.dexcom_helpers;
+uses trndi.api.dexcom_helpers;
 
 resourcestring
 sErrDexPass = 'Invalid Dexcom password or account credentials';

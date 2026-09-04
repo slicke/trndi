@@ -51,7 +51,9 @@ athreads,
 {$ENDIF}
 LCLTranslator,
 Interfaces, // this includes the LCL widgetset
-Forms,lazcontrols,trndi.types,trndi.native,
+Forms,lazcontrols,trndi.types,
+trndi.native, // hinted unused on Linux, but called in the {$IFDEF WINDOWS} startup block
+
 {$IFDEF TrndiExt}
 trndi.ext.functions,
 {$ENDIF}
@@ -59,14 +61,8 @@ sysutils,
 {$IFDEF DEBUG}
 trndi.log,
 {$ENDIF}
-trndi.api.dexcom, trndi.api.carelink, trndi.api.debug_faultysensor,
-trndi.api.debug_intermittentmissing, trndi.api.debug_latemissing,
-trndi.api.debug_list,
-trndi.api.debug_lowsoon, trndi.api.debug_perfect, trndi.api.debug_secondmissing,
-trndi.api.debug_sensorexpiry, trndi.api.debug_slow, trndi.api.dexcom_helpers,
-trndi.api.dexcom_time, trndi.api.librelinkup, trndi.api.registry,
-trndi.api.tandem, umain, uconf, ufloat, slicke.ux.alert, buildinfo,
-razer.chroma.factory
+trndi.api.dexcom, trndi.api.carelink, trndi.api.librelinkup, trndi.api.registry,
+umain, ufloat, slicke.ux.alert
 { you can add units after this };
 
 {$R *.res}

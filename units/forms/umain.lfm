@@ -82,25 +82,6 @@ object fBG: TfBG
     OnDblClick = lDiffDblClick
     OnMouseMove = FormMouseMove
   end
-  object lAgo: TLabel
-    Left = 8
-    Height = 20
-    Top = 5
-    Width = 200
-    AutoSize = False
-    BorderSpacing.Bottom = 5
-    Caption = 'lAgo'
-    Color = clWhite
-    Font.Color = clWhite
-    Font.Height = 14
-    OptimalFill = True
-    ParentColor = False
-    ParentFont = False
-    PopupMenu = pmSettings
-    OnClick = lAgoClick
-    OnDblClick = lDiffDblClick
-    OnMouseMove = FormMouseMove
-  end
   object pnMultiUser: TPanel
     Left = 0
     Height = 18
@@ -200,15 +181,6 @@ object fBG: TfBG
     OnClick = lArrowClick
     OnMouseMove = FormMouseMove
   end
-  object lTir: TLabel
-    Left = 88
-    Height = 15
-    Top = 32
-    Width = 76
-    AutoSize = False
-    Caption = 'Time In Range'
-    OnClick = lTirClick
-  end
   object pnOffReading: TPanel
     Left = 0
     Height = 194
@@ -230,18 +202,13 @@ object fBG: TfBG
       Caption = '0,?'
     end
   end
-  object pnNextProgress: TPanel
+  object pbNextProgress: TPaintBox
     Left = 0
     Height = 240
     Top = 0
     Width = 8
     Align = alLeft
-    BevelOuter = bvNone
-    DoubleBuffered = True
-    ParentBackground = False
-    ParentDoubleBuffered = False
-    TabOrder = 7
-    OnPaint = pnNextProgressPaint
+    OnPaint = pbNextProgressPaint
   end
   object bSettings: TButton
     Left = 8
@@ -252,14 +219,6 @@ object fBG: TfBG
     TabOrder = 5
     Visible = False
     OnClick = bSettingsClick
-  end
-  object lPredict: TLabel
-    Left = 224
-    Height = 16
-    Top = 214
-    Width = 62
-    Caption = 'Predictions'
-    OnClick = lPredictClick
   end
   object pnTouchMenu: TPanel
     Left = 16

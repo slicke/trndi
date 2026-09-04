@@ -48,21 +48,21 @@ implementation
 
 uses
 {$IFDEF LINUX}
-razer.chroma.linux,
+razer.chroma.linux
 {$ENDIF}
 {$IFDEF WINDOWS}
-Razer.chroma.windows,
+Razer.chroma.windows
 {$ENDIF}
 {$IFDEF DARWIN}
-Razer.chroma.mac,
+Razer.chroma.mac
 {$ENDIF}
 {$IFDEF HAIKU}
-Razer.chroma.linux,
+Razer.chroma.linux
 {$ENDIF}
 {$IF DEFINED(BSD) AND NOT DEFINED(DARWIN)}
-Razer.chroma.bsd,
+Razer.chroma.bsd
 {$ENDIF}
-StrUtils;
+;
 
 class function TRazerChromaFactory.CreateInstance: TRazerChromaBase;
 begin

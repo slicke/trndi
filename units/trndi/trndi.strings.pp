@@ -35,6 +35,9 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-08-27): Added RS_UNHANDLED_ERROR and
+   RS_UNHANDLED_ERROR_DESC for the unhandled-exception dialog shown by
+   TfBG.AppExceptionHandler. *)
 
 unit trndi.strings;
 
@@ -56,6 +59,8 @@ RS_RANGE_HI_UNSUPPORTED = 'Hi range not supported by API';
 RS_RANGE_LO_UNSUPPORTED = 'Lo range not supported by API';
 
   // Error messages
+RS_UNHANDLED_ERROR = 'Trndi hit an unexpected error';
+RS_UNHANDLED_ERROR_DESC = 'The app keeps running, but what''s on screen may lag behind until the next reading arrives. The details below are useful in a bug report.';
 RS_SETUP = 'Setup';
 RS_NO_BACKEND = 'No readings received.'+sLineBreak+sLineBreak+'Has your CGM synced recently? '+sLineBreak+'Is the remote server working?';
 RS_LAST_RECIEVE = 'Last reading was %s (%s)';
@@ -180,6 +185,10 @@ RS_HISTORY_ITEM = '» Selected Reading: %s'+sLineBreak+'Δ Difference: %s'+sLine
 
 RS_PREDICTIONS_UNAVAILABLE = 'Predictions unavailable';
 RS_PREDICTIONS_STABLE = 'No change predicted →';
+RS_PREDICT_HEADER = '+%d min'; // Countdown header over each forecast cell
+RS_TIR_CAPTION = 'in range'; // Muted caption before the time-in-range percentage
+RS_TIR_MEAN_CAPTION = 'avg'; // Muted caption before the mean shown with it
+RS_AGO_TIME_CAPTION = 'last reading'; // Muted caption under the reading time ("14:35")
 RS_PREDICTION_CONFIDENCE = 'Prediction confidence: %.0f%%'+sLineBreak+sLineBreak+'This score shows how cleanly the recent readings fit the trend model. Low values mean the data was noisy or contained outliers, so the forecast is less reliable than usual.';
 
 RS_CUSTOM_DOTS = 'Custom Size [%.2f]';
@@ -376,6 +385,14 @@ RS_WIZARD_THRESH_BODY =
   'These defaults are a common starting point — adjust to match your personal targets.';
 RS_WIZARD_THRESH_HI   = 'High alert';
 RS_WIZARD_THRESH_LO   = 'Low alert';
+RS_WIZARD_PROGRESS_HEAD = 'Refresh countdown';
+RS_WIZARD_PROGRESS_BODY =
+  'Trndi can show a slim bar along the left edge of the window that fills up ' +
+  'as the next reading approaches. If a reading runs late, a second line ' +
+  'beside it fills while Trndi retries.' +
+  sLineBreak + sLineBreak +
+  'You can change this later via right-click → Settings.';
+RS_WIZARD_PROGRESS_CHECK = 'Show the refresh countdown bar';
 
 implementation
 

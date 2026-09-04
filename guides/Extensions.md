@@ -109,8 +109,10 @@ the established bridge methods internally, but legacy global network shortcuts
 
 # Extension manifest
 Each extension may begin with a `/* ... */` manifest comment. It must be the
-first content in the file; a UTF-8 byte-order mark (BOM) is allowed, but do not
-put a blank line, a `//` comment, or a shebang before it. The manifest supplies
+first content in the file; a UTF-8 byte-order mark (BOM) and a single
+compiler-emitted `"use strict";` line (TypeScript and Babel prepend one) are
+allowed before it, but do not put a blank line, a `//` comment, or a shebang
+first. The manifest supplies
 the name shown by Trndi, copyright details, and requested permissions.
 
 Use explicit directives for new extensions:
@@ -154,6 +156,44 @@ at all — it does not warn, the extension simply loads with no name, no
 copyright and no permissions, and any promptable function fails at runtime with
 `ReferenceError: fetch is not defined` (or similar). See
 [Migrating older extensions](#migrating-older-extensions) below.
+
+# TypeScript and editor type checking
+
+The full extension API is described by a TypeScript declaration file,
+[extensions/trndi.d.ts](extensions/trndi.d.ts). It covers the `Trndi.*`
+methods, the v2 facade (`Trndi.data`, `Trndi.net`, `Trndi.storage`,
+`Trndi.on`), and the engine's globals (`console`, timers, `runCMD`,
+`setLimits`, `URL`, `crypto`, ...).
+
+**Type checking plain JavaScript.** Copy `trndi.d.ts` into your extensions
+folder and add a `jsconfig.json` next to it:
+
+```json
+{ "compilerOptions": { "checkJs": true, "target": "ES2022", "lib": ["ES2023"] } }
+```
+
+Editors such as VS Code then autocomplete and type-check the Trndi API inside
+your `.js` extensions — no build step involved.
+
+**Writing extensions in TypeScript.** Trndi itself only loads `.js`, but the
+engine runs modern JavaScript (ES2023), so a TypeScript extension is just a
+compile away:
+
+```bash
+tsc --target ES2022 --lib ES2023 --strict trndi.d.ts myextension.ts
+```
+
+Rules for the compiled file:
+
+- Keep the manifest comment as the very first thing in the `.ts` source; tsc
+  preserves leading comments by default (do not enable `removeComments`), and
+  Trndi tolerates the `"use strict";` line tsc prepends to the output.
+- Do not use `import`/`export` — extensions are evaluated as plain global
+  scripts, so a module-shaped file will not run. Use `lib: ["ES2023"]`
+  without `"DOM"`; the DOM library declares browser APIs (like a global
+  `fetch` and `document`) that do not exist in Trndi.
+- Types are erased at compile time: they help while writing, but values from
+  outside (settings, HTTP responses) still need runtime checks.
 
 # Async code and top-level await
 Extensions can use `await` directly at the top level of the script — when a

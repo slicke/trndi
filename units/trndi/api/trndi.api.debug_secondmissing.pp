@@ -49,7 +49,7 @@ unit trndi.api.debug_secondmissing;
 interface
 
 uses
-Classes, SysUtils, trndi.types, trndi.api, trndi.native, trndi.funcs.core,
+Classes, SysUtils, trndi.types,
 fpjson, jsonparser, dateutils, trndi.api.debug;
 
 type

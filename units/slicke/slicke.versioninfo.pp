@@ -16,7 +16,7 @@ Classes, SysUtils
 {$IFDEF WINDOWS}, Windows{$ENDIF},
 {$IFDEF FPC}
   // FCL units for version information
-fileinfo, versiontypes, versionresource
+fileinfo, versionresource
 {$ENDIF};
 
 function GetProductVersion(const def: string): string;

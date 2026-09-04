@@ -36,6 +36,28 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: Trend/prediction dot state moved into a proper model
+ *   (TDotKind/TTrendSlot, TrendSlots/PredictionSlots, FDotsExpanded). The
+ *   old encoding — sentinel control chars in Caption, the value as a locale
+ *   string in Hint, the time as H*100+M in Tag, the range color in
+ *   Font.Color, FPredictionLow — is retired.
+ * - 2026-08-27 (second pass): The per-dot TPaintBox controls, the lDot1..10
+ *   aliases, TTrendProc/actOnTrend and the control-based layout helpers are
+ *   gone. The whole trend renders on one client-sized TTrendSurface that is
+ *   mouse-transparent outside the dots (CM_HITTEST); UpdateTrendDots computes
+ *   the layout (FTrendLayout/FPredictLayout) in one pass and interaction goes
+ *   through DotHitAt. The surface's Hint carries the hover tooltip.
+ * - 2026-08-27: ShutdownBackgroundThreads no longer sets FreeOnTerminate on
+ *   a worker that outlived its shutdown wait: the RTL latches that flag
+ *   before publishing Finished, so the write could miss the latch. The
+ *   detached worker object is now leaked deliberately (the process is
+ *   exiting), matching how FormDestroy already leaks api/native on detach.
+ * - 2026-08-27: FApiCallInFlight's comment now documents that the prediction
+ *   worker runs outside the flag and is guarded separately in the Request*
+ *   methods (see umain_glucose).
+ * - 2026-08-27: AppExceptionHandler is no longer a silent no-op; TfBG gains
+ *   FLastExceptionMsg/FExceptionDialogActive so the handler can log every
+ *   unhandled exception and show each distinct one once (see umain_helpers).
  * - 2026-08-21: isWSL is declared unconditionally (default false) now that
  *   DetectWSL is part of the native base contract - Qt6 builds outside
  *   Linux/BSD (Haiku) reference it in umain_timers.
@@ -60,11 +82,11 @@ unit umain;
 interface
 
 uses
-trndi.strings, LCLTranslator, Classes, Menus, SysUtils, Forms, Controls,
+trndi.strings, LCLTranslator, Types, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
-trndi.api.dexcom, trndi.api.dexcomNew, trndi.api.tandem, trndi.api.carelink, trndi.api.nightscout, trndi.api.nightscout3, trndi.types,
+trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow,
+slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow, upredictionstrip, ustatbadge,
 Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
@@ -98,7 +120,7 @@ BaseUnix,
 winsock,
 {$endif}
 LazFileUtils, uconf, uwizard, trndi.native, Trndi.API, trndi.api.registry,
-trndi.api.xDrip,{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing,{$endif}
+{$ifdef DEBUG} trndi.api.debug_custom, trndi.api.debug, trndi.api.debug_edge, trndi.api.debug_lowsoon, trndi.api.debug_sensorexpiry, trndi.api.debug_missing, trndi.api.debug_firstXmissing, trndi.api.debug_intermittentmissing, trndi.api.debug_perfect, trndi.api.debug_firstmissing, trndi.api.debug_secondmissing, trndi.api.debug_slow, trndi.api.debug_faultysensor, trndi.api.debug_latemissing,{$endif}
 {$ifdef LCLQt6}Qt6, QtWidgets,{$endif}
 StrUtils, slicke.touchdetection, ufloat, uhistorygraph, LCLType, trndi.webserver.threaded, razer.chroma.factory, razer.chroma,
 trndi.alert.engine,
@@ -226,7 +248,22 @@ protected
 public
   constructor Create(AOwner: TfBG; ShowUpToDateMessage: boolean);
 end;
-TDotControl = TPaintBox;
+  // Single paint surface for the whole trend: every history/prediction dot is
+  // drawn onto this one client-sized control instead of one TPaintBox per dot.
+  // It sits above the labels (so the trace overlays the digits, as the per-dot
+  // controls did) but is transparent to the mouse everywhere except over a
+  // dot: LCL's ControlAtPos consults CM_HITTEST per control, so returning
+  // "miss" outside the dots leaves every label/form handler (window drag on
+  // lVal, the explain-clicks, the popup menu) untouched.
+TSurfaceHitTest = function(const P: TPoint): boolean of object;
+TTrendSurface = class(TPaintBox)
+private
+  FOnHitTest: TSurfaceHitTest;
+protected
+  procedure CMHitTest(var Message: TCMHitTest); message CM_HITTEST;
+public
+  property OnHitTest: TSurfaceHitTest read FOnHitTest write FOnHitTest;
+end;
   // Severity of an active warning. Drives panel layout, colors, and opacity.
   // wsInfo:     soft prediction (look-ahead, > 3 min)        — slim amber banner
   // wsSoon:     imminent prediction (≤ 3 min)                — slim orange banner with pulse
@@ -246,10 +283,6 @@ TWarnLayout = (wlBanner, wlStatusCard);
   // stLate:    past STALE_LATE_MINUTES      — amber
   // stLost:    past STALE_LOST_MINUTES      — red, "connection lost"
 TStaleStage = (stDelayed, stLate, stLost);
-  // Procedures which are applied to the trend drawing
-TTrendProc = procedure(l: TDotControl; c, ix: integer) of object;
-TTrendProcLoop = procedure(l: TDotControl; c, ix: integer;
-  ls: array of TDotControl) of object;
 TrndiPos = (tpoCenter = 0, tpoBottomLeft = 1, tpoBottomRight = 2,
   tpoCustom = 3, tpoTopRight = 4);
 TPONames = array[TrndiPos] of string;
@@ -258,14 +291,6 @@ var
 TrndiPosNames: TPONames = (RS_tpoCenter, RS_tpoBottomLeft,
   RS_tpoBottomRight, RS_tpoCustom, RS_tpoTopRight);
 const
-  // Prefix on every "time since last reading" caption, trailing space included.
-  // GTK2 renders no colour emoji, so U+1F551 comes out as tofu there — fall back
-  // to the plain BMP watch character.
-{$ifndef lclgtk2}
-CLOCK_CAPTION_PREFIX = '🕑 ';
-{$else}
-CLOCK_CAPTION_PREFIX = '⌚ ';
-{$endif}
   // Public timing constants used across the unit/interface
 CLOCK_INTERVAL_MS = 20000; // Default clock interval used for the clock tick
   // Escalation boundaries for the stale-data card, in minutes since the last
@@ -353,6 +378,29 @@ TDotInfo = record
   Visible: boolean;
 end;
 
+  // What a trend/prediction slot holds. Everything the trend surface's paint,
+  // the popup menu, the click handlers and the JS bridge need to know about a
+  // slot lives in a TTrendSlot; where it renders is the layout pass's business
+  // (FTrendLayout/FPredictLayout). Replaces the old encoding that smeared this
+  // state over per-dot control properties: sentinel control chars in Caption,
+  // the value as a locale string in Hint, the time as H*100+M in Tag and the
+  // range color in Font.Color.
+TDotKind = (
+  dkEmpty,   // no reading in this slot — nothing is drawn
+  dkReading, // a real reading (solid disc; ringed while fresh)
+  dkGap,     // provably missing reading between two known ones (faint hollow ring)
+  dkPredict);// forecast value (× mark)
+
+TTrendSlot = record
+  kind: TDotKind;
+  value: single;       // mmol/L (SetPointHeight's unit); interpolated for gaps
+  text: string;        // reading formatted in the display unit; '' for gaps
+  time: TDateTime;     // reading/forecast timestamp; nominal slot time for gaps
+  ident: TColor;       // range identity color (DetermineColorForReading)
+  lowPredict: boolean; // forecast at/below the low threshold (dkPredict only)
+end;
+PTrendSlot = ^TTrendSlot;
+
 // TDotColorMode and DOT_COLOR_MODE_DEFAULT live in trndi.types, where uconf can
 // see them too. The modes themselves are implemented in DotDisplayColor.
 
@@ -366,7 +414,6 @@ TfBG = class(TForm)
   bTouchRefresh: TButton;
   bTouchHistory: TButton;
   bTouchExit: TButton;
-  lPredict: TLabel;
   miGuidelines: TMenuItem;
   miBasalRate: TMenuItem;
   miReadingsSince: TMenuItem;
@@ -380,19 +427,8 @@ TfBG = class(TForm)
   pnTouchMenu: TPanel;
   pnWarnlast: TLabel;
   lRef: TLabel;
-  lDot10: TDotControl;
-  lDot2: TDotControl;
-  lDot3: TDotControl;
-  lDot4: TDotControl;
-  lDot5: TDotControl;
-  lDot6: TDotControl;
-  lDot7: TDotControl;
-  lDot8: TDotControl;
-  lDot9: TDotControl;
   lMissing: TLabel;
   lInternet: TLabel;
-  lTir: TLabel;
-  lAgo: TLabel;
   miADotAdjust: TMenuItem;
   miADotCount: TMenuItem;
   miDotsInView: TMenuItem;
@@ -406,14 +442,13 @@ TfBG = class(TForm)
   miADots: TMenuItem;
   miATouch: TMenuItem;
   miAdvanced: TMenuItem;
-  lDot1: TDotControl;
   miSplit6: TMenuItem;
   miSplit5: TMenuItem;
   miHistory: TMenuItem;
   miPref: TMenuItem;
   miFloatOn: TMenuItem;
   pnOffReading: TPanel;
-  pnNextProgress: TPanel;
+  pbNextProgress: TPaintBox;
   pnWarning: TPanel;
   pnMultiUser: TPanel;
   pnOffRangeBar: TPanel;
@@ -459,11 +494,6 @@ TfBG = class(TForm)
   miAlertSnoozeOff: TMenuItem;
   procedure APIReceiver(const msg: string; etype: TrndiAPIMsg);
   procedure APICredentialsChanged(const newCreds: string);
-    {** Recompute and apply layout offsets for all graph elements.
-      This adjusts trend dots, labels and other elements when the UI size or
-      dot-count changes to keep everything visually aligned.
-     }
-  procedure AdjustGraph;
   procedure bSettingsClick({%H-}Sender: TObject);
   procedure pnTouchButtonClick({%H-}Sender: TObject);
   procedure pnTouchButtonMouseDown({%H-}Sender: TObject; {%H-}Button: TMouseButton;
@@ -485,7 +515,6 @@ TfBG = class(TForm)
    }
   procedure FormDestroy({%H-}Sender: TObject);
   procedure FormKeyPress({%H-}Sender: TObject; var Key: char);
-  procedure DotPaint({%H-}Sender: TObject);
   procedure lDiffClick({%H-}Sender: TObject);
   procedure lPredictClick({%H-}Sender: TObject);
   procedure miBasalRateClick({%H-}Sender: TObject);
@@ -515,7 +544,7 @@ TfBG = class(TForm)
   procedure pmSettingsClose({%H-}Sender: TObject);
   procedure pnWarningClick({%H-}Sender: TObject);
   procedure pnWarningPaint({%H-}Sender: TObject);
-  procedure pnNextProgressPaint({%H-}Sender: TObject);
+  procedure pbNextProgressPaint({%H-}Sender: TObject);
   procedure speakReading;
   procedure FormMouseLeave({%H-}Sender: TObject);
   procedure FormMouseMove(Sender: TObject;{%H-}Shift: TShiftState; X, Y: integer);
@@ -531,7 +560,6 @@ TfBG = class(TForm)
   procedure lAgoClick({%H-}Sender: TObject);
   procedure lArrowClick({%H-}Sender: TObject);
   procedure lDiffDblClick({%H-}Sender: TObject);
-  procedure lDot7DblClick({%H-}Sender: TObject);
   procedure lgMainClick({%H-}Sender: TObject);
   procedure lTirClick({%H-}Sender: TObject);
   procedure lValClick({%H-}Sender: TObject);
@@ -557,8 +585,6 @@ TfBG = class(TForm)
   procedure ShowAboutDialog({%H-}Sender: TObject);
   procedure CheckForUpdatesMenuClick({%H-}Sender: TObject);
   {$endif}
-  procedure onTrendClick({%H-}Sender: TObject);
-  procedure PredictionDotClick({%H-}Sender: TObject);
   procedure pnOffReadingPaint({%H-}Sender: TObject);
   procedure pmSettingsMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
     var AWidth, AHeight: integer);
@@ -617,13 +643,15 @@ private
     end;
   titlecolor: boolean;
   FShuttingDown: boolean; // Flag to prevent recursive shutdown calls
+  FLastExceptionMsg: string; // Unhandled-exception text already shown once; repeats go to the log only
+  FExceptionDialogActive: boolean; // An unhandled-exception dialog is up; faults raised meanwhile are dropped
   FShutdownScreen: boolean; // Shutdown screen is up: skip normal paint/resize work
   FCloseAfterFormCreate: boolean; // Flag to close form after initialization completes
 
     // Performance optimization fields
   FLastReadingsHash: cardinal; // Hash of last readings for change detection
   FLastDotTimeBucket: int64; // 5-min wall-clock bucket of the last dot placement
-  FLatestIsFresh: boolean; // Latest reading within the freshness threshold (drives DOT_FRESH)
+  FLatestIsFresh: boolean; // Latest reading within the freshness threshold (draws the newest dot ringed)
   FTrendDataStale: boolean; // Latest fetch was not fresh — fades the trend dots
                             // (DetermineColorForReading) so the frozen trace
                             // doesn't read as a live plot. Set by
@@ -657,6 +685,9 @@ private
   // would cross-wire error state. Reads/writes happen on the main thread
   // only (Request* sets it, Apply*Result clears it via Synchronize), which
   // serializes worker creation and keeps only one worker on api at a time.
+  // TPredictionThread also calls into api but cannot take this flag - it is
+  // spawned from the glucose worker's ApplyResult while that fetch still
+  // holds it - so both Request* methods check FPredictionThread separately.
   FApiCallInFlight: boolean;
   FFetchThreadDetached: boolean; // Set when shutdown gave up waiting on the
                                  // fetch worker and detached it; gates the
@@ -703,12 +734,27 @@ private
   FInternetBadgeBg: TShape;
   FInternetBadgeShadow: TShape;
   FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (created when RotatingArrow is on)
+  FPredictStrip: TPredictionStrip; // Text rendering of the forecast, lower right (created in FormCreate)
+  FTirBadge: TStatBadge;           // Time-in-range readout, top right (created in FormCreate)
+  FAgoBadge: TStatBadge;           // Reading-age readout, top left; its Font is the top band's face
+  FPredictAnchor: TDateTime;   // Time the strip's countdown headers were last measured from
+  FPredictAnchorMin: integer;  // Minimum minutes past that anchor a prediction had to lie
   FLastArrowAngle: single;  // Last computed trend-arrow angle (shared with the float window)
+  FDiffRateMgdl: double;    // The change lDiff shows, as mg/dL per interval (drives its tint)
+  FDiffRateKnown: boolean;  // False while lDiff shows the '--' placeholder or is cleared
   FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
   FWarnPulseSecond: integer;    // Second the wsSoon pulse last repainted on
-  FProgressPulsing: boolean;    // Set by pnNextProgressPaint while a reading is overdue
+  FProgressPulsing: boolean;    // Set by pbNextProgressPaint while both lines are full
+  FProgressDrainFrom: double;   // Combined progress (0..2) the arrival drain animates down from (0 = no drain running)
+  FProgressDrainStart: QWord;   // GetTickCount64 when the arrival drain started
+  FProgressPaintedFrac: double; // Combined progress (0..2) of the last frame actually painted
+  FProgressPaintedLvl1: integer;   // Quantised primary-line fill (px) of the last painted frame
+  FProgressPaintedLvl2: integer;   // Quantised overtime-line fill (px) of the last painted frame
+  FProgressPaintedColor: TColor;   // Primary-line colour of the last painted frame
+  FProgressPaintedW: integer;      // Box size the last frame was painted at — a
+  FProgressPaintedH: integer;      // resize means the frame on screen may be partial
   FResizePending: boolean;      // A relayout was requested while minimized; replayed on restore
   FStaleStage: TStaleStage;     // Escalation step of the active stale card
   FNextFetchAt: TDateTime;      // When tMain will fire next; drives the retry countdown
@@ -718,14 +764,32 @@ private
 
   FReadingsLock: TRTLCriticalSection; // Protect cached readings shared with web server thread
 
-    // Dynamic array; allocated 1-based (index 0 unused). Size = ACTIVE_DOTS+1.
-  TrendDots: array of TDotControl;
-    // Future-prediction markers (drawn as X) shown to the right of the trend
-    // when dot mode is enabled. 0-based, fixed length PREDICTION_DOT_COUNT.
-  PredictionDots: array of TDotControl;
-    // Parallel to PredictionDots: true when that slot's forecast is at or
-    // below the low threshold, so DotPaint gives the mark full weight.
-  FPredictionLow: array of boolean;
+    // History-slot data. Dynamic array; allocated 1-based (index 0 unused),
+    // size ACTIVE_DOTS+1. TrendSlots[ACTIVE_DOTS] is the newest slot.
+  TrendSlots: array of TTrendSlot;
+    // Forecast-slot data (drawn as ×) shown to the right of the trend when
+    // dot mode is enabled. 0-based, fixed length PREDICTION_DOT_COUNT.
+  PredictionSlots: array of TTrendSlot;
+    // The one control the whole trend paints on (see TTrendSurface).
+  FTrendSurface: TTrendSurface;
+    // Where each slot renders, recomputed by UpdateTrendDots: the marker's
+    // square box (or the expanded value-text box) in surface/client
+    // coordinates, and whether the slot draws at all (data present + narrow-
+    // window stride). Parallel to TrendSlots (1-based) / PredictionSlots.
+  FTrendLayout: array of TRect;
+  FTrendVisible: array of boolean;
+  FPredictLayout: array of TRect;
+  FPredictVisible: array of boolean;
+    // Uniform history-dot diameter of the last layout pass; FormPaint anchors
+    // the threshold lines against it.
+  FTrendDotDiameter: integer;
+    // Which dot the last surface mouse-press landed on, so release-on-the-
+    // same-dot can be required before acting (mirrors per-control Click).
+  FDownIsPredict: boolean;
+  FDownDotIx: integer;
+    // All reading dots expand together into their value text on click; this is
+    // that shared state. Relayouts collapse it (see tResizeTimer).
+  FDotsExpanded: boolean;
   FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user
   multinick: string;
@@ -768,7 +832,6 @@ private
   procedure OnNoticeClick;
   procedure DeferredPostFetchResize(Data: PtrInt);
 
-  function dotsInView: integer;
   function setColorMode: boolean;
   function setColorMode(bg: tColor; const nocolor: boolean = false): boolean;
   {** True while the night-dim window (ux.night_dim + from/to hours) covers the
@@ -813,7 +876,7 @@ private
   function updateReading(boot: boolean = false): boolean;
   {** Map incoming readings to the visual trend slots. This function sorts and
       anchors readings to a fixed grid (5-minute intervals) and updates the
-      state of `TrendDots` accordingly.
+      state of `TrendSlots` accordingly.
       @param(Readings The array of BGReading to map.)
       @returns(True when the slots were actually re-placed; False when the call
         short-circuited because neither the readings nor the wall-clock slot
@@ -834,34 +897,41 @@ private
         readings in `bgs`.
       Returns empty string when no readings are available. */}
   function BGMean(const UnitPref: BGUnit = BGUnit.mmol; const NumReadings: integer = NUM_DOTS): string;
-  procedure actOnTrend(proc: TTrendProc);
-  procedure actOnTrend(proc: TTrendProcLoop);
-  procedure setDotWidth(l: TDotControl; c, ix: integer; {%H-}ls: array of TDotControl);
-  procedure HideDot(l: TDotControl; {%H-}c, {%H-}ix: integer);
-  procedure showDot(l: TDotControl; {%H-}c, ix: integer);
-  procedure ResizeDot(l: TDotControl; {%H-}c, ix: integer);
-  procedure initDot(l: TDotControl; c, ix: integer);
-  procedure ExpandDot(l: TDotControl; c, ix: integer);
-  procedure ApplyTrendDotCenterShift;
-  procedure ApplyTrendDotTopOffset(const Offset: integer);
-  procedure RepaintVisibleTrendDots;
-  procedure CreateTrendDots;
-  procedure FreeTrendDotControls;
+  {** (Re)allocate TrendSlots for the current ACTIVE_DOTS and PredictionSlots
+      for PREDICTION_DOT_COUNT, and make sure the trend surface exists. Slot
+      data is cleared; PlaceTrendDots refills it. }
+  procedure InitTrendModel;
   procedure ApplyTrendDotCount(newCount: integer);
+  {** Slot data of the dot whose on-screen box contains P (surface/client
+      coords), or nil. AIsPredict/AIndex report which array and index matched.
+      The pointer aims into a dynamic array — use it transiently and never
+      across InitTrendModel. }
+  function DotHitAt(const P: TPoint; out AIsPredict: boolean;
+    out AIndex: integer): PTrendSlot;
+  {** Hit-test callback for the trend surface's CM_HITTEST: true only over a
+      visible dot, so the surface stays mouse-transparent elsewhere. }
+  function TrendSurfaceHit(const P: TPoint): boolean;
+  procedure TrendSurfacePaint({%H-}Sender: TObject);
+  procedure TrendSurfaceMouseDown({%H-}Sender: TObject; {%H-}Button: TMouseButton;
+    {%H-}Shift: TShiftState; X, Y: integer);
+  procedure TrendSurfaceMouseUp({%H-}Sender: TObject; Button: TMouseButton;
+    {%H-}Shift: TShiftState; X, Y: integer);
+  procedure TrendSurfaceMouseMove({%H-}Sender: TObject; {%H-}Shift: TShiftState;
+    X, Y: integer);
   {** Mark empty trend slots that provably sit between two real readings as
-      sensor gaps (DOT_GAP). Interior emptiness always qualifies; a leading run
+      sensor gaps (dkGap). Interior emptiness always qualifies; a leading run
       (the oldest slots) qualifies when AHasOlder reports a reading beyond the
       window's left edge, with AOlderPos/AOlderVal anchoring the interpolation
-      (fractional slot position ≤ 0 and value in the display unit). Trailing
-      emptiness (an outage marching the trace left) is never a gap — the stale
-      UI owns that story. AAnchor is the placement pass's slot anchor, used to
-      stamp each gap's nominal slot time into its Tag for the popup menu.
+      (fractional slot position ≤ 0 and value in mmol/L). Trailing emptiness
+      (an outage marching the trace left) is never a gap — the stale UI owns
+      that story. AAnchor is the placement pass's slot anchor, used to stamp
+      each gap's nominal slot time into its slot for the popup menu.
       Honors the ux.dot_gaps setting. Runs after every placement pass. }
   procedure MarkTrendGaps(AHasOlder: boolean; AOlderPos, AOlderVal: double;
     AAnchor: TDateTime);
     {** Ring color/width marking the freshest reading's dot, per dot-coloring
-        mode. Shared by DotPaint and the settings-dialog preview so the two
-        cannot drift apart. }
+        mode. Shared by the trend surface's paint and the settings-dialog
+        preview so the two cannot drift apart. }
   procedure FreshDotRing(AMode: TDotColorMode; ADotColor, ABackground: TColor;
     ADiameter: integer; out ARingColor: TColor; out ARingWidth: integer);
     {** Paint the sample strip under the settings dialog's dot-coloring options:
@@ -961,6 +1031,10 @@ private
   procedure FinalizeUpdate;
   procedure UpdateFloatingWindow;
   procedure UpdateUIColors;
+  {** Colour for the change label: the muted sub-text tone, or the high/low
+      colour (lifted for contrast) when the reading is moving fast enough
+      for the trend arrow to call it a single/double up or down. }
+  function DiffLabelColor: TColor;
   {** Apply configuration changes that can take effect immediately without restart.
       This includes fonts, colors, display options, predictions, and UI preferences.
       Called after saving settings to provide instant feedback to the user.
@@ -1033,13 +1107,38 @@ private
   function WebServerActive: boolean;
   procedure tWebServerStartTimer(Sender: TObject);
 
-  {** Refresh trend-related UI elements like labels and trend markers.
-      Called after readings are processed to ensure the trend visuals match
-      the calculated BGTrend values.
-   }
-  procedure UpdateTrendElements;
-  {** Recalculate left of lTir when next progress bar is visible }
+  {** Recalculate left of the TIR badge when next progress bar is visible }
   procedure nextProgressChange;
+  {** Size the TIR badge to its content in the "ago" badge's font and park
+      it in the top-right corner, clear of the progress bar. }
+  procedure LayoutTirBadge;
+  {** Fit the top band's font to the window (the "ago" badge's Font, which
+      the TIR badge and the fullscreen clock mirror), then size and park the
+      "ago" badge top-left, clear of the progress bar. Re-lays the TIR badge
+      so it picks up the refitted font. }
+  procedure LayoutAgoBadge;
+  {** Put a value and caption on the "ago" badge ("3 min", or "14:35" over
+      "last reading") and re-layout, since its width just changed. }
+  procedure SetAgoText(const AValue, ACaption: string);
+  {** Compute the progress bar's current state: the primary line's fill
+      fraction (one refresh cycle), the overtime line's fill fraction (the
+      retry window after it), whether the both-full pulse is active, and
+      whether the reading-arrival drain animation is running. }
+  procedure ComputeProgressState(out AFrac1, AFrac2: double;
+    out APulsing, ADraining: boolean);
+  {** Fill colour of the primary line at the given fill fraction. }
+  function ProgressFillColor(const AFrac: double; const APulsing: boolean): TColor;
+  {** Colour of the overtime line — the retry window's red, breathing once
+      both lines are full, steady before that. }
+  function ProgressOvertimeColor(const APulsing: boolean): TColor;
+  {** True when the bar would paint differently from its last painted frame —
+      lets tProgressTimer skip repaints that would reproduce the same pixels. }
+  function ProgressFrameChanged: boolean;
+  {** Start the short drain animation from the last painted fill level down to
+      the level of the reading that just arrived. }
+  procedure StartProgressDrain;
+  {** Mirror the bar's state onto the floating window's slim progress strip. }
+  procedure UpdateFloatProgress;
   {** Refresh labels and menu captions that display API-derived thresholds
       and other backend metadata (e.g., cgmHi/cgmLo values).
    }
@@ -1053,9 +1152,11 @@ private
       "Setup" label and Settings button to the current window size.
    }
   procedure LayoutSetupScreen;
-  {** Iterate over all trend dots and update their position and visibility
-      based on the data in `TrendDots[].Hint`. This only adjusts visuals and
-      doesn't fetch data from backends.
+  {** Recompute every dot's on-screen box from the slot model and the current
+      window size — column grid, diameter, value-Y, the DOT_ADJUST offset and
+      the keep-in-view correction — into FTrendLayout/FPredictLayout, then
+      repaint the trend surface. The whole layout pipeline in one pass; only
+      adjusts visuals and doesn't fetch data from backends.
    }
   procedure UpdateTrendDots;
   {** Scale a TLabel font size to fit within its bounds using a binary search.
@@ -1090,8 +1191,7 @@ private
     CurrentTime: TDateTime);
   procedure ProcessTimeIntervals(const SortedReadings: array of BGReading;
     CurrentTime: TDateTime);
-  {** Update a specific UI trend label (slot) to reflect a BGReading.
-      Sets hint, caption, tag and positions the label according to its value.
+  {** Write a BGReading into its trend slot (kind, value, text, time, color).
       @param(SlotIndex Index of the visual slot to update (0=rightmost/most recent)).
       @param(Reading The BGReading to display.)
       @returns(True when the slot was successfully updated.)
@@ -1109,11 +1209,26 @@ private
    }
   procedure DoFullScreen;
   {** Fetch and display short-term predictions (e.g., 5/10/15 minute values)
-      in `lPredict`. Predictions are optional and controlled by user settings;
-      when unavailable, the label is hidden.
+      in the forecast strip. Predictions are optional and controlled by user
+      settings; when unavailable, the strip is hidden.
    }
   procedure UpdatePredictionLabel;
   procedure RenderPredictionCache(const bgr: BGResults);
+  {** Pick, for the 5/10/15-minute horizons and the short-mode horizon, the
+      index of the prediction nearest to it, measured from `anchor`. Entries
+      closer than `minMinutes` to the anchor are ignored; a horizon whose best
+      match an earlier horizon already took comes back as -1. }
+  procedure MatchPredictionHorizons(const bgr: BGResults; anchor: TDateTime;
+    minMinutes: integer; out c5, c10, c15, cTarget: integer);
+  {** Fill the forecast strip from a prediction set: three cells (or one in
+      short mode) with countdown headers measured from `anchor`, or the
+      stable/unavailable message. Both the fetch and the clock tick go
+      through here, so the text is built in exactly one place. }
+  procedure RenderPredictionText(const bgr: BGResults; anchor: TDateTime;
+    minMinutes: integer);
+  {** Size and place the forecast strip in the lower-right corner for the
+      current window size and prediction mode. }
+  procedure LayoutPredictionStrip;
   {** Total horizontal trend slots. Equals ACTIVE_DOTS, plus
       PREDICTION_DOT_COUNT when the prediction-dot view is active, so the
       history dots compress to leave room for future dots on the right. }
@@ -1129,18 +1244,11 @@ private
   {** True when predictions should render as hollow dots on the main trend
       (predictions enabled AND the dot view selected) rather than as text. }
   function PredictionDotsActive: boolean;
-  {** Create the fixed set of hollow prediction-dot paint boxes (once). }
-  procedure CreatePredictionDots;
-  {** Size and horizontally position the prediction dots in the trailing
-      trend slots. }
-  procedure LayoutPredictionDots;
-  {** Re-apply vertical positions to visible prediction dots from their cached
-      values (mirrors UpdateTrendDots for the history dots). }
-  procedure UpdatePredictionDotHeights;
-  {** Hide all prediction dots (used when the dot view is off/unavailable). }
+  {** Take the forecast marks off the trend by clearing the prediction slots
+      (used when data goes stale or predictions are disabled). }
   procedure HidePredictionDots;
-  {** Populate the prediction dots from the 5/10/15-minute matches in a
-      prediction result set and lay them out on the trend. }
+  {** Populate the prediction slots from the 5/10/15-minute matches in a
+      prediction result set and relayout the trend. }
   procedure RenderPredictionDots(const bgr: BGResults;
     Closest5, Closest10, Closest15: integer);
   {$ifdef DARWIN}
@@ -1234,7 +1342,7 @@ public
     {** Generic application exception handler used for reporting unhandled
       exceptions during runtime to a unified error dialog.
      }
-  procedure AppExceptionHandler(Sender: TObject; {%H-}E: Exception);
+  procedure AppExceptionHandler(Sender: TObject; E: Exception);
   procedure onGH({%H-}Sender: TObject);
     {** Return the most recent reading (the newest element in `bgs`).
       Caller should ensure `bgs` is not empty (use `tryLastReading` first).
@@ -1286,11 +1394,13 @@ PredictShortSize: integer = 1; // 1=small, 2=medium, 3=big
 PredictShortFullArrows: boolean = false; // Use full UTF arrow set in short mode
 PredictShortShowValue: boolean = false; // Show predicted value with clock icon in short mode
 PredictShortMinutes: integer = 10; // Prediction horizon (5, 10, or 15 minutes)
-PredictDotMode: boolean = false; // Render predictions as hollow dots on the trend instead of the lPredict label
+PredictDotMode: boolean = false; // Render predictions as hollow dots on the trend instead of the forecast strip
 ShowBolusOverlay: boolean = false; // Draw insulin deliveries on the history graph
 ShowAutoBolusOverlay: boolean = false; // Include the pump's own micro-deliveries in that overlay
 ShowCarbOverlay: boolean = false; // Draw carbohydrate entries on the history graph
 DotColorMode: TDotColorMode = DOT_COLOR_MODE_DEFAULT; // ux.dot_color_mode — cached here because DotPaint runs per dot, per paint
+TrendLineEnabled: boolean = false; // ux.dot_line — cached like DotColorMode: the trend surface reads it on every paint
+TrendLineWidthStep: integer = 2; // ux.dot_line_width — 1 thin / 2 normal / 3 thick; cached with TrendLineEnabled
 RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the actual rate of change instead of the 8-direction glyph
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings
@@ -1404,6 +1514,13 @@ RAPID_POLL_INTERVAL_MS = 20000; // 20 seconds
 // Once the newest reading is this old the outage is a gap, not a late upload;
 // rapid mode stands down and the normal retry clamp takes over.
 RAPID_POLL_MAX_OVERDUE_MS = 1800000; // 30 minutes
+// Repaint cadences for the left-side progress bar (tProgressTimer): the slow
+// tick covers the normal fill, the pulse tick keeps the overdue breathing
+// smooth, and the drain tick gives the short reading-arrival animation enough
+// frames to read as motion rather than a flicker.
+PROGRESS_TICK_MS = 1000;
+PROGRESS_PULSE_MS = 125;
+PROGRESS_DRAIN_TICK_MS = 40;
 DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
 // Prediction-dot × opacity: the mark fades as the engine's confidence drops
 // (never below the base, so it stays findable) and steps down once per horizon
@@ -1414,12 +1531,29 @@ PREDICTION_HORIZON_FADE = 0.15; // opacity step per horizon slot further out
 // window's text tone — enough to say "a reading is missing here" without
 // competing with the real dots around it.
 GAP_DOT_BLEND = 0.4;
+// The optional connecting line wears the dots' own display colors, each dot
+// owning the half-segment on either side of it; this is how much of the dot
+// color survives the blend toward the window background. High enough that
+// the ranges stay recognizable in the trace, low enough that the line reads
+// as support for the dots rather than a second row of data.
+TREND_LINE_BLEND = 0.65;
 // Night dim keeps this much of the in-range color; the rest goes to black.
 // Text, dots and every other on-window color derive from the background at
 // paint time, so they mute along with it for free.
 NIGHT_DIM_KEEP = 0.25;
 
 // Standalone helpers referenced by multiple include files below.
+
+// MacOSAll exports a classic-Mac `Point` record type that shadows
+// Types.Point(x, y), turning `Point(a, b)` into a one-arg type cast and
+// breaking the build on Darwin. MkPoint sidesteps the name clash. Declared
+// here, before the includes, because both umain_dots and umain_paint need it.
+function MkPoint(AX, AY: integer): TPoint; inline;
+begin
+  Result.X := AX;
+  Result.Y := AY;
+end;
+
 function CaptionStartsWithDigit(const S: string): boolean;
 begin
   Result := false;
@@ -1437,6 +1571,14 @@ begin
   Result.Low := bg_color_lo;
   Result.Unknown := RGBToColor(180, 180, 180);
 end;
+
+// The unit-local ShowMessage wrappers (inc/umain_helpers.inc) route messages
+// to the slicke.ux.alert dialogs. Declared ahead of the includes so that the
+// calls in umain_ext.inc and umain_async.inc bind to them as well; without
+// this they resolved to the LCL Dialogs.ShowMessage, showing a native message
+// box with the platform's own title bar.
+procedure ShowMessage(const str: string); forward;
+procedure ShowMessage(const title, str: string); forward;
 
 {$I ../../inc/umain_ext.inc}
 {$I ../../inc/umain_async.inc}
@@ -1860,7 +2002,12 @@ begin
     else
     begin
       TrndiDLog('ShutdownBackgroundThreads: update-check worker still in getURL after timeout; detaching');
-      FUpdateCheckThread.FreeOnTerminate := true;
+      // Deliberately leak the worker object: the process is exiting and the
+      // OS reclaims it. Setting FreeOnTerminate from here instead would race
+      // the RTL, which latches the flag BEFORE publishing Finished — a worker
+      // finishing right now can miss the write and never self-free, and no
+      // post-write re-check can tell "missed the latch" from "self-freeing
+      // right now" without risking a double free.
       FUpdateCheckThread := nil;
     end;
   end;
@@ -1917,7 +2064,8 @@ begin
     else
     begin
       TrndiDLog('ShutdownBackgroundThreads: fetch worker still in api.getReadings after timeout; detaching');
-      FGlucoseFetchThread.FreeOnTerminate := true;
+      // Same deliberate leak as the update-check worker above: FreeOnTerminate
+      // set from here races the RTL's latch of it.
       FGlucoseFetchThread := nil;
       FFetchThreadDetached := true;
     end;
@@ -1944,7 +2092,7 @@ begin
     else
     begin
       TrndiDLog('ShutdownBackgroundThreads: history worker still in api.getReadings after timeout; detaching');
-      FHistoryFetchThread.FreeOnTerminate := true;
+      // Same deliberate leak as the update-check worker above.
       FHistoryFetchThread := nil;
       FFetchThreadDetached := true;
     end;
@@ -2059,8 +2207,8 @@ begin
       // Only hide labels during resize if they don't have valid content
       if lVal.Caption = '' then
         lVal.Visible := false;
-      lAgo.Visible := false;
-      lTir.Visible := false;
+      FAgoBadge.Visible := false;
+      FTirBadge.Visible := false;
     end;
 
     // Apply alpha control only - rounded corners are handled by pnWarningPaint.
@@ -2072,11 +2220,14 @@ begin
     end;
 
     // Keep the thin left-side progress bar sized with the form
-    if Assigned(pnNextProgress) then
+    if Assigned(pbNextProgress) then
     begin
-      pnNextProgress.Height := ClientHeight;
-      pnNextProgress.Width := Max(6, ClientWidth div 40);
-      pnNextProgress.Left := 0;
+      pbNextProgress.Height := ClientHeight;
+      pbNextProgress.Width := Max(6, ClientWidth div 40);
+      pbNextProgress.Left := 0;
+      // Full invalidate: a grow only marks the newly exposed strip dirty, and
+      // a partially repainted capsule shows seams from the old size.
+      pbNextProgress.Invalidate;
       nextProgressChange;
     end;
 
@@ -2092,13 +2243,15 @@ begin
   lVal.font.Quality := fqCleartype;
 
   // Ensure the next-reading progress panel is correctly positioned
-  if Assigned(pnNextProgress) then
+  if Assigned(pbNextProgress) then
   begin
-    pnNextProgress.Height := ClientHeight;
-    pnNextProgress.Width := Max(6, ClientWidth div 40);
-    pnNextProgress.Left := 0;
-    pnNextProgress.BringToFront;
-    pnNextProgress.Visible := native.GetBoolSetting('main.next_progress', false);
+    pbNextProgress.Height := ClientHeight;
+    pbNextProgress.Width := Max(6, ClientWidth div 40);
+    pbNextProgress.Left := 0;
+    pbNextProgress.BringToFront;
+    pbNextProgress.Visible := native.GetBoolSetting('main.next_progress', false);
+    // Full invalidate — see FormResize: partial exposure repaints leave seams.
+    pbNextProgress.Invalidate;
   end;
   
   // Check if we need to close after FormCreate completed (e.g., fresh install with no config)
@@ -2443,6 +2596,7 @@ initialization
 
 finalization
   FreeAndNil(DotImageCache); // rendered-dot cache from inc/umain_dots.inc
+  FreeAndNil(TrendLineImage); // cached connecting-line raster, same file
 
 end.
 

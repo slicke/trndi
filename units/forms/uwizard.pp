@@ -45,6 +45,8 @@
  * - 2026-07-13: Backend selection, credential validation, connection testing and
  *               the assisted browser login now go through the shared
  *               trndi.api.registry and trndi.weblogin units.
+ * - 2026-08-28: Added refresh-countdown step (step 5) — offers the left-edge
+ *               progress bar (main.next_progress) during first-run setup.
  *)
 
 unit uwizard;
@@ -97,6 +99,10 @@ type
     pnTrendWindow: TPanel;
     rbDots6, rbDots10, rbDots18, rbDots24, rbDots36: TRadioButton;
 
+    // Refresh-countdown step controls
+    pnProgress: TPanel;
+    cbProgressBar: TCheckBox;
+
     // Threshold step controls
     pnThreshold: TPanel;
     lHiLabel: TLabel;
@@ -129,6 +135,7 @@ type
     procedure BuildConnectionStep;
     procedure BuildUnitStep;
     procedure BuildTrendWindowStep;
+    procedure BuildProgressStep;
     procedure BuildThresholdStep;
     procedure SaveSettings;
     function  ValidateConnection(out errMsg: string): boolean;
@@ -152,22 +159,24 @@ resourcestring
   WZ_TEST_NO_SUPPORT = 'Connection testing is not supported for this service.';
   WZ_WEBLOGIN_BUTTON = 'Get CareLink token…';
   WZ_WEBLOGIN_TITLE = 'CareLink login helper';
+  // sHTMLLineBreak, not #13#10: these two strings are shown via SlickeMsgYesNo,
+  // which renders its message as HTML — CRLFs collapse to spaces there.
   WZ_WEBLOGIN_HELP =
     'CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small ' +
-    'login helper to capture your token.'#13#10#13#10 +
-    'It needs Node.js installed. In a terminal, run:'#13#10#13#10 +
-    '    cd "%s"'#13#10 +
-    '    npm install'#13#10 +
-    '    %s'#13#10#13#10 +
+    'login helper to capture your token.' + sHTMLLineBreak + sHTMLLineBreak +
+    'It needs Node.js installed. In a terminal, run:' + sHTMLLineBreak + sHTMLLineBreak +
+    '> cd "%s"' + sHTMLLineBreak +
+    '> npm install' + sHTMLLineBreak +
+    '> %s' + sHTMLLineBreak + sHTMLLineBreak +
     'A browser opens — sign in with your Care Partner account and solve the CAPTCHA. ' +
-    'The helper then prints a block of JSON: copy it into the token field and click Test.'#13#10#13#10 +
+    'The helper then prints a block of JSON: copy it into the token field and click Test.' + sHTMLLineBreak + sHTMLLineBreak +
     'Open the helper folder now?';
   WZ_WEBLOGIN_RUN_TITLE = 'CareLink login';
   WZ_WEBLOGIN_RUN_PROMPT =
     'Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), ' +
-    'then capture the token automatically.'#13#10#13#10 +
+    'then capture the token automatically.' + sHTMLLineBreak + sHTMLLineBreak +
     'The first run also downloads the login helper''s dependencies, which can take a ' +
-    'minute. Keep this window open and complete the sign-in in the browser.'#13#10#13#10 +
+    'minute. Keep this window open and complete the sign-in in the browser.' + sHTMLLineBreak + sHTMLLineBreak +
     'Start now?';
   WZ_WEBLOGIN_INSTALLING = 'Installing login helper dependencies (first run only)…';
   WZ_WEBLOGIN_WAITING = 'Waiting for the browser sign-in to complete…';
@@ -187,7 +196,7 @@ resourcestring
   WZ_ERR_THRESH_ORDER = 'The high threshold must be greater than the low threshold.';
 
 const
-  WIZARD_STEPS = 5;
+  WIZARD_STEPS = 6;
   FORM_WIDTH   = 500;
   FORM_HEIGHT  = 450;
 
@@ -286,6 +295,7 @@ begin
   BuildConnectionStep;
   BuildUnitStep;
   BuildTrendWindowStep;
+  BuildProgressStep;
   BuildThresholdStep;
 
   FStep := 1;
@@ -512,8 +522,9 @@ begin
   pnConnection.Visible  := (step = 2);
   pnUnit.Visible        := (step = 3);
   pnTrendWindow.Visible := (step = 4);
-  pnThreshold.Visible   := (step = 5);
-  if step = 5 then
+  pnProgress.Visible    := (step = 5);
+  pnThreshold.Visible   := (step = 6);
+  if step = 6 then
     UpdateThresholdLabels;
   lStep.Caption := Format(RS_WIZARD_STEP_FMT, [step, WIZARD_STEPS]);
   UpdateNav;
@@ -803,6 +814,53 @@ begin
   lHead.BorderSpacing.Bottom := 8;
 end;
 
+procedure TfWizard.BuildProgressStep;
+var
+  pnInner: TPanel;
+  lHead, lBody: TLabel;
+begin
+  pnProgress := TPanel.Create(pnContent);
+  pnProgress.Parent  := pnContent;
+  pnProgress.Align   := alClient;
+  pnProgress.Visible := false;
+  pnProgress.BevelOuter := bvNone;
+  pnProgress.ParentBackground := false;
+
+  pnInner := TPanel.Create(pnProgress);
+  pnInner.Parent := pnProgress;
+  pnInner.Align  := alClient;
+  pnInner.BevelOuter := bvNone;
+  pnInner.BorderSpacing.Around := 24;
+  pnInner.ParentBackground := false;
+
+  { Bottom-to-top creation order for LCL alTop stacking. }
+  cbProgressBar := TCheckBox.Create(pnInner);
+  cbProgressBar.Parent  := pnInner;
+  cbProgressBar.Caption := RS_WIZARD_PROGRESS_CHECK;
+  cbProgressBar.Align   := alTop;
+  cbProgressBar.Height  := 28;
+  cbProgressBar.Checked := false;
+
+  lBody := TLabel.Create(pnInner);
+  lBody.Parent   := pnInner;
+  lBody.Caption  := RS_WIZARD_PROGRESS_BODY;
+  lBody.Align    := alTop;
+  lBody.AutoSize := false;
+  lBody.Height   := 90;
+  lBody.WordWrap := true;
+  lBody.BorderSpacing.Bottom := 12;
+
+  lHead := TLabel.Create(pnInner);
+  lHead.Parent   := pnInner;
+  lHead.Caption  := RS_WIZARD_PROGRESS_HEAD;
+  lHead.Align    := alTop;
+  lHead.AutoSize := false;
+  lHead.Height   := 28;
+  lHead.Font.Size  := 13;
+  lHead.Font.Style := [fsBold];
+  lHead.BorderSpacing.Bottom := 8;
+end;
+
 procedure TfWizard.BuildThresholdStep;
 var
   pnInner: TPanel;
@@ -994,6 +1052,7 @@ begin
     // the wizard and keep falling back to DOT_COLOR_MODE_DEFAULT (Classic),
     // which is what their screens showed before the mode existed.
     SetSetting('ux.dot_color_mode', Ord(dcmAuto));
+    SetSetting('main.next_progress', cbProgressBar.Checked);
   end;
 end;
 

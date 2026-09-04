@@ -2455,6 +2455,22 @@ msgstr "Dina förutspådda avläsningar visas i det nedra högra hörnet; skilln
 msgid "No change predicted →"
 msgstr "Ingen förändring förutspås →"
 
+#: trndi.strings.rs_predict_header
+msgid "+%d min"
+msgstr "+%d min"
+
+#: trndi.strings.rs_tir_caption
+msgid "in range"
+msgstr "inom mål"
+
+#: trndi.strings.rs_tir_mean_caption
+msgid "avg"
+msgstr "snitt"
+
+#: trndi.strings.rs_ago_time_caption
+msgid "last reading"
+msgstr "senaste"
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Förutspåelser otillgängliga"
@@ -2874,6 +2890,14 @@ msgstr "Tillägget stoppades"
 #: trndi.strings.rs_under
 msgid "under"
 msgstr "under"
+
+#: trndi.strings.rs_unhandled_error
+msgid "Trndi hit an unexpected error"
+msgstr "Trndi stötte på ett oväntat fel"
+
+#: trndi.strings.rs_unhandled_error_desc
+msgid "The app keeps running, but what's on screen may lag behind until the next reading arrives. The details below are useful in a bug report."
+msgstr "Appen fortsätter att köra, men det som visas på skärmen kan släpa efter tills nästa avläsning kommer. Uppgifterna nedan är användbara i en felrapport."
 
 #: trndi.strings.rs_unknown_err
 msgctxt "trndi.strings.rs_unknown_err"
@@ -3331,6 +3355,23 @@ msgstr ""
 "- Fönstret kan hållas över andra fönster\n"
 "- Fönstrets kanter kan döljas (kan bero på operativsystem)"
 
+#: uconf.rs_dot_line
+msgid "Draw a line connecting the trend dots"
+msgstr "Rita en linje mellan trendpunkterna"
+
+#: uconf.rs_dot_line_normal
+msgctxt "uconf.rs_dot_line_normal"
+msgid "Normal"
+msgstr "Normal"
+
+#: uconf.rs_dot_line_thick
+msgid "Thick"
+msgstr "Tjock"
+
+#: uconf.rs_dot_line_thin
+msgid "Thin"
+msgstr "Tunn"
+
 #: uconf.rs_dots_auto
 msgid "Adapt to background"
 msgstr "Anpassa till bakgrund"
@@ -3506,6 +3547,14 @@ msgstr "Du kan ändra typsnittet på avläsning, tid och pil. Klicka på respekt
 #: uconf.rs_full_arrow_set_help
 msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
 msgstr "Detta kommer visa alla förutspåelsepilar, som standard visar Trndi bara om värdet förutspås bli lågt, högt eller rakt"
+
+#: uconf.rs_gb_graph_overlays
+msgid "Overlays"
+msgstr "Överlägg"
+
+#: uconf.rs_gb_trend_dots
+msgid "Trend dots"
+msgstr "Trendpunkter"
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
@@ -3757,6 +3806,10 @@ msgctxt "uconf.rs_page_system"
 msgid "System"
 msgstr "System"
 
+#: uconf.rs_page_trendgraph
+msgid "Trend graph"
+msgstr "Trendgraf"
+
 #: uconf.rs_pd_access
 msgid "Text-to-speech, high contrast and in-app explanations."
 msgstr "Text-till-tal, hög kontrast och i-appen-förklaringar."
@@ -3816,6 +3869,10 @@ msgstr "Din enhet, dina höga/låga nivåer och önskvärda område."
 #: uconf.rs_pd_system
 msgid "System information, autostart, web access and settings backup."
 msgstr "Systeminformation, autostart, webbåtkomst och inställningsbackup."
+
+#: uconf.rs_pd_trendgraph
+msgid "How much history the trend dots show, and what is drawn on them."
+msgstr "Hur mycket historik trendpunkterna visar och vad som ritas ovanpå dem."
 
 #: uconf.rs_pos
 #, object-pascal-format

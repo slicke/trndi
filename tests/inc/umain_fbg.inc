@@ -37,10 +37,7 @@
  *)
 // Test accessors
   function GetValidatedPositionForTests: TrndiPos;
-  function DotsInViewForTests: integer;
   function DotsInViewForTestsFromInfos(const Dots: array of TDotInfo; ParentHeight: Integer): Integer;
-  procedure SetTrendDotForTests(i: integer; d: TDotControl);
-  function GetTrendDotForTests(i: integer): TDotControl;
   function TrendDotStrideForTests(AClientWidth, AColumnCount: integer): integer;
   function TrendDotVisibleInStrideForTests(SlotIndex, ActiveDots, Stride: integer): boolean;
   function DotColorModeFromSettingForTests(Value: integer): TDotColorMode;

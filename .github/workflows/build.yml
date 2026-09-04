@@ -49,7 +49,7 @@ jobs:
     outputs:
       build_number: ${{ steps.setver.outputs.build_number }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -132,7 +132,7 @@ jobs:
             runner: windows-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # ===================== LINUX BUILDER =====================
       - name: Install Lazarus/FPC toolchain (Linux)
@@ -663,7 +663,7 @@ jobs:
     # this job unless every leg succeeded, which is what we want for a release.
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       

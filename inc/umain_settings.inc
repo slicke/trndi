@@ -108,8 +108,8 @@ begin
   fontName := native.GetSetting('font.ago', 'default');
   if fontName <> 'default' then
   begin
-    lAgo.Font.Name := fontName;
-    lTir.Font.Name := fontName;
+    FAgoBadge.Font.Name := fontName;
+    FTirBadge.Font.Name := fontName;
   end;
 
   bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
@@ -142,6 +142,9 @@ begin
   // without waiting for the next reading.
   DotColorMode := DotColorModeFromSetting(
     native.GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT)));
+  TrendLineEnabled := native.GetBoolSetting('ux.dot_line', false);
+  TrendLineWidthStep :=
+    EnsureRange(native.GetIntSetting('ux.dot_line_width', 2), 1, 3);
 
   // Gate on the *_on flags exactly like the startup load (umain_init.inc):
   // the save path always writes ux.tir_color/ux.tir_color_custom, so reading
@@ -186,7 +189,7 @@ begin
   // Dot mode draws the predictions on the trend, so the text label must stay
   // hidden — it still carries the placeholder/last text caption, which would
   // otherwise reappear in the lower right until the next forced refresh.
-  lPredict.Visible := PredictGlucoseReading and not PredictDotMode;
+  FPredictStrip.Visible := PredictGlucoseReading and not PredictDotMode;
 
   DATA_FRESHNESS_THRESHOLD_MINUTES :=
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
@@ -239,7 +242,6 @@ begin
     ACTIVE_DOTS := newDotCount;
     if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
       MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
-    FreeTrendDotControls;
     // MAX_RESULT is a reading count, not minutes. Mirror InitializeAPI's
     // reporting-interval scaling with ACTIVE_DOTS as the base.
     if Assigned(api) then
@@ -248,26 +250,22 @@ begin
                      div api.getReportingInterval))
     else if MAX_RESULT < ACTIVE_DOTS then
       MAX_RESULT := ACTIVE_DOTS;
-    CreateTrendDots;
+    InitTrendModel;
     BuildDotWindowMenu;
-    Application.ProcessMessages;
     tResize.OnTimer(Self);
   end;
 
   // Re-place the dots from the cached readings regardless of whether the dot
-  // count changed: per-slot captions depend on settings too (e.g. the
-  // ux.dot_fresh marker), and PlaceTrendDots would otherwise dedupe on the
-  // unchanged readings hash and skip the pass.
+  // count changed: per-slot state depends on settings too (e.g. the
+  // ux.dot_fresh marker and the display unit behind each slot's text), and
+  // PlaceTrendDots would otherwise dedupe on the unchanged readings hash and
+  // skip the pass. UpdateTrendDots then runs the whole layout pass (value
+  // tops, centring, in-view correction) and repaints the trend surface.
   FLastReadingsHash := 0;
   if Length(bgs) > 0 then
     PlaceTrendDots(bgs);
 
-  // UpdateTrendDots sets value-based tops; AdjustGraph must always follow to
-  // apply the trend row's vertical offsets (half-diameter centring + in-view
-  // correction) — same pairing as tResizeTimer. Without it the whole row sits
-  // visibly lower until the next full relayout. It also repaints the dots.
   UpdateTrendDots;
-  AdjustGraph;
 
   // UpdateUIBasedOnGlucose below re-applies the window color with the dim
   // rule live, so sync the boundary watcher rather than letting the next
@@ -485,6 +483,12 @@ procedure LoadUserSettings(f: TfConf);
       cbCarbOverlay.Checked := GetBoolSetting('display.carb_overlay');
       cbDotFresh.Checked := GetBoolSetting('ux.dot_fresh', false);
       cbDotGaps.Checked := GetBoolSetting('ux.dot_gaps', true);
+      cbDotLine.Checked := GetBoolSetting('ux.dot_line', false);
+      cbDotLineWidth.ItemIndex :=
+        EnsureRange(GetIntSetting('ux.dot_line_width', 2), 1, 3) - 1;
+      // The dependent combo follows the parent from the moment the dialog
+      // opens, like cbBolusOverlayAuto does.
+      cbDotLineWidth.Enabled := cbDotLine.Checked;
       cbNightDim.Checked := GetBoolSetting('ux.night_dim', false);
       seNightDimFrom.Value := GetIntSetting('ux.night_dim_from', 22);
       seNightDimTo.Value := GetIntSetting('ux.night_dim_to', 7);
@@ -658,7 +662,7 @@ procedure SetupUIElements(f: TfConf);
       // keeps the default UI font so the dialog's font reset knows "stock".
       f.FontVal.Assign(Self.lVal.Font);
       f.FontArrow.Assign(Self.lArrow.Font);
-      f.FontAgo.Assign(Self.lAgo.Font);
+      f.FontAgo.Assign(Self.FAgoBadge.Font);
       pnDisplay.Color := Self.Color;
       pnDisplay.Font := fBG.Font;
 
@@ -925,6 +929,8 @@ procedure SaveUserSettings(f: TfConf);
       SetSetting('display.carb_overlay', cbCarbOverlay.Checked);
       SetSetting('ux.dot_fresh', cbDotFresh.Checked);
       SetSetting('ux.dot_gaps', cbDotGaps.Checked);
+      SetSetting('ux.dot_line', cbDotLine.Checked);
+      SetSetting('ux.dot_line_width', cbDotLineWidth.ItemIndex + 1);
       SetSetting('ux.night_dim', cbNightDim.Checked);
       SetSetting('ux.night_dim_from', seNightDimFrom.Value);
       SetSetting('ux.night_dim_to', seNightDimTo.Value);

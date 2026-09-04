@@ -48,7 +48,7 @@ interface
 
 uses
   Classes, SysUtils,   // Trndi units
-  trndi.types, trndi.api, trndi.native.base, trndi.funcs.core, trndi.log, math,
+  trndi.types, trndi.api, trndi.native.base, trndi.funcs.core, math,
   // FPC units
   fpjson, jsonparser, dateutils, StrUtils, base64, slicke.sha256;
 

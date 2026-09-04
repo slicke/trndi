@@ -58,8 +58,18 @@ This is your current blood sugar reading, shown in your preferred unit (mmol/L o
 - 🔴 **Red**: High - above your target
 - 🟡 **Orange/Yellow**: Low - below your target
 
+### The Change Line
+The small number along the bottom (e.g. `+0.3` or `-11`) is how much your
+reading moved over the last five minutes. It stays in the quiet sub-text
+colour while the change is gentle, and takes the high or low colour when you
+are rising or falling fast — the same speeds that give the trend arrow a
+straight up or down glyph. `--` means there was no usable previous reading
+to compare against.
+
 ### "Ago" Time
-Shows how old the reading is (e.g., "3 min ago"). If this number gets large (like "15 min ago"), it might mean:
+The badge in the top-left corner shows how old the reading is: `3 min` (or
+the reading's clock time over a small `last reading` when the timestamp
+display is on). If this number gets large (like 15 min), it might mean:
 - Your sensor lost connection
 - Your phone/uploader is offline
 - Trndi can't reach the data source
@@ -118,6 +128,17 @@ Those small dots you see across the screen show your recent readings over time:
 **How to use them**: Hover over a dot to see its value in a tooltip, or click it
 to swap the dot for the actual number. (Both are disabled in privacy mode.)
 
+**Connecting the dots**: If you prefer a continuous trace, *Settings → Trend graph →
+Draw a line connecting the trend dots* joins the dots with a subtle line drawn
+underneath them. The line wears the dots' own colors, slightly softened: each
+dot's color extends halfway toward its neighbors, so the trace switches color
+midway between two dots of different ranges. The dropdown next to the option
+picks the stroke weight — thin, normal or thick, always relative to the dot
+size. It runs through gap markers (see
+below) at the height the trace would pass — in the gap ring's quiet tone, since
+a missing reading has no range — and never extends into the predicted ✕ marks:
+a forecast is not a measurement.
+
 **Missing readings**: If the sensor skipped a reading between two known ones,
 that slot shows a faint hollow ring at the height the trace would pass through —
 so a sensor gap is visible instead of the dots just sitting further apart. This
@@ -126,7 +147,7 @@ the window. Slots are only left truly empty when nothing proves a reading is
 missing: before your history starts, or on the right while data is outdated
 (the stale warning covers that case). Click or right-click a ring to see when
 the missing reading would have been. The rings can be turned off under
-*Settings → Display → Mark missing readings*.
+*Settings → Trend graph → Mark missing readings*.
 
 **Changing how the dots are coloured**: *Settings → Colors → Backgrounds → Trend
 dot coloring*. A preview strip under the options shows how the selected mode
@@ -180,10 +201,13 @@ reading is always among the dots kept. Widen the window and the rest come back.
 When enabled, Trndi can show where your blood sugar might be heading in the next 5-15 minutes.
 
 #### What you'll see:
-- **Full mode**: `⏱5' ↗ 145.2 | ⏱10' → 147.8 | ⏱15' ↘ 146.1`
-  - Shows predictions at 5, 10, and 15 minutes with values
-  
-- **Short mode**: Just an arrow or `⏱10' ↗ 145.2`
+- **Full mode**: a small strip in the lower-right corner with three cells,
+  one each for 5, 10 and 15 minutes ahead. Each cell has a countdown header
+  (`+5 min`, counting down between readings) over the arrow and predicted
+  value (`↗ 145`). The value takes the high or low colour when the forecast
+  leaves your range, so an incoming low stands out.
+
+- **Short mode**: Just an arrow, or one cell with the countdown and value
   - Shows just the 10-minute prediction
 
 - **Dot mode** (*Show predictions as dots on the trend*): Instead of text, three
@@ -195,6 +219,24 @@ When enabled, Trndi can show where your blood sugar might be heading in the next
   drawn at full strength with a heavier stroke, so an incoming low stands out.
 
 **Important**: Predictions are estimates based on your current trend. They don't know about food you just ate, insulin you just took, or exercise. Use them as a guide, not a guarantee! While your data is outdated, predictions are hidden entirely — an old trend can't forecast anything.
+
+### Refresh Countdown Bar
+*Settings → Display → Display progress to next update on the left* (also offered
+during first-run setup): a slim line along the window's left edge that fills
+from the bottom.
+
+- The **primary line** covers one refresh cycle — **teal** for most of it,
+  warming to **amber** as the reading falls due. It is full exactly when Trndi
+  fetches the next reading.
+- If the reading runs late, a slimmer **overtime line** appears beside it and
+  fills in **red** across the retry window while Trndi keeps trying (it goes
+  away again once a reading lands). Both lines only ever rise — nothing jumps
+  back when a retry is rescheduled.
+- Once both lines are full the bar **breathes red** until a reading arrives.
+- When a fresh reading arrives the fill drains down with a short animation.
+- While the bar is enabled, the floating window mirrors it as a thin strip along
+  its left edge (the strip covers both lines end to end: its first half is the
+  cycle, its second half the retry window).
 
 ### Night Dimming
 *Settings → Colors → Backgrounds → Dim the window at night*: between the hours you
@@ -212,7 +254,16 @@ Hides your actual numbers, showing only dots and arrows. Useful when:
 Enable it by right-clicking → Privacy Mode.
 
 ### Time In Range (TIR)
-Shows what percentage of time your blood sugar has been in your target range (e.g., "85% TIR" means you were in range 85% of the time).
+The badge in the top-right corner shows what percentage of time your blood
+sugar has been in your target range: the percentage with a small `in range`
+caption under it. With *Show mean* on, the average over the same window sits
+to its left as `avg 6.4`. The percentage turns green once you are above the
+good threshold and red below the bad one; in between it stays in the quiet
+sub-text colour. Hover over the badge to see a thin upright bar on its right
+edge filled from the bottom to the same share, and click it to see the window
+it covers and the limits it uses. In a
+narrow window the `avg` word and then the mean give way so the percentage
+always fits.
 - **Good**: Above 70% in range
 - **Needs work**: Below 70% in range
 

@@ -36,6 +36,15 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-08-27: UpdateTrendDots reads slot values from the TTrendSlot model
+ *   instead of parsing them back out of the dots' Hint strings, and the
+ *   resize pass clears the shared FDotsExpanded flag up front instead of
+ *   probing captions to collapse expanded dots afterwards. Second pass, same
+ *   date: UpdateTrendDots and UpdateTrendElements moved out of this file —
+ *   the resize pass now calls the single-surface layout in umain_dots once.
+ * - 2026-08-27: tBootFetchTimer routes through updateReading(true) instead of
+ *   calling RequestAsyncFetch directly, so the boot fetch shares the same
+ *   wrapper semantics as every other fetch trigger.
  * - 2026-08-21: The WSL width tweak is guarded by LCLQt6 alone - isWSL is
  *   always false off Linux now that DetectWSL is in the base contract.
  *)
@@ -58,155 +67,16 @@ var
 
   // For prediction time updates
 procedure UpdatePredictionTimes;
-  var
-    i, closest5, closest10, closest15, closestTarget: integer;
-    diff5, diff10, diff15, diffTarget, currentDiffSigned: integer;
-    minutes, targetMinutes: integer;
-    delta: glucose;
-    trend: BGTrend;
-    pred1, pred2, pred3: string;
-    lastReadingValue: single;
-    validCount: integer;
-    prevCaption: string;
   begin
-    if not (PredictGlucoseReading and lPredict.Visible and (Length(PredictionCache) > 0)) then
+    if not (PredictGlucoseReading and Assigned(FPredictStrip) and
+      FPredictStrip.Visible and (Length(PredictionCache) > 0)) then
       Exit;
-
-    prevCaption := lPredict.Caption;
-    lastReadingValue := lastReading.convert(mgdl);
-
-    // Find predictions closest to 5, 10, 15 and the configured short horizon from NOW
-    closest5 := -1;
-    closest10 := -1;
-    closest15 := -1;
-    closestTarget := -1;
-    diff5 := MaxInt;
-    diff10 := MaxInt;
-    diff15 := MaxInt;
-    diffTarget := MaxInt;
-    targetMinutes := PredictShortMinutes;
-
-    for i := 0 to High(PredictionCache) do
-    begin
-      // Signed minutes from NOW: negative = past, positive = future.
-      // MinutesBetween is Abs()-based, so a stale past prediction would
-      // otherwise win "closest to N" against a real future one.
-      currentDiffSigned := Round((PredictionCache[i].date - Now) * MinsPerDay);
-
-      if (currentDiffSigned >= 0) and (Abs(currentDiffSigned - 5) < diff5) then
-      begin
-        diff5 := Abs(currentDiffSigned - 5);
-        closest5 := i;
-      end;
-
-      if (currentDiffSigned >= 0) and (i <> closest5) and (Abs(currentDiffSigned - 10) < diff10) then
-      begin
-        diff10 := Abs(currentDiffSigned - 10);
-        closest10 := i;
-      end;
-
-      if (currentDiffSigned >= 0) and (i <> closest5) and (i <> closest10) and (Abs(currentDiffSigned - 15) < diff15) then
-      begin
-        diff15 := Abs(currentDiffSigned - 15);
-        closest15 := i;
-      end;
-
-      if (currentDiffSigned >= 0) and (Abs(currentDiffSigned - targetMinutes) < diffTarget) then
-      begin
-        diffTarget := Abs(currentDiffSigned - targetMinutes);
-        closestTarget := i;
-      end;
-    end;
-
-    // Check if we have at least one valid prediction
-    validCount := 0;
-    if closest5 >= 0 then
-      Inc(validCount);
-    if closest10 >= 0 then
-      Inc(validCount);
-    if closest15 >= 0 then
-      Inc(validCount);
-
-    if validCount = 0 then
+    // Arrow-only short mode shows no time, so there is nothing to count down.
+    if PredictShortMode and not PredictShortShowValue then
       Exit;
-
-    // Update prediction display with current times
-    if PredictShortMode then
-    begin
-      // Short mode: show only configured-horizon prediction with arrow
-      if closestTarget >= 0 then
-      begin
-        delta := PredictionCache[closestTarget].convert(mgdl) - lastReadingValue;
-        trend := CalculateTrendFromDelta(delta);
-        minutes := Round(MinutesBetween(PredictionCache[closestTarget].date, Now));
-
-        if PredictShortShowValue then
-          if PredictShortFullArrows then
-            lPredict.Caption := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closestTarget].convert(un)])
-          else
-            case trend of
-            TdDoubleUp, TdSingleUp, TdFortyFiveUp:
-              lPredict.Caption := Format('⏱%d'' ↗ %.1f', [minutes, PredictionCache[closestTarget].convert(un)]);
-            TdFlat:
-              lPredict.Caption := Format('⏱%d'' → %.1f', [minutes, PredictionCache[closestTarget].convert(un)]);
-            TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-              lPredict.Caption := Format('⏱%d'' ↘ %.1f', [minutes, PredictionCache[closestTarget].convert(un)]);
-            else
-              lPredict.Caption := '?';
-            end;
-        // Arrow-only mode doesn't show time, so no update needed
-      end;
-    end
-    else
-    begin
-      // Full mode: show time, trend, and value for all three
-      if closest5 >= 0 then
-      begin
-        minutes := Round(MinutesBetween(PredictionCache[closest5].date, Now));
-        delta := PredictionCache[closest5].convert(mgdl) - lastReadingValue;
-        trend := CalculateTrendFromDelta(delta);
-        pred1 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest5].convert(un)]);
-      end
-      else
-        pred1 := '?';
-
-      if closest10 >= 0 then
-      begin
-        minutes := Round(MinutesBetween(PredictionCache[closest10].date, Now));
-        delta := PredictionCache[closest10].convert(mgdl) - lastReadingValue;
-        trend := CalculateTrendFromDelta(delta);
-        pred2 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest10].convert(un)]);
-      end
-      else
-        pred2 := '?';
-
-      if closest15 >= 0 then
-      begin
-        minutes := Round(MinutesBetween(PredictionCache[closest15].date, Now));
-        delta := PredictionCache[closest15].convert(mgdl) - lastReadingValue;
-        trend := CalculateTrendFromDelta(delta);
-        pred3 := Format('⏱%d'' %s %.1f', [minutes, BG_TREND_ARROWS_UTF[trend], PredictionCache[closest15].convert(un)]);
-      end
-      else
-        pred3 := '?';
-
-      lPredict.Caption := pred1 + ' | ' + pred2 + ' | ' + pred3;
-    end;
-
-    // Keep prediction label geometry in sync with dynamic caption updates.
-    // Only when the caption actually changed — ScaleLbl runs a binary-search
-    // font measurement plus a repaint, which is wasted work on the (common)
-    // ticks where the displayed minutes haven't moved yet.
-    if lPredict.Visible and (lPredict.Caption <> prevCaption) then
-    begin
-      if DIFF_ALIGN = taRightJustify then
-        ScaleLbl(lPredict, taCenter, tlBottom, false)
-      else
-        ScaleLbl(lPredict, taRightJustify, tlBottom, false);
-      // Keep horizontal anchoring stable during timer updates; Top is handled
-      // by the main resize/layout path to avoid small vertical jumps.
-      lPredict.Left := ClientWidth - lPredict.Width - 5;
-    end;
+    // Re-measure the countdown from now. The strip only repaints when a
+    // header actually changed, so the ticks between minutes cost nothing.
+    RenderPredictionText(PredictionCache, Now, 0);
   end;
 
 procedure predictFuture;
@@ -305,7 +175,7 @@ begin
   // fetch. The rest of the tick still runs: the fullscreen clock below is
   // wall-clock, not reading age.
   if Length(bgs) < 1 then
-    lAgo.Caption := CLOCK_CAPTION_PREFIX + RS_COMPUTE_FAILED_AGO
+    SetAgoText(RS_COMPUTE_FAILED_AGO, '')
   else
   if not FTrendDataStale then
   try
@@ -315,21 +185,23 @@ begin
     if showTimestamp then
     begin
       timeStr := FormatDateTime('hh:nn', d);
-      lAgo.Caption := CLOCK_CAPTION_PREFIX + timeStr;
+      SetAgoText(timeStr, RS_AGO_TIME_CAPTION);
     end
     else
     begin
       min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;
       if min < 0 then
         min := 0;
-      lAgo.Caption := CLOCK_CAPTION_PREFIX + Format(RS_LAST_UPDATE, [min]);
+      // No caption: "3 min" says enough on its own, and the word under it
+      // was one thing too many in that corner.
+      SetAgoText(Format(RS_LAST_UPDATE, [min]), '');
     end;
 
     UpdatePredictionTimes;
 
     predictFuture;
   except
-    lAgo.Caption := CLOCK_CAPTION_PREFIX + RS_COMPUTE_FAILED_AGO;
+    SetAgoText(RS_COMPUTE_FAILED_AGO, '');
   end;
 
   // Catch-all activation for the fullscreen clock: covers fullscreen entered
@@ -340,19 +212,24 @@ begin
 end;
 
 procedure TfBG.tProgressTimer(Sender: TObject);
-const
-  PROGRESS_TICK_MS = 1000;   // enough to keep a 5-minute bar moving smoothly
-  PROGRESS_PULSE_MS = 125;   // frame rate for the overdue breathing pulse
 var
   wantMs, nowSec: integer;
 begin
   wantMs := PROGRESS_TICK_MS;
-  if Assigned(pnNextProgress) and pnNextProgress.Visible then
+  if Assigned(pbNextProgress) and pbNextProgress.Visible then
   begin
-    pnNextProgress.Repaint;
-    // pnNextProgressPaint sets FProgressPulsing while the reading is overdue;
-    // the pulse needs real frames, the rest of the cycle does not.
-    if FProgressPulsing then
+    // Skip frames that would reproduce the last painted image: at 1 Hz the
+    // fill often moves less than a pixel per tick (and not at all while both
+    // lines sit pegged full waiting on a reading).
+    if ProgressFrameChanged then
+      pbNextProgress.Repaint;
+    UpdateFloatProgress;
+    // pbNextProgressPaint sets FProgressPulsing while both lines are full;
+    // the pulse needs real frames, the rest of the cycle does not. The
+    // reading-arrival drain is shorter and faster still.
+    if FProgressDrainFrom > 0 then
+      wantMs := PROGRESS_DRAIN_TICK_MS
+    else if FProgressPulsing then
       wantMs := PROGRESS_PULSE_MS;
   end;
   if tProgress.Interval <> wantMs then
@@ -370,6 +247,30 @@ begin
       pnWarning.Repaint;
     end;
   end;
+end;
+
+// Mirror the bar onto the floating window's slim edge strip. Runs on the
+// same tick as the bar itself, so the strip only exists while the progress
+// bar feature (main.next_progress) is on — the float has no scheduler of its
+// own to drive it. SetNextProgress ignores calls that change nothing.
+// The strip is a single line, so it shows the combined 0..2 progress halved —
+// still monotone: first half is the cycle, second half the retry window.
+procedure TfBG.UpdateFloatProgress;
+var
+  frac1, frac2: double;
+  pulsing, draining: boolean;
+begin
+  if not (Assigned(fFloat) and fFloat.Visible) then
+    Exit;
+  if (bgs = nil) or (Length(bgs) = 0) then
+    Exit;
+  ComputeProgressState(frac1, frac2, pulsing, draining);
+  // Colour follows the stage: the cycle colours while the primary line is
+  // still filling, the overtime red once the retry window has opened.
+  if frac2 > 0 then
+    fFloat.SetNextProgress(true, (frac1 + frac2) / 2, ProgressOvertimeColor(pulsing))
+  else
+    fFloat.SetNextProgress(true, frac1 / 2, ProgressFillColor(frac1, pulsing));
 end;
 
 {------------------------------------------------------------------------------
@@ -438,12 +339,12 @@ begin
   {$endif}
   lClock.Caption := clockText;
 
-  // Top-center band, same strip lAgo (left) and lTir (right) occupy; the
-  // font mirrors lAgo so UpdateUIColors' color choices carry over.
+  // Top-center band, same strip the age (left) and TIR (right) badges occupy;
+  // the font mirrors the age badge so UpdateUIColors' color choices carry over.
   lClock.Width := ClientWidth div 4;
   lClock.Height := ClientHeight div 9;
   lClock.Top := TitleBarOffset + 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
-  lClock.Font.Assign(lAgo.Font);
+  lClock.Font.Assign(FAgoBadge.Font);
   lClock.Visible := true;
   ScaleLbl(lClock, taCenter, tlCenter, true);
   lClock.Left := (ClientWidth - lClock.Width) div 2;
@@ -556,8 +457,6 @@ var
   resizeWarnTint: TColor;
   resizeWarnAlpha: byte;
   resizeWarnLayout: TWarnLayout;
-  dotProbe: TDotControl;
-  i: integer;
 begin
   tResize.Enabled := false;
 
@@ -587,9 +486,9 @@ begin
     Exit;
   end;
 
-  actOnTrend(@HideDot);
-
-  UpdateTrendElements;
+  // A relayout renders markers: drop the shared expanded-value state so the
+  // layout pass sizes every dot as a circle again.
+  FDotsExpanded := false;
 
   if not Assigned(api) then
   begin
@@ -612,39 +511,8 @@ begin
   ResizeUIElements;
 
   UpdateTrendDots;
-  actOnTrend(@showDot);
-
-  AdjustGraph;
 
   fixWarningPanel;
-
-  // Collapse expanded (value-text) dots back to markers after a relayout.
-  // DOT_FRESH counts as a marker too — with a 1-dot window TrendDots[1] is the
-  // latest dot and may carry the fresh ring rather than the plain dot.
-  // Probe the first slot holding a real reading rather than TrendDots[1]
-  // blindly: a leading DOT_GAP marker (or an empty slot's stale caption) is
-  // neither marker nor value text, and reading it as "expanded" made every
-  // relayout toggle the real dots into their value text — and made the
-  // click-collapse path re-expand them immediately.
-  dotProbe := nil;
-  if Length(TrendDots) > 1 then
-    for i := 1 to High(TrendDots) do
-      if Assigned(TrendDots[i]) and (TrendDots[i].Hint <> '') and
-        (TrendDots[i].Caption <> DOT_GAP) then
-      begin
-        dotProbe := TrendDots[i];
-        break;
-      end;
-  if Assigned(dotProbe) and (dotProbe.Caption <> DOT_GRAPH) and
-    (dotProbe.Caption <> DOT_FRESH) then
-    actOnTrend(@ExpandDot);
-end;
-
-procedure TfBG.UpdateTrendElements;
-begin
-  actOnTrend(@ResizeDot);
-  actOnTrend(@SetDotWidth);
-  LayoutPredictionDots;
 end;
 
 procedure TfBG.UpdateApiInformation;
@@ -674,18 +542,174 @@ end;
 
 procedure TfBG.nextProgressChange;
 begin
-  if not Assigned(pnNextProgress) then
+  if not Assigned(pbNextProgress) then
     Exit;
 
-  lTir.left := fBG.Width - lTir.Width - pnNextProgress.Width - 5;
+  FTirBadge.Left := fBG.Width - FTirBadge.Width - pbNextProgress.Width - 5;
 end;
 
-procedure TfBG.ResizeUIElements;
+procedure TfBG.SetAgoText(const AValue, ACaption: string);
+begin
+  if not Assigned(FAgoBadge) then
+    Exit;
+  FAgoBadge.RangeCaption := ACaption;
+  FAgoBadge.SetState(-1, AValue, '');
+  LayoutAgoBadge;
+end;
+
+procedure TfBG.LayoutAgoBadge;
+var
+  maxW, maxH, padding, lo, hi, mid, best, w, h: integer;
+  scaleFactor: single;
+  bmp: TBitmap;
+begin
+  if not Assigned(FAgoBadge) then
+    Exit;
+
+  // The same box ScaleLbl fitted lAgo into: half the width, a ninth of the
+  // height, scaled by the ux.labels.lago.scale hook (see guides/Hacks.md).
+  // The margin mirrors the TIR badge's on the other side — the progress
+  // bar's width plus five — so the two sit the same distance from their
+  // edges, and the age stays clear of the bar when it is on.
+  padding := pbNextProgress.Width + 5;
+  maxW := ClientWidth div 2 - padding - 4;
+  maxH := ClientHeight div 9 - 4;
+  scaleFactor := native.GetFloatSetting('ux.labels.' + LowerCase(FAgoBadge.Name) + '.scale', 1);
+  if (scaleFactor > 0) and (scaleFactor <> 1) then
+  begin
+    maxW := Min(ClientWidth, Round(maxW * scaleFactor));
+    maxH := Min(ClientHeight, Round(maxH * scaleFactor));
+  end;
+
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    // Largest point size whose value text fits the box — the band's font.
+    // Only the value takes part: the caption under it sizes itself.
+    if FAgoBadge.Caption <> '' then
+    begin
+      bmp.Canvas.Font.Assign(FAgoBadge.Font);
+      best := 1;
+      lo := 1;
+      hi := 150;
+      while lo <= hi do
+      begin
+        mid := (lo + hi) div 2;
+        bmp.Canvas.Font.Size := mid;
+        if (bmp.Canvas.TextWidth(FAgoBadge.Caption) <= maxW) and
+          (bmp.Canvas.TextHeight(FAgoBadge.Caption) <= maxH) then
+        begin
+          best := mid;
+          lo := mid + 1;
+        end
+        else
+          hi := mid - 1;
+      end;
+      FAgoBadge.Font.Size := best;
+    end;
+    FAgoBadge.PreferredSize(bmp.Canvas, 0, w, h);
+  finally
+    bmp.Free;
+  end;
+
+  FAgoBadge.SetBounds(padding,
+    TitleBarOffset + 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3), w, h);
+  // Re-shown here after the resize handler hid it, as ScaleLbl did.
+  FAgoBadge.Visible := FAgoBadge.Caption <> '';
+  FAgoBadge.BringToFront;
+
+  // The TIR badge copies this font, so it has to follow a refit.
+  LayoutTirBadge;
+end;
+
+procedure TfBG.LayoutTirBadge;
+var
+  w, h: integer;
+begin
+  if not Assigned(FTirBadge) then
+    Exit;
+  // Same face as the age badge on the other side of the band; the badge
+  // derives its caption size from it. Measure on a temp TBitmap — a control
+  // canvas outside paint SIGABRTs on Cocoa.
+  FTirBadge.Font := FAgoBadge.Font;
+  with TBitmap.Create do
+  try
+    SetSize(1, 1);
+    // At most half the window: the "ago" label owns the other half of the
+    // band, and the off-range banner sits between them.
+    FTirBadge.PreferredSize(Canvas, ClientWidth div 2 - pbNextProgress.Width - 5, w, h);
+  finally
+    Free;
+  end;
+  {$ifdef LCLQt6}
+  if isWSL then // isWSL is always false off Linux (base DetectWSL stub)
+    w := 50;
+  {$endif}
+  FTirBadge.SetBounds(fBG.Width - w - pbNextProgress.Width - 5, TitleBarOffset, w, h);
+  // The resize handler hides the badge along with the age badge while the window is
+  // being resized; ScaleLbl used to force the label back on, so this layout
+  // pass has to do the same — unless there is nothing to show (stale data).
+  FTirBadge.Visible := FTirBadge.Caption <> '';
+  FTirBadge.BringToFront;
+end;
+
+// The strip fits its own text to whatever box it gets, so this only decides
+// how much of the corner the forecast may take: two rows' worth in full mode,
+// the user-picked arrow size in short mode. ux.labels.lpredict.scale scales
+// the box like it scaled the label (see guides/Hacks.md).
+procedure TfBG.LayoutPredictionStrip;
 const
   PRED_WIDTH_NUM: array[1..3] of integer = (6, 8, 9);
   PRED_HEIGHT_NUM: array[1..3] of integer = (2, 3, 4);
 var
-  wnum, hnum: integer;
+  size, w, h: integer;
+  scaleFactor: single;
+begin
+  if not (Assigned(FPredictStrip) and FPredictStrip.Visible) then
+    Exit;
+
+  if PredictShortMode then
+  begin
+    size := Max(Min(PredictShortSize, 3), 1);
+    // The largest short-prediction size gets a bold face so the glyph keeps
+    // its weight at the bigger footprint.
+    FPredictStrip.Bold := size >= 3;
+    w := (ClientWidth * PRED_WIDTH_NUM[size]) div 12;
+    h := (ClientHeight * PRED_HEIGHT_NUM[size]) div 12;
+    // With the countdown and value the cell is two rows and about twice as
+    // wide as a lone arrow — but not as tall as the arrow-only box, whose
+    // full height would push the header up into the trend dots.
+    if PredictShortShowValue then
+    begin
+      w := w * 2;
+      h := (h * 2) div 3;
+    end;
+  end
+  else
+  begin
+    FPredictStrip.Bold := false;
+    w := (ClientWidth * 2) div 5;
+    h := ClientHeight div 8;
+  end;
+
+  scaleFactor := native.GetFloatSetting('ux.labels.' + LowerCase(FPredictStrip.Name) + '.scale', 1);
+  if scaleFactor > 0 then
+  begin
+    w := Min(ClientWidth, Round(w * scaleFactor));
+    h := Min(ClientHeight, Round(h * scaleFactor));
+  end;
+
+  // Content hugs the corner unless the difference label is right-aligned
+  // there too, in which case it centres within its box like the label did.
+  if DIFF_ALIGN = taRightJustify then
+    FPredictStrip.Alignment := taCenter
+  else
+    FPredictStrip.Alignment := taRightJustify;
+
+  FPredictStrip.SetBounds(ClientWidth - w - 5, ClientHeight - h - 5, w, h);
+end;
+
+procedure TfBG.ResizeUIElements;
 begin
   pnOffReading.Height := ClientHeight;
   pnOffReading.ClientWidth := ClientWidth div 35;
@@ -710,15 +734,7 @@ begin
   lDiff.Top := ClientHeight - lDiff.Height + 1;
   ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
 
-  lAgo.Width := ClientWidth div 2;
-  lAgo.Height := ClientHeight div 9;
-  lAgo.Left := 0;
-  lAgo.Top := TitleBarOffset + 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
-  lAgo.Transparent := true;
-  // Leave the clock clear of the enabled left-side progress bar at every form width.
-  ScaleLbl(lAgo, taLeftJustify, tlCenter, true,
-    IfThen(pnNextProgress.Visible, pnNextProgress.Width + 2, 0));
-  lAgo.BringToFront;
+  LayoutAgoBadge;
 
   lArrow.Height := ClientHeight;
   lArrow.Width := ClientWidth;
@@ -745,26 +761,7 @@ begin
     end;
   end;
 
-  ScaleLbl(lTir);
-  lTir.BringToFront;
-  lTir.AutoSize := false;
-  lTir.font := lAgo.Font;
-  // Measure on a temp TBitmap — TLabel.Canvas outside paint SIGABRTs on Cocoa.
-  with TBitmap.Create do
-  try
-    SetSize(1, 1);
-    Canvas.Font.Assign(lTir.Font);
-    lTir.Height := Canvas.TextHeight(lTir.Caption);
-    lTir.Width := Canvas.TextWidth(lTir.Caption);
-  finally
-    Free;
-  end;
-
-  {$ifdef LCLQt6}
-  if isWSL then // isWSL is always false off Linux (base DetectWSL stub)
-    lTir.Width := 50;
-  {$endif}
-  lTir.top := TitleBarOffset;
+  LayoutTirBadge;
 
   lArrow.OptimalFill := true;
 
@@ -773,47 +770,7 @@ begin
   pnMultiUser.top := TitleBarOffset;
   pnMultiUser.left := 0;
 
-  if Assigned(lPredict) and lPredict.Visible then
-  begin
-    if PredictShortMode then
-    begin
-      // The largest short-prediction size gets a bold face so the glyph keeps
-      // its weight at the bigger footprint.
-      if PredictShortSize >= 3 then
-        lPredict.Font.Style := [fsBold]
-      else
-        lPredict.Font.Style := [];
-      if PredictShortShowValue then
-      begin
-        wnum := PRED_WIDTH_NUM[Max(Min(PredictShortSize, 3), 1)];
-        hnum := PRED_HEIGHT_NUM[Max(Min(PredictShortSize, 3), 1)];
-        lPredict.Width := ((ClientWidth * wnum) div 12) * 2;
-        lPredict.Height := ((ClientHeight * hnum) div 12) div 2;
-      end
-      else
-      begin
-        wnum := PRED_WIDTH_NUM[Max(Min(PredictShortSize, 3), 1)];
-        hnum := PRED_HEIGHT_NUM[Max(Min(PredictShortSize, 3), 1)];
-        lPredict.Width := (ClientWidth * wnum) div 12;
-        lPredict.Height := (ClientHeight * hnum) div 12;
-      end;
-    end
-    else
-    begin
-      lPredict.Font.Style := [];
-      lPredict.Width := (ClientWidth * 2) div 5;
-      lPredict.Height := ClientHeight div 12;
-    end;
-
-    lPredict.Left := ClientWidth - lPredict.Width - 5;
-    lPredict.Top := ClientHeight - lPredict.Height - 5;
-
-    if DIFF_ALIGN = taRightJustify then
-      ScaleLbl(lPredict, taCenter, tlBottom, true)
-    else
-      ScaleLbl(lPredict, taRightJustify, tlBottom, true);
-    lPredict.Left := ClientWidth - lPredict.Width - 5;
-  end;
+  LayoutPredictionStrip;
   nextProgressChange;
 
   // The drawn title bar and its resize grips must stay above the controls the
@@ -826,61 +783,6 @@ begin
   // Keep the fullscreen clock's band and font in step with the labels that
   // were just re-laid out (it mirrors lAgo's font).
   UpdateClockOverlay(true);
-end;
-
-procedure TfBG.UpdateTrendDots;
-var
-  Dot: TDotControl;
-  Value: glucose;
-  ok: boolean;
-  wasVisible: boolean;
-  ix: integer;
-begin
-  // Indexed rather than a for-in: showing a dot needs its slot number so the
-  // narrow-window clamp can decide whether this slot is one of the rendered
-  // ones. TrendDots is 1-based with index 0 left nil.
-  for ix := Low(TrendDots) to High(TrendDots) do
-  begin
-    Dot := TrendDots[ix];
-    if not Assigned(Dot) then Continue;
-    wasVisible := Dot.Visible;
-
-    ok := TryStrToFloat(Dot.Hint, Value, native.locale);
-
-    if ok then
-    begin
-      if un = mgdl then
-        Value := Value * BG_CONVERTIONS[mmol][mgdl];
-
-      if Assigned(Dot.Parent) then
-        SetPointHeight(Dot, Value, Dot.Parent.ClientHeight)
-      else
-        SetPointHeight(Dot, Value, fBG.ClientHeight);
-
-      // Position the dot regardless — only its visibility is clamped, so
-      // widening the window brings it back already in the right place.
-      Dot.Visible := DotSlotVisible(ix);
-    end
-    else
-    if Dot.Hint <> '' then
-    begin
-      TrndiDLog(Format('Warning: Could not parse Hint "%s" for dot. Keeping visibility=%s',
-        [Dot.Hint, BoolToStr(wasVisible, true)]));
-      Dot.Visible := wasVisible and DotSlotVisible(ix);
-    end
-    else
-      Dot.Visible := false;
-  end;
-
-  // Keep prediction dots positioned alongside the history dots, or hidden when
-  // the dot view is off so they never linger after the mode is disabled.
-  if PredictionDotsActive then
-    UpdatePredictionDotHeights
-  else
-    HidePredictionDots;
-
-  if pnWarning.Visible then
-    pnWarning.Refresh;
 end;
 
 procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
@@ -1143,7 +1045,10 @@ begin
     tBootFetch.Enabled := false;
     FreeAndNil(tBootFetch);
   end;
-  RequestAsyncFetch(true, false);
+  // Route through updateReading like every other fetch trigger, so the boot
+  // fetch gets the same wrapper semantics (native.start, the refresh caption,
+  // force-flag bookkeeping) instead of a bespoke direct call.
+  updateReading(true);
 end;
 
 // Animates the braille-spinner glyph in lVal while the very first fetch is

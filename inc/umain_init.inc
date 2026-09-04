@@ -41,38 +41,10 @@
 (* MODIFICATION NOTICE (2026-08-18): The UI-state cache seeds FLastTirHint in
    place of the removed FLastTirColor, following ShouldUpdateUI's switch to the
    time-in-range hint. *)
+(* MODIFICATION NOTICE (2026-08-27): actOnTrend and the per-dot init are gone
+   with the per-dot controls; FormCreate now calls InitTrendModel, which
+   allocates the slot arrays and the single trend paint surface. *)
 // Main form helper functions for trend dots and UI initialization
-
-// Apply a procedure to all active trend dots; also provides count and index
-procedure TfBG.actOnTrend(proc: TTrendProcLoop);
-var
-  ix: integer;
-begin
-  if Length(TrendDots) <= ACTIVE_DOTS then Exit;
-  for ix := 1 to ACTIVE_DOTS do
-  begin
-    proc(TrendDots[ix], ACTIVE_DOTS, ix, TrendDots);
-    // Skip Repaint when the dot isn't on screen — early-init paths (e.g.
-    // applying initDot before the first reading) leave dots hidden, so the
-    // paint would be discarded anyway.
-    if TrendDots[ix].Visible then
-      TrendDots[ix].Repaint;
-  end;
-end;
-
-// Apply a procedure to all active trend dots
-procedure TfBG.actOnTrend(proc: TTrendProc);
-var
-  ix: integer;
-begin
-  if Length(TrendDots) <= ACTIVE_DOTS then Exit;
-  for ix := 1 to ACTIVE_DOTS do
-  begin
-    proc(TrendDots[ix], ACTIVE_DOTS, ix);
-    if TrendDots[ix].Visible then
-      TrendDots[ix].Repaint;
-  end;
-end;
 
 procedure tfBG.SetLang;
 var
@@ -225,8 +197,8 @@ begin
   fontName := native.GetSetting('font.ago', 'default');
   if fontName <> 'default' then
   begin
-    lAgo.Font.Name := fontName;
-    lTir.Font.Name := fontName;
+    FAgoBadge.Font.Name := fontName;
+    FTirBadge.Font.Name := fontName;
   end;
 
   // Sensitive data
@@ -235,13 +207,13 @@ begin
 
   tir_icon := native.GetBoolSetting('range.tir_icon', false);
 
-  // Read dot count before CreateTrendDots so the right number of slots is allocated
+  // Read dot count before InitTrendModel so the right number of slots is allocated
   ACTIVE_DOTS := native.GetIntSetting('ux.dot_count', NUM_DOTS);
   if ACTIVE_DOTS < 1 then ACTIVE_DOTS := 1;
   if ACTIVE_DOTS > MAX_DOT_COUNT then ACTIVE_DOTS := MAX_DOT_COUNT;
 
-  // Create trend dots dynamically (TLabel on Darwin, TPaintBox elsewhere)
-  CreateTrendDots;
+  // Allocate the trend slot model and its paint surface
+  InitTrendModel;
 
   // Check touch screen
   HasTouch := native.HasTouchScreen(HasMultiTouch);
@@ -249,8 +221,6 @@ begin
     touchHelper := TTouchDetector.Create;
 
   miATouch.Checked := hastouch;
-
-  actOnTrend(@initDot);
 
   //--- Colors
   bg_color_ok := native.GetColorSetting('ux.bg_color_ok', bg_color_ok);
@@ -289,6 +259,10 @@ begin
   // once and cached: DotPaint runs per dot on every paint pass.
   DotColorMode := DotColorModeFromSetting(
     native.GetIntSetting('ux.dot_color_mode', Ord(DOT_COLOR_MODE_DEFAULT)));
+  // Optional connecting line between the dots, cached for the same reason.
+  TrendLineEnabled := native.GetBoolSetting('ux.dot_line', false);
+  TrendLineWidthStep :=
+    EnsureRange(native.GetIntSetting('ux.dot_line_width', 2), 1, 3);
 
   // Color title bar (on Windows?)
   titlecolor := native.GetBoolSetting('ux.title_color', true);
@@ -653,14 +627,14 @@ begin
   pnOffReading.Visible := false;
   pnOffRange.Visible := false;
   pnOffRangeBar.Visible := false;
-  if Assigned(pnNextProgress) then
-    pnNextProgress.Visible := false;
-  if Assigned(lPredict) then
-    lPredict.Visible := false;
+  if Assigned(pbNextProgress) then
+    pbNextProgress.Visible := false;
+  if Assigned(FPredictStrip) then
+    FPredictStrip.Visible := false;
   lArrow.Caption := '';
   lDiff.Caption := '';
-  lAgo.Caption := '';
-  lTir.Caption := '';
+  FAgoBadge.Clear;
+  FTirBadge.Clear;
   lRef.Caption := '';
 
   // "Setup" fills the window like a reading would; lVal is client-aligned so
@@ -710,6 +684,37 @@ begin
   // from *this* — never to an already-prefixed caption — as the title-bar
   // badge appears or disappears (see RefreshUserBadge).
   FBaseCaption := Caption;
+
+  // The forecast text lives in a custom-painted strip rather than an LFM
+  // label: it fits its own fonts and colours its cells by range, which a
+  // TLabel can't. Hidden until settings say otherwise (below).
+  FPredictStrip := TPredictionStrip.Create(Self);
+  FPredictStrip.Name := 'lPredict'; // ux.labels.lpredict.scale keys off this
+  FPredictStrip.Parent := Self;
+  FPredictStrip.Visible := false;
+  FPredictStrip.OnClick := @lPredictClick;
+
+  // Same story for time-in-range: a caption, a mean part and a fill bar are
+  // beyond a TLabel. Named after the label it replaced for the extension
+  // hook's sake.
+  FTirBadge := TStatBadge.Create(Self);
+  FTirBadge.Name := 'lTir';
+  FTirBadge.Parent := Self;
+  FTirBadge.OnClick := @lTirClick;
+
+  // And the reading age on the left, the mirror image: "3 min", or the clock
+  // time over "last reading".
+  // Its Font is the top band's face — the TIR badge and the fullscreen clock
+  // copy it, as they copied lAgo's. No bar: an age has no share to fill.
+  FAgoBadge := TStatBadge.Create(Self);
+  FAgoBadge.Name := 'lAgo';
+  FAgoBadge.Parent := Self;
+  FAgoBadge.Alignment := taLeftJustify;
+  FAgoBadge.ShowBar := false;
+  FAgoBadge.PopupMenu := pmSettings;
+  FAgoBadge.OnClick := @lAgoClick;
+  FAgoBadge.OnDblClick := @lDiffDblClick;
+  FAgoBadge.OnMouseMove := @FormMouseMove;
 
   // --kiosk: dedicated-display mode (RPi wall display, bedside screen).
   // FormShow schedules the actual activation: fullscreen, keep-awake, and no
@@ -894,8 +899,7 @@ begin
           // InitializeAPI will scale this up by the reporting interval below.
           if MAX_RESULT < ACTIVE_DOTS then
             MAX_RESULT := ACTIVE_DOTS;
-          FreeTrendDotControls;
-          CreateTrendDots;
+          InitTrendModel;
 
           fSplash.Show;
         end
@@ -1065,7 +1069,7 @@ begin
     if PredictShortSize > 3 then
       PredictShortSize := 3;
     // Hidden in dot mode — the predictions are drawn on the trend instead.
-    lPredict.Visible := PredictGlucoseReading and not PredictDotMode;
+    FPredictStrip.Visible := PredictGlucoseReading and not PredictDotMode;
   end;
 
   // Final initialization and first reading. The fetch is dispatched to a
@@ -1091,19 +1095,19 @@ begin
   lArrow.Caption := '';
   lDiff.Caption := '';
   lRef.Caption := '';
-  lAgo.Caption := RS_INIT_FETCH;
-  lTir.Caption := '';
+  SetAgoText(RS_INIT_FETCH, '');
+  FTirBadge.Clear;
   if Assigned(pnOffReading) then
     pnOffReading.Visible := false;
   if Assigned(pnOffRange) then
     pnOffRange.Visible := false;
   if Assigned(pnOffRangeBar) then
     pnOffRangeBar.Visible := false;
-  if Assigned(pnNextProgress) then
-    pnNextProgress.Visible := false;
+  if Assigned(pbNextProgress) then
+    pbNextProgress.Visible := false;
   fBG.Color := clBlack;
-  if Assigned(lPredict) then
-    lPredict.Visible := false;
+  if Assigned(FPredictStrip) then
+    FPredictStrip.Visible := false;
 
   // The actual fetch is kicked off via a one-shot timer (tBootFetch) so the
   // worker thread is created only after Application.Run is pumping the

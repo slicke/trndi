@@ -2498,6 +2498,22 @@ msgstr "Detta er dina fôrutspodda avlesningar; Tidsskillnad: fôrutspodd-avlesn
 msgid "No change predicted →"
 msgstr "Ingen endring forutspos →"
 
+#: trndi.strings.rs_predict_header
+msgid "+%d min"
+msgstr "+%d min"
+
+#: trndi.strings.rs_tir_caption
+msgid "in range"
+msgstr ""
+
+#: trndi.strings.rs_tir_mean_caption
+msgid "avg"
+msgstr ""
+
+#: trndi.strings.rs_ago_time_caption
+msgid "last reading"
+msgstr ""
+
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Fôrutspoelser otillgengliga"
@@ -2948,6 +2964,14 @@ msgstr "Tillegget stoppades"
 msgid "under"
 msgstr "under"
 
+#: trndi.strings.rs_unhandled_error
+msgid "Trndi hit an unexpected error"
+msgstr ""
+
+#: trndi.strings.rs_unhandled_error_desc
+msgid "The app keeps running, but what's on screen may lag behind until the next reading arrives. The details below are useful in a bug report."
+msgstr ""
+
 #: trndi.strings.rs_unknown_err
 #, fuzzy
 msgctxt "trndi.strings.rs_unknown_err"
@@ -3393,6 +3417,23 @@ msgid ""
 "- The window's borders can be hidden (may depend on operating system)"
 msgstr ""
 
+#: uconf.rs_dot_line
+msgid "Draw a line connecting the trend dots"
+msgstr ""
+
+#: uconf.rs_dot_line_normal
+msgctxt "uconf.rs_dot_line_normal"
+msgid "Normal"
+msgstr ""
+
+#: uconf.rs_dot_line_thick
+msgid "Thick"
+msgstr ""
+
+#: uconf.rs_dot_line_thin
+msgid "Thin"
+msgstr ""
+
 #: uconf.rs_dots_auto
 msgid "Adapt to background"
 msgstr ""
@@ -3567,6 +3608,14 @@ msgstr "Du kan endra typsnittet po avlesning, tid och pil. Klicka po respektive 
 #: uconf.rs_full_arrow_set_help
 msgid "This will display all prediction arrows, by default Trndi just shows going up, down or steady"
 msgstr "Detta kommer visa alla forutspoelsepilar, som standard visar Trndi bara om verde forutspos bli logt, hôgt eller rakt"
+
+#: uconf.rs_gb_graph_overlays
+msgid "Overlays"
+msgstr ""
+
+#: uconf.rs_gb_trend_dots
+msgid "Trend dots"
+msgstr ""
 
 #: uconf.rs_hastouch
 msgid "Shows if Trndi detected a touch screen"
@@ -3835,6 +3884,10 @@ msgctxt "uconf.rs_page_system"
 msgid "System"
 msgstr "System"
 
+#: uconf.rs_page_trendgraph
+msgid "Trend graph"
+msgstr ""
+
 #: uconf.rs_pd_access
 msgid "Text-to-speech, high contrast and in-app explanations."
 msgstr ""
@@ -3893,6 +3946,10 @@ msgstr ""
 
 #: uconf.rs_pd_system
 msgid "System information, autostart, web access and settings backup."
+msgstr ""
+
+#: uconf.rs_pd_trendgraph
+msgid "How much history the trend dots show, and what is drawn on them."
 msgstr ""
 
 #: uconf.rs_pos

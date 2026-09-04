@@ -89,8 +89,8 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
-      <MajorVersionNr Value="18"/>
-      <BuildNr Value="128"/>
+      <MajorVersionNr Value="19"/>
+      <BuildNr Value="247"/>
       <StringTable CompanyName="Slicke" FileDescription="Trndi - CGM trend monitor" LegalCopyright="Björn Lindh" ProductName="Trndi"/>
     </VersionInfo>
     <BuildModes>
