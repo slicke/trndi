@@ -576,7 +576,11 @@ end;
 
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
 begin
-  FAlertEngine.SnoozeActive(Minutes);
+  // The menu is a global "pause alerts" control, so snooze every rule - not
+  // just the ones in violation. With glucose in range nothing is violating,
+  // and SnoozeActive would then snooze nothing while the confirmation still
+  // claimed a pause. Per-rule caps (MaxSnoozeMinutes) are still honoured.
+  FAlertEngine.SnoozeAll(Minutes);
   UpdateAlertSnoozeMenu;
   ShowMessage(Format(RS_ALERT_SNOOZE_FOR, [Minutes]));
 end;
