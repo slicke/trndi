@@ -121,7 +121,16 @@ WIDGETSET ?= qt6
 # directory, match nothing, and be silently dropped by the recipe's error
 # suppression. Non-matching patterns are otherwise harmless.
 ifeq ($(OS),Windows_NT)
-  QJS_DIR := externals/quickjs/prebuilt/x86_64-win64
+  # PROCESSOR_ARCHITECTURE is what the *current process* runs as, which is the
+  # right question: an x64 toolchain emulated on Windows on ARM builds an x64
+  # Trndi.exe and needs the x64 libraries beside it, and reports AMD64 here.
+  # Only a native ARM64 shell says ARM64, and only then is aarch64-win64 what
+  # the .lpi will look for ($(TargetCPU)-$(TargetOS)).
+  ifeq ($(PROCESSOR_ARCHITECTURE),ARM64)
+    QJS_DIR := externals/quickjs/prebuilt/aarch64-win64
+  else
+    QJS_DIR := externals/quickjs/prebuilt/x86_64-win64
+  endif
   QJS_LIBS := libqjs*.dll libtqshim*.dll tqshim*.dll
 else ifeq ($(UNAME_S),Darwin)
   QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed s/arm64/aarch64/)-darwin

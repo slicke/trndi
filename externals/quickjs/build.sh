@@ -5,7 +5,9 @@
 #   ./build.sh          host target, plus the win64 cross-build on Linux
 #   ./build.sh linux    host linux only
 #   ./build.sh mac      host macOS only
-#   ./build.sh win      win64 cross only
+#   ./build.sh win      x86_64 Windows, cross from Linux through mingw-w64
+#   ./build.sh winarm   aarch64 Windows, cross from Linux through llvm-mingw
+#   ./build.sh winhost  natively on Windows, in an MSYS2 shell (either arch)
 #   ./build.sh haiku    host Haiku only
 #   ./build.sh freebsd  host FreeBSD only
 #   ./build.sh shim     the ABI shim only, against an engine that is already there
@@ -23,13 +25,17 @@ host="$(uname -s)"
 what="${1:-all}"
 
 # 'all' means "everything this host can produce": macOS and Haiku build only for
-# themselves, Linux also cross-builds win64 through mingw.
+# themselves, Linux also cross-builds x86_64 win64 through mingw. 'winarm' is
+# deliberately not in it -- it needs llvm-mingw, which no distro packages, so
+# folding it in would make 'all' fail on every machine that has only the
+# x86_64 cross-compiler. Under MSYS2 the whole thing is a native Windows build.
 if [ "$what" = all ]; then
   case "$host" in
-    Darwin)  what=mac ;;
-    Haiku)   what=haiku ;;
-    FreeBSD) what=freebsd ;;
-    *)       what=all-linux ;;
+    Darwin)                       what=mac ;;
+    Haiku)                        what=haiku ;;
+    FreeBSD)                      what=freebsd ;;
+    MINGW*|MSYS*|CLANGARM64*|CYGWIN*) what=winhost ;;
+    *)                            what=all-linux ;;
   esac
 fi
 
@@ -50,6 +56,13 @@ case "$what" in
     if [ "$host" != FreeBSD ]; then
       echo "the FreeBSD libraries must be built on FreeBSD"; exit 1
     fi ;;
+  winhost)
+    # An MSYS2 shell reports MINGW64_NT-… / CLANGARM64_NT-… / MSYS_NT-…; the
+    # cross targets ('win', 'winarm') are the way in from anywhere else.
+    case "$host" in
+      MINGW*|MSYS*|CLANGARM64*|CYGWIN*) ;;
+      *) echo "winhost builds on Windows itself; use 'win' or 'winarm' to cross from $host"; exit 1 ;;
+    esac ;;
 esac
 
 # FreeBSD's base compiler is clang and there may be no 'gcc' at all, so do not
@@ -100,7 +113,7 @@ host_arch() {
     BePC|i?86) echo i386 ;;
     amd64)     echo x86_64 ;;
     arm64)     echo aarch64 ;;
-    *)         uname -m ;;
+    *)         uname -m ;;   # MSYS2 already agrees: x86_64 / aarch64
   esac
 }
 
@@ -191,6 +204,84 @@ build_shim() {
       -o "$out/libtqshim.so" "$HERE/tq_shim.c" "${lib[@]}" -lqjs \
       -Wl,-rpath,'$ORIGIN'
   fi
+}
+
+# --- Windows -----------------------------------------------------------------
+#
+# Both Windows targets produce libqjs.dll and tqshim.dll. Those names are not a
+# convention here, they are the interface: the Pascal binding declares
+# 'external libqjs.dll' / 'external tqshim.dll' (trndi.ext.quickjs.pp), and FPC
+# writes the import under exactly that name -- no import library is involved on
+# Windows. A toolchain that spells the engine qjs.dll, as MSVC does, links
+# cleanly and then leaves the executable asking the loader for a DLL that was
+# never shipped. mingw's lib-prefixed output is what the binding expects, which
+# is why every route below is a mingw one.
+
+# The C driver for a mingw triple. mingw-w64 packages ship <triple>-gcc;
+# llvm-mingw ships <triple>-clang, usually with a <triple>-gcc symlink beside
+# it. Prefer -gcc so a distro toolchain wins where one is installed, and fall
+# back to -clang, which is the only spelling some llvm-mingw builds carry.
+win_cc() {
+  if command -v "$1-gcc" >/dev/null 2>&1; then echo "$1-gcc"
+  elif command -v "$1-clang" >/dev/null 2>&1; then echo "$1-clang"
+  else return 1
+  fi
+}
+
+# Cross-build both libraries for Windows. $1 is the FPC cpu name, which is also
+# the prebuilt/ directory -- the .lpi library path is $(TargetCPU)-$(TargetOS),
+# so ARM64 is aarch64-win64 and nothing else. $2 is the mingw triple, $3 names
+# the cmake build tree.
+build_win_cross() {
+  local cpu="$1" triple="$2" name="$3"
+  local out="$HERE/prebuilt/${cpu}-win64" cc cxx root
+
+  if ! cc="$(win_cc "$triple")"; then
+    echo "no $triple toolchain on PATH."
+    if [ "$cpu" = aarch64 ]; then
+      echo "  No distro packages an ARM64 mingw. Either put llvm-mingw on PATH,"
+      echo "  or build in a container that already has it -- see 'Windows on ARM'"
+      echo "  in README.md, which installs nothing on the host."
+    else
+      echo "  Fedora: dnf install mingw64-gcc"
+      echo "  Debian: apt install gcc-mingw-w64-x86-64"
+    fi
+    exit 1
+  fi
+  case "$cc" in
+    *-gcc)   cxx="${cc%-gcc}-g++" ;;
+    *-clang) cxx="${cc%-clang}-clang++" ;;
+  esac
+
+  mkdir -p "$out"
+  {
+    echo "set(CMAKE_SYSTEM_NAME Windows)"
+    echo "set(CMAKE_SYSTEM_PROCESSOR $cpu)"
+    echo "set(CMAKE_C_COMPILER   $cc)"
+    echo "set(CMAKE_CXX_COMPILER $cxx)"
+    echo "set(CMAKE_RC_COMPILER  $triple-windres)"
+    # Fedora's mingw packages keep their sysroot here; llvm-mingw carries its
+    # own inside the toolchain and has no such directory. Pointing cmake at a
+    # path that does not exist makes every find_* search quietly useless, so
+    # only set it when it is really there.
+    root="/usr/$triple/sys-root/mingw"
+    if [ -d "$root" ]; then echo "set(CMAKE_FIND_ROOT_PATH $root)"; fi
+    echo "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)"
+    echo "set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)"
+    echo "set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)"
+  } > "$WORK/$name.cmake"
+
+  build_engine "$name" -DCMAKE_TOOLCHAIN_FILE="$WORK/$name.cmake"
+
+  echo "--> building shim ($cpu-win64)"
+  # Into the build tree rather than straight into $out, so a failed compile
+  # cannot leave half a library behind in a directory that is committed.
+  "$cc" -shared -O2 -std=c11 -I"$SRC" \
+    -o "$WORK/b-$name/tqshim.dll" "$HERE/tq_shim.c" \
+    "$WORK/b-$name/libqjs.dll.a"
+
+  cp "$WORK/b-$name/libqjs.dll" "$WORK/b-$name/tqshim.dll" "$out/"
+  echo "    -> $out"
 }
 
 if [ "$what" = all-linux ] || [ "$what" = linux ]; then
@@ -320,28 +411,69 @@ if [ "$what" = mac ]; then
 fi
 
 if [ "$what" = all-linux ] || [ "$what" = win ]; then
-  out="$HERE/prebuilt/x86_64-win64"
+  build_win_cross x86_64 x86_64-w64-mingw32 win
+fi
+
+if [ "$what" = winarm ]; then
+  build_win_cross aarch64 aarch64-w64-mingw32 winarm
+fi
+
+# Natively on Windows, in an MSYS2 shell. This is the route for a machine that
+# runs Windows anyway -- notably Windows on ARM, where an ARM64 VM builds its
+# own libraries and no cross-toolchain is involved at all. The compilers carry
+# no triple prefix here: it is a host build that happens to target Windows, so
+# it produces the same libqjs.dll / tqshim.dll pair as the cross-builds and
+# lands in the same directory.
+if [ "$what" = winhost ]; then
+  # MSYS2's CLANGARM64 environment has clang and no gcc (there is no ARM64
+  # mingw gcc); MINGW64 has gcc. Neither packages 'cc', so the default $CC
+  # picked above does not necessarily name anything that exists -- but an
+  # explicit CC= from the caller does, and is left alone.
+  if ! command -v "$CC" >/dev/null 2>&1; then
+    for c in gcc clang; do
+      if command -v "$c" >/dev/null 2>&1; then CC="$c"; break; fi
+    done
+  fi
+  if ! command -v "$CC" >/dev/null 2>&1; then
+    echo "no C compiler in this MSYS2 environment."
+    echo "  CLANGARM64: pacman -S mingw-w64-clang-aarch64-{clang,cmake,ninja} git"
+    echo "  MINGW64:    pacman -S mingw-w64-x86_64-{gcc,cmake,ninja} git"
+    exit 1
+  fi
+
+  # Ask the compiler what it targets rather than asking the host what it is.
+  # host_arch() is wrong here: MSYS2 ships no native ARM64 runtime, so on
+  # Windows on ARM the shell -- and its uname -- is the emulated x86_64 one
+  # even in the CLANGARM64 environment, where every compiler in $PATH emits
+  # ARM64 code. Trusting uname would file an ARM64 build under x86_64-win64
+  # and hand the loader an ARM64 DLL for an x64 executable.
+  triple="$("$CC" -dumpmachine)"
+  case "$triple" in
+    aarch64-*|arm64-*) arch=aarch64 ;;
+    x86_64-*)          arch=x86_64 ;;
+    i?86-*)            arch=i386 ;;
+    *) echo "cannot tell what $CC targets (-dumpmachine said '$triple')"; exit 1 ;;
+  esac
+  # The plain MSYS environment builds against msys-2.0.dll, a Cygwin fork --
+  # not a Windows-native DLL, and not something Trndi.exe can load. Its
+  # compiler reports *-pc-msys, which is the one spelling to refuse.
+  case "$triple" in
+    *-msys)
+      echo "this is the MSYS environment, which builds Cygwin-style binaries."
+      echo "  Open the CLANGARM64 shell (ARM64) or MINGW64 shell (x64) instead."
+      exit 1 ;;
+  esac
+
+  out="$HERE/prebuilt/${arch}-win64"
   mkdir -p "$out"
 
-  cat > "$WORK/mingw.cmake" <<'EOF'
-set(CMAKE_SYSTEM_NAME Windows)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)
-set(CMAKE_C_COMPILER   x86_64-w64-mingw32-gcc)
-set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
-set(CMAKE_RC_COMPILER  x86_64-w64-mingw32-windres)
-set(CMAKE_FIND_ROOT_PATH /usr/x86_64-w64-mingw32/sys-root/mingw)
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-EOF
+  build_engine winhost
+  echo "--> building shim (${arch}-win64, native)"
+  "$CC" -shared -O2 -std=c11 -I"$SRC" \
+    -o "$WORK/b-winhost/tqshim.dll" "$HERE/tq_shim.c" \
+    "$WORK/b-winhost/libqjs.dll.a"
 
-  build_engine win -DCMAKE_TOOLCHAIN_FILE="$WORK/mingw.cmake"
-  echo "--> building shim (win64)"
-  x86_64-w64-mingw32-gcc -shared -O2 -std=c11 -I"$SRC" \
-    -o "$WORK/tqshim.dll" "$HERE/tq_shim.c" \
-    "$WORK/b-win/libqjs.dll.a"
-
-  cp "$WORK/b-win/libqjs.dll" "$WORK/tqshim.dll" "$out/"
+  cp "$WORK/b-winhost/libqjs.dll" "$WORK/b-winhost/tqshim.dll" "$out/"
   echo "    -> $out"
 fi
 

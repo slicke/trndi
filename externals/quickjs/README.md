@@ -63,11 +63,17 @@ pkg install cmake
 ./build.sh            # everything this host can produce
 ./build.sh linux      # host .so
 ./build.sh mac        # host .dylib
-./build.sh win        # win64 .dll (mingw cross)
+./build.sh win        # x86_64 win64 .dll (mingw cross)
+./build.sh winarm     # aarch64 win64 .dll (llvm-mingw cross; see below)
+./build.sh winhost    # .dll natively, in an MSYS2 shell on Windows
 ./build.sh haiku      # host .so
 ./build.sh freebsd    # host .so
 ./build.sh shim       # the shim only (see below)
 ```
+
+`winarm` is not part of `./build.sh` with no argument: it needs a toolchain no
+distro packages, so folding it into "everything this host can produce" would
+make the default fail on every machine that has only the x86_64 cross-compiler.
 
 `./build.sh shim` builds *only* `tq_shim.c`, against an engine that is already
 there — the copy in `prebuilt/<target>/` when one exists, otherwise the system's.
@@ -116,19 +122,18 @@ target's directory as well if you want both to link against it.
 | target | how |
 |---|---|
 | `x86_64-linux` | `build.sh linux`, or cross from any host |
-| `x86_64-win64` | `build.sh win` (mingw cross), or natively with mingw |
+| `x86_64-win64` | `build.sh win` (mingw cross), or `build.sh winhost` in MSYS2 |
+| `aarch64-win64` | `build.sh winarm` (llvm-mingw cross), or `build.sh winhost` in MSYS2 |
 | `aarch64-darwin`, `x86_64-darwin` | `build.sh mac`, on a Mac |
 | `aarch64-linux` | build natively on the target (e.g. a Raspberry Pi) |
 | `x86_64-haiku` | `build.sh haiku` on Haiku, or `build.sh shim` against the `quickjs_ng` package |
 | `x86_64-freebsd` | `build.sh freebsd` on FreeBSD (ports has Bellard's quickjs, not ng — build it) |
-| Windows ARM64 | build natively on the platform |
 
-`x86_64-linux`, `aarch64-linux`, `x86_64-win64`, `aarch64-darwin`,
-`x86_64-haiku` and `x86_64-freebsd` are committed. The missing ones —
-`x86_64-darwin` (Intel Mac) and Windows ARM64 — have to be built on the target
-itself; until they are, those hosts can only build Trndi's "No Ext" modes.
-Anything `build.sh` produces is safe to commit — that is the point of
-`prebuilt/`.
+`x86_64-linux`, `aarch64-linux`, `x86_64-win64`, `aarch64-win64`,
+`aarch64-darwin`, `x86_64-haiku` and `x86_64-freebsd` are committed. The only
+missing one is `x86_64-darwin` (Intel Mac), which has to be built on the target
+itself; until it is, that host can only build Trndi's "No Ext" modes. Anything
+`build.sh` produces is safe to commit — that is the point of `prebuilt/`.
 
 Nothing is shared between platforms here, and a near miss is worth naming: a
 native FreeBSD build links `libc.so.7` and cannot load the Linux `libqjs`.
@@ -137,6 +142,82 @@ under `/compat/linux`; it does not let a native executable load a Linux `.so`.
 
 There is no cross-glibc in Fedora's repos, so arm64 Linux is built natively
 rather than cross-compiled.
+
+### Windows on ARM
+
+The directory is `aarch64-win64` — FPC's name for the target, which is what
+`Trndi.lpi` resolves through `$(TargetCPU)-$(TargetOS)`. Both routes below
+produce the same two files, `libqjs.dll` and `tqshim.dll`, and both go through
+mingw rather than MSVC on purpose: the Pascal binding declares `external
+'libqjs.dll'` and FPC writes the import under exactly that name, so a
+toolchain that spells the engine `qjs.dll` links cleanly and then leaves the
+executable asking the loader for a DLL nobody shipped.
+
+**Cross-build in a container**, which installs nothing on the host. No distro
+packages an ARM64 mingw, so the toolchain comes from
+[llvm-mingw](https://github.com/mstorsjo/llvm-mingw); its image already carries
+cmake, ninja and git, so unlike the Rocky recipe below there is no package
+install step:
+
+```sh
+cd <repo root>/externals/quickjs
+podman run --rm \
+  -v "$PWD:/qjs:Z" -w /qjs \
+  -e TRNDI_QJS_WORK=/tmp/qjsbuild \
+  docker.io/mstorsjo/llvm-mingw:latest \
+  ./build.sh winarm
+```
+
+Only `externals/quickjs` is mounted, so `:Z` relabels that directory rather
+than the whole source tree; drop it on a host without SELinux (WSL, Debian).
+`TRNDI_QJS_WORK` keeps the quickjs-ng clone and the CMake tree inside the
+container, so only the finished DLLs are written back. The same image builds
+`./build.sh win` too, if you would rather not install mingw at all.
+
+**Natively on Windows on ARM**, which is the route if you already run an ARM64
+Windows — in a VM on an Apple Silicon Mac, say. Install
+[MSYS2](https://www.msys2.org/), open the **CLANGARM64** shell (not MSYS, not
+UCRT64 — CLANGARM64 is the environment that targets ARM64; there is no ARM64
+mingw *gcc*, which is why it is a clang environment), and:
+
+```sh
+pacman -S --needed git mingw-w64-clang-aarch64-clang mingw-w64-clang-aarch64-cmake mingw-w64-clang-aarch64-ninja
+cd /c/path/to/trndi/externals/quickjs
+./build.sh winhost      # or just ./build.sh — 'all' means this under MSYS2
+```
+
+`winhost` is arch-agnostic: run it from the MINGW64 shell on an x64 machine and
+it fills `x86_64-win64` instead. It is a host build, so the compilers have no
+triple prefix — that is the whole difference from `winarm`.
+
+Which directory it fills is decided by `$CC -dumpmachine`, not by `uname -m`,
+and the difference is not academic: MSYS2 ships **no native ARM64 runtime**, so
+on Windows on ARM the shell itself is the emulated x86_64 one and its `uname`
+says `x86_64` even in CLANGARM64, where every compiler on `PATH` emits ARM64
+code. Trusting `uname` there would file an ARM64 build under `x86_64-win64` and
+hand the loader an ARM64 DLL for an x64 executable. The plain **MSYS** shell is
+refused outright — it builds against `msys-2.0.dll`, a Cygwin fork, which is
+not a Windows-native library at all.
+
+Two things to know before building *Trndi itself* for ARM64 Windows:
+
+- **FPC 3.2.2 cannot target `aarch64-win64`**; that came later. Check with
+  `fpc -i` on the build machine. The DLLs are independent of this and are worth
+  building either way.
+- **Windows 11 on ARM runs x64 binaries under emulation**, so an existing
+  `x86_64-win64` Trndi build already works on an ARM machine. A native ARM64
+  build is an optimisation, not a prerequisite — and if the toolchain you run
+  is the emulated x64 one, x64 is also the *correct* target: `Makefile` and
+  `make.ps1` both key off `PROCESSOR_ARCHITECTURE`, which describes the
+  process, not the machine, and so stage the libraries that match whatever
+  `Trndi.exe` was just built as.
+
+Packaging is a separate, unsolved problem: `dist/windows_setup.iss` is x64
+throughout — `ArchitecturesAllowed=x64compatible`, and `iscc` produces an x64
+setup binary — so pointing it at `aarch64-win64` would swap the DLLs without
+making the installer native. A native ARM64 installer needs solving as a whole,
+not one path at a time. Until then an ARM64 build is something you run from the
+build directory, not something you ship.
 
 ### FreeBSD version floor
 
