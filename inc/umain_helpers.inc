@@ -50,6 +50,33 @@ end;
 
 procedure TfBG.APIReceiver(const msg: string; etype: TrndiAPIMsg);
 begin
+  // Backends emit from whichever thread runs them — Connect and getReadings
+  // both live on the fetch worker — and alert/notice end in LCL calls. Hand
+  // those to the main thread and let the worker wait. FApiCallInFlight keeps
+  // one worker on the api at a time, so a single marshal slot suffices. A
+  // worker detached at shutdown must not block on a main loop that is gone.
+  if GetCurrentThreadId <> MainThreadID then
+  begin
+    if FShuttingDown then
+    begin
+      TrndiDLog(msg);
+      Exit;
+    end;
+    FPendingApiMsg := msg;
+    FPendingApiMsgType := etype;
+    TThread.Synchronize(TThread.CurrentThread, @DeliverPendingApiMessage);
+    Exit;
+  end;
+  DeliverApiMessage(msg, etype);
+end;
+
+procedure TfBG.DeliverPendingApiMessage;
+begin
+  DeliverApiMessage(FPendingApiMsg, FPendingApiMsgType);
+end;
+
+procedure TfBG.DeliverApiMessage(const msg: string; etype: TrndiAPIMsg);
+begin
   case etype of
   TrndiAPIMsg.alert:
     SlickeMessage('API Alert', msg, uxmtWarning);

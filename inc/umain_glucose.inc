@@ -1583,6 +1583,16 @@ begin
   if api = nil then
     Exit;
 
+  // Until the boot worker's Connect has succeeded only the boot fetch itself
+  // may use the backend: a periodic tick landing while the connect-failure
+  // Settings dialog is up would otherwise fetch against a backend that never
+  // connected, or against one that is about to be replaced.
+  if FBootConnectPending and (not Boot) then
+  begin
+    TrndiDLog('RequestAsyncFetch: dropped — boot connect still pending');
+    Exit;
+  end;
+
   if FApiCallInFlight then
   begin
     TrndiDLog('RequestAsyncFetch: dropped — api call already in flight');
@@ -1631,7 +1641,8 @@ begin
   TrndiDLog('RequestAsyncFetch: starting worker (boot=' +
     BoolToStr(Boot, true) + ' force=' + BoolToStr(Force, true) + ')');
 
-  FGlucoseFetchThread := TGlucoseFetchThread.Create(Self, Boot, Force);
+  FGlucoseFetchThread := TGlucoseFetchThread.Create(Self, Boot, Force,
+    Boot and FBootConnectPending);
   Result := true;
 end;
 

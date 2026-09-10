@@ -186,16 +186,24 @@ private
   FOwner: TfBG;
   FBoot: boolean;
   FForce: boolean;
+  FConnectFirst: boolean; // Run api.Connect before the fetch (boot only)
+  FConnectOK: boolean;
+  FConnectErr: string;
+  FAbortFetch: boolean;   // Set on the main thread inside ApplyConnectResult;
+                          // api may be replaced afterwards, so the worker
+                          // must unwind without touching it again
   FResults: BGResults;
   FErrorMsg: string;
   {$ifdef DEBUG}
   FDiag: string;
   {$endif}
+  procedure ApplyConnectResult;
   procedure ApplyResult;
 protected
   procedure Execute; override;
 public
-  constructor Create(AOwner: TfBG; Boot: boolean; Force: boolean);
+  constructor Create(AOwner: TfBG; Boot: boolean; Force: boolean;
+    ConnectFirst: boolean = false);
 end;
 
 {**
@@ -678,6 +686,15 @@ private
   FGlucoseFetchThread: TGlucoseFetchThread;
   FBootFetchPending: boolean; // True while the splash-time first fetch is in
                               // flight; gates the boot-failure warning panel.
+  FBootConnectPending: boolean; // True from FormCreate until api.Connect has
+                                // succeeded on the boot worker; only the boot
+                                // fetch may use the backend until then.
+  FBootConnectError: string;    // Connect failure text handed from the worker
+                                // to DeferredBootConnectFailure.
+  FBootFetchAttempts: integer;  // tBootFetch ticks since the last ArmBootFetch
+  FSafeModeRequested: boolean;  // Ctrl held at launch: skip extension loading.
+  FPendingApiMsg: string;       // APIReceiver marshal slot for a worker-thread
+  FPendingApiMsgType: TrndiAPIMsg; // emit, delivered via Synchronize.
   FHistoryFetchThread: THistoryFetchThread;
   // Shared guard: true while EITHER a TGlucoseFetchThread or
   // THistoryFetchThread is interacting with the TrndiAPI. Both backends
@@ -828,6 +845,28 @@ private
   procedure tBootFetchTimer(Sender: TObject);
   procedure tBootSpinnerTimer(Sender: TObject);
   procedure StopBootSpinner;
+  {** (Re)arm the one-shot boot-fetch timer. FormCreate arms it last; the
+      connect-failure path arms it again after the backend was replaced. }
+  procedure ArmBootFetch(const DelayMs: integer);
+  {** Runs on the main thread, from the boot worker's Synchronize, once
+      api.Connect succeeded: settles the thresholds (wizard fallback, user
+      overrides), seeds the level alerts and queues extension loading. Must
+      complete before the worker's getReadings, which stamps levels. }
+  procedure ApplyConnectedApi;
+  {** Queued by ApplyConnectResult when the boot Connect failed: error dialog,
+      Settings, then retry with the new backend or quit if nothing changed.
+      Runs after the worker has left Synchronize so a quit from the dialog
+      does not wait on a parked thread. }
+  procedure DeferredBootConnectFailure(Data: PtrInt);
+  {** Queued by ApplyConnectedApi: extension loading raises modal permission
+      prompts, which must not run while the worker is parked in Synchronize. }
+  procedure DeferredLoadExtensions(Data: PtrInt);
+  {** Drop to the "Setup" screen: no usable backend, the reading area becomes
+      a button into Settings. Safe both during FormCreate and afterwards. }
+  procedure EnterSetupScreen;
+  {** Main-thread half of APIReceiver: shows/logs the message. }
+  procedure DeliverApiMessage(const msg: string; etype: TrndiAPIMsg);
+  procedure DeliverPendingApiMessage;
   {** Disable a fired one-shot timer and drop the reference to it, without
       freeing it. Every caller runs from inside the timer's own OnTimer, where
       a free would tear down the widgetset timer whose callback is still on the
