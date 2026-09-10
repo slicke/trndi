@@ -68,8 +68,9 @@ private
   FShown: double;        // Displayed percentage, eased toward FProgress
   FCardRect: TRect;      // Warning card, computed from the scaled label bounds
   FDividerY: integer;    // Divider under the warning heading, inside the card
-  FUseFade: boolean;     // AlphaBlend fades enabled (skipped on problematic WMs)
+  FUseFade: boolean;     // AlphaBlend fade-in enabled (skipped on problematic WMs)
   FFadedIn: boolean;     // Fade-in already ran (Show is called more than once)
+  FFadeAlpha: integer;   // Fade-in progress stepped by AnimTick; -1 when done
   FCentered: boolean;    // Re-centered after the dynamic height was applied
   lWarnTitle: TLabel;    // Heading split off the translated warning caption
   lPct: TLabel;          // Percentage readout beside the status line
@@ -96,7 +97,7 @@ const
   CARD_PAD    = 14;  // Inner padding between the card edge and the warning text
   CARD_CORNER = 18;
   EDGE_PAD    = 16;  // Outer padding for the status line and progress bar
-  FADE_STEPS  = 10;  // × 12 ms sleep ≈ 120 ms per fade
+  FADE_STEP   = 51;  // AlphaBlend increment per tAnim tick: 5 × 16 ms ≈ 80 ms fade-in
 
   COL_CARD    = $001E1E1E;
   COL_BORDER  = $00363636;
@@ -151,11 +152,24 @@ procedure TfSplash.AnimTick({%H-}Sender: TObject);
 var
   diff: double;
 begin
+  // The fade-in rides on the same tick as the progress easing. It used to be
+  // a Sleep loop on the main thread inside FormShow; the ProcessMessages
+  // pumps in incProgress drive this timer just as well, without stalling
+  // FormCreate for the length of the fade.
+  if FFadeAlpha >= 0 then
+  begin
+    FFadeAlpha := Min(255, FFadeAlpha + FADE_STEP);
+    AlphaBlendValue := FFadeAlpha;
+    if FFadeAlpha >= 255 then
+      FFadeAlpha := -1;
+  end;
+
   diff := FProgress - FShown;
   if Abs(diff) < 0.5 then
   begin
     FShown := FProgress;
-    tAnim.Enabled := false;
+    if FFadeAlpha < 0 then
+      tAnim.Enabled := false;
   end
   else
     FShown := FShown + Max(1.0, diff * 0.25) * Sign(diff);
@@ -291,8 +305,6 @@ begin
 end;
 
 procedure TfSplash.FormShow({%H-}Sender: TObject);
-var
-  i: integer;
 begin
   UpdateLayout;
   Invalidate;
@@ -301,29 +313,17 @@ begin
   FFadedIn := true;
   if FUseFade then
   begin
-    for i := 1 to FADE_STEPS do
-    begin
-      AlphaBlendValue := (255 * i) div FADE_STEPS;
-      Application.ProcessMessages;
-      Sleep(12);
-    end;
-    AlphaBlendValue := 255;
+    FFadeAlpha := 0;
+    AlphaBlendValue := 0;
+    tAnim.Enabled := true;
   end;
 end;
 
-// Fade the splash away before closing; boot calls this instead of Close.
-// On WMs where fades are skipped this is just Close.
+// Close the splash; boot calls this instead of Close. The fade-out it used
+// to run was 120 ms of Sleep on the main thread right before the main window
+// appears, and the main window's own map covers the transition.
 procedure TfSplash.FadeOutAndClose;
-var
-  i: integer;
 begin
-  if FUseFade and Visible then
-    for i := FADE_STEPS - 1 downto 0 do
-    begin
-      AlphaBlendValue := (255 * i) div FADE_STEPS;
-      Application.ProcessMessages;
-      Sleep(12);
-    end;
   Close;
 end;
 
@@ -399,6 +399,7 @@ begin
   tAnim.Interval := 16;
   tAnim.OnTimer := @AnimTick;
   tAnim.Enabled := false;
+  FFadeAlpha := -1;
 
   // Same version string Settings shows: product version, plus the CI build
   // number when one was stamped in.
