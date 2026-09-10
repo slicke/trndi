@@ -2067,6 +2067,10 @@ msgstr "Votre connexion internet fonctionne !"
 msgid "The following extension file returned an error while loading: %s"
 msgstr "Le fichier d'extension suivant a renvoyé une erreur lors du chargement : %s"
 
+#: trndi.strings.rs_ext_none_loaded
+msgid "No extensions are loaded"
+msgstr "Aucune extension n'est chargée"
+
 #: trndi.strings.rs_ext_confirm
 msgctxt "trndi.strings.rs_ext_confirm"
 msgid "Extension Confirmation"

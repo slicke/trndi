@@ -1947,6 +1947,10 @@ msgstr ""
 msgid "The following extension file returned an error while loading: %s"
 msgstr ""
 
+#: trndi.strings.rs_ext_none_loaded
+msgid "No extensions are loaded"
+msgstr ""
+
 #: trndi.strings.rs_ext_confirm
 msgctxt "trndi.strings.rs_ext_confirm"
 msgid "Extension Confirmation"

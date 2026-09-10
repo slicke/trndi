@@ -312,6 +312,13 @@ public
     {** True when the singleton already exists. Unlike @code(Instance) this
         never lazily creates the engine, so it is safe on shutdown paths. }
   class function HasInstance: boolean;
+    {** The engine when one exists and shutdown has not begun; nil otherwise.
+        Never constructs one — the guard for every caller that only wants to
+        talk to an engine that is already running (callbacks, menu items).
+        Boot no longer builds the runtime when no extension is installed, so
+        an @code(Assigned(Instance)) test there would build it as a side
+        effect of the first glucose update. }
+  class function Existing: TTrndiExtEngine;
     {** Release the singleton instance (frees resources). }
   class procedure ReleaseInstance;
 
@@ -3326,6 +3333,13 @@ end;
 class function TTrndiExtEngine.HasInstance: boolean;
 begin
   Result := FInstance <> nil;
+end;
+
+class function TTrndiExtEngine.Existing: TTrndiExtEngine;
+begin
+  if IsExtShuttingDown then
+    Exit(nil);
+  Result := FInstance;
 end;
 
 {** Release the singleton engine instance. }
