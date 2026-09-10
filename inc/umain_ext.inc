@@ -363,8 +363,12 @@ begin
     fSplash.incProgress(79, 'Initializing extensions backend..');
 
   // Safe mode: holding Ctrl during startup skips all extension loading.
-  if ssCtrl in GetKeyShiftState then
+  // Boot samples the key at the top of FormCreate (FSafeModeRequested): the
+  // load itself now runs seconds later, after the backend connected, and the
+  // user has long let go by then. A live Ctrl still counts for manual reloads.
+  if FSafeModeRequested or (ssCtrl in GetKeyShiftState) then
   begin
+    FSafeModeRequested := false;
     SlickeHTMLMsg(sdsAuto, RS_SAFEMODE, RS_SAFEMODE_DESC, [mbOK], uxmtInformation, uxscLarge);
     exts.Free;
     Exit;

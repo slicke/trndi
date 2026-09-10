@@ -528,15 +528,22 @@ begin
     end;
   end;
 
-  // Scale MAX_RESULT to the API's reporting frequency so all dot slots can be
+  // Ensure MAX_MIN and MAX_RESULT cover the full dot window, then scale
+  // MAX_RESULT to the API's reporting frequency so all dot slots can be
   // filled even for backends that upload more often than every 5 minutes.
-  // Formula: 25 × ceil(INTERVAL_MINUTES / reportingInterval)
+  // Formula: max(25, ACTIVE_DOTS) × ceil(INTERVAL_MINUTES / reportingInterval)
   //   5-min backend → 25 × 1 = 25
   //   1-min backend → 25 × 5 = 125
+  // getReportingInterval is a backend constant, so this needs no Connect.
   if Assigned(api) then
+  begin
+    if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
+      MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
     MAX_RESULT := Max(MAX_RESULT,
-      25 * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
-                   div api.getReportingInterval));
+      Max(25, ACTIVE_DOTS) *
+      Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
+        div api.getReportingInterval));
+  end;
 end;
 
 {$ifdef X_LINUXBSD}
@@ -649,21 +656,8 @@ end;
 
 // Initialize the TrendDots array in FormCreate
 procedure TfBG.FormCreate({%H-}Sender: TObject);
-procedure haltBoot;
-  begin
-    firstboot := true;
-    fSplash.Hide;
-    FreeAndNil(fSplash);
-    tMain.Enabled := false;
-    lArrow.Caption := '';
-    lVal.Caption := RS_SETUP;
-    lVal.Cursor := crHandPoint;
-    bSettings.Show;
-    LayoutSetupScreen;
-  end;
-
 var
-  guifontName, txtfontName, apiTarget, prevSetup: string;
+  guifontName, txtfontName, apiTarget: string;
   fil, englishOnce: boolean;
   userlocale: TFormatSettings;
   minutesStr: string;
@@ -675,6 +669,9 @@ var
 begin
   TrndiDLog(Format(#10'=== Trndi started at %s ===', [DateTimeToStr(Now)]));
   firstboot := false;
+  // Extension safe mode is decided by the key state at launch, not at the
+  // (now deferred) moment the extensions load.
+  FSafeModeRequested := ssCtrl in GetKeyShiftState;
 
   // Assigned here rather than in the LFM: it pairs with the wsMinimized guard
   // in tResizeTimer, which is the only reason the event is wanted at all.
@@ -923,7 +920,7 @@ begin
     Application.ProcessMessages;
     if not InitializeAPI then
     begin
-      haltBoot;
+      EnterSetupScreen;
       Exit;
     end;
 
@@ -955,56 +952,16 @@ begin
 
     api.APIEmitter := @APIReceiver;
     api.OnCredentialsChanged := @APICredentialsChanged;
-    // A failed Connect at boot (e.g. an expired CareLink token) lands the
-    // user directly in Settings; the main window is never shown. New backend
-    // settings are retried in place, closing Settings unchanged quits.
-    while not api.Connect do
-    begin
-      fSplash.Hide;
-      ShowMessage(api.ErrorMsg);
-
-      prevSetup := GetSetting('remote.type') + '|' + GetSetting('remote.target') +
-        '|' + GetSetting('remote.creds');
-      firstboot := true; // Settings saves silently and leaves fBG hidden
-      miSettings.Click;
-      firstboot := false;
-
-      if GetSetting('remote.type') + '|' + GetSetting('remote.target') +
-        '|' + GetSetting('remote.creds') = prevSetup then
-      begin
-        firstboot := true; // Ensure quit doesn't ask for confirmation
-        FCloseAfterFormCreate := true;
-        Application.ShowMainForm := false;
-        Application.Terminate;
-        FreeAndNil(fSplash);
-        Exit;
-      end;
-
-      FreeAndNil(api);
-      if not InitializeAPI then
-      begin
-        haltBoot;
-        Exit;
-      end;
-      api.APIEmitter := @APIReceiver;
-      api.OnCredentialsChanged := @APICredentialsChanged;
-      fSplash.Show;
-    end;
+    // api.Connect runs on the boot worker (TGlucoseFetchThread with
+    // ConnectFirst), so the window is up and painting while the backend
+    // answers. ApplyConnectedApi finishes the threshold-dependent setup once
+    // it succeeds; DeferredBootConnectFailure runs the "error, Settings,
+    // retry or quit" flow when it does not.
+    FBootConnectPending := true;
 
     fSplash.incProgress(70, RS_INIT_UX);
     // UI preferences
     DOT_ADJUST := GetFloatSetting('ux.dot_adjust', 0);
-
-    // Ensure MAX_MIN and MAX_RESULT cover the full dot window.
-    // ACTIVE_DOTS was read before CreateTrendDots; the API-based MAX_RESULT
-    // scaling earlier used a default dot count — bump it for higher counts.
-    // MAX_RESULT is a reading count; mirror InitializeAPI's reporting-interval
-    // scaling but with ACTIVE_DOTS as the base.
-    if MAX_MIN < ACTIVE_DOTS * INTERVAL_MINUTES + 10 then
-      MAX_MIN := ACTIVE_DOTS * INTERVAL_MINUTES + 10;
-    MAX_RESULT := Max(MAX_RESULT,
-      ACTIVE_DOTS * Max(1, (INTERVAL_MINUTES + api.getReportingInterval - 1)
-                   div api.getReportingInterval));
 
     DIFF_ALIGN := native.GetAlignmentSetting('ux.labels.ldiff.alignment', taCenter);
 
@@ -1014,31 +971,8 @@ begin
     PaintRange := GetBoolSetting('ux.paint_range', true);
     PaintRangeLines := GetBoolSetting('ux.paint_range_lines', false);
     PaintRangeCGMRange := GetBoolSetting('ux.paint_range_cgmrange', false);
-    // Extensions
-    {$ifdef TrndiExt}
-    fSplash.incProgress(80, RS_SPLASH_LOADING_INIT);
-    LoadExtensions;
-    {$endif}
-
-    // Apply wizard-suggested thresholds for APIs that don't supply their own
-    // (cgmHi stays at initCGMCore's sentinel 401 when the API never set it)
-    if api.cgmHi = 401 then
-    begin
-      api.cgmHi := GetIntSetting('wizard.hi', api.cgmHi);
-      api.cgmLo := GetIntSetting('wizard.lo', api.cgmLo);
-    end;
-
-    fSplash.incProgress(85, RS_INIT_CUSTOM_OVERRIDES);
-    // Override settings - always apply if set, regardless of checkbox state
-    // This allows extensions and manual config edits to work
-    api.cgmLo := GetIntSetting('override.lo', api.cgmLo);
-    api.cgmHi := GetIntSetting('override.hi', api.cgmHi);
-    api.cgmRangeLo := GetIntSetting('override.rangelo', api.cgmRangeLo);
-    api.cgmRangeHi := GetIntSetting('override.rangehi', api.cgmRangeHi);
-
-    // Thresholds are final now - give the alert engine the same limits the UI
-    // paints with.
-    SeedLevelAlertRules;
+    // Extensions and the threshold fix-ups (wizard fallback, overrides, alert
+    // seeding) wait for the backend: see ApplyConnectedApi.
 
     PredictGlucoseReading := GetBoolSetting('predictions.enable', false);
     PredictShortMode := GetBoolSetting('predictions.short', false);
@@ -1095,7 +1029,7 @@ begin
   lArrow.Caption := '';
   lDiff.Caption := '';
   lRef.Caption := '';
-  SetAgoText(RS_INIT_FETCH, '');
+  SetAgoText(RS_INIT_CONNECT, '');
   FTirBadge.Clear;
   if Assigned(pnOffReading) then
     pnOffReading.Visible := false;
@@ -1117,16 +1051,12 @@ begin
   // message loop run first guarantees the form is painted and interactive
   // before any threading machinery starts.
   //
-  // Note: Enabled stays false here. The explicit Application.ProcessMessages
-  // further down (and any implicit pumping from fSplash.FadeOutAndClose /
-  // Self.Show)
-  // would otherwise dispatch this 50 ms WM_TIMER while FormCreate is still
-  // mid-setup. Arming happens at the very end of FormCreate.
+  // Note: the timer is not created here. The explicit
+  // Application.ProcessMessages further down (and any implicit pumping from
+  // fSplash.FadeOutAndClose / Self.Show) would otherwise dispatch its 50 ms
+  // WM_TIMER while FormCreate is still mid-setup. ArmBootFetch runs at the
+  // very end of FormCreate.
   FBootFetchPending := true;
-  tBootFetch := TTimer.Create(Self);
-  tBootFetch.Interval := 50;
-  tBootFetch.OnTimer := @tBootFetchTimer;
-  tBootFetch.Enabled := false;
 
   tBootSpinner := TTimer.Create(Self);
   tBootSpinner.Interval := 100;
@@ -1253,8 +1183,122 @@ begin
   // Application.ProcessMessages in FormCreate, so tBootFetchTimer cannot
   // fire until FormCreate returns and Application.Run starts pumping —
   // i.e. the form is fully constructed before any worker thread spawns.
-  if Assigned(tBootFetch) then
-    tBootFetch.Enabled := true;
+  ArmBootFetch(50);
+end;
+
+// Main thread, from the boot worker's Synchronize, after api.Connect
+// succeeded and before its getReadings. Everything here used to sit inline
+// in FormCreate behind the synchronous Connect.
+procedure TfBG.ApplyConnectedApi;
+begin
+  // Apply wizard-suggested thresholds for APIs that don't supply their own
+  // (cgmHi stays at initCGMCore's sentinel 401 when the API never set it)
+  if api.cgmHi = 401 then
+  begin
+    api.cgmHi := native.GetIntSetting('wizard.hi', api.cgmHi);
+    api.cgmLo := native.GetIntSetting('wizard.lo', api.cgmLo);
+  end;
+
+  // Override settings - always apply if set, regardless of checkbox state
+  // This allows extensions and manual config edits to work
+  api.cgmLo := native.GetIntSetting('override.lo', api.cgmLo);
+  api.cgmHi := native.GetIntSetting('override.hi', api.cgmHi);
+  api.cgmRangeLo := native.GetIntSetting('override.rangelo', api.cgmRangeLo);
+  api.cgmRangeHi := native.GetIntSetting('override.rangehi', api.cgmRangeHi);
+
+  // Thresholds are final now - give the alert engine the same limits the UI
+  // paints with, and the menu its real captions.
+  SeedLevelAlertRules;
+  UpdateApiInformation;
+
+  SetAgoText(RS_INIT_FETCH, '');
+
+  {$ifdef TrndiExt}
+  // Extensions capture the api pointer (TJSfuncs), so they load only once the
+  // backend that serves the session is settled. Queued rather than called:
+  // this runs inside the worker's Synchronize and the permission prompts
+  // LoadExtensions can raise are modal. The first fetchCallback comes from
+  // the same worker's later ApplyResult, well after this queued call ran.
+  Application.QueueAsyncCall(@DeferredLoadExtensions, 0);
+  {$endif}
+end;
+
+procedure TfBG.DeferredLoadExtensions({%H-}Data: PtrInt);
+begin
+  if FShuttingDown then
+    Exit;
+  {$ifdef TrndiExt}
+  LoadExtensions;
+  {$endif}
+end;
+
+// Queued from ApplyConnectResult on the main thread. This is the old
+// FormCreate connect loop, run once per failure with the window visible: a
+// failed Connect at boot (e.g. an expired CareLink token) lands the user in
+// Settings; new backend settings are retried in place, closing Settings
+// unchanged quits.
+procedure TfBG.DeferredBootConnectFailure({%H-}Data: PtrInt);
+var
+  prevSetup: string;
+begin
+  if FShuttingDown then
+    Exit;
+
+  // The worker has left Synchronize by now (ApplyConnectResult queued this
+  // call and returned); reap it so the api it used can be replaced below.
+  if Assigned(FGlucoseFetchThread) then
+  begin
+    SafeThreadJoin(FGlucoseFetchThread);
+    FreeAndNil(FGlucoseFetchThread);
+  end;
+
+  ShowMessage(FBootConnectError);
+
+  prevSetup := native.GetSetting('remote.type') + '|' + native.GetSetting('remote.target') +
+    '|' + native.GetSetting('remote.creds');
+  firstboot := true; // Settings saves silently and skips the save prompt
+  miSettings.Click;
+  firstboot := false;
+
+  if native.GetSetting('remote.type') + '|' + native.GetSetting('remote.target') +
+    '|' + native.GetSetting('remote.creds') = prevSetup then
+  begin
+    firstboot := true; // Ensure quit doesn't ask for confirmation
+    Close;
+    Exit;
+  end;
+
+  FreeAndNil(api);
+  if not InitializeAPI then
+  begin
+    EnterSetupScreen;
+    Exit;
+  end;
+  api.APIEmitter := @APIReceiver;
+  api.OnCredentialsChanged := @APICredentialsChanged;
+  ArmBootFetch(100);
+end;
+
+procedure TfBG.EnterSetupScreen;
+begin
+  firstboot := true;
+  if Assigned(fSplash) then
+  begin
+    fSplash.Hide;
+    FreeAndNil(fSplash);
+  end;
+  // Reached after boot too (backend replaced with one that cannot be
+  // created): the spinner would otherwise overwrite the Setup caption.
+  FBootFetchPending := false;
+  FBootConnectPending := false;
+  if Assigned(tBootSpinner) then
+    StopBootSpinner;
+  tMain.Enabled := false;
+  lArrow.Caption := '';
+  lVal.Caption := RS_SETUP;
+  lVal.Cursor := crHandPoint;
+  bSettings.Show;
+  LayoutSetupScreen;
 end;
 
 // Web Server Methods

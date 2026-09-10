@@ -517,6 +517,10 @@ end;
 
 procedure TfBG.UpdateApiInformation;
 begin
+  // The thresholds are initCGMCore's placeholders until the boot worker has
+  // connected; ApplyConnectedApi calls back in once they are real.
+  if FBootConnectPending then
+    Exit;
   miHi.Caption := Format(RS_HI_LEVEL, [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
   miLo.Caption := Format(RS_LO_LEVEL, [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
 
@@ -1058,12 +1062,41 @@ end;
 // that starts its work (Sleep / network I/O) before the main thread has had
 // a chance to enter Application.Run — symptom: form in taskbar, never drawn.
 procedure TfBG.tBootFetchTimer(Sender: TObject);
+const
+  // 50 ms ticks; RequestAsyncFetch only declines for the few ms the previous
+  // worker needs to unwind after its Synchronize, so this is never reached
+  // unless the api is gone for good.
+  MAX_BOOT_FETCH_TICKS = 40;
 begin
-  RetireOneShotTimer(tBootFetch);
+  if FShuttingDown then
+  begin
+    RetireOneShotTimer(tBootFetch);
+    Exit;
+  end;
+  Inc(FBootFetchAttempts);
   // Route through updateReading like every other fetch trigger, so the boot
   // fetch gets the same wrapper semantics (native.start, the refresh caption,
-  // force-flag bookkeeping) instead of a bespoke direct call.
-  updateReading(true);
+  // force-flag bookkeeping) instead of a bespoke direct call. Keep ticking
+  // until a worker was actually started: the connect-failure retry re-arms
+  // this timer right after the failed worker was reaped, and the request is
+  // dropped while that worker is still tearing down.
+  if updateReading(true) or (FBootFetchAttempts >= MAX_BOOT_FETCH_TICKS) then
+    RetireOneShotTimer(tBootFetch);
+end;
+
+procedure TfBG.ArmBootFetch(const DelayMs: integer);
+begin
+  FBootFetchAttempts := 0;
+  // RetireOneShotTimer drops the reference without freeing (the form owns
+  // the object), so a re-arm after a retired timer creates a fresh one.
+  if not Assigned(tBootFetch) then
+  begin
+    tBootFetch := TTimer.Create(Self);
+    tBootFetch.OnTimer := @tBootFetchTimer;
+  end;
+  tBootFetch.Enabled := false;
+  tBootFetch.Interval := DelayMs;
+  tBootFetch.Enabled := true;
 end;
 
 // Animates the braille-spinner glyph in lVal while the very first fetch is

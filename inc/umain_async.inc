@@ -369,13 +369,17 @@ end;
   UI stays responsive while the network round-trip is in flight.
  ------------------------------------------------------------------------------}
 constructor TGlucoseFetchThread.Create(AOwner: TfBG; Boot: boolean;
-Force: boolean);
+Force: boolean; ConnectFirst: boolean);
 begin
   inherited Create(true);
   FreeOnTerminate := false;
   FOwner := AOwner;
   FBoot := Boot;
   FForce := Force;
+  FConnectFirst := ConnectFirst;
+  FConnectOK := false;
+  FConnectErr := '';
+  FAbortFetch := false;
   FErrorMsg := '';
   SetLength(FResults, 0);
   Start;
@@ -391,6 +395,34 @@ begin
     try
       if not Assigned(api) then
         Exit;
+
+      // Boot: api.Connect used to run synchronously inside FormCreate, before
+      // the window existed — a slow network or CareLink's multi-step login
+      // meant an icon in the taskbar and nothing else. It runs here now.
+      // The thresholds it fills in are needed before getReadings stamps
+      // levels, so the main thread applies them (ApplyConnectResult) between
+      // the two calls.
+      if FConnectFirst then
+      begin
+        try
+          FConnectOK := api.Connect;
+          if not FConnectOK then
+            FConnectErr := api.errormsg;
+        except
+          on E: Exception do
+          begin
+            FConnectOK := false;
+            FConnectErr := E.ClassName + ': ' + E.Message;
+          end;
+        end;
+        if Terminated then
+          Exit;
+        Synchronize(@ApplyConnectResult);
+        // The failure path frees and replaces api once this worker has
+        // unwound; nothing below may touch it when FAbortFetch is set.
+        if FAbortFetch or (not FConnectOK) or Terminated then
+          Exit;
+      end;
 
       {$ifdef DEBUG}
       FResults := api.getReadings(MAX_MIN, MAX_RESULT, '', FDiag, FForce);
@@ -417,9 +449,45 @@ begin
       end;
     end;
   finally
-    if not Terminated then
+    if (not Terminated) and (not FAbortFetch) then
       Synchronize(@ApplyResult);
   end;
+end;
+
+// Main thread, between the worker's Connect and its getReadings.
+procedure TGlucoseFetchThread.ApplyConnectResult;
+begin
+  if not Assigned(FOwner) then
+  begin
+    FAbortFetch := true;
+    Exit;
+  end;
+
+  if FOwner.FShuttingDown then
+  begin
+    FAbortFetch := true;
+    FOwner.FApiCallInFlight := false;
+    if FBoot then
+      FOwner.FBootFetchPending := false;
+    Exit;
+  end;
+
+  if FConnectOK then
+  begin
+    FOwner.FBootConnectPending := false;
+    FOwner.ApplyConnectedApi;
+    Exit;
+  end;
+
+  // Failure. Release the api gate here, but run the dialogs from the message
+  // loop rather than from inside this Synchronize: they are modal, and a
+  // worker parked in Synchronize for the length of a Settings session would
+  // stall a quit from that dialog until the fetch-shutdown timeout detached
+  // it. The boot spinner keeps running; the retry re-enters the boot path.
+  FAbortFetch := true;
+  FOwner.FApiCallInFlight := false;
+  FOwner.FBootConnectError := FConnectErr;
+  Application.QueueAsyncCall(@FOwner.DeferredBootConnectFailure, 0);
 end;
 
 procedure TGlucoseFetchThread.ApplyResult;
