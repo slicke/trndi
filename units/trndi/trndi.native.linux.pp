@@ -243,6 +243,8 @@ public
     5) Fallback heuristic comparing clWindow vs clWindowText brightness.
   }
   class function isDarkMode: boolean; override;
+    {** Drops the cached @link(isDarkMode) answer so the next call re-probes. }
+  class procedure InvalidateThemeCache; override;
     {** Returns True if notify-send is available on this system. }
   class function isNotificationSystemAvailable: boolean; override;
     {** Identify notification backend: 'dbus' or 'gdbus' (the Qt6 bus paths),
@@ -527,6 +529,10 @@ end;
   the Qt tool is only a fallback, and its binary name varies by distro
   (plain `qdbus` does not exist on e.g. Fedora KDE, which ships `qdbus-qt6`).
  ------------------------------------------------------------------------------}
+var
+gGlobalMenuProbed: boolean = false;
+gGlobalMenuResult: boolean = false;
+
 class function TTrndiNativeLinux.HasGlobalMenu: boolean;
 const
   QDBUS_NAMES: array[0..4] of string =
@@ -550,14 +556,27 @@ var
       (Pos('org.kde.appmenu', lower) > 0);
   end;
 
+  // Every probe below is a subprocess with a multi-second timeout, and the
+  // answer cannot change for the lifetime of the process (the menu bar is
+  // built once from it). Startup used to pay the full chain twice.
+  function Remember(const v: boolean): boolean;
+  begin
+    gGlobalMenuResult := v;
+    gGlobalMenuProbed := true;
+    Result := v;
+  end;
+
 begin
+  if gGlobalMenuProbed then
+    Exit(gGlobalMenuResult);
+
   Result := False;
 
   toolPath := FindInPath('busctl');
   if toolPath <> '' then
     if RunAndCaptureSimpleWait(toolPath, ['--user', '--no-pager', '--acquired', 'list'],
       outS, exitCode, 7000) and (exitCode = 0) and HasRegistrar(outS) then
-      Exit(True);
+      Exit(Remember(True));
 
   toolPath := FindInPath('gdbus');
   if toolPath <> '' then
@@ -566,7 +585,7 @@ begin
       '--object-path', '/org/freedesktop/DBus',
       '--method', 'org.freedesktop.DBus.ListNames'],
       outS, exitCode, 7000) and (exitCode = 0) and HasRegistrar(outS) then
-      Exit(True);
+      Exit(Remember(True));
 
   for i := Low(QDBUS_NAMES) to High(QDBUS_NAMES) do
   begin
@@ -575,14 +594,14 @@ begin
       Continue;
     if RunAndCaptureSimpleWait(toolPath, [], outS, exitCode, 7000) and
       (exitCode = 0) and HasRegistrar(outS) then
-      Exit(True);
+      Exit(Remember(True));
   end;
 
   // GTK module hint: only match explicit appmenu-gtk module, not the generic 'appmenu' substring
   gtkMods := LowerCase(GetEnvironmentVariable('GTK_MODULES'));
   if gtkMods <> '' then
     if Pos('appmenu-gtk', gtkMods) > 0 then
-      Exit(True);
+      Exit(Remember(True));
 
   // Do NOT use KDE plasmoid presence as a global-menu indicator:
   // the plasmoid may be visible for display purposes without a desktop
@@ -591,7 +610,7 @@ begin
   // Do NOT check for appmenu helper tools on PATH; their presence does not
   // guarantee a working global menu bar integration.
 
-  Result := False;
+  Result := Remember(False);
 end;
 
 // (CurlWriteCallback_Linux moved to trndi.native.request.curl as
@@ -1126,7 +1145,45 @@ end;
   Desktop-aware detection: portal (gdbus), KDE (kreadconfig6/5), GNOME
   (gsettings), GTK_THEME, or fallback luminance heuristic.
  ------------------------------------------------------------------------------}
+var
+gDarkModeCached: boolean = false;
+gDarkModeCheckedAt: QWord = 0;
+gDarkModeValid: boolean = false;
+
+function DetectDarkModeUncached: boolean; forward;
+
 class function TTrndiNativeLinux.isDarkMode: boolean;
+const
+  // Every probe below is a bus call or a subprocess with a multi-second
+  // timeout. The value is read by every TrndiNative constructor (four of
+  // them at boot), by setColorMode on every reading and by each alert
+  // dialog, so it is cached like ShouldSuppressTrayIcon. There is no theme
+  // change signal on Linux; a switch is picked up within the TTL, which is
+  // sooner than the once-per-reading cadence that used to notice it.
+  DARK_MODE_TTL_MS = 30000;
+begin
+  if gDarkModeValid and
+    (GetTickCount64 - gDarkModeCheckedAt < DARK_MODE_TTL_MS) then
+    Exit(gDarkModeCached);
+
+  Result := DetectDarkModeUncached;
+
+  gDarkModeCached := Result;
+  gDarkModeCheckedAt := GetTickCount64;
+  gDarkModeValid := true;
+end;
+
+class procedure TTrndiNativeLinux.InvalidateThemeCache;
+begin
+  gDarkModeValid := false;
+end;
+
+{------------------------------------------------------------------------------
+  DetectDarkModeUncached
+  ----------------------
+  The actual probe chain behind isDarkMode.
+ ------------------------------------------------------------------------------}
+function DetectDarkModeUncached: boolean;
 var
   v: boolean;
   envGtkTheme: string;

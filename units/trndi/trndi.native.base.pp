@@ -323,6 +323,10 @@ class var touchOverride: TTrndiBool;
     // Theme/Env
     {** Determine if the OS/theme uses a dark appearance. Platforms override. }
   class function isDarkMode: boolean; virtual;
+    {** Forget any cached theme probe so the next @link(isDarkMode) asks the
+        desktop again. Called on resume-from-sleep; a no-op on platforms whose
+        detection is cheap enough not to cache. }
+  class procedure InvalidateThemeCache; virtual;
     {** Ask the platform to apply a dark appearance. @param(winHandle) is the
         native window handle for platforms that theme per-window (Windows
         DWM); 0 targets nothing/the app default — the same PtrUInt
@@ -1945,6 +1949,15 @@ end;
 class function TTrndiNativeBase.isDarkMode: boolean;
 begin
   Result := DefaultIsDarkMode;
+end;
+
+{------------------------------------------------------------------------------
+  InvalidateThemeCache (class, virtual)
+  -------------------------------------
+  Base: nothing is cached, so nothing to drop.
+ ------------------------------------------------------------------------------}
+class procedure TTrndiNativeBase.InvalidateThemeCache;
+begin
 end;
 
 {------------------------------------------------------------------------------

@@ -951,6 +951,9 @@ begin
   if FShuttingDown then
     Exit;
   TrndiDLog('OnSystemWake: OS reported resume-from-sleep — forcing refresh');
+  // The desktop theme may have flipped while asleep (scheduled dark mode);
+  // the next setColorMode should ask again rather than trust the cache.
+  TrndiNative.InvalidateThemeCache;
   FForceRefresh := true;
   if firstboot then
     Exit;
