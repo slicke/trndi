@@ -993,16 +993,36 @@ begin
   UpdateUIColors;
 end;
 
+{------------------------------------------------------------------------------
+  RetireOneShotTimer
+  ------------------
+  Stand a fired one-shot timer down: disable it and drop the reference, but do
+  not free it.
+
+  Every caller runs from inside the timer's own OnTimer. Freeing a TTimer there
+  destroys the widgetset timer object whose callback is still on the stack - on
+  Qt6 that is a C++ hook whose slot is mid-execution - and control then returns
+  into memory nobody owns. The platform units learned this the hard way in
+  StopBadgeFlash; this is the same rule for the form's own timers.
+
+  The reference is cleared because the create-once gates around these timers
+  test it, and because a stale pointer to a retired timer is worth nothing.
+  Freeing is left to the form, which owns every one of them.
+ ------------------------------------------------------------------------------}
+procedure TfBG.RetireOneShotTimer(var ATimer: TTimer);
+begin
+  if not Assigned(ATimer) then
+    Exit;
+  ATimer.Enabled := false;
+  ATimer := nil;
+end;
+
 // Fires once shortly after the main form is shown. Performs the synchronous
 // GitHub releases lookup off the FormShow critical path so the form's first
 // paint isn't blocked by network latency.
 procedure TfBG.tUpdateCheckTimer(Sender: TObject);
 begin
-  if Assigned(tUpdateCheck) then
-  begin
-    tUpdateCheck.Enabled := false;
-    FreeAndNil(tUpdateCheck);
-  end;
+  RetireOneShotTimer(tUpdateCheck);
   // Skip the blocking HTTPS call if the form is tearing down — the
   // ProcessMessages pumps inside ShutdownBackgroundThreads can otherwise
   // dispatch this WM_TIMER and stall shutdown on a synchronous network
@@ -1019,11 +1039,7 @@ end;
 // double fire (or a window the WM already made fullscreen) from undoing it.
 procedure TfBG.tKioskApplyTimer(Sender: TObject);
 begin
-  if Assigned(tKioskApply) then
-  begin
-    tKioskApply.Enabled := false;
-    FreeAndNil(tKioskApply);
-  end;
+  RetireOneShotTimer(tKioskApply);
   if FShuttingDown then
     Exit;
   if not IsFullscreenNow then
@@ -1040,11 +1056,7 @@ end;
 // a chance to enter Application.Run — symptom: form in taskbar, never drawn.
 procedure TfBG.tBootFetchTimer(Sender: TObject);
 begin
-  if Assigned(tBootFetch) then
-  begin
-    tBootFetch.Enabled := false;
-    FreeAndNil(tBootFetch);
-  end;
+  RetireOneShotTimer(tBootFetch);
   // Route through updateReading like every other fetch trigger, so the boot
   // fetch gets the same wrapper semantics (native.start, the refresh caption,
   // force-flag bookkeeping) instead of a bespoke direct call.
@@ -1076,11 +1088,7 @@ end;
 // overwrites the caption with the real value moments later.
 procedure TfBG.StopBootSpinner;
 begin
-  if Assigned(tBootSpinner) then
-  begin
-    tBootSpinner.Enabled := false;
-    FreeAndNil(tBootSpinner);
-  end;
+  RetireOneShotTimer(tBootSpinner);
   // Length() returns BYTES — a single braille glyph is 3 UTF-8 bytes, so
   // <= 3 matches the spinner cycle state without matching real readings.
   if (lVal.Caption = '') or (Length(lVal.Caption) <= 3) then

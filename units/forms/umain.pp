@@ -828,6 +828,11 @@ private
   procedure tBootFetchTimer(Sender: TObject);
   procedure tBootSpinnerTimer(Sender: TObject);
   procedure StopBootSpinner;
+  {** Disable a fired one-shot timer and drop the reference to it, without
+      freeing it. Every caller runs from inside the timer's own OnTimer, where
+      a free would tear down the widgetset timer whose callback is still on the
+      stack. The timers are owned by the form, so the object goes with it. }
+  procedure RetireOneShotTimer(var ATimer: TTimer);
   procedure OnSystemWake;
   procedure OnNoticeClick;
   procedure DeferredPostFetchResize(Data: PtrInt);
@@ -2267,7 +2272,7 @@ begin
   // remote stalls). Running it inline blocks the form's first WM_PAINT,
   // which on slow networks shows up as "icon in taskbar but window invisible"
   // for the duration of the request. A one-shot TTimer reuses the existing
-  // pattern for tWebServerStart below; the OnTimer handler frees itself.
+  // pattern for tWebServerStart below; the OnTimer handler retires it.
   // Kiosk mode skips the check entirely: an unattended wall display has
   // nobody to click an update dialog away.
   if (not FUpdateCheckScheduled) and (not FKioskMode) then
@@ -2282,7 +2287,7 @@ begin
   // Kiosk activation is deferred the same way: entering fullscreen while the
   // window manager is still mapping/placing the window is unreliable on some
   // platforms (DoFullScreen flips BorderStyle and WindowState), so let the
-  // first paint land and then flip. One-shot; the handler frees the timer.
+  // first paint land and then flip. One-shot; the handler retires the timer.
   if FKioskMode and (not FKioskApplied) then
   begin
     FKioskApplied := true;

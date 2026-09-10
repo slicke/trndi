@@ -2223,11 +2223,15 @@ end;
 
 procedure TTrndiNativeLinux.StopBadgeFlash;
 begin
+  // Only disable the timer here - FlashTimerTick calls StopBadgeFlash when the
+  // flash has run its course, so this executes from inside the timer's own
+  // OnTimer. Freeing a TTimer there destroys the widgetset timer object whose
+  // callback is still on the stack, and control then returns into memory that
+  // no longer belongs to anyone. The instance is reused by StartBadgeFlash and
+  // freed in the destructor. Matches the Windows implementation, which has
+  // avoided this since the flash was written.
   if Assigned(FFlashTimer) then
-  begin
     FFlashTimer.Enabled := false;
-    FreeAndNil(FFlashTimer);
-  end;
   if FFlashValue <> '' then
     SetTray(FFlashValue, FFlashBaseColor, DEFAULT_BADGE_SIZE_RATIO,
       DEFAULT_MIN_FONT_SIZE);
