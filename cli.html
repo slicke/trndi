@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>trndi-cli - Your CGM data in the terminal</title>
+    <meta name="description" content="trndi-cli shows your blood sugar in the console: one-shot readings, a TUI graph with forecast, sparklines, statistics, AGP and CSV export. Same backends as Trndi: Nightscout, Dexcom Share, Tandem Source, CareLink, FreeStyle Libre and xDrip. Linux, Windows, FreeBSD and Haiku.">
+    <meta name="theme-color" content="#12141c">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="Trndi.ico">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a class="nav-logo" href="index.html">
+                <img src="Trndi.png" alt="Trndi Logo">
+                <span>Trndi <span class="nav-logo-sub">/ cli</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Desktop app</a>
+                <a href="#features">Features</a>
+                <a href="#download">Download</a>
+                <a href="#setup">Setup</a>
+                <a href="https://discord.gg/5n7JyG9zU" class="nav-discord">💬 Discord</a>
+                <a href="https://github.com/slicke/trndi-cli">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero" id="top">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-content">
+            <img src="doc/img/trndi-cli.png" alt="trndi-cli Logo" class="hero-logo">
+
+            <div class="hero-release">
+                <span class="release-dot" aria-hidden="true"></span>
+                <span class="release-label">Latest build:</span>
+                <span id="latest-release" class="release-version">Loading&hellip;</span>
+                <span id="release-date" class="release-date"></span>
+            </div>
+
+            <h1>Your CGM data,<br><span class="grad-text">in your terminal</span></h1>
+            <p class="hero-subtitle">A small, GUI-free companion to Trndi &mdash; one-shot readings for scripts, or a full text-mode graph.</p>
+
+            <pre class="terminal"><span class="prompt">$</span> trndi-cli
+<span class="t-green">12.9 mmol/L</span> → (±0.0)  21:55
+<span class="prompt">$</span> trndi-cli --spark
+<span class="t-green">▃▃▄▅▅▅▅▄▄▃▃▂▂▂▁▁▁▂▃▃▃▄▅▇</span><span class="t-red">██████▇▇</span><span class="t-green">▆▆▅</span>  7.1 mmol/L ↘ (-0.4)  20:15</pre>
+
+            <div class="hero-buttons">
+                <a href="#download" class="btn-primary">Download trndi-cli</a>
+                <a href="index.html" class="btn-secondary">Looking for the desktop app?</a>
+            </div>
+
+            <div class="hero-chips">
+                <span class="chip">🌙 Nightscout</span>
+                <span class="chip">📡 Dexcom Share</span>
+                <span class="chip">💙 Tandem Source</span>
+                <span class="chip">🩸 Medtronic CareLink</span>
+                <span class="chip">🩹 FreeStyle Libre</span>
+                <span class="chip">📶 xDrip+</span>
+            </div>
+            <p class="hero-platforms">Linux &bull; Raspberry Pi &bull; Windows &bull; FreeBSD &bull; Haiku<br>
+            <small>macOS builds from source</small></p>
+
+            <div class="build-status">
+                <img src="https://github.com/slicke/trndi-cli/actions/workflows/build.yml/badge.svg" alt="Build Status">
+            </div>
+        </div>
+    </header>
+
+    <div class="stats-bar">
+        <div class="container stats-inner">
+            <div class="stat"><strong>Zero</strong> Config with Trndi installed</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>1</strong> Single binary</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>6</strong> CGM Sources</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>Free</strong> &amp; Open Source</div>
+        </div>
+    </div>
+
+    <section class="screenshots">
+        <div class="container">
+            <p class="eyebrow">Screenshots</p>
+            <h2>See it in action</h2>
+            <div class="screenshot-grid">
+                <div class="screenshot-item reveal">
+                    <img src="doc/img/cli_graph.png" alt="The --graph mode: eight hours of readings as coloured bars, with a shaded forecast past the divider on the right" loading="lazy">
+                    <h3>Graph mode with forecast</h3>
+                </div>
+                <div class="screenshot-item reveal">
+                    <img src="doc/img/cli_stat.png" alt="The --stats output: average, standard deviation, GMI, extremes and a five-band time-in-range breakdown" loading="lazy">
+                    <h3>Statistics</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <p class="eyebrow">Features</p>
+            <h2>One binary, many modes</h2>
+            <div class="features-grid">
+                <div class="feature reveal">
+                    <div class="feature-icon">⚡</div>
+                    <h3>One-shot Reading</h3>
+                    <p>Run it bare and get the current value, trend arrow, delta and time on one line. Perfect for a prompt, MOTD or status bar.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">⏰</div>
+                    <h3>Scriptable Alarms</h3>
+                    <p><code>--check</code> reports the range in the exit code &mdash; high, low, stale or unreachable &mdash; so a cron job can alarm without parsing output.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">📊</div>
+                    <h3>TUI Graph</h3>
+                    <p><code>--graph</code> draws the last hours as a colour-coded bar graph in a Free Vision text UI. Arrow keys inspect readings, F5 refreshes.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🔮</div>
+                    <h3>Forecast</h3>
+                    <p>Trndi's own prediction model adds a shaded half-hour forecast, shown only when the fit is trustworthy and labelled with its confidence.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">📈</div>
+                    <h3>Sparkline</h3>
+                    <p><code>--spark</code> compresses the last hours into a single coloured line of block glyphs. Piped output comes out plain for status-bar modules.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🧮</div>
+                    <h3>Statistics</h3>
+                    <p><code>--stats</code> summarises any window up to a week: average, spread, GMI, extremes and a five-band time-in-range breakdown.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🏥</div>
+                    <h3>Ambulatory Glucose Profile</h3>
+                    <p><code>--agp</code> folds two weeks onto a 24-hour axis with median and percentile bands &mdash; the view diabetes clinics work from.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">📄</div>
+                    <h3>CSV Export</h3>
+                    <p><code>--csv</code> writes readings with time, value, delta, trend and range band, ready for a spreadsheet or your own analysis.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🔋</div>
+                    <h3>Device Status</h3>
+                    <p><code>--device</code> lists sensor life, reservoir, pump and transmitter batteries and the basal rate, where the backend reports them.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">👥</div>
+                    <h3>Multi-User</h3>
+                    <p>Trndi's accounts carry over: <code>--profile</code> picks which person a run follows, so two terminals can watch two people.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Shares Trndi's Settings</h3>
+                    <p>Built on the same API and platform layer as the desktop app. If Trndi is set up, trndi-cli needs no configuration at all.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">💝</div>
+                    <h3>Free &amp; Open Source</h3>
+                    <p>GPLv3, like Trndi. No subscription, no ads, no data collection. Tab completion for bash, zsh and fish included.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="download">
+        <div class="container">
+            <p class="eyebrow eyebrow-dark">Get started</p>
+            <h2>Download trndi-cli</h2>
+            <p class="section-sub">A single binary per platform &mdash; no installer needed.</p>
+
+            <div class="download-grid">
+                <div class="download-item reveal">
+                    <div class="download-icon">🐧</div>
+                    <h3>Linux x64</h3>
+                    <p>Most distributions (amd64)</p>
+                    <a href="https://github.com/slicke/trndi-cli/releases/latest/download/trndi-cli-linux-amd64" data-asset="trndi-cli-linux-amd64" class="btn-download">Download for Linux</a>
+                </div>
+                <div class="download-item reveal">
+                    <div class="download-icon">🥧</div>
+                    <h3>Raspberry Pi</h3>
+                    <p>ARM64 / aarch64 Linux</p>
+                    <a href="https://github.com/slicke/trndi-cli/releases/latest/download/trndi-cli-linux-arm64" data-asset="trndi-cli-linux-arm64" class="btn-download">Download for Pi</a>
+                </div>
+                <div class="download-item reveal">
+                    <div class="download-icon">🪟</div>
+                    <h3>Windows</h3>
+                    <p>Windows 10 &amp; 11 (x64)</p>
+                    <a href="https://github.com/slicke/trndi-cli/releases/latest/download/trndi-cli-windows-x64.exe" data-asset="trndi-cli-windows-x64.exe" class="btn-download">Download .exe</a>
+                    <p class="download-subtext"><small>Needs libcurl.dll, see below</small></p>
+                </div>
+            </div>
+
+            <div class="download-note">
+                <p><strong>More platforms:</strong></p>
+                <div class="additional-downloads">
+                    <div class="download-category">
+                        <h4>Linux</h4>
+                        <a href="https://github.com/slicke/trndi-cli/releases/latest/download/trndi-cli-linux-i686" data-asset="trndi-cli-linux-i686">32-bit (i686)</a>
+                    </div>
+                    <div class="download-category">
+                        <h4>Windows on ARM</h4>
+                        <a href="https://github.com/slicke/trndi-cli/releases/latest/download/trndi-cli-windows-arm64.exe" data-asset="trndi-cli-windows-arm64.exe">Native ARM64 .exe</a>
+                    </div>
+                    <div class="download-category">
+                        <h4>BSD &amp; Haiku</h4>
+                        <a href="https://github.com/slicke/trndi-cli/releases/latest/download/trndi-cli-freebsd-amd64" data-asset="trndi-cli-freebsd-amd64">FreeBSD (amd64)</a> &bull;
+                        <a href="https://github.com/slicke/trndi-cli/releases/latest/download/trndi-cli-haiku-x86_64" data-asset="trndi-cli-haiku-x86_64">Haiku (x86_64)</a>
+                    </div>
+                </div>
+                <div class="linux-note">
+                    <span class="linux-note-icon" aria-hidden="true">🪟</span>
+                    <div>
+                        <h4>Windows Notes</h4>
+                        <p>The Windows builds load <code>libcurl.dll</code> at start. Download the matching package from
+                            <a href="https://curl.se/windows/">curl.se/windows</a>, rename its <code>libcurl-x64.dll</code>
+                            (or <code>libcurl-arm64.dll</code> from the <code>win64a-mingw</code> package for ARM64) to
+                            <code>libcurl.dll</code>, and place it next to the exe or in <code>PATH</code>.</p>
+                    </div>
+                </div>
+                <div class="linux-note">
+                    <span class="linux-note-icon" aria-hidden="true">🐧</span>
+                    <div>
+                        <h4>Linux, BSD &amp; Haiku Notes</h4>
+                        <p>Mark the file executable (<code>chmod +x trndi-cli-linux-amd64</code>) and run it. Building from
+                            source with <code>make</code> and <code>sudo make install</code> also installs tab completion for
+                            bash, zsh and fish. macOS has no prebuilt binary yet but builds the same way.
+                            <a href="https://github.com/slicke/trndi-cli#building">Build instructions &rarr;</a></p>
+                    </div>
+                </div>
+                <p><strong>All versions:</strong> <a href="https://github.com/slicke/trndi-cli/releases">View all releases on GitHub</a></p>
+            </div>
+        </div>
+    </section>
+
+    <section id="setup" class="setup">
+        <div class="container">
+            <p class="eyebrow">Setup</p>
+            <h2>Quick Setup</h2>
+            <div class="setup-grid">
+                <div class="setup-item reveal">
+                    <h3>🖥️ Already running Trndi?</h3>
+                    <p>Then you are done. trndi-cli reads the same settings file the desktop app saves &mdash; backend, credentials, unit and thresholds &mdash; including every account in multi-user mode.</p>
+                </div>
+                <div class="setup-item reveal">
+                    <h3>🧭 Headless machine?</h3>
+                    <p>Run <code>trndi-cli --setup</code>. A text-mode settings window asks for the backend, address and secret, with a Test button that connects before saving. See the <a href="https://github.com/slicke/trndi-cli/blob/main/MANUAL.md">manual</a> for every key.</p>
+                </div>
+            </div>
+
+            <div class="setup-instructions">
+                <h3>Usage</h3>
+                <pre class="terminal terminal-plain">trndi-cli               print the current reading and exit
+trndi-cli --check       ... with the range in the exit code, for scripts
+trndi-cli --graph       interactive TUI graph (F5 refresh, F6 forecast, F7 AGP, F9 settings, Q exits)
+trndi-cli --predict     ... with the forecast drawn from the start
+trndi-cli --stats 6     summarise the last 6 hours (1 to 168)
+trndi-cli --spark 8     the last 8 hours as a one-line sparkline (1 to 24)
+trndi-cli --agp 7       time-of-day percentile profile of the last 7 days (3 to 28)
+trndi-cli --csv 72      the last 72 hours of readings as CSV, oldest first
+trndi-cli --device      sensor life, reservoir, batteries and basal, where reported
+trndi-cli --unit mgdl   any mode above in mg/dL (or mmol) for this run only
+trndi-cli -p Anna ...   any mode above against that account's settings
+trndi-cli --setup       settings window: backend, address, secret, unit, limits</pre>
+                <p class="setup-tip">💡 Exit codes: 0 OK &bull; 1 not configured &bull; 2 unknown backend &bull; 3 connection failed &bull; 4 no recent reading &bull; with <code>--check</code>: 5 above high, 6 below low.</p>
+                <pre class="terminal terminal-plain">trndi-cli --check &gt;/dev/null; [ $? -eq 6 ] &amp;&amp; notify-send -u critical "Low glucose"</pre>
+            </div>
+        </div>
+    </section>
+
+    <section class="community">
+        <div class="container community-inner">
+            <div class="community-text">
+                <h2>Join the community</h2>
+                <p>Ask questions, share your setup, report bugs, or just hang out with other Trndi users and contributors.</p>
+            </div>
+            <div class="community-actions">
+                <a href="https://discord.gg/5n7JyG9zU" class="btn-community-discord">💬 Join us on Discord</a>
+                <a href="https://github.com/slicke/trndi-cli/issues" class="btn-community-gh">Report an Issue</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="index.html">Trndi desktop</a>
+                    <a href="https://github.com/slicke/trndi-cli">GitHub</a>
+                    <a href="https://discord.gg/5n7JyG9zU">Discord</a>
+                    <a href="https://github.com/slicke/trndi-cli/issues">Report Issues</a>
+                    <a href="https://github.com/slicke/trndi-cli/releases">Releases</a>
+                    <a href="https://github.com/slicke/trndi-cli/blob/main/MANUAL.md">Manual</a>
+                </div>
+                <div class="footer-info">
+                    <p>&copy; 2026 Trndi. Free and open source software (GPLv3).</p>
+                </div>
+            </div>
+            <p class="footer-disclaimer">trndi-cli is not a medical device. Never make treatment decisions based on trndi-cli alone.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        window.addEventListener('scroll', function () {
+            document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 100);
+        });
+
+        if ('IntersectionObserver' in window &&
+            !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            const io = new IntersectionObserver(entries => {
+                entries.forEach(e => {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('visible');
+                        io.unobserve(e.target);
+                    }
+                });
+            }, { rootMargin: '0px 0px -40px 0px' });
+            document.querySelectorAll('.reveal').forEach(el => {
+                el.classList.add('reveal-armed');
+                io.observe(el);
+            });
+        }
+
+        function applyReleaseAssets(assets) {
+            if (!Array.isArray(assets) || !assets.length) return;
+            const byName = new Map(assets.map(a => [a.name.toLowerCase(), a.browser_download_url]));
+            document.querySelectorAll('a[data-asset]').forEach(a => {
+                const exact = byName.get(a.dataset.asset.toLowerCase());
+                if (exact) a.href = exact;
+            });
+        }
+
+        fetch('https://api.github.com/repos/slicke/trndi-cli/releases/latest')
+            .then(r => r.json())
+            .then(data => {
+                const name = data.name || data.tag_name || '';
+                const date = new Date(data.published_at).toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+                document.getElementById('latest-release').textContent = name;
+                document.getElementById('release-date').textContent = date;
+                applyReleaseAssets(data.assets);
+            })
+            .catch(() => {
+                document.getElementById('latest-release').textContent = 'see GitHub';
+            });
+    </script>
+</body>
+</html>
