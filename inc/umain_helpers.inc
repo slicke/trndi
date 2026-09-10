@@ -442,10 +442,15 @@ end;
  ------------------------------------------------------------------------------}
 procedure TfBG.AppExceptionHandler({%H-}Sender: TObject; E: Exception);
 var
-  msg: string;
+  msg, report: string;
 begin
   msg := E.ClassName + ': ' + E.Message;
-  TrndiELog('Unhandled exception: ' + msg);
+  // The stack is the half that says where the fault came from, and this is the
+  // only place it can still be read: once this handler returns, the RTL has
+  // unwound it. It goes to the log (DEBUG builds) and into the dialog's dump
+  // area, so a release user can paste back more than a bare message.
+  report := TrndiExceptionReport(E, ExceptAddr, ExceptFrameCount, ExceptFrames);
+  TrndiELog('Unhandled exception:' + LineEnding + report);
 
   // Teardown-order faults keep the old silence: with the form closing there
   // is nowhere useful to surface them.
@@ -463,7 +468,7 @@ begin
   try
     try
       SlickeMsg(sdsAuto, sErrTitle, RS_UNHANDLED_ERROR, RS_UNHANDLED_ERROR_DESC,
-        msg, uxclWhite, uxclRed, [mbOK], uxmtWarning);
+        report, uxclWhite, uxclRed, [mbOK], uxmtWarning);
     except
       // The dialog machinery failing must not feed back into this handler
     end;

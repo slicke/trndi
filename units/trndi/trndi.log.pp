@@ -36,11 +36,16 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
 (*
- * Proxy/HTTP logging helper.
+ * Proxy/HTTP logging helper, and the process-wide crash reporting policy.
  *
  * This unit is intentionally dependency-light so it can be used from native
  * platform units without introducing circular dependencies with the extension
  * engine (trndi.ext.engine).
+ *
+ * Modifications (GNU GPL Section 5):
+ * - 2026-09-09: added TrndiExceptionReport / TrndiCurrentExceptionReport and
+ *   InstallCrashHandler. The log procedures stay DEBUG-only; the report
+ *   formatting and the crash policy are compiled into every build.
  *)
 unit trndi.log;
 
@@ -74,16 +79,63 @@ procedure TrndiNetLog(const Msg: string); // Network log entry (debug only)
     @returns(The URL with secret parameter values replaced by "<redacted>") }
 function TrndiSafeUrl(const AUrl: string): string;
 
+{** Format an exception and the stack that led to it as a multi-line report.
+
+    The first line is @code(ClassName: Message); every line after it is one
+    resolved return address, indented by two spaces. Addresses inside Trndi
+    resolve to a source file and line when the build carries line info;
+    addresses inside a shared library (Qt, libdbus, libcurl, QuickJS) can only
+    ever print as a raw address, which is itself diagnostic - a stack made up
+    entirely of library frames means the fault happened after a Pascal callback
+    had already returned into C code.
+
+    Compiled into every build, unlike the log procedures above, so a release
+    build can still put the stack in front of the user.
+    @param(Obj The exception object; anything not derived from Exception is
+      reported by class name alone, and nil as "unknown")
+    @param(Addr Address the exception was raised at)
+    @param(FrameCount Number of entries in @code(Frames))
+    @param(Frames Return addresses below the raise point)
+    @returns(The report, without a trailing line break) }
+function TrndiExceptionReport(Obj: TObject; Addr: CodePointer;
+  FrameCount: longint; Frames: PCodePointer): string;
+
+{** @link(TrndiExceptionReport) for the exception currently being handled.
+    Only meaningful from inside an @code(except) block (or a handler the RTL
+    calls from one, such as @code(Application.OnException)); outside one there
+    is no current exception and the report says so. }
+function TrndiCurrentExceptionReport: string;
+
+{** Install the process-wide crash policy. Call once, as early in the program
+    body as possible; a second call does nothing.
+
+    Two things happen. An @code(ExceptProc) hook logs any exception that
+    reaches the RTL unhandled - the ones that get past every Pascal handler,
+    including @code(Application.OnException) - before chaining to the handler
+    that was installed before it, so the RTL's own report and exit code are
+    unchanged.
+
+    And, on Unix-family targets only, @code(TRNDI_COREDUMP=1) in the
+    environment hands SIGSEGV, SIGBUS and SIGILL back to the OS instead of
+    letting the RTL turn them into an EAccessViolation. A wild jump then
+    terminates the process and leaves a core file for the system's crash
+    collector, which is the only way to recover the full stack (every thread,
+    with library symbols) of a fault that happens inside C code. Off by
+    default: it turns an otherwise recoverable pointer bug into a hard crash,
+    which is the wrong trade for a glucose monitor left running unattended. }
+procedure InstallCrashHandler;
+
 implementation
 
-{$ifdef DEBUG}
+// SysUtils is needed by the crash reporting below, which is compiled into
+// every build; the Cocoa units stay behind the DEBUG guard, since only the
+// DEBUG-only log path uses them.
 uses
 Classes, SysUtils
-{$ifdef DARWIN}
+{$if defined(DEBUG) and defined(DARWIN)}
   , CocoaAll, nsutils.nshelpers
 {$endif}
 ;
-{$endif}
 
 {------------------------------------------------------------------------------
   Redact credential values from a URL's query string. Defined outside the
@@ -163,6 +215,113 @@ begin
   end;
 
   Result := Result + acc;
+end;
+
+{------------------------------------------------------------------------------
+  Crash reporting
+  ---------------
+  Compiled into every build, unlike the log procedures below. In a release
+  build the log calls here are no-ops, so the report reaches a human through
+  whatever the caller does with it (the unhandled-exception dialog shows it)
+  and, with TRNDI_COREDUMP set, through a core file.
+ ------------------------------------------------------------------------------}
+function TrndiExceptionReport(Obj: TObject; Addr: CodePointer;
+  FrameCount: longint; Frames: PCodePointer): string;
+var
+  i: integer;
+begin
+  if Obj is Exception then
+    Result := Obj.ClassName + ': ' + Exception(Obj).Message
+  else
+  if Assigned(Obj) then
+    Result := 'Non-Exception object raised: ' + Obj.ClassName
+  else
+    Result := 'Unknown exception (no exception object)';
+
+  // BackTraceStrFunc is the RTL's own resolver: "line N of file.pp" for an
+  // address the build carries line info for, a bare address otherwise. It is a
+  // function variable, so a build that linked no resolver leaves it unassigned.
+  if not Assigned(BackTraceStrFunc) then
+    Exit(Result + LineEnding + '  (no backtrace resolver in this build)');
+
+  Result := Result + LineEnding + '  ' + BackTraceStrFunc(Addr);
+  if not Assigned(Frames) then
+    Exit;
+  for i := 0 to FrameCount - 1 do
+    Result := Result + LineEnding + '  ' + BackTraceStrFunc(Frames[i]);
+end;
+
+function TrndiCurrentExceptionReport: string;
+begin
+  if ExceptObject = nil then
+    Exit('No exception is being handled');
+  Result := TrndiExceptionReport(ExceptObject, ExceptAddr, ExceptFrameCount,
+    ExceptFrames);
+end;
+
+var
+PrevExceptProc: TExceptProc = nil;
+CrashHandlerInstalled: boolean = false;
+
+// ExceptProc target: the last stop before the RTL prints its own report and
+// halts. Only exceptions that no Pascal handler caught arrive here, which is
+// precisely the class of fault Application.OnException never sees - among them
+// anything raised where the stack below is C code rather than Pascal.
+procedure TrndiUnhandledException(Obj: TObject; Addr: CodePointer;
+  FrameCount: longint; Frames: PCodePointer);
+begin
+  try
+    TrndiELog('Unhandled exception, process is terminating:' + LineEnding +
+      TrndiExceptionReport(Obj, Addr, FrameCount, Frames));
+  except
+    // Logging must never displace the RTL's own report below.
+  end;
+  // Chain rather than replace: the RTL handler owns the stderr output and the
+  // exit code, and a crash that reported differently than every other crash
+  // would be the harder bug report to read, not the easier one.
+  if Assigned(PrevExceptProc) then
+    PrevExceptProc(Obj, Addr, FrameCount, Frames);
+end;
+
+procedure InstallCrashHandler;
+{$IF DEFINED(UNIX) OR DEFINED(HAIKU)}
+var
+  note: string;
+{$ENDIF}
+begin
+  if CrashHandlerInstalled then
+    Exit;
+  CrashHandlerInstalled := true;
+
+  PrevExceptProc := ExceptProc;
+  ExceptProc := @TrndiUnhandledException;
+
+{$IF DEFINED(UNIX) OR DEFINED(HAIKU)}
+  // Opt-in; see the interface comment for why this is not the default. Haiku
+  // is included because its RTL builds sysutils from the same Unix source,
+  // so UnhookSignal and the RTL_SIG* constants exist there too.
+  if GetEnvironmentVariable('TRNDI_COREDUMP') = '1' then
+  begin
+    UnhookSignal(RTL_SIGSEGV);
+    UnhookSignal(RTL_SIGBUS);
+    UnhookSignal(RTL_SIGILL);
+    note := 'TRNDI_COREDUMP=1: SIGSEGV/SIGBUS/SIGILL handed back to the OS; ' +
+      'a memory fault now dumps core instead of raising an exception';
+    // A warning, not an error: nothing has gone wrong, but the net that
+    // normally turns a memory fault into a survivable exception is down.
+    TrndiWLog(note);
+    // Also to stderr, unconditionally: this is opt-in, so it costs nobody any
+    // noise, and it is the only confirmation a release build can give that the
+    // policy took effect - the log procedures above are no-ops there, which is
+    // the whole reason for wanting a core file in the first place.
+    try
+      Writeln(StdErr, '[Trndi] ' + note);
+      Flush(StdErr);
+    except
+      // A process with no usable stderr still gets the policy.
+    end;
+  end;
+{$ENDIF}
 end;
 
 {$ifdef DEBUG}

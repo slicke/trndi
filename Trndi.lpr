@@ -58,9 +58,7 @@ trndi.native, // hinted unused on Linux, but called in the {$IFDEF WINDOWS} star
 trndi.ext.functions,
 {$ENDIF}
 sysutils,
-{$IFDEF DEBUG}
-trndi.log,
-{$ENDIF}
+trndi.log,   // InstallCrashHandler; the log procedures themselves are DEBUG-only
 trndi.api.dexcom, trndi.api.carelink, trndi.api.librelinkup, trndi.api.registry,
 umain, ufloat, slicke.ux.alert
 { you can add units after this };
@@ -78,6 +76,10 @@ var
 {$ENDIF}
 
 begin
+  // Before anything that can fault: a startup exception deserves the same
+  // report as one from a fetch, and TRNDI_COREDUMP has to take effect before
+  // the first line of faultable code runs.
+InstallCrashHandler;
 {$IFDEF DEBUG}
   // Set up -gh output for the Leakview package:
 if FileExists('heap.trc') then
