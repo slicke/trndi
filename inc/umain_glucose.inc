@@ -2636,7 +2636,9 @@ begin
     Exit;
   if not assigned(mediacontroller) then
     Exit;
-  if not mediacontroller.IsInitialized then
+  // Detect the player now rather than at boot; this also finds a player that
+  // was started after Trndi, which the boot-time probe never could.
+  if not mediacontroller.EnsureInitialized then
     Exit;
 
   case act of

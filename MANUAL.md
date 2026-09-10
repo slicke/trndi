@@ -280,7 +280,9 @@ always fits.
 Can be configured in settings to:
 - Play a sound when you go high or low
 - Show desktop notifications
-- Pause your music (Spotify/Deezer) to get your attention
+- Pause your music (Spotify/Deezer) to get your attention. The player is
+  looked for when an alert fires, so it does not need to be running when
+  Trndi starts.
 
 ### Low Insulin Warnings
 If your data source reports the reservoir (Tandem Source, CareLink, or a
