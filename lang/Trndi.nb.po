@@ -1962,6 +1962,10 @@ msgstr "Internettforbindelsen din fungerer!"
 msgid "The following extension file returned an error while loading: %s"
 msgstr "Følgende utvidelsesfil returnerte en feil under lasting: %s"
 
+#: trndi.strings.rs_ext_none_loaded
+msgid "No extensions are loaded"
+msgstr "Ingen utvidelser er lastet"
+
 #: trndi.strings.rs_ext_confirm
 msgctxt "trndi.strings.rs_ext_confirm"
 msgid "Extension Confirmation"

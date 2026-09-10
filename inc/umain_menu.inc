@@ -323,6 +323,12 @@ end;
 procedure TfBG.miExtLogClick(Sender: TObject);
 begin
   {$ifdef TrndiExt}
+  // Reading Instance here would build the engine just to show an empty log.
+  if TTrndiExtEngine.Existing = nil then
+  begin
+    ShowMessage(RS_EXT_NONE_LOADED);
+    Exit;
+  end;
   with TTrndiExtEngine.Instance do
   begin
     ShowMessage(Output);

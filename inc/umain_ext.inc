@@ -138,7 +138,7 @@ begin
   result := '';
   exists := false;
 
-  if not Assigned(TTrndiExtEngine.Instance) then Exit;
+  if not Assigned(TTrndiExtEngine.Existing) then Exit;
 
   n := TTrndiExtEngine.Instance.ExtensionCount;
   for i := 0 to n - 1 do
@@ -314,14 +314,16 @@ procedure TfBG.ReloadExtensions(Sender: TObject);
 var
   engine: TTrndiExtEngine;
 begin
-  // Instance() returns nil during shutdown (IsExtShuttingDown). If we got
+  // Existing is nil during shutdown (IsExtShuttingDown). If we got
   // re-entered via ProcessMessages while UnloadExtensions is draining, treat
   // it as "nothing to do" — the in-flight reload will complete and the user
-  // can retry. Don't fall through to LoadExtensions with a nil engine.
-  engine := TTrndiExtEngine.Instance;
-  if engine = nil then
+  // can retry. It is also nil when boot found no scripts and never built the
+  // engine; LoadExtensions then builds it on demand for the first .js.
+  if IsExtShuttingDown then
     Exit;
-  engine.UnloadExtensions;
+  engine := TTrndiExtEngine.Existing;
+  if engine <> nil then
+    engine.UnloadExtensions;
   LoadExtensions;
 end;
 
@@ -341,17 +343,34 @@ var
   extInfo: PExtContextInfo;
   nativeRef: TrndiNative;
 begin
+  extdir := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
+  ForceDirectoriesUTF8(extdir);
+  exts := FindAllFiles(extdir, '*.js', false);
+
+  // No scripts, no engine. TTrndiExtEngine.Instance constructs the QuickJS
+  // runtime on first touch — with its permanent 50 ms job-pump timer, the
+  // shim scripts and one more TrndiNative — so the directory is looked at
+  // before the engine is. Readers elsewhere go through Existing for the same
+  // reason; a later Reload builds the engine once a script has appeared.
+  if exts.Count = 0 then
+  begin
+    TrndiDLog('LoadExtensions: no extensions installed; engine not started');
+    exts.Free;
+    Exit;
+  end;
+
   // Bail if the engine isn't available (shutdown in progress). Without this,
   // the loop below would invoke NewExtensionContext on a nil Self and crash
   // at the first field access (`if FRuntime = nil then Exit;`).
   if TTrndiExtEngine.Instance = nil then
+  begin
+    exts.Free;
     Exit;
+  end;
   if not Assigned(jsFuncs) then
     jsFuncs := TJSfuncs.Create(api);
+  TrndiDLog(Format('LoadExtensions: %d script(s) in %s', [exts.Count, extdir]));
 
-  extdir := GetAppConfigDirUTF8(false, true) + 'extensions' + DirectorySeparator;
-  ForceDirectoriesUTF8(extdir);
-  exts := FindAllFiles(extdir, '*.js', false);
   // Ids are case-folded file names, so Test.js and test.js collide (possible
   // on case-sensitive file systems) and would share settings and grant keys.
   // Sort so "first file wins" is deterministic, not directory-scan order;
@@ -441,7 +460,7 @@ begin
       // GrantPermissionsFor above shows a modal prompt that pumps messages;
       // the engine may have been released in the meantime (FormClose path).
       // Bail rather than dereference nil inside NewExtensionContext.
-      if TTrndiExtEngine.Instance = nil then
+      if TTrndiExtEngine.Existing = nil then
         Break;
 
       // Create the per-extension JSContext with engine-internal baselines provisioned.

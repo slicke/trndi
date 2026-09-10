@@ -2094,6 +2094,10 @@ msgstr "Din internetanslutning fungerar!"
 msgid "The following extension file returned an error while loading: %s"
 msgstr "Fôljande tilleggsfil returnerade ett fel ner den laddades: __PH9c3509d5-301d-47d0-a140-39da51a88054__"
 
+#: trndi.strings.rs_ext_none_loaded
+msgid "No extensions are loaded"
+msgstr ""
+
 #: trndi.strings.rs_ext_confirm
 #, fuzzy
 msgctxt "trndi.strings.rs_ext_confirm"

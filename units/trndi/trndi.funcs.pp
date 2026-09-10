@@ -747,7 +747,7 @@ end;
 function callFunc(const func: string; params: array of const; out exists: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
   begin  // Safe
     exists := false;
     exit;
@@ -821,7 +821,7 @@ end;
 function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean; autoFree: boolean; autoFreeFirst: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
   begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
   if not exists then
@@ -839,7 +839,7 @@ end;
 function callFuncMixed(const func: string; const raw: array of JSValueRaw; rest: array of const; out exists: boolean; restAutoFree: boolean; rawAutoFree: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
   begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
   if not exists then
@@ -857,7 +857,7 @@ end;
 function callFuncRaw(const func: string; const raw: array of JSValueRaw; out exists: boolean; autoFree: boolean): string;
 begin
   Result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
   begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
   if not exists then
@@ -874,35 +874,35 @@ end;
 // Helper constructors
 function JSValueRawString(const s: RawUtf8): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSString(s);
 end;
 
 function JSValueRawInt(const v: int64): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSInt64(v);
 end;
 
 function JSValueRawFloat(const v: double): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSFloat(v);
 end;
 
 function JSValueRawBool(const v: boolean): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSBool(v);
 end;
 
 function JSValueRawArray(const values: array of const): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSArray(values);
 end;
