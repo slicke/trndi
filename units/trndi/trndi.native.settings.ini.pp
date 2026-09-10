@@ -138,6 +138,12 @@ begin
   EnterCriticalSection(gIniLock);
   try
     EnsureIni(resolver);
+    // UpdateFile rewrites the whole file. Several callers store a value on
+    // every start (users.active, alert state) whether or not it changed, so
+    // an unchanged value is not written at all.
+    if gIniStore.ValueExists('trndi', fullKey) and
+      (gIniStore.ReadString('trndi', fullKey, '') = val) then
+      Exit;
     // Write under a canonical section
     gIniStore.WriteString('trndi', fullKey, val);
     gIniStore.UpdateFile;
