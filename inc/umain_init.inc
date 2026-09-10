@@ -779,8 +779,8 @@ begin
   InitializePlatformMenus;
   {$endif}
   {$ifdef X_LINUXBSD}
-  if TrndiNative.HasGlobalMenu then
-    InitializePlatformMenus;
+  // InitializePlatformMenus gates on native.HasGlobalMenu itself.
+  InitializePlatformMenus;
   {$endif}
 
   if ssShift in GetKeyShiftState then
