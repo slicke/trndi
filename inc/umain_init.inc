@@ -753,11 +753,13 @@ begin
   Application.ProcessMessages;
   Application.OnException := @AppExceptionHandler;
 
-  // Start media backend early
+  // The media backend is created here but initialised on first use
+  // (actOnMediaController): detection spawns one pgrep/tasklist per known
+  // player, and that used to sit on the boot path for a feature that only
+  // acts when an alert fires.
   if not native.GetBoolSetting('media.disabled', false) then begin
     fSplash.incProgress(10, RS_INIT_MEDIA);
     MediaController := TSystemMediaController.Create(Self);
-    MediaController.Initialize;
   end;
   Application.ProcessMessages;
 
