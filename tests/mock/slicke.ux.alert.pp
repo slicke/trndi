@@ -15,6 +15,12 @@ uses Classes, SysUtils, Forms, Graphics;
 
 type
   TSlickeDialogSize = (sdsAuto, sdsOnForm, sdsNormal, sdsInline);
+  TSlickeAccount = record
+    Key: string;
+    Nick: string;
+    Color: TColor;
+  end;
+  TSlickeAccounts = array of TSlickeAccount;
   SlickeUXImage = LongInt;
 
   TSlickeMsgDlgBtn     = (mbYes, mbNo, mbOK, mbCancel, mbAbort, mbRetry, mbIgnore,
@@ -35,6 +41,7 @@ const
   uxmtWarning = 2;
   uxmtCog = 99; // gear emoji placeholder for headless tests
   uxmtCustom = uxmtCog;
+  smbSlickeDefault = 'Default';
   mrOk = 1;
   mrCancel = 2;
   mrNo = 3;
@@ -71,6 +78,7 @@ function SlickePrompt(const dialogsize: TSlickeDialogSize; const caption, text: 
 function SlickeInput(const dialogsize: TSlickeDialogSize; const title, prompt, labelText, def: string; var mr: TModalResult): string; overload;
 function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of unicodestring; const Default: boolean = false; const icon: SlickeUXImage = uxmtCog; const Preselect: integer = 0): LongInt; overload;
 function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false; const icon: SlickeUXImage = uxmtCog; const Preselect: integer = 0): LongInt; overload;
+function SlickeAccountPicker(const dialogsize: TSlickeDialogSize; const ACaption, ATitle, ADesc: string; const Accounts: TSlickeAccounts; const Preselect: integer = 0; const icon: SlickeUXImage = uxmtCog; const ACancelCaption: string = ''): integer;
 
 // Numeric and date inputs (headless stubs)
 function SlickeIntInput(
@@ -221,6 +229,11 @@ begin
 end;
 
 function SlickeList(const dialogsize: TSlickeDialogSize; const title, header, desc: string; const items: array of string; const Default: boolean = false; const icon: SlickeUXImage = uxmtCog; const Preselect: integer = 0): LongInt; overload;
+begin
+  Result := Preselect;
+end;
+
+function SlickeAccountPicker(const dialogsize: TSlickeDialogSize; const ACaption, ATitle, ADesc: string; const Accounts: TSlickeAccounts; const Preselect: integer = 0; const icon: SlickeUXImage = uxmtCog; const ACancelCaption: string = ''): integer;
 begin
   Result := Preselect;
 end;

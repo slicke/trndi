@@ -194,6 +194,20 @@ type
 SlickeUXImage = WChar;
 
   {**
+    One row of the account picker (@link(SlickeAccountPicker)).
+    @member Key Stored account name, shown in small print under the nickname;
+      left out of the row when it equals @code(Nick).
+    @member Nick Display name; falls back to @code(Key) when empty.
+    @member Color Account colour drawn as a dot; @code(clBlack) means none.
+  }
+TSlickeAccount = record
+  Key: string;
+  Nick: string;
+  Color: TColor;
+end;
+TSlickeAccounts = array of TSlickeAccount;
+
+  {**
     Modal dialog form used internally by UX helpers.
     @remarks
       - Overrides @code(CreateWnd) for platform tweaks (e.g., dark title bar on Windows).
@@ -249,6 +263,14 @@ public
         closes even when the Qt release point drifts outside the button rect. }
   procedure SlickeMessageOnMouseDown(sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: Integer);
+public
+    {** Rows shown by @link(SlickeAccountPicker); read by @link(AccountDrawItem). }
+  Accounts: TSlickeAccounts;
+    {** OnDrawItem for the account picker list: colour dot, nickname, key. }
+  procedure AccountDrawItem(Control: TWinControl; Index: integer; ARect: TRect;
+    State: TOwnerDrawState);
+    {** OnDblClick for the account picker list: a double-click answers the dialog. }
+  procedure AccountDblClick(Sender: TObject);
 public
     {** Helper fields for font picker dialog. }
   FontPickerPreview: TLabel;
@@ -813,6 +835,30 @@ const Choices: array of string;
 const Default: boolean = false;
 const icon: SlickeUXImage = uxmtCog;
 const Preselect: integer = 0): integer; overload;
+
+  {**
+    Show an account chooser: a list where every row carries the account's
+    colour dot, its nickname and, in smaller print, the stored account name.
+    Meant for the multi-user start-up prompt, where a person recognises the
+    nickname and colour they set up rather than the key they typed once.
+    A double-click or Enter answers with the highlighted row; the list is
+    keyboard-searchable like any list box.
+    @param dialogsize Layout preset.
+    @param ACaption Window caption.
+    @param ATitle Title text.
+    @param ADesc Description text.
+    @param Accounts Rows to show, in order.
+    @param Preselect Row highlighted when the dialog opens; out-of-range values fall back to the first row.
+    @param icon Emoji icon (default gear).
+    @param ACancelCaption Caption of the reject button; empty means Cancel.
+    @returns Chosen index into @code(Accounts) on OK, or -1 on cancel.
+  }
+function SlickeAccountPicker(const dialogsize: TSlickeDialogSize;
+const ACaption, ATitle, ADesc: string;
+const Accounts: TSlickeAccounts;
+const Preselect: integer = 0;
+const icon: SlickeUXImage = uxmtCog;
+const ACancelCaption: string = ''): integer;
   {**
     Show a single-line string input dialog.
     @param dialogsize Layout preset.
@@ -3512,6 +3558,105 @@ begin
   end;
 end;
 
+{ Blend two colours: Amount = 0 gives A, 1 gives B. Used for the dimmed
+  second line of an account row so it reads as secondary on either scheme. }
+function BlendColor(A, B: TColor; Amount: double): TColor;
+var
+  ca, cb: longint;
+begin
+  ca := ColorToRGB(A);
+  cb := ColorToRGB(B);
+  Result := RGBToColor(
+    Round(Red(ca) + (Red(cb) - Red(ca)) * Amount),
+    Round(Green(ca) + (Green(cb) - Green(ca)) * Amount),
+    Round(Blue(ca) + (Blue(cb) - Blue(ca)) * Amount));
+end;
+
+{ Height of AFont's text, measured on a scratch bitmap for the same reason as
+  DialogInputHeight: a form canvas is not safe to touch outside a paint event
+  on Cocoa and reports nothing on GTK3 before the window exists. }
+function MeasureFontHeight(AFont: TFont): integer;
+begin
+  with Graphics.TBitmap.Create do
+  try
+    SetSize(1, 1);
+    Canvas.Font.Assign(AFont);
+    Result := Canvas.TextHeight('Hg');
+  finally
+    Free;
+  end;
+end;
+
+const
+  { Rows visible before the account list scrolls. }
+  AccountPickerMaxRows = 6;
+  { Text size of the key line relative to the nickname line. }
+  AccountKeyFontScale = 0.8;
+
+{** See interface docs for behavior and parameters. }
+function SlickeAccountPicker(const dialogsize: TSlickeDialogSize;
+const ACaption, ATitle, ADesc: string;
+const Accounts: TSlickeAccounts;
+const Preselect: integer = 0;
+const icon: SlickeUXImage = uxmtCog;
+const ACancelCaption: string = ''): integer;
+var
+  Dialog: TDialogForm;
+  DescLabel: TLabel;
+  List: TListBox;
+  i, nickHeight, rowHeight, visibleRows: integer;
+  size: TSlickeDialogSize;
+begin
+  Result := -1;
+  if Length(Accounts) = 0 then
+    Exit;
+  size := GetSlickeDialogSize(dialogsize);
+
+  Dialog := CreateInputDialog(ACaption, size, icon, ATitle, ADesc, DescLabel);
+  try
+    Dialog.Accounts := Accounts;
+
+    // --- Account list ---
+    List := TListBox.Create(Dialog);
+    List.Parent := Dialog;
+    List.Left := DescLabel.Left;
+    List.Width := DescLabel.Width;
+    List.Top := InputContentTop(DescLabel, size);
+    ApplyInputColors(List);
+    ApplyDialogFont(List.Font, size, 20);
+    // The items only carry the nickname so the widgetset's type-to-search
+    // matches what the person sees; the drawing reads the full row from
+    // Dialog.Accounts by index.
+    for i := 0 to High(Accounts) do
+      if Accounts[i].Nick <> '' then
+        List.Items.Add(Accounts[i].Nick)
+      else
+        List.Items.Add(Accounts[i].Key);
+    // Two text lines per row (nickname over key), raised to the touch floor
+    // where one applies. Fixed rather than variable: every row is the same
+    // shape, so a one-line row (nick equal to key) centres its text instead
+    // of shrinking.
+    nickHeight := MeasureFontHeight(List.Font);
+    rowHeight := TouchMin(nickHeight + Round(nickHeight * AccountKeyFontScale) +
+      Max(nickHeight div 2, 8));
+    List.Style := lbOwnerDrawFixed;
+    List.ItemHeight := rowHeight;
+    List.OnDrawItem := @Dialog.AccountDrawItem;
+    List.OnDblClick := @Dialog.AccountDblClick;
+    visibleRows := Min(Length(Accounts), AccountPickerMaxRows);
+    List.Height := visibleRows * rowHeight + (List.BorderWidth * 2) + 4;
+    if (Preselect >= 0) and (Preselect <= High(Accounts)) then
+      List.ItemIndex := Preselect
+    else
+      List.ItemIndex := 0;
+
+    if RunInputDialog(Dialog, size, List, List, '', ACancelCaption) = mrOk then
+      Result := List.ItemIndex;
+  finally
+    Dialog.Free;
+  end;
+end;
+
 {** See interface docs for behavior and parameters. }
 function SlickeTable(
 const dialogsize: TSlickeDialogSize;
@@ -4901,6 +5046,104 @@ begin
 end;
 
 {** Expand log message area to 3/4 screen size }
+{ Draw one account row: a colour dot at the left (an outline when the account
+  has no colour, so every row keeps the same text column), the nickname, and
+  the stored key beneath it in smaller, dimmed type. A key equal to the
+  nickname is left out and the single line is centred instead. }
+procedure TDialogForm.AccountDrawItem(Control: TWinControl; Index: integer;
+  ARect: TRect; State: TOwnerDrawState);
+var
+  List: TListBox;
+  acc: TSlickeAccount;
+  fg, bg: TColor;
+  nick, key: string;
+  pad, dot, nickH, keyH, textX, textY, dotY, keyFontSize: integer;
+begin
+  List := Control as TListBox;
+  if (Index < 0) or (Index > High(Accounts)) then
+    Exit;
+  acc := Accounts[Index];
+  nick := acc.Nick;
+  if nick = '' then
+    nick := acc.Key;
+  key := acc.Key;
+  if SameText(key, nick) then
+    key := '';
+
+  if odSelected in State then
+  begin
+    bg := clHighlight;
+    fg := clHighlightText;
+  end
+  else
+  begin
+    bg := List.Color;
+    fg := List.Font.Color;
+    if fg = clDefault then
+      fg := getBaseColor;
+  end;
+
+  with List.Canvas do
+  begin
+    Brush.Style := bsSolid;
+    Brush.Color := bg;
+    FillRect(ARect);
+
+    Font.Assign(List.Font);
+    Font.Color := fg;
+    nickH := TextHeight('Hg');
+    keyFontSize := Max(Round(Abs(Font.Size) * AccountKeyFontScale), 6);
+    pad := Max(nickH div 2, 6);
+    dot := nickH;
+    textX := ARect.Left + pad + dot + pad;
+
+    // Vertical placement: two lines stacked, or one line centred.
+    if key <> '' then
+    begin
+      Font.Size := keyFontSize;
+      keyH := TextHeight('Hg');
+      Font.Assign(List.Font);
+      Font.Color := fg;
+      textY := ARect.Top + ((ARect.Bottom - ARect.Top) - (nickH + keyH)) div 2;
+    end
+    else
+    begin
+      keyH := 0;
+      textY := ARect.Top + ((ARect.Bottom - ARect.Top) - nickH) div 2;
+    end;
+
+    // The dot sits on the nickname line so the eye pairs colour and name.
+    dotY := textY + (nickH - dot) div 2;
+    Pen.Color := fg;
+    Pen.Width := 1;
+    if acc.Color = clBlack then
+      Brush.Style := bsClear
+    else
+      Brush.Color := acc.Color;
+    Ellipse(ARect.Left + pad, dotY, ARect.Left + pad + dot, dotY + dot);
+
+    Brush.Style := bsClear;
+    TextOut(textX, textY, nick);
+    if key <> '' then
+    begin
+      Font.Size := keyFontSize;
+      // Half-way to the row background: legible on either scheme without
+      // competing with the nickname above it.
+      Font.Color := BlendColor(fg, bg, 0.45);
+      TextOut(textX, textY + nickH, key);
+    end;
+  end;
+
+  if odFocused in State then
+    List.Canvas.DrawFocusRect(ARect);
+end;
+
+procedure TDialogForm.AccountDblClick(Sender: TObject);
+begin
+  if (Sender is TListBox) and (TListBox(Sender).ItemIndex >= 0) then
+    ModalResult := mrOk;
+end;
+
 procedure TDialogForm.ExpandLogDialog(Sender: TObject);
 var
   newHeight, newWidth: integer;

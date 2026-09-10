@@ -44,6 +44,9 @@
 (* MODIFICATION NOTICE (2026-08-27): actOnTrend and the per-dot init are gone
    with the per-dot controls; FormCreate now calls InitTrendModel, which
    allocates the slot arrays and the single trend paint surface. *)
+(* MODIFICATION NOTICE (2026-09-10): LoadUserProfile shows the accounts in
+   SlickeAccountPicker (colour dot, nickname, key) with the default account as
+   the first row, in place of the plain SlickeList drop-down of stored keys. *)
 // Main form helper functions for trend dots and UI initialization
 
 procedure tfBG.SetLang;
@@ -326,7 +329,21 @@ var
   i, preselect: integer;
   userNick, lastUser: string;
   userList: TStringArray;
+  accounts: TSlickeAccounts;
   sortHelper: TStringList;
+
+  // One picker row from the Accounts tab's stored nickname and colour, read
+  // under that account's settings scope. The scope is reset afterwards so
+  // nothing else in start-up resolves against a browsed account.
+  function AccountRow(const key, fallbackNick: string): TSlickeAccount;
+  begin
+    native.configUser := key;
+    Result.Key := key;
+    Result.Nick := native.GetSettingEx('user.nick', fallbackNick);
+    Result.Color := native.GetColorSetting('user.color', clBlack);
+    native.configUser := '';
+  end;
+
 begin
   if native.TryGetCSVSetting('users.names', userList, true) then
   begin // We have more than 1 user
@@ -344,31 +361,45 @@ begin
         sortHelper.Free;
       end;
     end;
+
+    // The default account is a row like any other, first in the list, so the
+    // picker has one way to answer. Its stored key is the empty scope, so the
+    // row shows "Default" instead (dropped by the picker when it matches the nick).
+    accounts := nil;
+    SetLength(accounts, Length(userList) + 1);
+    accounts[0] := AccountRow('', RS_DEFAULT_ACCOUNT);
+    accounts[0].Key := RS_DEFAULT_ACCOUNT;
+    for i := 0 to High(userList) do
+      accounts[i + 1] := AccountRow(userList[i], userList[i]);
+
     // Open on the account chosen last time rather than on whichever name sorts
     // first: users.active is written on every start, so the common case (same
-    // person, same machine) is a single click. An account removed since then
-    // simply isn't found and the picker opens on the first entry.
+    // person, same machine) is a single Enter. An empty users.active is the
+    // default account, i.e. the first row; an account removed since then
+    // simply isn't found and the picker opens there as well.
     lastUser := native.GetRootSetting('users.active', '');
     preselect := 0;
     if lastUser <> '' then
       for i := 0 to High(userList) do
         if SameText(userList[i], lastUser) then
         begin
-          preselect := i;
+          preselect := i + 1;
           Break;
         end;
 
     SlickeDialogsInTaskbar := true;
-    i := SlickeList(sdsAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE, // Show a prompt to choose user
-      RS_MULTIUSER_BOX, userList, true, uxmtCog, preselect);
+    // The reject button keeps its "Default" caption: closing or escaping the
+    // picker starts the default account, as it always has.
+    i := SlickeAccountPicker(sdsAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE,
+      RS_MULTIUSER_BOX, accounts, preselect, uxmtCog, smbSlickeDefault);
     SlickeDialogsInTaskbar := false;
 
-    if i > -1 then
-    begin // We chose a user
-      username := userList[i]; // Set username
+    if i > 0 then
+    begin // We chose a named account
+      username := userList[i - 1]; // Set username
       native.configUser := username; // Set settings main key
       native.SetRootSetting('users.active', username);
-      userNick := native.GetSettingEx('user.nick', username); // Load the user's nickname
+      userNick := accounts[i].Nick; // The account's nickname, read above
 
       multinick := userNick; // Set the multi user nickname
       // On platforms with a native title-bar badge (Windows) the name rides in
@@ -379,10 +410,10 @@ begin
         fbg.Caption := Format(RS_USER_CAPTION, [userNick, FBaseCaption]); // Set the main form title
     end
     else
-    begin // Standard user
+    begin // Standard user: chosen as the first row, or by cancelling
       username := ''; // No username
       native.SetRootSetting('users.active', username);
-      userNick := native.GetSettingEx('user.nick', RS_DEFAULT_ACCOUNT); // Get the standard user's nick
+      userNick := accounts[0].Nick; // The standard user's nick
       multinick := userNick; // Set the multi user nickname
       // See above: the badge platforms carry the name in the title-bar badge.
       if not native.SupportsUserBadge then
