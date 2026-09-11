@@ -128,12 +128,12 @@
                 <div class="feature reveal">
                     <div class="feature-icon">🖥️</div>
                     <h3>Wall Display Ready</h3>
-                    <p>Everything scales with the window. F11 goes full screen, the grid picks the layout that gives the biggest tiles, and text stays white on colour.</p>
+                    <p>Everything scales with the window and the grid picks the layout that gives the biggest tiles. <code>--kiosk</code> goes full screen, hides the pointer and keeps the machine and screen awake, on Linux, macOS and Windows.</p>
                 </div>
                 <div class="feature reveal">
                     <div class="feature-icon">🔗</div>
                     <h3>Shares Trndi's Settings</h3>
-                    <p>Built on the same API and platform layer as the desktop app. Accounts, nicknames, colours, backends and thresholds all come from Trndi; there is nothing to configure here.</p>
+                    <p>Built on the same API and platform layer as the desktop app. Accounts, nicknames, backends and thresholds all come from Trndi; there is nothing to configure here.</p>
                 </div>
                 <div class="feature reveal">
                     <div class="feature-icon">💝</div>
@@ -217,11 +217,11 @@ sudo make install # optional</pre>
             <div class="setup-grid">
                 <div class="setup-item reveal">
                     <h3>1️⃣ Add people in Trndi</h3>
-                    <p>Open Trndi's settings, go to the <em>Multi User</em> tab and add an account per person, each with its own backend and credentials. Give them a nickname and a colour while you are there. <a href="https://github.com/slicke/trndi/blob/main/guides/Multiuser.md">Multi-user guide &rarr;</a></p>
+                    <p>Open Trndi's settings, go to the <em>Multi User</em> tab and add an account per person, each with its own backend and credentials. Give them a nickname while you are there. <a href="https://github.com/slicke/trndi/blob/main/guides/Multiuser.md">Multi-user guide &rarr;</a></p>
                 </div>
                 <div class="setup-item reveal">
                     <h3>2️⃣ Start trndi-multi</h3>
-                    <p>That is all. It reads the same settings and shows every account with a backend, the default account first. The colour becomes the stripe on the tile; the nickname becomes its title.</p>
+                    <p>That is all. It reads the same settings and shows every account with a backend, the default account first. The nickname becomes the tile's title.</p>
                 </div>
             </div>
 
@@ -229,7 +229,11 @@ sudo make install # optional</pre>
                 <h3>Keys</h3>
                 <pre class="terminal terminal-plain">F5      refetch every account now
 F11     full screen (Esc leaves it)
-Q       quit</pre>
+Q       quit
+
+trndi-multi --fullscreen   start full screen
+trndi-multi --kiosk        wall display: full screen, pointer hidden, Esc ignored,
+                           machine and screen kept awake while it runs</pre>
                 <p class="setup-tip">💡 Values are shown in the first account's unit, so a wall with both mmol/L and mg/dL accounts still reads as one thing. Editing accounts, alarms, extensions and the Web API stay in Trndi itself.</p>
             </div>
         </div>
