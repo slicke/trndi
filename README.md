@@ -52,7 +52,7 @@
 ![macOS](doc/img/img_macos.png)
 
 #### Physical Display
-![Linux](doc/img/img_lin_rpi.png)
+![Raspberry Pi](doc/img/img_rpi.jpg)
 <br>RaspberryPi (with touch screen) - see [Guide for RPi display](guides/Display.md)
 
 ### Introduction
