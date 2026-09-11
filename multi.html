@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>trndi-multi - Everyone's glucose on one screen</title>
+    <meta name="description" content="trndi-multi shows every Trndi account at once: one tile per person, coloured by range, with value, trend, delta and a sparkline. For parents, partners and caregivers following more than one person. Same backends as Trndi: Nightscout, Dexcom Share, Tandem Source, CareLink, FreeStyle Libre and xDrip.">
+    <meta name="theme-color" content="#12141c">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="Trndi.ico">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a class="nav-logo" href="index.html">
+                <img src="Trndi.png" alt="Trndi Logo">
+                <span>Trndi <span class="nav-logo-sub">/ multi</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Desktop app</a>
+                <a href="cli.html">CLI</a>
+                <a href="#features">Features</a>
+                <a href="#download">Download</a>
+                <a href="#setup">Setup</a>
+                <a href="https://discord.gg/5n7JyG9zU" class="nav-discord">💬 Discord</a>
+                <a href="https://github.com/slicke/trndi-multi">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero" id="top">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-content">
+            <img src="doc/img/trndi-logo.png" alt="Trndi Logo" class="hero-logo">
+
+            <div class="hero-release">
+                <span class="release-dot" aria-hidden="true"></span>
+                <span class="release-label">Latest build:</span>
+                <span id="latest-release" class="release-version">Loading&hellip;</span>
+                <span id="release-date" class="release-date"></span>
+            </div>
+
+            <h1>Everyone's glucose,<br><span class="grad-text">on one screen</span></h1>
+            <p class="hero-subtitle">A companion to Trndi for parents, partners and caregivers &mdash; every account you follow as a tile on one wall display.</p>
+
+            <img src="doc/img/multi_six.png" alt="Six accounts as tiles in one window: green in range, blue below the low limit, red-orange above the high one, two of them dimmed and marked stale" class="hero-shot">
+
+            <div class="hero-buttons">
+                <a href="#download" class="btn-primary">Download trndi-multi</a>
+                <a href="index.html" class="btn-secondary">Looking for the desktop app?</a>
+            </div>
+
+            <div class="hero-chips">
+                <span class="chip">🌙 Nightscout</span>
+                <span class="chip">📡 Dexcom Share</span>
+                <span class="chip">💙 Tandem Source</span>
+                <span class="chip">🩸 Medtronic CareLink</span>
+                <span class="chip">🩹 FreeStyle Libre</span>
+                <span class="chip">📶 xDrip+</span>
+            </div>
+            <p class="hero-platforms">Linux &bull; Raspberry Pi &bull; Windows &bull; macOS</p>
+
+            <div class="build-status">
+                <img src="https://github.com/slicke/trndi-multi/actions/workflows/build.yml/badge.svg" alt="Build Status">
+            </div>
+        </div>
+    </header>
+
+    <div class="stats-bar">
+        <div class="container stats-inner">
+            <div class="stat"><strong>Zero</strong> Config &mdash; accounts come from Trndi</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>Any</strong> Number of people</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>6</strong> CGM Sources</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>Free</strong> &amp; Open Source</div>
+        </div>
+    </div>
+
+    <section class="screenshots">
+        <div class="container">
+            <p class="eyebrow">Screenshots</p>
+            <h2>Readable from across the room</h2>
+            <div class="screenshot-grid">
+                <div class="screenshot-item reveal">
+                    <img src="doc/img/multi_six.png" alt="Six tiles in a three-by-two grid, each with a name, a large value, trend arrow, delta and sparkline" loading="lazy">
+                    <h3>A whole household</h3>
+                </div>
+                <div class="screenshot-item reveal">
+                    <img src="doc/img/multi_two.png" alt="Two tall tiles side by side, the values filling most of each tile" loading="lazy">
+                    <h3>Two people, big numbers</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <p class="eyebrow">Features</p>
+            <h2>One window, every account</h2>
+            <div class="features-grid">
+                <div class="feature reveal">
+                    <div class="feature-icon">👥</div>
+                    <h3>One Tile per Person</h3>
+                    <p>Every account you have set up in Trndi's multi-user mode gets a tile: name, value, trend arrow, delta and the time of the reading.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Colour by Range</h3>
+                    <p>Green in range, red below the low limit, red-orange above the high one, amber and blue for a personal target band &mdash; the same meaning as in Trndi, using each person's own thresholds.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">📈</div>
+                    <h3>Sparkline</h3>
+                    <p>The last three hours drawn under the value, with the high and low limits as lines, so a slow drift is visible before it becomes an alarm.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">⏳</div>
+                    <h3>Old Readings Look Old</h3>
+                    <p>A reading that has aged past two sensor intervals dims its tile and is marked <em>stale</em> with its age, so a silent sensor is never mistaken for a steady one.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🧵</div>
+                    <h3>Independent Polling</h3>
+                    <p>Each account is fetched on its own thread, timed to land just after the next reading is due. A slow login on one never delays the others.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🖥️</div>
+                    <h3>Wall Display Ready</h3>
+                    <p>Everything scales with the window. F11 goes full screen, the grid picks the layout that gives the biggest tiles, and text stays white on colour.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Shares Trndi's Settings</h3>
+                    <p>Built on the same API and platform layer as the desktop app. Accounts, nicknames, colours, backends and thresholds all come from Trndi; there is nothing to configure here.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">💝</div>
+                    <h3>Free &amp; Open Source</h3>
+                    <p>GPLv3, like Trndi. No subscription, no ads, no data collection.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="download">
+        <div class="container">
+            <p class="eyebrow eyebrow-dark">Get started</p>
+            <h2>Download trndi-multi</h2>
+            <p class="section-sub">Built automatically from every change &mdash; no installer needed.</p>
+
+            <div class="download-grid">
+                <div class="download-item reveal">
+                    <div class="download-icon">🐧</div>
+                    <h3>Linux x64</h3>
+                    <p>Most distributions (amd64)</p>
+                    <a href="https://github.com/slicke/trndi-multi/releases/latest/download/trndi-multi-linux-amd64" data-asset="trndi-multi-linux-amd64" class="btn-download">Download for Linux</a>
+                    <p class="download-subtext"><small>Needs Qt6Pas and libcurl, see below</small></p>
+                </div>
+                <div class="download-item reveal">
+                    <div class="download-icon">🪟</div>
+                    <h3>Windows</h3>
+                    <p>Windows 10 &amp; 11 (x64)</p>
+                    <a href="https://github.com/slicke/trndi-multi/releases/latest/download/trndi-multi-windows-x64.zip" data-asset="trndi-multi-windows-x64.zip" class="btn-download">Download .zip</a>
+                    <p class="download-subtext"><small>libcurl.dll included</small></p>
+                </div>
+                <div class="download-item reveal">
+                    <div class="download-icon">🍎</div>
+                    <h3>macOS</h3>
+                    <p>Apple Silicon (arm64)</p>
+                    <a href="https://github.com/slicke/trndi-multi/releases/latest/download/trndi-multi-macos-arm64.zip" data-asset="trndi-multi-macos-arm64.zip" class="btn-download">Download .app</a>
+                    <p class="download-subtext"><small>Unsigned: right-click, Open the first time</small></p>
+                </div>
+            </div>
+
+            <div class="download-note">
+                <p><strong>More platforms:</strong></p>
+                <div class="additional-downloads">
+                    <div class="download-category">
+                        <h4>Raspberry Pi</h4>
+                        <a href="https://github.com/slicke/trndi-multi/releases/latest/download/trndi-multi-linux-arm64" data-asset="trndi-multi-linux-arm64">ARM64 / aarch64 Linux</a>
+                    </div>
+                </div>
+                <div class="linux-note">
+                    <span class="linux-note-icon" aria-hidden="true">🐧</span>
+                    <div>
+                        <h4>Linux Notes</h4>
+                        <p>The binary uses the Qt6 LCL, so install the bindings and libcurl first:
+                            <code>libqt6pas6</code> on Debian and Ubuntu, <code>qt6pas</code> on Fedora. Then mark
+                            it executable (<code>chmod +x trndi-multi-linux-amd64</code>) and run it.
+                            Other widgetsets build from source with <code>make WIDGETSET=gtk2</code>.
+                            <a href="https://github.com/slicke/trndi-multi#building">Build instructions &rarr;</a></p>
+                    </div>
+                </div>
+                <div class="linux-note">
+                    <span class="linux-note-icon" aria-hidden="true">🛠️</span>
+                    <div>
+                        <h4>Building</h4>
+                        <p>Needs Lazarus (<code>lazbuild</code>) and libcurl. Clone with the submodule and run make:</p>
+                        <pre class="terminal terminal-plain">git clone --recurse-submodules https://github.com/slicke/trndi-multi.git
+cd trndi-multi
+make              # bin/trndi-multi
+sudo make install # optional</pre>
+                        <p>Windows builds with <code>.\make.ps1</code>, macOS with <code>gmake</code>. <a href="https://github.com/slicke/trndi-multi#building">Full instructions &rarr;</a></p>
+                    </div>
+                </div>
+                <p><strong>All versions:</strong> <a href="https://github.com/slicke/trndi-multi/releases">View all releases on GitHub</a></p>
+            </div>
+        </div>
+    </section>
+
+    <section id="setup" class="setup">
+        <div class="container">
+            <p class="eyebrow">Setup</p>
+            <h2>Accounts come from Trndi</h2>
+            <div class="setup-grid">
+                <div class="setup-item reveal">
+                    <h3>1️⃣ Add people in Trndi</h3>
+                    <p>Open Trndi's settings, go to the <em>Multi User</em> tab and add an account per person, each with its own backend and credentials. Give them a nickname and a colour while you are there. <a href="https://github.com/slicke/trndi/blob/main/guides/Multiuser.md">Multi-user guide &rarr;</a></p>
+                </div>
+                <div class="setup-item reveal">
+                    <h3>2️⃣ Start trndi-multi</h3>
+                    <p>That is all. It reads the same settings and shows every account with a backend, the default account first. The colour becomes the stripe on the tile; the nickname becomes its title.</p>
+                </div>
+            </div>
+
+            <div class="setup-instructions">
+                <h3>Keys</h3>
+                <pre class="terminal terminal-plain">F5      refetch every account now
+F11     full screen (Esc leaves it)
+Q       quit</pre>
+                <p class="setup-tip">💡 Values are shown in the first account's unit, so a wall with both mmol/L and mg/dL accounts still reads as one thing. Editing accounts, alarms, extensions and the Web API stay in Trndi itself.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="community">
+        <div class="container community-inner">
+            <div class="community-text">
+                <h2>Join the community</h2>
+                <p>Ask questions, share your setup, report bugs, or just hang out with other Trndi users and contributors.</p>
+            </div>
+            <div class="community-actions">
+                <a href="https://discord.gg/5n7JyG9zU" class="btn-community-discord">💬 Join us on Discord</a>
+                <a href="https://github.com/slicke/trndi-multi/issues" class="btn-community-gh">Report an Issue</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="index.html">Trndi desktop</a>
+                    <a href="cli.html">trndi-cli</a>
+                    <a href="https://github.com/slicke/trndi-multi">GitHub</a>
+                    <a href="https://discord.gg/5n7JyG9zU">Discord</a>
+                    <a href="https://github.com/slicke/trndi-multi/issues">Report Issues</a>
+                </div>
+                <div class="footer-info">
+                    <p>&copy; 2026 Trndi. Free and open source software (GPLv3).</p>
+                </div>
+            </div>
+            <p class="footer-disclaimer">trndi-multi is not a medical device. Never make treatment decisions based on trndi-multi alone.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        window.addEventListener('scroll', function () {
+            document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 100);
+        });
+
+        if ('IntersectionObserver' in window &&
+            !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            const io = new IntersectionObserver(entries => {
+                entries.forEach(e => {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('visible');
+                        io.unobserve(e.target);
+                    }
+                });
+            }, { rootMargin: '0px 0px -40px 0px' });
+            document.querySelectorAll('.reveal').forEach(el => {
+                el.classList.add('reveal-armed');
+                io.observe(el);
+            });
+        }
+
+        function applyReleaseAssets(assets) {
+            if (!Array.isArray(assets) || !assets.length) return;
+            const byName = new Map(assets.map(a => [a.name.toLowerCase(), a.browser_download_url]));
+            document.querySelectorAll('a[data-asset]').forEach(a => {
+                const exact = byName.get(a.dataset.asset.toLowerCase());
+                if (exact) a.href = exact;
+            });
+        }
+
+        fetch('https://api.github.com/repos/slicke/trndi-multi/releases/latest')
+            .then(r => r.json())
+            .then(data => {
+                // 404 JSON until the first release is published.
+                if (!data.published_at) throw new Error('no release');
+                const name = data.name || data.tag_name || '';
+                const date = new Date(data.published_at).toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+                document.getElementById('latest-release').textContent = name;
+                document.getElementById('release-date').textContent = date;
+                applyReleaseAssets(data.assets);
+            })
+            .catch(() => {
+                document.getElementById('latest-release').textContent = 'see GitHub';
+            });
+    </script>
+</body>
+</html>
