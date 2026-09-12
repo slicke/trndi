@@ -1361,6 +1361,12 @@ begin
   
   FWebServer := TTrndiWebServer.Create(Port, Token, @GetCurrentReadingForWeb, @GetPredictionsForWeb);
   TTrndiWebServer(FWebServer).Start;
+
+  // Seed the /events snapshot with what the UI already knows. The reading
+  // itself is not needed here: a subscriber gets it from the cache callback
+  // until the next fetch publishes one.
+  WebPublishStatus;
+  WebPublishSnooze;
 end;
 
 procedure TfBG.StopWebServer;
@@ -1400,4 +1406,60 @@ end;
 function TfBG.WebServerActive: boolean;
 begin
   Result := Assigned(FWebServer) and TTrndiWebServer(FWebServer).Active;
+end;
+
+{------------------------------------------------------------------------------
+  WebPublish*
+  -----------
+  Relay state changes to the web API's /events stream. Each is a no-op while
+  no server is running, and the server drops sticky events whose payload did
+  not change, so the callers publish unconditionally from the paths that
+  apply readings, alerts, forecasts and snoozes.
+ ------------------------------------------------------------------------------}
+procedure TfBG.WebPublishReading(const Reading: BGReading);
+begin
+  if Assigned(FWebServer) then
+    TTrndiWebServer(FWebServer).PublishReading(Reading);
+end;
+
+procedure TfBG.WebPublishStatus;
+begin
+  if Assigned(FWebServer) then
+    TTrndiWebServer(FWebServer).PublishStatus(
+      FCachedReadingsValid and (not FTrendDataStale),
+      FLastFetchHadData, FLastConnectionDetail);
+end;
+
+const
+  // Wire names of the alert kinds, in TAlertKind order.
+  WEB_ALERT_KIND_NAMES: array[TAlertKind] of string = (
+    'high', 'low', 'urgent_low', 'missing', 'sensor_fault', 'rapid_fall', 'rapid_rise');
+
+procedure TfBG.WebPublishAlert(const Kinds: TAlertKindSet; const Reading: BGReading);
+var
+  Names: array of string;
+  Kind: TAlertKind;
+begin
+  if (not Assigned(FWebServer)) or (Kinds = []) then
+    Exit;
+  Names := nil;
+  for Kind in Kinds do
+  begin
+    SetLength(Names, Length(Names) + 1);
+    Names[High(Names)] := WEB_ALERT_KIND_NAMES[Kind];
+  end;
+  TTrndiWebServer(FWebServer).PublishAlert(Names, Reading);
+end;
+
+procedure TfBG.WebPublishSnooze;
+begin
+  if Assigned(FWebServer) and Assigned(FAlertEngine) then
+    TTrndiWebServer(FWebServer).PublishSnooze(
+      FAlertEngine.AnySnoozed, FAlertEngine.ActiveSnoozeUntil);
+end;
+
+procedure TfBG.WebPublishPredictions(const Preds: BGResults);
+begin
+  if Assigned(FWebServer) then
+    TTrndiWebServer(FWebServer).PublishPredictions(Preds);
 end;

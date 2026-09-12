@@ -1150,6 +1150,22 @@ private
      }
   function WebServerActive: boolean;
   procedure tWebServerStartTimer(Sender: TObject);
+    {** Push the newest reading to the web API's /events subscribers.
+      A no-op while no server runs; the server drops an unchanged payload.
+     }
+  procedure WebPublishReading(const Reading: BGReading);
+    {** Push the freshness/connection state to /events subscribers.
+     }
+  procedure WebPublishStatus;
+    {** Push a fired alert to /events subscribers (nothing for an empty set).
+     }
+  procedure WebPublishAlert(const Kinds: TAlertKindSet; const Reading: BGReading);
+    {** Push the alert-snooze state to /events subscribers.
+     }
+  procedure WebPublishSnooze;
+    {** Push the forecast to /events subscribers; nil clears it.
+     }
+  procedure WebPublishPredictions(const Preds: BGResults);
 
   {** Recalculate left of the TIR badge when next progress bar is visible }
   procedure nextProgressChange;

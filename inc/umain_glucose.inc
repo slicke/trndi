@@ -858,6 +858,8 @@ begin
   if not PredictGlucoseReading then
     Exit;
 
+  WebPublishPredictions(bgr);
+
   // Dot view: render the 5/10/15-minute predictions as hollow dots continuing
   // the trend to the right, and keep the text strip hidden.
   if PredictionDotsActive then
@@ -1175,6 +1177,7 @@ begin
   // on the high threshold restarted its persistence clock on every dip and
   // could never fire). The exact thresholds still pick the display color.
   fired := FAlertEngine.EvaluateLevel(reading.val);
+  WebPublishAlert(fired, reading);
 
   if reading.val >= api.cgmHi then
     HandleHighGlucose(reading, fired)
@@ -1188,7 +1191,10 @@ begin
   if sensorFault then
   begin
     if akSensorFault in FAlertEngine.EvaluateSensorFault then
+    begin
       native.attention(RS_ATTENTION_SENSOR_FAULT, RS_ATTENTION_SENSOR_FAULT_DESC);
+      WebPublishAlert([akSensorFault], reading);
+    end;
   end
   else
     FAlertEngine.ResetSensorFault;
@@ -1493,6 +1499,15 @@ begin
   else
     ApplyStaleDisplayState;
 
+  // The web API's /events subscribers learn about every fresh reading here.
+  // The stale branch below publishes its status once the connection detail
+  // is known.
+  if fresh then
+  begin
+    WebPublishReading(bgs[Low(bgs)]);
+    WebPublishStatus;
+  end;
+
   // Extensions learn about staleness here rather than from
   // FinalizeReadingUpdate. The caller skips that procedure whenever this one
   // returns false — which is every non-fresh fetch — so its 'stale' broadcast
@@ -1513,6 +1528,7 @@ begin
 
     FLastConnectionDetail := msg;
     SetConnectionBadge(ClassifyConnectionStatus(ErrorMsg), RGBToColor(185, 60, 45));
+    WebPublishStatus;
 
     // On boot, prefer the dedicated boot-failure message so the user knows
     // it's the first fetch that failed (and not a mid-session outage).
@@ -1526,6 +1542,7 @@ begin
     // marks that look like fresh predictions.
     HidePredictionDots;
     FPredictStrip.Visible := false;
+    WebPublishPredictions(nil);
 
     // The history itself is still worth showing, but it has to keep moving:
     // re-place it here (and once a second from tMissed) so the dots slide out
@@ -1534,7 +1551,10 @@ begin
     RefreshStaleTrendDots;
 
     if akMissing in FAlertEngine.EvaluateMissing then
+    begin
       native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
+      WebPublishAlert([akMissing], lastReading);
+    end;
     Exit;
   end;
 

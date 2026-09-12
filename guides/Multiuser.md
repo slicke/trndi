@@ -23,6 +23,15 @@ first letters of a nickname jumps to it. Closing the dialog or pressing
 __Default__ starts the default account. Each account's language setting is
 applied once you have chosen — accounts can run Trndi in different languages.
 
+## Setting up the new user's data source
+Adding a user only creates an empty account: it has no server, thresholds or other settings of its own yet. To fill them in:
+* Restart Trndi and pick the new user in the start-up dialog
+* Right-click and open settings
+* Configure the backend (Nightscout, Dexcom, etc.) and anything else, just as for a single-user Trndi
+* Close the window and __save settings__
+
+Repeat for every user you added. Each user's settings are stored separately, so changing one never affects another. This is also what makes a user appear in [trndi-multi](https://github.com/slicke/trndi-multi): users without a backend are skipped there.
+
 ## Customizing a user
 * In the user list, click the user's username
 * In the __Account Settings__ panel next to the list, choose an account color and nickname

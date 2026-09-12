@@ -78,7 +78,7 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * __Free__ and open source
 * Integrates with Windows, macOS and Linux special features such as the macOS dock, Windows taskbar and Linux notifications.
 * Supports low, normal and high blood sugar colors. But also __custom ranges__ such as "normal, but on the edge to high"
-* Offers a [WebAPI](doc/WebAPI.md) for other clients to access glucose data
+* Offers a [WebAPI](doc/WebAPI.md) for other clients to access glucose data, with a live event stream so they never need to poll
 * Supports experimental [predictions](guides/Predictions.md)
 * Supports Razer Chroma on Windows and Linux
 * Native proxy support on Windows, Linux, BSD and Haiku — a proxy you configure is used exclusively, never bypassed. With no proxy set, Trndi follows the system's own network settings (which is also how macOS is handled)

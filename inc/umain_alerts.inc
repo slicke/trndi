@@ -452,6 +452,8 @@ procedure TfBG.PersistAlertState(Sender: TObject);
 begin
   if not Assigned(native) or not Assigned(FAlertEngine) then Exit;
   native.SetSetting('alerts.state', FAlertEngine.SerializeState);
+  // Every snooze/resume lands here; the server ignores unchanged states.
+  WebPublishSnooze;
 end;
 
 {------------------------------------------------------------------------------
