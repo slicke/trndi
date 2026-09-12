@@ -103,7 +103,7 @@
                 <div class="feature reveal">
                     <div class="feature-icon">👥</div>
                     <h3>One Tile per Person</h3>
-                    <p>Every account you have set up in Trndi's multi-user mode gets a tile: name, value, trend arrow, delta and the time of the reading.</p>
+                    <p>Every account gets a tile: name, value, trend arrow, delta and the time of the reading. Add them right here, or use the ones already set up in Trndi's multi-user mode.</p>
                 </div>
                 <div class="feature reveal">
                     <div class="feature-icon">🎨</div>
@@ -133,7 +133,7 @@
                 <div class="feature reveal">
                     <div class="feature-icon">🔗</div>
                     <h3>Shares Trndi's Settings</h3>
-                    <p>Built on the same API and platform layer as the desktop app. Accounts, nicknames, backends and thresholds all come from Trndi; there is nothing to configure here.</p>
+                    <p>Built on the same API and platform layer as the desktop app, and on the same settings store. Accounts added in either program show up in both, and colours and thresholds set in Trndi are honoured here.</p>
                 </div>
                 <div class="feature reveal">
                     <div class="feature-icon">💝</div>
@@ -169,8 +169,8 @@
                     <div class="download-icon">🍎</div>
                     <h3>macOS</h3>
                     <p>Apple Silicon (arm64)</p>
-                    <a href="https://github.com/slicke/trndi-multi/releases/latest/download/trndi-multi-macos-arm64.zip" data-asset="trndi-multi-macos-arm64.zip" class="btn-download">Download .app</a>
-                    <p class="download-subtext"><small>Unsigned: right-click, Open the first time</small></p>
+                    <a href="https://github.com/slicke/trndi-multi/releases/latest/download/trndi-multi-macos-arm64.dmg" data-asset="trndi-multi-macos-arm64.dmg" class="btn-download">Download .dmg</a>
+                    <p class="download-subtext"><small>Unsigned: drag to Applications, then run <code>xattr -c "/Applications/Trndi Multi.app"</code> in Terminal once. Right-click Open does not work for it; the README inside explains.</small></p>
                 </div>
             </div>
 
@@ -213,28 +213,29 @@ sudo make install # optional</pre>
     <section id="setup" class="setup">
         <div class="container">
             <p class="eyebrow">Setup</p>
-            <h2>Accounts come from Trndi</h2>
+            <h2>Accounts are shared with Trndi</h2>
             <div class="setup-grid">
                 <div class="setup-item reveal">
-                    <h3>1️⃣ Add people in Trndi</h3>
-                    <p>Open Trndi's settings, go to the <em>Multi User</em> tab and add an account per person, each with its own backend and credentials. Give them a nickname while you are there. <a href="https://github.com/slicke/trndi/blob/main/guides/Multiuser.md">Multi-user guide &rarr;</a></p>
+                    <h3>1️⃣ Add people</h3>
+                    <p>Right-click the window and choose <em>Accounts</em>: one tab per person with a nickname, the system (Nightscout, Dexcom and so on), its login and the unit. The <em>+</em> tab adds an account. Already using Trndi's multi-user mode? Those accounts are there already. <a href="https://github.com/slicke/trndi/blob/main/guides/Multiuser.md">Multi-user guide &rarr;</a></p>
                 </div>
                 <div class="setup-item reveal">
-                    <h3>2️⃣ Start trndi-multi</h3>
-                    <p>That is all. It reads the same settings and shows every account with a backend, the default account first. The nickname becomes the tile's title.</p>
+                    <h3>2️⃣ Save</h3>
+                    <p>The tiles reload on the spot: every account with a backend, the default account first, the nickname as the tile's title. The same accounts are now in Trndi too.</p>
                 </div>
             </div>
 
             <div class="setup-instructions">
                 <h3>Keys</h3>
-                <pre class="terminal terminal-plain">F5      refetch every account now
-F11     full screen (Esc leaves it)
-Q       quit
+                <pre class="terminal terminal-plain">F5          refetch every account now
+F11         full screen (Esc leaves it)
+Q           quit
+Right-click accounts, refresh, full screen, quit (not in kiosk mode)
 
 trndi-multi --fullscreen   start full screen
 trndi-multi --kiosk        wall display: full screen, pointer hidden, Esc ignored,
                            machine and screen kept awake while it runs</pre>
-                <p class="setup-tip">💡 Values are shown in the first account's unit, so a wall with both mmol/L and mg/dL accounts still reads as one thing. Editing accounts, alarms, extensions and the Web API stay in Trndi itself.</p>
+                <p class="setup-tip">💡 Values are shown in the first account's unit, so a wall with both mmol/L and mg/dL accounts still reads as one thing. Account colours and thresholds, alarms, extensions and the Web API stay in Trndi itself.</p>
             </div>
         </div>
     </section>
