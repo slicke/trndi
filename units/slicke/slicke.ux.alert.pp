@@ -268,7 +268,7 @@ public
   Accounts: TSlickeAccounts;
     {** OnDrawItem for the account picker list: colour dot, nickname, key. }
   procedure AccountDrawItem(Control: TWinControl; Index: integer; ARect: TRect;
-    State: TOwnerDrawState);
+    State: StdCtrls.TOwnerDrawState);
     {** OnDblClick for the account picker list: a double-click answers the dialog. }
   procedure AccountDblClick(Sender: TObject);
 public
@@ -3567,9 +3567,9 @@ begin
   ca := ColorToRGB(A);
   cb := ColorToRGB(B);
   Result := RGBToColor(
-    Round(Red(ca) + (Red(cb) - Red(ca)) * Amount),
-    Round(Green(ca) + (Green(cb) - Green(ca)) * Amount),
-    Round(Blue(ca) + (Blue(cb) - Blue(ca)) * Amount));
+    Round(Graphics.Red(ca) + (Graphics.Red(cb) - Graphics.Red(ca)) * Amount),
+    Round(Graphics.Green(ca) + (Graphics.Green(cb) - Graphics.Green(ca)) * Amount),
+    Round(Graphics.Blue(ca) + (Graphics.Blue(cb) - Graphics.Blue(ca)) * Amount));
 end;
 
 { Height of AFont's text, measured on a scratch bitmap for the same reason as
@@ -5051,7 +5051,7 @@ end;
   the stored key beneath it in smaller, dimmed type. A key equal to the
   nickname is left out and the single line is centred instead. }
 procedure TDialogForm.AccountDrawItem(Control: TWinControl; Index: integer;
-  ARect: TRect; State: TOwnerDrawState);
+  ARect: TRect; State: StdCtrls.TOwnerDrawState);
 var
   List: TListBox;
   acc: TSlickeAccount;
@@ -5070,7 +5070,7 @@ begin
   if SameText(key, nick) then
     key := '';
 
-  if odSelected in State then
+  if LCLType.odSelected in State then
   begin
     bg := clHighlight;
     fg := clHighlightText;
@@ -5134,7 +5134,7 @@ begin
     end;
   end;
 
-  if odFocused in State then
+  if LCLType.odFocused in State then
     List.Canvas.DrawFocusRect(ARect);
 end;
 
