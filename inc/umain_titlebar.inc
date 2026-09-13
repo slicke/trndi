@@ -131,12 +131,27 @@ end;
 // on the same Wayland condition before they show; SlickeDressWithTitleBar
 // no-ops when the form is already frameless or already dressed, so calling
 // this repeatedly (Settings reopens often) is safe.
+//
+// Neither form sets a Color, so both carry the LCL default clDefault, which
+// has no RGB of its own: ColorToRGB turns it into black (white bar text and
+// glyphs), while the bar paints an unresolved brush (translucent on Wayland).
+// In a light theme that leaves the close glyph white on a light bar,
+// invisible until hover draws its highlight square under it. Resolve to the
+// color the widgetset actually paints the form with (clForm: QPalette::Window
+// on Qt, the GTK window background on GTK3), and pick the text color from
+// that resolved value.
 procedure TfBG.DressModalForm(AForm: TCustomForm);
+var
+  bg: TColor;
 begin
   if not (Assigned(AForm) and native.NeedsCustomTitleBar) then
     Exit;
-  SlickeDressWithTitleBar(AForm, AForm.Color,
-    IfThen(IsLightColor(AForm.Color), clBlack, clWhite), [stbClose]);
+  bg := AForm.Color;
+  if bg = clDefault then
+    bg := clForm;
+  bg := ColorToRGB(bg);
+  SlickeDressWithTitleBar(AForm, bg,
+    IfThen(IsLightColor(bg), clBlack, clWhite), [stbClose]);
 end;
 
 // Create or tear down the bar according to platform capability and settings.
