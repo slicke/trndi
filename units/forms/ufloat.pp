@@ -119,6 +119,9 @@ private
   FDragStartX: integer;
   FDragStartY: integer;
   FDraggingWin: boolean;
+  FPressX: integer;         // Screen position of the last left press — click detection
+  FPressY: integer;
+  FPressed: boolean;        // A left press began on this window and is not released yet
   FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (mirrors the main window)
   FProgressBox: TPaintBox;  // Slim next-refresh strip along the left edge (mirrors the main tube)
   FProgFrac: double;        // Fill fraction the strip currently shows
@@ -131,6 +134,7 @@ private
   procedure SyncSizeMenu;
   procedure SyncOpacityMenu(AOpacity: single);
   procedure ProgressBoxPaint({%H-}Sender: TObject);
+  procedure RaiseMainWindow;
 public
   {** Mirror the main window's rotating trend arrow.
       @param(AEnabled Whether the rotating arrow replaces the glyph.)
@@ -649,11 +653,50 @@ end;
 
 procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
+const
+  CLICK_SLOP = 4; // px of travel still counted as a click rather than a drag
+var
+  ScreenPt: TPoint;
+  wasClick: boolean;
 begin
   FDraggingWin := false;
   // Persist current position
   SaveSetting('position.float.left', Left);
   SaveSetting('position.float.top', Top);
+
+  // A left press released (almost) where it began is a click, not a drag:
+  // hand the user the main window back. Opening the float moves the focus to
+  // it, and once the main window has slipped behind other apps the float is
+  // the only Trndi surface left on screen, so a click on it is the way home.
+  if Sender is TControl then
+    ScreenPt := (Sender as TControl).ClientToScreen(Point(X, Y))
+  else
+    ScreenPt := ClientToScreen(Point(X, Y));
+  wasClick := FPressed and (Button = mbLeft) and
+    (Abs(ScreenPt.X - FPressX) <= CLICK_SLOP) and
+    (Abs(ScreenPt.Y - FPressY) <= CLICK_SLOP);
+  FPressed := false;
+  if wasClick then
+    RaiseMainWindow;
+end;
+
+{------------------------------------------------------------------------------
+  Bring the main window back: restore it when minimised, show it when hidden
+  and raise it. BringToFront ends in SetForegroundWindow, which Windows only
+  honours for the process that owns the foreground window — true right after
+  a click on the float, which is why this runs from the click itself.
+ ------------------------------------------------------------------------------}
+procedure TfFloat.RaiseMainWindow;
+var
+  mf: TCustomForm;
+begin
+  mf := Application.MainForm;
+  if (mf = nil) or (csDestroying in mf.ComponentState) then
+    Exit;
+  if mf.WindowState = wsMinimized then
+    mf.WindowState := wsNormal;
+  mf.Show;
+  mf.BringToFront;
 end;
 
 procedure TfFloat.FormResize(Sender: TObject);
@@ -717,6 +760,11 @@ begin
   begin
     FTrendArrow := TTrendArrow.Create(Self);
     FTrendArrow.Parent := lArrow.Parent;
+    // Forward mouse events like the labels do, so dragging and click-to-raise
+    // also work over the arrow.
+    FTrendArrow.OnMouseDown := @FormMouseDown;
+    FTrendArrow.OnMouseMove := @FormMouseMove;
+    FTrendArrow.OnMouseUp := @FormMouseUp;
   end;
 
   FTrendArrow.ArrowColor := AColor;
@@ -820,9 +868,12 @@ begin
       ScreenPt := (Sender as TControl).ClientToScreen(Point(X, Y))
     else
       ScreenPt := ClientToScreen(Point(X, Y));
-    
+
     FDragStartX := ScreenPt.X;
     FDragStartY := ScreenPt.Y;
+    FPressX := ScreenPt.X;
+    FPressY := ScreenPt.Y;
+    FPressed := true;
   end;
 end;
 

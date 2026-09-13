@@ -82,6 +82,10 @@ type
     property ArrowColor: TColor read FArrowColor write SetArrowColor;
     { Stroke width as a fraction of the shorter side (0..1). }
     property Thickness: single read FThickness write SetThickness;
+    { Mouse events, exposed so a host form can treat the arrow like its labels. }
+    property OnMouseDown;
+    property OnMouseMove;
+    property OnMouseUp;
   end;
 
 implementation
