@@ -262,7 +262,9 @@ function GetBValue(C: LongInt): Byte;
 const
   clWindow = $00FFFFFF; // white
   clWindowText = $00000000; // black
-  clForm = clWindow;        // LCL resolves it to the widgetset's form colour
+  {** The form background colour. The LCL resolves it to the widgetset's
+      form colour; the mock maps it to clWindow. }
+  clForm = clWindow;
 
 implementation
 
