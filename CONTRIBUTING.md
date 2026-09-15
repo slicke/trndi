@@ -240,12 +240,20 @@ TRNDI_COREDUMP=1 ./Trndi
 ```
 
 The process then dies on the fault and the system's crash collector keeps a
-core file with every thread and every library symbol intact:
+core file with every thread and every library symbol intact. On a systemd-based
+Linux system, `coredumpctl` finds it:
 
 ```bash
 coredumpctl list
 coredumpctl gdb          # opens the newest core in gdb
 ```
+
+Other platforms use their own core-file tools. On macOS, `ReportCrash` writes
+a `.ips` report under `~/Library/Logs/DiagnosticReports`, and
+`ulimit -c unlimited` puts a core in `/cores` for `lldb`. On BSD,
+`ulimit -c unlimited` leaves `Trndi.core` in the working directory for `gdb`
+or `lldb`. On Haiku, the Debugger window that opens on the fault can save a
+report or step through the frames directly.
 
 It is off by default on purpose. It turns an otherwise recoverable pointer bug
 into a hard crash, which is the wrong trade for a glucose monitor left running
