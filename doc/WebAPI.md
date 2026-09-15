@@ -250,6 +250,8 @@ data: { "kinds" : ["low"], "reading" : { ... }, "time_utc" : "2026-09-12T08:05:0
 
 Every frame carries an `id`. A client that reconnects with a `Last-Event-ID` header (browsers do this automatically) receives the events it missed instead of a fresh snapshot, as long as they are still among the last 128 events; otherwise (including an id from before a Trndi restart) it gets a snapshot again. The server writes a `: keepalive` comment after 15 seconds of silence so idle connections survive proxies and NAT.
 
+At most 16 streams are open at once. Each subscriber holds a server thread for as long as it stays connected, so a request past that limit is answered `503 Service Unavailable` with `Retry-After: 5` and closed; a browser `EventSource` retries on its own. Plain endpoints such as `/glucose` are not counted against the limit.
+
 **Example (browser):**
 ```javascript
 const es = new EventSource('http://localhost:8080/events');   // add ?token=... when auth is on
@@ -263,6 +265,7 @@ es.addEventListener('alert', e => console.warn('alert', JSON.parse(e.data).kinds
 **Status Codes:**
 - `200 OK`: Stream opened (`Content-Type: text/event-stream`)
 - `401 Unauthorized`: Token required and missing or wrong
+- `503 Service Unavailable`: All 16 stream slots are taken; retry after the `Retry-After` delay
 
 ## Trend Values
 

@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-15: Capped concurrent /events streams at MAX_EVENT_STREAMS with
+ *   a dedicated counter; a subscriber past the cap is answered 503.
  *)
 unit trndi.webserver.threaded;
 
@@ -49,6 +53,9 @@ unit trndi.webserver.threaded;
     - Each accepted connection is handled on its own TClientHandlerThread.
       A /events subscriber keeps its handler alive until the peer closes or
       the server shuts down; the handler polls TWebEventHub for new events.
+      At most MAX_EVENT_STREAMS such handlers exist at once; a subscriber
+      past that gets 503, since each one is a thread held for as long as
+      the peer likes.
     - TWebEventHub is the fan-out point: the owner publishes from any thread
       (the UI thread in practice), handlers copy out under the hub's lock.
     - The thread-safe-callback contract below MUST hold; otherwise concurrent
@@ -71,6 +78,14 @@ interface
 uses
 Classes, SysUtils, Sockets, fpjson, jsonparser, syncobjs, trndi.types, DateUtils
 {$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
+
+const
+  {** Upper bound on concurrent /events subscribers. Every stream holds a
+      handler thread until the peer hangs up, so without a cap a misbehaving
+      client could grow the process by one thread per reconnect. A request
+      past the cap is answered 503 with Retry-After and closed; plain
+      request/response endpoints are not counted against it. }
+  MAX_EVENT_STREAMS = 16;
 
 type
   { Callback function types for thread-safe data access }
@@ -138,6 +153,7 @@ private
   FStartedAtUtc: TDateTime;
   FPort: word;
   FActiveCounter: PLongInt;
+  FStreamCounter: PLongInt;   // open /events streams, capped at MAX_EVENT_STREAMS
   FHub: TWebEventHub;
   function HandleRequest(const Request: string): string;
   function CheckAuth(const Headers, QueryToken: string): boolean;
@@ -145,6 +161,8 @@ private
   function SendAll(const Data: string): boolean;
   function SendEvent(const Event: TWebEvent): boolean;
   procedure ServeEventStream(const Headers: string);
+  function ReserveStreamSlot: boolean;
+  procedure ReleaseStreamSlot;
 protected
   procedure Execute; override;
 public
@@ -152,7 +170,7 @@ public
     AGetCurrentReading: TGetCurrentReadingFunc;
     AGetPredictions: TGetPredictionsFunc;
     const AStartedAtUtc: TDateTime; APort: word;
-    AActiveCounter: PLongInt; AHub: TWebEventHub);
+    AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub);
 end;
 
   { TWebServerThread - listens and dispatches connections }
@@ -166,6 +184,7 @@ private
   FGetCurrentReading: TGetCurrentReadingFunc;
   FGetPredictions: TGetPredictionsFunc;
   FActiveCounter: PLongInt;
+  FStreamCounter: PLongInt;
   FHub: TWebEventHub;
 protected
   procedure Execute; override;
@@ -174,7 +193,7 @@ public
     AGetCurrentReading: TGetCurrentReadingFunc;
     AGetPredictions: TGetPredictionsFunc;
     ALoopbackOnly: boolean;
-    AActiveCounter: PLongInt; AHub: TWebEventHub);
+    AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub);
   destructor Destroy; override;
   procedure CloseServerSocket;
 end;
@@ -186,6 +205,7 @@ private
   FPort: word;
   FEnabled: boolean;
   FActiveClients: LongInt;
+  FActiveStreams: LongInt;   // subset of FActiveClients that serve /events
   FHub: TWebEventHub;
 public
   constructor Create(APort: word; const AAuthToken: string;
@@ -638,7 +658,7 @@ constructor TClientHandlerThread.Create(AClientSocket: TSocket; const AAuthToken
 AGetCurrentReading: TGetCurrentReadingFunc;
 AGetPredictions: TGetPredictionsFunc;
 const AStartedAtUtc: TDateTime; APort: word;
-AActiveCounter: PLongInt; AHub: TWebEventHub);
+AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub);
 begin
   inherited Create(true); // suspended; caller calls Start after setup is complete
   FreeOnTerminate := true;
@@ -649,7 +669,28 @@ begin
   FStartedAtUtc := AStartedAtUtc;
   FPort := APort;
   FActiveCounter := AActiveCounter;
+  FStreamCounter := AStreamCounter;
   FHub := AHub;
+end;
+
+// Take one of the MAX_EVENT_STREAMS slots. Increment first and test after:
+// a read-then-increment check would let two handlers racing through it both
+// get in. FActiveCounter is deliberately untouched here; it counts every
+// connection, streams included, and Stop drains on it.
+function TClientHandlerThread.ReserveStreamSlot: boolean;
+begin
+  if FStreamCounter = nil then
+    Exit(true);
+  if InterlockedIncrement(FStreamCounter^) <= MAX_EVENT_STREAMS then
+    Exit(true);
+  InterlockedDecrement(FStreamCounter^);
+  Result := false;
+end;
+
+procedure TClientHandlerThread.ReleaseStreamSlot;
+begin
+  if FStreamCounter <> nil then
+    InterlockedDecrement(FStreamCounter^);
 end;
 
 // The token is normally carried as "Authorization: Bearer <token>". A browser
@@ -1104,14 +1145,28 @@ begin
       ParseRequestLine(Request, Method, URIPath, Query);
       if (Method = 'GET') and (URIPath = '/events') and Assigned(FHub) then
       begin
-        if CheckAuth(Request, QueryValue(Query, 'token')) then
-          ServeEventStream(Request)
-        else
+        if not CheckAuth(Request, QueryValue(Query, 'token')) then
           SendAll('HTTP/1.1 401 Unauthorized'#13#10 +
             'Content-Type: application/json'#13#10 +
             'Access-Control-Allow-Origin: *'#13#10 +
             'Connection: close'#13#10#13#10 +
-            '{"error":"Unauthorized"}');
+            '{"error":"Unauthorized"}')
+        else if not ReserveStreamSlot then
+          // Authenticated, but every stream slot is taken. Retry-After
+          // matches the "retry:" hint an open stream hands its subscriber.
+          SendAll('HTTP/1.1 503 Service Unavailable'#13#10 +
+            'Content-Type: application/json'#13#10 +
+            'Access-Control-Allow-Origin: *'#13#10 +
+            'Retry-After: 5'#13#10 +
+            'Connection: close'#13#10#13#10 +
+            '{"error":"Too many event streams"}')
+        else
+          try
+            ServeEventStream(Request);
+          finally
+            // The one release for this slot, however the stream ended.
+            ReleaseStreamSlot;
+          end;
         Exit;
       end;
 
@@ -1138,7 +1193,7 @@ constructor TWebServerThread.Create(APort: word; const AAuthToken: string;
 AGetCurrentReading: TGetCurrentReadingFunc;
 AGetPredictions: TGetPredictionsFunc;
 ALoopbackOnly: boolean;
-AActiveCounter: PLongInt; AHub: TWebEventHub);
+AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub);
 begin
   inherited Create(true); // Create suspended
   FreeOnTerminate := false; // Owner stops + frees thread (needed for safe shutdown)
@@ -1148,6 +1203,7 @@ begin
   FGetPredictions := AGetPredictions;
   FLoopbackOnly := ALoopbackOnly;
   FActiveCounter := AActiveCounter;
+  FStreamCounter := AStreamCounter;
   FHub := AHub;
   FServerSocket := INVALID_SOCKET;
   FStartedAtUtc := LocalTimeToUniversal(Now);
@@ -1297,7 +1353,7 @@ begin
       try
         Client := TClientHandlerThread.Create(ClientSocket, FAuthToken,
           FGetCurrentReading, FGetPredictions,
-          FStartedAtUtc, FPort, FActiveCounter, FHub);
+          FStartedAtUtc, FPort, FActiveCounter, FStreamCounter, FHub);
         // Worker owns ClientSocket from here on.
         Client.Start;
       except
@@ -1333,10 +1389,11 @@ begin
   FPort := APort;
   FEnabled := false;
   FActiveClients := 0;
+  FActiveStreams := 0;
   FHub := TWebEventHub.Create;
   FThread := TWebServerThread.Create(APort, AAuthToken,
     AGetCurrentReading, AGetPredictions,
-    ALoopbackOnly, @FActiveClients, FHub);
+    ALoopbackOnly, @FActiveClients, @FActiveStreams, FHub);
 end;
 
 destructor TTrndiWebServer.Destroy;

@@ -101,6 +101,7 @@ type
     procedure TestReplayWithLastEventId;
     procedure TestQueryTokenAuth;
     procedure TestStopClosesStream;
+    procedure TestEventStreamLimit;
     procedure TestHubReplayAndRingOverflow;
   end;
 
@@ -493,6 +494,62 @@ begin
     AssertTrue('subscriber sees EOF', C.Reader.WaitForEof(WAIT_MS));
   finally
     C.Free;
+  end;
+end;
+
+procedure TWebServerEventsTests.TestEventStreamLimit;
+var
+  Clients: array of TSseClient;
+  Extra: TSseClient;
+  i, Attempt: integer;
+  Reopened: boolean;
+begin
+  StartServer;
+  SetLength(Clients, MAX_EVENT_STREAMS);
+  for i := 0 to High(Clients) do
+    Clients[i] := nil;
+  Extra := nil;
+  try
+    for i := 0 to High(Clients) do
+    begin
+      Clients[i] := TSseClient.Create(Port, Get('/events'));
+      AssertTrue('stream ' + IntToStr(i + 1) + ' opens',
+        Clients[i].Reader.WaitForText('text/event-stream', WAIT_MS));
+    end;
+
+    Extra := TSseClient.Create(Port, Get('/events'));
+    AssertTrue('one past the cap is refused', Extra.Reader.WaitForText('503', WAIT_MS));
+    AssertTrue('refusal says why', Extra.Reader.WaitForText('Too many event streams', WAIT_MS));
+    AssertTrue('refusal carries Retry-After', Pos('Retry-After', Extra.Reader.Snapshot) > 0);
+    AssertTrue('refused connection is closed', Extra.Reader.WaitForEof(WAIT_MS));
+    FreeAndNil(Extra);
+
+    // Plain endpoints are not counted against the cap.
+    Extra := TSseClient.Create(Port, Get('/health'));
+    AssertTrue('plain request still served', Extra.Reader.WaitForText('200 OK', WAIT_MS));
+    FreeAndNil(Extra);
+
+    // A subscriber hanging up frees its slot. The handler notices the EOF on
+    // its next poll, so allow a few refusals before the slot is back.
+    FreeAndNil(Clients[0]);
+    Reopened := false;
+    for Attempt := 1 to 40 do
+    begin
+      Extra := TSseClient.Create(Port, Get('/events'));
+      if Extra.Reader.WaitForText('text/event-stream', WAIT_MS) then
+      begin
+        Reopened := true;
+        Break;
+      end;
+      AssertTrue('refused again while the slot is still held', Extra.Reader.WaitForText('503', WAIT_MS));
+      FreeAndNil(Extra);
+      Sleep(100);
+    end;
+    AssertTrue('slot is released when the subscriber hangs up', Reopened);
+  finally
+    Extra.Free;
+    for i := 0 to High(Clients) do
+      Clients[i].Free;
   end;
 end;
 
