@@ -484,8 +484,12 @@ begin
   // worker parked in Synchronize for the length of a Settings session would
   // stall a quit from that dialog until the fetch-shutdown timeout detached
   // it. The boot spinner keeps running; the retry re-enters the boot path.
+  // Execute skips ApplyResult once FAbortFetch is set, so close the progress
+  // indicator RequestAsyncFetch's updateBegin opened here instead.
   FAbortFetch := true;
   FOwner.FApiCallInFlight := false;
+  if Assigned(native) then
+    native.updateDone;
   FOwner.FBootConnectError := FConnectErr;
   Application.QueueAsyncCall(@FOwner.DeferredBootConnectFailure, 0);
 end;
