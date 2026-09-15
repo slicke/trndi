@@ -455,26 +455,42 @@ const
     // is GPLv3, and the warnings above are its GPL section 7 additional terms.
     'Trndi is free software under the GNU General Public License v3,'#10 +
     'with the medical disclaimer above as an additional term.';
-  // Every license key we have ever shipped, newest last. Add the outgoing key
+  // The stored key is 'license.' + a date; bump the date whenever the terms
+  // above change materially, so everyone re-accepts what they are actually
+  // agreeing to. 260804 added the warning that alerts are not an alarm
+  // system (see DISCLAIMER.md).
+  currentTerms = '260804';
+  // Every terms date we have ever shipped, newest last. Add the outgoing date
   // here whenever the current one is bumped, so a returning user is told the
   // terms changed instead of being shown a first-run gate again.
-  priorKeys: array[0..0] of string = ('license.250608');
+  priorTerms: array[0..0] of string = ('250608');
 var
-  i, k: integer;
-  termsChanged: boolean;
+  i: integer;
   title, question: string;
-begin
-  // The key is dated: bump it whenever the terms above change materially, so
-  // everyone re-accepts what they are actually agreeing to. 260804 added the
-  // warning that alerts are not an alarm system (see DISCLAIMER.md).
-  if native.GetBoolSetting('license.260804') <> true then
-  begin
-    termsChanged := false;
-    for k := low(priorKeys) to high(priorKeys) do
-      if native.GetBoolSetting(priorKeys[k]) then
-        termsChanged := true;
 
-    if termsChanged then
+  // Every multi-user account accepts the disclaimer on its own: the key is
+  // read in the account scope, so one account's acceptance never covers
+  // another. (The default account is unprefixed, so its key is the root key.)
+  function Accepted(const terms: string): boolean; overload;
+  begin
+    Result := native.GetBoolSetting('license.' + terms);
+  end;
+
+  // True when any of the given terms versions was accepted.
+  function Accepted(const terms: array of string): boolean; overload;
+  var
+    t: string;
+  begin
+    Result := false;
+    for t in terms do
+      if Accepted(t) then
+        Exit(true);
+  end;
+
+begin
+  if not Accepted(currentTerms) then
+  begin
+    if Accepted(priorTerms) then
     begin
       // The GPLv3 text itself never changes, so a re-prompt can only mean the
       // medical disclaimer (the GPL section 7 additional term) moved.
@@ -496,7 +512,7 @@ begin
         [[mbYes, mbSlickeRead, mbCancel], [mbSlickeRead, mbCancel, mbYes]],
         uxmtCustom, uxscLarge);
       if i = mrYes then
-        native.SetSetting('license.260804', true)
+        native.SetSetting('license.' + currentTerms, true)
       else
       if i = mrCancel then
       begin
