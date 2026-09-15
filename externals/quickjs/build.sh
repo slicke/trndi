@@ -34,7 +34,7 @@ if [ "$what" = all ]; then
     Darwin)                       what=mac ;;
     Haiku)                        what=haiku ;;
     FreeBSD)                      what=freebsd ;;
-    MINGW*|MSYS*|CLANGARM64*|CYGWIN*) what=winhost ;;
+    MINGW*|MSYS*|CLANGARM64*)     what=winhost ;;
     *)                            what=all-linux ;;
   esac
 fi
@@ -59,8 +59,10 @@ case "$what" in
   winhost)
     # An MSYS2 shell reports MINGW64_NT-… / CLANGARM64_NT-… / MSYS_NT-…; the
     # cross targets ('win', 'winarm') are the way in from anywhere else.
+    # Cygwin (CYGWIN_NT-…) is deliberately not in the list: its compilers
+    # build against cygwin1.dll, which Trndi.exe cannot load.
     case "$host" in
-      MINGW*|MSYS*|CLANGARM64*|CYGWIN*) ;;
+      MINGW*|MSYS*|CLANGARM64*) ;;
       *) echo "winhost builds on Windows itself; use 'win' or 'winarm' to cross from $host"; exit 1 ;;
     esac ;;
 esac
@@ -456,10 +458,11 @@ if [ "$what" = winhost ]; then
   esac
   # The plain MSYS environment builds against msys-2.0.dll, a Cygwin fork --
   # not a Windows-native DLL, and not something Trndi.exe can load. Its
-  # compiler reports *-pc-msys, which is the one spelling to refuse.
+  # compiler reports *-pc-msys; a real Cygwin compiler reports *-pc-cygwin
+  # and links against cygwin1.dll, which is just as unloadable. Refuse both.
   case "$triple" in
-    *-msys)
-      echo "this is the MSYS environment, which builds Cygwin-style binaries."
+    *-msys|*-cygwin)
+      echo "$CC targets $triple, which builds Cygwin-style binaries."
       echo "  Open the CLANGARM64 shell (ARM64) or MINGW64 shell (x64) instead."
       exit 1 ;;
   esac
