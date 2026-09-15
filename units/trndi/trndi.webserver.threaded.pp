@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-15: SEND_FLAGS uses Haiku's own MSG_NOSIGNAL value ($0800) on
+ *   Haiku, since FPC 3.2.2's sockets unit carries the BSD value there.
  * - 2026-09-15: Capped concurrent /events streams at MAX_EVENT_STREAMS with
  *   a dedicated counter; a subscriber past the cap is answered 503.
  *)
@@ -266,8 +268,13 @@ SHUT_RDWR = 2;
 // down; an /events subscriber leaving is the normal case, not an error.
 // Every Unix target but macOS has the per-call flag; macOS gets the socket
 // option instead (set in TClientHandlerThread.Execute).
+// Haiku's value is spelled out: FPC 3.2.2's Haiku sockets unit copies the
+// BSD constant ($20000), but Haiku's sys/socket.h defines MSG_NOSIGNAL as
+// 0x0800. The kernel ignores the BSD bit, so SIGPIPE fired regardless.
 {$IF DEFINED(WINDOWS) OR DEFINED(DARWIN)}
 SEND_FLAGS = 0;
+{$ELSEIF DEFINED(HAIKU)}
+SEND_FLAGS = $0800;
 {$ELSE}
 SEND_FLAGS = MSG_NOSIGNAL;
 {$ENDIF}
