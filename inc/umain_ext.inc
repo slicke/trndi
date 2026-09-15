@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-10: LoadExtensions scans the extensions directory before it
+ *   touches the engine and returns when no script is installed, so the
+ *   QuickJS runtime is only built once an extension exists.
  *)
  // Extension loading and helper functions
 {$ifdef TrndiExt}

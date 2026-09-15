@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-13: Exposed OnMouseDown, OnMouseMove and OnMouseUp so a host
+ *   form can treat the arrow like its labels.
  *)
 
 unit utrendarrow;

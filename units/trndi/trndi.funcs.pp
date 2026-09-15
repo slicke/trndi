@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-10: Engine lookups go through TTrndiExtEngine.Existing, which
+ *   returns the running engine or nil, so checking for an engine no longer
+ *   constructs one.
  * - 2026-08-27: The DOT_GRAPH/DOT_FRESH/DOT_PREDICT/DOT_GAP sentinel caption
  *   constants are gone — dot state now lives in umain's TTrendSlot model
  *   instead of control-char captions.

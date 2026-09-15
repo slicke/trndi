@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-10: Added the Existing class function, which returns the running
+ *   engine or nil and never constructs one, so callers can test for an engine
+ *   without starting the QuickJS runtime.
  *)
 unit trndi.ext.engine;
 
