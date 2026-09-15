@@ -470,13 +470,17 @@ if [ "$what" = winhost ]; then
   out="$HERE/prebuilt/${arch}-win64"
   mkdir -p "$out"
 
-  build_engine winhost
+  # One build tree per target: $WORK persists between runs, and a CMake cache
+  # remembers its compiler, so a tree shared by the MINGW64 and CLANGARM64
+  # shells would hand the second run the first one's configuration.
+  name="winhost-$arch"
+  build_engine "$name"
   echo "--> building shim (${arch}-win64, native)"
   "$CC" -shared -O2 -std=c11 -I"$SRC" \
-    -o "$WORK/b-winhost/tqshim.dll" "$HERE/tq_shim.c" \
-    "$WORK/b-winhost/libqjs.dll.a"
+    -o "$WORK/b-$name/tqshim.dll" "$HERE/tq_shim.c" \
+    "$WORK/b-$name/libqjs.dll.a"
 
-  cp "$WORK/b-winhost/libqjs.dll" "$WORK/b-winhost/tqshim.dll" "$out/"
+  cp "$WORK/b-$name/libqjs.dll" "$WORK/b-$name/tqshim.dll" "$out/"
   echo "    -> $out"
 fi
 
