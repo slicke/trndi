@@ -38,6 +38,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-21: Added TGradientDirection and a no-op TCanvas.GradientFill
  *   for the splash screen's accent line.
+ * - 2026-09-15: Added clForm, which umain_titlebar.inc reads as the fallback
+ *   form colour when a modal form still carries clDefault.
  *)
 unit Graphics;
 
@@ -260,6 +262,7 @@ function GetBValue(C: LongInt): Byte;
 const
   clWindow = $00FFFFFF; // white
   clWindowText = $00000000; // black
+  clForm = clWindow;        // LCL resolves it to the widgetset's form colour
 
 implementation
 
