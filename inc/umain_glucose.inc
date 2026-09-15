@@ -1501,10 +1501,13 @@ begin
 
   // The web API's /events subscribers learn about every fresh reading here.
   // The stale branch below publishes its status once the connection detail
-  // is known.
+  // is known. Same "newest reading with a value" rule the hero value and the
+  // alert engine follow: a backend that could not parse an item clears it but
+  // keeps its slot, so publishing bgs[0] would serialize the placeholder as
+  // BG_NO_VAL instead of the value the screen is showing.
   if fresh then
   begin
-    WebPublishReading(bgs[Low(bgs)]);
+    WebPublishReading(lastDataReading);
     WebPublishStatus;
   end;
 
