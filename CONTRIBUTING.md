@@ -221,9 +221,12 @@ want a leak report; no rebuild is needed either way.
 An unhandled exception is reported in two places. `TfBG.AppExceptionHandler`
 (`inc/umain_helpers.inc`) catches whatever reaches `Application.OnException` and
 shows it in the error dialog's dump area, stack included. `InstallCrashHandler`
-(`units/trndi/trndi.log.pp`, called first thing in `Trndi.lpr`) hooks `ExceptProc`
-for the ones that get past every Pascal handler, logs them, and then chains to
-the RTL handler so the usual stderr report and exit code are unchanged.
+(`units/trndi/trndi.log.pp`) hooks `ExceptProc` for the ones that get past every
+Pascal handler, logs them, and then chains to the RTL handler so the usual stderr
+report and exit code are unchanged. It runs from that unit's initialization
+section, and `Trndi.lpr` lists `trndi.log` ahead of the LCL so the hook is in
+place before the widgetset and the form units initialize; the call at the top of
+the program body is only an idempotent fallback.
 
 Both write through `TrndiELog`, which is a no-op outside DEBUG. A release build
 therefore reports through the dialog and stderr only, and nothing lands in

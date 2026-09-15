@@ -46,6 +46,9 @@
  * - 2026-09-09: added TrndiExceptionReport / TrndiCurrentExceptionReport and
  *   InstallCrashHandler. The log procedures stay DEBUG-only; the report
  *   formatting and the crash policy are compiled into every build.
+ * - 2026-09-15: InstallCrashHandler is now also called from this unit's
+ *   initialization section, so the hook is in place before later units
+ *   initialize.
  *)
 unit trndi.log;
 
@@ -106,8 +109,10 @@ function TrndiExceptionReport(Obj: TObject; Addr: CodePointer;
     is no current exception and the report says so. }
 function TrndiCurrentExceptionReport: string;
 
-{** Install the process-wide crash policy. Call once, as early in the program
-    body as possible; a second call does nothing.
+{** Install the process-wide crash policy. This unit's initialization section
+    calls it, so a program that lists @code(trndi.log) early in its uses clause
+    has the hook in place before its later units initialize; calling it again
+    from the program body is harmless, a second call does nothing.
 
     Two things happen. An @code(ExceptProc) hook logs any exception that
     reaches the RTL unhandled - the ones that get past every Pascal handler,
@@ -453,7 +458,23 @@ begin
   end;
 end;
 
+{$else}
+
+procedure TrndiDLog(const Msg: string); begin if Msg = '' then Exit; end;
+procedure TrndiELog(const Msg: string); begin if Msg = '' then Exit; end;
+procedure TrndiWLog(const Msg: string); begin if Msg = '' then Exit; end;
+procedure TrndiNetLog(const Msg: string); begin if Msg = '' then Exit; end;
+
+{$endif}
+
 initialization
+// Hooked here, in every build, rather than only from the program body: unit
+// initialization runs before the first statement of that body, so a fault
+// while the widgetset or a form unit initializes never reached a handler
+// installed there. Trndi.lpr lists this unit ahead of the LCL for that reason.
+// The body's own call stays as the idempotent fallback.
+InstallCrashHandler;
+{$ifdef DEBUG}
 InitCriticalSection(LogLock);
 LogLockInited := True;
 try
@@ -477,20 +498,15 @@ except
   // ignore
 end;
 
+{$endif}
+
 finalization
+{$ifdef DEBUG}
 if LogLockInited then
 begin
   DoneCriticalSection(LogLock);
   LogLockInited := False;
 end;
-
-{$else}
-
-procedure TrndiDLog(const Msg: string); begin if Msg = '' then Exit; end;
-procedure TrndiELog(const Msg: string); begin if Msg = '' then Exit; end;
-procedure TrndiWLog(const Msg: string); begin if Msg = '' then Exit; end;
-procedure TrndiNetLog(const Msg: string); begin if Msg = '' then Exit; end;
-
 {$endif}
 
 end.
