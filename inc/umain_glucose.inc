@@ -1556,7 +1556,7 @@ begin
     if akMissing in FAlertEngine.EvaluateMissing then
     begin
       native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
-      WebPublishAlert([akMissing], lastReading);
+      WebPublishAlert([akMissing], lastDataReading);
     end;
     Exit;
   end;
