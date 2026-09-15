@@ -235,7 +235,14 @@ end;
 
 function SlickeAccountPicker(const dialogsize: TSlickeDialogSize; const ACaption, ATitle, ADesc: string; const Accounts: TSlickeAccounts; const Preselect: integer = 0; const icon: SlickeUXImage = uxmtCog; const ACancelCaption: string = ''): integer;
 begin
-  Result := Preselect;
+  // Same boundaries as the real dialog with OK pressed: nothing to pick from
+  // answers -1, an out-of-range Preselect lands on row 0.
+  if Length(Accounts) = 0 then
+    Result := -1
+  else if (Preselect >= 0) and (Preselect <= High(Accounts)) then
+    Result := Preselect
+  else
+    Result := 0;
 end;
 
 
