@@ -377,7 +377,7 @@ debug: build
 
 test: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -386,7 +386,7 @@ test: check qjs-links
 
 noext-test: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -395,7 +395,7 @@ noext-test: qjs-links
 
 test-noserver: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -404,7 +404,7 @@ test-noserver: check qjs-links
 
 noext-test-noserver: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
