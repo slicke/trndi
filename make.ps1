@@ -34,6 +34,17 @@ $env:OS = "Windows_NT"
 $firstArg = if ($MakeArgs.Length -ge 1) { $MakeArgs[0].ToLower() } else { "" }
 $extraArgs = if ($MakeArgs.Length -gt 1) { $MakeArgs[1..($MakeArgs.Length - 1)] } else { @() }
 
+# A leading --cpu=<name> is an option for the default (release) build, not a
+# target. `.\make.ps1 --cpu=aarch64` is the documented ARM64 command
+# (externals/quickjs/README.md); left as the "target" it fell through to the
+# raw forwarding at the bottom, which passes no build mode to lazbuild and
+# never runs Copy-QuickJSLibs or Publish-Build. Keep the flag among the
+# forwarded arguments so lazbuild and the library copy both see it.
+if ($firstArg -like '--cpu=*') {
+    $extraArgs = @($MakeArgs)
+    $firstArg = ""
+}
+
 function Find-Lazbuild {
     if ($env:LAZBUILD -and (Test-Path $env:LAZBUILD)) { return $env:LAZBUILD }
     $cmd = Get-Command lazbuild -ErrorAction SilentlyContinue
@@ -492,6 +503,7 @@ switch ($firstArg) {
         Write-Host "Notes:" -ForegroundColor Cyan
         Write-Host "  Extra arguments after a target are forwarded to lazbuild (or the test runner for 'test')."
         Write-Host "  Unknown targets are forwarded to lazbuild as-is."
+        Write-Host "  A leading --cpu=<name> (no target) builds release for that CPU, e.g. .\make.ps1 --cpu=aarch64."
         Write-Host "  Set LAZBUILD to override the lazbuild location (default: C:\lazarus\lazbuild.exe or PATH)."
         Write-Host "  Builds land in the project directory and are staged into build\ (binary + lang\, plus the"
         Write-Host "  QuickJS libraries for extensions modes). Set OUTDIR to stage somewhere else."
