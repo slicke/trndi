@@ -436,6 +436,15 @@ begin
   finally
     B.Free;
   end;
+
+  // An id from before a server restart is unknown to this hub: the client
+  // must get a snapshot rather than wait for the sequence to catch up.
+  B := TSseClient.Create(Port, Get('/events', 'Last-Event-ID: 999999'#13#10));
+  try
+    AssertTrue('unknown id falls back to a snapshot', B.Reader.WaitForText('event: reading', WAIT_MS));
+  finally
+    B.Free;
+  end;
 end;
 
 procedure TWebServerEventsTests.TestQueryTokenAuth;
@@ -499,6 +508,7 @@ begin
     AssertEquals('empty hub', int64(0), Hub.LatestSeq);
     AssertTrue('nothing to replay on an empty hub', Hub.CopySince(0, Items));
     AssertEquals(0, Length(Items));
+    AssertFalse('an id the hub never issued needs a resync', Hub.CopySince(1, Items));
 
     AssertTrue(Hub.Publish('status', 'a'));
     AssertFalse('unchanged sticky is dropped', Hub.Publish('status', 'a'));
@@ -506,6 +516,10 @@ begin
     AssertTrue(Hub.Publish('alert', 'x', false, false));
     AssertTrue('non-sticky repeats', Hub.Publish('alert', 'x', false, false));
     AssertEquals(int64(4), Hub.LatestSeq);
+
+    AssertTrue('the latest id has nothing new', Hub.CopySince(4, Items));
+    AssertEquals(0, Length(Items));
+    AssertFalse('an id past the latest needs a resync', Hub.CopySince(5, Items));
 
     AssertTrue(Hub.CopySince(2, Items));
     AssertEquals('two events after seq 2', 2, Length(Items));

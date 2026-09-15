@@ -248,7 +248,7 @@ data: { "kinds" : ["low"], "reading" : { ... }, "time_utc" : "2026-09-12T08:05:0
 
 `reading`, `status`, `snooze` and `predict` describe state: a new subscriber is sent the latest of each as a snapshot right after connecting, and an unchanged state is never resent. `alert` marks a moment and repeats whenever the engine re-fires.
 
-Every frame carries an `id`. A client that reconnects with a `Last-Event-ID` header (browsers do this automatically) receives the events it missed instead of a fresh snapshot, as long as they are still among the last 128 events; otherwise it gets a snapshot again. The server writes a `: keepalive` comment after 15 seconds of silence so idle connections survive proxies and NAT.
+Every frame carries an `id`. A client that reconnects with a `Last-Event-ID` header (browsers do this automatically) receives the events it missed instead of a fresh snapshot, as long as they are still among the last 128 events; otherwise (including an id from before a Trndi restart) it gets a snapshot again. The server writes a `: keepalive` comment after 15 seconds of silence so idle connections survive proxies and NAT.
 
 **Example (browser):**
 ```javascript

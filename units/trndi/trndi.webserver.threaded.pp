@@ -114,8 +114,10 @@ public
   {** Id of the most recently queued event (0 before the first). }
   function LatestSeq: int64;
   {** Copy the events queued after AfterSeq, oldest first.
-      @returns(False when AfterSeq has already fallen out of the ring, in
-      which case the caller should resynchronise from a snapshot.) }
+      @returns(False when AfterSeq has already fallen out of the ring or is
+      an id this hub has not issued (a client resuming across a server
+      restart), in which case the caller should resynchronise from a
+      snapshot.) }
   function CopySince(const AfterSeq: int64; out Items: TWebEventArray): boolean;
   {** Copy the latest payload of every sticky event, each stamped with the
       current LatestSeq so a client resuming from that id sees only what
@@ -563,8 +565,13 @@ begin
   Items := nil;
   FLock.Acquire;
   try
-    if AfterSeq >= FSeq then
+    if AfterSeq = FSeq then
       Exit(true); // nothing new
+    // An id this hub never issued: a Last-Event-ID carried over from before
+    // a server restart. Treating it as "nothing new" left the subscriber
+    // silent until the sequence had climbed past it; resynchronise instead.
+    if AfterSeq > FSeq then
+      Exit(false);
 
     if FRingCount = 0 then
       Exit(false);
