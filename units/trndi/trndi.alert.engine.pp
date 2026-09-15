@@ -74,9 +74,10 @@ type
     ReAlertMinutes: integer;      // 0 = one-shot per excursion; >0 = re-alert after N min
     MaxSnoozeMinutes: integer;    // 0 = unlimited; positive caps snooze duration
     MinDurationMinutes: integer;  // 0 = fire immediately; >0 = require violation to persist
-    HysteresisDelta: double;      // 0 = exact threshold; >0 widens the exit band (API units).
-                                  // The band only keeps the excursion alive; a rule fires
-                                  // solely on readings that meet Threshold itself.
+    {** 0 = exact threshold; >0 widens the exit band (API units).
+      The band only keeps the excursion alive; a rule fires solely on
+      readings that meet Threshold itself. }
+    HysteresisDelta: double;
     SnoozedUntil: TDateTime;
     LastFired: TDateTime;         // 0 = never fired this excursion
     ViolationStartedAt: TDateTime;// 0 = not currently violating
