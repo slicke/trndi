@@ -122,6 +122,9 @@ private
   FPressX: integer;         // Screen position of the last left press — click detection
   FPressY: integer;
   FPressed: boolean;        // A left press began on this window and is not released yet
+  {$IFDEF LCLQt6}
+  FSystemMovePending: boolean; // Wayland: hand the press to the compositor once it travels past the click slop
+  {$ENDIF}
   FTrendArrow: TTrendArrow; // Rotating trend arrow overlay (mirrors the main window)
   FProgressBox: TPaintBox;  // Slim next-refresh strip along the left edge (mirrors the main tube)
   FProgFrac: double;        // Fill fraction the strip currently shows
@@ -135,6 +138,9 @@ private
   procedure SyncOpacityMenu(AOpacity: single);
   procedure ProgressBoxPaint({%H-}Sender: TObject);
   procedure RaiseMainWindow;
+  {$IFDEF LCLQt6}
+  function StartSystemMove: boolean;
+  {$ENDIF}
 public
   {** Mirror the main window's rotating trend arrow.
       @param(AEnabled Whether the rotating arrow replaces the glyph.)
@@ -624,19 +630,45 @@ begin
     (Sender as TTimer).Enabled := false;
 end;
 
+const
+  CLICK_SLOP = 4; // px of travel still counted as a click rather than a drag
+
 procedure TfFloat.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
 var
   ScreenPt: TPoint;
   DeltaX, DeltaY: integer;
 begin
+  if not (FDraggingWin {$IFDEF LCLQt6} or FSystemMovePending {$ENDIF}) then
+    Exit;
+
+  // Convert to screen coordinates to handle moves from child controls
+  if Sender is TControl then
+    ScreenPt := (Sender as TControl).ClientToScreen(Point(X, Y))
+  else
+    ScreenPt := ClientToScreen(Point(X, Y));
+
+  {$IFDEF LCLQt6}
+  if FSystemMovePending then
+  begin
+    // Still within the click slop: keep waiting, a release here is a click.
+    if (Abs(ScreenPt.X - FPressX) <= CLICK_SLOP) and
+      (Abs(ScreenPt.Y - FPressY) <= CLICK_SLOP) then
+      Exit;
+    FSystemMovePending := false;
+    if StartSystemMove then
+    begin
+      // The compositor owns the pointer from here and swallows the mouse-up,
+      // so this press can no longer end as a click.
+      FPressed := false;
+      Exit;
+    end;
+    // No compositor move for this window: drag by hand like everywhere else.
+    FDraggingWin := true;
+  end;
+  {$ENDIF}
+
   if FDraggingWin then
   begin
-    // Convert to screen coordinates to handle moves from child controls
-    if Sender is TControl then
-      ScreenPt := (Sender as TControl).ClientToScreen(Point(X, Y))
-    else
-      ScreenPt := ClientToScreen(Point(X, Y));
-    
     // Calculate the delta (how much the mouse moved)
     DeltaX := ScreenPt.X - FDragStartX;
     DeltaY := ScreenPt.Y - FDragStartY;
@@ -653,13 +685,14 @@ end;
 
 procedure TfFloat.FormMouseUp(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
-const
-  CLICK_SLOP = 4; // px of travel still counted as a click rather than a drag
 var
   ScreenPt: TPoint;
   wasClick: boolean;
 begin
   FDraggingWin := false;
+  {$IFDEF LCLQt6}
+  FSystemMovePending := false;
+  {$ENDIF}
   // Persist current position
   SaveSetting('position.float.left', Left);
   SaveSetting('position.float.top', Top);
@@ -827,42 +860,42 @@ begin
   end;
 end;
 
+{$IFDEF LCLQt6}
+{------------------------------------------------------------------------------
+  Ask the compositor to move this window with the current press. Wayland
+  offers no way for a client to place its own toplevel, so this is the only
+  move that works there. True when the compositor took the gesture.
+ ------------------------------------------------------------------------------}
+function TfFloat.StartSystemMove: boolean;
+var
+  QtWidget: TQtWidget;
+  qwin: QWindowH;
+begin
+  Result := false;
+  if not HandleAllocated then
+    Exit;
+  QtWidget := TQtWidget(Handle);
+  if (QtWidget = nil) or (QtWidget.Widget = nil) then
+    Exit;
+  qwin := QWidget_windowHandle(QtWidget.Widget);
+  if qwin = nil then
+    Exit;
+  Result := QWindow_startSystemMove(qwin);
+  if Result then
+    // The compositor swallows the matching mouse-up (KWin), so drop the
+    // implicit capture or it sticks to the pressed control and hijacks every
+    // later press.
+    SetCaptureControl(nil);
+end;
+{$ENDIF}
+
 procedure TfFloat.FormMouseDown(Sender: TObject; Button: TMouseButton;
 Shift: TShiftState; X, Y: integer);
 var
   ScreenPt: TPoint;
-  {$IFDEF LCLQt6}
-  QtWidget: TQtWidget;
-  sessionType: string;
-  qwin: QWindowH;
-  {$ENDIF}
 begin
   if Button = mbLeft then
   begin
-    {$IFDEF LCLQt6}
-    sessionType := GetEnvironmentVariable('XDG_SESSION_TYPE');
-    if LowerCase(sessionType) = 'wayland' then
-      if HandleAllocated then
-      begin
-        QtWidget := TQtWidget(Handle);
-        if Assigned(QtWidget) and Assigned(QtWidget.Widget) then
-        begin
-          qwin := QWidget_windowHandle(QtWidget.Widget);
-          if qwin <> nil then
-            if QWindow_startSystemMove(qwin) then
-            begin
-              // The compositor swallows the matching mouse-up (KWin), so
-              // drop the implicit capture or it sticks to the pressed
-              // control and hijacks every later press.
-              SetCaptureControl(nil);
-              Exit; // compositor handles the move
-            end;
-        end;
-      end;
-    {$ENDIF}
-
-    FDraggingWin := true;
-    
     // Convert to screen coordinates to handle clicks from child controls
     if Sender is TControl then
       ScreenPt := (Sender as TControl).ClientToScreen(Point(X, Y))
@@ -874,6 +907,22 @@ begin
     FPressX := ScreenPt.X;
     FPressY := ScreenPt.Y;
     FPressed := true;
+
+    {$IFDEF LCLQt6}
+    // On Wayland the compositor has to do the move, and it also swallows the
+    // mouse-up that ends the gesture - so starting the move on the press
+    // itself turned every click into a drag and the click-to-restore never
+    // fired. Wait for the pointer to leave the click slop instead
+    // (FormMouseMove); a release before that reaches FormMouseUp as a click,
+    // the same as on every other platform.
+    if LowerCase(GetEnvironmentVariable('XDG_SESSION_TYPE')) = 'wayland' then
+    begin
+      FSystemMovePending := true;
+      Exit;
+    end;
+    {$ENDIF}
+
+    FDraggingWin := true;
   end;
 end;
 
