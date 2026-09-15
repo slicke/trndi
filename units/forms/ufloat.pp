@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-15: FormMouseDown detects a Wayland session through
+ *   TrndiNative.IsWaylandSession instead of reading XDG_SESSION_TYPE itself.
  *)
 
 unit ufloat;
@@ -914,8 +918,10 @@ begin
     // itself turned every click into a drag and the click-to-restore never
     // fired. Wait for the pointer to leave the click slop instead
     // (FormMouseMove); a release before that reaches FormMouseUp as a click,
-    // the same as on every other platform.
-    if LowerCase(GetEnvironmentVariable('XDG_SESSION_TYPE')) = 'wayland' then
+    // the same as on every other platform. The shared helper also honours a
+    // toolkit forced onto XWayland, which gets X11 window management and so
+    // takes the ordinary drag path below.
+    if TrndiNative.IsWaylandSession then
     begin
       FSystemMovePending := true;
       Exit;
