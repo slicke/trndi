@@ -1316,10 +1316,10 @@ begin
   // The engine has already been evaluated for this reading (see
   // UpdateUIBasedOnGlucose): an in-range value outside every hysteresis band
   // cleared the level rules there, while one still inside a band kept its
-  // violation alive — and may even have fired, when a min-duration ran out on
-  // a reading hovering just under the threshold. Honor such a verdict rather
-  // than swallowing it, or the alert would be lost to the re-alert gate once
-  // the value crosses back over.
+  // violation alive. The engine no longer fires on an in-band reading, so
+  // `fired` is normally empty here; this remains as a safety net in case the
+  // engine's threshold and api.cgmHi/cgmLo ever drift apart (a verdict that
+  // was fired must not be swallowed, or it is lost to the re-alert gate).
   if akHigh in fired then
     RaiseHighLevelAlert;
   if (fired * [akLow, akUrgentLow]) <> [] then

@@ -35,6 +35,9 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-09-15): Added ReAlertWaitsInsideHysteresisBand
+   and MinDurationExpiringInsideBandWaitsForThreshold - a reading inside the
+   hysteresis band keeps the excursion alive but must not fire. *)
 unit alert_engine_tests;
 
 {$mode objfpc}{$H+}
@@ -83,9 +86,11 @@ type
     procedure OneShotDoesNotRefireWithinExcursion;
     procedure ReAlertHoldsBeforeInterval;
     procedure ReAlertRefiresAfterInterval;
+    procedure ReAlertWaitsInsideHysteresisBand;
     // Minimum duration
     procedure MinDurationSuppressesFirstFire;
     procedure MinDurationFiresOncePersisted;
+    procedure MinDurationExpiringInsideBandWaitsForThreshold;
     // Snooze
     procedure SnoozeActiveCapsUrgentLow;
     procedure SnoozeActiveHonoursUncappedRule;
@@ -356,6 +361,28 @@ begin
   AssertTrue('must re-fire once the interval elapses', akHigh in res);
 end;
 
+procedure TAlertEngineTests.ReAlertWaitsInsideHysteresisBand;
+var
+  res: TAlertKindSet;
+begin
+  // Limit 10, band down to 8; re-alert every 30 minutes.
+  FEngine.SetupRule(akHigh, true, 10.0, 30, 0, 0, 2.0);
+  // Fired 45 minutes ago — the interval has elapsed.
+  FEngine.DeserializeState(StateEntry(akHigh, 0,
+    IncMinute(Now, -45), IncMinute(Now, -60), true), 12);
+
+  // The reading sits inside the band: the UI shows it in range, so a "high"
+  // re-alert here would contradict the display.
+  res := FEngine.EvaluateLevel(8.5);
+  AssertTrue('must not re-alert on an in-band reading', not (akHigh in res));
+  AssertTrue('excursion must survive the in-band reading',
+    FEngine.IsViolating(akHigh));
+
+  // Back over the limit: the overdue re-alert goes out.
+  res := FEngine.EvaluateLevel(10.2);
+  AssertTrue('re-alerts once the limit is met again', akHigh in res);
+end;
+
 // ---------------------------------------------------------------------------
 // Minimum duration
 // ---------------------------------------------------------------------------
@@ -384,6 +411,32 @@ begin
 
   res := FEngine.EvaluateLevel(12.0);
   AssertTrue('must fire once the violation has persisted', akHigh in res);
+end;
+
+procedure TAlertEngineTests.MinDurationExpiringInsideBandWaitsForThreshold;
+var
+  res: TAlertKindSet;
+begin
+  // Limit 10, band down to 9.5, 15 minute persistence.
+  FEngine.SetupRule(akHigh, true, 10.0, 0, 0, 15, 0.5);
+  // Violating for 30 minutes, never fired — the clock has run out.
+  FEngine.DeserializeState(StateEntry(akHigh, 0, 0,
+    IncMinute(Now, -30), true), 12);
+
+  res := FEngine.EvaluateLevel(9.7);
+  AssertTrue('must not fire on a reading just under the limit',
+    not (akHigh in res));
+  AssertTrue('in-band reading must keep the persistence clock',
+    FEngine.IsViolating(akHigh));
+
+  res := FEngine.EvaluateLevel(10.1);
+  AssertTrue('fires as soon as the limit is met again', akHigh in res);
+
+  // A fresh excursion (band exited) starts the clock over.
+  FEngine.EvaluateLevel(9.0);
+  res := FEngine.EvaluateLevel(10.5);
+  AssertTrue('new excursion must wait for the persistence again',
+    not (akHigh in res));
 end;
 
 // ---------------------------------------------------------------------------

@@ -1055,9 +1055,9 @@ private
   procedure HandleLowGlucose(const {%H-}reading: BGReading; const fired: TAlertKindSet);
   procedure HandleNormalGlucose(const reading: BGReading; const fired: TAlertKindSet);
   {** Alert side-effects (toast, media, Chroma) for a fired high/low level
-      rule. Split out of the Handle* color handlers so the engine's verdict —
-      which, with hysteresis, can fire while the displayed color is already
-      back to normal — is honored no matter which band the router picked. }
+      rule. Split out of the Handle* color handlers so the engine's verdict is
+      honored no matter which band the router picked, should the engine's
+      thresholds and the router's ever disagree. }
   procedure RaiseHighLevelAlert;
   procedure RaiseLowLevelAlert;
   procedure ApplyChromaAlertAction(const ActionSettingKey: string;
