@@ -66,12 +66,19 @@ function Find-Perl {
 # to Trndi.exe after an extensions-enabled build. See externals/quickjs/README.md.
 function Copy-QuickJSLibs {
     param([string]$Destination = $PSScriptRoot)
-    # PROCESSOR_ARCHITECTURE describes this process, not the machine, and that
-    # is the one that matters: an x64 PowerShell emulated on Windows on ARM
-    # drives an x64 lazbuild, produces an x64 Trndi.exe, and needs the x64
-    # libraries -- and reports AMD64. A native ARM64 shell reports ARM64, which
-    # is the only case where aarch64-win64 is what the .lpi resolves to.
-    $qjsArch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
+    # The directory follows the *target* CPU, the same rule as the Makefile's
+    # QJS_DIR. An explicit --cpu=<name> among the arguments forwarded to
+    # lazbuild wins, since that is what the .lpi resolves
+    # $(TargetCPU)-$(TargetOS) from. Otherwise PROCESSOR_ARCHITECTURE decides:
+    # it describes this process, not the machine, and that is the one that
+    # matters: an x64 PowerShell emulated on Windows on ARM drives an x64
+    # lazbuild, produces an x64 Trndi.exe, and needs the x64 libraries -- and
+    # reports AMD64. A native ARM64 shell reports ARM64, which is the only
+    # case where aarch64-win64 is what the .lpi resolves to.
+    $cpuArg = @($extraArgs | Where-Object { $_ -like '--cpu=*' } | Select-Object -Last 1)
+    $qjsArch = if ($cpuArg.Count -gt 0) { $cpuArg[0].Substring('--cpu='.Length) }
+               elseif ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' }
+               else { 'x86_64' }
     $src = Join-Path $PSScriptRoot "externals\quickjs\prebuilt\$qjsArch-win64"
     if (-not (Test-Path $src)) {
         Write-Warning "QuickJS libraries not found at $src - extensions will fail to start. Rebuild them with externals/quickjs/build.sh."

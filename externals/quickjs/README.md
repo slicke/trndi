@@ -211,6 +211,13 @@ Two things to know before building *Trndi itself* for ARM64 Windows:
   `make.ps1` both key off `PROCESSOR_ARCHITECTURE`, which describes the
   process, not the machine, and so stage the libraries that match whatever
   `Trndi.exe` was just built as.
+- **An explicit target CPU wins over that host detection.** The staged
+  directory is always `<TargetCPU>-<TargetOS>`, the same one `Trndi.lpi`
+  links against, so a cross build passes the CPU through and both sides
+  agree: `make CPU_FLAG=--cpu=aarch64` on any host, or
+  `.\make.ps1 --cpu=aarch64` on Windows (the argument is forwarded to
+  lazbuild and read back for the library copy). Only when no `--cpu` is
+  given does the host (`PROCESSOR_ARCHITECTURE`, `uname -m`) decide.
 
 Packaging is a separate, unsolved problem: `dist/windows_setup.iss` is x64
 throughout — `ArchitecturesAllowed=x64compatible`, and `iscc` produces an x64
