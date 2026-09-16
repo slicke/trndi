@@ -701,7 +701,8 @@ begin
 end;
 
 // The token is normally carried as "Authorization: Bearer <token>". A browser
-// EventSource cannot set headers, so a "?token=" query value is accepted too.
+// EventSource cannot set headers, so the /events caller passes the "?token="
+// query value too; every other caller passes an empty QueryToken.
 function TClientHandlerThread.CheckAuth(const Headers, QueryToken: string): boolean;
 var
   HeaderVal, Scheme, Token: string;
@@ -761,8 +762,10 @@ begin
       Exit;
     end;
 
-    // Check auth
-    if not CheckAuth(Headers, QueryValue(Query, 'token')) then
+    // Check auth. Only the /events stream (handled before this routine is
+    // reached) accepts a "?token=" query value; plain endpoints require the
+    // Authorization header so the token stays out of URLs and logs.
+    if not CheckAuth(Headers, '') then
     begin
       Result := 'HTTP/1.1 401 Unauthorized'#13#10 +
         'Content-Type: application/json'#13#10 +

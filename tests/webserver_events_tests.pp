@@ -473,7 +473,13 @@ begin
   end;
   C := TSseClient.Create(Port, Get('/glucose?token=s3cret'));
   try
-    AssertTrue('query token works on plain endpoints too', C.Reader.WaitForText('200 OK', WAIT_MS));
+    AssertTrue('query token is refused on plain endpoints', C.Reader.WaitForText('401', WAIT_MS));
+  finally
+    C.Free;
+  end;
+  C := TSseClient.Create(Port, Get('/glucose', 'Authorization: Bearer s3cret'#13#10));
+  try
+    AssertTrue('bearer header works on plain endpoints', C.Reader.WaitForText('200 OK', WAIT_MS));
   finally
     C.Free;
   end;

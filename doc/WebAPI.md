@@ -48,11 +48,13 @@ If a token is configured, requests must include it in the `Authorization` header
 curl -H "Authorization: Bearer your_token_here" http://localhost:8080/glucose
 ```
 
-A browser `EventSource` cannot set request headers, so the token is also accepted as a `token` query parameter on every endpoint:
+A browser `EventSource` cannot set request headers, so `/events` alone also accepts the token as a `token` query parameter:
 
 ```
 http://localhost:8080/events?token=your_token_here
 ```
+
+The other endpoints (`/glucose`, `/predict`, `/status`, `/health`) ignore the query parameter and require the `Authorization` header, so the token does not end up in URLs, browser history, or proxy logs.
 
 If no token is configured, all requests are allowed.
 
@@ -254,7 +256,7 @@ At most 16 streams are open at once. Each subscriber holds a server thread for a
 
 **Example (browser):**
 ```javascript
-const es = new EventSource('http://localhost:8080/events');   // add ?token=... when auth is on
+const es = new EventSource('http://localhost:8080/events');   // add ?token=... when auth is on (accepted only on /events)
 es.addEventListener('reading', e => {
   const r = JSON.parse(e.data);
   document.title = `${r.mmol} mmol/L`;
