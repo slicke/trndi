@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-10: Engine lookups go through TTrndiExtEngine.Existing, which
+ *   returns the running engine or nil, so checking for an engine no longer
+ *   constructs one.
  * - 2026-08-27: The DOT_GRAPH/DOT_FRESH/DOT_PREDICT/DOT_GAP sentinel caption
  *   constants are gone — dot state now lives in umain's TTrendSlot model
  *   instead of control-char captions.
@@ -747,7 +750,7 @@ end;
 function callFunc(const func: string; params: array of const; out exists: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
   begin  // Safe
     exists := false;
     exit;
@@ -821,7 +824,7 @@ end;
 function callFuncArrayFirst(const func: string; const firstArray: JSValueRaw; rest: array of const; out exists: boolean; autoFree: boolean; autoFreeFirst: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
   begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
   if not exists then
@@ -839,7 +842,7 @@ end;
 function callFuncMixed(const func: string; const raw: array of JSValueRaw; rest: array of const; out exists: boolean; restAutoFree: boolean; rawAutoFree: boolean): string;
 begin
   result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
   begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
   if not exists then
@@ -857,7 +860,7 @@ end;
 function callFuncRaw(const func: string; const raw: array of JSValueRaw; out exists: boolean; autoFree: boolean): string;
 begin
   Result := '';
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
   begin exists := false; exit; end;
   exists := TTrndiExtEngine.Instance.FunctionExists(func);
   if not exists then
@@ -874,35 +877,35 @@ end;
 // Helper constructors
 function JSValueRawString(const s: RawUtf8): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSString(s);
 end;
 
 function JSValueRawInt(const v: int64): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSInt64(v);
 end;
 
 function JSValueRawFloat(const v: double): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSFloat(v);
 end;
 
 function JSValueRawBool(const v: boolean): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSBool(v);
 end;
 
 function JSValueRawArray(const values: array of const): JSValueRaw;
 begin
-  if not Assigned(TTrndiExtEngine.Instance) then
+  if not Assigned(TTrndiExtEngine.Existing) then
     exit(JS_UNDEFINED);
   Result := TTrndiExtEngine.Instance.MakeJSArray(values);
 end;

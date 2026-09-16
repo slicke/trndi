@@ -216,6 +216,59 @@ In Lazarus, add it once under Run → Run Parameters → Environment as a user
 override so debug sessions end promptly. Clear the variable when you actually
 want a leak report; no rebuild is needed either way.
 
+### Crash reports and core dumps
+
+An unhandled exception is reported in two places. `TfBG.AppExceptionHandler`
+(`inc/umain_helpers.inc`) catches whatever reaches `Application.OnException` and
+shows it in the error dialog's dump area, stack included. `InstallCrashHandler`
+(`units/trndi/trndi.log.pp`) hooks `ExceptProc` for the ones that get past every
+Pascal handler, logs them, and then chains to the RTL handler so the usual stderr
+report and exit code are unchanged. It runs from that unit's initialization
+section, and `Trndi.lpr` lists `trndi.log` ahead of the LCL so the hook is in
+place before the widgetset and the form units initialize; the call at the top of
+the program body is only an idempotent fallback.
+
+Both write through `TrndiELog`, which is a no-op outside DEBUG. A release build
+therefore reports through the dialog and stderr only, and nothing lands in
+`trndi.log`.
+
+Some faults never become an exception worth reading. A jump through a corrupted
+function pointer faults inside whatever C library made the call, and by then the
+Pascal frames have returned, so the RTL's report is a list of raw library
+addresses. On Unix-family targets, set `TRNDI_COREDUMP=1` to hand SIGSEGV,
+SIGBUS and SIGILL back to the OS instead:
+
+```bash
+TRNDI_COREDUMP=1 ./Trndi
+```
+
+The process then dies on the fault and the system's crash collector keeps a
+core file with every thread and every library symbol intact. On a systemd-based
+Linux system, `coredumpctl` finds it:
+
+```bash
+coredumpctl list
+coredumpctl gdb          # opens the newest core in gdb
+```
+
+Other platforms use their own core-file tools. On macOS, `ReportCrash` writes
+a `.ips` report under `~/Library/Logs/DiagnosticReports`, and
+`ulimit -c unlimited` puts a core in `/cores` for `lldb`. On BSD,
+`ulimit -c unlimited` leaves `Trndi.core` in the working directory for `gdb`
+or `lldb`. On Haiku, the Debugger window that opens on the fault can save a
+report or step through the frames directly.
+
+It is off by default on purpose. It turns an otherwise recoverable pointer bug
+into a hard crash, which is the wrong trade for a glucose monitor left running
+unattended. Turn it on when you are chasing one. The startup line on stderr
+confirms it took effect.
+
+Frames inside Trndi itself only resolve to a file and line if the build carries
+symbols. The release modes set `StripSymbols` and leave `GenerateDebugInfo` off,
+so a core from a stock release build resolves the library frames but not the
+Trndi ones. Reproduce with a build that keeps them when you need the whole
+picture.
+
 ## Running Tests
 
 - Use the Makefile for test runs:

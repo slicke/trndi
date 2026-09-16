@@ -52,6 +52,10 @@
    lands straight on stale data reached this layout before ScaleLbl had ever
    run, leaving the LFM-default tlTop layout and pinning the value to the top
    edge of the window. *)
+(* MODIFICATION NOTICE (2026-09-15): SeedLevelAlertRules clamps the stored
+   hysteresis to the Settings dialog's own maximum. A pre-build-244 save
+   inflated the mmol figure ~18-fold, and such a leftover value kept a "high"
+   excursion alive far below the limit. *)
 (* Warning overlay panel, connection badge, and alert snooze for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -155,19 +159,31 @@ end;
   timestamps survive, so re-seeding never resets an alert in progress.
 ------------------------------------------------------------------------------}
 procedure TfBG.SeedLevelAlertRules;
+
+  // The Settings spinners cap the hysteresis at 50 mg/dL (2.8 mmol/L). A
+  // stored value beyond that is a leftover of the pre-build-244 bug that
+  // multiplied the mmol figure by 18 on every save; honouring it would keep
+  // an excursion alive across most of the in-range band.
+  function ClampedHysteresis(const key: string): double;
+  const
+    MAX_HYSTERESIS_MGDL = 2.8 * TrndiAPI.toMGDL;
+  begin
+    Result := EnsureRange(native.GetFloatSetting(key, 5), 0, MAX_HYSTERESIS_MGDL);
+  end;
+
 begin
   if (FAlertEngine = nil) or (api = nil) then
     Exit;
 
   FAlertEngine.SetupRule(akHigh,       true,  api.cgmHi,  30, 0,
     native.GetIntSetting('alerts.duration.high', 10),
-    native.GetFloatSetting('alerts.hysteresis.high', 5));
+    ClampedHysteresis('alerts.hysteresis.high'));
   FAlertEngine.SetupRule(akLow,        true,  api.cgmLo,  15, 0,
     native.GetIntSetting('alerts.duration.low', 5),
-    native.GetFloatSetting('alerts.hysteresis.low', 5));
+    ClampedHysteresis('alerts.hysteresis.low'));
   FAlertEngine.SetupRule(akUrgentLow,  true,  api.limitLO, 5, 5,
     native.GetIntSetting('alerts.duration.urgent', 0),
-    native.GetFloatSetting('alerts.hysteresis.urgent', 5));
+    ClampedHysteresis('alerts.hysteresis.urgent'));
 end;
 
 function TfBG.AlertsSnoozed: boolean;
@@ -452,6 +468,8 @@ procedure TfBG.PersistAlertState(Sender: TObject);
 begin
   if not Assigned(native) or not Assigned(FAlertEngine) then Exit;
   native.SetSetting('alerts.state', FAlertEngine.SerializeState);
+  // Every snooze/resume lands here; the server ignores unchanged states.
+  WebPublishSnooze;
 end;
 
 {------------------------------------------------------------------------------
@@ -576,7 +594,11 @@ end;
 
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
 begin
-  FAlertEngine.SnoozeActive(Minutes);
+  // The menu is a global "pause alerts" control, so snooze every rule - not
+  // just the ones in violation. With glucose in range nothing is violating,
+  // and SnoozeActive would then snooze nothing while the confirmation still
+  // claimed a pause. Per-rule caps (MaxSnoozeMinutes) are still honoured.
+  FAlertEngine.SnoozeAll(Minutes);
   UpdateAlertSnoozeMenu;
   ShowMessage(Format(RS_ALERT_SNOOZE_FOR, [Minutes]));
 end;

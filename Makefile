@@ -120,25 +120,47 @@ WIDGETSET ?= qt6
 # prefixes only the first one, leaving the rest to glob against the current
 # directory, match nothing, and be silently dropped by the recipe's error
 # suppression. Non-matching patterns are otherwise harmless.
+#
+# The CPU half follows the *target*: an explicit CPU_FLAG (--cpu=<name>, the
+# same value lazbuild gets, so the .lpi resolves the same directory) wins over
+# the host detection below. Without that a cross build staged the host's
+# libraries beside a binary linked against the target's.
+QJS_CPU_FLAG := $(patsubst --cpu=%,%,$(filter --cpu=%,$(CPU_FLAG)))
 ifeq ($(OS),Windows_NT)
-  QJS_DIR := externals/quickjs/prebuilt/x86_64-win64
+  # PROCESSOR_ARCHITECTURE is what the *current process* runs as, which is the
+  # right question: an x64 toolchain emulated on Windows on ARM builds an x64
+  # Trndi.exe and needs the x64 libraries beside it, and reports AMD64 here.
+  # Only a native ARM64 shell says ARM64, and only then is aarch64-win64 what
+  # the .lpi will look for ($(TargetCPU)-$(TargetOS)).
+  ifeq ($(PROCESSOR_ARCHITECTURE),ARM64)
+    QJS_HOST_CPU := aarch64
+  else
+    QJS_HOST_CPU := x86_64
+  endif
+  QJS_OS := win64
   QJS_LIBS := libqjs*.dll libtqshim*.dll tqshim*.dll
 else ifeq ($(UNAME_S),Darwin)
-  QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed s/arm64/aarch64/)-darwin
+  QJS_HOST_CPU := $(shell uname -m | sed s/arm64/aarch64/)
+  QJS_OS := darwin
   QJS_LIBS := libqjs*.dylib libtqshim*.dylib
 else ifeq ($(UNAME_S),FreeBSD)
   # FPC names the target x86_64-freebsd where uname -m says amd64.
-  QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed -e s/amd64/x86_64/ -e s/arm64/aarch64/)-freebsd
+  QJS_HOST_CPU := $(shell uname -m | sed -e s/amd64/x86_64/ -e s/arm64/aarch64/)
+  QJS_OS := freebsd
   QJS_LIBS := libqjs.so* libtqshim.so*
 else ifeq ($(UNAME_S),Haiku)
   # x86_64 matches, but Haiku reports 32-bit x86 as BePC and 64-bit ARM as
   # arm64, where FPC (and so this directory) says i386 and aarch64.
-  QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m | sed -e s/BePC/i386/ -e s/arm64/aarch64/)-haiku
+  QJS_HOST_CPU := $(shell uname -m | sed -e s/BePC/i386/ -e s/arm64/aarch64/)
+  QJS_OS := haiku
   QJS_LIBS := libqjs.so* libtqshim.so*
 else
-  QJS_DIR := externals/quickjs/prebuilt/$(shell uname -m)-linux
+  QJS_HOST_CPU := $(shell uname -m)
+  QJS_OS := linux
   QJS_LIBS := libqjs.so* libtqshim.so*
 endif
+QJS_CPU := $(or $(QJS_CPU_FLAG),$(QJS_HOST_CPU))
+QJS_DIR := externals/quickjs/prebuilt/$(QJS_CPU)-$(QJS_OS)
 
 # Stage the QuickJS engine and its ABI shim next to a binary that has to load
 # them. $(1) is a space-separated list of destination directories (globs are
@@ -274,6 +296,7 @@ help:
 	@echo "  LAZBUILD (default: lazbuild)"
 	@echo "  WIDGETSET (default: $(WIDGETSET))"
 	@echo "  BUILD_MODE (default: $(BUILD_MODE))"
+	@echo "  CPU_FLAG (default: empty). --cpu=<name> is passed to lazbuild and also picks the prebuilt QuickJS directory (otherwise the host CPU does)."
 	@echo "  LIBGCC_DIR (Linux; default: asked of gcc, currently '$(LIBGCC_DIR)'). Set empty to opt out."
 
 check:
@@ -354,7 +377,7 @@ debug: build
 
 test: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -363,7 +386,7 @@ test: check qjs-links
 
 noext-test: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -372,7 +395,7 @@ noext-test: qjs-links
 
 test-noserver: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -381,7 +404,7 @@ test-noserver: check qjs-links
 
 noext-test-noserver: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -493,6 +516,7 @@ show-mode:
 	@echo "Resolved build mode: $(BUILD_MODE_NAME)"
 	@echo lazbuild flags: $(LAZBUILD_FLAGS)
 	@echo "(WIDGETSET=$(WIDGETSET), BUILD_MODE=$(BUILD_MODE))"
+	@echo "QuickJS libraries: $(QJS_DIR)"
 
 # Run the built binary (build first). Use RUN_ARGS to forward arguments to the program.
 run: build

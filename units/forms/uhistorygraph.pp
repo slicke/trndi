@@ -1223,6 +1223,7 @@ begin
     Canvas.FillRect(ClientRect);
     messageText := RS_HISTORY_GRAPH_EMPTY;
     Canvas.Font.Size := 12;
+    Canvas.Font.Color := clBlack;
     Canvas.Brush.Style := bsClear;
     Canvas.TextOut((ClientWidth - Canvas.TextWidth(messageText)) div 2,
       (ClientHeight - Canvas.TextHeight(messageText)) div 2, messageText);
@@ -1279,6 +1280,9 @@ begin
     Canvas.Brush.Color := $00F6F6F6;
     Canvas.Pen.Color := $00B8B8B8;
     Canvas.RoundRect(hoverRect, 6, 6);
+    // The live canvas inherits the widgetset's font colour (white on dark
+    // themes), so pin it to match the fixed light popup background.
+    Canvas.Font.Color := clBlack;
     Canvas.Brush.Style := bsClear;
     Canvas.TextOut(hoverRect.Left + 6, hoverRect.Top + 4, hoverText);
   end;

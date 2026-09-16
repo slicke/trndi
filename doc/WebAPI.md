@@ -2,7 +2,7 @@
 
 ## Overview
 
-Trndi includes an embedded HTTP API server that exposes glucose readings and predictions via REST endpoints. The server runs in a separate thread and does not interfere with the GUI's responsiveness.
+Trndi includes an embedded HTTP API server that exposes glucose readings and predictions via REST endpoints, and pushes changes to subscribers over a live event stream (`/events`). The server runs in a separate thread and does not interfere with the GUI's responsiveness.
 > This is especially useful for Dexcom users, as they have no easy API access
 
 ## Configuration
@@ -48,6 +48,14 @@ If a token is configured, requests must include it in the `Authorization` header
 curl -H "Authorization: Bearer your_token_here" http://localhost:8080/glucose
 ```
 
+A browser `EventSource` cannot set request headers, so `/events` alone also accepts the token as a `token` query parameter:
+
+```
+http://localhost:8080/events?token=your_token_here
+```
+
+The other endpoints (`/glucose`, `/predict`, `/status`, `/health`) ignore the query parameter and require the `Authorization` header, so the token does not end up in URLs, browser history, or proxy logs.
+
 If no token is configured, all requests are allowed.
 
 ## Endpoints
@@ -65,6 +73,7 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
     "mgdl_delta": "0.0",
     "mmol_delta": "0.0",
     "trend": 3,
+    "level": "normal",
     "timestamp": "2025-11-13 14:30:00",
     "timestamp_utc": "2025-11-13T13:30:00Z"
   },
@@ -74,6 +83,7 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
     "mgdl_delta": "-5.0",
     "mmol_delta": "-0.3",
     "trend": 3,
+    "level": "normal",
     "timestamp": "2025-11-13 14:25:00",
     "timestamp_utc": "2025-11-13T13:25:00Z"
   }, 
@@ -87,6 +97,7 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
 - `mgdl_delta`: Change since last reading in mg/dL
 - `mmol_delta`: Change since last reading in mmol/L
 - `trend`: Trend arrow (see Trend Values below)
+- `level`: Classification against the configured thresholds: `low`, `range_low`, `normal`, `range_high` or `high`
 - `timestamp`: Reading timestamp in local time (`YYYY-MM-DD HH:MM:SS`, no zone) — kept for backwards compatibility
 - `timestamp_utc`: Reading timestamp in UTC (`YYYY-MM-DDTHH:MM:SSZ`) — preferred for new consumers
 
@@ -182,7 +193,8 @@ Returns a richer health payload suitable for uptime/monitoring checks.
     "/glucose",
     "/predict",
     "/status",
-    "/health"
+    "/health",
+    "/events"
   ]
 }
 ```
@@ -201,6 +213,61 @@ Returns a richer health payload suitable for uptime/monitoring checks.
 ```bash
 curl -s http://localhost:8080/health | jq
 ```
+
+### GET /events
+
+A [server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html) stream. The connection stays open and Trndi writes an event the moment something changes, so a client no longer has to poll `/glucose` for a reading that only arrives every few minutes.
+
+```bash
+curl -N http://localhost:8080/events
+```
+
+```
+retry: 5000
+
+id: 41
+event: reading
+data: { "mgdl" : 112, "mmol" : "6.2", "mgdl_delta" : -3, "mmol_delta" : "-0.2", "trend" : 4, "level" : "normal", "timestamp" : "2026-09-12 10:05:00", "timestamp_utc" : "2026-09-12T08:05:00Z" }
+
+id: 41
+event: status
+data: { "fresh" : true, "connected" : true, "detail" : "" }
+
+id: 42
+event: alert
+data: { "kinds" : ["low"], "reading" : { ... }, "time_utc" : "2026-09-12T08:05:01Z" }
+```
+
+**Events:**
+
+| Event | When | Payload |
+|-------|------|---------|
+| `reading` | A fresh reading was applied | The same object `/glucose` returns for the newest reading |
+| `status` | Freshness or connectivity changed | `fresh` (data is current), `connected` (last fetch returned data), `detail` (last error text) |
+| `alert` | The alert engine fired | `kinds`: one or more of `high`, `low`, `urgent_low`, `missing`, `sensor_fault`, `rapid_fall`, `rapid_rise`; `reading`; `time_utc` |
+| `snooze` | Alerts were snoozed or resumed | `active`, `until_utc` |
+| `predict` | The forecast was recomputed (or cleared) | `predictions`: array of reading objects |
+
+`reading`, `status`, `snooze` and `predict` describe state: a new subscriber is sent the latest of each as a snapshot right after connecting, and an unchanged state is never resent. `alert` marks a moment and repeats whenever the engine re-fires.
+
+Every frame carries an `id`. A client that reconnects with a `Last-Event-ID` header (browsers do this automatically) receives the events it missed instead of a fresh snapshot, as long as they are still among the last 128 events; otherwise (including an id from before a Trndi restart) it gets a snapshot again. The server writes a `: keepalive` comment after 15 seconds of silence so idle connections survive proxies and NAT.
+
+At most 16 streams are open at once. Each subscriber holds a server thread for as long as it stays connected, so a request past that limit is answered `503 Service Unavailable` with `Retry-After: 5` and closed; a browser `EventSource` retries on its own. Plain endpoints such as `/glucose` are not counted against the limit.
+
+**Example (browser):**
+```javascript
+const es = new EventSource('http://localhost:8080/events');   // add ?token=... when auth is on (accepted only on /events)
+es.addEventListener('reading', e => {
+  const r = JSON.parse(e.data);
+  document.title = `${r.mmol} mmol/L`;
+});
+es.addEventListener('alert', e => console.warn('alert', JSON.parse(e.data).kinds));
+```
+
+**Status Codes:**
+- `200 OK`: Stream opened (`Content-Type: text/event-stream`)
+- `401 Unauthorized`: Token required and missing or wrong
+- `503 Service Unavailable`: All 16 stream slots are taken; retry after the `Retry-After` delay
 
 ## Trend Values
 
@@ -244,6 +311,8 @@ The web server is implemented using:
 
 The server uses a simple callback pattern where the main GUI thread maintains cached glucose readings that the web server thread reads. Since the web server only reads cached data and doesn't make API calls, no mutex or critical section is required.
 
+The event stream goes the other way: the GUI thread publishes into `TWebEventHub`, a lock-protected fan-out object owned by `TTrndiWebServer`. Each `/events` connection is served by its own handler thread, which keeps the socket open, polls the hub every 250 ms for events newer than the last one it sent, and ends when the peer closes or the server stops. The hub keeps the latest payload of every state event (for the snapshot a new subscriber gets) and a ring of the last 128 events (for `Last-Event-ID` replay).
+
 **Callback Functions:**
 ```pascal
 type
@@ -262,7 +331,7 @@ These callbacks are called from the web server thread and must:
 2. If `webserver.enable=true`, the `StartWebServer` function is called
 3. A `TTrndiWebServer` instance is created with callbacks
 4. The server thread starts and binds to the configured port
-5. The thread enters an accept loop, handling one request at a time
+5. The thread enters an accept loop and hands each connection to its own handler thread
 
 ### Shutdown
 
@@ -270,7 +339,8 @@ When the application closes:
 1. `StopWebServer` is called in `FormDestroy`
 2. The thread is terminated with `Terminate`
 3. `WaitFor` ensures the thread completes
-4. The socket is closed and resources are freed
+4. Open `/events` streams are told to end, and the server waits for every handler to finish
+5. The socket is closed and resources are freed
 
 ## Integration Example
 
@@ -292,6 +362,14 @@ async function getCurrentGlucose() {
 }
 
 setInterval(getCurrentGlucose, 60000); // Update every minute
+```
+
+### Live updates
+
+The same page can subscribe to `/events` instead of polling; see the `EventSource` example under [GET /events](#get-events). Any HTTP client that can read a response incrementally works too:
+
+```bash
+curl -N http://localhost:8080/events
 ```
 
 ### Python Client

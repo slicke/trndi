@@ -858,6 +858,8 @@ begin
   if not PredictGlucoseReading then
     Exit;
 
+  WebPublishPredictions(bgr);
+
   // Dot view: render the 5/10/15-minute predictions as hollow dots continuing
   // the trend to the right, and keep the text strip hidden.
   if PredictionDotsActive then
@@ -1175,6 +1177,7 @@ begin
   // on the high threshold restarted its persistence clock on every dip and
   // could never fire). The exact thresholds still pick the display color.
   fired := FAlertEngine.EvaluateLevel(reading.val);
+  WebPublishAlert(fired, reading);
 
   if reading.val >= api.cgmHi then
     HandleHighGlucose(reading, fired)
@@ -1188,7 +1191,10 @@ begin
   if sensorFault then
   begin
     if akSensorFault in FAlertEngine.EvaluateSensorFault then
+    begin
       native.attention(RS_ATTENTION_SENSOR_FAULT, RS_ATTENTION_SENSOR_FAULT_DESC);
+      WebPublishAlert([akSensorFault], reading);
+    end;
   end
   else
     FAlertEngine.ResetSensorFault;
@@ -1310,10 +1316,10 @@ begin
   // The engine has already been evaluated for this reading (see
   // UpdateUIBasedOnGlucose): an in-range value outside every hysteresis band
   // cleared the level rules there, while one still inside a band kept its
-  // violation alive — and may even have fired, when a min-duration ran out on
-  // a reading hovering just under the threshold. Honor such a verdict rather
-  // than swallowing it, or the alert would be lost to the re-alert gate once
-  // the value crosses back over.
+  // violation alive. The engine no longer fires on an in-band reading, so
+  // `fired` is normally empty here; this remains as a safety net in case the
+  // engine's threshold and api.cgmHi/cgmLo ever drift apart (a verdict that
+  // was fired must not be swallowed, or it is lost to the re-alert gate).
   if akHigh in fired then
     RaiseHighLevelAlert;
   if (fired * [akLow, akUrgentLow]) <> [] then
@@ -1493,6 +1499,18 @@ begin
   else
     ApplyStaleDisplayState;
 
+  // The web API's /events subscribers learn about every fresh reading here.
+  // The stale branch below publishes its status once the connection detail
+  // is known. Same "newest reading with a value" rule the hero value and the
+  // alert engine follow: a backend that could not parse an item clears it but
+  // keeps its slot, so publishing bgs[0] would serialize the placeholder as
+  // BG_NO_VAL instead of the value the screen is showing.
+  if fresh then
+  begin
+    WebPublishReading(lastDataReading);
+    WebPublishStatus;
+  end;
+
   // Extensions learn about staleness here rather than from
   // FinalizeReadingUpdate. The caller skips that procedure whenever this one
   // returns false — which is every non-fresh fetch — so its 'stale' broadcast
@@ -1513,6 +1531,7 @@ begin
 
     FLastConnectionDetail := msg;
     SetConnectionBadge(ClassifyConnectionStatus(ErrorMsg), RGBToColor(185, 60, 45));
+    WebPublishStatus;
 
     // On boot, prefer the dedicated boot-failure message so the user knows
     // it's the first fetch that failed (and not a mid-session outage).
@@ -1526,6 +1545,7 @@ begin
     // marks that look like fresh predictions.
     HidePredictionDots;
     FPredictStrip.Visible := false;
+    WebPublishPredictions(nil);
 
     // The history itself is still worth showing, but it has to keep moving:
     // re-place it here (and once a second from tMissed) so the dots slide out
@@ -1534,7 +1554,10 @@ begin
     RefreshStaleTrendDots;
 
     if akMissing in FAlertEngine.EvaluateMissing then
+    begin
       native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
+      WebPublishAlert([akMissing], lastDataReading);
+    end;
     Exit;
   end;
 
@@ -1582,6 +1605,16 @@ begin
 
   if api = nil then
     Exit;
+
+  // Until the boot worker's Connect has succeeded only the boot fetch itself
+  // may use the backend: a periodic tick landing while the connect-failure
+  // Settings dialog is up would otherwise fetch against a backend that never
+  // connected, or against one that is about to be replaced.
+  if FBootConnectPending and (not Boot) then
+  begin
+    TrndiDLog('RequestAsyncFetch: dropped — boot connect still pending');
+    Exit;
+  end;
 
   if FApiCallInFlight then
   begin
@@ -1631,7 +1664,8 @@ begin
   TrndiDLog('RequestAsyncFetch: starting worker (boot=' +
     BoolToStr(Boot, true) + ' force=' + BoolToStr(Force, true) + ')');
 
-  FGlucoseFetchThread := TGlucoseFetchThread.Create(Self, Boot, Force);
+  FGlucoseFetchThread := TGlucoseFetchThread.Create(Self, Boot, Force,
+    Boot and FBootConnectPending);
   Result := true;
 end;
 
@@ -2625,7 +2659,9 @@ begin
     Exit;
   if not assigned(mediacontroller) then
     Exit;
-  if not mediacontroller.IsInitialized then
+  // Detect the player now rather than at boot; this also finds a player that
+  // was started after Trndi, which the boot-time probe never could.
+  if not mediacontroller.EnsureInitialized then
     Exit;
 
   case act of

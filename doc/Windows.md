@@ -7,7 +7,7 @@ Trndi is not _signed_ (due to the cost of doing so), so Windows SmartScreen may 
 Trndi can color the entire window (including the title bar; where the close/minimize buttons are). If you prefer to have a normal title bar you can customize this in Settings > Colors > "Color the title bar".
 
 ## Multiple users
-Each user gets their own color and nickname (Settings > Multi User). On Windows, the nickname appears as a colored badge in the top-right of the title bar — click it to jump straight to Settings.
+Each user gets their own color and nickname (Settings > Accounts). On Windows, the nickname appears as a colored badge in the top-right of the title bar — click it to jump straight to Settings.
 
 When more than one user is configured, Trndi asks which one to use at start-up; this selection dialog shows up as its own entry in the taskbar.
 

@@ -517,6 +517,10 @@ end;
 
 procedure TfBG.UpdateApiInformation;
 begin
+  // The thresholds are initCGMCore's placeholders until the boot worker has
+  // connected; ApplyConnectedApi calls back in once they are real.
+  if FBootConnectPending then
+    Exit;
   miHi.Caption := Format(RS_HI_LEVEL, [api.cgmHi * BG_CONVERTIONS[un][mgdl]]);
   miLo.Caption := Format(RS_LO_LEVEL, [api.cgmLo * BG_CONVERTIONS[un][mgdl]]);
 
@@ -951,6 +955,9 @@ begin
   if FShuttingDown then
     Exit;
   TrndiDLog('OnSystemWake: OS reported resume-from-sleep — forcing refresh');
+  // The desktop theme may have flipped while asleep (scheduled dark mode);
+  // the next setColorMode should ask again rather than trust the cache.
+  TrndiNative.InvalidateThemeCache;
   FForceRefresh := true;
   if firstboot then
     Exit;
@@ -993,16 +1000,36 @@ begin
   UpdateUIColors;
 end;
 
+{------------------------------------------------------------------------------
+  RetireOneShotTimer
+  ------------------
+  Stand a fired one-shot timer down: disable it and drop the reference, but do
+  not free it.
+
+  Every caller runs from inside the timer's own OnTimer. Freeing a TTimer there
+  destroys the widgetset timer object whose callback is still on the stack - on
+  Qt6 that is a C++ hook whose slot is mid-execution - and control then returns
+  into memory nobody owns. The platform units learned this the hard way in
+  StopBadgeFlash; this is the same rule for the form's own timers.
+
+  The reference is cleared because the create-once gates around these timers
+  test it, and because a stale pointer to a retired timer is worth nothing.
+  Freeing is left to the form, which owns every one of them.
+ ------------------------------------------------------------------------------}
+procedure TfBG.RetireOneShotTimer(var ATimer: TTimer);
+begin
+  if not Assigned(ATimer) then
+    Exit;
+  ATimer.Enabled := false;
+  ATimer := nil;
+end;
+
 // Fires once shortly after the main form is shown. Performs the synchronous
 // GitHub releases lookup off the FormShow critical path so the form's first
 // paint isn't blocked by network latency.
 procedure TfBG.tUpdateCheckTimer(Sender: TObject);
 begin
-  if Assigned(tUpdateCheck) then
-  begin
-    tUpdateCheck.Enabled := false;
-    FreeAndNil(tUpdateCheck);
-  end;
+  RetireOneShotTimer(tUpdateCheck);
   // Skip the blocking HTTPS call if the form is tearing down — the
   // ProcessMessages pumps inside ShutdownBackgroundThreads can otherwise
   // dispatch this WM_TIMER and stall shutdown on a synchronous network
@@ -1019,11 +1046,7 @@ end;
 // double fire (or a window the WM already made fullscreen) from undoing it.
 procedure TfBG.tKioskApplyTimer(Sender: TObject);
 begin
-  if Assigned(tKioskApply) then
-  begin
-    tKioskApply.Enabled := false;
-    FreeAndNil(tKioskApply);
-  end;
+  RetireOneShotTimer(tKioskApply);
   if FShuttingDown then
     Exit;
   if not IsFullscreenNow then
@@ -1039,16 +1062,41 @@ end;
 // that starts its work (Sleep / network I/O) before the main thread has had
 // a chance to enter Application.Run — symptom: form in taskbar, never drawn.
 procedure TfBG.tBootFetchTimer(Sender: TObject);
+const
+  // 50 ms ticks; RequestAsyncFetch only declines for the few ms the previous
+  // worker needs to unwind after its Synchronize, so this is never reached
+  // unless the api is gone for good.
+  MAX_BOOT_FETCH_TICKS = 40;
 begin
-  if Assigned(tBootFetch) then
+  if FShuttingDown then
   begin
-    tBootFetch.Enabled := false;
-    FreeAndNil(tBootFetch);
+    RetireOneShotTimer(tBootFetch);
+    Exit;
   end;
+  Inc(FBootFetchAttempts);
   // Route through updateReading like every other fetch trigger, so the boot
   // fetch gets the same wrapper semantics (native.start, the refresh caption,
-  // force-flag bookkeeping) instead of a bespoke direct call.
-  updateReading(true);
+  // force-flag bookkeeping) instead of a bespoke direct call. Keep ticking
+  // until a worker was actually started: the connect-failure retry re-arms
+  // this timer right after the failed worker was reaped, and the request is
+  // dropped while that worker is still tearing down.
+  if updateReading(true) or (FBootFetchAttempts >= MAX_BOOT_FETCH_TICKS) then
+    RetireOneShotTimer(tBootFetch);
+end;
+
+procedure TfBG.ArmBootFetch(const DelayMs: integer);
+begin
+  FBootFetchAttempts := 0;
+  // RetireOneShotTimer drops the reference without freeing (the form owns
+  // the object), so a re-arm after a retired timer creates a fresh one.
+  if not Assigned(tBootFetch) then
+  begin
+    tBootFetch := TTimer.Create(Self);
+    tBootFetch.OnTimer := @tBootFetchTimer;
+  end;
+  tBootFetch.Enabled := false;
+  tBootFetch.Interval := DelayMs;
+  tBootFetch.Enabled := true;
 end;
 
 // Animates the braille-spinner glyph in lVal while the very first fetch is
@@ -1076,11 +1124,7 @@ end;
 // overwrites the caption with the real value moments later.
 procedure TfBG.StopBootSpinner;
 begin
-  if Assigned(tBootSpinner) then
-  begin
-    tBootSpinner.Enabled := false;
-    FreeAndNil(tBootSpinner);
-  end;
+  RetireOneShotTimer(tBootSpinner);
   // Length() returns BYTES — a single braille glyph is 3 UTF-8 bytes, so
   // <= 3 matches the spinner cycle state without matching real readings.
   if (lVal.Caption = '') or (Length(lVal.Caption) <= 3) then

@@ -1947,6 +1947,10 @@ msgstr ""
 msgid "The following extension file returned an error while loading: %s"
 msgstr ""
 
+#: trndi.strings.rs_ext_none_loaded
+msgid "No extensions are loaded"
+msgstr ""
+
 #: trndi.strings.rs_ext_confirm
 msgctxt "trndi.strings.rs_ext_confirm"
 msgid "Extension Confirmation"
@@ -2024,7 +2028,7 @@ msgid ""
 "Δ Difference: %s\n"
 "↔ Trend: %s\n"
 "📻 RSSI: %s\n"
-"𐩘 Noise: %s\n"
+"〰️ Noise: %s\n"
 "ℹ Source: %s\n"
 "💻 Device: %s"
 msgstr ""
@@ -2814,7 +2818,7 @@ msgstr ""
 #: trndi.strings.rs_ux_noise
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
-msgid "𐩘 Noise: %d"
+msgid "〰️ Noise: %d"
 msgstr ""
 
 #: trndi.strings.rs_ux_prediction_here

@@ -3,9 +3,9 @@
 
 ## Adding a user
 * Start Trndi as usual
-* Richt-click and open settings
-* Click the "Multi User" tab
-* Click Add
+* Right-click and open settings
+* Open the __Accounts__ page (under _App & system_ in the sidebar)
+* Click __+ Add__ and enter a name
 * Close the window and __save settings__
 * __A new user has been created__
 ![User select](/doc/img/user_config.png)
@@ -15,14 +15,26 @@ When users exist, Trndi will ask which one you want to use on start-up:
 
 ![User select](/doc/img/user_select.png)
 
-The account you used last time is already selected when the dialog opens, so
-returning to the same account is a single click. Each account's language
-setting is applied once you have chosen — accounts can run Trndi in different
-languages.
+Every row shows the account's colour dot, its nickname and, underneath, the
+account name you typed when creating it. The default account is the first row.
+The account you used last time is already highlighted when the dialog opens, so
+returning to the same account is a single Enter or double-click; typing the
+first letters of a nickname jumps to it. Closing the dialog or pressing
+__Default__ starts the default account. Each account's language setting is
+applied once you have chosen — accounts can run Trndi in different languages.
+
+## Setting up the new user's data source
+Adding a user only creates an empty account: it has no server, thresholds or other settings of its own yet. To fill them in:
+* Restart Trndi and pick the new user in the start-up dialog
+* Right-click and open settings
+* Configure the backend (Nightscout, Dexcom, etc.) and anything else, just as for a single-user Trndi
+* Close the window and __save settings__
+
+Repeat for every user you added. Each user's settings are stored separately, so changing one never affects another. This is also what makes a user appear in [trndi-multi](https://github.com/slicke/trndi-multi): users without a backend are skipped there.
 
 ## Customizing a user
 * In the user list, click the user's username
-* Below choose an account color and nickname
+* In the __Account Settings__ panel next to the list, choose an account color and nickname
 > Edits are kept while you browse the user list, but nothing is stored until you close the settings window and __save settings__ — closing without saving discards them, just like every other setting.
 
 The color chosen will be assigned to the window when Trndi loads the user.

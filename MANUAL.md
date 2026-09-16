@@ -280,7 +280,9 @@ always fits.
 Can be configured in settings to:
 - Play a sound when you go high or low
 - Show desktop notifications
-- Pause your music (Spotify/Deezer) to get your attention
+- Pause your music (Spotify/Deezer) to get your attention. The player is
+  looked for when an alert fires, so it does not need to be running when
+  Trndi starts.
 
 ### Low Insulin Warnings
 If your data source reports the reservoir (Tandem Source, CareLink, or a
@@ -414,9 +416,10 @@ Right-click → Position, then choose:
 - **Floating window**: Smaller, simplified view you can position anywhere
 - Both show the same data from your selected account
 - Right-click the floating window to set its size, visibility (transparency), font color and an optional clock — all choices are remembered between sessions, along with its position
+- Click the floating window (without dragging it) to bring the main window back to the front — handy when it has ended up behind other apps
 
 ### The app disappeared from my screen!
-Right-click the tray icon (near your clock) and select "Show Trndi" or try clicking Reset Position in settings.
+Right-click the tray icon (near your clock) and select "Show Trndi" or try clicking Reset Position in settings. If the floating window is open, a click on it also brings the main window back.
 
 ### How do I know if Trndi is working correctly?
 Look for:

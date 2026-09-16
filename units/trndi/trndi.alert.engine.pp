@@ -35,6 +35,12 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-09-15): EvaluateLevel fires a level rule only on
+   a reading that actually meets its threshold. The hysteresis band still keeps
+   the excursion (and its min-duration clock) alive for readings that dip just
+   back inside range, but such a reading no longer fires the rule itself: the
+   re-alert interval and an expiring min-duration used to raise "high" for a
+   value the UI paints as in range. *)
 
 unit trndi.alert.engine;
 
@@ -68,7 +74,10 @@ type
     ReAlertMinutes: integer;      // 0 = one-shot per excursion; >0 = re-alert after N min
     MaxSnoozeMinutes: integer;    // 0 = unlimited; positive caps snooze duration
     MinDurationMinutes: integer;  // 0 = fire immediately; >0 = require violation to persist
-    HysteresisDelta: double;      // 0 = exact threshold; >0 widens the exit band (API units)
+    {** 0 = exact threshold; >0 widens the exit band (API units).
+      The band only keeps the excursion alive; a rule fires solely on
+      readings that meet Threshold itself. }
+    HysteresisDelta: double;
     SnoozedUntil: TDateTime;
     LastFired: TDateTime;         // 0 = never fired this excursion
     ViolationStartedAt: TDateTime;// 0 = not currently violating
@@ -97,7 +106,10 @@ type
       @param(AMinDurationMinutes) requires the violation to persist this long
       before firing — 0 fires on the first qualifying reading.
       @param(AHysteresisDelta) widens the band the value must exit before the
-      violation clears — 0 clears at the exact threshold. Units match Threshold. }
+      violation clears — 0 clears at the exact threshold. Units match Threshold.
+      A reading inside the band keeps the excursion alive but never fires the
+      rule: firing (first alert, re-alert, min-duration expiry) needs a reading
+      at or past Threshold. }
     procedure SetupRule(const AKind: TAlertKind;
       const AEnabled: boolean;
       const AThreshold: double;
@@ -488,6 +500,7 @@ end;
 function TAlertEngine.EvaluateLevel(const Val: double): TAlertKindSet;
 var
   inUrgent, inLow, inHigh: boolean;
+  meetsUrgent, meetsLow, meetsHigh: boolean;
   enterUrgent, enterLow, enterHigh: boolean;
 begin
   Result := [];
@@ -496,18 +509,28 @@ begin
   inLow    := akLow in FViolating;
   inHigh   := akHigh in FViolating;
 
-  // Hysteresis: once in a band, stay in it until the value exits by HysteresisDelta.
-  enterUrgent := FRules[akUrgentLow].Enabled and
-    ((Val <= FRules[akUrgentLow].Threshold) or
-     (inUrgent and (Val <= FRules[akUrgentLow].Threshold + FRules[akUrgentLow].HysteresisDelta)));
+  // A reading at or past the threshold itself - the only kind that may fire.
+  meetsUrgent := FRules[akUrgentLow].Enabled and (Val <= FRules[akUrgentLow].Threshold);
+  meetsLow    := FRules[akLow].Enabled and (Val <= FRules[akLow].Threshold);
+  meetsHigh   := FRules[akHigh].Enabled and (Val >= FRules[akHigh].Threshold);
 
-  enterLow := FRules[akLow].Enabled and
-    ((Val <= FRules[akLow].Threshold) or
-     (inLow and (Val <= FRules[akLow].Threshold + FRules[akLow].HysteresisDelta)));
+  // Hysteresis: once in a band, stay in it until the value exits by
+  // HysteresisDelta. Staying keeps the excursion and its min-duration clock
+  // alive across a dip just inside range, so a BG bouncing on the threshold
+  // neither restarts its persistence clock nor raises a fresh alert on every
+  // re-crossing. It does NOT fire: the UI paints an in-band reading as in
+  // range, and a "high" toast for a value shown in green is a contradiction.
+  enterUrgent := meetsUrgent or
+    (inUrgent and FRules[akUrgentLow].Enabled and
+     (Val <= FRules[akUrgentLow].Threshold + FRules[akUrgentLow].HysteresisDelta));
 
-  enterHigh := FRules[akHigh].Enabled and
-    ((Val >= FRules[akHigh].Threshold) or
-     (inHigh and (Val >= FRules[akHigh].Threshold - FRules[akHigh].HysteresisDelta)));
+  enterLow := meetsLow or
+    (inLow and FRules[akLow].Enabled and
+     (Val <= FRules[akLow].Threshold + FRules[akLow].HysteresisDelta));
+
+  enterHigh := meetsHigh or
+    (inHigh and FRules[akHigh].Enabled and
+     (Val >= FRules[akHigh].Threshold - FRules[akHigh].HysteresisDelta));
 
   // Urgent low subsumes regular low.
   if enterUrgent then
@@ -516,7 +539,7 @@ begin
     LeaveViolation(akHigh);
     // Reset akLow so it starts a fresh excursion if BG climbs back into the regular-low band.
     LeaveViolation(akLow);
-    if ShouldFire(akUrgentLow) then
+    if meetsUrgent and ShouldFire(akUrgentLow) then
     begin
       MarkFired(akUrgentLow);
       Include(Result, akUrgentLow);
@@ -527,7 +550,7 @@ begin
     EnterViolation(akLow);
     LeaveViolation(akHigh);
     LeaveViolation(akUrgentLow);
-    if ShouldFire(akLow) then
+    if meetsLow and ShouldFire(akLow) then
     begin
       MarkFired(akLow);
       Include(Result, akLow);
@@ -538,7 +561,7 @@ begin
     EnterViolation(akHigh);
     LeaveViolation(akLow);
     LeaveViolation(akUrgentLow);
-    if ShouldFire(akHigh) then
+    if meetsHigh and ShouldFire(akHigh) then
     begin
       MarkFired(akHigh);
       Include(Result, akHigh);

@@ -40,6 +40,10 @@
    Caption-sentinel/Hint/Tag encoding; with the per-dot controls gone it now
    maps the popup's screen point back to a slot via DotHitAt, and the
    dots-in-view debug entry probes the layout arrays. *)
+(* MODIFICATION NOTICE (2026-09-10): miExtLogClick checks
+   TTrndiExtEngine.Existing before touching Instance, so opening the
+   extension log no longer builds the QuickJS engine when no extension is
+   loaded; it reports that nothing is loaded instead. *)
 (* Menu event handlers and UI click handlers for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -323,6 +327,12 @@ end;
 procedure TfBG.miExtLogClick(Sender: TObject);
 begin
   {$ifdef TrndiExt}
+  // Reading Instance here would build the engine just to show an empty log.
+  if TTrndiExtEngine.Existing = nil then
+  begin
+    ShowMessage(RS_EXT_NONE_LOADED);
+    Exit;
+  end;
   with TTrndiExtEngine.Instance do
   begin
     ShowMessage(Output);

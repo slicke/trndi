@@ -74,6 +74,7 @@ type
     FCurrentState: TMediaState;
     FAvailablePlayers: TPlayerInfoArray;
     FIsInitialized: Boolean;
+    FLastInitAttempt: QWord; // GetTickCount64 of the last EnsureInitialized probe
     FLastTrackTitle: string;
     FVolumeStep: Integer;
 
@@ -144,6 +145,12 @@ type
 
     // Main methods
     procedure Initialize;
+    {** Initialize on first use instead of at construction: player detection
+        is one process spawn per known player (pgrep / tasklist), which is
+        not worth paying at startup for a feature that only acts on alerts.
+        A failed probe is not repeated for a minute, so a user without a
+        player does not pay it on every alert either. Returns IsInitialized. }
+    function EnsureInitialized: Boolean;
     procedure RefreshPlayerList;
 
     // Playback control
@@ -230,6 +237,7 @@ begin
   FCurrentState.IsMuted := False;
 
   FIsInitialized := False;
+  FLastInitAttempt := 0;
   FLastTrackTitle := '';
   FVolumeStep := 5;
 end;
@@ -260,6 +268,20 @@ begin
       if Assigned(FOnError) then
         FOnError(Self, 'Initialize failed: ' + E.Message);
   end;
+end;
+
+function TSystemMediaController.EnsureInitialized: Boolean;
+const
+  RETRY_INTERVAL_MS = 60000;
+begin
+  if not FIsInitialized then
+    if (FLastInitAttempt = 0) or
+      (GetTickCount64 - FLastInitAttempt >= RETRY_INTERVAL_MS) then
+    begin
+      FLastInitAttempt := GetTickCount64;
+      Initialize;
+    end;
+  Result := FIsInitialized;
 end;
 
 procedure TSystemMediaController.DetectAvailablePlayers;

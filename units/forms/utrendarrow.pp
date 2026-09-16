@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-13: Exposed OnMouseDown, OnMouseMove and OnMouseUp so a host
+ *   form can treat the arrow like its labels.
  *)
 
 unit utrendarrow;
@@ -63,7 +67,7 @@ uses
   Classes, Controls, Graphics, Math;
 
 type
-  { A vector arrow drawn at a settable rotation angle. }
+  {** A vector arrow drawn at a settable rotation angle. }
   TTrendArrow = class(TGraphicControl)
   private
     FAngle: single;          //< Rotation in degrees (0 = right, + = up, - = down)
@@ -76,12 +80,16 @@ type
     procedure Paint; override;
   public
     constructor Create(AOwner: TComponent); override;
-    { Rotation in degrees. 0 = flat/steady, positive = rising, negative = falling. }
+    {** Rotation in degrees. 0 = flat/steady, positive = rising, negative = falling. }
     property Angle: single read FAngle write SetAngle;
-    { Colour of the arrow strokes. }
+    {** Colour of the arrow strokes. }
     property ArrowColor: TColor read FArrowColor write SetArrowColor;
-    { Stroke width as a fraction of the shorter side (0..1). }
+    {** Stroke width as a fraction of the shorter side (0..1). }
     property Thickness: single read FThickness write SetThickness;
+    {** Mouse events, exposed so a host form can treat the arrow like its labels. }
+    property OnMouseDown;
+    property OnMouseMove;
+    property OnMouseUp;
   end;
 
 implementation

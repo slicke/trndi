@@ -34,6 +34,17 @@ $env:OS = "Windows_NT"
 $firstArg = if ($MakeArgs.Length -ge 1) { $MakeArgs[0].ToLower() } else { "" }
 $extraArgs = if ($MakeArgs.Length -gt 1) { $MakeArgs[1..($MakeArgs.Length - 1)] } else { @() }
 
+# A leading --cpu=<name> is an option for the default (release) build, not a
+# target. `.\make.ps1 --cpu=aarch64` is the documented ARM64 command
+# (externals/quickjs/README.md); left as the "target" it fell through to the
+# raw forwarding at the bottom, which passes no build mode to lazbuild and
+# never runs Copy-QuickJSLibs or Publish-Build. Keep the flag among the
+# forwarded arguments so lazbuild and the library copy both see it.
+if ($firstArg -like '--cpu=*') {
+    $extraArgs = @($MakeArgs)
+    $firstArg = ""
+}
+
 function Find-Lazbuild {
     if ($env:LAZBUILD -and (Test-Path $env:LAZBUILD)) { return $env:LAZBUILD }
     $cmd = Get-Command lazbuild -ErrorAction SilentlyContinue
@@ -66,7 +77,20 @@ function Find-Perl {
 # to Trndi.exe after an extensions-enabled build. See externals/quickjs/README.md.
 function Copy-QuickJSLibs {
     param([string]$Destination = $PSScriptRoot)
-    $src = Join-Path $PSScriptRoot 'externals\quickjs\prebuilt\x86_64-win64'
+    # The directory follows the *target* CPU, the same rule as the Makefile's
+    # QJS_DIR. An explicit --cpu=<name> among the arguments forwarded to
+    # lazbuild wins, since that is what the .lpi resolves
+    # $(TargetCPU)-$(TargetOS) from. Otherwise PROCESSOR_ARCHITECTURE decides:
+    # it describes this process, not the machine, and that is the one that
+    # matters: an x64 PowerShell emulated on Windows on ARM drives an x64
+    # lazbuild, produces an x64 Trndi.exe, and needs the x64 libraries -- and
+    # reports AMD64. A native ARM64 shell reports ARM64, which is the only
+    # case where aarch64-win64 is what the .lpi resolves to.
+    $cpuArg = @($extraArgs | Where-Object { $_ -like '--cpu=*' } | Select-Object -Last 1)
+    $qjsArch = if ($cpuArg.Count -gt 0) { $cpuArg[0].Substring('--cpu='.Length) }
+               elseif ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' }
+               else { 'x86_64' }
+    $src = Join-Path $PSScriptRoot "externals\quickjs\prebuilt\$qjsArch-win64"
     if (-not (Test-Path $src)) {
         Write-Warning "QuickJS libraries not found at $src - extensions will fail to start. Rebuild them with externals/quickjs/build.sh."
         return
@@ -479,6 +503,7 @@ switch ($firstArg) {
         Write-Host "Notes:" -ForegroundColor Cyan
         Write-Host "  Extra arguments after a target are forwarded to lazbuild (or the test runner for 'test')."
         Write-Host "  Unknown targets are forwarded to lazbuild as-is."
+        Write-Host "  A leading --cpu=<name> (no target) builds release for that CPU, e.g. .\make.ps1 --cpu=aarch64."
         Write-Host "  Set LAZBUILD to override the lazbuild location (default: C:\lazarus\lazbuild.exe or PATH)."
         Write-Host "  Builds land in the project directory and are staged into build\ (binary + lang\, plus the"
         Write-Host "  QuickJS libraries for extensions modes). Set OUTDIR to stage somewhere else."

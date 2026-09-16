@@ -2094,6 +2094,10 @@ msgstr "Din internetanslutning fungerar!"
 msgid "The following extension file returned an error while loading: %s"
 msgstr "Fôljande tilleggsfil returnerade ett fel ner den laddades: __PH9c3509d5-301d-47d0-a140-39da51a88054__"
 
+#: trndi.strings.rs_ext_none_loaded
+msgid "No extensions are loaded"
+msgstr ""
+
 #: trndi.strings.rs_ext_confirm
 #, fuzzy
 msgctxt "trndi.strings.rs_ext_confirm"
@@ -2179,7 +2183,7 @@ msgid ""
 "Δ Difference: %s\n"
 "↔ Trend: %s\n"
 "📻 RSSI: %s\n"
-"𐩘 Noise: %s\n"
+"〰️ Noise: %s\n"
 "ℹ Source: %s\n"
 "💻 Device: %s"
 msgstr ""
@@ -2187,7 +2191,7 @@ msgstr ""
 "Δ Skillnad: %s\n"
 "↔ Trend: %s\n"
 "📻 Signalstyrka (RSSI): %s\n"
-"𐩘 Brus: %s\n"
+"〰️ Brus: %s\n"
 "ℹ Källa: %s\n"
 "💻 Enhet: %s"
 
@@ -3049,8 +3053,8 @@ msgstr ""
 #: trndi.strings.rs_ux_noise
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
-msgid "𐩘 Noise: %d"
-msgstr "𐩘 Brus: %d"
+msgid "〰️ Noise: %d"
+msgstr "〰️ Brus: %d"
 
 #: trndi.strings.rs_ux_prediction_here
 #, object-pascal-format

@@ -186,16 +186,24 @@ private
   FOwner: TfBG;
   FBoot: boolean;
   FForce: boolean;
+  FConnectFirst: boolean; // Run api.Connect before the fetch (boot only)
+  FConnectOK: boolean;
+  FConnectErr: string;
+  FAbortFetch: boolean;   // Set on the main thread inside ApplyConnectResult;
+                          // api may be replaced afterwards, so the worker
+                          // must unwind without touching it again
   FResults: BGResults;
   FErrorMsg: string;
   {$ifdef DEBUG}
   FDiag: string;
   {$endif}
+  procedure ApplyConnectResult;
   procedure ApplyResult;
 protected
   procedure Execute; override;
 public
-  constructor Create(AOwner: TfBG; Boot: boolean; Force: boolean);
+  constructor Create(AOwner: TfBG; Boot: boolean; Force: boolean;
+    ConnectFirst: boolean = false);
 end;
 
 {**
@@ -678,6 +686,15 @@ private
   FGlucoseFetchThread: TGlucoseFetchThread;
   FBootFetchPending: boolean; // True while the splash-time first fetch is in
                               // flight; gates the boot-failure warning panel.
+  FBootConnectPending: boolean; // True from FormCreate until api.Connect has
+                                // succeeded on the boot worker; only the boot
+                                // fetch may use the backend until then.
+  FBootConnectError: string;    // Connect failure text handed from the worker
+                                // to DeferredBootConnectFailure.
+  FBootFetchAttempts: integer;  // tBootFetch ticks since the last ArmBootFetch
+  FSafeModeRequested: boolean;  // Ctrl held at launch: skip extension loading.
+  FPendingApiMsg: string;       // APIReceiver marshal slot for a worker-thread
+  FPendingApiMsgType: TrndiAPIMsg; // emit, delivered via Synchronize.
   FHistoryFetchThread: THistoryFetchThread;
   // Shared guard: true while EITHER a TGlucoseFetchThread or
   // THistoryFetchThread is interacting with the TrndiAPI. Both backends
@@ -828,6 +845,33 @@ private
   procedure tBootFetchTimer(Sender: TObject);
   procedure tBootSpinnerTimer(Sender: TObject);
   procedure StopBootSpinner;
+  {** (Re)arm the one-shot boot-fetch timer. FormCreate arms it last; the
+      connect-failure path arms it again after the backend was replaced. }
+  procedure ArmBootFetch(const DelayMs: integer);
+  {** Runs on the main thread, from the boot worker's Synchronize, once
+      api.Connect succeeded: settles the thresholds (wizard fallback, user
+      overrides), seeds the level alerts and queues extension loading. Must
+      complete before the worker's getReadings, which stamps levels. }
+  procedure ApplyConnectedApi;
+  {** Queued by ApplyConnectResult when the boot Connect failed: error dialog,
+      Settings, then retry with the new backend or quit if nothing changed.
+      Runs after the worker has left Synchronize so a quit from the dialog
+      does not wait on a parked thread. }
+  procedure DeferredBootConnectFailure(Data: PtrInt);
+  {** Queued by ApplyConnectedApi: extension loading raises modal permission
+      prompts, which must not run while the worker is parked in Synchronize. }
+  procedure DeferredLoadExtensions(Data: PtrInt);
+  {** Drop to the "Setup" screen: no usable backend, the reading area becomes
+      a button into Settings. Safe both during FormCreate and afterwards. }
+  procedure EnterSetupScreen;
+  {** Main-thread half of APIReceiver: shows/logs the message. }
+  procedure DeliverApiMessage(const msg: string; etype: TrndiAPIMsg);
+  procedure DeliverPendingApiMessage;
+  {** Disable a fired one-shot timer and drop the reference to it, without
+      freeing it. Every caller runs from inside the timer's own OnTimer, where
+      a free would tear down the widgetset timer whose callback is still on the
+      stack. The timers are owned by the form, so the object goes with it. }
+  procedure RetireOneShotTimer(var ATimer: TTimer);
   procedure OnSystemWake;
   procedure OnNoticeClick;
   procedure DeferredPostFetchResize(Data: PtrInt);
@@ -1011,9 +1055,9 @@ private
   procedure HandleLowGlucose(const {%H-}reading: BGReading; const fired: TAlertKindSet);
   procedure HandleNormalGlucose(const reading: BGReading; const fired: TAlertKindSet);
   {** Alert side-effects (toast, media, Chroma) for a fired high/low level
-      rule. Split out of the Handle* color handlers so the engine's verdict —
-      which, with hysteresis, can fire while the displayed color is already
-      back to normal — is honored no matter which band the router picked. }
+      rule. Split out of the Handle* color handlers so the engine's verdict is
+      honored no matter which band the router picked, should the engine's
+      thresholds and the router's ever disagree. }
   procedure RaiseHighLevelAlert;
   procedure RaiseLowLevelAlert;
   procedure ApplyChromaAlertAction(const ActionSettingKey: string;
@@ -1106,6 +1150,22 @@ private
      }
   function WebServerActive: boolean;
   procedure tWebServerStartTimer(Sender: TObject);
+    {** Push the newest reading to the web API's /events subscribers.
+      A no-op while no server runs; the server drops an unchanged payload.
+     }
+  procedure WebPublishReading(const Reading: BGReading);
+    {** Push the freshness/connection state to /events subscribers.
+     }
+  procedure WebPublishStatus;
+    {** Push a fired alert to /events subscribers (nothing for an empty set).
+     }
+  procedure WebPublishAlert(const Kinds: TAlertKindSet; const Reading: BGReading);
+    {** Push the alert-snooze state to /events subscribers.
+     }
+  procedure WebPublishSnooze;
+    {** Push the forecast to /events subscribers; nil clears it.
+     }
+  procedure WebPublishPredictions(const Preds: BGResults);
 
   {** Recalculate left of the TIR badge when next progress bar is visible }
   procedure nextProgressChange;
@@ -2267,7 +2327,7 @@ begin
   // remote stalls). Running it inline blocks the form's first WM_PAINT,
   // which on slow networks shows up as "icon in taskbar but window invisible"
   // for the duration of the request. A one-shot TTimer reuses the existing
-  // pattern for tWebServerStart below; the OnTimer handler frees itself.
+  // pattern for tWebServerStart below; the OnTimer handler retires it.
   // Kiosk mode skips the check entirely: an unattended wall display has
   // nobody to click an update dialog away.
   if (not FUpdateCheckScheduled) and (not FKioskMode) then
@@ -2282,7 +2342,7 @@ begin
   // Kiosk activation is deferred the same way: entering fullscreen while the
   // window manager is still mapping/placing the window is unreliable on some
   // platforms (DoFullScreen flips BorderStyle and WindowState), so let the
-  // first paint land and then flip. One-shot; the handler frees the timer.
+  // first paint land and then flip. One-shot; the handler retires the timer.
   if FKioskMode and (not FKioskApplied) then
   begin
     FKioskApplied := true;

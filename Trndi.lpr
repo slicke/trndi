@@ -49,6 +49,11 @@ cthreads,
 {$IFDEF HASAMIGA}
 athreads,
 {$ENDIF}
+// Ahead of the LCL on purpose: trndi.log's initialization installs the crash
+// handler, and units initialize in this order, so listing it first puts the
+// hook in place before the widgetset and the form units run their own
+// initialization. The log procedures themselves are DEBUG-only.
+trndi.log,
 LCLTranslator,
 Interfaces, // this includes the LCL widgetset
 Forms,lazcontrols,trndi.types,
@@ -58,9 +63,6 @@ trndi.native, // hinted unused on Linux, but called in the {$IFDEF WINDOWS} star
 trndi.ext.functions,
 {$ENDIF}
 sysutils,
-{$IFDEF DEBUG}
-trndi.log,
-{$ENDIF}
 trndi.api.dexcom, trndi.api.carelink, trndi.api.librelinkup, trndi.api.registry,
 umain, ufloat, slicke.ux.alert
 { you can add units after this };
@@ -78,6 +80,10 @@ var
 {$ENDIF}
 
 begin
+  // Normally a no-op: trndi.log's initialization section installed the
+  // handler before any other unit initialized (see the uses clause). Kept as
+  // the idempotent fallback so the hook survives a reordering of that clause.
+InstallCrashHandler;
 {$IFDEF DEBUG}
   // Set up -gh output for the Leakview package:
 if FileExists('heap.trc') then

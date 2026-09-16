@@ -52,7 +52,7 @@
 ![macOS](doc/img/img_macos.png)
 
 #### Physical Display
-![Linux](doc/img/img_lin_rpi.png)
+![Raspberry Pi](doc/img/img_rpi.jpg)
 <br>RaspberryPi (with touch screen) - see [Guide for RPi display](guides/Display.md)
 
 ### Introduction
@@ -78,7 +78,7 @@ It also supports the _xDrip_ app, connecting over the local network/WiFi.
 * __Free__ and open source
 * Integrates with Windows, macOS and Linux special features such as the macOS dock, Windows taskbar and Linux notifications.
 * Supports low, normal and high blood sugar colors. But also __custom ranges__ such as "normal, but on the edge to high"
-* Offers a [WebAPI](doc/WebAPI.md) for other clients to access glucose data
+* Offers a [WebAPI](doc/WebAPI.md) for other clients to access glucose data, with a live event stream so they never need to poll
 * Supports experimental [predictions](guides/Predictions.md)
 * Supports Razer Chroma on Windows and Linux
 * Native proxy support on Windows, Linux, BSD and Haiku — a proxy you configure is used exclusively, never bypassed. With no proxy set, Trndi follows the system's own network settings (which is also how macOS is handled)
@@ -112,6 +112,38 @@ Download `TrndiSetup.exe` from the [latest release](https://github.com/slicke/tr
 
 ### Portable (No install needed)
 Download `Trndi-windows-x64.zip` from the [latest release](https://github.com/slicke/trndi/releases), extract and run `Trndi.exe`.
+
+### Windows on ARM (aarch64)
+The releases above are x64, and Windows 11 on ARM runs them under emulation —
+so the ordinary download works on an ARM machine, extensions included, and is
+the path of least resistance.
+
+A **native** ARM64 build is supported but has to be compiled yourself, the way
+Haiku and the BSDs are. Two things it needs:
+
+- **An FPC that targets `aarch64-win64`.** 3.2.2 does not; check with `fpc -i`.
+  The target lives in FPC trunk. Note that it assembles with clang rather than
+  GAS, so the toolchain needs llvm-mingw (or MSYS2's CLANGARM64) and not plain
+  binutils — a cross compiler for it does build on Linux, and
+  [trndi-cli](https://github.com/slicke/trndi-cli) documents that recipe. Only
+  the *native* route is verified for Trndi itself, though: cross-building the
+  LCL for `aarch64-win64` has not been tried, and it is the half most likely to
+  need work.
+- **The QuickJS libraries for `aarch64-win64`**, which are committed like every
+  other target's. Rebuild them with `externals/quickjs/build.sh winarm` (cross,
+  including from a container that installs nothing on the host) or `build.sh
+  winhost` (natively, in an MSYS2 CLANGARM64 shell).
+
+`make` and `make.ps1` then pick the ARM64 libraries up automatically — both key
+off `PROCESSOR_ARCHITECTURE`, so a native ARM64 shell gets `aarch64-win64` and
+an emulated x64 shell gets `x86_64-win64`, which is the correct answer in each
+case since that is also what `lazbuild` just built.
+
+There is no ARM64 installer: `dist/windows_setup.iss` is x64 throughout, so a
+native ARM64 build is something you run from the build directory rather than
+something you package. See
+[externals/quickjs/README.md](/externals/quickjs/README.md) for the toolchain
+details.
 
 _See the [specific Windows guide](/doc/Windows.md) for more specifics._
 
@@ -458,6 +490,7 @@ Trndi2 (and later) is a rewrite, less bloated, version of Trndi 1, which was nev
 
 ### Testing
 Trndi is actively tested on Windows (x64), Fedora Linux (amd64), Debian Linux (arm64 / Raspberry Pi).
+Windows on ARM (aarch64) has been built and run natively, extensions included, but is not part of the regular testing rounds.
 
 <a name="Linux-support"></a>
 ## Linux notes
