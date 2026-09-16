@@ -477,7 +477,7 @@ var
   end;
 
   // True when any of the given terms versions was accepted.
-  function Accepted(const terms: array of string): boolean; overload;
+  function AcceptedAny(const terms: array of string): boolean;
   var
     t: string;
   begin
@@ -490,7 +490,7 @@ var
 begin
   if not Accepted(currentTerms) then
   begin
-    if Accepted(priorTerms) then
+    if AcceptedAny(priorTerms) then
     begin
       // The GPLv3 text itself never changes, so a re-prompt can only mean the
       // medical disclaimer (the GPL section 7 additional term) moved.
