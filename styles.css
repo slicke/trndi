@@ -1008,6 +1008,17 @@ section h2 {
     line-height: 1;
 }
 
+/* The trndi-multi promo carries its own logo rather than a glyph: the
+   artwork is the program's icon, so no tinted background behind it. */
+.promo-icon-img {
+    background: transparent;
+}
+
+.promo-icon-img img {
+    width: 48px;
+    height: 48px;
+}
+
 .promo-text h2 {
     font-size: 1.35rem;
     margin-bottom: 4px;
