@@ -64,6 +64,9 @@
  * - 2026-08-16: The form unit now also uses trndi.funcs.core, which took over
  *   the shared reading/trend helpers and the DEBUG_LOG_ALERT switch from
  *   trndi.funcs.
+ * - 2026-09-17: FormClose re-arms the boot connect (ResumeBootAfterCancelledClose)
+ *   when the quit prompt is declined, since the prompt runs with FShuttingDown
+ *   raised and a boot worker finishing meanwhile aborted for good.
  * - 2026-08-18: ShouldUpdateUI/CacheUIState compare the time-in-range hint
  *   instead of lTir's never-assigned Color, so FLastTirColor became
  *   FLastTirHint; added FTitleTintedFromBanner so setColorMode can take back a
@@ -848,6 +851,11 @@ private
   {** (Re)arm the one-shot boot-fetch timer. FormCreate arms it last; the
       connect-failure path arms it again after the backend was replaced. }
   procedure ArmBootFetch(const DelayMs: integer);
+  {** Called by FormClose when the user declines the quit prompt. The prompt
+      runs with FShuttingDown raised, which makes a boot worker finishing its
+      Connect meanwhile (or a tBootFetch tick) abort without clearing
+      FBootConnectPending; re-arm the boot fetch so the connect is retried. }
+  procedure ResumeBootAfterCancelledClose;
   {** Runs on the main thread, from the boot worker's Synchronize, once
       api.Connect succeeded: settles the thresholds (wizard fallback, user
       overrides), seeds the level alerts and queues extension loading. Must
@@ -1875,6 +1883,7 @@ begin
       mrCancel: 
       begin
         FShuttingDown := false; // Reset flag if user cancels
+        ResumeBootAfterCancelledClose;
         CloseAction := caNone;
         Exit;
       end;
@@ -1882,6 +1891,7 @@ begin
       begin
         CloseAction := caHide;
         FShuttingDown := false; // Reset flag for hide
+        ResumeBootAfterCancelledClose;
         Exit;
       end;
       end;
@@ -1898,6 +1908,7 @@ begin
       if mr = mrCancel then
       begin
         FShuttingDown := false;
+        ResumeBootAfterCancelledClose;
         CloseAction := caNone;
         Exit;
       end;
@@ -1905,6 +1916,7 @@ begin
       begin
         CloseAction := caMinimize;
         FShuttingDown := false;
+        ResumeBootAfterCancelledClose;
         Exit;
       end;
     end;
@@ -1917,6 +1929,7 @@ begin
       [[mbYes, mbNo], [mbNo, mbYes]], uxmtOK) = mrNo then
     begin
       FShuttingDown := false;
+      ResumeBootAfterCancelledClose;
       CloseAction := caNone;
       Exit;
     end;

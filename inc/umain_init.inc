@@ -44,6 +44,9 @@
 (* MODIFICATION NOTICE (2026-08-27): actOnTrend and the per-dot init are gone
    with the per-dot controls; FormCreate now calls InitTrendModel, which
    allocates the slot arrays and the single trend paint surface. *)
+(* MODIFICATION NOTICE (2026-09-17): Added ResumeBootAfterCancelledClose so a
+   quit prompt declined during the boot Connect no longer strands the app with
+   FBootConnectPending set and every fetch dropped. *)
 (* MODIFICATION NOTICE (2026-09-10): LoadUserProfile shows the accounts in
    SlickeAccountPicker (colour dot, nickname, key) with the default account as
    the first row, in place of the plain SlickeList drop-down of stored keys. *)
@@ -1326,6 +1329,25 @@ begin
   api.APIEmitter := @APIReceiver;
   api.OnCredentialsChanged := @APICredentialsChanged;
   ArmBootFetch(100);
+end;
+
+// Main thread, from FormClose after the user declined the quit prompt.
+// FormClose raises FShuttingDown before the (modal) prompt, and the prompt
+// pumps messages: a boot worker whose Connect finished meanwhile hit the
+// shutdown branch of ApplyConnectResult and gave up, and a tBootFetch tick
+// retired its timer the same way. Neither clears FBootConnectPending, and
+// nothing else ever re-arms the boot fetch, so every later fetch was dropped
+// and lVal sat on the spinner glyph until a restart. Re-arm it here; the
+// timer route waits out the aborted worker's teardown by itself.
+procedure TfBG.ResumeBootAfterCancelledClose;
+begin
+  if firstboot or (api = nil) or (not FBootConnectPending) then
+    Exit;
+  // The worker is still inside Connect: its ApplyConnectResult now runs with
+  // FShuttingDown cleared and takes the normal path.
+  if FApiCallInFlight then
+    Exit;
+  ArmBootFetch(50);
 end;
 
 procedure TfBG.EnterSetupScreen;

@@ -39,6 +39,8 @@
  * - 2026-08-17: The Unix connectivity probe now converts the target IP with
  *   StrToNetAddr instead of StrToHostAddr, which returned host byte order
  *   and made the OpenDNS fallback probe a byte-swapped address.
+ * - 2026-09-17: ApplyConnectResult's shutdown branch closes the native
+ *   progress indicator, since FormClose's quit prompt can be declined.
  *)
 (* Async helpers: thread implementations moved out of umain_helpers.inc
    This include defines background worker threads used by the main form.
@@ -465,10 +467,16 @@ begin
 
   if FOwner.FShuttingDown then
   begin
+    // Execute skips ApplyResult once FAbortFetch is set, so close the
+    // progress indicator RequestAsyncFetch's updateBegin opened here - the
+    // close may be a quit prompt the user declines, and the taskbar
+    // indicator otherwise stayed lit for the rest of the session.
     FAbortFetch := true;
     FOwner.FApiCallInFlight := false;
     if FBoot then
       FOwner.FBootFetchPending := false;
+    if Assigned(native) then
+      native.updateDone;
     Exit;
   end;
 
