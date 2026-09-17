@@ -41,6 +41,10 @@
    back inside range, but such a reading no longer fires the rule itself: the
    re-alert interval and an expiring min-duration used to raise "high" for a
    value the UI paints as in range. *)
+(* MODIFICATION NOTICE (2026-09-17): A reading inside the urgent-low band that
+   meets the regular low threshold now fires the regular low. The urgent branch
+   used to reset akLow unconditionally, so a band reaching past the low limit
+   silenced every level alert while BG hovered between the two thresholds. *)
 
 unit trndi.alert.engine;
 
@@ -537,13 +541,32 @@ begin
   begin
     EnterViolation(akUrgentLow);
     LeaveViolation(akHigh);
-    // Reset akLow so it starts a fresh excursion if BG climbs back into the regular-low band.
-    LeaveViolation(akLow);
-    if meetsUrgent and ShouldFire(akUrgentLow) then
+    if meetsUrgent then
     begin
-      MarkFired(akUrgentLow);
-      Include(Result, akUrgentLow);
-    end;
+      // Reset akLow so it starts a fresh excursion if BG climbs back into the regular-low band.
+      LeaveViolation(akLow);
+      if ShouldFire(akUrgentLow) then
+      begin
+        MarkFired(akUrgentLow);
+        Include(Result, akUrgentLow);
+      end;
+    end
+    else if enterLow then
+    begin
+      // Inside the urgent band but at (or hovering just above) the regular
+      // low threshold. The urgent band can reach past the low limit - a
+      // 50 mg/dL band on a 54/70 split does - and the urgent rule never
+      // fires inside its band, so the regular low has to run here on its
+      // own terms or a BG parked at 65 would raise nothing at all.
+      EnterViolation(akLow);
+      if meetsLow and ShouldFire(akLow) then
+      begin
+        MarkFired(akLow);
+        Include(Result, akLow);
+      end;
+    end
+    else
+      LeaveViolation(akLow);
   end
   else if enterLow then
   begin

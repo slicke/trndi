@@ -38,6 +38,8 @@
 (* MODIFICATION NOTICE (2026-09-15): Added ReAlertWaitsInsideHysteresisBand
    and MinDurationExpiringInsideBandWaitsForThreshold - a reading inside the
    hysteresis band keeps the excursion alive but must not fire. *)
+(* MODIFICATION NOTICE (2026-09-17): Added LowFiresInsideUrgentBand - an urgent
+   band that reaches past the low threshold must not silence the regular low. *)
 unit alert_engine_tests;
 
 {$mode objfpc}{$H+}
@@ -80,6 +82,7 @@ type
     procedure ZeroHysteresisClearsAtThreshold;
     // Level rules
     procedure UrgentLowSubsumesLow;
+    procedure LowFiresInsideUrgentBand;
     procedure ReturnToRangeResetsLevelState;
     procedure DisabledRuleNeverFires;
     // Re-alerting
@@ -287,6 +290,43 @@ begin
   res := FEngine.EvaluateLevel(3.5);
   AssertTrue('low fires as a fresh excursion', akLow in res);
   AssertTrue('urgent low must clear', not FEngine.IsViolating(akUrgentLow));
+end;
+
+procedure TAlertEngineTests.LowFiresInsideUrgentBand;
+var
+  res: TAlertKindSet;
+begin
+  // Urgent 3.0 with a 2.8 band reaches 5.8, well past the low limit of 3.9:
+  // the shape a pre-build-244 mmol setting has after the 50 mg/dL clamp.
+  FEngine.SetupRule(akLow, true, 3.9, 0, 0, 0, 0.3);
+  FEngine.SetupRule(akUrgentLow, true, 3.0, 0, 5, 0, 2.8);
+
+  res := FEngine.EvaluateLevel(2.9);
+  AssertTrue('urgent low fires on entry', akUrgentLow in res);
+
+  // Recovered to 3.6: still inside the urgent band, but a real low.
+  res := FEngine.EvaluateLevel(3.6);
+  AssertTrue('urgent must not fire inside its band', not (akUrgentLow in res));
+  AssertTrue('regular low must fire inside the urgent band', akLow in res);
+  AssertTrue('urgent excursion stays alive', FEngine.IsViolating(akUrgentLow));
+  AssertTrue('low excursion is tracked', FEngine.IsViolating(akLow));
+
+  // 4.1 is inside the low band (3.9 + 0.3): hold, no fire.
+  res := FEngine.EvaluateLevel(4.1);
+  AssertTrue('nothing fires just above the low limit', res = []);
+  AssertTrue('low band holds', FEngine.IsViolating(akLow));
+
+  // 4.5 leaves the low band but not the urgent one.
+  FEngine.EvaluateLevel(4.5);
+  AssertTrue('low clears above its band', not FEngine.IsViolating(akLow));
+  AssertTrue('urgent still holds its band', FEngine.IsViolating(akUrgentLow));
+
+  // Back at the urgent threshold the urgent rule owns low again. It does
+  // not re-fire: its excursion never ended and the rule is one-shot here.
+  res := FEngine.EvaluateLevel(3.0);
+  AssertTrue('urgent stays a one-shot within its excursion',
+    not (akUrgentLow in res));
+  AssertTrue('low is subsumed again', not FEngine.IsViolating(akLow));
 end;
 
 procedure TAlertEngineTests.ReturnToRangeResetsLevelState;
