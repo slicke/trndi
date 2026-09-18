@@ -35,6 +35,9 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-09-18): ApplySettingsInstantly re-lays the
+   connection badge out through RefreshConnectionBadge, which keeps the
+   status colour instead of reading back whatever the badge shape shows. *)
 (* MODIFICATION NOTICE (2026-08-20): SaveUserSettings now calls the dialog's
    CommitUserAccounts before rewriting users.names, persisting the Multi User
    tab's staged color/nick edits and pending account erasures — the tab itself
@@ -195,11 +198,7 @@ begin
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES);
   tir_icon := native.GetBoolSetting('range.tir_icon', false);
 
-  if FLastConnectionStatus <> '' then
-    if Assigned(FInternetBadgeBg) then
-      SetConnectionBadge(FLastConnectionStatus, FInternetBadgeBg.Brush.Color)
-    else
-      SetConnectionBadge(FLastConnectionStatus, RGBToColor(60, 150, 90));
+  RefreshConnectionBadge;
 
   UseRangeColor := native.GetBoolSetting('ux.range_color', true);
 

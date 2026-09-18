@@ -64,6 +64,10 @@
  * - 2026-08-16: The form unit now also uses trndi.funcs.core, which took over
  *   the shared reading/trend helpers and the DEBUG_LOG_ALERT switch from
  *   trndi.funcs.
+ * - 2026-09-18: FormClose writes size.last.width/height when size.main is on;
+ *   placeForm had read the keys since forever but nothing ever wrote them.
+ *   Esc leaves fullscreen instead of toggling it. Added FLastConnectionColor,
+ *   FSnoozeBadgeShown and RefreshConnectionBadge for the snooze chip.
  * - 2026-09-17: FormClose re-arms the boot connect (ResumeBootAfterCancelledClose)
  *   when the quit prompt is declined, since the prompt runs with FShuttingDown
  *   raised and a boot worker finishing meanwhile aborted for good.
@@ -643,6 +647,7 @@ private
   procedure UpdateAlertSnoozeMenu;
   function ClassifyConnectionStatus(const ErrorText: string): string;
   procedure SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
+  procedure RefreshConnectionBadge;
   procedure ShutdownBackgroundThreads;
 private
   FStoredWindowInfo: record // Saved geometry and window state for restore/toggle
@@ -682,7 +687,13 @@ private
                                    // tint has to be taken back explicitly
                                    // once the banner stops carrying it.
   FLastConnectionStatus: string;
+  FLastConnectionColor: TColor; // Colour that came with FLastConnectionStatus,
+                                // so the badge can be re-laid-out without
+                                // reading back a colour the snooze chip set
   FLastConnectionDetail: string;
+  FSnoozeBadgeShown: boolean;   // The connection badge currently carries the
+                                // alert-snooze text; tAgoTimer drops it once
+                                // the pause lapses
   FConnectivityThread: TConnectivityCheckThread;
   FPingThread: TConnectivityCheckThread;
   FPredictionThread: TPredictionThread;
@@ -1783,7 +1794,10 @@ begin
   case key of
   #27:
   begin
-    lDiffDblClick(self);
+    // Esc only ever leaves fullscreen. It used to toggle, which expanded a
+    // normal window to fullscreen - the opposite of what Esc means.
+    if IsFullscreenNow then
+      lDiffDblClick(self);
     key := #0; // Disable future escapes
   end;
   'f', 'F':
@@ -1866,6 +1880,24 @@ begin
     native.SetSetting('position.last.left', Left);
     native.SetSetting('position.last.top', Top);
   end;
+
+  // Save the window size when the user asked for it to be remembered
+  // (placeForm reads it back). In fullscreen the stored pre-fullscreen
+  // bounds are the real size; a maximized window has none of its own.
+  if native.GetBoolSetting('size.main') then
+    if IsFullscreenNow then
+    begin
+      if FStoredWindowInfo.Initialized then
+      begin
+        native.SetSetting('size.last.width', FStoredWindowInfo.Width);
+        native.SetSetting('size.last.height', FStoredWindowInfo.Height);
+      end;
+    end
+    else if WindowState = wsNormal then
+    begin
+      native.SetSetting('size.last.width', Width);
+      native.SetSetting('size.last.height', Height);
+    end;
 
   {$ifdef Darwin}
   if not firstboot then

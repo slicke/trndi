@@ -46,6 +46,9 @@
    used to reset akLow unconditionally, so a band reaching past the low limit
    silenced every level alert while BG hovered between the two thresholds. *)
 
+(* MODIFICATION NOTICE (2026-09-18): Added SnoozedUntil, exposing a single
+   rule's snooze end so the UI can tell when a capped rule (urgent low) comes
+   back before the others. *)
 unit trndi.alert.engine;
 
 {$mode objfpc}{$H+}
@@ -146,6 +149,8 @@ type
     procedure ResumeAll;
 
     function IsSnoozed(const AKind: TAlertKind): boolean;
+    {** When the rule's current snooze ends, or 0 when it is not snoozed. }
+    function SnoozedUntil(const AKind: TAlertKind): TDateTime;
     function AnySnoozed: boolean;
     function IsViolating(const AKind: TAlertKind): boolean;
     function ViolatingKinds: TAlertKindSet;
@@ -711,6 +716,14 @@ begin
   Result := (FRules[AKind].SnoozedUntil > 0) and (Now < FRules[AKind].SnoozedUntil);
   if not Result then
     FRules[AKind].SnoozedUntil := 0;
+end;
+
+function TAlertEngine.SnoozedUntil(const AKind: TAlertKind): TDateTime;
+begin
+  if IsSnoozed(AKind) then
+    Result := FRules[AKind].SnoozedUntil
+  else
+    Result := 0;
 end;
 
 function TAlertEngine.AnySnoozed: boolean;

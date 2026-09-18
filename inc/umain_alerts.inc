@@ -52,6 +52,11 @@
    lands straight on stale data reached this layout before ScaleLbl had ever
    run, leaving the LFM-default tlTop layout and pinning the value to the top
    edge of the window. *)
+(* MODIFICATION NOTICE (2026-09-18): The connection badge shows the alert
+   snooze (AlertsSnoozed had no caller, so a pause was invisible on the
+   window); RefreshConnectionBadge re-lays it out from the remembered status
+   and colour. The snooze confirmation names when urgent low resumes, since
+   its cap cuts the pause short. *)
 (* MODIFICATION NOTICE (2026-09-15): SeedLevelAlertRules clamps the stored
    hysteresis to the Settings dialog's own maximum. A pre-build-244 save
    inflated the mmol figure ~18-fold, and such a leftover value kept a "high"
@@ -188,7 +193,7 @@ end;
 
 function TfBG.AlertsSnoozed: boolean;
 begin
-  Result := FAlertEngine.AnySnoozed;
+  Result := Assigned(FAlertEngine) and FAlertEngine.AnySnoozed;
 end;
 
 procedure TfBG.UpdateAlertSnoozeMenu;
@@ -294,8 +299,11 @@ var
   displayColor: TColor;
   forceShowBadge: boolean;
   sensorBadgeText: string;
+  snoozed: boolean;
+  snoozeText: string;
 begin
   FLastConnectionStatus := StatusText;
+  FLastConnectionColor := BadgeColor;
   displayStatus := StatusText;
   displayColor := BadgeColor;
   forceShowBadge := false;
@@ -318,6 +326,25 @@ begin
   if sensorBadgeText <> '' then
     displayStatus := displayStatus + ' | ' + sensorBadgeText;
 
+  // A snooze must be visible on the window itself, not only as a menu
+  // caption. A calm badge has nothing else to say, so it becomes the snooze
+  // chip; a connection problem outranks the pause and keeps its own text.
+  snoozed := AlertsSnoozed;
+  if snoozed then
+  begin
+    snoozeText := Format(RS_ALERT_SNOOZE_ACTIVE,
+      [FormatDateTime('hh:nn', FAlertEngine.ActiveSnoozeUntil)]);
+    if isOk and (not forceShowBadge) then
+    begin
+      displayStatus := snoozeText;
+      displayColor := RGBToColor(105, 95, 170);
+      forceShowBadge := true;
+    end
+    else
+      displayStatus := displayStatus + ' | ' + snoozeText;
+  end;
+  FSnoozeBadgeShown := snoozed;
+
   if isOk and (not showOkBadge) and (not forceShowBadge) then
   begin
     HideConnectionBadge;
@@ -326,6 +353,25 @@ begin
 
   EnsureConnectionBadgeControls;
   ApplyConnectionBadgeLayout(displayStatus, displayColor, isCentered);
+end;
+
+procedure TfBG.RefreshConnectionBadge;
+begin
+  if FLastConnectionStatus <> '' then
+    SetConnectionBadge(FLastConnectionStatus, FLastConnectionColor)
+  else
+  if AlertsSnoozed then
+  begin
+    // Nothing has connected yet, so there is no status to restate; lay the
+    // chip out on the OK path and keep the "no status yet" state afterwards.
+    SetConnectionBadge(RS_CONN_OK, RGBToColor(60, 150, 90));
+    FLastConnectionStatus := '';
+  end
+  else
+  begin
+    HideConnectionBadge;
+    FSnoozeBadgeShown := false;
+  end;
 end;
 
 procedure TfBG.HideConnectionBadge;
@@ -593,6 +639,9 @@ begin
 end;
 
 procedure TfBG.SetAlertSnoozeMinutes(const Minutes: integer);
+var
+  msg: string;
+  latest, urgentUntil: TDateTime;
 begin
   // The menu is a global "pause alerts" control, so snooze every rule - not
   // just the ones in violation. With glucose in range nothing is violating,
@@ -600,7 +649,17 @@ begin
   // claimed a pause. Per-rule caps (MaxSnoozeMinutes) are still honoured.
   FAlertEngine.SnoozeAll(Minutes);
   UpdateAlertSnoozeMenu;
-  ShowMessage(Format(RS_ALERT_SNOOZE_FOR, [Minutes]));
+  RefreshConnectionBadge;
+
+  msg := Format(RS_ALERT_SNOOZE_FOR, [Minutes]);
+  // Urgent low carries a snooze cap, so it comes back before the others; the
+  // confirmation used to claim the full pause for it too.
+  latest := FAlertEngine.ActiveSnoozeUntil;
+  urgentUntil := FAlertEngine.SnoozedUntil(akUrgentLow);
+  if (urgentUntil > 0) and (MinutesBetween(latest, urgentUntil) >= 1) then
+    msg := msg + LineEnding +
+      Format(RS_ALERT_SNOOZE_URGENT_CAP, [FormatDateTime('hh:nn', urgentUntil)]);
+  ShowMessage(msg);
 end;
 
 procedure TfBG.miAlertSnooze15Click(Sender: TObject);
@@ -622,6 +681,7 @@ procedure TfBG.miAlertSnoozeOffClick(Sender: TObject);
 begin
   FAlertEngine.ResumeAll;
   UpdateAlertSnoozeMenu;
+  RefreshConnectionBadge;
   ShowMessage(RS_ALERT_SNOOZE_OFF);
 end;
 

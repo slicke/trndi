@@ -39,6 +39,8 @@
    RS_UNHANDLED_ERROR_DESC for the unhandled-exception dialog shown by
    TfBG.AppExceptionHandler. *)
 
+(* MODIFICATION NOTICE (2026-09-18): Added RS_ALERT_SNOOZE_URGENT_CAP for the
+   snooze confirmation, which used to claim the full pause for urgent low. *)
 unit trndi.strings;
 
 interface
@@ -262,6 +264,7 @@ RS_ALERT_SNOOZE_FOR = 'Alerts snoozed for %d minutes';
 RS_ALERT_SNOOZE_OFF = 'Alert snooze disabled';
 RS_ALERT_SNOOZE_RESUME = 'Resume alerts';
 RS_ALERT_SNOOZE_NOT_ACTIVE = 'Snooze is not active';
+RS_ALERT_SNOOZE_URGENT_CAP = 'Urgent low alerts can only be snoozed briefly and resume at %s';
 RS_CONN_OK = 'OK';
 RS_CONN_RETRYING = 'Retrying';
 RS_CONN_AUTH_EXPIRED = 'Auth expired';

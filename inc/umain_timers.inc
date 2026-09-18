@@ -48,6 +48,8 @@
  * - 2026-08-21: The WSL width tweak is guarded by LCLQt6 alone - isWSL is
  *   always false off Linux now that DetectWSL is in the base contract.
  *)
+(* MODIFICATION NOTICE (2026-09-18): tAgoTimer clears the snooze chip from the
+   connection badge when the alert snooze has lapsed. *)
 (* MODIFICATION NOTICE (2026-08-18): tAgoTimer no longer rewrites the "last
    update" caption while the data is stale. The timer runs for the whole
    outage and bgs still holds the cached readings, so it put the age back
@@ -209,6 +211,11 @@ begin
   // being toggled elsewhere. Nearly free — the overlay's own minute gate
   // swallows the call when nothing changed.
   UpdateClockOverlay;
+
+  // The snooze chip in the connection badge has no timer of its own; drop
+  // it here once the pause has lapsed.
+  if FSnoozeBadgeShown and not AlertsSnoozed then
+    RefreshConnectionBadge;
 end;
 
 procedure TfBG.tProgressTimer(Sender: TObject);

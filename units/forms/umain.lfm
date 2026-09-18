@@ -9,6 +9,7 @@ object fBG: TfBG
   ClientWidth = 320
   Color = clBlack
   Font.Color = clWhite
+  KeyPreview = True
   PopupMenu = pmSettings
   Position = poDesktopCenter
   LCLVersion = '4.8.0.0'

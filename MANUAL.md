@@ -276,6 +276,15 @@ always fits.
 - **Orange sidebar**: Your blood sugar is too low
 - **Flashing**: Can be enabled for urgent situations
 
+### Snoozing Alerts
+Right-click → *Snooze alerts* pauses the high, low and urgent-low alerts for
+15, 30 or 60 minutes; *Resume alerts* in the same menu ends the pause early.
+While a snooze is active a purple *Snoozed until hh:mm* chip sits at the top
+of the window (beside the connection status if that is showing a problem), so
+a silent window is never mistaken for a calm one. Urgent-low alerts can only
+be snoozed for a few minutes at a time; the confirmation tells you when they
+come back.
+
 ### Sound and System Notifications
 Can be configured in settings to:
 - Play a sound when you go high or low
@@ -447,7 +456,8 @@ Look for:
   and low looks. Click the reading, arrow or time in the miniature to change
   that item's font
 - **Add JavaScript extensions**: See the Extensions guide for advanced features
-- **Keyboard shortcuts**: press "i" for Settings, "s" to hear the current reading
+- **Keyboard shortcuts**: press "i" for Settings, "s" to hear the current reading,
+  "f" to toggle fullscreen and Esc to leave it
 
 ### Best Practices
 - ✅ Keep Trndi running in the background
