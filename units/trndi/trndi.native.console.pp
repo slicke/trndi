@@ -34,6 +34,12 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-18: HTTP on Windows now goes through the system's WinHTTP stack
+ *   (the new trndi.native.request.winhttp unit, shared with the desktop
+ *   Windows class) instead of libcurl, so a console build for Windows no
+ *   longer needs libcurl.dll. Every other target keeps the libcurl transport.
  *)
 
 {**
@@ -49,10 +55,12 @@
     terminal or the service log.
   - Speech uses @code(spd-say) or @code(espeak) when available.
   - Badges and window-manager integration are no-ops.
-  - HTTP goes through libcurl (@code(trndi.native.request.curl) — the same
-    transport the desktop Linux build uses), overriding the generic base's
-    TFPHTTPClient. libcurl brings the system TLS stack and CA store, avoiding
-    FPC's OpenSSL version-loading fragility on modern distributions.
+  - HTTP overrides the generic base's TFPHTTPClient with the platform's own
+    stack, the same one the desktop build uses there: WinHTTP on Windows
+    (@code(trndi.native.request.winhttp) — no third-party DLL, the system TLS,
+    CA store and proxy configuration) and libcurl everywhere else
+    (@code(trndi.native.request.curl) — the system TLS stack and CA store,
+    avoiding FPC's OpenSSL version-loading fragility on modern distributions).
 
   Selected by @code(trndi.native)'s dispatch when the build defines
   @code(X_CONSOLE) (a build-mode define, not a platform one — any OS target can
@@ -74,7 +82,11 @@ interface
 
 uses
 Classes, SysUtils, trndi.native.base, trndi.native.generic,
+{$IFDEF WINDOWS}
+trndi.native.request.winhttp;
+{$ELSE}
 trndi.native.request.curl;
+{$ENDIF}
 
 type
   {!
@@ -103,22 +115,23 @@ public
     {** No window manager from a terminal's point of view. }
   class function GetWindowManagerName: string; override;
 
-  // HTTP: libcurl transport (shared with desktop Linux), replacing the
-  // generic base's TFPHTTPClient implementations.
-    {** Simple HTTP GET via libcurl. }
+  // HTTP: the platform's own transport (WinHTTP on Windows, libcurl
+  // elsewhere), shared with the desktop build, replacing the generic base's
+  // TFPHTTPClient implementations.
+    {** Simple HTTP GET. }
   class function getURL(const url: string; out res: string): boolean; override;
-    {** Simple HTTP POST via libcurl. }
+    {** Simple HTTP POST. }
   class function postURL(const url: string; const body: string;
     const contentType: string; out res: string): boolean; override;
-    {** Proxy-only HTTP GET via libcurl (settings "Test proxy" action). }
+    {** Proxy-only HTTP GET (settings "Test proxy" action). }
   class function TestProxyURL(const url: string; const proxyHost: string;
     const proxyPort: string; const proxyUser: string; const proxyPass: string;
     out res: string): boolean; override;
-    {** HTTP GET/POST via libcurl, honouring proxy.* root settings. }
+    {** HTTP GET/POST honouring proxy.* root settings. }
   function request(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     const header: string = ''; prefix: boolean = true): string; override;
-    {** Cookie-aware, redirect-following HTTP via libcurl. }
+    {** Cookie-aware, redirect-following HTTP. }
   function requestEx(const post: boolean; const endpoint: string;
     const params: array of string; const jsondata: string = '';
     cookieJar: TStringList = nil; followRedirects: boolean = true;
@@ -232,53 +245,90 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  HTTP via the shared libcurl transport. The class functions read proxy
-  settings through a short-lived instance, exactly like the Linux unit.
+  HTTP via the shared platform transport: WinHTTP on Windows, libcurl
+  everywhere else. The two transport units expose the same five functions
+  under different prefixes and each has its own proxy record; the alias below
+  keeps the proxy plumbing common, and each method picks its transport call
+  under one {$IFDEF WINDOWS}. The class functions read proxy settings through
+  a short-lived instance, exactly like the Linux unit.
  ------------------------------------------------------------------------------}
+type
+{$IFDEF WINDOWS}
+  TTransportProxy = TWinHttpProxy;
+{$ELSE}
+  TTransportProxy = TCurlProxy;
+{$ENDIF}
+
+function FetchTransportProxy(inst: TTrndiNativeBase): TTransportProxy; inline;
+begin
+  {$IFDEF WINDOWS}
+  Result := FetchWinHttpProxy(inst);
+  {$ELSE}
+  Result := FetchCurlProxy(inst);
+  {$ENDIF}
+end;
+
 class function TTrndiNativeConsole.getURL(const url: string; out res: string): boolean;
 var
   tempInstance: TTrndiNativeConsole;
-  proxy: TCurlProxy;
+  proxy: TTransportProxy;
 begin
   tempInstance := TTrndiNativeConsole.Create;
   tempInstance.noFree := true;
   try
-    proxy := FetchCurlProxy(tempInstance);
+    proxy := FetchTransportProxy(tempInstance);
   finally
     tempInstance.Free;
   end;
+  {$IFDEF WINDOWS}
+  Result := WinHttpGetURL(url, proxy, res);
+  {$ELSE}
   Result := CurlGetURL(url, proxy, res);
+  {$ENDIF}
 end;
 
 class function TTrndiNativeConsole.postURL(const url: string; const body: string;
 const contentType: string; out res: string): boolean;
 var
   tempInstance: TTrndiNativeConsole;
-  proxy: TCurlProxy;
+  proxy: TTransportProxy;
 begin
   tempInstance := TTrndiNativeConsole.Create;
   tempInstance.noFree := true;
   try
-    proxy := FetchCurlProxy(tempInstance);
+    proxy := FetchTransportProxy(tempInstance);
   finally
     tempInstance.Free;
   end;
+  {$IFDEF WINDOWS}
+  Result := WinHttpPostURL(url, body, contentType, proxy, res);
+  {$ELSE}
   Result := CurlPostURL(url, body, contentType, proxy, res);
+  {$ENDIF}
 end;
 
 class function TTrndiNativeConsole.TestProxyURL(const url: string;
 const proxyHost: string; const proxyPort: string; const proxyUser: string;
 const proxyPass: string; out res: string): boolean;
 begin
+  {$IFDEF WINDOWS}
+  Result := WinHttpTestProxyURL(url, proxyHost, proxyPort, proxyUser, proxyPass, res);
+  {$ELSE}
   Result := CurlTestProxyURL(url, proxyHost, proxyPort, proxyUser, proxyPass, res);
+  {$ENDIF}
 end;
 
 function TTrndiNativeConsole.request(const post: boolean; const endpoint: string;
 const params: array of string; const jsondata: string;
 const header: string; prefix: boolean): string;
 begin
+  {$IFDEF WINDOWS}
+  Result := WinHttpRequest(post, baseurl, useragent, endpoint, params, jsondata,
+    header, prefix, FetchTransportProxy(self));
+  {$ELSE}
   Result := CurlRequest(post, baseurl, useragent, endpoint, params, jsondata,
-    header, prefix, FetchCurlProxy(self));
+    header, prefix, FetchTransportProxy(self));
+  {$ENDIF}
 end;
 
 function TTrndiNativeConsole.requestEx(const post: boolean; const endpoint: string;
@@ -287,9 +337,15 @@ cookieJar: TStringList; followRedirects: boolean;
 maxRedirects: integer; customHeaders: TStringList;
 prefix: boolean): THTTPResponse;
 begin
+  {$IFDEF WINDOWS}
+  Result := WinHttpRequestEx(post, baseurl, useragent, endpoint, params, jsondata,
+    cookieJar, followRedirects, maxRedirects, customHeaders, prefix,
+    FetchTransportProxy(self));
+  {$ELSE}
   Result := CurlRequestEx(post, baseurl, useragent, endpoint, params, jsondata,
     cookieJar, followRedirects, maxRedirects, customHeaders, prefix,
-    FetchCurlProxy(self));
+    FetchTransportProxy(self));
+  {$ENDIF}
 end;
 
 end.
