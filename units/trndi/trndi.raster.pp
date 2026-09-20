@@ -46,6 +46,11 @@
  *   with the same alpha bands as the main window.
  * - 2026-09-20: DrawSmoothDashedPolyline compares its dash phase with a
  *   tolerance; a float residue could stall the walk forever.
+ * - 2026-09-20: Rasters are rendered in device pixels. CanvasDeviceScale
+ *   reads the Cocoa backing scale from the drawing context and every shape
+ *   rasterizes at size times scale, then stretches into its canvas
+ *   rectangle. Darwin now hands Cocoa an R8G8B8A8 raster it premultiplies
+ *   itself, so the premultiplied blit is Windows-only.
  *)
 
 unit trndi.raster;
@@ -60,17 +65,29 @@ unit trndi.raster;
   destination pixels itself, which a TGraphicControl canvas cannot reliably
   do during its initial paint or during a window drag.
 
+  Rasters are laid down in device pixels. On Cocoa the canvas counts points
+  while a Retina backing store holds two pixels per point, so a raster drawn
+  at point size would be upsampled and blurred next to the crisp text.
+  CanvasDeviceScale reads the factor from the drawing context, every shape
+  rasterizes at size times scale and is stretched back into its canvas
+  rectangle, which lands its pixels 1:1 on the device. Elsewhere the scale is
+  1 and the rasters are blitted as they are.
+
   Everything is main-thread only: the rendered-shape caches are plain globals
   used from paint handlers and freed in this unit's finalization.
 }
 
 {$mode objfpc}{$H+}
+{$ifdef DARWIN}
+{$modeswitch objectivec1}
+{$endif}
 
 interface
 
 uses
 Classes, SysUtils, Math, Graphics, GraphType, IntfGraphics, FPImage,
 {$ifdef Windows}LCLType,{$endif} // HDC for the msimg32 AlphaBlend import
+{$ifdef DARWIN}MacOSAll, CocoaGDIObjects,{$endif} // context transform + TCocoaContext for CanvasDeviceScale
 Generics.Collections;
 
 type
@@ -107,18 +124,20 @@ const
       Windows: AlphaBlend with AC_SRC_ALPHA is defined to take premultiplied
       source pixels.
 
-      Cocoa: less obvious, and it is a defect rather than a contract. LCL maps
-      the Init_BPP32_B8G8R8A8_BIO_TTB description to cbtBGRA;
-      TCocoaBitmap.PreMultiplyAlpha bails out for anything that is not
-      cbtARGB/cbtRGBA, yet CreateHandle still hands the rep to CoreGraphics
-      without NSAlphaNonpremultipliedBitmapFormat. Straight RGB therefore
-      composites as C + dst*(1-a), and every partially transparent pixel blows
-      out toward the background — barely visible on a solid disc (its body is
-      alpha = 1), but it erased the prediction × (all thin antialiased stroke)
-      against the brighter out-of-range backgrounds.
+      Cocoa takes straight alpha, but only for the layouts it premultiplies
+      itself: TCocoaBitmap.PreMultiplyAlpha runs for cbtARGB and cbtRGBA and
+      bails out for everything else, while CreateHandle hands every layout to
+      CoreGraphics without NSAlphaNonpremultipliedBitmapFormat. The
+      B8G8R8A8 description the other widgetsets get maps to cbtBGRA there and
+      composited as C + dst*(1-a), blowing every partially transparent pixel
+      out toward the background (it erased the thin prediction × against the
+      brighter out-of-range windows). NewAlphaRaster therefore uses R8G8B8A8
+      on Darwin, which maps to cbtRGBA and takes the premultiplying path.
+      Should that ever misbehave on a Mac, the old workaround is DARWIN in
+      this constant plus B8G8R8A8 in NewAlphaRaster.
 
       GTK (GdkPixbuf) and Qt (QImage::Format_ARGB32) both take straight alpha. }
-  {$if defined(Windows) or defined(DARWIN)}
+  {$ifdef Windows}
   ALPHA_BLIT_PREMULTIPLIED = true;
   {$else}
   ALPHA_BLIT_PREMULTIPLIED = false;
@@ -126,6 +145,12 @@ const
 
 {** Allocate a straight-alpha RGBA raster to render into. }
 function NewAlphaRaster(AWidth, AHeight: integer): TLazIntfImage;
+
+{** Device pixels per canvas unit on ACanvas: the Retina backing scale on
+    Cocoa, read from the drawing context's user-to-device transform; 1 on
+    every other widgetset and for any canvas without a live handle. The
+    rasterizers render at this scale so their pixels land 1:1 on the device. }
+function CanvasDeviceScale(ACanvas: TCanvas): double;
 
 {** Write one straight-alpha pixel (RGB in 0..255, AAlpha in 0..1). Use this
     when the colour is known independently of its coverage — the usual case
@@ -249,8 +274,10 @@ var
   // moves that don't change the trace's shape still hit.
   PolylineImage: TAlphaImage = nil;
   PolylineKey: string = '';
-  PolylineW: integer = 0;
+  PolylineW: integer = 0;      // raster size (device pixels)
   PolylineH: integer = 0;
+  PolylineDestW: integer = 0;  // canvas size it stretches into
+  PolylineDestH: integer = 0;
 
 //------------------------------------------------------------------------------
 // Raster primitives
@@ -261,10 +288,47 @@ var
   rawDesc: TRawImageDescription;
 begin
   Result := TLazIntfImage.Create(0, 0);
+  // Darwin gets the layout Cocoa classes as cbtRGBA and premultiplies itself;
+  // B8G8R8A8 would land as cbtBGRA and skip that (see ALPHA_BLIT_PREMULTIPLIED).
+  {$ifdef DARWIN}
+  rawDesc.Init_BPP32_R8G8B8A8_BIO_TTB(AWidth, AHeight);
+  {$else}
   rawDesc.Init_BPP32_B8G8R8A8_BIO_TTB(AWidth, AHeight);
+  {$endif}
   Result.DataDescription := rawDesc;
   Result.CreateData;
 end;
+
+// The Cocoa context's user-to-device transform carries the backing scale on
+// its diagonal (the y term is negative in a flipped view, hence Abs). A
+// bitmap context answers 1, so a shape rendered into an offscreen TBitmap is
+// not scaled — that bitmap is blitted in points anyway.
+function CanvasDeviceScale(ACanvas: TCanvas): double;
+{$ifdef DARWIN}
+var
+  cocoaCtx: TCocoaContext;
+  t: CGAffineTransform;
+begin
+  Result := 1.0;
+  if (ACanvas = nil) or not ACanvas.HandleAllocated then
+    Exit;
+  cocoaCtx := TCocoaContext(ACanvas.Handle);
+  if (cocoaCtx = nil) or (cocoaCtx.ctx = nil) then
+    Exit;
+  t := CGContextGetUserSpaceToDeviceSpaceTransform(cocoaCtx.CGContext);
+  Result := Abs(t.a);
+  // Nothing plausible outside the real backing scales; a degenerate transform
+  // is no reason to rasterize at a silly size.
+  if (Result < 0.5) or (Result > 8.0) then
+    Result := 1.0;
+end;
+{$else}
+begin
+  Result := 1.0;
+  if ACanvas = nil then
+    Exit;
+end;
+{$endif}
 
 // Clamp to 0..255 and pack into the raster. Both Put* entry points funnel
 // here so the channel packing exists once.
@@ -382,37 +446,38 @@ begin
   ShapeImageCache.AddOrSetValue(AKey, AImage);
 end;
 
-// Composite a finished square shape image over ACanvas at the given offset.
-// Shapes are always blitted 1:1 — they are rasterized at their final size.
+// Composite a finished square shape image over ACanvas at the given offset:
+// ARasterSize pixels of image into an ADestSize box of canvas units — the
+// same number at scale 1, the device-pixel count on Retina.
 procedure BlitShapeImage(ACanvas: TCanvas; AImage: TAlphaImage;
-  ASize, AOffsetX, AOffsetY: integer); inline;
+  ARasterSize, ADestSize, AOffsetX, AOffsetY: integer); inline;
 begin
-  BlitAlphaImage(ACanvas, AImage, ASize, ASize, AOffsetX, AOffsetY,
-    ASize, ASize);
+  BlitAlphaImage(ACanvas, AImage, ARasterSize, ARasterSize, AOffsetX,
+    AOffsetY, ADestSize, ADestSize);
 end;
 
 // Try to satisfy a paint entirely from the rendered-shape cache.
 function TryBlitCachedShape(ACanvas: TCanvas; const AKey: string;
-  ASize, AOffsetX, AOffsetY: integer): boolean;
+  ARasterSize, ADestSize, AOffsetX, AOffsetY: integer): boolean;
 var
   img: TAlphaImage;
 begin
   img := GetCachedShapeImage(AKey);
   Result := img <> nil;
   if Result then
-    BlitShapeImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+    BlitShapeImage(ACanvas, img, ARasterSize, ADestSize, AOffsetX, AOffsetY);
 end;
 
 // Wrap the finished raster in the platform image, cache it under AKey and
 // composite it onto the destination canvas. The caller still owns AIntf.
 procedure FinishShapeRender(ACanvas: TCanvas; const AKey: string;
-  AIntf: TLazIntfImage; ASize, AOffsetX, AOffsetY: integer);
+  AIntf: TLazIntfImage; ARasterSize, ADestSize, AOffsetX, AOffsetY: integer);
 var
   img: TAlphaImage;
 begin
-  img := AlphaImageFromIntf(AIntf, ASize, ASize);
+  img := AlphaImageFromIntf(AIntf, ARasterSize, ARasterSize);
   StoreCachedShapeImage(AKey, img);
-  BlitShapeImage(ACanvas, img, ASize, AOffsetX, AOffsetY);
+  BlitShapeImage(ACanvas, img, ARasterSize, ADestSize, AOffsetX, AOffsetY);
 end;
 
 //------------------------------------------------------------------------------
@@ -426,8 +491,8 @@ procedure DrawSmoothX(ACanvas: TCanvas; ASize: integer; AColor: TColor;
   AAlpha: double = 1.0);
 var
   intf: TLazIntfImage;
-  x, y: integer;
-  cx, cy, dist1, dist2, dist, halfT, aPix, invSqrt2: double;
+  x, y, px: integer;
+  scale, cx, cy, dist1, dist2, dist, halfT, aPix, invSqrt2: double;
   fr, fg, fb: byte;
   key: string;
 begin
@@ -436,27 +501,32 @@ begin
   if AAlpha > 1.0 then
     AAlpha := 1.0;
 
+  // Rendered in device pixels (CanvasDeviceScale) and stretched back into
+  // the ASize box at blit time; px = ASize wherever the scale is 1.
+  scale := CanvasDeviceScale(ACanvas);
+  px := Max(2, Round(ASize * scale));
+
   // The rendered image depends only on these parameters (offsets are applied
   // at blit time), so reuse the finished image across paints. Alpha is
   // quantized to percent so tiny confidence drift can't churn the cache.
-  key := Format('x|%d|%d|%d|%d', [ASize, Integer(AColor), AThickness,
+  key := Format('x|%d|%d|%d|%d|%d', [ASize, px, Integer(AColor), AThickness,
     Round(AAlpha * 100)]);
-  if TryBlitCachedShape(ACanvas, key, ASize, AOffsetX, AOffsetY) then
+  if TryBlitCachedShape(ACanvas, key, px, ASize, AOffsetX, AOffsetY) then
     Exit;
 
   fr := Red(ColorToRGB(AColor));
   fg := Green(ColorToRGB(AColor));
   fb := Blue(ColorToRGB(AColor));
 
-  cx := (ASize - 1) / 2.0;
-  cy := (ASize - 1) / 2.0;
-  halfT := AThickness / 2.0;
+  cx := (px - 1) / 2.0;
+  cy := (px - 1) / 2.0;
+  halfT := AThickness * scale / 2.0;
   invSqrt2 := 1.0 / Sqrt(2);
 
-  intf := NewAlphaRaster(ASize, ASize);
+  intf := NewAlphaRaster(px, px);
   try
-    for y := 0 to ASize - 1 do
-      for x := 0 to ASize - 1 do
+    for y := 0 to px - 1 do
+      for x := 0 to px - 1 do
       begin
         dist1 := Abs((x - cx) - (y - cy)) * invSqrt2;
         dist2 := Abs((x - cx) + (y - cy)) * invSqrt2;
@@ -472,7 +542,7 @@ begin
         PutAlphaPixel(intf, x, y, fr, fg, fb, aPix * AAlpha);
       end;
 
-    FinishShapeRender(ACanvas, key, intf, ASize, AOffsetX, AOffsetY);
+    FinishShapeRender(ACanvas, key, intf, px, ASize, AOffsetX, AOffsetY);
   finally
     intf.Free;
   end;
@@ -483,8 +553,8 @@ procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
   AOffsetX: integer = 0; AOffsetY: integer = 0);
 var
   intf: TLazIntfImage;
-  x, y: integer;
-  cx, cy, r, dist: double;
+  x, y, px: integer;
+  scale, cx, cy, r, dist: double;
   ringOuter, ringInner: double;
   alphaDisc, alphaRing: double;
   fr, fg, fb: byte;
@@ -497,11 +567,16 @@ begin
   if ASize < 2 then
     Exit;
 
+  // Rendered in device pixels (CanvasDeviceScale) and stretched back into
+  // the ASize box at blit time; px = ASize wherever the scale is 1.
+  scale := CanvasDeviceScale(ACanvas);
+  px := Max(2, Round(ASize * scale));
+
   // The rendered image depends only on these parameters (offsets are applied
   // at blit time), so reuse the finished image across paints.
-  key := Format('c|%d|%d|%d|%d', [ASize, Integer(ADotColor),
+  key := Format('c|%d|%d|%d|%d|%d', [ASize, px, Integer(ADotColor),
     Integer(ARingColor), ARingWidth]);
-  if TryBlitCachedShape(ACanvas, key, ASize, AOffsetX, AOffsetY) then
+  if TryBlitCachedShape(ACanvas, key, px, ASize, AOffsetX, AOffsetY) then
     Exit;
 
   hasDisc := ADotColor <> clNone;
@@ -527,18 +602,18 @@ begin
     rr := 0; rg := 0; rb := 0;
   end;
 
-  cx := (ASize - 1) / 2.0;
-  cy := (ASize - 1) / 2.0;
+  cx := (px - 1) / 2.0;
+  cy := (px - 1) / 2.0;
   // Half-pixel inset keeps the analytical AA edge inside the bounding box.
-  r := ASize / 2.0 - 0.5;
+  r := px / 2.0 - 0.5;
   ringOuter := r;
-  ringInner := r - ARingWidth;
+  ringInner := r - ARingWidth * scale;
 
-  intf := NewAlphaRaster(ASize, ASize);
+  intf := NewAlphaRaster(px, px);
   try
-    for y := 0 to ASize - 1 do
+    for y := 0 to px - 1 do
     begin
-      for x := 0 to ASize - 1 do
+      for x := 0 to px - 1 do
       begin
         dist := Sqrt(Sqr(x - cx) + Sqr(y - cy));
 
@@ -581,7 +656,7 @@ begin
       end;
     end;
 
-    FinishShapeRender(ACanvas, key, intf, ASize, AOffsetX, AOffsetY);
+    FinishShapeRender(ACanvas, key, intf, px, ASize, AOffsetX, AOffsetY);
   finally
     intf.Free;
   end;
@@ -593,18 +668,22 @@ end;
 
 // Rasterize a stroke list into a fresh straight-alpha image covering the
 // strokes' padded bounding box, whose canvas position comes back in
-// (AX, AY) and size in (AW, AH). Nil when there is nothing to draw. Every
-// stroke is a capsule (round caps fall out of the point-to-segment
-// distance), and overlapping strokes keep the strongest coverage in a
-// shared buffer so joints and crossings don't double-blend. Only each
-// stroke's own padded bbox is visited, so the cost tracks the ink rather
-// than the raster's area.
+// (AX, AY) and canvas size in (AW, AH); the raster itself is that box at
+// AScale device pixels per canvas unit, (ARW, ARH) — the same numbers at
+// scale 1. The box is fixed in canvas units first so the raster's origin
+// sits on a whole canvas unit and the stretch back lands pixel-exact. Nil
+// when there is nothing to draw. Every stroke is a capsule (round caps fall
+// out of the point-to-segment distance), and overlapping strokes keep the
+// strongest coverage in a shared buffer so joints and crossings don't
+// double-blend. Only each stroke's own padded bbox is visited, so the cost
+// tracks the ink rather than the raster's area.
 function RasterizeStrokes(const AStrokes: array of TSmoothStroke;
-  AThickness: integer; out AX, AY, AW, AH: integer): TLazIntfImage;
+  AThickness: integer; AScale: double;
+  out AX, AY, AW, AH, ARW, ARH: integer): TLazIntfImage;
 var
   cov: array of single;
   col: array of TColor;
-  i, x, y, pad: integer;
+  i, x, y, pad, padPx: integer;
   fMinX, fMinY, fMaxX, fMaxY, halfT: double;
   c: TColor;
 
@@ -616,10 +695,10 @@ var
     dx := bx - ax;
     dy := by - ay;
     len2 := dx * dx + dy * dy;
-    sx0 := Max(0, Math.Floor(Min(ax, bx)) - pad);
-    sx1 := Min(AW - 1, Math.Ceil(Max(ax, bx)) + pad);
-    sy0 := Max(0, Math.Floor(Min(ay, by)) - pad);
-    sy1 := Min(AH - 1, Math.Ceil(Max(ay, by)) + pad);
+    sx0 := Max(0, Math.Floor(Min(ax, bx)) - padPx);
+    sx1 := Min(ARW - 1, Math.Ceil(Max(ax, bx)) + padPx);
+    sy0 := Max(0, Math.Floor(Min(ay, by)) - padPx);
+    sy1 := Min(ARH - 1, Math.Ceil(Max(ay, by)) + padPx);
 
     for py := sy0 to sy1 do
       for px := sx0 to sx1 do
@@ -639,17 +718,17 @@ var
         else
           a := halfT + 0.5 - dist;
 
-        if a > cov[py * AW + px] then
+        if a > cov[py * ARW + px] then
         begin
-          cov[py * AW + px] := a;
-          col[py * AW + px] := AColor;
+          cov[py * ARW + px] := a;
+          col[py * ARW + px] := AColor;
         end;
       end;
   end;
 
 begin
   Result := nil;
-  AX := 0; AY := 0; AW := 0; AH := 0;
+  AX := 0; AY := 0; AW := 0; AH := 0; ARW := 0; ARH := 0;
   if (Length(AStrokes) = 0) or (AThickness < 1) then
     Exit;
 
@@ -672,20 +751,24 @@ begin
   if (AW < 1) or (AH < 1) then
     Exit;
 
-  halfT := AThickness / 2.0;
-  SetLength({%H-}cov, AW * AH); // fresh dynarrays: zero-initialized
-  SetLength({%H-}col, AW * AH);
+  ARW := Max(1, Round(AW * AScale));
+  ARH := Max(1, Round(AH * AScale));
+  padPx := Math.Ceil(pad * AScale);
+  halfT := AThickness * AScale / 2.0;
+  SetLength({%H-}cov, ARW * ARH); // fresh dynarrays: zero-initialized
+  SetLength({%H-}col, ARW * ARH);
 
   for i := 0 to High(AStrokes) do
-    RasterStroke(AStrokes[i].X1 - AX, AStrokes[i].Y1 - AY,
-      AStrokes[i].X2 - AX, AStrokes[i].Y2 - AY, AStrokes[i].Color);
+    RasterStroke((AStrokes[i].X1 - AX) * AScale, (AStrokes[i].Y1 - AY) * AScale,
+      (AStrokes[i].X2 - AX) * AScale, (AStrokes[i].Y2 - AY) * AScale,
+      AStrokes[i].Color);
 
-  Result := NewAlphaRaster(AW, AH);
-  for y := 0 to AH - 1 do
-    for x := 0 to AW - 1 do
+  Result := NewAlphaRaster(ARW, ARH);
+  for y := 0 to ARH - 1 do
+    for x := 0 to ARW - 1 do
     begin
-      c := ColorToRGB(col[y * AW + x]);
-      PutAlphaPixel(Result, x, y, Red(c), Green(c), Blue(c), cov[y * AW + x]);
+      c := ColorToRGB(col[y * ARW + x]);
+      PutAlphaPixel(Result, x, y, Red(c), Green(c), Blue(c), cov[y * ARW + x]);
     end;
 end;
 
@@ -694,15 +777,16 @@ procedure DrawSmoothStrokes(ACanvas: TCanvas;
 var
   intf: TLazIntfImage;
   img: TAlphaImage;
-  x, y, w, h: integer;
+  x, y, w, h, rw, rh: integer;
 begin
-  intf := RasterizeStrokes(AStrokes, AThickness, x, y, w, h);
+  intf := RasterizeStrokes(AStrokes, AThickness, CanvasDeviceScale(ACanvas),
+    x, y, w, h, rw, rh);
   if intf = nil then
     Exit;
   try
-    img := AlphaImageFromIntf(intf, w, h);
+    img := AlphaImageFromIntf(intf, rw, rh);
     try
-      BlitAlphaImage(ACanvas, img, w, h, x, y, w, h);
+      BlitAlphaImage(ACanvas, img, rw, rh, x, y, w, h);
     finally
       img.Free;
     end;
@@ -718,14 +802,15 @@ var
   intf: TLazIntfImage;
   img: TAlphaImage;
   strokes: array of TSmoothStroke;
-  i, n, minX, minY, x, y, w, h: integer;
-  mx, my: double;
+  i, n, minX, minY, x, y, w, h, rw, rh: integer;
+  mx, my, scale: double;
   key: string;
 begin
   if (Length(APts) < 2) or (Length(AColors) <> Length(APts))
     or (AThickness < 1) then
     Exit;
 
+  scale := CanvasDeviceScale(ACanvas);
   if ACache then
   begin
     // The rendered image depends only on the trace's shape, colors and
@@ -740,7 +825,7 @@ begin
       minX := Min(minX, APts[i].X);
       minY := Min(minY, APts[i].Y);
     end;
-    key := Format('pl|%d', [AThickness]);
+    key := Format('pl|%d|%d', [AThickness, Round(scale * 100)]);
     for i := 0 to High(APts) do
       key := key + Format('|%d;%d;%d', [APts[i].X - minX, APts[i].Y - minY,
         integer(AColors[i])]);
@@ -749,7 +834,7 @@ begin
       Dec(minX, AThickness div 2 + 2);
       Dec(minY, AThickness div 2 + 2);
       BlitAlphaImage(ACanvas, PolylineImage, PolylineW, PolylineH,
-        minX, minY, PolylineW, PolylineH);
+        minX, minY, PolylineDestW, PolylineDestH);
       Exit;
     end;
   end;
@@ -777,11 +862,11 @@ begin
     Inc(n);
   end;
 
-  intf := RasterizeStrokes(strokes, AThickness, x, y, w, h);
+  intf := RasterizeStrokes(strokes, AThickness, scale, x, y, w, h, rw, rh);
   if intf = nil then
     Exit;
   try
-    img := AlphaImageFromIntf(intf, w, h);
+    img := AlphaImageFromIntf(intf, rw, rh);
   finally
     intf.Free;
   end;
@@ -790,13 +875,15 @@ begin
     FreeAndNil(PolylineImage);
     PolylineImage := img;
     PolylineKey := key;
-    PolylineW := w;
-    PolylineH := h;
-    BlitAlphaImage(ACanvas, img, w, h, x, y, w, h);
+    PolylineW := rw;
+    PolylineH := rh;
+    PolylineDestW := w;
+    PolylineDestH := h;
+    BlitAlphaImage(ACanvas, img, rw, rh, x, y, w, h);
   end
   else
     try
-      BlitAlphaImage(ACanvas, img, w, h, x, y, w, h);
+      BlitAlphaImage(ACanvas, img, rw, rh, x, y, w, h);
     finally
       img.Free;
     end;
@@ -920,7 +1007,8 @@ procedure DrawRangeBands(ACanvas: TCanvas; AWidth, AHeight: integer;
 var
   intf: TLazIntfImage;
   img: TAlphaImage;
-  y, i: integer;
+  y, i, rows, gradPx: integer;
+  scale: double;
   br, bg, bb: byte;
   dstR, dstG, dstB, dstA: double;
   srcA, invA: double;
@@ -928,15 +1016,23 @@ begin
   if (AWidth <= 0) or (AHeight <= 0) or (Length(Bands) = 0) then
     Exit;
 
-  intf := NewAlphaRaster(1, AHeight);
+  // The column is rendered in device rows (CanvasDeviceScale): Top..Bottom
+  // are inclusive canvas rows, so a band covers rows Top*scale up to the row
+  // before (Bottom+1)*scale, and the fade spans AGradientPx*scale rows.
+  scale := CanvasDeviceScale(ACanvas);
+  rows := Max(1, Round(AHeight * scale));
+  gradPx := Round(AGradientPx * scale);
+
+  intf := NewAlphaRaster(1, rows);
   try
-    for y := 0 to AHeight - 1 do
+    for y := 0 to rows - 1 do
     begin
       dstR := 0; dstG := 0; dstB := 0; dstA := 0;
       for i := Low(Bands) to High(Bands) do
       begin
         srcA := (Bands[i].Alpha / 255.0) *
-                EdgeCoverage(y, Bands[i].Top, Bands[i].Bottom, AGradientPx);
+                EdgeCoverage(y, Round(Bands[i].Top * scale),
+                  Round((Bands[i].Bottom + 1) * scale) - 1, gradPx);
         if srcA <= 0 then
           Continue;
         br := Red(ColorToRGB(Bands[i].Color));
@@ -958,9 +1054,9 @@ begin
     // One column stretched across the full width -- the bands are uniform
     // horizontally, so there is nothing to gain from rasterizing AWidth
     // identical copies.
-    img := AlphaImageFromIntf(intf, 1, AHeight);
+    img := AlphaImageFromIntf(intf, 1, rows);
     try
-      BlitAlphaImage(ACanvas, img, 1, AHeight, ADestX, ADestY, AWidth, AHeight);
+      BlitAlphaImage(ACanvas, img, 1, rows, ADestX, ADestY, AWidth, AHeight);
     finally
       img.Free;
     end;
