@@ -50,7 +50,8 @@
  *   reads the Cocoa backing scale from the drawing context and every shape
  *   rasterizes at size times scale, then stretches into its canvas
  *   rectangle. Darwin now hands Cocoa an R8G8B8A8 raster it premultiplies
- *   itself, so the premultiplied blit is Windows-only.
+ *   itself, so the premultiplied blit is Windows-only. The Cocoa probe is
+ *   gated on RASTER_COCOA (Darwin outside the -dTEST mock build).
  *)
 
 unit trndi.raster;
@@ -78,7 +79,11 @@ unit trndi.raster;
 }
 
 {$mode objfpc}{$H+}
-{$ifdef DARWIN}
+
+// The Cocoa backing-scale probe needs the LCL Cocoa widgetset unit, which the
+// test build (tests/mock, -dTEST) does not carry; there the scale is 1.
+{$if defined(DARWIN) and not defined(TEST)}
+{$define RASTER_COCOA}
 {$modeswitch objectivec1}
 {$endif}
 
@@ -87,7 +92,7 @@ interface
 uses
 Classes, SysUtils, Math, Graphics, GraphType, IntfGraphics, FPImage,
 {$ifdef Windows}LCLType,{$endif} // HDC for the msimg32 AlphaBlend import
-{$ifdef DARWIN}MacOSAll, CocoaGDIObjects,{$endif} // context transform + TCocoaContext for CanvasDeviceScale
+{$ifdef RASTER_COCOA}MacOSAll, CocoaGDIObjects,{$endif} // context transform + TCocoaContext for CanvasDeviceScale
 Generics.Collections;
 
 type
@@ -304,7 +309,7 @@ end;
 // bitmap context answers 1, so a shape rendered into an offscreen TBitmap is
 // not scaled — that bitmap is blitted in points anyway.
 function CanvasDeviceScale(ACanvas: TCanvas): double;
-{$ifdef DARWIN}
+{$ifdef RASTER_COCOA}
 var
   cocoaCtx: TCocoaContext;
   t: CGAffineTransform;
