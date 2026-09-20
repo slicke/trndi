@@ -495,22 +495,62 @@ Windows on ARM (aarch64) has been built and run natively, extensions included, b
 
 <a name="Linux-support"></a>
 ## Linux notes
-If you find yourself having problems running Trndi, i.e., it will not start, you might be missing the Qt6 framework and/or the pascal headers.
+If Trndi will not start on Linux, the cause is almost always the same one: the
+**Qt6Pas** library is missing. Trndi's Linux builds use the Qt6 widgetset, which
+needs Qt6 itself (both are normally already present on a Qt-based desktop) plus
+this Pascal binding on top of it.
 
-#### Debian / Raspbian
-You can install the ```libqt6pas6``` package on Debian-based distros via ```apt``` (add ```libqt6pas-dev``` only if you're building Trndi yourself).
+### Installing Qt6Pas
 
-#### Ubuntu
-You can install the ```libqt6pas6``` package via ```apt``` (add ```libqt6pas-dev``` only if you're building Trndi yourself).
+The `.deb` and `.rpm` packages *recommend* it rather than depending on it, so
+apt and dnf install it automatically where the distribution ships it and install
+Trndi anyway where it does not. That is deliberate: a hard dependency would make
+the packages refuse to install on the releases listed as "not packaged" below,
+where people install the library by hand. The AppImage and the portable `.zip`
+are not self-contained and never pull it in.
 
-#### Fedora
-You can install the ```qt6pas``` package in ```DNF```.
+| Distribution | Install it with |
+| --- | --- |
+| Debian 13 (trixie) and newer | `sudo apt install libqt6pas6` |
+| Debian 12 (bookworm) | Not packaged — use the [upstream `.deb`](#if-your-distribution-does-not-package-it) |
+| Ubuntu 25.04 and newer | `sudo apt install libqt6pas6` |
+| Ubuntu 24.04 LTS and older | Not packaged — use the [upstream `.deb`](#if-your-distribution-does-not-package-it) |
+| Raspberry Pi OS (trixie) | `sudo apt install libqt6pas6` |
+| Raspberry Pi OS (bookworm) | Not packaged — use the upstream **arm64** `.deb` |
+| Fedora 43 and newer | `sudo dnf install qt6pas` |
+| RHEL / AlmaLinux / Rocky 10 | `sudo dnf install qt6pas` (needs EPEL enabled) |
+| Arch, Manjaro, EndeavourOS | `sudo pacman -S qt6pas` |
+| openSUSE | `sudo zypper install libQt6Pas6` — if zypper cannot find it, the package lives in *devel:languages:pascal* on the [openSUSE Build Service](https://software.opensuse.org/package/libQt6Pas) |
+| Gentoo | `sudo emerge dev-libs/libqt6pas` |
+| Anything else | Search your package manager for `qt6pas`, `libqt6pas6` or the soname `libQt6Pas.so.6` |
 
-#### Arch
-You can install the ```qt6pas``` package.
+Add the matching `-dev`/`-devel` package (`libqt6pas-dev`, `qt6pas-devel`) only
+if you intend to build Trndi yourself; running it does not need the headers.
 
-#### Others
-Look for ```qt6pas``` or ```libqt6-pas``` (or ```qt6pas6```) in your package manager, or search for ```libQt6Pas.so```.
+### If your distribution does not package it
+
+The library's own project publishes prebuilt packages for every release:
+
+- **[github.com/davidbannon/libqt6pas/releases/latest](https://github.com/davidbannon/libqt6pas/releases/latest)**
+  — `.deb` for amd64 and arm64, `.rpm` for x86_64, and a plain tarball.
+
+Install one the same way you installed Trndi, for example:
+
+```bash
+sudo apt install ./libqt6pas6_*_amd64.deb     # Debian, Ubuntu, Raspberry Pi OS
+sudo dnf install ./libqt6pas6-*.x86_64.rpm    # Fedora, RHEL and relatives
+```
+
+These need Qt6 6.2.4 or newer and glibc 2.34 or newer, so they will not work on
+releases older than roughly Ubuntu 22.04 or Fedora 36. openSUSE users have to
+import the packager's signing key before the RPM will install.
+
+### Checking whether it is there
+
+```bash
+ldconfig -p | grep -i qt6pas     # prints the library path if it is installed
+ldd ./Trndi | grep -i 'not found'   # lists anything else Trndi is missing
+```
 
 ## Settings storage
 Trndi stores settings per platform in the standard location:
