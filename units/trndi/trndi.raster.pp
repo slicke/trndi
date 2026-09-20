@@ -44,6 +44,8 @@
  * - 2026-09-20: Moved DrawRangeBands here from inc/umain_paint.inc and gave
  *   it a destination offset, so the history graph can tint its plot area
  *   with the same alpha bands as the main window.
+ * - 2026-09-20: DrawSmoothDashedPolyline compares its dash phase with a
+ *   tolerance; a float residue could stall the walk forever.
  *)
 
 unit trndi.raster;
@@ -803,6 +805,11 @@ end;
 procedure DrawSmoothDashedPolyline(ACanvas: TCanvas;
   const APts: array of TPoint; AColor: TColor; AThickness, ADashPx,
   AGapPx: integer);
+const
+  // The phase is accumulated from float subtractions, so it can land a hair
+  // short of the dash or gap length; without the tolerance that residue
+  // would advance pos by less than its own ulp and the walk never ends.
+  DASH_EPS = 1e-6;
 var
   strokes: array of TSmoothStroke;
   i, n: integer;
@@ -853,11 +860,12 @@ begin
       if inking then
       begin
         dashEnd := Min(len, pos + (ADashPx - phase));
-        AddStroke(ax + dx * pos, ay + dy * pos, ax + dx * dashEnd,
-          ay + dy * dashEnd);
+        if dashEnd > pos then
+          AddStroke(ax + dx * pos, ay + dy * pos, ax + dx * dashEnd,
+            ay + dy * dashEnd);
         phase := phase + (dashEnd - pos);
         pos := dashEnd;
-        if phase >= ADashPx then
+        if phase >= ADashPx - DASH_EPS then
         begin
           inking := false;
           phase := 0;
@@ -868,7 +876,7 @@ begin
         dashEnd := Min(len, pos + (AGapPx - phase));
         phase := phase + (dashEnd - pos);
         pos := dashEnd;
-        if phase >= AGapPx then
+        if phase >= AGapPx - DASH_EPS then
         begin
           inking := true;
           phase := 0;
