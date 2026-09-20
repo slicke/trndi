@@ -481,3 +481,23 @@ declare class TextDecoder {
   readonly encoding: "utf-8";
   readonly fatal: boolean;
 }
+
+// ---- "trndi" module ----------------------------------------------------------
+//
+// Extensions written as ES modules (a file with static import/export) can
+// import the API instead of using the global:
+//
+//   import Trndi, { data, on } from "trndi";
+//
+// See guides/Extensions.md, "ES modules".
+declare module "trndi" {
+  const api: typeof Trndi;
+  export default api;
+  export const api: typeof Trndi.api;
+  export const permissions: typeof Trndi.permissions;
+  export const data: typeof Trndi.data;
+  export const net: typeof Trndi.net;
+  export const storage: typeof Trndi.storage;
+  export const on: typeof Trndi.on;
+  export const off: typeof Trndi.off;
+}
