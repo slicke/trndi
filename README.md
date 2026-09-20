@@ -122,13 +122,13 @@ A **native** ARM64 build is supported but has to be compiled yourself, the way
 Haiku and the BSDs are. Two things it needs:
 
 - **An FPC that targets `aarch64-win64`.** 3.2.2 does not; check with `fpc -i`.
-  The target lives in FPC trunk. Note that it assembles with clang rather than
-  GAS, so the toolchain needs llvm-mingw (or MSYS2's CLANGARM64) and not plain
-  binutils — a cross compiler for it does build on Linux, and
-  [trndi-cli](https://github.com/slicke/trndi-cli) documents that recipe. Only
-  the *native* route is verified for Trndi itself, though: cross-building the
-  LCL for `aarch64-win64` has not been tried, and it is the half most likely to
-  need work.
+  InstallAware ships a prebuilt ARM64 Lazarus for it:
+  [lazarus-arm64.msi](https://www.installaware.com/lazarus-arm64.msi) (~1.3 GB,
+  a development build — expect beta quality). Building it yourself means FPC
+  trunk with llvm-mingw or MSYS2's CLANGARM64 rather than plain binutils, since
+  the target assembles with clang;
+  [trndi-cli](https://github.com/slicke/trndi-cli) has that recipe. Only the
+  *native* route is verified for Trndi itself.
 - **The QuickJS libraries for `aarch64-win64`**, which are committed like every
   other target's. Rebuild them with `externals/quickjs/build.sh winarm` (cross,
   including from a container that installs nothing on the host) or `build.sh

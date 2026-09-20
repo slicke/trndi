@@ -202,8 +202,11 @@ not a Windows-native library at all.
 Two things to know before building *Trndi itself* for ARM64 Windows:
 
 - **FPC 3.2.2 cannot target `aarch64-win64`**; that came later. Check with
-  `fpc -i` on the build machine. The DLLs are independent of this and are worth
-  building either way.
+  `fpc -i` on the build machine, or install InstallAware's prebuilt
+  [lazarus-arm64.msi](https://www.installaware.com/lazarus-arm64.msi). The
+  `aarch64-win64` DLLs are committed either way: rebuilding them needs no FPC at
+  all — clang and CMake do that — so an FPC that cannot target ARM64 does not
+  stop you refreshing them for everyone else.
 - **Windows 11 on ARM runs x64 binaries under emulation**, so an existing
   `x86_64-win64` Trndi build already works on an ARM machine. A native ARM64
   build is an optimisation, not a prerequisite — and if the toolchain you run
