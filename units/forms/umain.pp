@@ -78,6 +78,11 @@
  *   instead of lTir's never-assigned Color, so FLastTirColor became
  *   FLastTirHint; added FTitleTintedFromBanner so setColorMode can take back a
  *   title-bar tint it lent from the off-range banner.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Declared the extension broadcasts for alerts, snooze,
+ *   connection status and device notices, with the fields that keep the
+ *   last state sent.
  *)
 
 unit umain;
@@ -845,6 +850,8 @@ private
 
   Chroma: TRazerChromaBase;
   FExtLastLevel: string; // Last level name broadcast to extensions ('' = none yet)
+  FExtLastConnection: string; // Last connection status id broadcast to extensions ('' = none yet)
+  FExtLastSnooze: string; // Last snooze state broadcast to extensions (active|until key)
   FAlertEngine: TAlertEngine;
   FReservoirStep: integer; // Lowest reservoir step already notified (0 = none); persisted in alerts.reservoir.step
   FSensorExpiryStep: integer; // Lowest sensor-expiry step already notified (0 = none); persisted in alerts.sensor.step
@@ -1100,6 +1107,19 @@ private
   {** Broadcast levelCallback(level, previous) to extensions after a reading
       update. No-op in No Ext builds. }
   procedure NotifyExtensionsLevel(const Fresh: boolean);
+  {** Broadcast alertCallback(kind, mgdl, mmol) to extensions, once per kind
+      in @code(Kinds), beside the web publish of the same alerts. }
+  procedure NotifyExtensionsAlert(const Kinds: TAlertKindSet; const Reading: BGReading);
+  {** Broadcast snoozeCallback(active, untilMs) to extensions when the
+      alert-snooze state changes. }
+  procedure NotifyExtensionsSnooze;
+  {** Broadcast connectionCallback(status, detail) to extensions when the
+      backend connection status changes. @code(StatusText) is the badge text
+      (one of the RS_CONN_* strings), mapped to a stable id. }
+  procedure NotifyExtensionsConnection(const StatusText: string);
+  {** Broadcast deviceCallback(kind, value) to extensions when a pump or
+      sensor notice (reservoir, sensor expiry, pump battery) is raised. }
+  procedure NotifyExtensionsDevice(const Kind: string; const Value: double);
   procedure UpdateOffRangePanel(const Value: double);
   procedure DisplayLowRange;
   procedure DisplayHighRange;

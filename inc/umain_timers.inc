@@ -47,6 +47,9 @@
  *   wrapper semantics as every other fetch trigger.
  * - 2026-08-21: The WSL width tweak is guarded by LCLQt6 alone - isWSL is
  *   always false off Linux now that DetectWSL is in the base contract.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: OnSystemWake broadcasts wakeCallback to extensions.
  *)
 (* MODIFICATION NOTICE (2026-09-18): tAgoTimer clears the snooze chip from the
    connection badge when the alert snooze has lapsed. *)
@@ -966,6 +969,9 @@ begin
   // the next setColorMode should ask again rather than trust the cache.
   TrndiNative.InvalidateThemeCache;
   FForceRefresh := true;
+  {$ifdef TrndiExt}
+  callFunc('wakeCallback', []);
+  {$endif}
   if firstboot then
     Exit;
   updateReading;
