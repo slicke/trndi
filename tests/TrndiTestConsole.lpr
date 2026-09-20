@@ -71,6 +71,7 @@ uses
   api_nightscout3_tests,
   api_nightscout3_treatment_tests,
   alert_engine_tests,
+  report_tests,
   webserver_events_tests,
     system_media_controller_tests,
   ext_manifest_tests,
