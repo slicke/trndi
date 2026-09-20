@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: ApplySettingsInstantly broadcasts settingsCallback to
+ *   extensions once the new settings are in effect.
  *)
 (* MODIFICATION NOTICE (2026-09-18): ApplySettingsInstantly re-lays the
    connection badge out through RefreshConnectionBadge, which keeps the
@@ -312,6 +316,12 @@ begin
   RefreshUserBadge;
 
   Self.Invalidate;
+
+  {$ifdef TrndiExt}
+  // Everything above has been applied, so a listener reading settings or
+  // limits now sees the new values.
+  callFunc('settingsCallback', []);
+  {$endif}
 end;
 
 // Handle settings menu click

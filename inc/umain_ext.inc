@@ -39,6 +39,10 @@
  * - 2026-09-10: LoadExtensions scans the extensions directory before it
  *   touches the engine and returns when no script is installed, so the
  *   QuickJS runtime is only built once an extension exists.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Trndi.events maps the alert, snooze, connection, device,
+ *   settings and wake events to their callback globals.
  *)
  // Extension loading and helper functions
 {$ifdef TrndiExt}
@@ -239,7 +243,8 @@ const
       dispatcher is only installed for events actually subscribed to, so a
       mere Trndi.on("reading",...) doesn't make Pascal-side broadcasts think
       unrelated callbacks exist. }
-    't.events={reading:"updateCallback",fetch:"fetchCallback",level:"levelCallback",clock:"clockView",dot:"dotClicked",uxclick:"uxClick",unload:"unloadCallback"};var ls={};' +
+    't.events={reading:"updateCallback",fetch:"fetchCallback",level:"levelCallback",clock:"clockView",dot:"dotClicked",uxclick:"uxClick",unload:"unloadCallback",' +
+    'alert:"alertCallback",snooze:"snoozeCallback",connection:"connectionCallback",device:"deviceCallback",settings:"settingsCallback",wake:"wakeCallback"};var ls={};' +
     't.on=function(n,f){n=String(n);var g=t.events[n];if(!g)throw new Error("Trndi.on: unknown event \""+n+"\"; valid: "+Object.keys(t.events).join(", "));if(typeof f!=="function")throw new TypeError("Trndi.on: listener must be a function");' +
     'if(!ls[n]){ls[n]=[];var prev=globalThis[g];globalThis[g]=function(){var a=arguments,out,i,r;if(typeof prev==="function")out=prev.apply(this,a);for(i=0;i<ls[n].length;i++){try{r=ls[n][i].apply(null,a);if(r!==undefined)out=r;}catch(e){try{console.push("[Trndi.on "+n+"] "+e);}catch(_e){}}}return out;};}' +
     'ls[n].push(f);return f;};' +

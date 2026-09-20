@@ -39,6 +39,10 @@
  * - 2026-08-21: setDarkMode is in the native base contract now, so the
  *   {$ifdef windows} argument splice is gone - the handle is passed
  *   unconditionally and ignored off-Windows.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Fired alerts are broadcast to extensions next to the web
+ *   publish (level, sensor fault and missing-reading alerts).
  *)
 (* MODIFICATION NOTICE (2026-08-11): The alert engine is now evaluated once
    per update, before the threshold routing, so its hysteresis band and
@@ -1182,6 +1186,7 @@ begin
   // could never fire). The exact thresholds still pick the display color.
   fired := FAlertEngine.EvaluateLevel(reading.val);
   WebPublishAlert(fired, reading);
+  NotifyExtensionsAlert(fired, reading);
 
   if reading.val >= api.cgmHi then
     HandleHighGlucose(reading, fired)
@@ -1198,6 +1203,7 @@ begin
     begin
       native.attention(RS_ATTENTION_SENSOR_FAULT, RS_ATTENTION_SENSOR_FAULT_DESC);
       WebPublishAlert([akSensorFault], reading);
+      NotifyExtensionsAlert([akSensorFault], reading);
     end;
   end
   else
@@ -1561,6 +1567,7 @@ begin
     begin
       native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
       WebPublishAlert([akMissing], lastDataReading);
+      NotifyExtensionsAlert([akMissing], lastDataReading);
     end;
     Exit;
   end;

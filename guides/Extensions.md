@@ -100,8 +100,15 @@ see [Extensions Functions](Extensions_functions.md#trndion--trndioff):
 
 ```javascript
 Trndi.on("reading", () => console.push("new reading!"));
+Trndi.on("alert", (kind, mgdl, mmol) => console.push(`alert: ${kind}`));
+Trndi.on("connection", (status) => console.push(`backend: ${status}`));
 Trndi.on("unload", () => Trndi.storage.setJSON("state", state));
 ```
+
+Events: `reading`, `fetch`, `level`, `clock`, `dot`, `uxclick`, `alert`,
+`snooze`, `connection`, `device`, `settings`, `wake` and `unload` — each
+documented with its arguments under
+[Callbacks](Extensions_functions.md#callbacks).
 
 The v2 facade is the supported public API. Its implementation currently uses
 the established bridge methods internally, but legacy global network shortcuts

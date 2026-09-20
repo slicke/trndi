@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Added NotifyExtensionsAlert, the extension-side twin of
+ *   WebPublishAlert.
  *)
 (* MODIFICATION NOTICE (2026-08-17): The high/low/urgent-low alert rules are now
    seeded after Connect and the wizard/override adjustments instead of before
@@ -1488,6 +1492,28 @@ begin
   end;
   TTrndiWebServer(FWebServer).PublishAlert(Names, Reading);
 end;
+
+const
+  // Names the extension API uses for the alert kinds, in TAlertKind order.
+  // Hyphenated like the level names extensions already see ('range-high').
+  EXT_ALERT_KIND_NAMES: array[TAlertKind] of string = (
+    'high', 'low', 'urgent-low', 'missing', 'sensor-fault', 'rapid-fall', 'rapid-rise');
+
+procedure TfBG.NotifyExtensionsAlert(const Kinds: TAlertKindSet; const Reading: BGReading);
+{$ifdef TrndiExt}
+var
+  Kind: TAlertKind;
+begin
+  if Kinds = [] then
+    Exit;
+  for Kind in Kinds do
+    callFunc('alertCallback', [EXT_ALERT_KIND_NAMES[Kind],
+      Reading.convert(mgdl), Reading.convert(mmol)]);
+end;
+{$else}
+begin
+end;
+{$endif}
 
 procedure TfBG.WebPublishSnooze;
 begin
