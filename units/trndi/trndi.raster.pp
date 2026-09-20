@@ -52,6 +52,12 @@
  *   rectangle. Darwin now hands Cocoa an R8G8B8A8 raster it premultiplies
  *   itself, so the premultiplied blit is Windows-only. The Cocoa probe is
  *   gated on RASTER_COCOA (Darwin outside the -dTEST mock build).
+ * - 2026-09-20: CanvasDeviceScale also reads the Qt6 device pixel ratio
+ *   (QPainter's paint device), so rasters land 1:1 on a scaled Wayland or
+ *   X11 desktop instead of being upsampled from logical pixels. The scaled
+ *   blit goes straight to the QPainter there, because LCL's StretchDraw
+ *   rescales the source to logical size first. Gated on RASTER_QT (LCLQt6
+ *   outside the -dTEST mock build).
  *)
 
 unit trndi.raster;
@@ -69,9 +75,12 @@ unit trndi.raster;
   Rasters are laid down in device pixels. On Cocoa the canvas counts points
   while a Retina backing store holds two pixels per point, so a raster drawn
   at point size would be upsampled and blurred next to the crisp text.
-  CanvasDeviceScale reads the factor from the drawing context, every shape
-  rasterizes at size times scale and is stretched back into its canvas
-  rectangle, which lands its pixels 1:1 on the device. Elsewhere the scale is
+  Qt6 does the same on a scaled desktop: widgets are laid out in logical
+  pixels and the painter's device pixel ratio says how many device pixels each
+  one covers. CanvasDeviceScale reads the factor from the drawing context,
+  every shape rasterizes at size times scale and is stretched back into its
+  canvas rectangle, which lands its pixels 1:1 on the device. Elsewhere
+  (Win32 draws in physical pixels already; GTK2 has no scaling) the scale is
   1 and the rasters are blitted as they are.
 
   Everything is main-thread only: the rendered-shape caches are plain globals
@@ -87,12 +96,19 @@ unit trndi.raster;
 {$modeswitch objectivec1}
 {$endif}
 
+// The Qt6 probe needs the LCL Qt6 binding and device-context units, which the
+// mock build does not carry either.
+{$if defined(LCLQt6) and not defined(TEST)}
+{$define RASTER_QT}
+{$endif}
+
 interface
 
 uses
 Classes, SysUtils, Math, Graphics, GraphType, IntfGraphics, FPImage,
 {$ifdef Windows}LCLType,{$endif} // HDC for the msimg32 AlphaBlend import
 {$ifdef RASTER_COCOA}MacOSAll, CocoaGDIObjects,{$endif} // context transform + TCocoaContext for CanvasDeviceScale
+{$ifdef RASTER_QT}Types, qt6, qtobjects,{$endif} // PRect, QPainter + TQtDeviceContext for CanvasDeviceScale and the Qt blit
 Generics.Collections;
 
 type
@@ -309,7 +325,7 @@ end;
 // bitmap context answers 1, so a shape rendered into an offscreen TBitmap is
 // not scaled — that bitmap is blitted in points anyway.
 function CanvasDeviceScale(ACanvas: TCanvas): double;
-{$ifdef RASTER_COCOA}
+{$if defined(RASTER_COCOA)}
 var
   cocoaCtx: TCocoaContext;
   t: CGAffineTransform;
@@ -324,6 +340,28 @@ begin
   Result := Abs(t.a);
   // Nothing plausible outside the real backing scales; a degenerate transform
   // is no reason to rasterize at a silly size.
+  if (Result < 0.5) or (Result > 8.0) then
+    Result := 1.0;
+end;
+{$elseif defined(RASTER_QT)}
+// The Qt device context wraps a QPainter (its Widget field); the painter's
+// paint device carries the ratio. A widget being painted on a scaled screen
+// answers 2 (or 1.5 with fractional scaling); an offscreen QPixmap answers 1,
+// so a shape rendered into a TBitmap is not scaled, matching Cocoa above.
+var
+  qtCtx: TQtDeviceContext;
+  device: QPaintDeviceH;
+begin
+  Result := 1.0;
+  if (ACanvas = nil) or not ACanvas.HandleAllocated then
+    Exit;
+  qtCtx := TQtDeviceContext(ACanvas.Handle);
+  if (qtCtx = nil) or (qtCtx.Widget = nil) then
+    Exit;
+  device := QPainter_device(qtCtx.Widget);
+  if device = nil then
+    Exit;
+  Result := QPaintDevice_devicePixelRatioF(device);
   if (Result < 0.5) or (Result > 8.0) then
     Result := 1.0;
 end;
@@ -410,7 +448,7 @@ end;
 
 procedure BlitAlphaImage(ACanvas: TCanvas; AImage: TAlphaImage;
   ASrcW, ASrcH, ADestX, ADestY, ADestW, ADestH: integer);
-{$ifdef Windows}
+{$if defined(Windows)}
 var
   blend: TLocalBlendFunction;
 begin
@@ -420,6 +458,42 @@ begin
   blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
   LocalAlphaBlend(ACanvas.Handle, ADestX, ADestY, ADestW, ADestH,
                   AImage.Canvas.Handle, 0, 0, ASrcW, ASrcH, blend);
+end;
+{$elseif defined(RASTER_QT)}
+// LCL's StretchDraw on Qt rescales the source pixmap to the logical target
+// size (QPixmap_scaled in StretchMaskBlt) before Qt applies the device pixel
+// ratio, so a device-pixel raster is thrown away and blown back up blocky.
+// Hand the painter the raster and the logical target rectangle directly: the
+// painter's device transform maps the target onto the same number of device
+// pixels the raster holds, so the pixels land 1:1. Smooth sampling is an
+// identity there and only matters for fractional ratios.
+var
+  qtCtx, imgCtx: TQtDeviceContext;
+  target, source: TRect;
+  hints: QPainterRenderHints;
+begin
+  if (ADestW = ASrcW) and (ADestH = ASrcH) then
+  begin
+    ACanvas.Draw(ADestX, ADestY, AImage);
+    Exit;
+  end;
+  qtCtx := TQtDeviceContext(ACanvas.Handle);
+  imgCtx := TQtDeviceContext(AImage.Canvas.Handle);
+  if (qtCtx = nil) or (qtCtx.Widget = nil) or (imgCtx = nil) or
+    (imgCtx.vImage = nil) or (imgCtx.vImage.Handle = nil) then
+  begin
+    ACanvas.StretchDraw(
+      Classes.Rect(ADestX, ADestY, ADestX + ADestW, ADestY + ADestH), AImage);
+    Exit;
+  end;
+  target := Classes.Rect(ADestX, ADestY, ADestX + ADestW, ADestY + ADestH);
+  source := Classes.Rect(0, 0, ASrcW, ASrcH);
+  hints := QPainter_renderHints(qtCtx.Widget);
+  QPainter_setRenderHint(qtCtx.Widget, QPainterSmoothPixmapTransform, True);
+  QPainter_drawImage(qtCtx.Widget, PRect(@target), imgCtx.vImage.Handle,
+    PRect(@source));
+  QPainter_setRenderHint(qtCtx.Widget, QPainterSmoothPixmapTransform,
+    (hints and QPainterSmoothPixmapTransform) <> 0);
 end;
 {$else}
 begin
