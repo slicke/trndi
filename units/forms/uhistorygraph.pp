@@ -42,6 +42,9 @@
  * - 2026-09-20: The threshold range is tinted as translucent bands behind
  *   the plot, like the main window, with a hairline at each threshold in
  *   place of the earlier dashed lines.
+ * - 2026-09-20: Margins, dot radius, overlay geometry and the panel
+ *   paddings are 96 dpi design values scaled to the form's DPI through Px,
+ *   so the graph keeps its proportions on high-DPI screens.
  *)
 
 {**
@@ -61,7 +64,9 @@
 
   Developer notes:
   - The layout is intentionally simple: change GRAPH_MARGIN_* constants if
-    the UI needs to be more compact or if panels overflow.
+    the UI needs to be more compact or if panels overflow. All pixel
+    constants in this unit are 96 dpi design values; Px scales them to the
+    form's actual DPI at draw time.
   - The color mapping is done in LevelColor() and should match other
     application UI where possible — keeping the same color scheme improves
     accessibility (and is easier for users to read).
@@ -126,7 +131,7 @@ private
   FMaxValue: double;
   FMinTime: TDateTime;
   FMaxTime: TDateTime;
-  FDotRadius: integer; // Dot radius in pixels
+  FDotRadius: integer; // Dot radius in 96 dpi pixels; see Px
   FPalette: THistoryGraphPalette; // Runtime palette supplied by main UI
   FCgmHi: integer; // High threshold in mg/dL
   FCgmLo: integer; // Low threshold in mg/dL
@@ -220,6 +225,9 @@ private
     {** PointAt: Returns the index of a point if the (X,Y) is within a small
       distance of a drawn dot, otherwise -1. Used to detect clicks. }
   function PointAt(const X, Y: integer): integer;
+    {** Px: Scales a 96 dpi design length to the form's DPI, so margins,
+      radii and paddings stay proportional on high-DPI screens. }
+  function Px(const ASize: integer): integer;
   function HasData: boolean;
   function FormatHoverText(const Reading: BGReading; const Value: double): string;
   procedure ApplyRangeFilter;
@@ -229,6 +237,8 @@ private
 protected
   procedure Paint; override;
   procedure Resize; override;
+  procedure DoAutoAdjustLayout(const AMode: TLayoutAdjustmentPolicy;
+    const AXProportion, AYProportion: double); override;
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
     override;
   procedure MouseMove(Shift: TShiftState; X, Y: integer); override;
@@ -346,7 +356,8 @@ RS_HISTORY_GRAPH_HOVER_FMT = '%s at %s';
 RS_HISTORY_GRAPH_KEY_PREDICT = 'Predicted';
 
 {** Constants used for layout and division handling in this graph unit.
-  Changing these values will affect overall margins and grid density. }
+  Changing these values will affect overall margins and grid density. The
+  margins are 96 dpi design values; GetPlotRect scales them with Px. }
 const
 GRAPH_MARGIN_LEFT = 72;
 GRAPH_MARGIN_TOP = 40;
@@ -403,6 +414,8 @@ procedure AddRangeItem(const ACaption: string; const AMinutes: integer);
 begin
   inherited CreateNew(AOwner, 0);
   Caption := RS_HISTORY_GRAPH_TITLE;
+  // 96 dpi design size; the LCL rescales the form to the monitor's DPI in
+  // AfterConstruction, so no Px here.
   Width := 760;
   Height := 460;
   DoubleBuffered := true;
@@ -485,7 +498,7 @@ begin
     // mmol/L, no decimals for mg/dL).
     labelText := Format(BG_MSG_SHORT[FUnit], [value]);
     ACanvas.Pen.Color := clGray;
-    ACanvas.TextOut(PlotRect.Left - 48,
+    ACanvas.TextOut(PlotRect.Left - Px(48),
       y - ACanvas.TextHeight(labelText) div 2, labelText);
   end;
 
@@ -526,18 +539,18 @@ begin
       labelText := FormatDateTime('ddd hh:nn', timeVal);
     ACanvas.Pen.Color := clGray;
     ACanvas.TextOut(x - ACanvas.TextWidth(labelText) div 2,
-      PlotRect.Bottom + 8, labelText);
+      PlotRect.Bottom + Px(8), labelText);
   end;
 
   ACanvas.Font.Style := [fsBold];
   labelText := RS_HISTORY_GRAPH_AXIS_TIME;
   ACanvas.TextOut(
     (PlotRect.Left + PlotRect.Right - ACanvas.TextWidth(labelText)) div 2,
-    PlotRect.Bottom + 60, labelText);
+    PlotRect.Bottom + Px(60), labelText);
 
   labelText := Format(RS_HISTORY_GRAPH_UNIT_FMT, [BG_UNIT_NAMES[FUnit]]);
   ACanvas.Font.Orientation := 900;
-  ACanvas.TextOut(PlotRect.Left - GRAPH_MARGIN_LEFT + 8,
+  ACanvas.TextOut(PlotRect.Left - Px(GRAPH_MARGIN_LEFT) + Px(8),
     (PlotRect.Top + PlotRect.Bottom + ACanvas.TextWidth(labelText)) div 2,
     labelText);
   ACanvas.Font.Orientation := 0;
@@ -588,7 +601,7 @@ begin
     AddBand(FCgmRangeHi, FCgmRangeLo, LevelColor(BGRange), CUSTOM_ALPHA);
 
   if Length(bands) > 0 then
-    DrawRangeBands(ACanvas, plotW, plotH, bands, EDGE_GRADIENT_PX,
+    DrawRangeBands(ACanvas, plotW, plotH, bands, Px(EDGE_GRADIENT_PX),
       PlotRect.Left, PlotRect.Top);
 end;
 
@@ -636,7 +649,7 @@ begin
     Exit;
 
   // Determine basal strip height (small fraction of plot height)
-  basalHeight := Min(Max(24, (PlotRect.Bottom - PlotRect.Top) div 8), 80);
+  basalHeight := Min(Max(Px(24), (PlotRect.Bottom - PlotRect.Top) div 8), Px(80));
   basalColor := RGBToColor(120, 170, 255);
 
   // Iterate each day in the plot range; basal profile repeats daily
@@ -697,6 +710,7 @@ const
   LABEL_GAP = 4;     // Clear space between two labels before one is dropped
 var
   i, x, h, stemHeight, plotHeight: integer;
+  minStem, labelGap, autoWidth, manualWidth: integer;
   maxUnits: single;
   labelText: string;
   labelWidth, labelX, labelY, lastLabelRight: integer;
@@ -719,7 +733,13 @@ begin
 
   // A third of the plot at most: tall enough to compare doses, short enough to
   // leave the glucose curve — the actual subject of the chart — unobscured.
-  stemHeight := Min(Max(30, plotHeight div 5), plotHeight div 3);
+  stemHeight := Min(Max(Px(30), plotHeight div 5), plotHeight div 3);
+  minStem := Px(MIN_STEM);
+  labelGap := Px(LABEL_GAP);
+  // Stem widths in device pixels; the thin automatic stem must never round
+  // away entirely.
+  autoWidth := Max(1, Px(1));
+  manualWidth := Max(3, Px(3));
 
   maxUnits := 0;
   for i := 0 to High(FBoluses) do
@@ -742,9 +762,9 @@ begin
     if (not Visible(FBoluses[i])) or (not FBoluses[i].automatic) then
       Continue;
     x := TimeToX(FBoluses[i].time, PlotRect);
-    h := Max(MIN_STEM, Round((FBoluses[i].units / maxUnits) * stemHeight));
+    h := Max(minStem, Round((FBoluses[i].units / maxUnits) * stemHeight));
     ACanvas.Brush.Color := autoColor;
-    ACanvas.Rectangle(x, PlotRect.Bottom - h, x + 1, PlotRect.Bottom);
+    ACanvas.Rectangle(x, PlotRect.Bottom - h, x + autoWidth, PlotRect.Bottom);
   end;
 
   for i := 0 to High(FBoluses) do
@@ -752,9 +772,10 @@ begin
     if (not Visible(FBoluses[i])) or FBoluses[i].automatic then
       Continue;
     x := TimeToX(FBoluses[i].time, PlotRect);
-    h := Max(MIN_STEM, Round((FBoluses[i].units / maxUnits) * stemHeight));
+    h := Max(minStem, Round((FBoluses[i].units / maxUnits) * stemHeight));
     ACanvas.Brush.Color := manualColor;
-    ACanvas.Rectangle(x - 1, PlotRect.Bottom - h, x + 2, PlotRect.Bottom);
+    ACanvas.Rectangle(x - manualWidth div 2, PlotRect.Bottom - h,
+      x - manualWidth div 2 + manualWidth, PlotRect.Bottom);
   end;
 
   // Labels last, in a second pass, so no stem can be drawn over one.
@@ -775,12 +796,12 @@ begin
 
     // Drop a label rather than overprint the one before it; the stem is still
     // drawn, so a dose is never hidden — only its number is.
-    if labelX < (lastLabelRight + LABEL_GAP) then
+    if labelX < (lastLabelRight + labelGap) then
       Continue;
     lastLabelRight := labelX + labelWidth;
 
-    h := Max(MIN_STEM, Round((FBoluses[i].units / maxUnits) * stemHeight));
-    labelY := PlotRect.Bottom - h - ACanvas.TextHeight(labelText) - 2;
+    h := Max(minStem, Round((FBoluses[i].units / maxUnits) * stemHeight));
+    labelY := PlotRect.Bottom - h - ACanvas.TextHeight(labelText) - Px(2);
     if labelY < PlotRect.Top then
       labelY := PlotRect.Top;
     ACanvas.TextOut(labelX, labelY, labelText);
@@ -809,6 +830,7 @@ const
   LABEL_GAP = 4;
 var
   i, x, y, radius, plotHeight: integer;
+  minRadius, maxRadius, labelGap: integer;
   maxGrams: single;
   labelText: string;
   labelWidth, labelX, labelY, lastLabelRight: integer;
@@ -835,7 +857,10 @@ begin
   if maxGrams <= 0 then
     Exit;
 
-  y := PlotRect.Bottom - LANE_HEIGHT;
+  y := PlotRect.Bottom - Px(LANE_HEIGHT);
+  minRadius := Px(MIN_RADIUS);
+  maxRadius := Px(MAX_RADIUS);
+  labelGap := Px(LABEL_GAP);
 
   ACanvas.Brush.Style := bsSolid;
   ACanvas.Brush.Color := CarbColor;
@@ -848,8 +873,8 @@ begin
     if not Visible(FCarbs[i]) then
       Continue;
     x := TimeToX(FCarbs[i].time, PlotRect);
-    radius := MIN_RADIUS +
-      Round((FCarbs[i].grams / maxGrams) * (MAX_RADIUS - MIN_RADIUS));
+    radius := minRadius +
+      Round((FCarbs[i].grams / maxGrams) * (maxRadius - minRadius));
     ACanvas.Ellipse(x - radius, y - radius, x + radius, y + radius);
   end;
 
@@ -870,13 +895,13 @@ begin
 
     // Drop the number rather than overprint the one before it; the disc still
     // marks the meal.
-    if labelX < (lastLabelRight + LABEL_GAP) then
+    if labelX < (lastLabelRight + labelGap) then
       Continue;
     lastLabelRight := labelX + labelWidth;
 
-    radius := MIN_RADIUS +
-      Round((FCarbs[i].grams / maxGrams) * (MAX_RADIUS - MIN_RADIUS));
-    labelY := y - radius - ACanvas.TextHeight(labelText) - 1;
+    radius := minRadius +
+      Round((FCarbs[i].grams / maxGrams) * (maxRadius - minRadius));
+    labelY := y - radius - ACanvas.TextHeight(labelText) - Px(1);
     if labelY < PlotRect.Top then
       labelY := PlotRect.Top;
     ACanvas.TextOut(labelX, labelY, labelText);
@@ -897,6 +922,7 @@ var
   infoRect, helpRect, keyRect: TRect;
   textY, lineHeight: integer;
   keyX, keyY: integer;
+  pad, keyBox, gap, corner, minPanelWidth: integer;
 function LegendBackground: TColor; inline;
   begin
     Result := RGBToColor(246, 246, 246);
@@ -914,25 +940,25 @@ procedure DrawInfoPanel;
     hInfo1 := ACanvas.TextHeight(info);
     hInfo2 := ACanvas.TextHeight(rangeFirst);
     hInfo3 := ACanvas.TextHeight(rangeSecond);
-    infoRect := Rect(PlotRect.Right + 12,
-      keyRect.Bottom + 12,
-      ClientWidth - 12,
-      keyRect.Bottom + 12 + (hInfo1 + hInfo2 + hInfo3) + (INFO_PADDING * 4));
-    if infoRect.Right - infoRect.Left < 160 then
-      infoRect.Right := infoRect.Left + 160;
+    infoRect := Rect(PlotRect.Right + gap,
+      keyRect.Bottom + gap,
+      ClientWidth - gap,
+      keyRect.Bottom + gap + (hInfo1 + hInfo2 + hInfo3) + (pad * 4));
+    if infoRect.Right - infoRect.Left < minPanelWidth then
+      infoRect.Right := infoRect.Left + minPanelWidth;
     ACanvas.Brush.Style := bsSolid;
     ACanvas.Brush.Color := LegendBackground;
     ACanvas.Pen.Color := $00C8C8C8;
-    ACanvas.RoundRect(infoRect, 6, 6);
+    ACanvas.RoundRect(infoRect, corner, corner);
     ACanvas.Brush.Style := bsClear;
-    textY := infoRect.Top + INFO_PADDING;
+    textY := infoRect.Top + pad;
     ACanvas.Font.Style := [fsBold];
-    ACanvas.TextOut(infoRect.Left + INFO_PADDING, textY, info);
-    Inc(textY, lineHeight + 2);
+    ACanvas.TextOut(infoRect.Left + pad, textY, info);
+    Inc(textY, lineHeight + Px(2));
     ACanvas.Font.Style := [];
-    ACanvas.TextOut(infoRect.Left + INFO_PADDING, textY, rangeFirst);
-    Inc(textY, lineHeight + 2);
-    ACanvas.TextOut(infoRect.Left + INFO_PADDING, textY, rangeSecond);
+    ACanvas.TextOut(infoRect.Left + pad, textY, rangeFirst);
+    Inc(textY, lineHeight + Px(2));
+    ACanvas.TextOut(infoRect.Left + pad, textY, rangeSecond);
   end;
 
   {** DrawHelpPanel: Internal helper to render a single-line help banner
@@ -941,18 +967,18 @@ procedure DrawHelpPanel;
   var
     panelTop: integer;
   begin
-    panelTop := PlotRect.Bottom + 92;
-    helpRect := Rect(PlotRect.Left - 12,
+    panelTop := PlotRect.Bottom + Px(92);
+    helpRect := Rect(PlotRect.Left - gap,
       panelTop,
-      PlotRect.Right + 12,
-      panelTop + lineHeight + INFO_PADDING * 2);
+      PlotRect.Right + gap,
+      panelTop + lineHeight + pad * 2);
     ACanvas.Brush.Style := bsSolid;
     ACanvas.Brush.Color := LegendBackground;
     ACanvas.Pen.Color := $00C8C8C8;
-    ACanvas.RoundRect(helpRect, 6, 6);
+    ACanvas.RoundRect(helpRect, corner, corner);
     ACanvas.Brush.Style := bsClear;
-    ACanvas.TextOut(helpRect.Left + INFO_PADDING,
-      helpRect.Top + INFO_PADDING, RS_HISTORY_GRAPH_HELP_INTERACT);
+    ACanvas.TextOut(helpRect.Left + pad,
+      helpRect.Top + pad, RS_HISTORY_GRAPH_HELP_INTERACT);
   end;
 
   {** DrawKeyEntry: Render a single key entry (small colored box + label)
@@ -964,13 +990,13 @@ procedure DrawKeyEntry(const Caption: string; const Color: TColor);
     ACanvas.Brush.Style := bsSolid;
     ACanvas.Brush.Color := Color;
     ACanvas.Pen.Color := clGray;
-    ACanvas.Rectangle(keyX, keyY, keyX + KEY_BOX, keyY + KEY_BOX);
+    ACanvas.Rectangle(keyX, keyY, keyX + keyBox, keyY + keyBox);
     ACanvas.Brush.Style := bsClear;
-    textOffset := keyY + (KEY_BOX - lineHeight) div 2;
+    textOffset := keyY + (keyBox - lineHeight) div 2;
     if textOffset < keyY then
       textOffset := keyY;
-    ACanvas.TextOut(keyX + KEY_BOX + 8, textOffset, Caption);
-    Inc(keyY, KEY_BOX + 6);
+    ACanvas.TextOut(keyX + keyBox + Px(8), textOffset, Caption);
+    Inc(keyY, keyBox + pad);
   end;
 
   {** DrawKeyPanel: Build the legend panel showing color chips and text.
@@ -1033,22 +1059,22 @@ procedure DrawKeyPanel;
       rangeStr := Format('%s (%d - %d %s)', [RS_HISTORY_GRAPH_KEY_RANGE, Round(rangeLoVal), Round(rangeHiVal), unitStr]);
     end;
     
-    keyRect := Rect(PlotRect.Right + 12, PlotRect.Top,
-      ClientWidth - 12,
-      PlotRect.Top + (KEY_BOX + 6) * (entries - 1) + INFO_PADDING * 3 + lineHeight);
-    if keyRect.Right - keyRect.Left < 160 then
-      keyRect.Right := keyRect.Left + 160;
+    keyRect := Rect(PlotRect.Right + gap, PlotRect.Top,
+      ClientWidth - gap,
+      PlotRect.Top + (keyBox + pad) * (entries - 1) + pad * 3 + lineHeight);
+    if keyRect.Right - keyRect.Left < minPanelWidth then
+      keyRect.Right := keyRect.Left + minPanelWidth;
     ACanvas.Brush.Style := bsSolid;
     ACanvas.Brush.Color := LegendBackground;
     ACanvas.Pen.Color := $00C8C8C8;
-    ACanvas.RoundRect(keyRect, 6, 6);
+    ACanvas.RoundRect(keyRect, corner, corner);
     ACanvas.Brush.Style := bsClear;
     ACanvas.Font.Style := [fsBold];
-    ACanvas.TextOut(keyRect.Left + INFO_PADDING,
-      keyRect.Top + INFO_PADDING, RS_HISTORY_GRAPH_KEY_TITLE);
+    ACanvas.TextOut(keyRect.Left + pad,
+      keyRect.Top + pad, RS_HISTORY_GRAPH_KEY_TITLE);
     ACanvas.Font.Style := [];
-    keyX := keyRect.Left + INFO_PADDING;
-    keyY := keyRect.Top + INFO_PADDING + lineHeight + 4;
+    keyX := keyRect.Left + pad;
+    keyY := keyRect.Top + pad + lineHeight + Px(4);
     if hasRange then
     begin
       DrawKeyEntry(rangeStr, LevelColor(BGRange));
@@ -1083,6 +1109,11 @@ begin
   rangeFirst := firstStamp;
   rangeSecond := '→ ' + lastStamp;
   lineHeight := ACanvas.TextHeight('Hg');
+  pad := Px(INFO_PADDING);
+  keyBox := Px(KEY_BOX);
+  gap := Px(12);
+  corner := Px(6);
+  minPanelWidth := Px(160);
 
   DrawKeyPanel;
   DrawInfoPanel;
@@ -1095,7 +1126,7 @@ var
   x, y: integer;
   radius: integer;
 begin
-  radius := FDotRadius;
+  radius := Px(FDotRadius);
   // Same disc-plus-rim the old Ellipse drew (level colour inside a 1 px black
   // outline), but rasterized with analytical coverage: the LCL Ellipse is
   // strictly aliased on GDI and Qt, and the dots are the graph's data.
@@ -1104,7 +1135,7 @@ begin
     x := TimeToX(FPoints[i].Reading.date, PlotRect);
     y := ValueToY(FPoints[i].Value, PlotRect);
     DrawSmoothCircle(ACanvas, 2 * radius, LevelColor(FPoints[i].Reading.level),
-      clBlack, 1, x - radius, y - radius);
+      clBlack, Max(1, Px(1)), x - radius, y - radius);
   end;
 end;
 
@@ -1114,12 +1145,12 @@ var
 begin
   if (FHoveredPoint < 0) or (FHoveredPoint > High(FPoints)) then
     Exit;
-  radius := FDotRadius + 3;
+  radius := Px(FDotRadius + 3);
   x := TimeToX(FPoints[FHoveredPoint].Reading.date, PlotRect);
   y := ValueToY(FPoints[FHoveredPoint].Value, PlotRect);
   // Hollow ring (clNone disc) so the dot it circles stays visible inside.
-  DrawSmoothCircle(ACanvas, 2 * radius, clNone, clBlack, 2, x - radius,
-    y - radius);
+  DrawSmoothCircle(ACanvas, 2 * radius, clNone, clBlack, Max(2, Px(2)),
+    x - radius, y - radius);
 end;
 
 procedure TfHistoryGraph.InvalidateBackground;
@@ -1129,6 +1160,12 @@ end;
 
 procedure TfHistoryGraph.RenderBackground(ABmp: TBitmap; const PlotRect: TRect);
 begin
+  // The form font is the one the LCL rescales with the form's DPI; a fresh
+  // bitmap canvas would otherwise label a high-DPI plot in the 96 dpi default.
+  // TFont.Assign copies the point size, not the pixel height, when the two
+  // fonts disagree on DPI, so align the DPI first to carry the height over.
+  ABmp.Canvas.Font.PixelsPerInch := Font.PixelsPerInch;
+  ABmp.Canvas.Font.Assign(Font);
   ABmp.Canvas.Brush.Color := Color;
   ABmp.Canvas.FillRect(Rect(0, 0, ABmp.Width, ABmp.Height));
   DrawThresholdBands(ABmp.Canvas, PlotRect);
@@ -1167,8 +1204,8 @@ var
       // The trace lands in the cached background bitmap, so it must not take
       // over the single-slot polyline cache the main window's live trend
       // line relies on.
-      DrawSmoothPolyline(ACanvas, pts, Copy(runColors, 0, n), TRACE_WIDTH_PX,
-        false);
+      DrawSmoothPolyline(ACanvas, pts, Copy(runColors, 0, n),
+        Max(1, Px(TRACE_WIDTH_PX)), false);
     end;
     n := 0;
   end;
@@ -1203,15 +1240,23 @@ end;
 
 function TfHistoryGraph.GetPlotRect: TRect;
 var
-  rightEdge, bottomEdge: integer;
+  leftEdge, topEdge, rightEdge, bottomEdge, minSpan: integer;
 begin
-  rightEdge := ClientWidth - GRAPH_MARGIN_RIGHT;
-  bottomEdge := ClientHeight - GRAPH_MARGIN_BOTTOM;
-  if rightEdge <= GRAPH_MARGIN_LEFT + 10 then
-    rightEdge := GRAPH_MARGIN_LEFT + 10;
-  if bottomEdge <= GRAPH_MARGIN_TOP + 10 then
-    bottomEdge := GRAPH_MARGIN_TOP + 10;
-  Result := Rect(GRAPH_MARGIN_LEFT, GRAPH_MARGIN_TOP, rightEdge, bottomEdge);
+  leftEdge := Px(GRAPH_MARGIN_LEFT);
+  topEdge := Px(GRAPH_MARGIN_TOP);
+  minSpan := Px(10);
+  rightEdge := ClientWidth - Px(GRAPH_MARGIN_RIGHT);
+  bottomEdge := ClientHeight - Px(GRAPH_MARGIN_BOTTOM);
+  if rightEdge <= leftEdge + minSpan then
+    rightEdge := leftEdge + minSpan;
+  if bottomEdge <= topEdge + minSpan then
+    bottomEdge := topEdge + minSpan;
+  Result := Rect(leftEdge, topEdge, rightEdge, bottomEdge);
+end;
+
+function TfHistoryGraph.Px(const ASize: integer): integer;
+begin
+  Result := Scale96ToForm(ASize);
 end;
 
 function TfHistoryGraph.HasData: boolean;
@@ -1325,28 +1370,28 @@ begin
 
     hoverText := FormatHoverText(FPoints[FHoveredPoint].Reading,
       FPoints[FHoveredPoint].Value);
-    hoverRect := Rect(dotX + 10,
-      dotY - Canvas.TextHeight(hoverText) - 8,
-      dotX + 22 + Canvas.TextWidth(hoverText),
-      dotY + 8);
+    hoverRect := Rect(dotX + Px(10),
+      dotY - Canvas.TextHeight(hoverText) - Px(8),
+      dotX + Px(22) + Canvas.TextWidth(hoverText),
+      dotY + Px(8));
     if hoverRect.Right > plotRect.Right then
-      ShiftRect(hoverRect, (plotRect.Right - hoverRect.Right) - 4, 0);
+      ShiftRect(hoverRect, (plotRect.Right - hoverRect.Right) - Px(4), 0);
     if hoverRect.Left < plotRect.Left then
-      ShiftRect(hoverRect, (plotRect.Left - hoverRect.Left) + 4, 0);
+      ShiftRect(hoverRect, (plotRect.Left - hoverRect.Left) + Px(4), 0);
     if hoverRect.Top < plotRect.Top then
-      ShiftRect(hoverRect, 0, (plotRect.Top - hoverRect.Top) + 4);
+      ShiftRect(hoverRect, 0, (plotRect.Top - hoverRect.Top) + Px(4));
     if hoverRect.Bottom > plotRect.Bottom then
-      ShiftRect(hoverRect, 0, (plotRect.Bottom - hoverRect.Bottom) - 4);
+      ShiftRect(hoverRect, 0, (plotRect.Bottom - hoverRect.Bottom) - Px(4));
 
     Canvas.Brush.Style := bsSolid;
     Canvas.Brush.Color := $00F6F6F6;
     Canvas.Pen.Color := $00B8B8B8;
-    Canvas.RoundRect(hoverRect, 6, 6);
+    Canvas.RoundRect(hoverRect, Px(6), Px(6));
     // The live canvas inherits the widgetset's font colour (white on dark
     // themes), so pin it to match the fixed light popup background.
     Canvas.Font.Color := clBlack;
     Canvas.Brush.Style := bsClear;
-    Canvas.TextOut(hoverRect.Left + 6, hoverRect.Top + 4, hoverText);
+    Canvas.TextOut(hoverRect.Left + Px(6), hoverRect.Top + Px(4), hoverText);
   end;
 end;
 
@@ -1362,7 +1407,7 @@ begin
     Exit;
 
   plotRect := GetPlotRect;
-  thresholdSq := sqr(FDotRadius + 4);
+  thresholdSq := sqr(Px(FDotRadius + 4));
   for i := 0 to High(FPoints) do
   begin
     dotX := TimeToX(FPoints[i].Reading.date, plotRect);
@@ -1378,6 +1423,20 @@ begin
   inherited Resize;
   InvalidateBackground;
   Invalidate;
+end;
+
+procedure TfHistoryGraph.DoAutoAdjustLayout(const AMode: TLayoutAdjustmentPolicy;
+const AXProportion, AYProportion: double);
+begin
+  inherited DoAutoAdjustLayout(AMode, AXProportion, AYProportion);
+  // A DPI change (the window dragged to another monitor) changes what Px
+  // returns, so the cached static layers are stale even if the client size
+  // happens to stay the same.
+  if AMode = lapAutoAdjustForDPI then
+  begin
+    InvalidateBackground;
+    Invalidate;
+  end;
 end;
 
 procedure TfHistoryGraph.KeyDown(var Key: word; Shift: TShiftState);
@@ -1979,7 +2038,7 @@ begin
   if Length(FPredictions) = 0 then
     Exit;
 
-  radius := Max(2, FDotRadius - 1);
+  radius := Max(2, Px(FDotRadius - 1));
 
   // Dashed line from the last real point through each prediction. Anchored
   // on the last reading when there is one, so the forecast visibly continues
@@ -1999,14 +2058,15 @@ begin
     Inc(n);
   end;
   SetLength(pts, n);
-  DrawSmoothDashedPolyline(ACanvas, pts, PREDICT_COLOR, 1, DASH_PX, GAP_PX);
+  DrawSmoothDashedPolyline(ACanvas, pts, PREDICT_COLOR, Max(1, Px(1)),
+    Px(DASH_PX), Px(GAP_PX));
 
   // Hollow circles at each predicted point
   for i := 0 to High(FPredictions) do
   begin
     x := TimeToX(FPredictions[i].Reading.date, PlotRect);
     y := ValueToY(FPredictions[i].Value, PlotRect);
-    DrawSmoothCircle(ACanvas, 2 * radius, clNone, PREDICT_COLOR, 1,
+    DrawSmoothCircle(ACanvas, 2 * radius, clNone, PREDICT_COLOR, Max(1, Px(1)),
       x - radius, y - radius);
   end;
 end;
