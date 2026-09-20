@@ -188,10 +188,11 @@ Rules for the compiled file:
 - Keep the manifest comment as the very first thing in the `.ts` source; tsc
   preserves leading comments by default (do not enable `removeComments`), and
   Trndi tolerates the `"use strict";` line tsc prepends to the output.
-- Do not use `import`/`export` — extensions are evaluated as plain global
-  scripts, so a module-shaped file will not run. Use `lib: ["ES2023"]`
-  without `"DOM"`; the DOM library declares browser APIs (like a global
-  `fetch` and `document`) that do not exist in Trndi.
+- Either compile to a single classic script (`--module none`) or keep
+  `import`/`export` and compile with `--module es2022`: a file with static
+  imports or exports is loaded as an [ES module](#es-modules). Use
+  `lib: ["ES2023"]` without `"DOM"`; the DOM library declares browser APIs
+  (like a global `fetch` and `document`) that do not exist in Trndi.
 - Types are erased at compile time: they help while writing, but values from
   outside (settings, HTTP responses) still need runtime checks.
 
@@ -215,6 +216,61 @@ Top-level `function` declarations keep working as Trndi callbacks (like
 `globalThis.clockView = () => ...` instead, and a rejection escaping a
 top-level `await` is reported as an unhandled promise rejection — wrap risky
 awaits in `try`/`catch`.
+
+# ES modules
+An extension can be split into several files. When the `.js` file in the
+plugin folder contains a static `import` or an `export` declaration, Trndi
+evaluates it as an ES module instead of a classic script:
+
+```javascript
+/*
+@name Modular demo
+*/
+import Trndi, { data } from "trndi";
+import { formatReading } from "./lib/format.js";
+
+export function clockView() {
+  return formatReading(data.current(), Trndi.getUnit());
+}
+```
+
+```javascript
+// lib/format.js
+export function formatReading(reading, unit) {
+  return reading ? `${reading.value} ${unit}` : "--";
+}
+```
+
+How it works:
+
+- **Only top-level `.js` files are extensions.** Trndi does not look into
+  subfolders, so put shared modules in one — `lib/` is the convention. A
+  helper placed next to the entry file would be loaded as an extension of its
+  own.
+- **Imports are relative** (`./` or `../`), resolved from the importing file,
+  and must stay inside the plugin folder. Bare names (`import x from "lodash"`)
+  are rejected with an error that says so. A specifier without an extension
+  (`./lib/format`) falls back to the `.js` twin, which is what plain `tsc`
+  output needs.
+- **`"trndi"` is a built-in module.** Its default export is the `Trndi`
+  object and it re-exports `api`, `permissions`, `data`, `net`, `storage`,
+  `on` and `off`, so a module can import the API instead of reaching for the
+  global. The global `Trndi` still exists.
+- **Exported functions become callbacks.** Every exported function is
+  published as a global unless a global of that name already exists, so
+  `export function clockView()` (or `updateCallback`, `dotClicked`, ...)
+  works like a top-level declaration in a classic script. Functions that are
+  not exported stay private to the module. `Trndi.on(...)` works as usual.
+- **Top-level `await` is native** in modules — no re-evaluation step. A
+  rejection escaping it is reported as an unhandled promise rejection.
+- The manifest comment still has to be the first thing in the entry file;
+  imported modules need no manifest. All of the extension's files share one
+  identity, one set of permissions and one context.
+
+Detection is line based: the file is a module when a line starts with
+`import ...` (not `import(` or `import.meta`) or `export ...` outside of
+comments. Files that only use dynamic `import()` remain classic scripts —
+dynamic import works there too, with the same resolution rules.
 
 # Runtime limits
 To keep a buggy extension from freezing or exhausting Trndi, the engine
