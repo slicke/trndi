@@ -7,6 +7,7 @@
 #   make test-noserver-> build and run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)
 #   make ide-libs     -> copy the QuickJS libraries to the project root (for Lazarus IDE runs)
 #   make clean        -> remove build artifacts
+#   make distclean    -> clean, plus binaries, logs, heaptrc, unit output dirs and Lazarus backups
 #   make install      -> install binary to /usr/local/bin (requires sudo)
 #   make list-modes   -> list available build modes from Trndi.lpi
 
@@ -261,7 +262,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install uninstall run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
 
 all: release
 
@@ -288,6 +289,7 @@ help:
 	@echo "  ptop       Regenerate $(PTOP_CFG) from $(JCF_SETTINGS) (formatter config for ptop)"
 	@echo "  lang-check Audit lang/: list resource strings missing from $(POT) and validate every .po (read-only; needs gettext for the .po half)"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
+	@echo "  distclean  clean, plus the rest of the ignored residue: built binaries, link*.res, heaptrc/log output, $(OUTDIR)/, lib/, backup/ dirs, versioned QuickJS sonames"
 	@echo "  dist       Create a minimal tarball in $(OUTDIR)"
 	@echo "  run        Build (if needed) and run the built binary (use RUN_ARGS to pass args)"
 	@echo "  install    Install binary plus (on Linux/BSD) desktop entry, icon and AppStream metadata to PREFIX (default /usr/local; requires sudo)"
@@ -570,6 +572,23 @@ clean:
 	  -o \( -type d -name '*.app' \) \
 	\) -print0 | xargs -0 -r rm -rf || true
 	@echo "(Note: Lazarus project files and sources are not removed, but temporary noext project files (e.g. $(LPI).noext-*) are cleaned.)"
+
+# Everything 'clean' removes, plus the ignored residue a working tree collects
+# over time: the built binaries, linker response files (link*.res), heaptrc and
+# log output, the staging dir, unit output dirs, Lazarus backup dirs and the
+# versioned QuickJS sonames the build copies next to the executables. Sources,
+# project files, assets/ and the committed prebuilt libraries under externals/
+# are never touched. Mirrors what .gitignore lists; keep the two in step.
+distclean: clean
+	@echo "Removing remaining build residue..."
+	@[ -n "$(OUTDIR)" ] && rm -rf "$(OUTDIR)" || true
+	@rm -rf lib tests/lib
+	@find . \( -path ./.git -o -path ./externals \) -prune -o -type d -name backup -print0 | xargs -0 -r rm -rf
+	@rm -f Trndi Trndi-arm64 Trndi-arm Trndi-amd64 Trndi-linux tests/TrndiTest tests/TrndiTestConsole
+	@rm -f Trndi.res link*.res tests/link*.res *.trc tests/*.trc trndi.log trndi.log.locked tests/*.log tests/*.pid tests/*.out
+	@rm -f *.so.[0-9]* tests/*.so.[0-9]* *.lps *.tmp
+	@find . \( -path ./.git -o -path ./externals -o -path ./assets \) -prune -o -type f \( -name '*.dbg' -o -name '*.or' -o -name '*.rsj' -o -name '*.rst' -o -name '*.lrt' -o -name '*.lrs' \) -print0 | xargs -0 -r rm -f
+	@echo "(Note: run 'make ide-libs' or a build to restore the QuickJS libraries next to the executable.)"
 
 dist: build
 	@mkdir -p $(OUTDIR)

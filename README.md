@@ -445,6 +445,7 @@ There is a convenience `Makefile` that wraps `lazbuild` with common targets:
 - `make noext` — build without JavaScript extension support (no QuickJS libraries needed)
 - `make noext-release` / `make noext-debug` — same as `noext` but force build mode
 - `make clean`
+- `make distclean` — `clean` plus the built binaries, `link*.res`, heaptrc/log output, `build/`, `lib/` and Lazarus `backup/` dirs
 - `make.ps1` (Windows PowerShell helper) — run `./make.ps1 help` for shortcuts (`release`, `debug`, `noext`)
 
 Defaults by platform:
