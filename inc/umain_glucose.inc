@@ -80,6 +80,10 @@
    placement pipeline writes slots only, HandleLatestReadingFreshness no
    longer touches a control, and ApplyFetchedReadings relays out via
    UpdateTrendDots (the single-surface layout pass in umain_dots). *)
+(* MODIFICATION NOTICE (2026-09-20): ProcessTimeIntervals records the slot
+   anchor of each placement and how many slots it advanced (FTrendAnchor /
+   FTrendSlideBy), which UpdateTrendDots turns into the reading-arrival
+   slide. *)
 (* Glucose update pipeline, data fetching, UI state and color logic for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -2059,6 +2063,17 @@ begin
   // interval so the reading lands cleanly inside slot 0's window.
   if SortedReadings[0].date > anchorTime + RECENT_SLOT_GRACE_DAYS then
     anchorTime := IncMinute(anchorTime, INTERVAL_MINUTES);
+
+  // How far the row steps on: every slot the anchor advanced moves each
+  // reading one column left. Consumed by the next UpdateTrendDots, which
+  // slides the row over that distance. The first placement has nothing to
+  // slide from, and a clock stepping backwards is not a step at all.
+  if FTrendAnchor <> 0 then
+    FTrendSlideBy := Max(0, Round((anchorTime - FTrendAnchor) * MinsPerDay
+      / INTERVAL_MINUTES))
+  else
+    FTrendSlideBy := 0;
+  FTrendAnchor := anchorTime;
 
   TrndiDLog(Format('PlaceTrendDots: Processing %d readings, anchor=%s (latest=%s)',
     [Length(SortedReadings), DateTimeToStr(anchorTime), DateTimeToStr(SortedReadings[0].date)]));

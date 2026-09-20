@@ -64,6 +64,9 @@
  * - 2026-08-16: The form unit now also uses trndi.funcs.core, which took over
  *   the shared reading/trend helpers and the DEBUG_LOG_ALERT switch from
  *   trndi.funcs.
+ * - 2026-09-20: A reading arrival slides the trend row into its new slots
+ *   (tTrendSlide and the FTrendSlide fields) instead of snapping it one
+ *   column left.
  * - 2026-09-18: FormClose writes size.last.width/height when size.main is on;
  *   placeForm had read the keys since forever but nothing ever wrote them.
  *   Esc leaves fullscreen instead of toggling it. Added FLastConnectionColor,
@@ -814,6 +817,18 @@ private
     // Uniform history-dot diameter of the last layout pass; FormPaint anchors
     // the threshold lines against it.
   FTrendDotDiameter: integer;
+    // Reading-arrival slide (see StartTrendSlide). FTrendAnchor is the slot
+    // anchor of the last placement (0 before the first); FTrendSlideBy is how
+    // many slots the anchor advanced in the placement UpdateTrendDots is about
+    // to lay out (0 = no slide). While a slide runs, FTrendLayout holds the
+    // eased in-between boxes; From/To are where each slot started and rests.
+  FTrendAnchor: TDateTime;
+  FTrendSlideBy: integer;
+  FTrendSlideFrom: array of TRect;
+  FTrendSlideTo: array of TRect;
+  FTrendSlideStart: QWord;
+  tTrendSlide: TTimer;        // Frame tick of the slide; runtime-created on
+                              // the first slide, disabled between slides.
     // Which dot the last surface mouse-press landed on, so release-on-the-
     // same-dot can be required before acting (mirrors per-control Click).
   FDownIsPredict: boolean;
@@ -847,6 +862,7 @@ private
   procedure tUpdateCheckTimer(Sender: TObject);
   procedure tKioskApplyTimer(Sender: TObject);
   procedure tDotScrollTimer({%H-}Sender: TObject);
+  procedure tTrendSlideTimer({%H-}Sender: TObject);
   procedure tClockOverlayTimer(Sender: TObject);
   {** Show/hide/refresh the persistent fullscreen clock. Cheap to call often:
       it only re-renders on a minute flip, on first show, or when ForceLayout
@@ -1238,6 +1254,17 @@ private
       adjusts visuals and doesn't fetch data from backends.
    }
   procedure UpdateTrendDots;
+  {** Start the reading-arrival slide: ease every history slot from where the
+      reading it now holds was drawn before the placement (APrev/APrevVisible,
+      the layout UpdateTrendDots just replaced) to its new box in FTrendLayout.
+      AShiftBy is the number of slots the anchor advanced. Readings without a
+      previous box enter from AShiftBy columns to the right.
+   }
+  procedure StartTrendSlide(const APrev: array of TRect;
+    const APrevVisible: array of boolean; AShiftBy: integer);
+  {** Write the slide's current in-between boxes into FTrendLayout and stop
+      the tick once the row has come to rest. }
+  procedure ApplyTrendSlideFrame;
   {** Scale a TLabel font size to fit within its bounds using a binary search.
       This utility is used across many UI labels to ensure readable and
       consistent visual sizes across different screen resolutions.
@@ -1600,6 +1627,10 @@ RAPID_POLL_MAX_OVERDUE_MS = 1800000; // 30 minutes
 PROGRESS_TICK_MS = 1000;
 PROGRESS_PULSE_MS = 125;
 PROGRESS_DRAIN_TICK_MS = 40;
+// Reading-arrival slide of the trend row (StartTrendSlide): its length and
+// frame tick. Short enough to read as the row stepping on, not as a scroll.
+TREND_SLIDE_MS = 380;
+TREND_SLIDE_TICK_MS = 16;
 DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
 // Prediction-dot × opacity: the mark fades as the engine's confidence drops
 // (never below the base, so it stays findable) and steps down once per horizon

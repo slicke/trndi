@@ -52,6 +52,12 @@
    replacing the ResizeDot/SetDotWidth/SetPointHeight/CenterShift/TopOffset/
    dotsInView control-mutation cascade. Clicks, hover hints and the popup
    menu's dot entry go through DotHitAt. *)
+(* MODIFICATION NOTICE (2026-09-20): A placement that advanced the slot anchor
+   no longer snaps the row one column left: UpdateTrendDots keeps the boxes it
+   is replacing and StartTrendSlide eases every reading from its old box to
+   its new one over TREND_SLIDE_MS (tTrendSlide / ApplyTrendSlideFrame), with
+   arriving readings entering from the right. Any other relayout while the
+   slide runs just moves its finish line. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -1118,10 +1124,12 @@ end;
 // FTrendLayout/FPredictLayout for the surface's paint and hit test.
 procedure TfBG.UpdateTrendDots;
 var
-  cw, ch, cols, stride, ix, d, pd, y, da, pass: integer;
+  cw, ch, cols, stride, ix, d, pd, y, da, pass, slideBy: integer;
   infos: array of TDotInfo;
   bmp: TBitmap;
   fontn: string;
+  prevLayout: array of TRect;
+  prevVisible: array of boolean;
 
   // SetPointHeight's value→Top mapping, minus the control: 10% padding at
   // both edges, values clamped to the API's representable range, +Y down.
@@ -1155,6 +1163,14 @@ var
 begin
   if (FTrendSurface = nil) or FShuttingDown then
     Exit;
+
+  // The boxes on screen right now — mid-slide ones included, so a second
+  // step that lands while the row is still moving continues from where the
+  // dots are, not from where they were meant to be.
+  prevLayout := Copy(FTrendLayout);
+  prevVisible := Copy(FTrendVisible);
+  slideBy := FTrendSlideBy;
+  FTrendSlideBy := 0;
 
   cw := ClientWidth;
   ch := ClientHeight;
@@ -1267,10 +1283,134 @@ begin
   // clock/arrow swaps raise lVal now and then); windowed surfaces like the
   // warning card and the buttons stay on top regardless.
   FTrendSurface.BringToFront;
+
+  // A placement that stepped the anchor on slides the row from the boxes
+  // captured above. Every other relayout (resize, a settings change, the
+  // deferred post-fetch pass that follows a placement within the slide's
+  // own lifetime) keeps a running slide going toward the fresh layout
+  // rather than cutting it short — the resting boxes just moved.
+  if slideBy > 0 then
+    StartTrendSlide(prevLayout, prevVisible, slideBy)
+  else
+  if Assigned(tTrendSlide) and tTrendSlide.Enabled then
+  begin
+    if Length(FTrendSlideTo) = Length(FTrendLayout) then
+    begin
+      FTrendSlideTo := Copy(FTrendLayout);
+      ApplyTrendSlideFrame;
+    end
+    else
+      tTrendSlide.Enabled := false;
+  end;
+
   FTrendSurface.Invalidate;
 
   if pnWarning.Visible then
     pnWarning.Refresh;
+end;
+
+// Reading-arrival slide. A new reading (or the clock crossing a slot
+// boundary) moves every reading one slot left, and until now the row simply
+// snapped there between two frames. Instead, each history slot eases from
+// the box its reading was drawn in before the placement — the slot AShiftBy
+// columns to its right in the previous layout — to the box UpdateTrendDots
+// just gave it, so the eye can follow the readings stepping on and sees the
+// time pass. Readings with no previous box (the arrival itself, or one that
+// was hidden by the narrow-window stride) start AShiftBy columns to the
+// right of their new box, which is where their column was. Only the history
+// row moves: the forecast marks stay in their fixed columns and simply take
+// their new values. Interpolating FTrendLayout itself, rather than a paint-
+// time offset, keeps the connecting line, the fresh ring, the hit test and
+// the popup menu's dots-in-view probe all on the moving boxes for free.
+procedure TfBG.StartTrendSlide(const APrev: array of TRect;
+  const APrevVisible: array of boolean; AShiftBy: integer);
+var
+  ix, src, colW: integer;
+begin
+  // A whole window's worth of shift (an outage, a wake from sleep) has no
+  // readings in common with the last frame, so there is nothing to follow.
+  if (FTrendSurface = nil) or FShuttingDown or (WindowState = wsMinimized)
+    or (AShiftBy >= ACTIVE_DOTS) or (Length(FTrendLayout) < 2) then
+    Exit;
+
+  colW := Round(ClientWidth / Max(TrendColumnCount, 1));
+  FTrendSlideTo := Copy(FTrendLayout);
+  SetLength(FTrendSlideFrom, Length(FTrendLayout));
+  for ix := 1 to High(FTrendLayout) do
+  begin
+    src := ix + AShiftBy;
+    if (src <= High(APrev)) and (src <= High(APrevVisible))
+      and APrevVisible[src] and (APrev[src].Width > 0) then
+      FTrendSlideFrom[ix] := APrev[src]
+    else
+    begin
+      FTrendSlideFrom[ix] := FTrendSlideTo[ix];
+      Types.OffsetRect(FTrendSlideFrom[ix], AShiftBy * colW, 0);
+    end;
+  end;
+
+  if tTrendSlide = nil then
+  begin
+    tTrendSlide := TTimer.Create(Self);
+    tTrendSlide.Enabled := false;
+    tTrendSlide.Interval := TREND_SLIDE_TICK_MS;
+    tTrendSlide.OnTimer := @tTrendSlideTimer;
+  end;
+  FTrendSlideStart := GetTickCount64;
+  ApplyTrendSlideFrame;   // frame 0: the row where it was
+  tTrendSlide.Enabled := true;
+end;
+
+// One frame of the slide: FTrendLayout takes the eased mix of the start and
+// resting boxes. Ease-out cubic, like the progress bar's drain — the row
+// leaves quickly and settles softly. Past the end the resting boxes are
+// written exactly (no rounding residue) and the tick stands down.
+procedure TfBG.ApplyTrendSlideFrame;
+var
+  ix: integer;
+  t: double;
+
+  function Mix(a, b: integer): integer;
+  begin
+    Result := a + Round((b - a) * t);
+  end;
+
+begin
+  if (Length(FTrendSlideTo) <> Length(FTrendLayout))
+    or (Length(FTrendSlideFrom) <> Length(FTrendLayout)) then
+  begin
+    if Assigned(tTrendSlide) then
+      tTrendSlide.Enabled := false;
+    Exit;
+  end;
+
+  t := (GetTickCount64 - FTrendSlideStart) / TREND_SLIDE_MS;
+  if t >= 1.0 then
+  begin
+    t := 1.0;
+    if Assigned(tTrendSlide) then
+      tTrendSlide.Enabled := false;
+  end
+  else
+    t := 1 - (1 - t) * (1 - t) * (1 - t);
+
+  for ix := 1 to High(FTrendLayout) do
+    FTrendLayout[ix] := Classes.Rect(
+      Mix(FTrendSlideFrom[ix].Left, FTrendSlideTo[ix].Left),
+      Mix(FTrendSlideFrom[ix].Top, FTrendSlideTo[ix].Top),
+      Mix(FTrendSlideFrom[ix].Right, FTrendSlideTo[ix].Right),
+      Mix(FTrendSlideFrom[ix].Bottom, FTrendSlideTo[ix].Bottom));
+end;
+
+procedure TfBG.tTrendSlideTimer(Sender: TObject);
+begin
+  if FShuttingDown or (FTrendSurface = nil) then
+  begin
+    tTrendSlide.Enabled := false;
+    Exit;
+  end;
+  ApplyTrendSlideFrame;
+  FTrendSurface.Invalidate;
 end;
 
 // Total horizontal trend slots: the history dots plus prediction slots when

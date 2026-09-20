@@ -125,6 +125,10 @@ Those small dots you see across the screen show your recent readings over time:
   colour of the moment, so a high dot on a high (yellow) background is hard to
   pick out — if that bothers you, the setting below changes it
 
+Every new reading steps the whole row one slot to the left. The dots slide
+there instead of jumping, with the new reading arriving from the right, so you
+can see the time pass.
+
 **How to use them**: Hover over a dot to see its value in a tooltip, or click it
 to swap the dot for the actual number. (Both are disabled in privacy mode.)
 
