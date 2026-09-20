@@ -17,10 +17,10 @@
                 <span>Trndi</span>
             </a>
             <div class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#sources">Sources</a>
                 <a href="#download">Download</a>
                 <a href="#setup">Setup</a>
+                <a href="#sources">Sources</a>
+                <a href="#features">Features</a>
                 <a href="cli.html">CLI</a>
                 <a href="multi.html">Multi</a>
                 <a href="https://discord.gg/5n7JyG9zU" class="nav-discord">💬 Discord</a>
@@ -42,7 +42,7 @@
             </div>
 
             <h1>Your CGM data,<br><span class="grad-text">on any screen</span></h1>
-            <p class="hero-subtitle">A free, native desktop app for blood sugar monitoring &mdash; no browser, no cloud middleman.</p>
+            <p class="hero-subtitle">A free app that shows your blood sugar big and clear on your computer screen &mdash; straight from the CGM system you already use.</p>
 
             <div class="hero-buttons">
                 <a href="#download" class="btn-primary">Download Trndi</a>
@@ -71,7 +71,7 @@
         <div class="container stats-inner">
             <div class="stat"><strong>6</strong> CGM Sources</div>
             <div class="stat-divider"></div>
-            <div class="stat"><strong>100%</strong> Native</div>
+            <div class="stat"><strong>No</strong> account needed</div>
             <div class="stat-divider"></div>
             <div class="stat"><strong>4+</strong> Platforms*</div>
             <div class="stat-divider"></div>
@@ -100,148 +100,159 @@
         </div>
     </section>
 
-    <section class="promo" id="cli">
-        <div class="container promo-inner">
-            <div class="promo-text">
-                <span class="promo-icon" aria-hidden="true">$_</span>
-                <div>
-                    <h2>Prefer the command line? Meet trndi-cli</h2>
-                    <p>An optional extra for people who work in a terminal. It shows your readings as plain text, so they fit in a shell prompt, a script, or a Raspberry Pi with no desktop. It reuses the settings you already made in Trndi. If you are happy with the desktop app, you can skip it.</p>
-                </div>
-            </div>
-            <a href="cli.html" class="btn-promo">Explore trndi-cli &rarr;</a>
-        </div>
-    </section>
-
-    <section class="promo" id="multi">
-        <div class="container promo-inner">
-            <div class="promo-text">
-                <span class="promo-icon promo-icon-img" aria-hidden="true"><img src="trndi-multi.png" alt=""></span>
-                <div>
-                    <h2>Following more than one person? Meet trndi-multi</h2>
-                    <p>An optional companion for parents, partners and caregivers. Every account becomes a tile in one window, coloured by range, with a sparkline of the last hours. Put it on a wall display or a spare screen. It shares your Trndi accounts, and can add new ones too.</p>
-                </div>
-            </div>
-            <a href="multi.html" class="btn-promo">Explore trndi-multi &rarr;</a>
-        </div>
-    </section>
-
-    <section id="features" class="features">
-        <div class="container">
-            <p class="eyebrow">Features</p>
-            <h2>What makes Trndi different?</h2>
-            <div class="features-grid">
-                <div class="feature reveal">
-                    <div class="feature-icon">💻</div>
-                    <h3>Native Desktop App</h3>
-                    <p>Runs natively on your computer — no browser, no cloud middleman. Just your data on your screen.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">📊</div>
-                    <h3>Trend Graph</h3>
-                    <p>Displays readings in a clear trend graph with customizable color-coded high, normal, and low ranges.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">🔮</div>
-                    <h3>Predictions</h3>
-                    <p>Experimental glucose predictions show where your reading is heading — with optional warning overlays for predicted lows and highs.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">♿</div>
-                    <h3>Accessibility Built-in</h3>
-                    <p>Text-to-speech announces readings aloud. High contrast mode, adjustable voice and speed, and screen-reader-friendly dialogs.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">📱</div>
-                    <h3>Touch Screen Ready</h3>
-                    <p>Works perfectly on touch devices — ideal for a Raspberry Pi kiosk display by the bed or in the kitchen.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">👥</div>
-                    <h3>Multi-User</h3>
-                    <p>Monitor more than one person. Each account has its own source, settings, and JavaScript plugins.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">🧩</div>
-                    <h3>JavaScript Extensions</h3>
-                    <p>A built-in QuickJS engine lets you write custom logic, alerts, and integrations without recompiling.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">🌐</div>
-                    <h3>Web API</h3>
-                    <p>Expose glucose data to other apps and dashboards via Trndi's built-in local Web API.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">🌍</div>
-                    <h3>Multi-Language</h3>
-                    <p>Ships in six languages. Adding a new language is straightforward — contributions welcome!</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">🎮</div>
-                    <h3>Razer Chroma</h3>
-                    <p>Lights up your Razer peripherals in different colors for normal, high, and low readings on Windows and Linux.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">🛡️</div>
-                    <h3>Proxy &amp; Privacy</h3>
-                    <p>Native proxy support, a Privacy Mode that hides the actual glucose value, and no mandatory account required.</p>
-                </div>
-                <div class="feature reveal">
-                    <div class="feature-icon">💝</div>
-                    <h3>Free &amp; Open Source</h3>
-                    <p>GPLv3. No subscription, no ads, no data collection. Fork it, improve it, share it.</p>
-                </div>
-            </div>
-            <p class="footnote">* Linux may require additional libraries depending on the distribution.</p>
-        </div>
-    </section>
-
-    <section id="sources" class="sources">
-        <div class="container">
-            <p class="eyebrow eyebrow-dark">Compatibility</p>
-            <h2>Supported CGM Sources</h2>
-            <p class="section-sub">Connect to the system you already use — no extra hardware needed.</p>
-            <div class="sources-grid">
-                <div class="source-item reveal">
-                    <div class="source-icon">🌙</div>
-                    <h3>Nightscout</h3>
-                    <p>Self-hosted or cloud. High/low settings auto-imported from your server. Supports both v2 and v3 APIs.</p>
-                </div>
-                <div class="source-item reveal">
-                    <div class="source-icon">📡</div>
-                    <h3>Dexcom Share</h3>
-                    <p>US, EU, and Japan regions supported. Connects via the official Dexcom Share API — classic and new.</p>
-                </div>
-                <div class="source-item reveal">
-                    <div class="source-icon">💙</div>
-                    <h3>Tandem Source</h3>
-                    <p>Connects to the Tandem Source cloud with your existing Tandem account credentials.</p>
-                </div>
-                <div class="source-item reveal">
-                    <div class="source-icon">🩸</div>
-                    <h3>Medtronic CareLink</h3>
-                    <p>Follow a Medtronic pump via the CareLink Connect follower API — US and EU regions. One-time browser login; Trndi keeps the session alive. <em>Experimental.</em></p>
-                </div>
-                <div class="source-item reveal">
-                    <div class="source-icon">🩹</div>
-                    <h3>FreeStyle Libre</h3>
-                    <p>Follows an Abbott sensor through a LibreLinkUp follower account. Works in every region with no server to pick. High/low limits come from your LibreLinkUp alarm settings. <em>Alpha.</em></p>
-                </div>
-                <div class="source-item reveal">
-                    <div class="source-icon">📶</div>
-                    <h3>xDrip+ WiFi</h3>
-                    <p>Connects locally over your home network to the xDrip+ Android app — no cloud needed.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <section id="download" class="download">
         <div class="container">
             <p class="eyebrow eyebrow-dark">Get started</p>
             <h2>Download Trndi</h2>
-            <p class="section-sub">Get the latest version for your platform.</p>
+            <p class="section-sub">Free, no account, no sign-up. One click and you are on your way.</p>
 
+            <!-- Filled in by script when the visitor's computer is recognised; hidden otherwise -->
+            <div id="download-primary" class="download-primary" hidden>
+                <div class="download-icon" id="download-primary-icon" aria-hidden="true"></div>
+                <a href="#" id="download-primary-btn" class="btn-download btn-download-big">Download Trndi</a>
+                <!-- Linux gets a row of package buttons instead: the distro decides the file -->
+                <div id="download-primary-pkgs" class="download-pkgs" hidden>
+                    <a href="https://github.com/slicke/trndi/releases/latest/" id="download-pkg-deb" class="btn-download btn-download-pkg">
+                        <span class="pkg-name">Ubuntu &middot; Debian</span><span class="pkg-file">.deb package</span></a>
+                    <a href="https://github.com/slicke/trndi/releases/latest/" id="download-pkg-rpm" class="btn-download btn-download-pkg">
+                        <span class="pkg-name">Fedora &middot; RHEL</span><span class="pkg-file">.rpm package</span></a>
+                    <a href="https://github.com/slicke/trndi/releases/latest/" id="download-pkg-appimage" class="btn-download btn-download-pkg">
+                        <span class="pkg-name">Other Linux</span><span class="pkg-file">AppImage</span></a>
+                </div>
+                <p class="download-primary-sub" id="download-primary-sub"></p>
+                <p class="download-primary-other">Not the right computer? <a href="#all-downloads" id="download-show-all">Show every download</a></p>
+            </div>
+
+            <div id="download-mobile" class="download-mobile" hidden>
+                <p><strong>Trndi is an app for computers,</strong> not phones. Your Dexcom, Libre or Nightscout app already does the job on your phone &mdash; Trndi is for the laptop, the desktop, or a spare screen on the wall. Open this page on your computer to download it.</p>
+                <p class="download-primary-other"><a href="#all-downloads" id="download-show-all-mobile">Show every download anyway</a></p>
+            </div>
+
+            <div id="download-next" class="download-next" hidden>
+                <h3 id="download-next-title">What happens after you click</h3>
+                <p class="next-steps-file" id="download-next-file" hidden></p>
+
+                <div class="next-steps" data-kind="exe" hidden>
+                    <p>Trndi is made by one person, not a big company, so Windows has never heard of it and shows a blue warning the first time. That is normal. Here is what it looks like and what to click:</p>
+                    <div class="mock-dialog" role="img" aria-label="Windows SmartScreen warning: Windows protected your PC. Click More info, then Run anyway.">
+                        <div class="mock-dialog-title">Windows protected your PC</div>
+                        <p>Microsoft Defender SmartScreen prevented an unrecognized app from starting. Running this app might put your PC at risk.</p>
+                        <p><span class="mock-link mock-step">1. More info</span></p>
+                        <p class="mock-dialog-info">App: TrndiSetup.exe<br>Publisher: Unknown publisher</p>
+                        <div class="mock-dialog-buttons">
+                            <span class="mock-btn mock-step">2. Run anyway</span>
+                            <span class="mock-btn mock-btn-muted">Don't run</span>
+                        </div>
+                    </div>
+                    <ol>
+                        <li>Click the small <strong>More info</strong> link.</li>
+                        <li>Click <strong>Run anyway</strong>.</li>
+                        <li>Follow the installer. Trndi opens and asks how to connect to your CGM.</li>
+                    </ol>
+                </div>
+
+                <div class="next-steps" data-kind="winzip" hidden>
+                    <p>The portable version has no installer: it is a folder you keep wherever you like, on a USB stick if you want. Windows still shows its blue warning the first time you start it.</p>
+                    <ol>
+                        <li>Right-click the downloaded <strong>.zip</strong> and choose <strong>Extract All&hellip;</strong>. Pick a folder you will keep, for example <em>Documents\Trndi</em>. Do not run it from inside the zip window.</li>
+                        <li>Open that folder and double-click <strong>Trndi.exe</strong>.</li>
+                        <li>Windows says <em>Windows protected your PC</em>. Click the small <strong>More info</strong> link, then <strong>Run anyway</strong>. It only asks once.</li>
+                        <li>Trndi opens and asks how to connect to your CGM.</li>
+                    </ol>
+                    <p class="next-steps-note">Nothing is added to the Start menu. Make a shortcut to Trndi.exe yourself if you want one. Settings are stored in the Windows registry, not in the folder.</p>
+                </div>
+
+                <div class="next-steps" data-kind="dmg" hidden>
+                    <p>Trndi is made by one person, not a company that pays Apple to sign apps, so your Mac will refuse to open it the first time. Two minutes fixes it:</p>
+                    <ol>
+                        <li>Open the downloaded <strong>.dmg</strong> and drag <strong>Trndi</strong> into <strong>Applications</strong>, like any other app.</li>
+                        <li>Open <strong>Terminal</strong>: press <kbd>&#8984;</kbd>+<kbd>Space</kbd>, type <em>Terminal</em>, press Enter. A plain text window opens.</li>
+                        <li>Copy this line, paste it into that window, and press Enter:
+                            <pre class="mock-terminal"><code>xattr -c /Applications/Trndi.app</code></pre>
+                            Nothing visible happens. That is fine.</li>
+                        <li>Open Trndi from Applications. It asks how to connect to your CGM.</li>
+                    </ol>
+                    <p class="next-steps-note">Why? The line removes the "downloaded from the internet" mark that makes macOS block unsigned apps. It changes nothing else. See the <a href="https://github.com/slicke/trndi/blob/main/doc/macOS.md">macOS notes</a>.</p>
+                </div>
+
+                <div class="next-steps" data-kind="deb" hidden>
+                    <ol>
+                        <li>Double-click the downloaded <strong>.deb</strong> and your software installer takes it from there. Or, in a terminal:
+                            <pre class="mock-terminal"><code>sudo apt install ./trndi_*.deb</code></pre></li>
+                        <li>The package asks for <strong>Qt6Pas</strong>, so on Debian 13 and Ubuntu 25.04 and newer that library is installed alongside and you are done. On older releases it is not in the repositories, so the package installs without it and Trndi will not start &mdash; install it yourself first, as the table below shows.</li>
+                        <li>Start <strong>Trndi</strong> from your app menu. It asks how to connect to your CGM.</li>
+                    </ol>
+                </div>
+
+                <div class="next-steps" data-kind="rpm" hidden>
+                    <ol>
+                        <li>Double-click the downloaded <strong>.rpm</strong> and your software installer takes it from there. Or, in a terminal:
+                            <pre class="mock-terminal"><code>sudo dnf install ./trndi-*.rpm</code></pre></li>
+                        <li>The package asks for <strong>Qt6Pas</strong>, so on Fedora 43 and newer that library is installed alongside and you are done. On older Fedora, or where the package is spelled differently, install it yourself first, as the table below shows.</li>
+                        <li>Start <strong>Trndi</strong> from your app menu. It asks how to connect to your CGM.</li>
+                    </ol>
+                </div>
+
+                <div class="next-steps" data-kind="appimage" hidden>
+                    <p>An AppImage is a single file that runs without installing. Trndi's does <strong>not</strong> carry the Qt6Pas library inside it, so that one thing has to be installed first.</p>
+                    <ol>
+                        <li>Install <strong>Qt6Pas</strong> with your package manager &mdash; the table below gives the command for your distribution.</li>
+                        <li>Make the file executable: right-click it, <em>Properties</em>, tick <em>Allow executing as program</em>. Or in a terminal:
+                            <pre class="mock-terminal"><code>chmod +x Trndi-*.AppImage</code></pre></li>
+                        <li>Double-click it. Trndi opens and asks how to connect to your CGM.</li>
+                    </ol>
+                    <p class="next-steps-note">Nothing is added to your app menu. The GNOME and KDE panel indicators are inside the AppImage but need copying out by hand; the .deb and .rpm install them for you.</p>
+                </div>
+
+                <div class="next-steps" data-kind="linuxzip" hidden>
+                    <p>The .zip is the bare program folder, for people who prefer not to install anything. It does <strong>not</strong> carry the Qt6Pas library, so that one thing has to be installed first.</p>
+                    <ol>
+                        <li>Install <strong>Qt6Pas</strong> with your package manager &mdash; the table below gives the command for your distribution.</li>
+                        <li>Unpack the zip somewhere you will keep it, then run <strong>Trndi</strong> from that folder:
+                            <pre class="mock-terminal"><code>unzip Trndi-linux-*.zip -d ~/trndi
+~/trndi/Trndi</code></pre></li>
+                        <li>Trndi opens and asks how to connect to your CGM.</li>
+                    </ol>
+                    <p class="next-steps-note">Nothing is added to your app menu. If you want that, the .deb or .rpm is the easier choice.</p>
+                </div>
+
+                <div class="next-steps" data-kind="pick" hidden>
+                    <p>Click one of the packages above and the steps for that file appear here.</p>
+                </div>
+
+                <div id="qt6pas-table" class="qt6pas" hidden>
+                    <h4>Getting Qt6Pas on your distribution</h4>
+                    <p>Trndi is drawn with Qt6 and needs one extra library, <strong>Qt6Pas</strong>. Distributions spell it differently, and the older ones do not carry it at all. Find yours:</p>
+                    <div class="qt6pas-scroll">
+                        <table>
+                            <thead>
+                                <tr><th>Distribution</th><th>Install it with</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Debian 13 (trixie) and newer</td><td><code>sudo apt install libqt6pas6</code></td></tr>
+                                <tr><td>Debian 12 (bookworm)</td><td class="qt6pas-missing">Not in the repositories &mdash; use the upstream <code>.deb</code> below</td></tr>
+                                <tr><td>Ubuntu 25.04 and newer</td><td><code>sudo apt install libqt6pas6</code></td></tr>
+                                <tr><td>Ubuntu 24.04 LTS and older</td><td class="qt6pas-missing">Not in the repositories &mdash; use the upstream <code>.deb</code> below</td></tr>
+                                <tr><td>Raspberry Pi OS (trixie)</td><td><code>sudo apt install libqt6pas6</code></td></tr>
+                                <tr><td>Raspberry Pi OS (bookworm)</td><td class="qt6pas-missing">Not in the repositories &mdash; use the upstream <strong>arm64</strong> <code>.deb</code> below</td></tr>
+                                <tr><td>Fedora 43 and newer</td><td><code>sudo dnf install qt6pas</code></td></tr>
+                                <tr><td>RHEL, AlmaLinux, Rocky 10</td><td><code>sudo dnf install qt6pas</code><br><small>Needs the EPEL repository enabled.</small></td></tr>
+                                <tr><td>Arch, Manjaro, EndeavourOS</td><td><code>sudo pacman -S qt6pas</code></td></tr>
+                                <tr><td>openSUSE</td><td><code>sudo zypper install libQt6Pas6</code><br><small>Not found? It lives in <em>devel:languages:pascal</em> on the <a href="https://software.opensuse.org/package/libQt6Pas">openSUSE Build Service</a>.</small></td></tr>
+                                <tr><td>Gentoo</td><td><code>sudo emerge dev-libs/libqt6pas</code></td></tr>
+                                <tr><td>Anything else</td><td>Search your package manager for <code>qt6pas</code>, <code>libqt6pas6</code> or <code>libQt6Pas.so.6</code></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="next-steps-note"><strong>Not in your repositories?</strong> The library's own project publishes ready-made packages &mdash; a <code>.deb</code> for amd64 and arm64, an <code>.rpm</code> for x86_64, and a plain tarball &mdash; at <a href="https://github.com/davidbannon/libqt6pas/releases/latest">davidbannon/libqt6pas</a>. Install the one for your machine the same way you installed Trndi. It needs Qt6 itself (6.2.4 or newer) and glibc 2.34 or newer, so it will not work on very old releases.</p>
+                </div>
+            </div>
+
+            <div id="all-downloads" class="download-all">
+            <div class="download-all-toggle">
+                <p>Every download, for every computer</p>
+                <button type="button" id="download-show-all-btn" class="btn-showall">Show all</button>
+            </div>
             <div class="download-grid">
                 <div class="download-item reveal">
                     <div class="download-icon">🪟</div>
@@ -308,25 +319,27 @@
                     <a href="https://github.com/slicke/trndi#bsd">FreeBSD, OpenBSD &amp; NetBSD</a> and
                     <a href="https://github.com/slicke/trndi#haiku">Haiku</a>.</p>
             </div>
+            </div><!-- /all-downloads -->
         </div>
     </section>
 
     <section id="setup" class="setup">
         <div class="container">
             <p class="eyebrow">Setup</p>
-            <h2>Quick Setup</h2>
+            <h2>Connect it to your CGM</h2>
+            <p class="section-sub">The first time Trndi starts it asks which system you use and what to log in with. This is what to have ready:</p>
             <div class="setup-grid">
                 <div class="setup-item reveal">
                     <h3>🌙 Nightscout</h3>
-                    <p>Enter your Nightscout URL — Trndi fetches your high/low settings automatically from the server.</p>
+                    <p>Your Nightscout address (the one you open in a browser) and its API secret or token. Trndi fetches your high/low limits from the site automatically.</p>
                 </div>
                 <div class="setup-item reveal">
                     <h3>📡 Dexcom Share</h3>
-                    <p>Use your Dexcom username and password. See the <a href="https://github.com/slicke/trndi/blob/main/guides/Dexcom.md">Dexcom setup guide</a> for region selection.</p>
+                    <p><strong>The same email and password you log in to the Dexcom app with</strong> &mdash; not a Follow account. Sharing must be switched on in the Dexcom app first. Pick the Dexcom entry for your region (US, EU or Japan). See the <a href="https://github.com/slicke/trndi/blob/main/guides/Dexcom.md">Dexcom setup guide</a>.</p>
                 </div>
                 <div class="setup-item reveal">
                     <h3>💙 Tandem Source</h3>
-                    <p>Enter your Tandem account email and password. See the <a href="https://github.com/slicke/trndi/blob/main/guides/Tandem.md">Tandem setup guide</a> for details.</p>
+                    <p>The email and password for your Tandem Source account. Readings can arrive a few minutes late here; that is Tandem's side, not yours. See the <a href="https://github.com/slicke/trndi/blob/main/guides/Tandem.md">Tandem setup guide</a>.</p>
                 </div>
                 <div class="setup-item reveal">
                     <h3>🩸 Medtronic CareLink</h3>
@@ -334,7 +347,7 @@
                 </div>
                 <div class="setup-item reveal">
                     <h3>🩹 FreeStyle Libre</h3>
-                    <p>Sign in with a <strong>LibreLinkUp</strong> follower account — not the LibreLink account on the sensor wearer's phone. The wearer invites it once from their app. See the <a href="https://github.com/slicke/trndi/blob/main/guides/LibreLinkUp.md">LibreLinkUp setup guide</a>.</p>
+                    <p><strong>You need a second account before you start.</strong> Trndi logs in as a <strong>LibreLinkUp</strong> follower, not as the LibreLink app on the phone. Make a LibreLinkUp account with a different email, invite it from the LibreLink app (Connected Apps &rarr; LibreLinkUp), and accept the invitation in the LibreLinkUp app. Then give Trndi that email and password. See the <a href="https://github.com/slicke/trndi/blob/main/guides/LibreLinkUp.md">Libre setup guide</a>.</p>
                 </div>
                 <div class="setup-item reveal">
                     <h3>📶 xDrip+</h3>
@@ -343,16 +356,165 @@
             </div>
 
             <div class="setup-instructions">
-                <h3>Getting Started</h3>
+                <h3>Your first five minutes</h3>
                 <ol>
-                    <li><strong>Download and run Trndi</strong> for your platform above.<br><small>Linux users: check the <a href="https://github.com/slicke/trndi/blob/main/README.md#linux-notes">Linux notes</a> if Trndi won't start.</small></li>
-                    <li><strong>Right-click</strong> the reading on screen and choose <em>Settings</em>.</li>
-                    <li><strong>Select your CGM source</strong> and enter your credentials.</li>
-                    <li><strong>Save</strong> — readings will start appearing within a minute.</li>
-                    <li><strong>Customize</strong> via right-click &rarr; Settings: colors, fonts, alerts, and more.</li>
+                    <li><strong>Download and open Trndi</strong> using the button above. Windows and macOS will warn you the first time; the steps under the button show what to click.</li>
+                    <li><strong>Read and accept the notice.</strong> Trndi is not a medical device and its alerts are not an alarm system. It says so up front.</li>
+                    <li><strong>A setup guide opens.</strong> Pick your CGM system from the list, type in the login from the box above, and press <em>Test connection</em>. Green tick means you are done.</li>
+                    <li><strong>Choose mmol/L or mg/dL</strong> and check the high and low limits. They start at the usual 4&ndash;10 mmol/L (70&ndash;180 mg/dL); change them if your nurse gave you others.</li>
+                    <li><strong>Press Finish.</strong> Your reading appears within a minute, in green, orange or red.</li>
                 </ol>
-                <p class="setup-tip">💡 Tip: right-click is also how you access the graph, TIR stats, and privacy mode.</p>
+                <p class="setup-tip">💡 There are no buttons on the window. <strong>Right-click the reading</strong> to get the menu with Settings, privacy mode, snooze and everything else. On a touch screen, press and hold.</p>
             </div>
+        </div>
+    </section>
+
+    <section id="sources" class="sources">
+        <div class="container">
+            <p class="eyebrow eyebrow-dark">Compatibility</p>
+            <h2>Supported CGM Sources</h2>
+            <p class="section-sub">Connect to the system you already use — no extra hardware needed.</p>
+            <div class="sources-grid">
+                <div class="source-item reveal">
+                    <div class="source-icon">🌙</div>
+                    <h3>Nightscout</h3>
+                    <p>Self-hosted or cloud. High/low settings auto-imported from your server. Supports both v2 and v3 APIs.</p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">📡</div>
+                    <h3>Dexcom Share</h3>
+                    <p>US, EU, and Japan regions supported. Connects via the official Dexcom Share API — classic and new.</p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">💙</div>
+                    <h3>Tandem Source</h3>
+                    <p>Connects to the Tandem Source cloud with your existing Tandem account credentials.</p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">🩸</div>
+                    <h3>Medtronic CareLink</h3>
+                    <p>Follow a Medtronic pump via the CareLink Connect follower API — US and EU regions. One-time browser login; Trndi keeps the session alive. <em>Experimental.</em></p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">🩹</div>
+                    <h3>FreeStyle Libre</h3>
+                    <p>Follows an Abbott sensor through a LibreLinkUp follower account. Works in every region with no server to pick. High/low limits come from your LibreLinkUp alarm settings. <em>Alpha.</em></p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">📶</div>
+                    <h3>xDrip+ WiFi</h3>
+                    <p>Connects locally over your home network to the xDrip+ Android app — no cloud needed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <p class="eyebrow">Features</p>
+            <h2>What you get</h2>
+            <div class="features-grid">
+                <div class="feature reveal">
+                    <div class="feature-icon">🔢</div>
+                    <h3>One big number</h3>
+                    <p>Your reading, the arrow, and how many minutes old it is. The whole window turns green, orange or red, so you can tell from across the room.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">📊</div>
+                    <h3>The last few hours</h3>
+                    <p>A row of dots shows where you have been. You pick how far back it goes, and which colours mean high, low and "fine but drifting".</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">⏱️</div>
+                    <h3>Never lies about old data</h3>
+                    <p>When no new reading has come in, the number dims and a note tells you how long it has been quiet, so a stale value never looks fresh.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🔔</div>
+                    <h3>Alerts you can snooze</h3>
+                    <p>Desktop notifications, a sound, and it can pause your music to get your attention. Snooze for 15, 30 or 60 minutes when you are already on it.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🙈</div>
+                    <h3>Privacy mode</h3>
+                    <p>Sharing your screen in a meeting? One click hides the number and keeps the colours, so you still know where you are.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🌙</div>
+                    <h3>Dims at night</h3>
+                    <p>Between the hours you choose, a calm reading fades to almost black so a bedside screen stops lighting the room. Highs and lows still shine through.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🔮</div>
+                    <h3>A look ahead</h3>
+                    <p>Optional, experimental predictions show where the trend is heading 5, 10 and 15 minutes out. A guide, not a promise.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">♿</div>
+                    <h3>Reads aloud</h3>
+                    <p>Text-to-speech can announce readings. High contrast mode, adjustable voice and speed, and controls that work with screen readers.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">📱</div>
+                    <h3>Works on a wall screen</h3>
+                    <p>Touch-friendly and happy on a Raspberry Pi with a small display, by the bed or in the kitchen.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">👥</div>
+                    <h3>More than one person</h3>
+                    <p>Parents and partners can follow several people, each with their own CGM system and settings.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🌍</div>
+                    <h3>In your language</h3>
+                    <p>Ships in six languages, including Swedish, German and French.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">💝</div>
+                    <h3>Free, forever</h3>
+                    <p>No subscription, no ads, no account, no data collection. Open source under the GPLv3.</p>
+                </div>
+            </div>
+
+            <div class="features-tinker">
+                <h3>For the tinkerers</h3>
+                <p class="section-sub">You can ignore all of this. It is there if you want it.</p>
+                <ul class="tinker-list">
+                    <li><strong>JavaScript extensions</strong> &mdash; a built-in QuickJS engine runs your own scripts on every reading. Official ones exist for IFTTT and Discord.</li>
+                    <li><strong>Web API</strong> &mdash; a local endpoint with a live event stream, so other apps and dashboards can read your data without polling.</li>
+                    <li><strong>Desktop indicators</strong> &mdash; a GNOME Shell extension, a KDE Plasma widget and a Waybar module that show the current reading in your panel.</li>
+                    <li><strong>Razer Chroma</strong> &mdash; keyboard and mouse lighting follows your range on Windows and Linux.</li>
+                    <li><strong>Kiosk mode</strong> &mdash; start with <code>--kiosk</code> for a fullscreen, always-awake display.</li>
+                    <li><strong>Proxy support</strong> &mdash; a configured proxy is used exclusively, never bypassed.</li>
+                    <li><strong>Runs natively</strong> &mdash; no browser, no Electron, no cloud in between. One small binary per platform.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="promo" id="cli">
+        <div class="container promo-inner">
+            <div class="promo-text">
+                <span class="promo-icon" aria-hidden="true">$_</span>
+                <div>
+                    <h2>Prefer the command line? Meet trndi-cli</h2>
+                    <p>An optional extra for people who work in a terminal. It shows your readings as plain text, so they fit in a shell prompt, a script, or a Raspberry Pi with no desktop. It reuses the settings you already made in Trndi. If you are happy with the desktop app, you can skip it.</p>
+                </div>
+            </div>
+            <a href="cli.html" class="btn-promo">Explore trndi-cli &rarr;</a>
+        </div>
+    </section>
+
+    <section class="promo" id="multi">
+        <div class="container promo-inner">
+            <div class="promo-text">
+                <span class="promo-icon promo-icon-img" aria-hidden="true"><img src="trndi-multi.png" alt=""></span>
+                <div>
+                    <h2>Following more than one person? Meet trndi-multi</h2>
+                    <p>An optional companion for parents, partners and caregivers. Every account becomes a tile in one window, coloured by range, with a sparkline of the last hours. Put it on a wall display or a spare screen. It shares your Trndi accounts, and can add new ones too.</p>
+                </div>
+            </div>
+            <a href="multi.html" class="btn-promo">Explore trndi-multi &rarr;</a>
         </div>
     </section>
 
@@ -416,6 +578,145 @@
                 io.observe(el);
             });
         }
+
+        // Pick the download for the visitor's computer and show the matching
+        // "what happens next" steps. Unknown platforms just see the full grid.
+        (function () {
+            const ua = navigator.userAgent || '';
+            const uaPlat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+            const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua) ||
+                (navigator.userAgentData && navigator.userAgentData.mobile);
+            // iPadOS reports itself as a Mac; touch points give it away.
+            const iPadAsMac = /Mac/i.test(uaPlat) && navigator.maxTouchPoints > 1;
+
+            const targets = {
+                windows: { icon: '🪟', label: 'Download Trndi for Windows', sub: 'Windows 10 and 11. A normal installer.', asset: 'TrndiSetup.exe',
+                           href: 'https://github.com/slicke/trndi/releases/latest/download/TrndiSetup.exe' },
+                mac:     { icon: '🍎', label: 'Download Trndi for Mac', sub: 'Macs with Apple Silicon (M1 and newer).', asset: 'Trndi-macos-silicon.dmg',
+                           href: 'https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.dmg' },
+                // Linux and Pi show a row of packages instead of one file, so the
+                // distro's own installer handles it (and pulls in Qt6Pas where the
+                // distro ships it). The .deb/.rpm names carry the version, so they
+                // are resolved from the release listing by applyReleaseAssets.
+                linux:   { icon: '🐧', sub: 'Pick the one that matches your distribution. The package installer adds Trndi to your app menu and fetches the Qt6Pas library where your distribution has it.',
+                           pkgs: { deb: 'trndi_*_amd64.deb', rpm: 'trndi-*.x86_64.rpm', appimage: 'Trndi-x86_64.AppImage' },
+                           debName: 'Ubuntu · Debian', rpmName: 'Fedora · RHEL' },
+                pi:      { icon: '🥧', sub: 'Pick the one that matches your Pi. Raspberry Pi OS uses the .deb. The package installer adds Trndi to your app menu.',
+                           pkgs: { deb: 'trndi_*_arm64.deb', rpm: 'trndi-*.aarch64.rpm', appimage: 'Trndi-aarch64.AppImage' },
+                           debName: 'Raspberry Pi OS · Debian', rpmName: 'Fedora · RHEL' }
+            };
+
+            // ?os=windows|mac|linux|pi|mobile previews another computer's view,
+            // and ?os=off previews what an unrecognised computer gets (the full grid).
+            const forced = new URLSearchParams(location.search).get('os');
+            let key = null;
+            if (forced === 'off') key = null;
+            else if (forced && (forced === 'mobile' || forced in targets)) key = forced;
+            else if (isMobile || iPadAsMac) key = 'mobile';
+            else if (/Win/i.test(uaPlat)) key = 'windows';
+            else if (/Mac/i.test(uaPlat)) key = 'mac';
+            else if (/Linux|X11|BSD/i.test(uaPlat + ua)) key = /aarch64|arm64|armv/i.test(ua) ? 'pi' : 'linux';
+            if (forced === 'off') key = null;
+
+            const primary = document.getElementById('download-primary');
+            const mobile = document.getElementById('download-mobile');
+            const next = document.getElementById('download-next');
+            const all = document.getElementById('all-downloads');
+
+            function showAll(e) {
+                if (e) e.preventDefault();
+                all.classList.remove('download-all-collapsed');
+                all.scrollIntoView({ behavior: 'smooth' });
+            }
+            document.getElementById('download-show-all').addEventListener('click', showAll);
+            document.getElementById('download-show-all-mobile').addEventListener('click', showAll);
+            document.getElementById('download-show-all-btn').addEventListener('click', showAll);
+
+            if (key === 'mobile') {
+                mobile.hidden = false;
+                all.classList.add('download-all-collapsed');
+                return;
+            }
+            const t = targets[key];
+            if (!t) return;
+
+            document.getElementById('download-primary-icon').textContent = t.icon;
+            const btn = document.getElementById('download-primary-btn');
+            if (t.pkgs) {
+                btn.hidden = true;
+                const row = document.getElementById('download-primary-pkgs');
+                const deb = document.getElementById('download-pkg-deb');
+                const rpm = document.getElementById('download-pkg-rpm');
+                const app = document.getElementById('download-pkg-appimage');
+                deb.dataset.asset = t.pkgs.deb;        // resolved by applyReleaseAssets
+                rpm.dataset.asset = t.pkgs.rpm;
+                app.dataset.asset = t.pkgs.appimage;
+                app.href = 'https://github.com/slicke/trndi/releases/latest/download/' + t.pkgs.appimage;
+                deb.querySelector('.pkg-name').textContent = t.debName;
+                rpm.querySelector('.pkg-name').textContent = t.rpmName;
+                row.hidden = false;
+            } else {
+                btn.textContent = t.label;
+                btn.href = t.href;
+                btn.dataset.asset = t.asset;   // applyReleaseAssets swaps in the versioned URL
+            }
+            document.getElementById('download-primary-sub').textContent = t.sub;
+            primary.hidden = false;
+
+            // Steps for the file the visitor is most likely to take. Linux has to
+            // choose first, so it gets a "pick one" line instead.
+            showStepsFor(t.pkgs ? 'pick' : kindOf(t.asset), '', false);
+
+            all.classList.add('download-all-collapsed');
+        })();
+
+        // Which "what happens next" block a download belongs to, from its file name.
+        function kindOf(name) {
+            name = (name || '').toLowerCase();
+            if (name.endsWith('.exe')) return 'exe';
+            if (name.endsWith('.dmg')) return 'dmg';
+            if (name.endsWith('.deb')) return 'deb';
+            if (name.endsWith('.rpm')) return 'rpm';
+            if (name.endsWith('.appimage')) return 'appimage';
+            if (name.endsWith('.zip')) return name.includes('windows') ? 'winzip' : 'linuxzip';
+            return null;
+        }
+
+        // Reveal the steps for one file kind. The download itself is not
+        // interrupted: the link's default action still runs.
+        function showStepsFor(kind, fileName, scroll) {
+            const next = document.getElementById('download-next');
+            const block = kind && next.querySelector('.next-steps[data-kind="' + kind + '"]');
+            if (!block) return;
+            next.querySelectorAll('.next-steps').forEach(el => { el.hidden = true; });
+            block.hidden = false;
+            // The Qt6Pas table applies to every Linux download, whichever one it is
+            document.getElementById('qt6pas-table').hidden =
+                ['deb', 'rpm', 'appimage', 'linuxzip'].indexOf(kind) === -1;
+            const fileLine = document.getElementById('download-next-file');
+            if (fileName && kind !== 'pick') {
+                fileLine.textContent = 'You are downloading ' + fileName + '.';
+                fileLine.hidden = false;
+            } else {
+                fileLine.hidden = true;
+            }
+            next.hidden = false;
+            if (scroll) {
+                next.classList.remove('download-next-flash');
+                void next.offsetWidth;   // restart the highlight animation
+                next.classList.add('download-next-flash');
+                next.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Every download link, in the big card and in the full grid alike,
+        // shows the steps for its own file when clicked.
+        document.querySelectorAll('a[data-asset]').forEach(a => {
+            a.addEventListener('click', () => {
+                const name = a.href.split('/').pop() || a.dataset.asset;
+                showStepsFor(kindOf(a.dataset.asset), decodeURIComponent(name), true);
+            });
+        });
 
         function applyReleaseAssets(assets) {
             if (!Array.isArray(assets) || !assets.length) return;

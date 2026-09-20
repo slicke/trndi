@@ -497,6 +497,54 @@ section h2 {
     margin-top: 24px;
 }
 
+/* Developer-facing features, deliberately below the fold and low-key */
+.features-tinker {
+    max-width: 760px;
+    margin: 56px auto 0;
+    padding: 28px 32px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    text-align: left;
+}
+
+.features-tinker h3 {
+    font-size: 1.25rem;
+    margin-bottom: 6px;
+}
+
+.features-tinker .section-sub {
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.tinker-list {
+    list-style: none;
+    padding: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.tinker-list li {
+    padding: 6px 0;
+    border-top: 1px solid var(--border);
+}
+
+.tinker-list li:first-child {
+    border-top: none;
+}
+
+.tinker-list strong {
+    color: var(--text);
+}
+
+.tinker-list code {
+    background: var(--bg-alt);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+
 /* ==========================================================================
    Sources — dark band
    ========================================================================== */
@@ -639,6 +687,333 @@ section h2 {
 .btn-download:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* The script hides parts with the hidden attribute; keep that winning over display rules */
+.download [hidden] {
+    display: none !important;
+}
+
+/* One big button for the visitor's own computer (filled in by script) */
+.download-primary {
+    max-width: 560px;
+    margin: 0 auto 36px;
+    padding: 40px 28px 28px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: var(--radius);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.download-primary .download-icon {
+    font-size: 3.4rem;
+}
+
+.btn-download-big {
+    display: inline-block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    padding: 18px 40px;
+    border-radius: 999px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Linux: one button per package kind */
+.download-pkgs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+}
+
+.btn-download-pkg {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 170px;
+    padding: 14px 22px;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+.btn-download-pkg .pkg-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.btn-download-pkg .pkg-file {
+    font-weight: 400;
+    font-size: 0.85rem;
+    opacity: 0.75;
+}
+
+.download-primary-sub {
+    margin-top: 16px;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.download-primary-other {
+    margin-top: 14px;
+    font-size: 0.92rem;
+    opacity: 0.85;
+}
+
+.download-primary-other a {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.download-mobile {
+    max-width: 560px;
+    margin: 0 auto 36px;
+    padding: 28px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: var(--radius);
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+/* "What happens after you click" — plain words about the OS warnings */
+.download-next {
+    max-width: 640px;
+    margin: 0 auto 44px;
+    padding: 28px 30px;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius);
+    line-height: 1.6;
+}
+
+.download-next h3 {
+    font-size: 1.35rem;
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.download-next ol {
+    padding-left: 22px;
+    margin: 14px 0;
+}
+
+.download-next li {
+    margin-bottom: 10px;
+}
+
+.download-next code,
+.download-next kbd {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.95em;
+}
+
+.next-steps-note {
+    margin-top: 12px;
+    font-size: 0.92rem;
+    opacity: 0.85;
+}
+
+.next-steps-file {
+    text-align: center;
+    font-size: 0.95rem;
+    opacity: 0.85;
+    margin: -6px 0 16px;
+}
+
+/* Qt6Pas per-distribution table, shared by every Linux download */
+.qt6pas {
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.qt6pas h4 {
+    font-size: 1.15rem;
+    margin-bottom: 8px;
+}
+
+.qt6pas-scroll {
+    overflow-x: auto;
+    margin: 16px 0 4px;
+}
+
+.qt6pas table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.qt6pas th {
+    text-align: left;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    padding: 0 12px 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.qt6pas td {
+    padding: 10px 12px 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    vertical-align: top;
+}
+
+.qt6pas tr:last-child td {
+    border-bottom: none;
+}
+
+.qt6pas td:first-child {
+    white-space: nowrap;
+    padding-right: 24px;
+}
+
+.qt6pas code {
+    white-space: nowrap;
+}
+
+.qt6pas small {
+    display: inline-block;
+    margin-top: 4px;
+    opacity: 0.8;
+    font-size: 0.85rem;
+    white-space: normal;
+}
+
+.qt6pas-missing {
+    opacity: 0.85;
+}
+
+/* A short glow when the steps change because a download link was clicked */
+@keyframes next-steps-flash {
+    0%   { box-shadow: 0 0 0 0 rgba(255, 209, 102, 0.9); }
+    100% { box-shadow: 0 0 0 14px rgba(255, 209, 102, 0); }
+}
+
+.download-next-flash {
+    animation: next-steps-flash 1.2s ease-out 1;
+}
+
+.next-steps-note a,
+.download-next a {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* A drawn copy of the SmartScreen box, so people recognise it when it appears */
+.mock-dialog {
+    margin: 16px auto;
+    max-width: 420px;
+    background: #1f6feb;
+    color: #fff;
+    padding: 22px 26px;
+    border-radius: 6px;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.mock-dialog-title {
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.mock-dialog p {
+    margin-bottom: 10px;
+}
+
+.mock-dialog-info {
+    opacity: 0.85;
+    font-size: 0.85rem;
+}
+
+.mock-link {
+    text-decoration: underline;
+    cursor: default;
+}
+
+.mock-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.mock-btn {
+    padding: 8px 18px;
+    background: #f2f2f2;
+    color: #1c1e26;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.mock-btn-muted {
+    background: rgba(255, 255, 255, 0.35);
+    color: #fff;
+    font-weight: 400;
+}
+
+.mock-step {
+    outline: 3px solid #ffd166;
+    outline-offset: 3px;
+    border-radius: 3px;
+}
+
+.mock-terminal {
+    margin: 10px 0;
+    padding: 12px 16px;
+    background: #0d0f14;
+    color: #e6edf3;
+    border-radius: 8px;
+    font-size: 1rem;
+    overflow-x: auto;
+    user-select: all;
+}
+
+.mock-terminal code {
+    background: none;
+    padding: 0;
+}
+
+/* The full grid folds away once a primary button is showing */
+.download-all-toggle {
+    display: none;
+}
+
+.download-all-collapsed .download-grid,
+.download-all-collapsed .download-note {
+    display: none;
+}
+
+.download-all-collapsed .download-all-toggle {
+    display: block;
+}
+
+.download-all-toggle p {
+    font-size: 1.05rem;
+    opacity: 0.85;
+    margin-bottom: 10px;
+}
+
+.btn-showall {
+    font: inherit;
+    font-weight: 600;
+    color: #fff;
+    background: transparent;
+    padding: 10px 22px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.btn-showall:hover {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .download-subtext {
@@ -1126,6 +1501,81 @@ section h2 {
 
     .setup-instructions {
         padding: 28px 20px;
+    }
+
+    .download-next {
+        padding: 22px 18px;
+    }
+
+    .btn-download-big {
+        display: block;
+        font-size: 1.15rem;
+        padding: 16px 20px;
+    }
+
+    .download-pkgs {
+        flex-direction: column;
+    }
+
+    .qt6pas td:first-child {
+        white-space: normal;
+        padding-right: 14px;
+    }
+
+    .qt6pas table {
+        font-size: 0.9rem;
+    }
+
+    .btn-download-pkg {
+        min-width: 0;
+    }
+
+    .features-tinker {
+        padding: 22px 18px;
+    }
+}
+
+/* Too narrow for two columns: stack each distribution into its own block */
+@media (max-width: 560px) {
+    .qt6pas-scroll {
+        overflow-x: visible;
+    }
+
+    .qt6pas table,
+    .qt6pas tbody,
+    .qt6pas tr,
+    .qt6pas td {
+        display: block;
+        width: 100%;
+    }
+
+    .qt6pas thead {
+        display: none;
+    }
+
+    .qt6pas tr {
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .qt6pas tr:last-child {
+        border-bottom: none;
+    }
+
+    .qt6pas td {
+        border: none;
+        padding: 0;
+    }
+
+    .qt6pas td:first-child {
+        font-weight: 700;
+        margin-bottom: 6px;
+        padding-right: 0;
+    }
+
+    .qt6pas code {
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
 }
 
