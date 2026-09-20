@@ -36,6 +36,10 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: The warning and stale glyphs and the expand chevrons are
+ *   drawn through trndi.raster (convex polygons, capsule strokes, smooth
+ *   discs) instead of the aliased Canvas.Polygon/Ellipse/LineTo primitives,
+ *   so they match the antialiased trend dots on GDI and Qt.
  * - 2026-08-27: FormPaint anchors the threshold lines on the layout pass's
  *   FTrendDotDiameter instead of probing the removed per-dot controls.
  * - 2026-08-21: The shutdown screen's accent gradients call Classes.Rect
@@ -54,36 +58,33 @@ procedure DrawWarningGlyph(Canvas: TCanvas; CenterX, CenterY, Size: integer;
   Fill, Stroke, AccentColor: TColor);
 var
   pts: array[0..2] of TPoint;
+  bar: array[0..3] of TPoint;
   halfSize, barW, barH, barX, barTopY, dotY: integer;
 begin
   if Size < 8 then
     Size := 8;
   halfSize := Size div 2;
 
-  // Equilateral-ish triangle, flat base
+  // Equilateral-ish triangle, flat base, outlined with a mitred pen
   pts[0] := MkPoint(CenterX, CenterY - halfSize);
   pts[1] := MkPoint(CenterX - halfSize, CenterY + halfSize);
   pts[2] := MkPoint(CenterX + halfSize, CenterY + halfSize);
-
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := Fill;
-  Canvas.Pen.Color := Stroke;
-  Canvas.Pen.Width := Max(1, Size div 16);
-  Canvas.Pen.Style := psSolid;
-  Canvas.Polygon(pts);
+  DrawSmoothConvexPolygon(Canvas, pts, Fill, Stroke, Max(1, Size div 16));
 
   // Exclamation bar
   barW := Max(2, Size div 9);
   barH := Max(4, Size div 3);
   barX := CenterX - (barW div 2);
   barTopY := CenterY - halfSize + (Size div 3);
-  Canvas.Brush.Color := AccentColor;
-  Canvas.Pen.Style := psClear;
-  Canvas.FillRect(Classes.Rect(barX, barTopY, barX + barW, barTopY + barH));
+  bar[0] := MkPoint(barX, barTopY);
+  bar[1] := MkPoint(barX + barW, barTopY);
+  bar[2] := MkPoint(barX + barW, barTopY + barH);
+  bar[3] := MkPoint(barX, barTopY + barH);
+  DrawSmoothConvexPolygon(Canvas, bar, AccentColor);
 
   // Exclamation dot
   dotY := CenterY + halfSize - Max(4, Size div 6);
-  Canvas.Ellipse(barX, dotY, barX + barW, dotY + barW);
+  DrawSmoothCircle(Canvas, barW, AccentColor, clNone, 0, barX, dotY);
 end;
 
 // Draw the stale-data glyph: a clock face with hour/minute hands, struck
@@ -92,31 +93,37 @@ end;
 // card renders identically on every widgetset.
 procedure DrawStaleGlyph(Canvas: TCanvas; CenterX, CenterY, Size: integer;
   Fill, Stroke: TColor; Struck: boolean);
+
+  function Seg(x1, y1, x2, y2: double; c: TColor): TSmoothStroke;
+  begin
+    Result.X1 := x1; Result.Y1 := y1;
+    Result.X2 := x2; Result.Y2 := y2;
+    Result.Color := c;
+  end;
+
 var
-  radius, handLen, ringW, off: integer;
+  radius, handLen, ringW, off, faceD: integer;
+  hands: array[0..1] of TSmoothStroke;
+  slash: array[0..0] of TSmoothStroke;
 begin
   if Size < 12 then
     Size := 12;
   radius := Size div 2;
   ringW := Max(2, Size div 10);
 
-  // Face
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := Fill;
-  Canvas.Pen.Color := Stroke;
-  Canvas.Pen.Width := ringW;
-  Canvas.Pen.Style := psSolid;
-  Canvas.Ellipse(CenterX - radius, CenterY - radius,
-    CenterX + radius, CenterY + radius);
+  // Face: the pen used to straddle the circle, so the rimmed disc is one
+  // ring width wider than Size to keep the same footprint.
+  faceD := Size + ringW;
+  DrawSmoothCircle(Canvas, faceD, Fill, Stroke, ringW,
+    CenterX - faceD div 2, CenterY - faceD div 2);
 
   // Hands frozen at 10:10 — a stopped clock reads as "time has passed", and
   // the symmetric pose stays legible at the small sizes the card uses.
-  Canvas.Pen.Width := Max(2, Size div 11);
   handLen := round(radius * 0.55);
-  Canvas.MoveTo(CenterX, CenterY);
-  Canvas.LineTo(CenterX, CenterY - handLen);
-  Canvas.MoveTo(CenterX, CenterY);
-  Canvas.LineTo(CenterX + round(handLen * 0.75), CenterY + round(handLen * 0.4));
+  hands[0] := Seg(CenterX, CenterY, CenterX, CenterY - handLen, Stroke);
+  hands[1] := Seg(CenterX, CenterY, CenterX + handLen * 0.75,
+    CenterY + handLen * 0.4, Stroke);
+  DrawSmoothStrokes(Canvas, hands, Max(2, Size div 11));
 
   if Struck then
   begin
@@ -124,14 +131,11 @@ begin
     // "cut", then the stroke on top, so it reads as a gap through the face
     // rather than a line lying over it.
     off := round(radius * 0.78);
-    Canvas.Pen.Color := Fill;
-    Canvas.Pen.Width := Max(4, Size div 5);
-    Canvas.MoveTo(CenterX - off, CenterY + off);
-    Canvas.LineTo(CenterX + off, CenterY - off);
-    Canvas.Pen.Color := Stroke;
-    Canvas.Pen.Width := Max(2, Size div 10);
-    Canvas.MoveTo(CenterX - off, CenterY + off);
-    Canvas.LineTo(CenterX + off, CenterY - off);
+    slash[0] := Seg(CenterX - off, CenterY + off, CenterX + off, CenterY - off,
+      Fill);
+    DrawSmoothStrokes(Canvas, slash, Max(4, Size div 5));
+    slash[0].Color := Stroke;
+    DrawSmoothStrokes(Canvas, slash, Max(2, Size div 10));
   end;
 end;
 
@@ -247,9 +251,8 @@ begin
           chevPts[1] := MkPoint(chevronCX + chevronS, chevronCY - chevronS div 2);
           chevPts[2] := MkPoint(chevronCX, chevronCY + chevronS div 2);
         end;
-        Brush.Color := BlendColors(glyphFill, panelFillColor, 0.35);
-        Pen.Style := psClear;
-        Polygon(chevPts);
+        DrawSmoothConvexPolygon(P.Canvas, chevPts,
+          BlendColors(glyphFill, panelFillColor, 0.35));
       end;
     end
     else
@@ -286,9 +289,7 @@ begin
           chevPts[1] := MkPoint(chevronCX + chevronS, chevronCY - chevronS div 2);
           chevPts[2] := MkPoint(chevronCX, chevronCY + chevronS div 2);
         end;
-        Brush.Color := accentColor;
-        Pen.Style := psClear;
-        Polygon(chevPts);
+        DrawSmoothConvexPolygon(P.Canvas, chevPts, accentColor);
       end;
     end;
   end;
