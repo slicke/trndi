@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trndi - Ditt CGM-värde på datorn och Raspberry Pi</title>
+    <meta name="description" content="Gratis skrivbordsprogram som visar ditt blodsocker. Fungerar med Nightscout, Dexcom Share, Tandem Source, Medtronic CareLink, FreeStyle Libre (LibreLinkUp) och xDrip. Finns för Windows, macOS, Linux och Raspberry Pi.">
+    <meta name="theme-color" content="#12141c">
+    <link rel="alternate" hreflang="en" href="https://trndi.app/">
+    <link rel="alternate" hreflang="sv" href="https://trndi.app/sv/">
+    <link rel="alternate" hreflang="x-default" href="https://trndi.app/">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="icon" href="../Trndi.ico">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a class="nav-logo" href="#top">
+                <img src="../Trndi.png" alt="Trndi-logotyp">
+                <span>Trndi</span>
+            </a>
+            <div class="nav-links">
+                <a href="#download">Ladda ner</a>
+                <a href="#setup">Kom igång</a>
+                <a href="#sources">Källor</a>
+                <a href="#features">Funktioner</a>
+                <a href="../cli.html">CLI</a>
+                <a href="../multi.html">Multi</a>
+                <a href="https://discord.gg/5n7JyG9zU" class="nav-discord">💬 Discord</a>
+                <a href="https://github.com/slicke/trndi">GitHub</a>
+                <a href="../" class="nav-lang" hreflang="en" lang="en">English</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero" id="top">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-content">
+            <img src="../doc/img/trndi-logo.png" alt="Trndi-logotyp" class="hero-logo">
+
+            <div class="hero-release">
+                <span class="release-dot" aria-hidden="true"></span>
+                <span class="release-label">Senaste versionen:</span>
+                <span id="latest-release" class="release-version">Laddar&hellip;</span>
+                <span id="release-date" class="release-date"></span>
+            </div>
+
+            <h1>Ditt CGM-värde,<br><span class="grad-text">på vilken skärm som helst</span></h1>
+            <p class="hero-subtitle">Ett gratis program som visar ditt blodsocker stort och tydligt på datorskärmen &mdash; direkt från CGM-systemet du redan använder.</p>
+
+            <div class="hero-buttons">
+                <a href="#download" class="btn-primary">Ladda ner Trndi</a>
+                <a href="https://discord.gg/5n7JyG9zU" class="btn-discord">💬 Gå med på Discord</a>
+                <a href="https://github.com/slicke/trndi" class="btn-secondary">Se på GitHub</a>
+            </div>
+
+            <div class="hero-chips">
+                <span class="chip">🌙 Nightscout</span>
+                <span class="chip">📡 Dexcom Share</span>
+                <span class="chip">💙 Tandem Source</span>
+                <span class="chip">🩸 Medtronic CareLink</span>
+                <span class="chip">🩹 FreeStyle Libre</span>
+                <span class="chip">📶 xDrip+</span>
+            </div>
+            <p class="hero-platforms">Windows &bull; macOS &bull; Linux &bull; Raspberry Pi &bull; Inbyggd Linux<br>
+            <small>*&nbsp;plus inofficiella versioner för BSD och Haiku</small></p>
+        </div>
+    </header>
+
+    <div class="stats-bar">
+        <div class="container stats-inner">
+            <div class="stat"><strong>6</strong> CGM-källor</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>Inget</strong> konto behövs</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>4+</strong> plattformar*</div>
+            <div class="stat-divider"></div>
+            <div class="stat"><strong>Gratis</strong> &amp; öppen källkod</div>
+        </div>
+    </div>
+
+    <section class="screenshots">
+        <div class="container">
+            <p class="eyebrow">Skärmbilder</p>
+            <h2>Så här ser det ut</h2>
+            <div class="screenshot-grid">
+                <div class="screenshot-item reveal">
+                    <img src="../doc/img/img_win.png" alt="Trndi på Windows 11" loading="lazy">
+                    <h3>Windows 11</h3>
+                </div>
+                <div class="screenshot-item reveal">
+                    <img src="../doc/img/img_lin_range.png" alt="Trndi på Fedora Linux (KDE)" loading="lazy">
+                    <h3>Linux</h3>
+                </div>
+                <div class="screenshot-item reveal">
+                    <img src="../doc/img/img_rpi.jpg" alt="Trndi på Raspberry Pi med pekskärm" loading="lazy">
+                    <h3>Raspberry Pi</h3>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="download">
+        <div class="container">
+            <p class="eyebrow eyebrow-dark">Kom igång</p>
+            <h2>Ladda ner Trndi</h2>
+            <p class="section-sub">Gratis, inget konto, ingen registrering. Ett klick så är du igång.</p>
+
+            <!-- Fylls i av skriptet när besökarens dator känns igen; döljs annars -->
+            <div id="download-primary" class="download-primary" hidden>
+                <div class="download-icon" id="download-primary-icon" aria-hidden="true"></div>
+                <a href="#" id="download-primary-btn" class="btn-download btn-download-big">Ladda ner Trndi</a>
+                <!-- Linux får en rad med paketknappar i stället: distributionen avgör filen -->
+                <div id="download-primary-pkgs" class="download-pkgs" hidden>
+                    <a href="https://github.com/slicke/trndi/releases/latest/" id="download-pkg-deb" class="btn-download btn-download-pkg">
+                        <span class="pkg-name">Ubuntu &middot; Debian</span><span class="pkg-file">.deb-paket</span></a>
+                    <a href="https://github.com/slicke/trndi/releases/latest/" id="download-pkg-rpm" class="btn-download btn-download-pkg">
+                        <span class="pkg-name">Fedora &middot; RHEL</span><span class="pkg-file">.rpm-paket</span></a>
+                    <a href="https://github.com/slicke/trndi/releases/latest/" id="download-pkg-appimage" class="btn-download btn-download-pkg">
+                        <span class="pkg-name">Övriga Linux</span><span class="pkg-file">AppImage</span></a>
+                </div>
+                <p class="download-primary-sub" id="download-primary-sub"></p>
+                <p class="download-primary-other">Fel dator? <a href="#all-downloads" id="download-show-all">Visa alla nedladdningar</a></p>
+            </div>
+
+            <div id="download-mobile" class="download-mobile" hidden>
+                <p><strong>Trndi är ett program för datorer,</strong> inte för mobiler. Din Dexcom-, Libre- eller Nightscout-app sköter redan den saken i telefonen &mdash; Trndi är till för laptopen, stationära datorn eller en extra skärm på väggen. Öppna den här sidan på datorn för att ladda ner det.</p>
+                <p class="download-primary-other"><a href="#all-downloads" id="download-show-all-mobile">Visa alla nedladdningar ändå</a></p>
+            </div>
+
+            <div id="download-next" class="download-next" hidden>
+                <h3 id="download-next-title">Vad som händer efter klicket</h3>
+                <p class="next-steps-file" id="download-next-file" hidden></p>
+
+                <div class="next-steps" data-kind="exe" hidden>
+                    <p>Trndi är gjort av en enda person, inte av ett stort företag, så Windows har aldrig hört talas om det och visar en blå varning första gången. Det är helt normalt. Så här ser den ut och så här klickar du:</p>
+                    <div class="mock-dialog" role="img" aria-label="Varning från Windows SmartScreen: Windows skyddade din dator. Klicka på Mer information och sedan Kör ändå.">
+                        <div class="mock-dialog-title">Windows skyddade din dator</div>
+                        <p>Microsoft Defender SmartScreen förhindrade att en okänd app startades. Om du kör appen kan datorn utsättas för risker.</p>
+                        <p><span class="mock-link mock-step">1. Mer information</span></p>
+                        <p class="mock-dialog-info">App: TrndiSetup.exe<br>Utgivare: Okänd utgivare</p>
+                        <div class="mock-dialog-buttons">
+                            <span class="mock-btn mock-step">2. Kör ändå</span>
+                            <span class="mock-btn mock-btn-muted">Kör inte</span>
+                        </div>
+                    </div>
+                    <ol>
+                        <li>Klicka på den lilla länken <strong>Mer information</strong>.</li>
+                        <li>Klicka på <strong>Kör ändå</strong>.</li>
+                        <li>Följ installationsprogrammet. Trndi öppnas och frågar hur det ska ansluta till din CGM.</li>
+                    </ol>
+                </div>
+
+                <div class="next-steps" data-kind="winzip" hidden>
+                    <p>Den portabla versionen har inget installationsprogram: det är en mapp som du lägger var du vill, på ett USB-minne om du föredrar det. Windows visar ändå sin blå varning första gången du startar det.</p>
+                    <ol>
+                        <li>Högerklicka på den nedladdade <strong>.zip</strong>-filen och välj <strong>Extrahera alla&hellip;</strong>. Välj en mapp du tänker behålla, till exempel <em>Dokument\Trndi</em>. Kör det inte direkt inifrån zip-fönstret.</li>
+                        <li>Öppna mappen och dubbelklicka på <strong>Trndi.exe</strong>.</li>
+                        <li>Windows säger <em>Windows skyddade din dator</em>. Klicka på den lilla länken <strong>Mer information</strong> och sedan på <strong>Kör ändå</strong>. Det frågas bara en gång.</li>
+                        <li>Trndi öppnas och frågar hur det ska ansluta till din CGM.</li>
+                    </ol>
+                    <p class="next-steps-note">Ingenting läggs till på Startmenyn. Gör en genväg till Trndi.exe själv om du vill ha en. Inställningarna sparas i Windows-registret, inte i mappen.</p>
+                </div>
+
+                <div class="next-steps" data-kind="dmg" hidden>
+                    <p>Trndi är gjort av en enda person, inte av ett företag som betalar Apple för att signera appar, så din Mac vägrar öppna det första gången. Två minuter löser det:</p>
+                    <ol>
+                        <li>Öppna den nedladdade <strong>.dmg</strong>-filen och dra <strong>Trndi</strong> till <strong>Program</strong>, precis som med vilken app som helst.</li>
+                        <li>Öppna <strong>Terminal</strong>: tryck <kbd>&#8984;</kbd>+<kbd>Mellanslag</kbd>, skriv <em>Terminal</em> och tryck Enter. Ett enkelt textfönster öppnas.</li>
+                        <li>Kopiera den här raden, klistra in den i fönstret och tryck Enter:
+                            <pre class="mock-terminal"><code>xattr -c /Applications/Trndi.app</code></pre>
+                            Ingenting syns hända. Det är som det ska.</li>
+                        <li>Öppna Trndi från Program. Det frågar hur det ska ansluta till din CGM.</li>
+                    </ol>
+                    <p class="next-steps-note">Varför? Raden tar bort märkningen "hämtad från internet" som får macOS att blockera osignerade appar. Den ändrar ingenting annat. Se <a href="https://github.com/slicke/trndi/blob/main/doc/macOS.md">anteckningarna om macOS</a>.</p>
+                </div>
+
+                <div class="next-steps" data-kind="deb" hidden>
+                    <ol>
+                        <li>Dubbelklicka på den nedladdade <strong>.deb</strong>-filen så tar din programhanterare över. Eller, i en terminal:
+                            <pre class="mock-terminal"><code>sudo apt install ./trndi_*.deb</code></pre></li>
+                        <li>Paketet kräver <strong>Qt6Pas</strong>, så på Debian 13 och Ubuntu 25.04 och nyare installeras det biblioteket automatiskt med och då är du klar. På äldre utgåvor finns det inte i paketkällorna, så paketet installeras utan det och Trndi startar inte &mdash; installera det själv först, som tabellen nedan visar.</li>
+                        <li>Starta <strong>Trndi</strong> från programmenyn. Det frågar hur det ska ansluta till din CGM.</li>
+                    </ol>
+                </div>
+
+                <div class="next-steps" data-kind="rpm" hidden>
+                    <ol>
+                        <li>Dubbelklicka på den nedladdade <strong>.rpm</strong>-filen så tar din programhanterare över. Eller, i en terminal:
+                            <pre class="mock-terminal"><code>sudo dnf install ./trndi-*.rpm</code></pre></li>
+                        <li>Paketet kräver <strong>Qt6Pas</strong>, så på Fedora 43 och nyare installeras det biblioteket automatiskt med och då är du klar. På äldre Fedora, eller där paketet heter något annat, installerar du det själv först, som tabellen nedan visar.</li>
+                        <li>Starta <strong>Trndi</strong> från programmenyn. Det frågar hur det ska ansluta till din CGM.</li>
+                    </ol>
+                </div>
+
+                <div class="next-steps" data-kind="appimage" hidden>
+                    <p>En AppImage är en enda fil som körs utan installation. Trndis AppImage bär <strong>inte</strong> med sig Qt6Pas-biblioteket, så just det måste installeras först.</p>
+                    <ol>
+                        <li>Installera <strong>Qt6Pas</strong> med din pakethanterare &mdash; tabellen nedan ger kommandot för din distribution.</li>
+                        <li>Gör filen körbar: högerklicka på den, <em>Egenskaper</em>, kryssa i <em>Tillåt körning som program</em>. Eller i en terminal:
+                            <pre class="mock-terminal"><code>chmod +x Trndi-*.AppImage</code></pre></li>
+                        <li>Dubbelklicka på den. Trndi öppnas och frågar hur det ska ansluta till din CGM.</li>
+                    </ol>
+                    <p class="next-steps-note">Ingenting läggs till i programmenyn. Panelindikatorerna för GNOME och KDE finns inuti AppImage-filen men måste kopieras ut för hand; .deb och .rpm installerar dem åt dig.</p>
+                </div>
+
+                <div class="next-steps" data-kind="linuxzip" hidden>
+                    <p>.zip-filen är bara programmappen, för den som helst slipper installera något. Den bär <strong>inte</strong> med sig Qt6Pas-biblioteket, så just det måste installeras först.</p>
+                    <ol>
+                        <li>Installera <strong>Qt6Pas</strong> med din pakethanterare &mdash; tabellen nedan ger kommandot för din distribution.</li>
+                        <li>Packa upp zip-filen någonstans där du tänker behålla den och kör sedan <strong>Trndi</strong> från den mappen:
+                            <pre class="mock-terminal"><code>unzip Trndi-linux-*.zip -d ~/trndi
+~/trndi/Trndi</code></pre></li>
+                        <li>Trndi öppnas och frågar hur det ska ansluta till din CGM.</li>
+                    </ol>
+                    <p class="next-steps-note">Ingenting läggs till i programmenyn. Vill du ha det är .deb eller .rpm det enklare valet.</p>
+                </div>
+
+                <div class="next-steps" data-kind="pick" hidden>
+                    <p>Klicka på ett av paketen ovan så dyker stegen för just den filen upp här.</p>
+                </div>
+
+                <div id="qt6pas-table" class="qt6pas" hidden>
+                    <h4>Så får du Qt6Pas på din distribution</h4>
+                    <p>Trndi ritas upp med Qt6 och behöver ett extra bibliotek, <strong>Qt6Pas</strong>. Distributionerna stavar det olika, och de äldre har det inte alls. Hitta din:</p>
+                    <div class="qt6pas-scroll">
+                        <table>
+                            <thead>
+                                <tr><th>Distribution</th><th>Installera med</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Debian 13 (trixie) och nyare</td><td><code>sudo apt install libqt6pas6</code></td></tr>
+                                <tr><td>Debian 12 (bookworm)</td><td class="qt6pas-missing">Finns inte i paketkällorna &mdash; använd <code>.deb</code>-filen från projektet nedan</td></tr>
+                                <tr><td>Ubuntu 25.04 och nyare</td><td><code>sudo apt install libqt6pas6</code></td></tr>
+                                <tr><td>Ubuntu 24.04 LTS och äldre</td><td class="qt6pas-missing">Finns inte i paketkällorna &mdash; använd <code>.deb</code>-filen från projektet nedan</td></tr>
+                                <tr><td>Raspberry Pi OS (trixie)</td><td><code>sudo apt install libqt6pas6</code></td></tr>
+                                <tr><td>Raspberry Pi OS (bookworm)</td><td class="qt6pas-missing">Finns inte i paketkällorna &mdash; använd <strong>arm64</strong>-<code>.deb</code>-filen från projektet nedan</td></tr>
+                                <tr><td>Fedora 43 och nyare</td><td><code>sudo dnf install qt6pas</code></td></tr>
+                                <tr><td>RHEL, AlmaLinux, Rocky 10</td><td><code>sudo dnf install qt6pas</code><br><small>Kräver att EPEL-förrådet är aktiverat.</small></td></tr>
+                                <tr><td>Arch, Manjaro, EndeavourOS</td><td><code>sudo pacman -S qt6pas</code></td></tr>
+                                <tr><td>openSUSE</td><td><code>sudo zypper install libQt6Pas6</code><br><small>Hittar du det inte? Det ligger i <em>devel:languages:pascal</em> på <a href="https://software.opensuse.org/package/libQt6Pas">openSUSE Build Service</a>.</small></td></tr>
+                                <tr><td>Gentoo</td><td><code>sudo emerge dev-libs/libqt6pas</code></td></tr>
+                                <tr><td>Något annat</td><td>Sök i din pakethanterare efter <code>qt6pas</code>, <code>libqt6pas6</code> eller <code>libQt6Pas.so.6</code></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="next-steps-note"><strong>Finns det inte i dina paketkällor?</strong> Bibliotekets eget projekt publicerar färdiga paket &mdash; en <code>.deb</code> för amd64 och arm64, en <code>.rpm</code> för x86_64 och en vanlig tarball &mdash; på <a href="https://github.com/davidbannon/libqt6pas/releases/latest">davidbannon/libqt6pas</a>. Installera den som passar din maskin på samma sätt som du installerade Trndi. Den behöver Qt6 självt (6.2.4 eller nyare) och glibc 2.34 eller nyare, så den fungerar inte på riktigt gamla utgåvor.</p>
+                </div>
+            </div>
+
+            <div id="all-downloads" class="download-all">
+            <div class="download-all-toggle">
+                <p>Alla nedladdningar, för alla datorer</p>
+                <button type="button" id="download-show-all-btn" class="btn-showall">Visa alla</button>
+            </div>
+            <div class="download-grid">
+                <div class="download-item reveal">
+                    <div class="download-icon">🪟</div>
+                    <h3>Windows</h3>
+                    <p>Windows 10 &amp; 11 (x64)</p>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/TrndiSetup.exe" data-asset="TrndiSetup.exe" class="btn-download">Ladda ner installationsfil</a>
+                    <p class="download-subtext"><small>Portabel .zip finns nedan</small></p>
+                </div>
+                <div class="download-item reveal">
+                    <div class="download-icon">🍎</div>
+                    <h3>macOS</h3>
+                    <p>Apple Silicon</p>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.dmg" data-asset="Trndi-macos-silicon.dmg" class="btn-download">Ladda ner DMG</a>
+                </div>
+                <div class="download-item reveal">
+                    <div class="download-icon">🐧</div>
+                    <h3>Linux x64</h3>
+                    <p>De flesta distributioner (amd64)</p>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-linux-amd64.zip" data-asset="Trndi-linux-amd64.zip" class="btn-download">Ladda ner för Linux</a>
+                    <p class="download-subtext"><small>.deb / .rpm / AppImage nedan</small></p>
+                </div>
+                <div class="download-item reveal">
+                    <div class="download-icon">🥧</div>
+                    <h3>Raspberry Pi</h3>
+                    <p>ARM64 / aarch64</p>
+                    <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-linux-arm64.zip" data-asset="Trndi-linux-arm64.zip" class="btn-download">Ladda ner för Pi</a>
+                    <p class="download-subtext"><small>.deb / .rpm / AppImage nedan</small></p>
+                </div>
+            </div>
+
+            <div class="download-note">
+                <p><strong>Fler alternativ:</strong></p>
+                <div class="additional-downloads">
+                    <div class="download-category">
+                        <h4>Windows (portabel)</h4>
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-windows-x64.zip" data-asset="Trndi-windows-x64.zip">Portabel .zip</a>
+                    </div>
+                    <div class="download-category">
+                        <h4>Linux-paket</h4>
+                        <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi_*_amd64.deb">Ubuntu/Debian (.deb)</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi-*.x86_64.rpm">Fedora/RHEL (.rpm)</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-x86_64.AppImage" data-asset="Trndi-x86_64.AppImage">AppImage (x86_64)</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/download/Trndi-aarch64.AppImage" data-asset="Trndi-aarch64.AppImage">AppImage (aarch64)</a>
+                    </div>
+                    <div class="download-category">
+                        <h4>Raspberry Pi-paket</h4>
+                        <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi_*_arm64.deb">ARM64 .deb</a> &bull;
+                        <a href="https://github.com/slicke/trndi/releases/latest/" data-asset="trndi-*.aarch64.rpm">ARM64 .rpm</a>
+                    </div>
+                </div>
+                <div class="linux-note">
+                    <span class="linux-note-icon" aria-hidden="true">🐧</span>
+                    <div>
+                        <h4>Att tänka på för Linux</h4>
+                        <p>Alla Linux-versioner behöver biblioteket Qt6Pas — <code>libqt6pas6</code> på Debian,
+                            Ubuntu och Raspberry Pi OS, <code>qt6pas</code> på Fedora. .deb och .rpm begär
+                            det automatiskt på distributioner som har det; AppImage och den portabla
+                            .zip-filen är inte självförsörjande, så där installerar du det själv först.
+                            <a href="https://github.com/slicke/trndi/blob/main/README.md#linux-notes">Allt om Linux &rarr;</a></p>
+                    </div>
+                </div>
+                <p><strong>Alla versioner:</strong> <a href="https://github.com/slicke/trndi/releases">Se alla utgåvor på GitHub</a></p>
+                <p><strong>Inofficiella versioner:</strong> Trndi kan också byggas från källkod för
+                    <a href="https://github.com/slicke/trndi#bsd">FreeBSD, OpenBSD &amp; NetBSD</a> och
+                    <a href="https://github.com/slicke/trndi#haiku">Haiku</a>.</p>
+            </div>
+            </div><!-- /all-downloads -->
+        </div>
+    </section>
+
+    <section id="setup" class="setup">
+        <div class="container">
+            <p class="eyebrow">Kom igång</p>
+            <h2>Koppla ihop det med din CGM</h2>
+            <p class="section-sub">Första gången Trndi startar frågar det vilket system du använder och vad det ska logga in med. Det här behöver du ha framme:</p>
+            <div class="setup-grid">
+                <div class="setup-item reveal">
+                    <h3>🌙 Nightscout</h3>
+                    <p>Din Nightscout-adress (den du öppnar i webbläsaren) och dess API-hemlighet eller token. Trndi hämtar dina hög- och låggränser från sidan automatiskt.</p>
+                </div>
+                <div class="setup-item reveal">
+                    <h3>📡 Dexcom Share</h3>
+                    <p><strong>Samma e-postadress och lösenord som du loggar in i Dexcom-appen med</strong> &mdash; inte ett följarkonto. Delning måste vara påslagen i Dexcom-appen först. Välj den Dexcom-post som gäller din region (USA, EU eller Japan). Se <a href="https://github.com/slicke/trndi/blob/main/guides/Dexcom.md">guiden för Dexcom</a>.</p>
+                </div>
+                <div class="setup-item reveal">
+                    <h3>💙 Tandem Source</h3>
+                    <p>E-postadressen och lösenordet till ditt Tandem Source-konto. Värdena kan komma några minuter sent här; det är Tandems sida av saken, inte din. Se <a href="https://github.com/slicke/trndi/blob/main/guides/Tandem.md">guiden för Tandem</a>.</p>
+                </div>
+                <div class="setup-item reveal">
+                    <h3>🩸 Medtronic CareLink</h3>
+                    <p>Logga in en gång i webbläsaren med ett Care Partner-konto via det medföljande hjälpprogrammet och klistra sedan in din token i Trndi. Se <a href="https://github.com/slicke/trndi/blob/main/guides/CareLink.md">guiden för CareLink</a>.</p>
+                </div>
+                <div class="setup-item reveal">
+                    <h3>🩹 FreeStyle Libre</h3>
+                    <p><strong>Du behöver ett andra konto innan du börjar.</strong> Trndi loggar in som en följare i <strong>LibreLinkUp</strong>, inte som LibreLink-appen i telefonen. Skapa ett LibreLinkUp-konto med en annan e-postadress, bjud in det från LibreLink-appen (Anslutna appar &rarr; LibreLinkUp) och acceptera inbjudan i LibreLinkUp-appen. Ge sedan Trndi den e-postadressen och det lösenordet. Se <a href="https://github.com/slicke/trndi/blob/main/guides/LibreLinkUp.md">guiden för Libre</a>.</p>
+                </div>
+                <div class="setup-item reveal">
+                    <h3>📶 xDrip+</h3>
+                    <p>Slå på den lokala webbservern i xDrip+ och ange sedan IP-adressen och lösenordet i Trndi.</p>
+                </div>
+            </div>
+
+            <div class="setup-instructions">
+                <h3>Dina första fem minuter</h3>
+                <ol>
+                    <li><strong>Ladda ner och öppna Trndi</strong> med knappen ovan. Windows och macOS varnar första gången; stegen under knappen visar vad du ska klicka på.</li>
+                    <li><strong>Läs och godkänn informationen.</strong> Trndi är ingen medicinteknisk produkt och dess varningar är inget larmsystem. Det står där direkt.</li>
+                    <li><strong>En guide öppnas.</strong> Välj ditt CGM-system i listan, skriv in inloggningen från rutan ovan och tryck på <em>Testa anslutning</em>. Grön bock betyder att du är klar.</li>
+                    <li><strong>Välj mmol/L eller mg/dL</strong> och kontrollera hög- och låggränserna. De börjar på de vanliga 4&ndash;10 mmol/L (70&ndash;180 mg/dL); ändra dem om din sköterska gav dig andra.</li>
+                    <li><strong>Tryck på Slutför.</strong> Ditt värde dyker upp inom en minut, i grönt, orange eller rött.</li>
+                </ol>
+                <p class="setup-tip">💡 Det finns inga knappar i fönstret. <strong>Högerklicka på värdet</strong> för att få menyn med Inställningar, privatläge, snooze och allt annat. På en pekskärm håller du in fingret.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="sources" class="sources">
+        <div class="container">
+            <p class="eyebrow eyebrow-dark">Kompatibilitet</p>
+            <h2>CGM-källor som stöds</h2>
+            <p class="section-sub">Anslut till systemet du redan använder — ingen extra hårdvara behövs.</p>
+            <div class="sources-grid">
+                <div class="source-item reveal">
+                    <div class="source-icon">🌙</div>
+                    <h3>Nightscout</h3>
+                    <p>Egen server eller moln. Hög- och låggränser importeras automatiskt från din server. Stöder både v2- och v3-API:et.</p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">📡</div>
+                    <h3>Dexcom Share</h3>
+                    <p>Stöd för regionerna USA, EU och Japan. Ansluter via Dexcoms officiella Share-API — både det klassiska och det nya.</p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">💙</div>
+                    <h3>Tandem Source</h3>
+                    <p>Ansluter till Tandem Source-molnet med inloggningen till ditt befintliga Tandem-konto.</p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">🩸</div>
+                    <h3>Medtronic CareLink</h3>
+                    <p>Följ en Medtronic-pump via följar-API:et i CareLink Connect — regionerna USA och EU. Inloggning i webbläsaren en gång; Trndi håller sessionen vid liv. <em>Experimentellt.</em></p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">🩹</div>
+                    <h3>FreeStyle Libre</h3>
+                    <p>Följer en Abbott-sensor via ett följarkonto i LibreLinkUp. Fungerar i alla regioner utan någon server att välja. Hög- och låggränser hämtas från dina larminställningar i LibreLinkUp. <em>Alfa.</em></p>
+                </div>
+                <div class="source-item reveal">
+                    <div class="source-icon">📶</div>
+                    <h3>xDrip+ WiFi</h3>
+                    <p>Ansluter lokalt över ditt hemnätverk till Android-appen xDrip+ — inget moln behövs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <p class="eyebrow">Funktioner</p>
+            <h2>Det här får du</h2>
+            <div class="features-grid">
+                <div class="feature reveal">
+                    <div class="feature-icon">🔢</div>
+                    <h3>En enda stor siffra</h3>
+                    <p>Ditt värde, pilen och hur många minuter gammalt det är. Hela fönstret blir grönt, orange eller rött, så att du ser det tvärs över rummet.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">📊</div>
+                    <h3>De senaste timmarna</h3>
+                    <p>En rad prickar visar var du har legat. Du väljer hur långt bak den går och vilka färger som betyder högt, lågt och "okej men på väg".</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">⏱️</div>
+                    <h3>Ljuger aldrig om gamla värden</h3>
+                    <p>När inget nytt värde har kommit in tonas siffran ner och en notis berättar hur länge det har varit tyst, så att ett gammalt värde aldrig ser färskt ut.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🔔</div>
+                    <h3>Varningar du kan snooza</h3>
+                    <p>Aviseringar på skrivbordet, ett ljud, och den kan pausa musiken för att fånga din uppmärksamhet. Snooza i 15, 30 eller 60 minuter när du redan har koll.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🙈</div>
+                    <h3>Privatläge</h3>
+                    <p>Delar du skärmen på ett möte? Ett klick döljer siffran men behåller färgerna, så att du fortfarande vet var du ligger.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🌙</div>
+                    <h3>Dämpas på natten</h3>
+                    <p>Mellan de timmar du väljer tonas ett lugnt värde ner till nästan svart, så att en skärm vid sängen slutar lysa upp rummet. Höga och låga värden syns ändå.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🔮</div>
+                    <h3>En blick framåt</h3>
+                    <p>Valfria, experimentella prognoser visar vart trenden är på väg om 5, 10 och 15 minuter. En vägledning, inte ett löfte.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">♿</div>
+                    <h3>Läser upp</h3>
+                    <p>Talsyntes kan läsa upp värdena. Högkontrastläge, justerbar röst och hastighet, och kontroller som fungerar med skärmläsare.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">📱</div>
+                    <h3>Fungerar på en väggskärm</h3>
+                    <p>Anpassat för pekskärm och trivs på en Raspberry Pi med en liten display, vid sängen eller i köket.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">👥</div>
+                    <h3>Fler än en person</h3>
+                    <p>Föräldrar och partner kan följa flera personer, var och en med sitt eget CGM-system och sina egna inställningar.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">🌍</div>
+                    <h3>På ditt språk</h3>
+                    <p>Finns på sex språk, bland annat svenska, tyska och franska.</p>
+                </div>
+                <div class="feature reveal">
+                    <div class="feature-icon">💝</div>
+                    <h3>Gratis, för alltid</h3>
+                    <p>Ingen prenumeration, inga annonser, inget konto, ingen datainsamling. Öppen källkod under GPLv3.</p>
+                </div>
+            </div>
+
+            <div class="features-tinker">
+                <h3>För dig som gillar att meka</h3>
+                <p class="section-sub">Du kan strunta i allt det här. Det finns där om du vill ha det.</p>
+                <ul class="tinker-list">
+                    <li><strong>JavaScript-tillägg</strong> &mdash; en inbyggd QuickJS-motor kör dina egna skript vid varje värde. Det finns officiella tillägg för IFTTT och Discord.</li>
+                    <li><strong>Webb-API</strong> &mdash; en lokal slutpunkt med en direktström av händelser, så att andra program och instrumentpaneler kan läsa dina data utan att fråga om och om igen.</li>
+                    <li><strong>Skrivbordsindikatorer</strong> &mdash; ett GNOME Shell-tillägg, en KDE Plasma-widget och en Waybar-modul som visar aktuellt värde i panelen.</li>
+                    <li><strong>Razer Chroma</strong> &mdash; belysningen i tangentbord och mus följer ditt målområde på Windows och Linux.</li>
+                    <li><strong>Kioskläge</strong> &mdash; starta med <code>--kiosk</code> för en helskärmsvy som aldrig somnar.</li>
+                    <li><strong>Proxystöd</strong> &mdash; en inställd proxy används uteslutande och förbigås aldrig.</li>
+                    <li><strong>Körs direkt i systemet</strong> &mdash; ingen webbläsare, ingen Electron, inget moln emellan. En liten binärfil per plattform.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="promo" id="cli">
+        <div class="container promo-inner">
+            <div class="promo-text">
+                <span class="promo-icon" aria-hidden="true">$_</span>
+                <div>
+                    <h2>Föredrar du kommandoraden? Möt trndi-cli</h2>
+                    <p>Ett valfritt tillägg för dig som jobbar i en terminal. Det visar dina värden som ren text, så att de får plats i en skalprompt, ett skript eller en Raspberry Pi utan skrivbordsmiljö. Det återanvänder inställningarna du redan gjort i Trndi. Är du nöjd med skrivbordsprogrammet kan du hoppa över det.</p>
+                </div>
+            </div>
+            <a href="../cli.html" class="btn-promo" hreflang="en">Utforska trndi-cli &rarr;</a>
+        </div>
+    </section>
+
+    <section class="promo" id="multi">
+        <div class="container promo-inner">
+            <div class="promo-text">
+                <span class="promo-icon promo-icon-img" aria-hidden="true"><img src="../trndi-multi.png" alt=""></span>
+                <div>
+                    <h2>Följer du fler än en person? Möt trndi-multi</h2>
+                    <p>En valfri följeslagare för föräldrar, partner och anhörigvårdare. Varje konto blir en ruta i ett och samma fönster, färgad efter målområdet och med en minigraf över de senaste timmarna. Sätt den på en väggskärm eller en extra skärm. Den delar dina Trndi-konton och kan lägga till nya också.</p>
+                </div>
+            </div>
+            <a href="../multi.html" class="btn-promo" hreflang="en">Utforska trndi-multi &rarr;</a>
+        </div>
+    </section>
+
+    <section class="community">
+        <div class="container community-inner">
+            <div class="community-text">
+                <h2>Gå med i gemenskapen</h2>
+                <p>Ställ frågor, visa hur du har satt upp det, rapportera fel eller häng bara med andra Trndi-användare och bidragsgivare.</p>
+            </div>
+            <div class="community-actions">
+                <a href="https://discord.gg/5n7JyG9zU" class="btn-community-discord">💬 Häng med oss på Discord</a>
+                <a href="https://github.com/slicke/trndi/issues" class="btn-community-gh">Rapportera ett fel</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="https://github.com/slicke/trndi">GitHub</a>
+                    <a href="https://discord.gg/5n7JyG9zU">Discord</a>
+                    <a href="https://github.com/slicke/trndi/issues">Rapportera fel</a>
+                    <a href="https://github.com/slicke/trndi/blob/main/CONTRIBUTING.md">Bidra</a>
+                    <a href="https://github.com/slicke/trndi/releases">Utgåvor</a>
+                    <a href="https://github.com/slicke/trndi/blob/main/doc/LANGUAGES.md">Översättningar</a>
+                    <a href="../" hreflang="en" lang="en">English</a>
+                </div>
+                <div class="footer-info">
+                    <p>&copy; 2026 Trndi. Fri programvara med öppen källkod (GPLv3).</p>
+                </div>
+            </div>
+            <p class="footer-disclaimer">Trndi är ingen medicinteknisk produkt. Fatta aldrig behandlingsbeslut enbart utifrån Trndi.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        window.addEventListener('scroll', function () {
+            document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 100);
+        });
+
+        // Fade cards in as they scroll into view (no-op if reduced motion or no support)
+        if ('IntersectionObserver' in window &&
+            !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            const io = new IntersectionObserver(entries => {
+                entries.forEach(e => {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('visible');
+                        io.unobserve(e.target);
+                    }
+                });
+            }, { rootMargin: '0px 0px -40px 0px' });
+            document.querySelectorAll('.reveal').forEach(el => {
+                el.classList.add('reveal-armed');
+                io.observe(el);
+            });
+        }
+
+        // Pick the download for the visitor's computer and show the matching
+        // "what happens next" steps. Unknown platforms just see the full grid.
+        (function () {
+            const ua = navigator.userAgent || '';
+            const uaPlat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+            const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua) ||
+                (navigator.userAgentData && navigator.userAgentData.mobile);
+            // iPadOS reports itself as a Mac; touch points give it away.
+            const iPadAsMac = /Mac/i.test(uaPlat) && navigator.maxTouchPoints > 1;
+
+            const targets = {
+                windows: { icon: '🪟', label: 'Ladda ner Trndi för Windows', sub: 'Windows 10 och 11. Ett vanligt installationsprogram.', asset: 'TrndiSetup.exe',
+                           href: 'https://github.com/slicke/trndi/releases/latest/download/TrndiSetup.exe' },
+                mac:     { icon: '🍎', label: 'Ladda ner Trndi för Mac', sub: 'Mac-datorer med Apple Silicon (M1 och nyare).', asset: 'Trndi-macos-silicon.dmg',
+                           href: 'https://github.com/slicke/trndi/releases/latest/download/Trndi-macos-silicon.dmg' },
+                // Linux and Pi show a row of packages instead of one file, so the
+                // distro's own installer handles it (and pulls in Qt6Pas where the
+                // distro ships it). The .deb/.rpm names carry the version, so they
+                // are resolved from the release listing by applyReleaseAssets.
+                linux:   { icon: '🐧', sub: 'Välj den som passar din distribution. Paketinstallationen lägger till Trndi i programmenyn och hämtar Qt6Pas-biblioteket där din distribution har det.',
+                           pkgs: { deb: 'trndi_*_amd64.deb', rpm: 'trndi-*.x86_64.rpm', appimage: 'Trndi-x86_64.AppImage' },
+                           debName: 'Ubuntu · Debian', rpmName: 'Fedora · RHEL' },
+                pi:      { icon: '🥧', sub: 'Välj den som passar din Pi. Raspberry Pi OS använder .deb-filen. Paketinstallationen lägger till Trndi i programmenyn.',
+                           pkgs: { deb: 'trndi_*_arm64.deb', rpm: 'trndi-*.aarch64.rpm', appimage: 'Trndi-aarch64.AppImage' },
+                           debName: 'Raspberry Pi OS · Debian', rpmName: 'Fedora · RHEL' }
+            };
+
+            // ?os=windows|mac|linux|pi|mobile previews another computer's view,
+            // and ?os=off previews what an unrecognised computer gets (the full grid).
+            const forced = new URLSearchParams(location.search).get('os');
+            let key = null;
+            if (forced === 'off') key = null;
+            else if (forced && (forced === 'mobile' || forced in targets)) key = forced;
+            else if (isMobile || iPadAsMac) key = 'mobile';
+            else if (/Win/i.test(uaPlat)) key = 'windows';
+            else if (/Mac/i.test(uaPlat)) key = 'mac';
+            else if (/Linux|X11|BSD/i.test(uaPlat + ua)) key = /aarch64|arm64|armv/i.test(ua) ? 'pi' : 'linux';
+            if (forced === 'off') key = null;
+
+            const primary = document.getElementById('download-primary');
+            const mobile = document.getElementById('download-mobile');
+            const next = document.getElementById('download-next');
+            const all = document.getElementById('all-downloads');
+
+            function showAll(e) {
+                if (e) e.preventDefault();
+                all.classList.remove('download-all-collapsed');
+                all.scrollIntoView({ behavior: 'smooth' });
+            }
+            document.getElementById('download-show-all').addEventListener('click', showAll);
+            document.getElementById('download-show-all-mobile').addEventListener('click', showAll);
+            document.getElementById('download-show-all-btn').addEventListener('click', showAll);
+
+            if (key === 'mobile') {
+                mobile.hidden = false;
+                all.classList.add('download-all-collapsed');
+                return;
+            }
+            const t = targets[key];
+            if (!t) return;
+
+            document.getElementById('download-primary-icon').textContent = t.icon;
+            const btn = document.getElementById('download-primary-btn');
+            if (t.pkgs) {
+                btn.hidden = true;
+                const row = document.getElementById('download-primary-pkgs');
+                const deb = document.getElementById('download-pkg-deb');
+                const rpm = document.getElementById('download-pkg-rpm');
+                const app = document.getElementById('download-pkg-appimage');
+                deb.dataset.asset = t.pkgs.deb;        // resolved by applyReleaseAssets
+                rpm.dataset.asset = t.pkgs.rpm;
+                app.dataset.asset = t.pkgs.appimage;
+                app.href = 'https://github.com/slicke/trndi/releases/latest/download/' + t.pkgs.appimage;
+                deb.querySelector('.pkg-name').textContent = t.debName;
+                rpm.querySelector('.pkg-name').textContent = t.rpmName;
+                row.hidden = false;
+            } else {
+                btn.textContent = t.label;
+                btn.href = t.href;
+                btn.dataset.asset = t.asset;   // applyReleaseAssets swaps in the versioned URL
+            }
+            document.getElementById('download-primary-sub').textContent = t.sub;
+            primary.hidden = false;
+
+            // Steps for the file the visitor is most likely to take. Linux has to
+            // choose first, so it gets a "pick one" line instead.
+            showStepsFor(t.pkgs ? 'pick' : kindOf(t.asset), '', false);
+
+            all.classList.add('download-all-collapsed');
+        })();
+
+        // Which "what happens next" block a download belongs to, from its file name.
+        function kindOf(name) {
+            name = (name || '').toLowerCase();
+            if (name.endsWith('.exe')) return 'exe';
+            if (name.endsWith('.dmg')) return 'dmg';
+            if (name.endsWith('.deb')) return 'deb';
+            if (name.endsWith('.rpm')) return 'rpm';
+            if (name.endsWith('.appimage')) return 'appimage';
+            if (name.endsWith('.zip')) return name.includes('windows') ? 'winzip' : 'linuxzip';
+            return null;
+        }
+
+        // Reveal the steps for one file kind. The download itself is not
+        // interrupted: the link's default action still runs.
+        function showStepsFor(kind, fileName, scroll) {
+            const next = document.getElementById('download-next');
+            const block = kind && next.querySelector('.next-steps[data-kind="' + kind + '"]');
+            if (!block) return;
+            next.querySelectorAll('.next-steps').forEach(el => { el.hidden = true; });
+            block.hidden = false;
+            // The Qt6Pas table applies to every Linux download, whichever one it is
+            document.getElementById('qt6pas-table').hidden =
+                ['deb', 'rpm', 'appimage', 'linuxzip'].indexOf(kind) === -1;
+            const fileLine = document.getElementById('download-next-file');
+            if (fileName && kind !== 'pick') {
+                fileLine.textContent = 'Du laddar ner ' + fileName + '.';
+                fileLine.hidden = false;
+            } else {
+                fileLine.hidden = true;
+            }
+            next.hidden = false;
+            if (scroll) {
+                next.classList.remove('download-next-flash');
+                void next.offsetWidth;   // restart the highlight animation
+                next.classList.add('download-next-flash');
+                next.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Every download link, in the big card and in the full grid alike,
+        // shows the steps for its own file when clicked.
+        document.querySelectorAll('a[data-asset]').forEach(a => {
+            a.addEventListener('click', () => {
+                const name = a.href.split('/').pop() || a.dataset.asset;
+                showStepsFor(kindOf(a.dataset.asset), decodeURIComponent(name), true);
+            });
+        });
+
+        function applyReleaseAssets(assets) {
+            if (!Array.isArray(assets) || !assets.length) return;
+            const byName = new Map(assets.map(a => [a.name.toLowerCase(), a.browser_download_url]));
+            document.querySelectorAll('a[data-asset]').forEach(a => {
+                const pattern = a.dataset.asset;
+                const exact = byName.get(pattern.toLowerCase());
+                if (exact) { a.href = exact; return; }
+                const re = new RegExp(
+                    '^' + pattern.split('*').map(s =>
+                        s.replace(/[.+^${}()|[\]\\?]/g, '\\$&')
+                    ).join('.*') + '$',
+                    'i'
+                );
+                const hit = assets.find(x => re.test(x.name));
+                if (hit) a.href = hit.browser_download_url;
+            });
+        }
+
+        fetch('https://api.github.com/repos/slicke/trndi/releases/latest')
+            .then(r => r.json())
+            .then(data => {
+                const name = data.name || data.tag_name || '';
+                const date = new Date(data.published_at).toLocaleDateString('sv-SE', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+                document.getElementById('latest-release').textContent = name;
+                document.getElementById('release-date').textContent = date;
+                applyReleaseAssets(data.assets);
+            })
+            .catch(() => {
+                document.getElementById('latest-release').textContent = 'se GitHub';
+            });
+    </script>
+</body>
+</html>

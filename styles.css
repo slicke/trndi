@@ -180,6 +180,20 @@ section h2 {
     background: var(--discord-hover) !important;
 }
 
+/* Language switcher — a quiet outline, so it reads as a setting, not a call to action */
+.nav-lang {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted) !important;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-lang:hover {
+    border-color: var(--accent);
+    color: var(--accent) !important;
+}
+
 /* ==========================================================================
    Hero — dark panel with warm brand glow, in both themes
    ========================================================================== */
@@ -279,11 +293,6 @@ section h2 {
     font-size: 0.95rem;
     color: var(--dark-text-muted);
     margin-bottom: 10px;
-}
-
-.build-status {
-    margin-top: 22px;
-    opacity: 0.9;
 }
 
 /* Release badge */
