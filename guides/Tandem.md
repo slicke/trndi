@@ -51,7 +51,7 @@ Two things are unresolved, and a log from a debug build would settle both. Run a
 
 The `Tandem.EventCensus:` lines in the same log list every event code the payload contained with one sample of each. That is what the field names above were derived from, and a payload from a different pump or CGM would tell us whether they hold generally.
 
-Redact before sharing: the samples contain your glucose, insulin and carbohydrate figures, plus account and device ids. Drop them in a GitHub issue or on [Discord](https://discord.gg/QXACfpcW).
+Redact before sharing: the samples contain your glucose, insulin and carbohydrate figures, plus account and device ids. Drop them in a GitHub issue or on [Discord](https://discord.gg/zYHHDXPHsd).
 
 # Personal Settings
 ## Setting limits

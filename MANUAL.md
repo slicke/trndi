@@ -489,7 +489,7 @@ Look for:
 
 ## Need More Help?
 
-- 💬 Join the [Discord community](https://discord.gg/QXACfpcW)
+- 💬 Join the [Discord community](https://discord.gg/zYHHDXPHsd)
 - 📖 Check the [full documentation](README.md)
 - 🐛 Report issues on [GitHub](https://github.com/slicke/trndi/issues)
 - 🌍 Help translate Trndi into your language

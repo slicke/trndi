@@ -56,7 +56,7 @@
 <br>RaspberryPi (with touch screen) - see [Guide for RPi display](guides/Display.md)
 
 ### Introduction
-> __NEW__: Join us on [Discord](https://discord.gg/QXACfpcW)
+> __NEW__: Join us on [Discord](https://discord.gg/zYHHDXPHsd)
 
 Trndi is a _desktop app_ that shows your blood sugar and graph. It works with  _Night Scout_, _Tandem Source_, _Medtronic CareLink_, _FreeStyle Libre_ (via LibreLinkUp) and _Dexcom Share_ at the moment.
 It also supports the _xDrip_ app, connecting over the local network/WiFi.
@@ -363,7 +363,7 @@ Right click or click/hold the reading (or "Setup" text) and choose settings to a
 Backends are explained [here](doc/Backends.md).
 
 # Support
-Join us on [Discord](https://discord.gg/QXACfpcW) to discuss issues or new features
+Join us on [Discord](https://discord.gg/zYHHDXPHsd) to discuss issues or new features
 
 ## Donate
 If Trndi is useful to you, consider supporting its development:
