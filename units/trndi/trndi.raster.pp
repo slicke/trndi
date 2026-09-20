@@ -58,6 +58,9 @@
  *   blit goes straight to the QPainter there, because LCL's StretchDraw
  *   rescales the source to logical size first. Gated on RASTER_QT (LCLQt6
  *   outside the -dTEST mock build).
+ * - 2026-09-20: Added DrawSmoothConvexPolygon, a signed-distance rasterizer
+ *   for filled convex shapes with an optional mitred outline, so the warning
+ *   triangle and the expand chevrons can leave Canvas.Polygon.
  *)
 
 unit trndi.raster;
@@ -215,6 +218,16 @@ procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
     are either drawn once into a cached surface or change every paint. }
 procedure DrawSmoothStrokes(ACanvas: TCanvas;
   const AStrokes: array of TSmoothStroke; AThickness: integer);
+
+{** Antialiased filled convex polygon through APts, optionally outlined by an
+    AOutlineWidth-pixel stroke in AOutlineColor centred on the edge with
+    mitred corners, the way a GDI pen draws it. Vertices sit on pixel edges,
+    so an axis-aligned rectangle covers exactly the pixels FillRect would.
+    Concave input is not detected: the coverage is the distance to the
+    nearest edge line, which only describes a convex outline. Uncached. }
+procedure DrawSmoothConvexPolygon(ACanvas: TCanvas;
+  const APts: array of TPoint; AFillColor: TColor;
+  AOutlineColor: TColor = clNone; AOutlineWidth: integer = 0);
 
 {** Antialiased polyline through APts. AColors runs parallel to APts: each
     point's colour extends halfway toward both of its neighbours, so the
@@ -866,6 +879,153 @@ begin
     img := AlphaImageFromIntf(intf, rw, rh);
     try
       BlitAlphaImage(ACanvas, img, rw, rh, x, y, w, h);
+    finally
+      img.Free;
+    end;
+  finally
+    intf.Free;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+// Convex polygon
+//------------------------------------------------------------------------------
+
+// The polygon is described by its signed distance field: for a convex shape
+// the inward distance to the nearest edge line is exact inside, and outside
+// it reproduces the mitred corner a pen with a square join would draw. Fill
+// coverage is that distance clamped over one pixel, the outline is a band of
+// half the pen width either side of zero, and the two composite as outline
+// over fill. Samples are taken at pixel centres in a raster laid down at
+// device scale over the polygon's padded bounding box, the same way the
+// stroke rasterizer places its box.
+procedure DrawSmoothConvexPolygon(ACanvas: TCanvas;
+  const APts: array of TPoint; AFillColor: TColor;
+  AOutlineColor: TColor; AOutlineWidth: integer);
+var
+  intf: TLazIntfImage;
+  img: TAlphaImage;
+  n, i, j, x, y, pad, ax, ay, aw, ah, rw, rh, minX, minY, maxX, maxY: integer;
+  scale, halfW, sx, sy, ex, ey, len, d, dEdge, orient: double;
+  covFill, covLine, aOut, invLine: double;
+  vx, vy, nx, ny: array of double;
+  fr, fg, fb, lr, lg, lb: byte;
+  fc, lc: TColor;
+  hasLine: boolean;
+begin
+  n := Length(APts);
+  if n < 3 then
+    Exit;
+  hasLine := (AOutlineColor <> clNone) and (AOutlineWidth > 0);
+  if hasLine then
+    halfW := AOutlineWidth / 2.0
+  else
+    halfW := 0.0;
+
+  minX := APts[0].X; maxX := APts[0].X;
+  minY := APts[0].Y; maxY := APts[0].Y;
+  for i := 1 to n - 1 do
+  begin
+    minX := Min(minX, APts[i].X); maxX := Max(maxX, APts[i].X);
+    minY := Min(minY, APts[i].Y); maxY := Max(maxY, APts[i].Y);
+  end;
+  // A mitre reaches halfW / sin(half the corner angle) past the vertex; two
+  // pen widths holds every corner down to 60 degrees, which is the sharpest
+  // shape drawn through here.
+  pad := Math.Ceil(2 * halfW) + 2;
+  ax := minX - pad;
+  ay := minY - pad;
+  aw := maxX + pad - ax;
+  ah := maxY + pad - ay;
+  if (aw < 1) or (ah < 1) then
+    Exit;
+
+  scale := CanvasDeviceScale(ACanvas);
+  rw := Max(1, Round(aw * scale));
+  rh := Max(1, Round(ah * scale));
+  halfW := halfW * scale;
+
+  // Edges in raster space with their unit normals; the sign that makes the
+  // normals point inward comes from the polygon's winding (signed area).
+  SetLength({%H-}vx, n); SetLength({%H-}vy, n);
+  SetLength({%H-}nx, n); SetLength({%H-}ny, n);
+  orient := 0;
+  for i := 0 to n - 1 do
+  begin
+    vx[i] := (APts[i].X - ax) * scale;
+    vy[i] := (APts[i].Y - ay) * scale;
+  end;
+  for i := 0 to n - 1 do
+  begin
+    j := (i + 1) mod n;
+    orient := orient + vx[i] * vy[j] - vx[j] * vy[i];
+  end;
+  if orient < 0 then
+    orient := -1.0
+  else
+    orient := 1.0;
+  for i := 0 to n - 1 do
+  begin
+    j := (i + 1) mod n;
+    ex := vx[j] - vx[i];
+    ey := vy[j] - vy[i];
+    len := Sqrt(ex * ex + ey * ey);
+    if len < 1e-9 then
+    begin
+      nx[i] := 0; ny[i] := 0;
+    end
+    else
+    begin
+      // Left normal of the edge, flipped by the winding so it points inward.
+      nx[i] := -ey / len * orient;
+      ny[i] := ex / len * orient;
+    end;
+  end;
+
+  fc := ColorToRGB(AFillColor);
+  fr := Red(fc); fg := Green(fc); fb := Blue(fc);
+  lr := 0; lg := 0; lb := 0;
+  if hasLine then
+  begin
+    lc := ColorToRGB(AOutlineColor);
+    lr := Red(lc); lg := Green(lc); lb := Blue(lc);
+  end;
+
+  intf := NewAlphaRaster(rw, rh);
+  try
+    for y := 0 to rh - 1 do
+      for x := 0 to rw - 1 do
+      begin
+        sx := x + 0.5;
+        sy := y + 0.5;
+        d := Infinity;
+        for i := 0 to n - 1 do
+        begin
+          if (nx[i] = 0) and (ny[i] = 0) then
+            Continue;
+          dEdge := (sx - vx[i]) * nx[i] + (sy - vy[i]) * ny[i];
+          if dEdge < d then
+            d := dEdge;
+        end;
+
+        covFill := EnsureRange(d + 0.5, 0.0, 1.0);
+        if hasLine then
+          covLine := EnsureRange(halfW + 0.5 - Abs(d), 0.0, 1.0)
+        else
+          covLine := 0.0;
+        // Every pixel is written: a fresh raster carries whatever the
+        // allocator left behind, so untouched pixels would blit opaque.
+        invLine := 1.0 - covLine;
+        aOut := covLine + covFill * invLine;
+        PutPremultipliedPixel(intf, x, y,
+          lr * covLine + fr * covFill * invLine,
+          lg * covLine + fg * covFill * invLine,
+          lb * covLine + fb * covFill * invLine, aOut);
+      end;
+
+    img := AlphaImageFromIntf(intf, rw, rh);
+    try
+      BlitAlphaImage(ACanvas, img, rw, rh, ax, ay, aw, ah);
     finally
       img.Free;
     end;
