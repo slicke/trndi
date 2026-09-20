@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|ide-libs|list-modules|test|assets|ptop|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|ide-libs|list-modules|test|assets|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -214,7 +214,8 @@ switch ($firstArg) {
         & 'tests/TrndiTestConsole.exe' @extraArgs
         exit $LASTEXITCODE
     }
-    "clean" {
+    { $_ -in "clean", "distclean" } {
+        $distclean = ($_ -eq "distclean")
         Write-Host "Cleaning common products..." -ForegroundColor Cyan
 
         # Accept optional dry-run flag: -n or --dry-run
@@ -263,6 +264,46 @@ switch ($firstArg) {
             Write-Host "(no matching build artifacts found)" -ForegroundColor Yellow
         }
 
+        if ($distclean) {
+            # Same list as the Makefile's distclean: built binaries, link*.res,
+            # heaptrc/log output, the staging dir, unit output dirs, Lazarus backup
+            # dirs and the versioned QuickJS sonames. Sources, project files, assets\
+            # and externals\ are never touched. Keep in step with .gitignore.
+            Write-Host "Removing remaining build residue..." -ForegroundColor Cyan
+            $residue = @()
+            $stage = if ($env:OUTDIR) { $env:OUTDIR } else { "build" }
+            foreach ($d in @($stage, "lib", "tests\lib")) {
+                if (Test-Path -LiteralPath $d -PathType Container) { $residue += Get-Item -LiteralPath $d -Force }
+            }
+            $residue += Get-ChildItem -Path . -Recurse -Force -Directory -Filter backup -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -notmatch "[\\/](\.git|externals)[\\/]" }
+            $files = @("Trndi", "Trndi.res", "tests\TrndiTest", "tests\TrndiTestConsole", "trndi.log", "trndi.log.locked") |
+                Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | ForEach-Object { Get-Item -LiteralPath $_ -Force }
+            $residue += $files
+            $residue += Get-ChildItem -Path . -File -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -match "^link\d+\.res$|\.(trc|lps|tmp)$|\.so\.\d" }
+            $residue += Get-ChildItem -Path tests -File -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -match "^link\d+\.res$|\.(trc|log|pid|out)$|\.so\.\d" }
+            $residue += Get-ChildItem -Path . -Recurse -File -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -notmatch "[\\/](\.git|externals|assets)[\\/]" -and $_.Name -match "\.(dbg|or|rsj|rst|lrt|lrs)$" }
+            $residue = $residue | Sort-Object FullName -Unique
+            $residueCount = ($residue | Measure-Object).Count
+            if ($residueCount -eq 0) {
+                Write-Host "(no remaining build residue found)" -ForegroundColor Yellow
+            }
+            elseif ($dryRun) {
+                Write-Host "DRY RUN: residue that would be removed:" -ForegroundColor Yellow
+                foreach ($m in $residue) { Write-Host "  $($m.FullName)" }
+                Write-Host "Would remove $residueCount items." -ForegroundColor Yellow
+            }
+            else {
+                foreach ($m in $residue) {
+                    try { Remove-Item -LiteralPath $m.FullName -Force -Recurse -ErrorAction SilentlyContinue } catch { }
+                }
+                Write-Host "Removed $residueCount residue items." -ForegroundColor Green
+            }
+            Write-Host "(Note: run .\make.ps1 ide-libs or a build to restore the QuickJS DLLs next to the executable.)" -ForegroundColor Cyan
+        }
         Write-Host "(Note: Lazarus project files and sources are not removed; temporary noext project files are cleaned.)" -ForegroundColor Cyan
         exit 0
     }
@@ -499,6 +540,7 @@ switch ($firstArg) {
         Write-Host "  lang-check       Audit lang/: resource strings missing from Trndi.pot, plus per-catalog stats"
         Write-Host "                   (read-only; -all lists design-time placeholders; .po validation needs gettext)"
         Write-Host "  clean            Remove build artifacts (*.o, *.ppu, executables, ...); use -n or --dry-run to preview"
+        Write-Host "  distclean        clean, plus binaries, link*.res, heaptrc/log output, build\, lib\, backup\ dirs and versioned QuickJS sonames; -n previews"
         Write-Host "  help             Show this help"
         Write-Host "Notes:" -ForegroundColor Cyan
         Write-Host "  Extra arguments after a target are forwarded to lazbuild (or the test runner for 'test')."

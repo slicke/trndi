@@ -181,6 +181,7 @@ function getReadings(minNum, maxNum: integer; extras: string; out res: string): 
 - `make test-noserver` — tests without the embedded test server (`TRNDI_NO_TESTSERVER=1`)
 - `make noext` — build without JavaScript extension support
 - `make clean` — remove build artifacts
+- `make distclean` — `clean` plus binaries, `link*.res`, heaptrc/log output, `build/`, `lib/` and `backup/` dirs (back to a fresh checkout)
 - `make dist` — create tarball
 - `make run` — build and run
 - `make install` — install binary (needs `sudo`)
