@@ -45,6 +45,10 @@
  * - 2026-09-20: Margins, dot radius, overlay geometry and the panel
  *   paddings are 96 dpi design values scaled to the form's DPI through Px,
  *   so the graph keeps its proportions on high-DPI screens.
+ * - 2026-09-20: Hovering follows the reading nearest the pointer anywhere in
+ *   the plot instead of needing a hit on a dot, clears on MouseLeave, and
+ *   draws a vertical hairline plus a two-line box with the value in its
+ *   range colour, the time, the delta and the trend.
  *)
 
 {**
@@ -60,6 +64,8 @@
   - Plot readings across a time axis and a value axis (units aware).
   - Click a dot to show a small details popup (same format as the existing
     history list popup in main UI).
+  - Hover anywhere in the plot to see the nearest reading's value, time,
+    delta and trend in a box beside a hairline through the reading.
   - Lightweight, single-form instance reused via ShowHistoryGraph().
 
   Developer notes:
@@ -157,6 +163,10 @@ private
   procedure InvalidateBackground;
   procedure RenderBackground(ABmp: TBitmap; const PlotRect: TRect);
   procedure DrawHoverRing(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawHoverOverlay: Draws the hover layer on the live canvas: a
+      vertical hairline through the hovered reading, the ring around its
+      dot and a two-line box with its value, time, delta and trend. }
+  procedure DrawHoverOverlay(ACanvas: TCanvas; const PlotRect: TRect);
     {** GetPlotRect: Determine the plotting rectangle inside the form where
       dots and lines are drawn. Respects the margins defined above. }
   function GetPlotRect: TRect;
@@ -225,11 +235,15 @@ private
     {** PointAt: Returns the index of a point if the (X,Y) is within a small
       distance of a drawn dot, otherwise -1. Used to detect clicks. }
   function PointAt(const X, Y: integer): integer;
+    {** NearestPointAt: Returns the index of the point whose time position
+      is closest to X while (X,Y) is inside the plot, otherwise -1. Used for
+      hovering, so the pointer need not sit on a dot. }
+  function NearestPointAt(const X, Y: integer): integer;
     {** Px: Scales a 96 dpi design length to the form's DPI, so margins,
       radii and paddings stay proportional on high-DPI screens. }
   function Px(const ASize: integer): integer;
   function HasData: boolean;
-  function FormatHoverText(const Reading: BGReading; const Value: double): string;
+  procedure HoverTexts(const Index: integer; out ValueText, DetailText: string);
   procedure ApplyRangeFilter;
   procedure HandleRangeMenuClick(Sender: TObject);
   procedure UpdateRangeMenuChecks;
@@ -242,6 +256,7 @@ protected
   procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: integer);
     override;
   procedure MouseMove(Shift: TShiftState; X, Y: integer); override;
+  procedure MouseLeave; override;
   procedure KeyDown(var Key: word; Shift: TShiftState); override;
   procedure DoClose(var CloseAction: TCloseAction); override;
 public
@@ -352,7 +367,6 @@ RS_HISTORY_GRAPH_MENU_RANGE_3H = 'Last 3h';
 RS_HISTORY_GRAPH_MENU_RANGE_6H = 'Last 6h';
 RS_HISTORY_GRAPH_MENU_RANGE_12H = 'Last 12h';
 RS_HISTORY_GRAPH_MENU_RANGE_24H = 'Last 24h';
-RS_HISTORY_GRAPH_HOVER_FMT = '%s at %s';
 RS_HISTORY_GRAPH_KEY_PREDICT = 'Predicted';
 
 {** Constants used for layout and division handling in this graph unit.
@@ -364,6 +378,13 @@ GRAPH_MARGIN_TOP = 40;
 GRAPH_MARGIN_RIGHT = 220;
 GRAPH_MARGIN_BOTTOM = 120;
 GRAPH_DIVISIONS = 5;
+  // Hover overlay: the box keeps a fixed light face whatever the widgetset
+  // theme, since the graph background is light too, and the hairline is a
+  // mid grey that reads over both the bands and the white plot.
+HOVER_BOX_COLOR = $00F6F6F6;
+HOVER_BORDER_COLOR = $00B8B8B8;
+HOVER_LINE_COLOR = $00A8A8A8;
+HOVER_SEP = ' · ';
 
   // Treatment overlay colours. Named because each is used twice — once to draw
   // and once for the legend chip — and a legend that disagrees with the chart
@@ -1294,10 +1315,22 @@ begin
   if not HasData then
     Exit;
 
-  idx := PointAt(X, Y);
+  idx := NearestPointAt(X, Y);
   if idx <> FHoveredPoint then
   begin
     FHoveredPoint := idx;
+    Invalidate;
+  end;
+end;
+
+procedure TfHistoryGraph.MouseLeave;
+begin
+  inherited MouseLeave;
+  // Without this the ring and box stay behind when the pointer leaves the
+  // window without passing a spot NearestPointAt rejects.
+  if FHoveredPoint <> -1 then
+  begin
+    FHoveredPoint := -1;
     Invalidate;
   end;
 end;
@@ -1306,17 +1339,6 @@ procedure TfHistoryGraph.Paint;
 var
   plotRect: TRect;
   messageText: string;
-  hoverText: string;
-  hoverRect: TRect;
-  dotX, dotY: integer;
-
-procedure ShiftRect(var R: TRect; const DX, DY: integer);
-  begin
-    R.Left := R.Left + DX;
-    R.Right := R.Right + DX;
-    R.Top := R.Top + DY;
-    R.Bottom := R.Bottom + DY;
-  end;
 begin
   // Static layers (axes, grid, threshold lines, basal overlay, polyline,
   // dots, predictions, legend) only change when data/extents/size change.
@@ -1353,46 +1375,7 @@ begin
   end;
   Canvas.Draw(0, 0, FBackground);
 
-  DrawHoverRing(Canvas, plotRect);
-
-  if (FHoveredPoint >= 0) and (FHoveredPoint <= High(FPoints)) then
-  begin
-    dotX := TimeToX(FPoints[FHoveredPoint].Reading.date, plotRect);
-    dotY := ValueToY(FPoints[FHoveredPoint].Value, plotRect);
-
-    Canvas.Pen.Style := psDot;
-    Canvas.Pen.Color := clGray;
-    Canvas.MoveTo(dotX, plotRect.Top);
-    Canvas.LineTo(dotX, plotRect.Bottom);
-    Canvas.MoveTo(plotRect.Left, dotY);
-    Canvas.LineTo(plotRect.Right, dotY);
-    Canvas.Pen.Style := psSolid;
-
-    hoverText := FormatHoverText(FPoints[FHoveredPoint].Reading,
-      FPoints[FHoveredPoint].Value);
-    hoverRect := Rect(dotX + Px(10),
-      dotY - Canvas.TextHeight(hoverText) - Px(8),
-      dotX + Px(22) + Canvas.TextWidth(hoverText),
-      dotY + Px(8));
-    if hoverRect.Right > plotRect.Right then
-      ShiftRect(hoverRect, (plotRect.Right - hoverRect.Right) - Px(4), 0);
-    if hoverRect.Left < plotRect.Left then
-      ShiftRect(hoverRect, (plotRect.Left - hoverRect.Left) + Px(4), 0);
-    if hoverRect.Top < plotRect.Top then
-      ShiftRect(hoverRect, 0, (plotRect.Top - hoverRect.Top) + Px(4));
-    if hoverRect.Bottom > plotRect.Bottom then
-      ShiftRect(hoverRect, 0, (plotRect.Bottom - hoverRect.Bottom) - Px(4));
-
-    Canvas.Brush.Style := bsSolid;
-    Canvas.Brush.Color := $00F6F6F6;
-    Canvas.Pen.Color := $00B8B8B8;
-    Canvas.RoundRect(hoverRect, Px(6), Px(6));
-    // The live canvas inherits the widgetset's font colour (white on dark
-    // themes), so pin it to match the fixed light popup background.
-    Canvas.Font.Color := clBlack;
-    Canvas.Brush.Style := bsClear;
-    Canvas.TextOut(hoverRect.Left + Px(6), hoverRect.Top + Px(4), hoverText);
-  end;
+  DrawHoverOverlay(Canvas, plotRect);
 end;
 
 function TfHistoryGraph.PointAt(const X, Y: integer): integer;
@@ -1416,6 +1399,118 @@ begin
     if distSq <= thresholdSq then
       Exit(i);
   end;
+end;
+
+function TfHistoryGraph.NearestPointAt(const X, Y: integer): integer;
+var
+  i, dist, bestDist, slack: integer;
+  plotRect: TRect;
+begin
+  Result := -1;
+  if not HasData then
+    Exit;
+
+  plotRect := GetPlotRect;
+  // A little slack around the plot so the hover survives the pointer
+  // brushing an axis label or the top margin.
+  slack := Px(FDotRadius + 4);
+  if (X < plotRect.Left - slack) or (X > plotRect.Right + slack) or
+    (Y < plotRect.Top - slack) or (Y > plotRect.Bottom + slack) then
+    Exit;
+
+  // Nearest along the time axis only: the reading under a vertical line
+  // through the pointer, which is what a sweep across the plot should pick.
+  bestDist := MaxInt;
+  for i := 0 to High(FPoints) do
+  begin
+    dist := Abs(TimeToX(FPoints[i].Reading.date, plotRect) - X);
+    if dist < bestDist then
+    begin
+      bestDist := dist;
+      Result := i;
+    end;
+  end;
+end;
+
+procedure TfHistoryGraph.DrawHoverOverlay(ACanvas: TCanvas; const PlotRect: TRect);
+var
+  dotX, dotY, pad, lineGap, sideGap, valueH, detailH, boxW, boxH: integer;
+  valueText, detailText: string;
+  box: TRect;
+  hairline: array[0..0] of TSmoothStroke;
+  savedStyle: TFontStyles;
+
+  procedure ShiftRect(var R: TRect; const DX, DY: integer);
+  begin
+    R.Left := R.Left + DX;
+    R.Right := R.Right + DX;
+    R.Top := R.Top + DY;
+    R.Bottom := R.Bottom + DY;
+  end;
+
+begin
+  if (FHoveredPoint < 0) or (FHoveredPoint > High(FPoints)) then
+    Exit;
+
+  dotX := TimeToX(FPoints[FHoveredPoint].Reading.date, PlotRect);
+  dotY := ValueToY(FPoints[FHoveredPoint].Value, PlotRect);
+
+  // The hairline goes first so the ring and the box sit on top of it. A
+  // capsule stroke on integer coordinates covers exactly one column, so the
+  // line stays crisp while matching the antialiased trace and dots.
+  hairline[0].X1 := dotX;
+  hairline[0].Y1 := PlotRect.Top;
+  hairline[0].X2 := dotX;
+  hairline[0].Y2 := PlotRect.Bottom;
+  hairline[0].Color := HOVER_LINE_COLOR;
+  DrawSmoothStrokes(ACanvas, hairline, Max(1, Px(1)));
+  DrawHoverRing(ACanvas, PlotRect);
+
+  HoverTexts(FHoveredPoint, valueText, detailText);
+  pad := Px(8);
+  lineGap := Px(2);
+  sideGap := Px(12);
+
+  savedStyle := ACanvas.Font.Style;
+  ACanvas.Font.Style := [fsBold];
+  valueH := ACanvas.TextHeight(valueText);
+  boxW := ACanvas.TextWidth(valueText);
+  ACanvas.Font.Style := [];
+  detailH := ACanvas.TextHeight(detailText);
+  boxW := Max(boxW, ACanvas.TextWidth(detailText)) + 2 * pad;
+  boxH := valueH + lineGap + detailH + 2 * pad;
+
+  // Above and to the right of the dot; flipped to the left of the hairline
+  // near the right edge and clamped into the plot vertically, so the box
+  // never covers the reading it describes and never leaves the plot.
+  box := Rect(dotX + sideGap, dotY - boxH - Px(4), dotX + sideGap + boxW,
+    dotY - Px(4));
+  if box.Right > PlotRect.Right then
+    ShiftRect(box, -(boxW + 2 * sideGap), 0);
+  if box.Left < PlotRect.Left then
+    ShiftRect(box, (PlotRect.Left - box.Left) + Px(4), 0);
+  if box.Top < PlotRect.Top then
+    ShiftRect(box, 0, (PlotRect.Top - box.Top) + Px(4));
+  if box.Bottom > PlotRect.Bottom then
+    ShiftRect(box, 0, (PlotRect.Bottom - box.Bottom) - Px(4));
+
+  ACanvas.Brush.Style := bsSolid;
+  ACanvas.Brush.Color := HOVER_BOX_COLOR;
+  ACanvas.Pen.Style := psSolid;
+  ACanvas.Pen.Width := 1;
+  ACanvas.Pen.Color := HOVER_BORDER_COLOR;
+  ACanvas.RoundRect(box, Px(6), Px(6));
+
+  // The live canvas inherits the widgetset's font colour (white on dark
+  // themes), so both lines pin their colour against the fixed light box.
+  ACanvas.Brush.Style := bsClear;
+  ACanvas.Font.Style := [fsBold];
+  ACanvas.Font.Color := LevelColor(FPoints[FHoveredPoint].Reading.level);
+  ACanvas.TextOut(box.Left + pad, box.Top + pad, valueText);
+  ACanvas.Font.Style := [];
+  ACanvas.Font.Color := clBlack;
+  ACanvas.TextOut(box.Left + pad, box.Top + pad + valueH + lineGap, detailText);
+  ACanvas.Font.Style := savedStyle;
 end;
 
 procedure TfHistoryGraph.Resize;
@@ -1589,15 +1684,39 @@ begin
   end;
 end;
 
-{** FormatHoverText: Build the hover tooltip text for a plotted point using
-    the BGReading timestamp and the converted Value already stored in the
-    graph point. Reading supplies the original reading time, while Value is the
-    display value in the configured unit used for the formatted hover string. }
-function TfHistoryGraph.FormatHoverText(const Reading: BGReading;
-const Value: double): string;
+{** HoverTexts: Build the two hover box lines for the point at Index: the
+    value with its unit, and the reading time followed by the delta and the
+    trend glyph. The delta is the reading's own when the backend supplied
+    one, otherwise the difference to the previous plotted point. }
+procedure TfHistoryGraph.HoverTexts(const Index: integer; out ValueText,
+  DetailText: string);
+var
+  delta: double;
+  sign: string;
 begin
-  Result := Format(RS_HISTORY_GRAPH_HOVER_FMT,
-    [Format(BG_MSG_SHORT[FUnit], [Value]), FormatDateTime('ddd hh:nn', Reading.date)]);
+  ValueText := Format(BG_MSG_DEF[FUnit], [FPoints[Index].Value]);
+  DetailText := FormatDateTime('ddd hh:nn', FPoints[Index].Reading.date);
+
+  if not FPoints[Index].Reading.deltaEmpty then
+    DetailText := DetailText + HOVER_SEP +
+      FPoints[Index].Reading.format(FUnit, BG_MSG_SIG_SHORT, BGDelta)
+  else if Index > 0 then
+  begin
+    delta := FPoints[Index].Value - FPoints[Index - 1].Value;
+    if delta > 0 then
+      sign := '+'
+    else if delta < 0 then
+      sign := ''
+    else
+      sign := '±';
+    DetailText := DetailText + HOVER_SEP + Format(StringReplace(
+      BG_MSG_SIG_SHORT[FUnit], '%+', sign, [rfReplaceAll]), [delta]);
+  end;
+
+  // The two non-directional trends ('?' and the placeholder) tell the
+  // reader nothing and look like a rendering bug, so they are left out.
+  if FPoints[Index].Reading.trend in [TdDoubleUp..TdDoubleDown] then
+    DetailText := DetailText + HOVER_SEP + FPoints[Index].Reading.trend.Img;
 end;
 
 procedure TfHistoryGraph.SetPalette(const Palette: THistoryGraphPalette);
