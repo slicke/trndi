@@ -413,6 +413,13 @@ object fBG: TfBG
         Caption = 'Show readings since..'
         OnClick = miReadingsSinceClick
       end
+      object miReportSplit: TMenuItem
+        Caption = '-'
+      end
+      object miReport: TMenuItem
+        Caption = 'Summary report...'
+        OnClick = miReportClick
+      end
     end
     object miSplit4: TMenuItem
       Caption = '-'

@@ -271,6 +271,21 @@ always fits.
 - **Good**: Above 70% in range
 - **Needs work**: Below 70% in range
 
+### Summary Report
+*Views → Summary report...* in the right-click menu sums up the readings Trndi
+currently holds. It opens with the period it covers, how many readings arrived
+and how much of the period they actually cover, then a small chart of the shape
+of the period, how the readings split across your bands, and the plain numbers:
+average, median, spread, variability (CV), the Glucose Management Indicator,
+your lowest and highest reading with the time each arrived, how many excursions
+past your high and low thresholds there were, and the longest gap in the data.
+
+**Save...** writes the same summary as a plain text file you can keep or send on.
+
+These are descriptive statistics over whatever Trndi has loaded — nothing more.
+They are not a medical assessment, the indicator is not a laboratory A1c, and
+none of it should be acted on without your official device and your care team.
+
 ---
 
 ## Alerts and Notifications

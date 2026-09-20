@@ -102,7 +102,7 @@ Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, trndi.raster, utrendarrow, upredictionstrip, ustatbadge,
-Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
+Trndi.native.base, trndi.shared, trndi.theme, trndi.report, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, trndi.ext.perm,
@@ -154,6 +154,11 @@ IntfGraphics, FPImage, GraphType;
 type
 TFloatIntDictionary = specialize TDictionary<single, integer>;
   // Specialized TDictionary
+  {** Wording and colour for each band of the summary report, built once in
+      ReportBandLabels and shared by the on-screen and the saveable form so the
+      two can never describe the same band differently. }
+TReportBandLabels = array[TTrndiReportBand] of string;
+TReportBandColors = array[TTrndiReportBand] of TColor;
 TfBG = class;
 TConnectivityCheckThread = class(TThread)
 private
@@ -440,6 +445,8 @@ TfBG = class(TForm)
   miGuidelines: TMenuItem;
   miBasalRate: TMenuItem;
   miReadingsSince: TMenuItem;
+  miReport: TMenuItem;
+  miReportSplit: TMenuItem;
   miExtLog: TMenuItem;
   miSep1: TMenuItem;
   miDNS: TMenuItem;
@@ -564,6 +571,16 @@ TfBG = class(TForm)
   procedure miGuidelinesClick({%H-}Sender: TObject);
   procedure miPredictClick({%H-}Sender: TObject);
   procedure miReadingsSinceClick({%H-}Sender: TObject);
+  procedure miReportClick({%H-}Sender: TObject);
+  {** Summarise the readings currently loaded. @code(valid) is false when
+      there are none. }
+  function BuildGlucoseReport: TTrndiReportStats;
+  {** The report as the dialog shows it. }
+  function ReportAsHTML(const st: TTrndiReportStats): string;
+  {** The report as it is written to a file: fixed-width, no markup. }
+  function ReportAsText(const st: TTrndiReportStats): string;
+  {** Ask for a path and write @code(body) there, reporting either outcome. }
+  procedure SaveGlucoseReport(const body: string);
   procedure pmSettingsClose({%H-}Sender: TObject);
   procedure pnWarningClick({%H-}Sender: TObject);
   procedure pnWarningPaint({%H-}Sender: TObject);
@@ -1720,6 +1737,7 @@ procedure ShowMessage(const title, str: string); forward;
 {$I ../../inc/umain_glucose.inc}
 {$I ../../inc/umain_menu.inc}
 {$I ../../inc/umain_paint.inc}
+{$I ../../inc/umain_report.inc}
 {$I ../../inc/umain_settings.inc}
 {$I ../../inc/umain_timers.inc}
 
