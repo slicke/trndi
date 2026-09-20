@@ -151,7 +151,7 @@ type
 // Each band fades in over AGradientPx rows at the top and bottom edges,
 // giving the band a soft transition into the surrounding background instead
 // of a hard rectangle. Raster and blit go through the shared primitives in
-// inc/umain_alphablit.inc.
+// trndi.raster.
 procedure DrawRangeBands(ACanvas: TCanvas; AWidth, AHeight: integer;
   const Bands: array of TRangeBand; AGradientPx: integer);
 

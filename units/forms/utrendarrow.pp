@@ -38,6 +38,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-13: Exposed OnMouseDown, OnMouseMove and OnMouseUp so a host
  *   form can treat the arrow like its labels.
+ * - 2026-09-20: The shaft and head are rasterized antialiased through
+ *   trndi.raster instead of the aliased Canvas.Line.
  *)
 
 unit utrendarrow;
@@ -64,7 +66,7 @@ unit utrendarrow;
 interface
 
 uses
-  Classes, Controls, Graphics, Math;
+  Classes, Controls, Graphics, Math, trndi.raster;
 
 type
   {** A vector arrow drawn at a settable rotation angle. }
@@ -158,7 +160,8 @@ var
 
 var
   shortSide: integer;
-  tailX, tailY, headX, headY, wingX, wingY: single;
+  tailX, tailY, headX, headY: single;
+  strokes: array[0..2] of TSmoothStroke;
 begin
   shortSide := Min(Width, Height);
   if shortSide <= 4 then
@@ -177,29 +180,40 @@ begin
   dy := -sin(rad);
 
   penW := Max(2, Round(shortSide * FThickness));
-  Canvas.Pen.Color := FArrowColor;
-  Canvas.Pen.Width := penW;
-  Canvas.Pen.EndCap := pecRound;
-  Canvas.Pen.JoinStyle := pjsRound;
 
   tailX := cx - dx * halfLen;
   tailY := cy - dy * halfLen;
   headX := cx + dx * halfLen;
   headY := cy + dy * halfLen;
 
-  // Shaft
-  Canvas.Line(Round(tailX), Round(tailY), Round(headX), Round(headY));
+  // Three capsule strokes rasterized together: the shaft, and the two head
+  // wings fanned out by +/-headSpread from the reversed direction. The
+  // capsules give the round caps and the round joint at the tip that the
+  // old pecRound/pjsRound pen asked for, and the analytical coverage gives
+  // the smooth edges the LCL pen never did on GDI or Qt. Sub-pixel
+  // endpoints are kept, so the arrow rotates without snapping.
+  strokes[0].X1 := tailX;
+  strokes[0].Y1 := tailY;
+  strokes[0].X2 := headX;
+  strokes[0].Y2 := headY;
 
-  // Head wings: start from the reversed direction and fan out by +/-headSpread.
   Rot(-dx, -dy, headSpread, bx, by);
-  wingX := headX + bx * headLen;
-  wingY := headY + by * headLen;
-  Canvas.Line(Round(headX), Round(headY), Round(wingX), Round(wingY));
+  strokes[1].X1 := headX;
+  strokes[1].Y1 := headY;
+  strokes[1].X2 := headX + bx * headLen;
+  strokes[1].Y2 := headY + by * headLen;
 
   Rot(-dx, -dy, -headSpread, bx, by);
-  wingX := headX + bx * headLen;
-  wingY := headY + by * headLen;
-  Canvas.Line(Round(headX), Round(headY), Round(wingX), Round(wingY));
+  strokes[2].X1 := headX;
+  strokes[2].Y1 := headY;
+  strokes[2].X2 := headX + bx * headLen;
+  strokes[2].Y2 := headY + by * headLen;
+
+  strokes[0].Color := FArrowColor;
+  strokes[1].Color := FArrowColor;
+  strokes[2].Color := FArrowColor;
+
+  DrawSmoothStrokes(Canvas, strokes, penW);
 end;
 
 end.

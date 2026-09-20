@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: The dots, the trace, the hover ring and the prediction
+ *   overlay are drawn antialiased through trndi.raster instead of the
+ *   aliased canvas Ellipse/LineTo primitives.
  *)
 
 {**
@@ -72,7 +77,7 @@ interface
 uses
 Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Math, Menus,
 trndi.types, trndi.api, trndi.strings, slicke.ux.alert, dateutils,{$ifdef WINDOWS}trndi.native,{$endif}
-ExtDlgs, IntfGraphics, FPImage, FPWritePNG;
+ExtDlgs, IntfGraphics, FPImage, FPWritePNG, trndi.raster;
 
 type
   {** THistoryGraphPalette
@@ -1064,13 +1069,15 @@ var
   radius: integer;
 begin
   radius := FDotRadius;
-  ACanvas.Pen.Color := clBlack;
+  // Same disc-plus-rim the old Ellipse drew (level colour inside a 1 px black
+  // outline), but rasterized with analytical coverage: the LCL Ellipse is
+  // strictly aliased on GDI and Qt, and the dots are the graph's data.
   for i := 0 to High(FPoints) do
   begin
     x := TimeToX(FPoints[i].Reading.date, PlotRect);
     y := ValueToY(FPoints[i].Value, PlotRect);
-    ACanvas.Brush.Color := LevelColor(FPoints[i].Reading.level);
-    ACanvas.Ellipse(x - radius, y - radius, x + radius, y + radius);
+    DrawSmoothCircle(ACanvas, 2 * radius, LevelColor(FPoints[i].Reading.level),
+      clBlack, 1, x - radius, y - radius);
   end;
 end;
 
@@ -1080,16 +1087,12 @@ var
 begin
   if (FHoveredPoint < 0) or (FHoveredPoint > High(FPoints)) then
     Exit;
-  radius := FDotRadius;
+  radius := FDotRadius + 3;
   x := TimeToX(FPoints[FHoveredPoint].Reading.date, PlotRect);
   y := ValueToY(FPoints[FHoveredPoint].Value, PlotRect);
-  ACanvas.Brush.Style := bsClear;
-  ACanvas.Pen.Color := clBlack;
-  ACanvas.Pen.Width := 2;
-  ACanvas.Ellipse(x - radius - 3, y - radius - 3, x + radius + 3,
-    y + radius + 3);
-  ACanvas.Pen.Width := 1;
-  ACanvas.Brush.Style := bsSolid;
+  // Hollow ring (clNone disc) so the dot it circles stays visible inside.
+  DrawSmoothCircle(ACanvas, 2 * radius, clNone, clBlack, 2, x - radius,
+    y - radius);
 end;
 
 procedure TfHistoryGraph.InvalidateBackground;
@@ -1113,30 +1116,61 @@ begin
 end;
 
 procedure TfHistoryGraph.DrawPolyline(ACanvas: TCanvas; const PlotRect: TRect);
+const
+  TRACE_WIDTH_PX = 2;
 var
-  i: integer;
+  i, n: integer;
   gapMinutes: integer;
+  run: array of TPoint;
+  runColors: array of TColor;
+
+  // Draw the n connected points gathered in `run` as one antialiased trace.
+  // A run of one point has nothing to connect.
+  procedure FlushRun;
+  var
+    pts: array of TPoint;
+    k: integer;
+  begin
+    if n >= 2 then
+    begin
+      SetLength({%H-}pts, n);
+      for k := 0 to n - 1 do
+        pts[k] := run[k];
+      // The trace lands in the cached background bitmap, so it must not take
+      // over the single-slot polyline cache the main window's live trend
+      // line relies on.
+      DrawSmoothPolyline(ACanvas, pts, Copy(runColors, 0, n), TRACE_WIDTH_PX,
+        false);
+    end;
+    n := 0;
+  end;
+
 begin
   if Length(FPoints) < 2 then
     Exit;
 
-  ACanvas.Pen.Color := clSilver;
-  ACanvas.Brush.Style := bsClear;
-  ACanvas.MoveTo(TimeToX(FPoints[0].Reading.date, PlotRect),
-    ValueToY(FPoints[0].Value, PlotRect));
-  for i := 1 to High(FPoints) do
-  begin
-    gapMinutes := MinutesBetween(FPoints[i].Reading.date, FPoints[i - 1].Reading.date);
+  SetLength({%H-}run, Length(FPoints));
+  SetLength({%H-}runColors, Length(FPoints));
+  for i := 0 to High(runColors) do
+    runColors[i] := clSilver;
 
+  n := 0;
+  for i := 0 to High(FPoints) do
+  begin
     // If the time gap is large, don't connect points with a line.
     // This makes missing samples appear as a visual break.
-    if gapMinutes >= (INTERVAL_MINUTES * 2) then
-      ACanvas.MoveTo(TimeToX(FPoints[i].Reading.date, PlotRect),
-        ValueToY(FPoints[i].Value, PlotRect))
-    else
-      ACanvas.LineTo(TimeToX(FPoints[i].Reading.date, PlotRect),
-        ValueToY(FPoints[i].Value, PlotRect));
+    if i > 0 then
+    begin
+      gapMinutes := MinutesBetween(FPoints[i].Reading.date,
+        FPoints[i - 1].Reading.date);
+      if gapMinutes >= (INTERVAL_MINUTES * 2) then
+        FlushRun;
+    end;
+    run[n] := Point(TimeToX(FPoints[i].Reading.date, PlotRect),
+      ValueToY(FPoints[i].Value, PlotRect));
+    Inc(n);
   end;
+  FlushRun;
 end;
 
 function TfHistoryGraph.GetPlotRect: TRect;
@@ -1907,49 +1941,46 @@ procedure TfHistoryGraph.DrawPredictionOverlay(ACanvas: TCanvas;
 const PlotRect: TRect);
 const
   PREDICT_COLOR: TColor = $00C88050; // muted steel-blue (BGR: R=80 G=128 B=200)
+  DASH_PX = 6;
+  GAP_PX = 4;
 var
-  i: integer;
+  i, n: integer;
   x, y, radius: integer;
+  pts: array of TPoint;
 begin
   if Length(FPredictions) = 0 then
     Exit;
 
   radius := Max(2, FDotRadius - 1);
 
-  // Dashed line from the last real point through each prediction
-  ACanvas.Pen.Style  := psDash;
-  ACanvas.Pen.Width  := 1;
-  ACanvas.Pen.Color  := PREDICT_COLOR;
-  ACanvas.Brush.Style := bsClear;
-
+  // Dashed line from the last real point through each prediction. Anchored
+  // on the last reading when there is one, so the forecast visibly continues
+  // the trace rather than floating beside it.
+  SetLength({%H-}pts, Length(FPredictions) + 1);
+  n := 0;
   if Length(FPoints) > 0 then
-    ACanvas.MoveTo(
-      TimeToX(FPoints[High(FPoints)].Reading.date, PlotRect),
-      ValueToY(FPoints[High(FPoints)].Value, PlotRect))
-  else
-    ACanvas.MoveTo(
-      TimeToX(FPredictions[0].Reading.date, PlotRect),
-      ValueToY(FPredictions[0].Value, PlotRect));
-
+  begin
+    pts[n] := Point(TimeToX(FPoints[High(FPoints)].Reading.date, PlotRect),
+      ValueToY(FPoints[High(FPoints)].Value, PlotRect));
+    Inc(n);
+  end;
   for i := 0 to High(FPredictions) do
-    ACanvas.LineTo(
-      TimeToX(FPredictions[i].Reading.date, PlotRect),
+  begin
+    pts[n] := Point(TimeToX(FPredictions[i].Reading.date, PlotRect),
       ValueToY(FPredictions[i].Value, PlotRect));
+    Inc(n);
+  end;
+  SetLength(pts, n);
+  DrawSmoothDashedPolyline(ACanvas, pts, PREDICT_COLOR, 1, DASH_PX, GAP_PX);
 
   // Hollow circles at each predicted point
-  ACanvas.Pen.Style  := psSolid;
-  ACanvas.Pen.Color  := PREDICT_COLOR;
-  ACanvas.Brush.Style := bsClear;
   for i := 0 to High(FPredictions) do
   begin
     x := TimeToX(FPredictions[i].Reading.date, PlotRect);
     y := ValueToY(FPredictions[i].Value, PlotRect);
-    ACanvas.Ellipse(x - radius, y - radius, x + radius, y + radius);
+    DrawSmoothCircle(ACanvas, 2 * radius, clNone, PREDICT_COLOR, 1,
+      x - radius, y - radius);
   end;
-
-  ACanvas.Pen.Width   := 1;
-  ACanvas.Pen.Style   := psSolid;
-  ACanvas.Brush.Style := bsSolid;
 end;
 
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit;

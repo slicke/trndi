@@ -93,7 +93,7 @@ trndi.strings, LCLTranslator, Types, Classes, Menus, SysUtils, Forms, Controls,
 Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
-slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, utrendarrow, upredictionstrip, ustatbadge,
+slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, trndi.raster, utrendarrow, upredictionstrip, ustatbadge,
 Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
@@ -1665,7 +1665,6 @@ procedure ShowMessage(const title, str: string); forward;
 {$I ../../inc/umain_titlebar.inc}
 {$I ../../inc/umain_init.inc}
 {$I ../../inc/umain_alerts.inc}
-{$I ../../inc/umain_alphablit.inc}
 {$I ../../inc/umain_dots.inc}
 {$I ../../inc/umain_glucose.inc}
 {$I ../../inc/umain_menu.inc}
@@ -2699,9 +2698,6 @@ initialization
   bg_rel_color_lo := DefaultBGTheme.ColorRangeLow;
   bg_rel_color_lo_txt := DefaultBGTheme.ColorRangeLowText;
 
-finalization
-  FreeAndNil(DotImageCache); // rendered-dot cache from inc/umain_dots.inc
-  FreeAndNil(TrendLineImage); // cached connecting-line raster, same file
 
 end.
 
