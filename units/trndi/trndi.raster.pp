@@ -41,6 +41,9 @@
  *   of inc/umain_dots.inc, so the history graph and the trend arrow can draw
  *   antialiased shapes through the same code as the main window. Added the
  *   stroke-list rasterizer (DrawSmoothStrokes) and the dashed polyline.
+ * - 2026-09-20: Moved DrawRangeBands here from inc/umain_paint.inc and gave
+ *   it a destination offset, so the history graph can tint its plot area
+ *   with the same alpha bands as the main window.
  *)
 
 unit trndi.raster;
@@ -86,6 +89,14 @@ type
   TSmoothStroke = record
     X1, Y1, X2, Y2: double;
     Color: TColor;
+  end;
+
+  {** One horizontal band for DrawRangeBands. Top and Bottom are rows inside
+      the band raster, inclusive; rows outside the raster are clipped. }
+  TRangeBand = record
+    Top, Bottom: integer;
+    Color: TColor;
+    Alpha: byte;
   end;
 
 const
@@ -173,6 +184,19 @@ procedure DrawSmoothPolyline(ACanvas: TCanvas; const APts: array of TPoint;
 procedure DrawSmoothDashedPolyline(ACanvas: TCanvas;
   const APts: array of TPoint; AColor: TColor; AThickness, ADashPx,
   AGapPx: integer);
+
+{** Paint a set of horizontal alpha bands, AWidth by AHeight, with the
+    raster's origin at (ADestX, ADestY) on ACanvas.
+
+    The bands are uniform horizontally, so they are rendered as a single
+    premultiplied column that the OS stretches across AWidth. Bands composite
+    in array order using Porter-Duff "over", so a band listed later and lying
+    inside an earlier one reads as a deeper shade of it. Each band fades in
+    over AGradientPx rows at its top and bottom edges; an edge that lies
+    outside the raster is clipped without a fade. }
+procedure DrawRangeBands(ACanvas: TCanvas; AWidth, AHeight: integer;
+  const Bands: array of TRangeBand; AGradientPx: integer;
+  ADestX: integer = 0; ADestY: integer = 0);
 
 implementation
 
@@ -855,6 +879,86 @@ begin
   SetLength(strokes, n);
   if n > 0 then
     DrawSmoothStrokes(ACanvas, strokes, AThickness);
+end;
+
+// ---------------------------------------------------------------------------
+// Horizontal alpha bands
+// ---------------------------------------------------------------------------
+
+procedure DrawRangeBands(ACanvas: TCanvas; AWidth, AHeight: integer;
+  const Bands: array of TRangeBand; AGradientPx: integer;
+  ADestX: integer; ADestY: integer);
+
+  function EdgeCoverage(y, top, bottom, grad: integer): double;
+  begin
+    if (y < top) or (y > bottom) then
+    begin
+      Result := 0;
+      Exit;
+    end;
+    if grad <= 0 then
+    begin
+      Result := 1;
+      Exit;
+    end;
+    if y - top < bottom - y then
+      Result := (y - top + 0.5) / grad
+    else
+      Result := (bottom - y + 0.5) / grad;
+    if Result > 1 then Result := 1
+    else if Result < 0 then Result := 0;
+  end;
+
+var
+  intf: TLazIntfImage;
+  img: TAlphaImage;
+  y, i: integer;
+  br, bg, bb: byte;
+  dstR, dstG, dstB, dstA: double;
+  srcA, invA: double;
+begin
+  if (AWidth <= 0) or (AHeight <= 0) or (Length(Bands) = 0) then
+    Exit;
+
+  intf := NewAlphaRaster(1, AHeight);
+  try
+    for y := 0 to AHeight - 1 do
+    begin
+      dstR := 0; dstG := 0; dstB := 0; dstA := 0;
+      for i := Low(Bands) to High(Bands) do
+      begin
+        srcA := (Bands[i].Alpha / 255.0) *
+                EdgeCoverage(y, Bands[i].Top, Bands[i].Bottom, AGradientPx);
+        if srcA <= 0 then
+          Continue;
+        br := Red(ColorToRGB(Bands[i].Color));
+        bg := Green(ColorToRGB(Bands[i].Color));
+        bb := Blue(ColorToRGB(Bands[i].Color));
+        invA := 1.0 - srcA;
+        dstR := br * srcA + dstR * invA;
+        dstG := bg * srcA + dstG * invA;
+        dstB := bb * srcA + dstB * invA;
+        dstA := srcA + dstA * invA;
+      end;
+
+      // dstR/dstG/dstB are accumulated in premultiplied form already
+      // (Porter-Duff: dstR = br*srcA + dstR*invA -- the srcA factor is baked
+      // in), which is exactly what PutPremultipliedPixel takes.
+      PutPremultipliedPixel(intf, 0, y, dstR, dstG, dstB, dstA);
+    end;
+
+    // One column stretched across the full width -- the bands are uniform
+    // horizontally, so there is nothing to gain from rasterizing AWidth
+    // identical copies.
+    img := AlphaImageFromIntf(intf, 1, AHeight);
+    try
+      BlitAlphaImage(ACanvas, img, 1, AHeight, ADestX, ADestY, AWidth, AHeight);
+    finally
+      img.Free;
+    end;
+  finally
+    intf.Free;
+  end;
 end;
 
 finalization

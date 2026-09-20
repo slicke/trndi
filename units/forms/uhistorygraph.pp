@@ -39,6 +39,9 @@
  * - 2026-09-20: The dots, the trace, the hover ring and the prediction
  *   overlay are drawn antialiased through trndi.raster instead of the
  *   aliased canvas Ellipse/LineTo primitives.
+ * - 2026-09-20: The threshold range is tinted as translucent bands behind
+ *   the plot, like the main window, with a hairline at each threshold in
+ *   place of the earlier dashed lines.
  *)
 
 {**
@@ -164,8 +167,13 @@ private
       (left) and time (bottom) axes. Uses the plot extents from
       UpdateExtents. }
   procedure DrawAxesAndGrid(ACanvas: TCanvas; const PlotRect: TRect);
-    {** DrawThresholdLines: Draws horizontal lines at each threshold level
-      using the corresponding level colors. }
+    {** DrawThresholdBands: Tints the hi/lo range as a translucent band
+      across the plot, with the personal range as a deeper band inside it,
+      the same way the main window shades its trend surface. Drawn under
+      the grid so the grid lines stay crisp. }
+  procedure DrawThresholdBands(ACanvas: TCanvas; const PlotRect: TRect);
+    {** DrawThresholdLines: Draws a hairline at each threshold level in the
+      corresponding level color, marking the band edges. }
   procedure DrawThresholdLines(ACanvas: TCanvas; const PlotRect: TRect);
     {** DrawBasalOverlay: Renders daily repeating basal schedule as a small
       area strip at the bottom of the plot. Values are scaled to
@@ -536,61 +544,80 @@ begin
   ACanvas.Font.Style := [];
 end;
 
-procedure TfHistoryGraph.DrawThresholdLines(ACanvas: TCanvas; const PlotRect: TRect);
+procedure TfHistoryGraph.DrawThresholdBands(ACanvas: TCanvas; const PlotRect: TRect);
+const
+  // Tuned for the white graph background: the hi/lo wash stays faint enough
+  // for the grid and the silver trace to read through it, and the personal
+  // range stacks on top as a visibly deeper shade of the same colour.
+  HILO_ALPHA = 30;
+  CUSTOM_ALPHA = 44;
+  EDGE_GRADIENT_PX = 3;
 var
-  hiVal, loVal, rangeHiVal, rangeLoVal: double;
-  hiY, loY, rangeHiY, rangeLoY: integer;
-  lineColor: TColor;
-  alpha: byte;
+  bands: array of TRangeBand;
+  plotW, plotH: integer;
+
+  // Band rows are relative to the plot's top edge; DrawRangeBands clips
+  // whatever falls outside the plot, so a threshold above the visible value
+  // range simply fades the band into the plot border instead of stopping short.
+  procedure AddBand(const hiMgdl, loMgdl: integer; const AColor: TColor;
+    const AAlpha: byte);
+  begin
+    SetLength(bands, Length(bands) + 1);
+    with bands[High(bands)] do
+    begin
+      Top := ValueToY(hiMgdl * BG_CONVERTIONS[FUnit][mgdl], PlotRect) - PlotRect.Top;
+      Bottom := ValueToY(loMgdl * BG_CONVERTIONS[FUnit][mgdl], PlotRect) - PlotRect.Top;
+      Color := AColor;
+      Alpha := AAlpha;
+    end;
+  end;
+
 begin
-  // Convert thresholds from mg/dL to display unit
-  hiVal := FCgmHi * BG_CONVERTIONS[FUnit][mgdl];
-  loVal := FCgmLo * BG_CONVERTIONS[FUnit][mgdl];
-  rangeHiVal := FCgmRangeHi * BG_CONVERTIONS[FUnit][mgdl];
-  rangeLoVal := FCgmRangeLo * BG_CONVERTIONS[FUnit][mgdl];
+  plotW := PlotRect.Right - PlotRect.Left;
+  plotH := PlotRect.Bottom - PlotRect.Top;
+  if (plotW <= 0) or (plotH <= 0) then
+    Exit;
 
-  // Calculate Y positions
-  hiY := ValueToY(hiVal, PlotRect);
-  loY := ValueToY(loVal, PlotRect);
-  rangeHiY := ValueToY(rangeHiVal, PlotRect);
-  rangeLoY := ValueToY(rangeLoVal, PlotRect);
+  bands := nil;
+  if (FCgmHi > 0) and (FCgmLo > 0) and (FCgmHi > FCgmLo) then
+    AddBand(FCgmHi, FCgmLo, LevelColor(BGRange), HILO_ALPHA);
 
-  ACanvas.Pen.Width := 2;
-  ACanvas.Pen.Style := psDash;
+  // The personal range uses the disabled sentinels (500 / 0) when a backend
+  // does not supply one, matching the checks in the legend and the hairlines.
+  if (FCgmRangeHi < 500) and (FCgmRangeLo > 0) and (FCgmRangeHi > FCgmRangeLo) then
+    AddBand(FCgmRangeHi, FCgmRangeLo, LevelColor(BGRange), CUSTOM_ALPHA);
 
-  // Draw High threshold line
-  lineColor := LevelColor(BGHigh);
-  ACanvas.Pen.Color := lineColor;
-  ACanvas.MoveTo(PlotRect.Left, hiY);
-  ACanvas.LineTo(PlotRect.Right, hiY);
+  if Length(bands) > 0 then
+    DrawRangeBands(ACanvas, plotW, plotH, bands, EDGE_GRADIENT_PX,
+      PlotRect.Left, PlotRect.Top);
+end;
 
-  // Draw Low threshold line
-  lineColor := LevelColor(BGLOW);
-  ACanvas.Pen.Color := lineColor;
-  ACanvas.MoveTo(PlotRect.Left, loY);
-  ACanvas.LineTo(PlotRect.Right, loY);
+procedure TfHistoryGraph.DrawThresholdLines(ACanvas: TCanvas; const PlotRect: TRect);
 
-  // Draw Range High threshold line (if not disabled)
-  if FCgmRangeHi <> 500 then
+  procedure Hairline(const valueMgdl: integer; const level: BGValLevel);
+  var
+    y: integer;
   begin
-    lineColor := LevelColor(BGRangeHI);
-    ACanvas.Pen.Color := lineColor;
-    ACanvas.MoveTo(PlotRect.Left, rangeHiY);
-    ACanvas.LineTo(PlotRect.Right, rangeHiY);
+    y := ValueToY(valueMgdl * BG_CONVERTIONS[FUnit][mgdl], PlotRect);
+    if (y < PlotRect.Top) or (y > PlotRect.Bottom) then
+      Exit;
+    ACanvas.Pen.Color := LevelColor(level);
+    ACanvas.MoveTo(PlotRect.Left, y);
+    ACanvas.LineTo(PlotRect.Right, y);
   end;
 
-  // Draw Range Low threshold line (if not disabled)
-  if FCgmRangeLo <> 0 then
-  begin
-    lineColor := LevelColor(BGRangeLO);
-    ACanvas.Pen.Color := lineColor;
-    ACanvas.MoveTo(PlotRect.Left, rangeLoY);
-    ACanvas.LineTo(PlotRect.Right, rangeLoY);
-  end;
-
-  // Reset pen style
+begin
   ACanvas.Pen.Width := 1;
   ACanvas.Pen.Style := psSolid;
+
+  Hairline(FCgmHi, BGHigh);
+  Hairline(FCgmLo, BGLOW);
+
+  // Personal range edges, skipped at the disabled sentinels
+  if FCgmRangeHi <> 500 then
+    Hairline(FCgmRangeHi, BGRangeHI);
+  if FCgmRangeLo <> 0 then
+    Hairline(FCgmRangeLo, BGRangeLO);
 end;
 
 procedure TfHistoryGraph.DrawBasalOverlay(ACanvas: TCanvas; const PlotRect: TRect);
@@ -1104,6 +1131,7 @@ procedure TfHistoryGraph.RenderBackground(ABmp: TBitmap; const PlotRect: TRect);
 begin
   ABmp.Canvas.Brush.Color := Color;
   ABmp.Canvas.FillRect(Rect(0, 0, ABmp.Width, ABmp.Height));
+  DrawThresholdBands(ABmp.Canvas, PlotRect);
   DrawAxesAndGrid(ABmp.Canvas, PlotRect);
   DrawThresholdLines(ABmp.Canvas, PlotRect);
   DrawBasalOverlay(ABmp.Canvas, PlotRect);
