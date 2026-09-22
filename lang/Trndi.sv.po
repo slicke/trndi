@@ -1884,7 +1884,7 @@ msgstr "Aktivera varningar igen"
 #: trndi.strings.rs_alert_snooze_urgent_cap
 #, object-pascal-format
 msgid "Urgent low alerts can only be snoozed briefly and resume at %s"
-msgstr ""
+msgstr "Akuta låga varningar kan endast snoozas kortvarigt och återupptas vid %s"
 
 #: trndi.strings.rs_api_notice
 msgid "Data source notice"
@@ -2569,7 +2569,7 @@ msgid "Refresh?"
 msgstr "Läs om?"
 
 #: trndi.strings.rs_report_at
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.strings.rs_report_at"
 msgid "%s at %s"
 msgstr "%s vid %s"
@@ -2577,150 +2577,150 @@ msgstr "%s vid %s"
 #: trndi.strings.rs_report_band_high
 #, object-pascal-format
 msgid "High, over %s"
-msgstr ""
+msgstr "Högt, över %s"
 
 #: trndi.strings.rs_report_band_in
 #, object-pascal-format
 msgid "In range, %s-%s"
-msgstr ""
+msgstr "Inom mål, %s-%s"
 
 #: trndi.strings.rs_report_band_low
 #, object-pascal-format
 msgid "Low, under %s"
-msgstr ""
+msgstr "Lågt, under %s"
 
 #: trndi.strings.rs_report_band_over
 #, object-pascal-format
 msgid "Over range, %s-%s"
-msgstr ""
+msgstr "Över område, %s-%s"
 
 #: trndi.strings.rs_report_band_under
 #, object-pascal-format
 msgid "Under range, %s-%s"
-msgstr ""
+msgstr "Under område, %s-%s"
 
 #: trndi.strings.rs_report_cv
 msgid "Variability (CV)"
-msgstr ""
+msgstr "Variabilitet (CV)"
 
 #: trndi.strings.rs_report_distribution
 msgid "Where the readings fell"
-msgstr ""
+msgstr "Var avläsningarna föll"
 
 #: trndi.strings.rs_report_excursions
 msgid "Excursions"
-msgstr ""
+msgstr "Exkursioner"
 
 #: trndi.strings.rs_report_excursions_value
 #, object-pascal-format
 msgid "%d low, %d high (runs of %d or more readings past the limit)"
-msgstr ""
+msgstr "%d lågt, %d högt (körs av %d eller fler avläsningar efter gränsen)"
 
 #: trndi.strings.rs_report_footer
 msgid "These are plain statistics over the readings Trndi happens to hold. They are not a medical assessment, the indicator above is not a laboratory A1c, and nothing here should be acted on without your official device and your care team."
-msgstr ""
+msgstr "Detta är enbart statistik över de mätvärden som Trndi råkar innehålla. De utgör inte en medicinsk bedömning, indikatorn ovan är inte ett laboratorie-HbA1c, och ingenting här bör ageras utifrån utan din officiella enhet och ditt vårdteam."
 
 #: trndi.strings.rs_report_gap
 msgid "Longest gap"
-msgstr ""
+msgstr "Längst gap"
 
 #: trndi.strings.rs_report_gap_none
 msgid "none beyond the usual spacing"
-msgstr ""
+msgstr "ingen utöver normala mellanrum"
 
 #: trndi.strings.rs_report_gap_value
 #, object-pascal-format
 msgid "%d min, from %s"
-msgstr ""
+msgstr "%d min, från %s"
 
 #: trndi.strings.rs_report_gmi
 msgid "Glucose Management Indicator"
-msgstr ""
+msgstr "Indikator för glukoshantering (GMI)"
 
 #: trndi.strings.rs_report_gmi_value
 #, object-pascal-format
 msgid "%.1f%% (%.0f mmol/mol)"
-msgstr ""
+msgstr "%.1f%% (%.0f mmol/mol)"
 
 #: trndi.strings.rs_report_highest
 msgid "Highest reading"
-msgstr ""
+msgstr "Högsta avläsning"
 
 #: trndi.strings.rs_report_lowest
 msgid "Lowest reading"
-msgstr ""
+msgstr "Lägsta avläsning"
 
 #: trndi.strings.rs_report_mean
 msgid "Average"
-msgstr ""
+msgstr "Medel"
 
 #: trndi.strings.rs_report_median
 msgid "Median"
-msgstr ""
+msgstr "Median"
 
 #: trndi.strings.rs_report_nodata
 msgid "There are no readings loaded to summarise yet."
-msgstr ""
+msgstr "Det finns inga avläsningar laddade att sammanfatta än."
 
 #: trndi.strings.rs_report_numbers
 msgid "Numbers"
-msgstr ""
+msgstr "Nummer"
 
 #: trndi.strings.rs_report_period
 #, object-pascal-format
 msgid "%s to %s (%s)"
-msgstr ""
+msgstr "%s till %s (%s)"
 
 #: trndi.strings.rs_report_samples
 #, object-pascal-format
 msgid "%d readings, roughly %s apart, covering %.0f%% of the period"
-msgstr ""
+msgstr "%d avläsningar, grovt %s emellan, täcker %.0f%% av perioden"
 
 #: trndi.strings.rs_report_save
 msgid "Save..."
-msgstr ""
+msgstr "Spara…"
 
 #: trndi.strings.rs_report_save_error
 #, object-pascal-format
 msgid "The summary could not be saved: %s"
-msgstr ""
+msgstr "Sammanfattningen kunde inte sparas: %s"
 
 #: trndi.strings.rs_report_save_filter
 msgid "Text file|*.txt|All files|*.*"
-msgstr ""
+msgstr "Textfil|*.txt|Alla filer|*.*"
 
 #: trndi.strings.rs_report_save_ok
 #, object-pascal-format
 msgid "Summary saved to %s"
-msgstr ""
+msgstr "Sammanfattningen sparades till %s"
 
 #: trndi.strings.rs_report_save_title
 msgid "Save summary"
-msgstr ""
+msgstr "Spara sammanfattning"
 
 #: trndi.strings.rs_report_sd
 msgid "Spread (standard deviation)"
-msgstr ""
+msgstr "Spridning (standardavvikelse)"
 
 #: trndi.strings.rs_report_shape
 msgid "Shape of the period"
-msgstr ""
+msgstr "Periodens trendförlopp"
 
 #: trndi.strings.rs_report_span_hm
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.strings.rs_report_span_hm"
 msgid "%d h %d min"
 msgstr "%d tim %d min"
 
 #: trndi.strings.rs_report_span_m
-#, object-pascal-format, fuzzy
+#, object-pascal-format
 msgctxt "trndi.strings.rs_report_span_m"
 msgid "%d min"
 msgstr "%d min"
 
 #: trndi.strings.rs_report_title
 msgid "Glucose summary"
-msgstr ""
+msgstr "Glukossammanfattning"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
@@ -3254,14 +3254,17 @@ msgid ""
 "\n"
 "You can change this later via right-click → Settings."
 msgstr ""
+"Trndi kan visa en smal linje till vänster om fönstret som fylls upp medan nästa avläsning närmar sig. Om en avläsning är sen, visas en andra linje bredvid som fylls medan Trndi försöker hämta igen.\n"
+"\n"
+"Du kan ändra detta senare genom höger-klick → Inställningar."
 
 #: trndi.strings.rs_wizard_progress_check
 msgid "Show the refresh countdown bar"
-msgstr ""
+msgstr "Visa uppdateringsnedräknaren"
 
 #: trndi.strings.rs_wizard_progress_head
 msgid "Refresh countdown"
-msgstr ""
+msgstr "Uppdateringsnedräkning"
 
 #: trndi.strings.rs_wizard_source
 msgid "Data source:"
@@ -4620,4 +4623,3 @@ msgstr "CareLink loginhjälpare"
 msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Väntar på att webbläsarinloggningen ska slutföras…"
-
