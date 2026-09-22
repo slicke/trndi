@@ -9,7 +9,17 @@
 #
 # lld takes the same command line as Apple's ld except for a few ld64-only
 # flags, which are translated or dropped below. LD64_LLD (exported by the
-# Makefile) names the lld binary.
+# Makefile) names the lld binary. Without it -- a build from the Lazarus IDE,
+# which Finder starts without Homebrew on PATH -- look in PATH and the Homebrew
+# prefixes.
+if [ -z "${LD64_LLD:-}" ]; then
+  LD64_LLD=$(command -v ld64.lld 2>/dev/null || \
+    ls /opt/homebrew/bin/ld64.lld /usr/local/bin/ld64.lld 2>/dev/null | head -n1)
+  if [ -z "$LD64_LLD" ]; then
+    echo "tools/darwin-lld/ld: ld64.lld not found (brew install lld)" >&2
+    exit 1
+  fi
+fi
 args=()
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -28,4 +38,4 @@ while [ $# -gt 0 ]; do
       args+=("$1"); shift ;;
   esac
 done
-exec "${LD64_LLD:-ld64.lld}" "${args[@]}"
+exec "$LD64_LLD" "${args[@]}"
