@@ -23,6 +23,19 @@ ifeq ($(OS),Windows_NT)
   endif
 endif
 
+# macOS: the Lazarus installer puts lazbuild in /Applications/lazarus without
+# adding it to PATH. Use that copy when LAZBUILD was not set explicitly and no
+# lazbuild is on PATH.
+ifneq ($(OS),Windows_NT)
+  ifeq ($(origin LAZBUILD)$(shell uname -s),fileDarwin)
+    ifeq ($(shell command -v lazbuild 2>/dev/null),)
+      ifneq ($(wildcard /Applications/lazarus/lazbuild),)
+        LAZBUILD := /Applications/lazarus/lazbuild
+      endif
+    endif
+  endif
+endif
+
 LPI ?= Trndi.lpi
 TEST_LPI ?= tests/TrndiTest.lpi
 OUTDIR ?= build
@@ -329,7 +342,7 @@ help:
 	@echo "  install    Install binary plus (on Linux/BSD) desktop entry, icon and AppStream metadata to PREFIX (default /usr/local; requires sudo)"
 	@echo "  uninstall  Remove everything 'make install' put under PREFIX (requires sudo)"
 	@echo "Variables:" 
-	@echo "  LAZBUILD (default: lazbuild)"
+	@echo "  LAZBUILD (default: lazbuild on PATH; on macOS /Applications/lazarus/lazbuild if not on PATH; currently $(LAZBUILD))"
 	@echo "  WIDGETSET (default: $(WIDGETSET))"
 	@echo "  BUILD_MODE (default: $(BUILD_MODE))"
 	@echo "  CPU_FLAG (default: empty). --cpu=<name> is passed to lazbuild and also picks the prebuilt QuickJS directory (otherwise the host CPU does)."
