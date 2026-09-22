@@ -2043,4 +2043,20 @@ begin
     gUserBadgeBridge.Callback := nil;
 end;
 
+const
+  LC_NUMERIC = 4; // <locale.h> on Darwin
+
+function trndi_setlocale(category: cint; locale: PChar): PChar;
+  cdecl; external 'c' name 'setlocale';
+
+initialization
+  // cwstring (pulled in by the LCL) calls setlocale(LC_ALL, '') on startup,
+  // which copies LANG/LC_* from the environment into the C locale. With a
+  // decimal-comma LC_NUMERIC (sv_SE and friends) AppKit's SF Symbols come back
+  // as empty 2x2 images, so the dialog icons vanish whenever Trndi is started
+  // from a terminal. Finder and the Dock launch without LANG, which leaves the
+  // C locale alone; restore "C" numerics so every launch behaves the same.
+  // Graphics -> LazUTF8 -> cwstring guarantees this runs after cwstring.
+  trndi_setlocale(LC_NUMERIC, 'C');
+
 end.
