@@ -255,12 +255,27 @@ ifeq ($(UNAME_S),Linux)
 endif
 LIBGCC_FLAGS := $(if $(strip $(LIBGCC_DIR)),--opt=-Fl$(strip $(LIBGCC_DIR)))
 
-LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS)
+# macOS linker. Apple's ld from Xcode/CLT 27 refuses the Objective-C method
+# lists FPC 3.2.x emits ("malformed method list atom"), and -ld_classic no
+# longer exists, so when LLVM's ld64.lld is installed (brew install lld) link
+# through it instead: -FD makes FPC run tools/darwin-lld/ld, a shim that
+# translates the few ld64-only flags and execs $(LD64_LLD). Without ld64.lld
+# the build uses Apple's ld as before.
+#
+# Set LD64_LLD= (empty) to opt out, or LD64_LLD=/some/ld64.lld to override.
+ifeq ($(UNAME_S),Darwin)
+  LD64_LLD ?= $(shell command -v ld64.lld 2>/dev/null || \
+    ls /opt/homebrew/bin/ld64.lld /usr/local/bin/ld64.lld 2>/dev/null | head -n1)
+  export LD64_LLD
+endif
+DARWIN_LD_FLAGS := $(if $(strip $(LD64_LLD)),--opt=-FD$(CURDIR)/tools/darwin-lld)
+
+LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS)
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
 NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
-NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS)
+NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS)
 
 .PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
 
@@ -300,6 +315,7 @@ help:
 	@echo "  BUILD_MODE (default: $(BUILD_MODE))"
 	@echo "  CPU_FLAG (default: empty). --cpu=<name> is passed to lazbuild and also picks the prebuilt QuickJS directory (otherwise the host CPU does)."
 	@echo "  LIBGCC_DIR (Linux; default: asked of gcc, currently '$(LIBGCC_DIR)'). Set empty to opt out."
+	@echo "  LD64_LLD (macOS; default: ld64.lld if installed, currently '$(LD64_LLD)'). Links through LLVM lld instead of Apple ld. Set empty to opt out."
 
 check:
 ifeq ($(OS),Windows_NT)
@@ -379,7 +395,7 @@ debug: build
 
 test: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -388,7 +404,7 @@ test: check qjs-links
 
 noext-test: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -397,7 +413,7 @@ noext-test: qjs-links
 
 test-noserver: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -406,7 +422,7 @@ test-noserver: check qjs-links
 
 noext-test-noserver: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))

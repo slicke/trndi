@@ -1,0 +1,29 @@
+#!/bin/bash
+# ld shim that lets FPC link through LLVM's ld64.lld on macOS.
+#
+# Apple's ld from Xcode/CLT 27 (ld-27037) rejects the Objective-C protocol
+# method lists FPC 3.2.x emits ("malformed method list atom ... fixups found
+# beyond the number of method entries"), in Trndi's own units as well as in the
+# LCL, and the -ld_classic escape hatch is gone. The Makefile points FPC here
+# with -FD when ld64.lld is available; FPC then runs this file as "ld".
+#
+# lld takes the same command line as Apple's ld except for a few ld64-only
+# flags, which are translated or dropped below. LD64_LLD (exported by the
+# Makefile) names the lld binary.
+args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -macosx_version_min|-macos_version_min)
+      # lld only understands -platform_version <platform> <min> <sdk>.
+      sdk=$(xcrun --show-sdk-version 2>/dev/null)
+      args+=(-platform_version macos "$2" "${sdk:-$2}")
+      shift 2 ;;
+    -no_dead_strip_inits_and_terms)
+      shift ;;
+    -multiply_defined)
+      shift 2 ;;
+    *)
+      args+=("$1"); shift ;;
+  esac
+done
+exec "${LD64_LLD:-ld64.lld}" "${args[@]}"
