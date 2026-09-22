@@ -15,8 +15,10 @@ while [ $# -gt 0 ]; do
   case "$1" in
     -macosx_version_min|-macos_version_min)
       # lld only understands -platform_version <platform> <min> <sdk>.
-      sdk=$(xcrun --show-sdk-version 2>/dev/null)
-      args+=(-platform_version macos "$2" "${sdk:-$2}")
+      # Record the minimum as the SDK version too, which is what Apple's ld
+      # does when given only -macos_version_min. macOS picks the app's look
+      # from that field: SDK 26+ opts into the new, larger controls.
+      args+=(-platform_version macos "$2" "$2")
       shift 2 ;;
     -no_dead_strip_inits_and_terms)
       shift ;;
