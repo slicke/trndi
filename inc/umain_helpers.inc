@@ -686,6 +686,16 @@ begin
   Color := COL_BACKDROP;
   Screen.Cursor := crHourGlass; // Restored implicitly when the process exits
 
+  // The title bar still wears the last reading's colour; give it the backdrop
+  // so the notice reads as one surface. The timers are already stopped, so no
+  // UpdateTitleColor pass can re-tint it afterwards. The user badge goes too:
+  // it is a shortcut into Settings, which must not open mid-teardown.
+  native.SetTitleColor(Handle, COL_BACKDROP, clWhite);
+  if OwnTitleBarActive then
+    FTitleBar.ClearUserBadge
+  else
+    native.HideUserBadge;
+
   // lVal normally renders a reading at fill-the-window size; a sentence at
   // that size just clips. Give it a deliberate, moderate size instead.
   lVal.OptimalFill := false;
