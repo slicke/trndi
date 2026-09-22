@@ -270,6 +270,25 @@ ifeq ($(UNAME_S),Darwin)
 endif
 DARWIN_LD_FLAGS := $(if $(strip $(LD64_LLD)),--opt=-FD$(CURDIR)/tools/darwin-lld)
 
+# macOS development bundle identity. Trndi keeps its settings in NSUserDefaults
+# under the bundle identifier, so the .app in $(OUTDIR) gets its own id and name
+# to keep a development build from sharing settings (and a Dock/Spotlight name)
+# with an installed Trndi (com.slicke.Trndi). Only $(OUTDIR) is touched; the
+# dist/macos*.sh packaging scripts write their own Info.plist.
+#
+# Set DEV_BUNDLE_ID= (empty) to keep the Info.plist Lazarus generated.
+ifeq ($(UNAME_S),Darwin)
+  DEV_BUNDLE_ID ?= com.slicke.Trndi.dev
+  DEV_BUNDLE_NAME ?= Trndi Dev
+endif
+MARK_DEV_BUNDLE = p="$(OUTDIR)/$(basename $(LPI)).app/Contents/Info.plist"; \
+  if [ -n "$(DEV_BUNDLE_ID)" ] && [ -f "$$p" ]; then \
+    plutil -replace CFBundleIdentifier -string "$(DEV_BUNDLE_ID)" "$$p" && \
+    plutil -replace CFBundleName -string "$(DEV_BUNDLE_NAME)" "$$p" && \
+    plutil -replace CFBundleDisplayName -string "$(DEV_BUNDLE_NAME)" "$$p" && \
+    echo "Marked $(OUTDIR)/$(basename $(LPI)).app as $(DEV_BUNDLE_ID)"; \
+  fi
+
 LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS)
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
@@ -316,6 +335,7 @@ help:
 	@echo "  CPU_FLAG (default: empty). --cpu=<name> is passed to lazbuild and also picks the prebuilt QuickJS directory (otherwise the host CPU does)."
 	@echo "  LIBGCC_DIR (Linux; default: asked of gcc, currently '$(LIBGCC_DIR)'). Set empty to opt out."
 	@echo "  LD64_LLD (macOS; default: ld64.lld if installed, currently '$(LD64_LLD)'). Links through LLVM lld instead of Apple ld. Set empty to opt out."
+	@echo "  DEV_BUNDLE_ID / DEV_BUNDLE_NAME (macOS; default: com.slicke.Trndi.dev / Trndi Dev). Identity of the .app in $(OUTDIR), so a dev build keeps its own settings. Set DEV_BUNDLE_ID empty to opt out."
 
 check:
 ifeq ($(OS),Windows_NT)
@@ -364,6 +384,7 @@ build: qjs-links
 	@for f in "$(basename $(LPI))" "$(basename $(LPI)).exe" "$(basename $(LPI)).app"; do \
 	  if [ -e "$$f" ]; then cp -r "$$f" "$(OUTDIR)/" && echo "Copied $$f to $(OUTDIR)"; fi; \
 	done;
+	@$(MARK_DEV_BUNDLE)
 	@if [ -f "$(OUTDIR)/$(basename $(LPI))" ] || [ -f "$(OUTDIR)/$(basename $(LPI)).exe" ] || [ -d "$(OUTDIR)/$(basename $(LPI)).app" ]; then \
 	  echo "Found in $(OUTDIR)"; \
 	else \
@@ -565,6 +586,7 @@ noext:
 	    echo "Warning: no executable found in project dir or $(OUTDIR)"; \
 	  fi; \
 	  if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/. "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi; \
+	  $(MARK_DEV_BUNDLE); \
 	  if [ "$(BUILD_MODE)" = "Release" ] && [ "$(STRIP_RELEASE)" = "1" ]; then \
 	    if [ -f "$(OUTDIR)/Trndi" ]; then \
 	      if command -v "$(STRIP)" >/dev/null 2>&1; then \
