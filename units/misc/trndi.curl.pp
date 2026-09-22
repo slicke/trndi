@@ -75,13 +75,13 @@ type
 CURL = type Pointer;
 
   {** libcurl result code (C enum, int-sized). @code(CURLE_OK) means success. }
-CURLcode = clong;
+CURLcode = cint;
 
   {** Option selector for @link(curl_easy_setopt) (C enum, int-sized). }
-CURLoption = clong;
+CURLoption = cint;
 
   {** Info selector for @link(curl_easy_getinfo) (C enum, int-sized). }
-CURLINFO = clong;
+CURLINFO = cint;
 
 pcurl_slist = ^curl_slist;
   {** Singly-linked string list used for custom HTTP headers. }
@@ -156,19 +156,23 @@ cdecl; external CurlLib;
 
 {**
   Sets a long-typed option (timeouts, booleans, ports, sizes).
-  Typed overloads replace C's variadic @code(curl_easy_setopt) so the
-  compiler checks the argument against the option class.
+  Typed overloads over C's variadic @code(curl_easy_setopt) so the compiler
+  checks the argument against the option class. They are Pascal wrappers
+  around a varargs import rather than direct imports: Apple's arm64 ABI
+  passes variadic arguments on the stack, not in registers, so a fixed
+  three-argument import hands libcurl garbage there (every URL came back as
+  "bad/illegal format").
 }
 function curl_easy_setopt(handle: CURL; option: CURLoption; Value: clong): CURLcode;
-cdecl; overload; external CurlLib Name 'curl_easy_setopt';
+overload; inline;
 
 {** Sets a string-typed option (URL, proxy, user agent, POST body, ...). }
 function curl_easy_setopt(handle: CURL; option: CURLoption; Value: pchar): CURLcode;
-cdecl; overload; external CurlLib Name 'curl_easy_setopt';
+overload; inline;
 
 {** Sets a pointer-typed option (callbacks, userdata, header lists). }
 function curl_easy_setopt(handle: CURL; option: CURLoption; Value: Pointer): CURLcode;
-cdecl; overload; external CurlLib Name 'curl_easy_setopt';
+overload; inline;
 
 {** Performs the transfer configured on @param(handle); blocks until done. }
 function curl_easy_perform(handle: CURL): CURLcode;
@@ -180,7 +184,7 @@ cdecl; external CurlLib;
   for @code(CURLINFO_STRING) selectors (string storage is owned by libcurl).
 }
 function curl_easy_getinfo(handle: CURL; info: CURLINFO; Value: Pointer): CURLcode;
-cdecl; external CurlLib;
+inline;
 
 {** Returns a static, human-readable description of @param(code). }
 function curl_easy_strerror(code: CURLcode): pchar;
@@ -203,5 +207,32 @@ procedure curl_slist_free_all(list: Pcurl_slist);
 cdecl; external CurlLib;
 
 implementation
+
+{ The real, variadic imports behind the typed wrappers above. }
+function curl_easy_setopt_va(handle: CURL; option: CURLoption): CURLcode;
+cdecl; varargs; external CurlLib Name 'curl_easy_setopt';
+
+function curl_easy_getinfo_va(handle: CURL; info: CURLINFO): CURLcode;
+cdecl; varargs; external CurlLib Name 'curl_easy_getinfo';
+
+function curl_easy_setopt(handle: CURL; option: CURLoption; Value: clong): CURLcode;
+begin
+  Result := curl_easy_setopt_va(handle, option, Value);
+end;
+
+function curl_easy_setopt(handle: CURL; option: CURLoption; Value: pchar): CURLcode;
+begin
+  Result := curl_easy_setopt_va(handle, option, Value);
+end;
+
+function curl_easy_setopt(handle: CURL; option: CURLoption; Value: Pointer): CURLcode;
+begin
+  Result := curl_easy_setopt_va(handle, option, Value);
+end;
+
+function curl_easy_getinfo(handle: CURL; info: CURLINFO; Value: Pointer): CURLcode;
+begin
+  Result := curl_easy_getinfo_va(handle, info, Value);
+end;
 
 end.
