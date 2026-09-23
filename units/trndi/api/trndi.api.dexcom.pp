@@ -48,6 +48,8 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-09-23: testConnection rejects a null-GUID session instead of
+ *   reporting it as a working connection, matching Connect.
  *)
 unit trndi.api.dexcom;
 
@@ -860,6 +862,15 @@ begin
       end;
 
       sessionId := StringReplace(resp, '"', '', [rfReplaceAll]);
+    end;
+
+    // Connect rejects the null GUID as a session, so a test that passed it
+    // would report a connection that the real login then refuses (Dex2)
+    if sessionId = DEXCOM_NULL_UUID then
+    begin
+      res := sErrDexLogin + ': Dexcom returned an empty session. Check the region, ' +
+        'and that Dexcom Share is enabled in the official app.';
+      Exit;
     end;
 
     // 2) Basic checks on session token
