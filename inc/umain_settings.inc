@@ -1164,7 +1164,9 @@ begin
   versionInfo := versionInfo + ' (macOS)';
   {$endif}
 
-  html := '<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +
+  // The hosted logo is 1024x1024 and TIpHtmlPanel draws images at their
+  // natural size unless both dimensions are given
+  html := '<img src="https://trndi.app/doc/img/trndi-logo.png" width="128" height="128">' + sHTMLLineBreak +
     '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
     '<i>Continuous Glucose Monitor data display</i>' + sHTMLLineBreak +
     'for desktop and embedded devices' + sHTMLLineBreak + sHTMLLineBreak +
