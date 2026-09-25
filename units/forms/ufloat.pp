@@ -138,7 +138,6 @@ private
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
   procedure ApplyClock(AEnabled: boolean);
-  procedure SetFixedFontColor(AColor: TColor);
   procedure SyncSizeMenu;
   procedure SyncOpacityMenu(AOpacity: single);
   procedure ProgressBoxPaint({%H-}Sender: TObject);
@@ -149,6 +148,12 @@ private
   procedure CMColorChanged(var Message: TLMessage); message CM_COLORCHANGED;
   {$ENDIF}
 public
+  {** Colour every piece of text on the float: the value, the trend glyph or
+      vector arrow, the clock and the off-range markers. Both the fixed
+      black/white menu choice and the main window's colour sync go through
+      here, so the small corner texts never fall out of step with the value.
+      @param(AColor The text colour.) }
+  procedure SetTextColor(AColor: TColor);
   {** Mirror the main window's rotating trend arrow.
       @param(AEnabled Whether the rotating arrow replaces the glyph.)
       @param(AAngle Rotation in degrees (0 = flat, + = up, - = down).)
@@ -463,14 +468,14 @@ begin
   1:
     begin
       miFontWhite.Checked := true;
-      SetFixedFontColor(clWhite);
+      SetTextColor(clWhite);
     end;
   2:
     miFontMain.Checked := true; // colors arrive with the next main-window sync
   else
     begin
       miFontBlack.Checked := true;
-      SetFixedFontColor(clBlack);
+      SetTextColor(clBlack);
     end;
   end;
 
@@ -534,23 +539,26 @@ begin
   ShowMessage(RS_CUSTOM_OP);
 end;
 
-procedure TfFloat.SetFixedFontColor(AColor: TColor);
+procedure TfFloat.SetTextColor(AColor: TColor);
 begin
   lVal.Font.Color := AColor;
   lArrow.Font.Color := AColor;
+  lTime.Font.Color := AColor;
+  lRangeDown.Font.Color := AColor;
+  lRangeUp.Font.Color := AColor;
   if Assigned(FTrendArrow) then
     FTrendArrow.ArrowColor := AColor;
 end;
 
 procedure TfFloat.miFontBlackClick(Sender: TObject);
 begin
-  SetFixedFontColor(clBlack);
+  SetTextColor(clBlack);
   SaveSetting('ux.float.fontcolor', 0);
 end;
 
 procedure TfFloat.miFontWhiteClick(Sender: TObject);
 begin
-  SetFixedFontColor(clWhite);
+  SetTextColor(clWhite);
   SaveSetting('ux.float.fontcolor', 1);
 end;
 

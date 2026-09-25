@@ -1088,10 +1088,7 @@ begin
     // is stale take the main window's computed dimmed tone regardless, which is
     // derived from the stale background and therefore always legible on it.
     if fFloat.miFontMain.Checked or FTrendDataStale then
-    begin
-      fFloat.lVal.font.color := lval.font.color;
-      fFloat.larrow.font.color := fFloat.lVal.font.color;
-    end;
+      fFloat.SetTextColor(lVal.Font.Color);
     fFloat.pnMultiUser.Visible := userColorBar;
     if fFloat.pnMultiUser.Visible then
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
@@ -1959,7 +1956,6 @@ begin
   begin
     fFloat.lRangeDown.Visible := not UseRangeColor;
     fFloat.lRangeUp.Visible := false;
-    fFloat.Font.color := bg_rel_color_lo_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;
@@ -1986,7 +1982,6 @@ begin
   begin
     fFloat.lRangeUp.Visible := not UseRangeColor;
     fFloat.lRangeDown.Visible := false;
-    fFloat.Font.color := bg_rel_color_hi_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;
