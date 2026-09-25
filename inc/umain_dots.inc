@@ -63,7 +63,8 @@
    dot crossing the reading's digits or the arrow glyph keeps a clean edge.
    The settings previews draw the same halo. Older history dots (and the
    connecting line and gap rings with them) fade toward the backdrop by slot
-   age (DotAgeKeep, ux.dot_fade) so the newest reading dominates. The
+   age (DotAgeKeep, ux.dot_fade) and shrink with it (DotAgeDiameter) so the
+   newest reading dominates. The
    connecting line runs through the dots as a monotone cubic curve
    (SmoothTrace) instead of straight segments. The Display-tab preview
    shows the delta as the pill under the reading, like the live window. *)
@@ -215,15 +216,31 @@ begin
     ALeft - halo, ATop - halo);
 end;
 
+// A history slot's age as a fraction: 0 for the newest slot, 1 for slot 1,
+// linear in between. 0 everywhere with the fade off.
+function DotAgeFrac(ASlotIx, ANewestIx: integer): double;
+begin
+  if (not TrendDotFade) or (ANewestIx <= 1) then
+    Exit(0.0);
+  Result := EnsureRange((ANewestIx - ASlotIx) / (ANewestIx - 1), 0.0, 1.0);
+end;
+
 // How much of a history marker's own color survives the age fade: 1.0 for the
 // newest slot, falling linearly to 1 - DOT_AGE_FADE_MAX at slot 1. Shared by
 // the live surface and the Display-tab preview. Always 1.0 with the fade off.
 function DotAgeKeep(ASlotIx, ANewestIx: integer): double;
 begin
-  if (not TrendDotFade) or (ANewestIx <= 1) then
-    Exit(1.0);
-  Result := 1.0 - DOT_AGE_FADE_MAX * (ANewestIx - ASlotIx) / (ANewestIx - 1);
-  Result := EnsureRange(Result, 1.0 - DOT_AGE_FADE_MAX, 1.0);
+  Result := 1.0 - DOT_AGE_FADE_MAX * DotAgeFrac(ASlotIx, ANewestIx);
+end;
+
+// The diameter an aged marker draws at inside its ADiameter layout box: the
+// newest keeps the full box, the oldest loses DOT_AGE_SHRINK_MAX of it. Never
+// below the smallest legible dot.
+function DotAgeDiameter(ADiameter, ASlotIx, ANewestIx: integer): integer;
+begin
+  Result := Max(MIN_DOT_DIAMETER_PX, Round(ADiameter *
+    (1.0 - DOT_AGE_SHRINK_MAX * DotAgeFrac(ASlotIx, ANewestIx))));
+  Result := Min(Result, ADiameter);
 end;
 
 // Bend the connecting line: expand the dot centres into a curve through them.
@@ -317,7 +334,7 @@ var
   fontn: string;
   slot: PTrendSlot;
   r: TRect;
-  ix, d, ringWidth, xSize, xOff, xThick, fs, nPts: integer;
+  ix, d, dd, ageOff, ringWidth, xSize, xOff, xThick, fs, nPts: integer;
   dotColor, ringColor, backdrop: TColor;
   xAlpha, keep: double;
   linePts, curvePts: TPointArray;
@@ -410,6 +427,10 @@ begin
     // exactly as they do on the plain window.
     backdrop := TrendBackdropColorAt(r.Top + d div 2);
     keep := DotAgeKeep(ix, ACTIVE_DOTS);
+    // ...and draws smaller, centred in the same box, so the trace's centre
+    // line (and the hit box) stay where the layout put them.
+    dd := DotAgeDiameter(d, ix, ACTIVE_DOTS);
+    ageOff := (d - dd) div 2;
 
     if slot^.kind = dkGap then
     begin
@@ -420,7 +441,7 @@ begin
       // data dots, and ring-only (clNone disc) so the range bands behind it
       // stay visible through the hole. Drawn from the window tone — a gap has
       // no reading and thus no range color.
-      xSize := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
+      xSize := Max(MIN_DOT_DIAMETER_PX, Round(dd * 0.8));
       xOff  := (d - xSize) div 2;
       DrawSmoothCircle(cnv, xSize, clNone,
         BlendColors(BlendColors(GetTextColorForBackground(fBG.Color),
@@ -441,7 +462,7 @@ begin
     // The newest reading carries the fresh ring while the data is fresh —
     // derived here rather than stored, so a freshness flip repaints right.
     if (ix = ACTIVE_DOTS) and FLatestIsFresh then
-      FreshDotRing(DotColorMode, dotColor, fBG.Color, d, ringColor, ringWidth)
+      FreshDotRing(DotColorMode, dotColor, fBG.Color, dd, ringColor, ringWidth)
     else
     if DotColorMode = dcmOutline then
     begin
@@ -449,7 +470,7 @@ begin
       // untouched range color and may be the window's own color exactly. Thin,
       // because it has to sit inside dots that get small on a dense trend
       // without eating the color it exists to protect.
-      ringWidth := Max(1, d div 14);
+      ringWidth := Max(1, dd div 14);
       ringColor := DotOutlineColor(fBG.Color);
     end
     else
@@ -467,8 +488,9 @@ begin
     // The halo takes the backdrop at the dot's centre row, so it is invisible
     // on the plain window and on the band alike, and only shows as a knockout
     // where a digit or the arrow runs under the dot.
-    DrawDotHalo(cnv, d, r.Left, r.Top, backdrop);
-    DrawSmoothCircle(cnv, d, dotColor, ringColor, ringWidth, r.Left, r.Top);
+    DrawDotHalo(cnv, dd, r.Left + ageOff, r.Top + ageOff, backdrop);
+    DrawSmoothCircle(cnv, dd, dotColor, ringColor, ringWidth,
+      r.Left + ageOff, r.Top + ageOff);
   end;
 
   // Prediction × marks in the trailing slots.
@@ -743,7 +765,7 @@ var
   bg, valColor, subColor, arrowColor, tirColor: TColor;
   dotColor, ringColor, ident, partner: TColor;
   valText, arrowText, agoText, diffText, tirText: string;
-  w, h, i, d, x, y, tw, th, ringWidth, r, cols, gs: integer;
+  w, h, i, d, dd, ageOff, x, y, tw, th, ringWidth, r, cols, gs: integer;
   valTop, valTh, chev, gap, padX, padY, pillH, cy, ccx: integer;
   linePts, curvePts: TPointArray;
   lineCols, curveCols: TColorArray;
@@ -973,12 +995,16 @@ begin
     y := ARect.Top + PAD + (((DOT_COUNT - 1 - i) * (h - 2 * PAD - d))
       div (DOT_COUNT - 1) * 3) div 4;
 
+    // The live surface's age shrink, slot 1 oldest.
+    dd := DotAgeDiameter(d, i + 1, DOT_COUNT);
+    ageOff := (d - dd) div 2;
+
     // One mid-trend slot renders as a sensor gap when the option is on — the
     // same quiet hollow ring DotPaint draws, at the height the climb passes
     // through anyway (the preview's trace is linear).
     if AData.GapRing and (i = DOT_COUNT div 2) then
     begin
-      gs := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
+      gs := Max(MIN_DOT_DIAMETER_PX, Round(dd * 0.8));
       DrawSmoothCircle(ACanvas, gs, clNone,
         BlendColors(BlendColors(GetTextColorForBackground(bg), bg,
         GAP_DOT_BLEND), bg, DotAgeKeep(i + 1, DOT_COUNT)),
@@ -989,12 +1015,12 @@ begin
     PreviewBandColors(ATheme, i div 2, ident, partner);
     dotColor := DotDisplayColor(ident, partner, bg, valColor, mode);
     if (i = DOT_COUNT - 1) and AData.FreshRing then
-      FreshDotRing(mode, dotColor, bg, d, ringColor, ringWidth)
+      FreshDotRing(mode, dotColor, bg, dd, ringColor, ringWidth)
     else
     if mode = dcmOutline then
     begin
       // Same rim rule as DotPaint's non-fresh outline branch.
-      ringWidth := Max(1, d div 14);
+      ringWidth := Max(1, dd div 14);
       ringColor := DotOutlineColor(bg);
     end
     else
@@ -1006,8 +1032,9 @@ begin
     dotColor := BlendColors(dotColor, bg, DotAgeKeep(i + 1, DOT_COUNT));
     if ringWidth > 0 then
       ringColor := BlendColors(ringColor, bg, DotAgeKeep(i + 1, DOT_COUNT));
-    DrawDotHalo(ACanvas, d, x, y, bg);
-    DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
+    DrawDotHalo(ACanvas, dd, x + ageOff, y + ageOff, bg);
+    DrawSmoothCircle(ACanvas, dd, dotColor, ringColor, ringWidth,
+      x + ageOff, y + ageOff);
   end;
 
   // Prediction × marks in the trailing slots, colored through the same
