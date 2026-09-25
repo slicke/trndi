@@ -107,6 +107,8 @@ begin
   fontName := native.GetSetting('font.val', 'default');
   if fontName <> 'default' then
     lVal.Font.Name := fontName;
+  if lVal is TLabel then
+    lVal.TabularDigits := native.GetBoolSetting('ux.tabular_digits', true);
 
   fontName := native.GetSetting('font.arrow', 'default');
   if fontName <> 'default' then

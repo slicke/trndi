@@ -58,13 +58,18 @@ This is your current blood sugar reading, shown in your preferred unit (mmol/L o
 - 🔴 **Red**: High - above your target
 - 🟡 **Orange/Yellow**: Low - below your target
 
+The digits are typeset in equal-width cells, so the number does not shift
+around as it ticks from `9.9` to `10.0` (see [Hacks](guides/Hacks.md) if you
+prefer the font's own spacing).
+
 ### The Change Line
-The small number along the bottom (e.g. `+0.3` or `-11`) is how much your
-reading moved over the last five minutes. It stays in the quiet sub-text
-colour while the change is gentle, and takes the high or low colour when you
-are rising or falling fast — the same speeds that give the trend arrow a
-straight up or down glyph. `--` means there was no usable previous reading
-to compare against.
+The small number in the pill just under the reading (e.g. `+0.3` or `-11`)
+is how much your reading moved over the last five minutes. The little arrow
+beside it points the way the number is going — a dash when it is steady. The
+text stays in the quiet sub-text colour while the change is gentle, and takes
+the high or low colour when you are rising or falling fast — the same speeds
+that give the trend arrow a straight up or down glyph. `--` means there was
+no usable previous reading to compare against.
 
 ### "Ago" Time
 The badge in the top-left corner shows how old the reading is: `3 min` (or

@@ -200,6 +200,13 @@ begin
   fontName := native.GetSetting('font.val', 'default');
   if fontName <> 'default' then
     lVal.Font.Name := fontName;
+  // Equal-width digits for the reading (ux.tabular_digits), so the number
+  // does not reflow as it ticks. Only when the streamed control really is
+  // the utabularlabel interposer -- the field says so, but a reader that
+  // resolved the .lfm's TLabel to the stock class would make the property
+  // write land past the object.
+  if lVal is TLabel then
+    lVal.TabularDigits := native.GetBoolSetting('ux.tabular_digits', true);
   fontName := native.GetSetting('font.arrow', 'default');
   if fontName <> 'default' then
     lArrow.Font.Name := fontName;
