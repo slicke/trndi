@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-25: JSStringLiteral converts its input to UTF-8 before escaping
+ *   instead of copying the bytes of a system-codepage string under a UTF-8
+ *   label, which handed QuickJS invalid UTF-8 for non-ASCII paths on Windows.
  *)
 
 {** ES module support for extensions: the pure, engine-independent half.
@@ -274,13 +279,20 @@ end;
 
 function JSStringLiteral(const S: string): UTF8String;
 var
+  u: UTF8String;
   i: integer;
   c: char;
 begin
+  // Convert first, escape the UTF-8 bytes after. S is a system-codepage
+  // string (CP1252 on a Windows runner; UTF-8 on the Unixes, where this is a
+  // no-op), and appending its chars to the UTF-8 result copies the bytes
+  // unconverted -- so a path like C:\Users\Björn reached the engine as
+  // Latin-1 bytes under a UTF-8 label.
+  u := UTF8String(S);
   Result := '"';
-  for i := 1 to Length(S) do
+  for i := 1 to Length(u) do
   begin
-    c := S[i];
+    c := u[i];
     case c of
     '"': Result := Result + '\"';
     '\': Result := Result + '\\';
