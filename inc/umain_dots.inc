@@ -68,8 +68,8 @@
    connecting line runs through the dots as a monotone cubic curve
    (SmoothTrace) instead of straight segments. The Display-tab preview
    shows the delta as the pill under the reading, like the live window.
-   Gap markers are drawn by DrawGapMarker as a dashed ring on a halo, at
-   full strength whatever the slot's age. *)
+   Gap markers are drawn by DrawGapMarker as a dashed ring with a knockout
+   rim around the dashes only, at full strength whatever the slot's age. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -330,14 +330,18 @@ begin
   SetLength(AOutCols, count);
 end;
 
-// A missing reading's marker: a dashed ring, ASize across, in AColor on a
-// knockout halo in ABackdrop. Dashed rather than a thin hollow ring because a
-// hollow ring among solid dots was easy to miss at a glance, and a dashed
-// outline reads as "placeholder" the way a dashed box does -- nothing that
-// could pass for a measurement. Built from short capsule strokes along the
-// circle (two per dash, so each follows the arc), spaced so the gaps stay
-// about as wide as the stroke at every size; small markers get fewer dashes
-// rather than dashes that merge. Uncached: the strokes are few and tiny.
+// A missing reading's marker: a dashed ring, ASize across, in AColor. Dashed
+// rather than a thin hollow ring because a hollow ring among solid dots was
+// easy to miss at a glance, and a dashed outline reads as "placeholder" the
+// way a dashed box does -- nothing that could pass for a measurement. Built
+// from short capsule strokes along the circle (two per dash, so each follows
+// the arc), spaced so the gaps stay about as wide as the stroke at every
+// size; small markers get fewer dashes rather than dashes that merge. The
+// knockout is a rim around the dashes only -- the same strokes drawn first,
+// wider, in ABackdrop -- so the ring keeps a clean edge over the digits and
+// the arrow while its inside stays open: a gap has nothing to show, so it
+// should not cover what is behind it either. Uncached: the strokes are few
+// and tiny.
 procedure DrawGapMarker(ACanvas: TCanvas; ASize: integer; AColor, ABackdrop: TColor;
   ALeft, ATop: integer);
 const
@@ -345,14 +349,14 @@ const
   GAP_PER_THICK = 0.8;    // the gap's share of that
 var
   strokes: array of TSmoothStroke;
-  thick, n, i, k: integer;
+  thick, rim, n, i, k: integer;
   r, cx, cy, seg, core, a0, a1, am, coreAng: double;
 begin
   if ASize < 4 then
     Exit;
-  DrawDotHalo(ACanvas, ASize, ALeft, ATop, ABackdrop);
 
   thick := Max(2, Round(ASize / 6));
+  rim := Max(1, Round(thick * 0.5));    // knockout width on either side
   r := (ASize - thick) / 2.0;          // the stroke's centre line
   cx := ALeft + ASize / 2.0;
   cy := ATop + ASize / 2.0;
@@ -381,6 +385,12 @@ begin
     strokes[k].Color := AColor;
     Inc(k);
   end;
+  // Rim first: the dashes in the backdrop tone, one rim wider on each side.
+  for k := 0 to High(strokes) do
+    strokes[k].Color := ABackdrop;
+  DrawSmoothStrokes(ACanvas, strokes, thick + 2 * rim);
+  for k := 0 to High(strokes) do
+    strokes[k].Color := AColor;
   DrawSmoothStrokes(ACanvas, strokes, thick);
 end;
 
@@ -495,8 +505,8 @@ begin
       // gap has no reading and thus no range color. It says "a reading
       // should be here", so unlike the dots it neither fades nor shrinks
       // with age: a missing reading is a status, not a value, and has to be
-      // as findable at the left edge as at the right. The halo it sits on
-      // is the backdrop at its own row, band tint included.
+      // as findable at the left edge as at the right. Its knockout rim is
+      // the backdrop at its own row, band tint included.
       xSize := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
       xOff  := (d - xSize) div 2;
       DrawGapMarker(cnv, xSize,
