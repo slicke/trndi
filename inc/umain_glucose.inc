@@ -151,11 +151,21 @@ var
   gapMin: integer;
   deltaVal: double;
 
-function FormatSigned(const Value: double): string;
+  // WithSign false gives the bare magnitude: the delta pill's chevron already
+  // says which way, so "+" beside "▲" would say it twice.
+function FormatSigned(const Value: double; const WithSign: boolean = true): string;
   var
     signStr: string;
     fmtStr: string;
+    v: double;
   begin
+    v := Value;
+    if not WithSign then
+    begin
+      signStr := '';
+      v := Abs(Value);
+    end
+    else
     if Value = 0 then
       signStr := '±'
     else
@@ -165,7 +175,7 @@ function FormatSigned(const Value: double): string;
       signStr := '';
 
     fmtStr := StringReplace(BG_MSG_SIG_SHORT[un], '%+', signStr, [rfReplaceAll]);
-    Result := SysUtils.Format(fmtStr, [Value]);
+    Result := SysUtils.Format(fmtStr, [v]);
   end;
 begin
   if firstboot then
@@ -240,11 +250,13 @@ begin
     // Clamp the divisor to a full interval so samples arriving closer together
     // than usual can't amplify a small drift into a large-looking delta.
     deltaVal := deltaVal * INTERVAL_MINUTES / Max(gapMin, INTERVAL_MINUTES);
-    lDiff.Caption := FormatSigned(deltaVal);
     // The same rate in mg/dL, for the tint: DiffLabelColor classifies it
     // with the arrow's thresholds, which are mg/dL per interval.
     FDiffRateMgdl := deltaVal * BG_CONVERTIONS[mgdl][un];
     FDiffRateKnown := true;
+    // Rate first, caption after: with the chevron beside it the text drops
+    // its sign, and DeltaChevronShown reads the rate state.
+    lDiff.Caption := FormatSigned(deltaVal, not DeltaChevronShown);
   end;
   lArrow.Caption := reading.trend.Img;
   UpdateTrendArrow(reading, havePrev, gapMin);

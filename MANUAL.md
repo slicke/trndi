@@ -63,9 +63,10 @@ around as it ticks from `9.9` to `10.0` (see [Hacks](guides/Hacks.md) if you
 prefer the font's own spacing).
 
 ### The Change Line
-The small number in the pill just under the reading (e.g. `+0.3` or `-11`)
+The small number in the pill just under the reading (e.g. `0.3` or `11`)
 is how much your reading moved over the last five minutes. The little arrow
-beside it points the way the number is going — a dash when it is steady. The
+beside it points the way it went — ▲ rising, ▼ falling, a dash when steady —
+so the number itself carries no sign. The
 text stays in the quiet sub-text colour while the change is gentle, and takes
 the high or low colour when you are rising or falling fast — the same speeds
 that give the trend arrow a straight up or down glyph. `--` means there was

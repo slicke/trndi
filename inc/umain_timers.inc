@@ -800,8 +800,11 @@ end;
 
 function TfBG.DeltaChevronShown: boolean;
 begin
-  Result := FDiffRateKnown and (not FTrendDataStale) and (lDiff.Caption <> '')
-    and (lDiff.Caption <> '--');
+  // Not from the caption: ProcessCurrentReading asks before it writes the
+  // text, since the text loses its sign when the chevron carries it. High
+  // contrast draws neither pill nor chevron, so the sign stays in the text.
+  Result := FDiffRateKnown and (not FTrendDataStale) and
+    (not native.GetBoolSetting('main.high_contrast', false));
 end;
 
 // The delta used to run along the bottom edge, a window's height away from the
@@ -860,7 +863,7 @@ begin
   // Chevron room, from the size ScaleLbl settled on. The label paints its
   // text centred/edge-aligned in its own box, so moving the box is how the
   // group (chevron + gap + text) ends up where the text alone used to be.
-  if not DeltaChevronShown then
+  if (not DeltaChevronShown) or (lDiff.Caption = '') then
     Exit;
   bmp := TBitmap.Create;
   try
