@@ -46,6 +46,9 @@
  *   with the same alpha bands as the main window.
  * - 2026-09-20: DrawSmoothDashedPolyline compares its dash phase with a
  *   tolerance; a float residue could stall the walk forever.
+ * - 2026-09-25: SHAPE_IMAGE_CACHE_MAX raised to 64: the dot halos take the
+ *   window gradient's tone at their row, so a paint pass needs more
+ *   distinct shape images than the flat backdrop did.
  * - 2026-09-20: Rasters are rendered in device pixels. CanvasDeviceScale
  *   reads the Cocoa backing scale from the drawing context and every shape
  *   rasterizes at size times scale, then stretches into its canvas
@@ -288,10 +291,11 @@ type
 
 const
   // Upper bound on distinct (shape, size, color, ...) combos kept alive. A
-  // layout pass produces a handful of sizes and range colors; the cap only
-  // stops unbounded growth across many window sizes. Clearing wholesale is
-  // fine — entries are cheap to re-render once.
-  SHAPE_IMAGE_CACHE_MAX = 32;
+  // layout pass produces a handful of sizes and range colors, plus one halo
+  // tone per gradient step the dots span; the cap only stops unbounded
+  // growth across many window sizes. Clearing wholesale is fine — entries
+  // are cheap to re-render once.
+  SHAPE_IMAGE_CACHE_MAX = 64;
 
 var
   // Rendered-shape cache. The main window repaints every dot on each tick
