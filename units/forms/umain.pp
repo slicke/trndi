@@ -284,6 +284,10 @@ end;
   // "miss" outside the dots leaves every label/form handler (window drag on
   // lVal, the explain-clicks, the popup menu) untouched.
 TSurfaceHitTest = function(const P: TPoint): boolean of object;
+  // Dynamic point/colour lists for the trend trace helpers (SmoothTrace):
+  // an open array cannot be returned, so the curve comes back in these.
+TPointArray = array of TPoint;
+TColorArray = array of TColor;
 TTrendSurface = class(TPaintBox)
 private
   FOnHitTest: TSurfaceHitTest;
