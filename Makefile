@@ -316,7 +316,8 @@ MARK_DEV_BUNDLE = p="$(OUTDIR)/$(basename $(LPI)).app/Contents/Info.plist"; \
       rm -rf "$$set" && mkdir -p "$$set" "$$res" && \
       for s in 16 32 128 256 512; do \
         sips -z $$s $$s "$(DEV_BUNDLE_ICON)" --out "$$set/icon_$${s}x$${s}.png" >/dev/null && \
-        sips -z $$((s*2)) $$((s*2)) "$(DEV_BUNDLE_ICON)" --out "$$set/icon_$${s}x$${s}@2x.png" >/dev/null; \
+        sips -z $$((s*2)) $$((s*2)) "$(DEV_BUNDLE_ICON)" --out "$$set/icon_$${s}x$${s}@2x.png" >/dev/null \
+          || exit 1; \
       done && \
       iconutil -c icns "$$set" -o "$$res/Trndi.icns" && rm -rf "$$set" && \
       plutil -replace CFBundleIconFile -string "Trndi.icns" "$$p" && \
