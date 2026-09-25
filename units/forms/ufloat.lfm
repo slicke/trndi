@@ -90,6 +90,14 @@ object fFloat: TfFloat
     Caption = '00:00'
     Visible = False
   end
+  object lDelta: TLabel
+    Left = 167
+    Height = 15
+    Top = 100
+    Width = 27
+    Caption = '+0.0'
+    Visible = False
+  end
   object pMain: TPopupMenu
     Left = 67
     Top = 40
@@ -192,6 +200,10 @@ object fFloat: TfFloat
     object miClock: TMenuItem
       Caption = 'Show clock'
       OnClick = miClockClick
+    end
+    object miDelta: TMenuItem
+      Caption = 'Show delta'
+      OnClick = miDeltaClick
     end
     object miMain: TMenuItem
       Caption = 'Show/Hide Main Window'
