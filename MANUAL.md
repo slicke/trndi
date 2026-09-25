@@ -135,8 +135,10 @@ direction at a glance (see [Hacks](guides/Hacks.md) to turn the fade off).
 to swap the dot for the actual number. (Both are disabled in privacy mode.)
 
 **Connecting the dots**: If you prefer a continuous trace, *Settings → Trend graph →
-Draw a line connecting the trend dots* joins the dots with a subtle line drawn
-underneath them. The line wears the dots' own colors, slightly softened: each
+Draw a line connecting the trend dots* joins the dots with a subtle curve drawn
+underneath them. The curve bends smoothly through every dot but never
+overshoots one, so it doesn't show a dip or a peak that was never measured. It
+wears the dots' own colors, slightly softened: each
 dot's color extends halfway toward its neighbors, so the trace switches color
 midway between two dots of different ranges. The dropdown next to the option
 picks the stroke weight — thin, normal or thick, always relative to the dot

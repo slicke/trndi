@@ -63,7 +63,9 @@
    dot crossing the reading's digits or the arrow glyph keeps a clean edge.
    The settings previews draw the same halo. Older history dots (and the
    connecting line and gap rings with them) fade toward the backdrop by slot
-   age (DotAgeKeep, ux.dot_fade) so the newest reading dominates. *)
+   age (DotAgeKeep, ux.dot_fade) so the newest reading dominates. The
+   connecting line runs through the dots as a monotone cubic curve
+   (SmoothTrace) instead of straight segments. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -221,6 +223,91 @@ begin
   Result := EnsureRange(Result, 1.0 - DOT_AGE_FADE_MAX, 1.0);
 end;
 
+// Bend the connecting line: expand the dot centres into a curve through them.
+// Fritsch-Carlson monotone cubic Hermite in x: the trace is a value over time
+// with x increasing left to right, and a monotone spline never overshoots a
+// dot -- a Catmull-Rom would dip below a low or arc above a high between two
+// readings, drawing glucose that was never measured. Every original point is
+// kept, and each sub-point takes the colour of the nearer original so
+// DrawSmoothPolyline's mid-segment colour break lands where it did before.
+// A segment whose x does not advance (a mid-slide collision) stays straight.
+procedure SmoothTrace(const APts: array of TPoint; const ACols: array of TColor;
+  out AOutPts: TPointArray; out AOutCols: TColorArray);
+const
+  PX_PER_STEP = 6;   // one sub-point per this many pixels of x
+  MAX_STEPS = 12;
+var
+  n, i, k, steps, count: integer;
+  h, delta, m: array of double;
+  t, t2, t3, h00, h10, h01, h11, y: double;
+begin
+  n := Length(APts);
+  SetLength(AOutPts, 0);
+  SetLength(AOutCols, 0);
+  if n < 2 then
+    Exit;
+
+  SetLength(h, n - 1);
+  SetLength(delta, n - 1);
+  SetLength(m, n);
+  for i := 0 to n - 2 do
+  begin
+    h[i] := APts[i + 1].X - APts[i].X;
+    if h[i] > 0 then
+      delta[i] := (APts[i + 1].Y - APts[i].Y) / h[i]
+    else
+      delta[i] := 0;
+  end;
+  // Endpoint tangents follow their one segment; interior tangents are the
+  // weighted harmonic mean of the two slopes, zero at a local extremum so the
+  // curve turns flat through a peak or trough instead of overshooting it.
+  m[0] := delta[0];
+  m[n - 1] := delta[n - 2];
+  for i := 1 to n - 2 do
+    if (delta[i - 1] * delta[i] <= 0) or (h[i - 1] <= 0) or (h[i] <= 0) then
+      m[i] := 0
+    else
+      m[i] := 3 * (h[i - 1] + h[i]) /
+        ((2 * h[i] + h[i - 1]) / delta[i - 1] + (h[i] + 2 * h[i - 1]) / delta[i]);
+
+  // Upper bound first, trimmed to what was written.
+  SetLength(AOutPts, (n - 1) * MAX_STEPS + 1);
+  SetLength(AOutCols, Length(AOutPts));
+  count := 0;
+  for i := 0 to n - 2 do
+  begin
+    AOutPts[count] := APts[i];
+    AOutCols[count] := ACols[i];
+    Inc(count);
+    if h[i] <= 0 then
+      Continue;
+    steps := EnsureRange(Round(h[i] / PX_PER_STEP), 2, MAX_STEPS);
+    for k := 1 to steps - 1 do
+    begin
+      t := k / steps;
+      t2 := t * t;
+      t3 := t2 * t;
+      h00 := 2 * t3 - 3 * t2 + 1;
+      h10 := t3 - 2 * t2 + t;
+      h01 := -2 * t3 + 3 * t2;
+      h11 := t3 - t2;
+      y := h00 * APts[i].Y + h10 * h[i] * m[i] + h01 * APts[i + 1].Y +
+        h11 * h[i] * m[i + 1];
+      AOutPts[count] := MkPoint(Round(APts[i].X + t * h[i]), Round(y));
+      if t < 0.5 then
+        AOutCols[count] := ACols[i]
+      else
+        AOutCols[count] := ACols[i + 1];
+      Inc(count);
+    end;
+  end;
+  AOutPts[count] := APts[n - 1];
+  AOutCols[count] := ACols[n - 1];
+  Inc(count);
+  SetLength(AOutPts, count);
+  SetLength(AOutCols, count);
+end;
+
 procedure TfBG.TrendSurfacePaint(Sender: TObject);
 var
   cnv: TCanvas;
@@ -230,8 +317,8 @@ var
   ix, d, ringWidth, xSize, xOff, xThick, fs, nPts: integer;
   dotColor, ringColor, backdrop: TColor;
   xAlpha, keep: double;
-  linePts: array of TPoint;
-  lineCols: array of TColor;
+  linePts, curvePts: TPointArray;
+  lineCols, curveCols: TColorArray;
 begin
   if FTrendSurface = nil then
     Exit;
@@ -274,8 +361,11 @@ begin
     SetLength(linePts, nPts);
     SetLength(lineCols, nPts);
     if nPts >= 2 then
-      DrawSmoothPolyline(cnv, linePts, lineCols,
+    begin
+      SmoothTrace(linePts, lineCols, curvePts, curveCols);
+      DrawSmoothPolyline(cnv, curvePts, curveCols,
         TrendLineStrokePx(FTrendDotDiameter, TrendLineWidthStep));
+    end;
   end;
 
   for ix := 1 to Min(High(TrendSlots), High(FTrendLayout)) do
@@ -651,8 +741,8 @@ var
   dotColor, ringColor, ident, partner: TColor;
   valText, arrowText, agoText, diffText, tirText: string;
   w, h, i, d, x, y, tw, th, ringWidth, r, cols, gs: integer;
-  linePts: array of TPoint;
-  lineCols: array of TColor;
+  linePts, curvePts: TPointArray;
+  lineCols, curveCols: TColorArray;
 
 function HasDigit(const s: string): boolean;
   var
@@ -827,7 +917,8 @@ begin
       lineCols[i] := BlendColors(lineCols[i], bg,
         DotAgeKeep(i + 1, DOT_COUNT));
     end;
-    DrawSmoothPolyline(ACanvas, linePts, lineCols,
+    SmoothTrace(linePts, lineCols, curvePts, curveCols);
+    DrawSmoothPolyline(ACanvas, curvePts, curveCols,
       TrendLineStrokePx(d, AData.LineWidth));
   end;
 
