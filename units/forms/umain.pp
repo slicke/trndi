@@ -102,6 +102,9 @@ Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, trndi.raster, utrendarrow, upredictionstrip, ustatbadge,
+// After StdCtrls on purpose: utabularlabel's TLabel interposer must win the
+// name, so every TLabel on the form (lVal above all) can typeset tabular digits.
+utabularlabel,
 Trndi.native.base, trndi.shared, trndi.theme, trndi.report, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}

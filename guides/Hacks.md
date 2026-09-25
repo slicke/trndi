@@ -40,6 +40,12 @@ Older trend dots fade toward the background the further left they sit, so the ne
 ux.dot_fade=false
 ```
 
+## Let the reading's digits reflow
+The big reading is typeset with equal-width digits, so `9.9` and `10.0` keep every digit in place as the value ticks. To use the font's own proportional digits instead:
+```ini
+ux.tabular_digits=false
+```
+
 ## Override the number readings fetched
 Trndi defaults to a set amount of minutes it fetches (1440), this only affects time-in-range - not the graph!
 ```ini

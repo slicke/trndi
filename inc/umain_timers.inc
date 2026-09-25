@@ -38,6 +38,7 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-25: The delta label is laid out by LayoutDeltaPill under the
  *   reading's baseline (with chevron room) instead of along the bottom edge.
+ *   ScaleLbl measures a label with TabularDigits on by its tabular width.
  * - 2026-08-27: UpdateTrendDots reads slot values from the TTrendSlot model
  *   instead of parsing them back out of the dots' Hint strings, and the
  *   resize pass clears the shared FDotsExpanded flag up front instead of
@@ -967,7 +968,14 @@ begin
       Mid := (Low + High) div 2;
       bmp.Canvas.Font.Size := Mid;
 
-      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+      // A tabular label paints its digits in equal cells, which run wider
+      // than the proportional text whenever a narrow digit is in the number;
+      // fit that width, or the cells will not fit and it falls back to
+      // proportional exactly when it matters.
+      if ALabel.TabularDigits then
+        TextWidth := TLabel.TabularTextWidth(bmp.Canvas, ALabel.Caption)
+      else
+        TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
       TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
 
       if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
@@ -981,7 +989,10 @@ begin
 
     ALabel.Font.Size := OptimalSize;
     bmp.Canvas.Font.Size := OptimalSize;
-    TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+    if ALabel.TabularDigits then
+      TextWidth := TLabel.TabularTextWidth(bmp.Canvas, ALabel.Caption)
+    else
+      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
     TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
     while ((TextWidth > MaxWidth) or (TextHeight > MaxHeight)) and (ALabel.Font.Size > 1) do
     begin
@@ -989,7 +1000,10 @@ begin
       Dec(i);
       ALabel.Font.Size := i;
       bmp.Canvas.Font.Size := i;
-      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+      if ALabel.TabularDigits then
+        TextWidth := TLabel.TabularTextWidth(bmp.Canvas, ALabel.Caption)
+      else
+        TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
       TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
     end;
   finally
