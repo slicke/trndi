@@ -1072,6 +1072,9 @@ begin
   if Assigned(fFloat) then
   begin
     fFloat.Color := fBg.Color;
+    // Same gradient as the main window: BackdropColorAt at the bottom edge is
+    // the fully darkened tone, or the flat colour in high-contrast mode.
+    fFloat.SetBackdrop(BackdropColorAt(ClientHeight, false));
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lVal.Visible := true;
     // Carries the stale strike-through. The float has no room for a status
