@@ -1079,6 +1079,15 @@ begin
     // Mirrored rather than set from the freshness flag so the fresh path clears
     // it by the same route.
     fFloat.lVal.Font.Style := lVal.Font.Style;
+    // Same faces as the main window (font.val / font.arrow, and the arrow
+    // face the platform picked), and the same equal-width digit cells, so the
+    // float reads as the same instrument and its number does not reflow as
+    // it ticks. Guarded like the main window's own write: TabularDigits only
+    // exists on the utabularlabel interposer.
+    fFloat.lVal.Font.Name := lVal.Font.Name;
+    fFloat.lArrow.Font.Name := lArrow.Font.Name;
+    if (lVal is TLabel) and (fFloat.lVal is TLabel) then
+      fFloat.lVal.TabularDigits := lVal.TabularDigits;
     fFloat.lArrow.Caption := lArrow.Caption;
     fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
     // The fixed black/white font choice is a preference about the *live* look,

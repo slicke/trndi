@@ -54,7 +54,10 @@ interface
 
 uses
 Classes, ExtCtrls, Menus, StdCtrls, SysUtils, Math, Forms, Controls, Graphics,
-Dialogs, LCLIntf, LCLType, InterfaceBase, trndi.native, trndi.shared, utrendarrow
+Dialogs, LCLIntf, LCLType, InterfaceBase, trndi.native, trndi.shared, utrendarrow,
+// After StdCtrls on purpose: utabularlabel's TLabel interposer must win the
+// name so the value can typeset its digits in equal cells like the main window
+utabularlabel
 {$IFDEF DARWIN},
 CocoaAll
 {$ENDIF}
@@ -235,7 +238,13 @@ begin
       Mid := (Low + High) div 2;
       bmp.Canvas.Font.Size := Mid;
 
-      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+      // A tabular label paints its digits in equal cells, wider than the
+      // proportional run whenever a narrow digit is in the number; fit that
+      // width or the cells will not fit exactly when it matters.
+      if ALabel.TabularDigits then
+        TextWidth := TLabel.TabularTextWidth(bmp.Canvas, ALabel.Caption)
+      else
+        TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
       TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
 
       if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
