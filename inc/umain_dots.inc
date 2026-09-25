@@ -58,6 +58,10 @@
    its new one over TREND_SLIDE_MS (tTrendSlide / ApplyTrendSlideFrame), with
    arriving readings entering from the right. Any other relayout while the
    slide runs just moves its finish line. *)
+(* MODIFICATION NOTICE (2026-09-25): Every history dot is drawn on a knockout
+   halo in the backdrop color (TrendBackdropColorAt, DOT_HALO_FRACTION) so a
+   dot crossing the reading's digits or the arrow glyph keeps a clean edge.
+   The settings previews draw the same halo. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -174,6 +178,34 @@ var
   ix: integer;
 begin
   Result := DotHitAt(P, isPredict, ix) <> nil;
+end;
+
+function TfBG.TrendBackdropColorAt(AY: integer): TColor;
+var
+  i: integer;
+begin
+  Result := fBG.Color;
+  // Same order and the same "over" composite DrawRangeBands uses, so a band
+  // listed inside an earlier one deepens it here too. The few edge-gradient
+  // rows are ignored: a halo straddling a band edge is off by a shade nobody
+  // can see.
+  for i := Low(FPaintedBands) to High(FPaintedBands) do
+    if (AY >= FPaintedBands[i].Top) and (AY <= FPaintedBands[i].Bottom) then
+      Result := BlendColors(FPaintedBands[i].Color, Result,
+        FPaintedBands[i].Alpha / 255.0);
+end;
+
+// The knockout halo under a history dot: a disc in the backdrop color a
+// little wider than the dot, drawn first so the dot's own edge lands on a
+// clean field whatever the digits, arrow or connecting line put there.
+procedure DrawDotHalo(ACanvas: TCanvas; ADiameter, ALeft, ATop: integer;
+  ABackdrop: TColor);
+var
+  halo: integer;
+begin
+  halo := Max(DOT_HALO_MIN_PX, Round(ADiameter * DOT_HALO_FRACTION));
+  DrawSmoothCircle(ACanvas, ADiameter + 2 * halo, ABackdrop, clNone, 0,
+    ALeft - halo, ATop - halo);
 end;
 
 procedure TfBG.TrendSurfacePaint(Sender: TObject);
@@ -310,6 +342,11 @@ begin
       ringColor := dotColor;
     end;
 
+    // The halo takes the backdrop at the dot's centre row, so it is invisible
+    // on the plain window and on the band alike, and only shows as a knockout
+    // where a digit or the arrow runs under the dot.
+    DrawDotHalo(cnv, d, r.Left, r.Top,
+      TrendBackdropColorAt(r.Top + d div 2));
     DrawSmoothCircle(cnv, d, dotColor, ringColor, ringWidth, r.Left, r.Top);
   end;
 
@@ -559,6 +596,7 @@ begin
       end;
       x := sw.Left + PAD + j * (sw.Width - 2 * PAD - d) div 4;
       y := sw.Top + PAD + (4 - j) * (swH - 2 * PAD - d) div 4;
+      DrawDotHalo(ACanvas, d, x, y, winBgs[i]);
       DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
     end;
   end;
@@ -798,6 +836,7 @@ begin
       ringWidth := 0;
       ringColor := dotColor;
     end;
+    DrawDotHalo(ACanvas, d, x, y, bg);
     DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
   end;
 

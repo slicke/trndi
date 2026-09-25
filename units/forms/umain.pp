@@ -839,6 +839,10 @@ private
     // Uniform history-dot diameter of the last layout pass; FormPaint anchors
     // the threshold lines against it.
   FTrendDotDiameter: integer;
+    // The range bands FormPaint composited in its last pass (empty when it
+    // drew none), in client rows. TrendBackdropColorAt reads them so a dot's
+    // knockout halo takes the exact tone under the dot, band tint included.
+  FPaintedBands: array of TRangeBand;
     // Reading-arrival slide (see StartTrendSlide). FTrendAnchor is the slot
     // anchor of the last placement (0 before the first); FTrendSlideBy is how
     // many slots the anchor advanced in the placement UpdateTrendDots is about
@@ -1015,6 +1019,11 @@ private
       visible dot, so the surface stays mouse-transparent elsewhere. }
   function TrendSurfaceHit(const P: TPoint): boolean;
   procedure TrendSurfacePaint({%H-}Sender: TObject);
+  {** The color the window shows at client row AY before the trend is drawn:
+      the form color with FormPaint's range bands composited over it. The dot
+      halos are drawn in this so they knock out the digits and arrow behind a
+      dot without leaving a visible ring on the band tint. }
+  function TrendBackdropColorAt(AY: integer): TColor;
   procedure TrendSurfaceMouseDown({%H-}Sender: TObject; {%H-}Button: TMouseButton;
     {%H-}Shift: TShiftState; X, Y: integer);
   procedure TrendSurfaceMouseUp({%H-}Sender: TObject; Button: TMouseButton;
@@ -1684,6 +1693,12 @@ GAP_DOT_BLEND = 0.4;
 // the ranges stay recognizable in the trace, low enough that the line reads
 // as support for the dots rather than a second row of data.
 TREND_LINE_BLEND = 0.65;
+// Every history dot sits on a halo in the backdrop color, this fraction of the
+// dot's diameter wide (never thinner than the floor), so a dot crossing the
+// reading's digits or the arrow glyph keeps a clean edge instead of merging
+// into them, and neighbouring dots stay separable where they touch.
+DOT_HALO_FRACTION = 0.12;
+DOT_HALO_MIN_PX = 2;
 // Night dim keeps this much of the in-range color; the rest goes to black.
 // Text, dots and every other on-window color derive from the background at
 // paint time, so they mute along with it for free.

@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-25: FormPaint records the range bands it composited in
+ *   FPaintedBands so the trend surface can match the backdrop under each
+ *   dot for its knockout halo.
  * - 2026-09-20: The warning and stale glyphs and the expand chevrons are
  *   drawn through trndi.raster (convex polygons, capsule strokes, smooth
  *   discs) instead of the aliased Canvas.Polygon/Ellipse/LineTo primitives,
@@ -437,6 +440,8 @@ begin
     Exit;
 
   cnv := Self.Canvas;
+  // Nothing composited yet this pass; the band branch below fills this in.
+  SetLength(FPaintedBands, 0);
 
   // Shutdown screen (ShowShutdownScreen): a plain splash-style backdrop with
   // the splash's green accent glow along the top — no bands, no guide lines.
@@ -574,6 +579,10 @@ begin
 
   if Length(bands) > 0 then
     DrawRangeBands(cnv, Self.ClientWidth, clientH, bands, BandEdgeGradientPx);
+  // Kept for TrendBackdropColorAt: the child controls (the trend surface among
+  // them) paint after this handler in the same pass, so what it reads is what
+  // is on screen under them.
+  FPaintedBands := Copy(bands);
 
   // Subtle hairline at each band edge so the threshold has a defined
   // boundary even when PaintRangeLines is off. Skipped when PaintRangeLines
