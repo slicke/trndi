@@ -817,11 +817,20 @@ procedure TfBG.LayoutDeltaPill;
 var
   bmp: TBitmap;
   tm: TLCLTextMetric;
-  th, asc, textTop, pillTop, gapBelow, chev, gap, bottomPad: integer;
+  th, asc, textTop, pillTop, gapBelow, chev, gap, bottomPad, reserve: integer;
 begin
-  lDiff.Width := ClientWidth;
   lDiff.Height := (ClientHeight div 9) - 10;
   lDiff.Left := 0;
+  // Chevron room is taken off the box *before* ScaleLbl fits the caption, or
+  // the fit could use the full width and the shift below would push the box
+  // past the client edge. The exact chevron size follows from the fitted
+  // text height, which is not known yet; the box height bounds it (ScaleLbl
+  // fits the text inside Height - 4), so reserve for that.
+  reserve := 0;
+  if DeltaChevronShown then
+    reserve := Round(lDiff.Height * DELTA_CHEVRON_FRAC) +
+      Max(3, lDiff.Height div 4) + 1;
+  lDiff.Width := ClientWidth - reserve;
   pillTop := ClientHeight - lDiff.Height + 1;   // the old bottom strip, the fallback
 
   // Measure on a bitmap: a label's canvas is unsafe outside paint on Cocoa
@@ -875,13 +884,18 @@ begin
   end;
   chev := Round(th * DELTA_CHEVRON_FRAC);
   gap := Max(3, th div 4);
+  // chev + gap <= reserve, so none of these leaves the client area.
   case lDiff.Alignment of
   taLeftJustify:
     lDiff.Left := lDiff.Left + chev + gap;
   taRightJustify:
-    ;                       // the chevron takes the padding on the text's left
+    // Hand the reserved width back on the right so the text keeps its old
+    // right margin; the chevron takes the room on the text's left.
+    lDiff.Left := lDiff.Left + reserve;
   else
-    lDiff.Left := lDiff.Left + (chev + gap) div 2;
+    // Centre the group, not the text: the box's centre sits half a chevron
+    // right of the window's.
+    lDiff.Left := (ClientWidth - lDiff.Width) div 2 + (chev + gap) div 2;
   end;
 end;
 
