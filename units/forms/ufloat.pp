@@ -361,15 +361,17 @@ begin
 end;
 
 procedure TfFloat.ApplyRoundedCorners;
+// Qt6 needs no locals: the style sheet does the rounding. The var keyword
+// has to go inside the conditionals, since an empty var section is a syntax
+// error.
+{$IF DEFINED(DARWIN)}
 var
-  {$IF DEFINED(DARWIN)}
   NSViewHandle: NSView;
   NSWin: NSWindow;
-  Mask: NSBezierPath;
-  {$ELSEIF DEFINED(LCLQT6)}
-  {$ELSE}
+{$ELSEIF NOT DEFINED(LCLQT6)}
+var
   ABitmap: TBitmap;
-  {$ENDIF}
+{$ENDIF}
 begin
   {$IF DEFINED(DARWIN)}
   try
