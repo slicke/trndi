@@ -35,7 +35,7 @@ system.fresh_threshold=31
 
 
 ## Keep every trend dot at full strength
-Older trend dots fade toward the background the further left they sit, so the newest reading dominates. To draw every dot (and the connecting line and gap rings) at full strength instead:
+Older trend dots fade toward the background and shrink the further left they sit, so the newest reading dominates. To draw every dot (and the connecting line and gap rings) at full strength and size instead:
 ```ini
 ux.dot_fade=false
 ```

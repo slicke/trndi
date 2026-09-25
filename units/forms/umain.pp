@@ -1732,12 +1732,14 @@ TREND_LINE_BLEND = 0.65;
 // into them, and neighbouring dots stay separable where they touch.
 DOT_HALO_FRACTION = 0.12;
 DOT_HALO_MIN_PX = 2;
-// Age fade (ux.dot_fade): history dots blend toward the backdrop the older
-// they are, linearly by slot, so the newest reading dominates and the row
-// reads as a direction at a glance. The oldest slot gives up this much of its
-// distance to the backdrop — enough to rank the dots, little enough that the
-// oldest still clears the contrast floor DotDisplayColor gave it by half.
-DOT_AGE_FADE_MAX = 0.45;
+// Age fade (ux.dot_fade): history dots blend toward the backdrop and shrink
+// the older they are, linearly by slot, so the newest reading dominates and
+// the row reads as a direction at a glance. The oldest slot gives up this
+// much of its distance to the backdrop and this much of its diameter. Tone
+// alone was too quiet on the coloured windows (a green dot blended toward a
+// yellow high window is just a paler green), so the size carries the age too.
+DOT_AGE_FADE_MAX = 0.65;
+DOT_AGE_SHRINK_MAX = 0.15;
 // The delta pill: lDiff sits on a capsule tinted this far toward the reading's
 // ink, padded around the text by these fractions of the text height, with a
 // direction chevron of DELTA_CHEVRON_FRAC text heights beside it.
