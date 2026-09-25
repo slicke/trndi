@@ -15,6 +15,7 @@ object fFloat: TfFloat
   OnMouseDown = FormMouseDown
   OnMouseMove = FormMouseMove
   OnMouseUp = FormMouseUp
+  OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
   object lVal: TLabel

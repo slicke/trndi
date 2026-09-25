@@ -108,6 +108,7 @@ TfFloat = class(TForm)
   procedure FormMouseMove({%H-}Sender: TObject; {%H-}Shift: TShiftState; X, Y: integer);
   procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: integer);
+  procedure FormPaint({%H-}Sender: TObject);
   procedure FormResize({%H-}Sender: TObject);
   procedure FormShow({%H-}Sender: TObject);
   procedure MenuItem1Click({%H-}Sender: TObject);
@@ -138,6 +139,7 @@ private
   FProgFill: TColor;        // Fill colour pushed from the main window
   FProgLevel: integer;      // Quantised fill level (px) last shown — change gate
   FOpacity: double;         // Window opacity currently applied, 0..1
+  FBackdropBottom: TColor;  // Gradient tone at the bottom edge; clNone = flat
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
   procedure ApplyClock(AEnabled: boolean);
@@ -151,6 +153,12 @@ private
   procedure CMColorChanged(var Message: TLMessage); message CM_COLORCHANGED;
   {$ENDIF}
 public
+  {** Mirror the main window's backdrop gradient: Color at the top edge
+      running to ABottom at the bottom edge, the same slope the main window
+      paints. Pass Color itself (or clNone) for a flat fill, which is what
+      the high-contrast mode asks for.
+      @param(ABottom Tone at the bottom edge.) }
+  procedure SetBackdrop(ABottom: TColor);
   {** Colour every piece of text on the float: the value, the trend glyph or
       vector arrow, the clock and the off-range markers. Both the fixed
       black/white menu choice and the main window's colour sync go through
@@ -315,6 +323,7 @@ begin
   // Opacity is applied through the same path everywhere, so seed it from the
   // stored value before anything paints with it.
   FOpacity := ReadFloatSetting('ux.float.opacity', 0.5);
+  FBackdropBottom := clNone;
 
   {$IFDEF LCLQt6}
   if HandleAllocated then
@@ -546,6 +555,32 @@ end;
 procedure TfFloat.miCustomVisibleClick(Sender: TObject);
 begin
   ShowMessage(RS_CUSTOM_OP);
+end;
+
+procedure TfFloat.SetBackdrop(ABottom: TColor);
+begin
+  if ABottom = Color then
+    ABottom := clNone;
+  if ABottom = FBackdropBottom then
+    Exit;
+  FBackdropBottom := ABottom;
+  Invalidate;
+end;
+
+{------------------------------------------------------------------------------
+  The backdrop gradient. Not on Qt6: there the style sheet owns the background
+  (rounded corners and the translucent fill), and a canvas fill would paint
+  square, opaque corners over it.
+ ------------------------------------------------------------------------------}
+procedure TfFloat.FormPaint(Sender: TObject);
+begin
+  {$IFNDEF LCLQt6}
+  if FBackdropBottom = clNone then
+    Exit;
+  Canvas.Brush.Style := bsSolid;
+  Canvas.GradientFill(ClientRect, ColorToRGB(Color), ColorToRGB(FBackdropBottom),
+    gdVertical);
+  {$ENDIF}
 end;
 
 procedure TfFloat.SetTextColor(AColor: TColor);
