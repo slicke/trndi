@@ -59,7 +59,7 @@ Dialogs, LCLIntf, LCLType, InterfaceBase, trndi.native, trndi.shared, utrendarro
 CocoaAll
 {$ENDIF}
 {$IFDEF LCLQT6},
-qt6, qtwidgets
+qt6, qtwidgets, LMessages
 {$ENDIF};
 
 type
@@ -134,6 +134,7 @@ private
   FProgFrac: double;        // Fill fraction the strip currently shows
   FProgFill: TColor;        // Fill colour pushed from the main window
   FProgLevel: integer;      // Quantised fill level (px) last shown — change gate
+  FOpacity: double;         // Window opacity currently applied, 0..1
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
   procedure ApplyClock(AEnabled: boolean);
@@ -144,6 +145,8 @@ private
   procedure RaiseMainWindow;
   {$IFDEF LCLQt6}
   function StartSystemMove: boolean;
+  procedure ApplyQtStyle;
+  procedure CMColorChanged(var Message: TLMessage); message CM_COLORCHANGED;
   {$ENDIF}
 public
   {** Mirror the main window's rotating trend arrow.
@@ -293,9 +296,12 @@ procedure TfFloat.FormCreate({%H-}Sender: TObject);
 {$IFDEF LCLQt6}
 var
   QtWidget: TQtWidget;
-  style: string;
 {$endif}
 begin
+  // Opacity is applied through the same path everywhere, so seed it from the
+  // stored value before anything paints with it.
+  FOpacity := ReadFloatSetting('ux.float.opacity', 0.5);
+
   {$IFDEF LCLQt6}
   if HandleAllocated then
   begin
@@ -304,8 +310,7 @@ begin
     begin
       QtWidget.setAttribute(QtWA_TranslucentBackground, true);
       QtWidget.setWindowFlags(QtWidget.windowFlags or QtFramelessWindowHint);
-      style := 'border-radius:15px; background-color:rgba(255,255,255,200);';
-      QWidget_setStyleSheet(QtWidget.Widget, PWideString(style));
+      ApplyQtStyle;
     end;
   end;
   {$ENDIF}
@@ -329,7 +334,6 @@ var
   NSWin: NSWindow;
   Mask: NSBezierPath;
   {$ELSEIF DEFINED(LCLQT6)}
-  StyleStr: widestring;
   {$ELSE}
   ABitmap: TBitmap;
   {$ENDIF}
@@ -365,10 +369,8 @@ begin
     // Ignore any errors
   end;
   {$ELSEIF DEFINED(LCLQT6)}
-  StyleStr := 'border-radius: 10px; background-color: rgba(240, 240, 240, 255);';
   Self.BorderStyle := bsNone; // Remove border
-  if HandleAllocated then
-    QWidget_setStyleSheet(TQtWidget(Handle).Widget, @stylestr);
+  ApplyQtStyle;
   {$ELSE}
   Self.BorderStyle := bsNone; // Remove border
   // Use LCL stuff when Windows (or not Qt really)
@@ -393,17 +395,13 @@ begin
 end;
 
 procedure TfFloat.SetFormOpacity(Opacity: double);
-{$IF DEFINED(LCLQt6) OR DEFINED(DARWIN)}
+{$IFDEF DARWIN}
 var
-{$endif}
-  {$IFDEF DARWIN}
   NSViewHandle: NSView;
   NSWin: NSWindow;
-  {$ENDIF}
-  {$IFDEF LCLQt6}
-  StyleStr: widestring;
-  {$ENDIF}
+{$ENDIF}
 begin
+  FOpacity := Opacity;
   {$IFDEF DARWIN}
   if HandleAllocated then
   try
@@ -419,12 +417,8 @@ begin
   end;
   {$ELSE}
   {$IFDEF LCLQt6}
-  if HandleAllocated then
-  begin
-      // For Qt6, use style sheets to set opacity
-    StyleStr := Format('background-color: rgba(240, 240, 240, %.0f);', [Opacity * 255]);
-    QWidget_setStyleSheet(TQtWidget(Handle).Widget, @StyleStr);
-  end;
+  // Qt6 carries the opacity in the same style sheet as the corners and colour
+  ApplyQtStyle;
   {$ENDIF}
   // Standard LCL approach for other platforms
   AlphaBlend := Opacity < 1.0;
@@ -890,6 +884,35 @@ begin
     // implicit capture or it sticks to the pressed control and hijacks every
     // later press.
     SetCaptureControl(nil);
+end;
+
+{------------------------------------------------------------------------------
+  Qt6 draws the float through one style sheet, and a style sheet wins over
+  the widget palette. Corner radius, the range colour pushed into Color and
+  the opacity therefore all have to travel together: setting any one of them
+  alone used to drop the other two, leaving a square grey window.
+ ------------------------------------------------------------------------------}
+procedure TfFloat.ApplyQtStyle;
+const
+  CORNER_RADIUS = 10;
+var
+  rgb: longint;
+  StyleStr: widestring;
+begin
+  if not HandleAllocated then
+    Exit;
+  rgb := ColorToRGB(Color);
+  StyleStr := UTF8Decode(Format('border-radius: %dpx; background-color: rgba(%d, %d, %d, %d);',
+    [CORNER_RADIUS, Red(rgb), Green(rgb), Blue(rgb), Round(FOpacity * 255)]));
+  QWidget_setStyleSheet(TQtWidget(Handle).Widget, @StyleStr);
+end;
+
+// The main window mirrors its range colour into Color; on Qt6 that only
+// shows once it is written into the style sheet as well.
+procedure TfFloat.CMColorChanged(var Message: TLMessage);
+begin
+  inherited;
+  ApplyQtStyle;
 end;
 {$ENDIF}
 
