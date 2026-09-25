@@ -39,7 +39,10 @@
  * - 2026-09-25: FormPaint records the range bands it composited in
  *   FPaintedBands so the trend surface can match the backdrop under each
  *   dot for its knockout halo. It also paints the delta pill and its
- *   direction chevron behind lDiff (PaintDeltaPill).
+ *   direction chevron behind lDiff (PaintDeltaPill), and fills the window
+ *   with a slight top-to-bottom gradient of its colour (PaintBackdrop) on
+ *   every widgetset; the progress bar and warning panel paint their
+ *   backgrounds from the same gradient.
  * - 2026-09-20: The warning and stale glyphs and the expand chevrons are
  *   drawn through trndi.raster (convex polygons, capsule strokes, smooth
  *   discs) instead of the aliased Canvas.Polygon/Ellipse/LineTo primitives,
@@ -168,11 +171,13 @@ begin
   else
     radius := RadiusBanner;
 
+  // Behind the rounded card: the window's own gradient slice, so the corners
+  // outside the card match the form around the panel.
+  PaintBackdrop(P.Canvas, Classes.Rect(0, 0, P.Width, P.Height), P.Top);
+
   with P.Canvas do
   begin
-    Brush.Color := fBG.Color;
     Brush.Style := bsSolid;
-    FillRect(0, 0, P.Width, P.Height);
 
     {$ifndef X_WIN}
     panelFillColor := BlendColors(tintColor, fBG.Color, opacityTmp / 255.0);
@@ -461,18 +466,15 @@ begin
     Exit;
   end;
 
-  {$ifdef LCLGTK3}
-  // LCL-GTK3 ignores TForm.Color: TGtk3Widget.SetColor's body sits behind an
-  // `if IsWidgetOK and (0 > 1)` (gtk3widgets.pas), so the window keeps the GTK
-  // theme background and the whole glucose-coloured backdrop never appears.
-  // Everything below composites *onto* that backdrop -- the range bands are
-  // alpha blends and the label inks come from GetTextColorForBackground(Color)
-  // -- so without this fill they land on white and wash out. Must precede the
-  // high-contrast early exit below, or unstyled mode stays white too.
-  cnv.Brush.Style := bsSolid;
-  cnv.Brush.Color := Self.Color;
-  cnv.FillRect(0, 0, Self.ClientWidth, Self.ClientHeight);
-  {$endif}
+  // The backdrop: the window colour, darkening slightly toward the bottom.
+  // Painted here on every widgetset, since the gradient cannot come from
+  // TForm.Color -- and on LCL-GTK3 the fill is what makes the colour appear
+  // at all: TGtk3Widget.SetColor's body sits behind an `if IsWidgetOK and
+  // (0 > 1)` (gtk3widgets.pas), so the window would otherwise keep the GTK
+  // theme background, and everything below (alpha bands, inks derived from
+  // Color) would land on white and wash out. Must precede the high-contrast
+  // early exit below, or unstyled mode stays white too.
+  PaintBackdrop(cnv, Classes.Rect(0, 0, Self.ClientWidth, Self.ClientHeight), 0);
 
   // The dots render on the client-sized trend surface, so the form's own
   // client height is the value axis they share.
@@ -680,6 +682,32 @@ begin
   PaintGuideLines;
   // And the pill over the scale: the delta is a reading, the scale is paper.
   PaintDeltaPill(cnv);
+end;
+
+function TfBG.BackdropColorAt(AY: integer; const AQuantized: boolean): TColor;
+var
+  frac: double;
+begin
+  Result := fBG.Color;
+  if FShutdownScreen or native.GetBoolSetting('main.high_contrast', false) then
+    Exit;
+  frac := EnsureRange(AY / Max(1, ClientHeight), 0.0, 1.0);
+  if AQuantized then
+    frac := Round(frac * BACKDROP_GRADIENT_STEPS) / BACKDROP_GRADIENT_STEPS;
+  Result := BlendColors(clBlack, fBG.Color, BACKDROP_GRADIENT_DARKEN * frac);
+end;
+
+procedure TfBG.PaintBackdrop(ACanvas: TCanvas; const ARect: TRect;
+  AClientTop: integer);
+begin
+  if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then
+    Exit;
+  // GradientFill interpolates linearly between the two ends, which is the
+  // same line BackdropColorAt draws, so a child control's slice joins the
+  // form's fill without a seam.
+  ACanvas.Brush.Style := bsSolid;
+  ACanvas.GradientFill(ARect, BackdropColorAt(AClientTop + ARect.Top),
+    BackdropColorAt(AClientTop + ARect.Bottom), gdVertical);
 end;
 
 // The delta pill behind lDiff: a capsule in the reading's ink, faintly, wide
@@ -1012,11 +1040,11 @@ begin
   bgCol := fBG.Color;
 
   // The box is painted edge to edge every time — the lines are drawn onto the
-  // window colour, so nothing of the previous frame can survive around them.
+  // window backdrop, so nothing of the previous frame can survive around them.
+  // The backdrop slice, not a flat fill: the window behind is a gradient.
+  PaintBackdrop(cvs, Classes.Rect(0, 0, w, h), box.Top);
   cvs.Brush.Style := bsSolid;
   cvs.Pen.Style := psClear;
-  cvs.Brush.Color := bgCol;
-  cvs.FillRect(Classes.Rect(0, 0, w, h));
 
   if (bgs = nil) or (Length(bgs) = 0) then
     Exit;

@@ -1028,6 +1028,17 @@ private
       halos are drawn in this so they knock out the digits and arrow behind a
       dot without leaving a visible ring on the band tint. }
   function TrendBackdropColorAt(AY: integer): TColor;
+  {** The window backdrop's own colour at client row AY, before the range
+      bands: the form colour with the vertical gradient applied (flat in
+      high-contrast mode and on the shutdown screen). AQuantized snaps the
+      row to BACKDROP_GRADIENT_STEPS so repeated samples share colours. }
+  function BackdropColorAt(AY: integer; const AQuantized: boolean = false): TColor;
+  {** Fill ARect of ACanvas with the slice of the window backdrop that lies
+      under it. AClientTop is the canvas owner's Top in form-client
+      coordinates (0 for the form itself), so a child control painting its
+      own background lands on the same gradient as the form around it. }
+  procedure PaintBackdrop(ACanvas: TCanvas; const ARect: TRect;
+    AClientTop: integer);
   procedure TrendSurfaceMouseDown({%H-}Sender: TObject; {%H-}Button: TMouseButton;
     {%H-}Shift: TShiftState; X, Y: integer);
   procedure TrendSurfaceMouseUp({%H-}Sender: TObject; Button: TMouseButton;
@@ -1726,6 +1737,14 @@ DOT_AGE_FADE_MAX = 0.45;
 // The delta pill: lDiff sits on a capsule tinted this far toward the reading's
 // ink, padded around the text by these fractions of the text height, with a
 // direction chevron of DELTA_CHEVRON_FRAC text heights beside it.
+// The window backdrop is the state colour at the top edge (so a coloured
+// title bar still matches) darkening toward the bottom by this much of the
+// way to black -- enough depth to lift the number and pill off the surface,
+// too little to read as a second colour. Sampling for the dot halos and the
+// pill is quantised to this many steps so the shape cache sees a handful of
+// backdrop tones rather than one per pixel row.
+BACKDROP_GRADIENT_DARKEN = 0.06;
+BACKDROP_GRADIENT_STEPS = 16;
 DELTA_PILL_TINT = 0.10;
 DELTA_PILL_PAD_X = 0.55;
 DELTA_PILL_PAD_Y = 0.22;

@@ -189,7 +189,9 @@ function TfBG.TrendBackdropColorAt(AY: integer): TColor;
 var
   i: integer;
 begin
-  Result := fBG.Color;
+  // The gradient's tone at this row (quantised, see BACKDROP_GRADIENT_STEPS)
+  // is the base the bands composite onto.
+  Result := BackdropColorAt(AY, true);
   // Same order and the same "over" composite DrawRangeBands uses, so a band
   // listed inside an earlier one deepens it here too. The few edge-gradient
   // rows are ignored: a halo straddling a band edge is off by a shade nobody
