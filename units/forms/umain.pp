@@ -1745,11 +1745,12 @@ DOT_AGE_SHRINK_MAX = 0.15;
 // direction chevron of DELTA_CHEVRON_FRAC text heights beside it.
 // The window backdrop is the state colour at the top edge (so a coloured
 // title bar still matches) darkening toward the bottom by this much of the
-// way to black -- enough depth to lift the number and pill off the surface,
-// too little to read as a second colour. Sampling for the dot halos and the
-// pill is quantised to this many steps so the shape cache sees a handful of
-// backdrop tones rather than one per pixel row.
-BACKDROP_GRADIENT_DARKEN = 0.06;
+// way to black -- enough depth to lift the number and pill off the surface
+// (six percent was there but hardly seen), too little to read as a second
+// colour. Sampling for the dot halos and the pill is quantised to this many
+// steps so the shape cache sees a handful of backdrop tones rather than one
+// per pixel row.
+BACKDROP_GRADIENT_DARKEN = 0.10;
 BACKDROP_GRADIENT_STEPS = 16;
 DELTA_PILL_TINT = 0.10;
 DELTA_PILL_PAD_X = 0.55;
