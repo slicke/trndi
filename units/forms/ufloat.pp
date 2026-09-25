@@ -731,16 +731,32 @@ begin
 end;
 
 procedure TfFloat.FormResize(Sender: TObject);
+const
+  STRIP_LEFT = 2;  // Inset past the rounded corners so the strip never pokes out
+  STRIP_GAP = 4;   // Clearance between the strip and the value's first digit
+var
+  inset, textH, split: integer;
 begin
-  lVal.Left := 0;
-  lVal.Top := 0;
-  lVal.Height := ClientHeight;
-  lVal.Width := Round(ClientWidth * 0.75);
+  // Lay the next-refresh strip out first: the value's left edge depends on it.
+  inset := 0;
+  if Assigned(FProgressBox) then
+  begin
+    FProgressBox.SetBounds(STRIP_LEFT, 8, Max(3, ClientWidth div 60),
+      Max(4, ClientHeight - 16));
+    if FProgressBox.Visible then
+      inset := FProgressBox.Left + FProgressBox.Width + STRIP_GAP;
+  end;
 
-  lArrow.Left := lVal.Width;
-  lArrow.Top := 0;
-  lArrow.Height := ClientHeight;
-  lArrow.Width := ClientWidth - lVal.Width;
+  // The multi-user bar is aligned to the bottom edge; keep the text above it.
+  textH := ClientHeight;
+  if pnMultiUser.Visible then
+    textH := textH - pnMultiUser.Height;
+
+  // Value on the left three quarters, arrow on the right quarter. The value is
+  // left-justified, so it starts past the strip rather than under it.
+  split := Round(ClientWidth * 0.75);
+  lVal.SetBounds(inset, 0, Max(1, split - inset), textH);
+  lArrow.SetBounds(split, 0, ClientWidth - split, textH);
 
   ScaleLbl(lVal, taLeftJustify, tlCenter);
   ScaleLbl(lArrow, taCenter, tlCenter);
@@ -769,12 +785,6 @@ begin
     if FTrendArrow.Visible then
       lArrow.Visible := false;
   end;
-
-  // Keep the next-refresh strip hugging the left edge, inset past the rounded
-  // corners so it never pokes out of the window shape.
-  if Assigned(FProgressBox) then
-    FProgressBox.SetBounds(2, 8, Max(3, ClientWidth div 60),
-      Max(4, ClientHeight - 16));
 end;
 
 procedure TfFloat.SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor);
@@ -813,7 +823,12 @@ begin
     Exit;
   if not AShow then
   begin
-    FProgressBox.Visible := false;
+    if FProgressBox.Visible then
+    begin
+      // Give the value its left edge back
+      FProgressBox.Visible := false;
+      FormResize(Self);
+    end;
     Exit;
   end;
 
@@ -826,7 +841,12 @@ begin
   FProgFrac := AFrac;
   FProgFill := AFill;
   FProgLevel := lvl;
-  FProgressBox.Visible := true;
+  if not FProgressBox.Visible then
+  begin
+    // The strip takes a slice off the value's left edge: relayout the labels
+    FProgressBox.Visible := true;
+    FormResize(Self);
+  end;
   FProgressBox.Invalidate;
 end;
 
