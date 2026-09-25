@@ -34,6 +34,11 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-25: The unit declares its source codepage (UTF-8) so the
+ *   non-ASCII literal in TestJSStringLiteralEscapes is labelled correctly
+ *   on Windows.
  *)
 
 { Tests for trndi.ext.modules: module detection, specifier resolution and the
@@ -42,6 +47,11 @@
 unit ext_modules_tests;
 
 {$mode objfpc}{$H+}
+// The source is UTF-8, and the literals below have to be labelled as such:
+// without this, 'åäö' is UTF-8 bytes tagged with the system codepage, which on
+// a Windows runner (CP1252) double-encodes on every conversion and made
+// TestJSStringLiteralEscapes fail there while passing on the Unixes.
+{$codepage utf8}
 
 interface
 
@@ -263,6 +273,9 @@ procedure TExtModulesTests.TestJSStringLiteralEscapes;
 begin
   AssertEquals('"C:\\ext\\a \"b\"\n"', string(JSStringLiteral('C:\ext\a "b"' + #10)));
   AssertEquals('"\u0001"', string(JSStringLiteral(#1)));
+  // Both sides pass through `string` (the system codepage): the literal is
+  // converted from UTF-8 into it, the result from the function's UTF-8 back
+  // into it, so they meet in the same encoding on every platform.
   AssertEquals('"åäö"', string(JSStringLiteral('åäö')));
 end;
 
