@@ -38,7 +38,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-25: FormPaint records the range bands it composited in
  *   FPaintedBands so the trend surface can match the backdrop under each
- *   dot for its knockout halo.
+ *   dot for its knockout halo. It also paints the delta pill and its
+ *   direction chevron behind lDiff (PaintDeltaPill).
  * - 2026-09-20: The warning and stale glyphs and the expand chevrons are
  *   drawn through trndi.raster (convex polygons, capsule strokes, smooth
  *   discs) instead of the aliased Canvas.Polygon/Ellipse/LineTo primitives,
@@ -484,6 +485,7 @@ begin
     not (PaintRange or PaintRangeCGMRange) then
   begin
     PaintGuideLines;
+    PaintDeltaPill(cnv);
     Exit;
   end;
 
@@ -676,6 +678,101 @@ begin
 
   // Last, so the scale sits on top of the range bands rather than under them.
   PaintGuideLines;
+  // And the pill over the scale: the delta is a reading, the scale is paper.
+  PaintDeltaPill(cnv);
+end;
+
+// The delta pill behind lDiff: a capsule in the reading's ink, faintly, wide
+// enough for the text and the direction chevron LayoutDeltaPill left room
+// for. The chevron says which way the number points before it is read --
+// up/down for any rising or falling trend, a dash for flat -- in the label's
+// own colour, which DiffLabelColor already tints for a fast change. The label
+// paints its text over this in the same pass (children paint after the form).
+procedure TfBG.PaintDeltaPill(ACanvas: TCanvas);
+var
+  tw, th, chev, gap, textX, x0, x1, cy, padX, padY, pillH, ccx: integer;
+  ink, backdrop, fill, glyph: TColor;
+  showChev: boolean;
+  capsule: array[0..0] of TSmoothStroke;
+  pts: array[0..2] of TPoint;
+begin
+  if not (Assigned(lDiff) and lDiff.Visible and (lDiff.Caption <> '')) then
+    Exit;
+  if FShutdownScreen or native.GetBoolSetting('main.high_contrast', false) then
+    Exit;
+
+  ACanvas.Font.Assign(lDiff.Font);
+  tw := ACanvas.TextWidth(lDiff.Caption);
+  th := ACanvas.TextHeight(lDiff.Caption);
+  if (tw <= 0) or (th <= 0) then
+    Exit;
+
+  showChev := DeltaChevronShown;
+  chev := Round(th * DELTA_CHEVRON_FRAC);
+  gap := Max(3, th div 4);
+
+  // Where the label puts its single centred line (TCustomLabel.Paint).
+  case lDiff.Alignment of
+  taLeftJustify:
+    textX := lDiff.Left;
+  taRightJustify:
+    textX := lDiff.Left + lDiff.Width - tw;
+  else
+    textX := lDiff.Left + (lDiff.Width - tw) div 2;
+  end;
+  cy := lDiff.Top + lDiff.Height div 2;
+
+  x0 := textX;
+  if showChev then
+    x0 := x0 - gap - chev;
+  x1 := textX + tw;
+  padX := Round(th * DELTA_PILL_PAD_X);
+  padY := Round(th * DELTA_PILL_PAD_Y);
+  pillH := th + 2 * padY;
+
+  // Tinted from what is actually under it (band included), so the pill reads
+  // as a lift of the surface rather than a patch laid on it.
+  ink := lVal.Font.Color;
+  backdrop := TrendBackdropColorAt(cy);
+  fill := BlendColors(ink, backdrop, DELTA_PILL_TINT);
+
+  // One capsule stroke as thick as the pill: its round caps are the pill's
+  // ends, so the endpoints sit half a height inside the padded extent.
+  capsule[0].X1 := x0 - padX + pillH / 2;
+  capsule[0].X2 := Max(capsule[0].X1, x1 + padX - pillH / 2);
+  capsule[0].Y1 := cy;
+  capsule[0].Y2 := cy;
+  capsule[0].Color := fill;
+  DrawSmoothStrokes(ACanvas, capsule, pillH);
+
+  if not showChev then
+    Exit;
+  glyph := lDiff.Font.Color;
+  ccx := x0 + chev div 2;
+  case CalculateTrendFromDelta(FDiffRateMgdl) of
+  TdDoubleUp, TdSingleUp, TdFortyFiveUp:
+  begin
+    pts[0] := MkPoint(ccx, cy - chev div 2);
+    pts[1] := MkPoint(ccx - chev div 2, cy + chev div 2);
+    pts[2] := MkPoint(ccx + chev div 2, cy + chev div 2);
+    DrawSmoothConvexPolygon(ACanvas, pts, glyph);
+  end;
+  TdFortyFiveDown, TdSingleDown, TdDoubleDown:
+  begin
+    pts[0] := MkPoint(ccx - chev div 2, cy - chev div 2);
+    pts[1] := MkPoint(ccx + chev div 2, cy - chev div 2);
+    pts[2] := MkPoint(ccx, cy + chev div 2);
+    DrawSmoothConvexPolygon(ACanvas, pts, glyph);
+  end;
+  else
+  begin
+    // Flat: a short dash on the text's mid-line.
+    capsule[0].X1 := ccx - chev / 2;
+    capsule[0].X2 := ccx + chev / 2;
+    capsule[0].Color := glyph;
+    DrawSmoothStrokes(ACanvas, capsule, Max(2, chev div 4));
+  end;
+  end;
 end;
 
 procedure TfBG.pnOffReadingPaint(Sender: TObject);

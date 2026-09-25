@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-25: The delta label is laid out by LayoutDeltaPill under the
+ *   reading's baseline (with chevron room) instead of along the bottom edge.
  * - 2026-08-27: UpdateTrendDots reads slot values from the TTrendSlot model
  *   instead of parsing them back out of the dots' Hint strings, and the
  *   resize pass clears the shared FDotsExpanded flag up front instead of
@@ -742,11 +744,7 @@ begin
 
   ScaleLbl(lVal);
 
-  lDiff.Width := ClientWidth;
-  lDiff.Height := (ClientHeight div 9) - 10;
-  lDiff.Left := 0;
-  lDiff.Top := ClientHeight - lDiff.Height + 1;
-  ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
+  LayoutDeltaPill;
 
   LayoutAgoBadge;
 
@@ -797,6 +795,90 @@ begin
   // Keep the fullscreen clock's band and font in step with the labels that
   // were just re-laid out (it mirrors lAgo's font).
   UpdateClockOverlay(true);
+end;
+
+function TfBG.DeltaChevronShown: boolean;
+begin
+  Result := FDiffRateKnown and (not FTrendDataStale) and (lDiff.Caption <> '')
+    and (lDiff.Caption <> '--');
+end;
+
+// The delta used to run along the bottom edge, a window's height away from the
+// number it qualifies. It now hangs just under the reading's baseline, so the
+// two read as one group, and its box is shifted to leave room for the chevron
+// PaintDeltaPill draws on its left -- the text plus glyph stay centred (or
+// hug the chosen edge) as a unit. The box keeps the old strip's height so the
+// fitted font size is unchanged.
+procedure TfBG.LayoutDeltaPill;
+var
+  bmp: TBitmap;
+  tm: TLCLTextMetric;
+  th, asc, textTop, pillTop, gapBelow, chev, gap, bottomPad: integer;
+begin
+  lDiff.Width := ClientWidth;
+  lDiff.Height := (ClientHeight div 9) - 10;
+  lDiff.Left := 0;
+  pillTop := ClientHeight - lDiff.Height + 1;   // the old bottom strip, the fallback
+
+  // Measure on a bitmap: a label's canvas is unsafe outside paint on Cocoa
+  // (see ScaleLbl). The reading is a single line centred in lVal, so its
+  // baseline is the centred line's top plus the font's ascent; when the
+  // widgetset reports no metrics, four fifths of the line height is close for
+  // every face the app ships with.
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(lVal.Font);
+    th := 0;
+    if lVal.Caption <> '' then
+      th := bmp.Canvas.TextHeight(lVal.Caption);
+    if th > 0 then
+    begin
+      if bmp.Canvas.GetTextMetrics(tm) and (tm.Ascender > 0) and
+        (tm.Ascender <= th) then
+        asc := tm.Ascender
+      else
+        asc := Round(th * 0.8);
+      textTop := lVal.Top + (lVal.Height - th) div 2;
+      // The pill's upper padding reaches above the text box, so the gap
+      // leaves room for it and a little air besides.
+      gapBelow := Round(lDiff.Height * DELTA_PILL_PAD_Y) + Scale96ToForm(6);
+      pillTop := textTop + asc + gapBelow;
+      // Never off the bottom (the pill's lower padding needs its own room),
+      // never up among the digits on a squat window.
+      bottomPad := Round(lDiff.Height * DELTA_PILL_PAD_Y) + Scale96ToForm(4);
+      pillTop := Min(pillTop, ClientHeight - lDiff.Height - bottomPad);
+      pillTop := Max(pillTop, ClientHeight div 2);
+    end;
+  finally
+    bmp.Free;
+  end;
+  lDiff.Top := pillTop;
+  ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
+
+  // Chevron room, from the size ScaleLbl settled on. The label paints its
+  // text centred/edge-aligned in its own box, so moving the box is how the
+  // group (chevron + gap + text) ends up where the text alone used to be.
+  if not DeltaChevronShown then
+    Exit;
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(lDiff.Font);
+    th := bmp.Canvas.TextHeight(lDiff.Caption);
+  finally
+    bmp.Free;
+  end;
+  chev := Round(th * DELTA_CHEVRON_FRAC);
+  gap := Max(3, th div 4);
+  case lDiff.Alignment of
+  taLeftJustify:
+    lDiff.Left := lDiff.Left + chev + gap;
+  taRightJustify:
+    ;                       // the chevron takes the padding on the text's left
+  else
+    lDiff.Left := lDiff.Left + (chev + gap) div 2;
+  end;
 end;
 
 procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;

@@ -1262,6 +1262,19 @@ private
       "ago" badge top-left, clear of the progress bar. Re-lays the TIR badge
       so it picks up the refitted font. }
   procedure LayoutAgoBadge;
+  {** Place the delta label (lDiff) as a pill right under the reading's
+      baseline instead of along the bottom edge, leaving room for the
+      direction chevron PaintDeltaPill draws beside the text. Called from
+      ResizeUIElements after lVal has been fitted. }
+  procedure LayoutDeltaPill;
+  {** Paint the delta pill -- a capsule tinted with the reading's ink -- and
+      its direction chevron behind lDiff. Runs at the end of FormPaint; a
+      no-op with the delta hidden, empty, or in high-contrast mode. }
+  procedure PaintDeltaPill(ACanvas: TCanvas);
+  {** Whether the delta carries a direction chevron: only while a rate is
+      known and the data is current. Shared by layout and paint so the text
+      shift and the glyph agree. }
+  function DeltaChevronShown: boolean;
   {** Put a value and caption on the "ago" badge ("3 min", or "14:35" over
       "last reading") and re-layout, since its width just changed. }
   procedure SetAgoText(const AValue, ACaption: string);
@@ -1710,6 +1723,13 @@ DOT_HALO_MIN_PX = 2;
 // distance to the backdrop — enough to rank the dots, little enough that the
 // oldest still clears the contrast floor DotDisplayColor gave it by half.
 DOT_AGE_FADE_MAX = 0.45;
+// The delta pill: lDiff sits on a capsule tinted this far toward the reading's
+// ink, padded around the text by these fractions of the text height, with a
+// direction chevron of DELTA_CHEVRON_FRAC text heights beside it.
+DELTA_PILL_TINT = 0.10;
+DELTA_PILL_PAD_X = 0.55;
+DELTA_PILL_PAD_Y = 0.22;
+DELTA_CHEVRON_FRAC = 0.42;
 // Night dim keeps this much of the in-range color; the rest goes to black.
 // Text, dots and every other on-window color derive from the background at
 // paint time, so they mute along with it for free.
