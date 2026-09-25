@@ -402,12 +402,19 @@ begin
           Break;
         end;
 
-    SlickeDialogsInTaskbar := true;
-    // The reject button keeps its "Default" caption: closing or escaping the
-    // picker starts the default account, as it always has.
-    i := SlickeAccountPicker(sdsAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE,
-      RS_MULTIUSER_BOX, accounts, preselect, uxmtCog, smbSlickeDefault);
-    SlickeDialogsInTaskbar := false;
+    if FNoMultiMode then
+      // --no-multi: the default account, as if the picker had been dismissed
+      // -- but without asking.
+      i := 0
+    else
+    begin
+      SlickeDialogsInTaskbar := true;
+      // The reject button keeps its "Default" caption: closing or escaping the
+      // picker starts the default account, as it always has.
+      i := SlickeAccountPicker(sdsAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE,
+        RS_MULTIUSER_BOX, accounts, preselect, uxmtCog, smbSlickeDefault);
+      SlickeDialogsInTaskbar := false;
+    end;
 
     if i > 0 then
     begin // We chose a named account
@@ -427,7 +434,10 @@ begin
     else
     begin // Standard user: chosen as the first row, or by cancelling
       username := ''; // No username
-      native.SetRootSetting('users.active', username);
+      // A --no-multi start is not a choice: leave users.active alone so the
+      // next interactive start still opens the picker on the last account.
+      if not FNoMultiMode then
+        native.SetRootSetting('users.active', username);
       userNick := accounts[0].Nick; // The standard user's nick
       multinick := userNick; // Set the multi user nickname
       // See above: the badge platforms carry the name in the title-bar badge.
@@ -780,12 +790,21 @@ begin
   // update popup. Everything else (setup wizard, menus) behaves as normal so
   // a kiosk can still be configured on first boot. Parsed by hand rather
   // than via Application.HasOption so the test build's Forms mock suffices.
+  // --no-multi: with several accounts configured, skip the start-up account
+  // picker and run the default account -- for scripted launches, kiosks and
+  // development runs where a dialog nobody answers would hold the start.
   FKioskMode := false;
+  FNoMultiMode := false;
   for paramIx := 1 to ParamCount do
     if ParamStr(paramIx) = '--kiosk' then
-      FKioskMode := true;
+      FKioskMode := true
+    else
+    if ParamStr(paramIx) = '--no-multi' then
+      FNoMultiMode := true;
   if FKioskMode then
     TrndiDLog('Kiosk mode requested via --kiosk');
+  if FNoMultiMode then
+    TrndiDLog('Account picker skipped via --no-multi');
 
   InitCriticalSection(FReadingsLock);
 
