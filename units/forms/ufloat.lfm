@@ -22,7 +22,6 @@ object fFloat: TfFloat
     Height = 117
     Top = 0
     Width = 200
-    Align = alLeft
     Alignment = taCenter
     AutoSize = False
     Caption = 'Setup'
@@ -68,7 +67,6 @@ object fFloat: TfFloat
     Height = 117
     Top = 0
     Width = 200
-    Align = alRight
     Alignment = taCenter
     AutoSize = False
     Caption = 'lArrow'
