@@ -760,7 +760,7 @@ private
                               // the first network attempt doesn't compete
                               // with the form's first WM_PAINT.
   FUpdateCheckScheduled: boolean;
-  FNoMultiMode: boolean;      // --no-multi on the command line: skip the account picker, start the default account
+  FNoMultiMode: boolean;      // --no-multi on the command line: skip the account picker, run single-user on the default settings
   FKioskMode: boolean;        // --kiosk on the command line: start fullscreen,
                               // keep the system awake, skip the update popup
   FKioskApplied: boolean;     // Fullscreen/keep-awake done (FormShow can rerun)
