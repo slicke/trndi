@@ -768,6 +768,12 @@ begin
 
   ScaleLbl(lVal, taLeftJustify, tlCenter);
   ScaleLbl(lArrow, taCenter, tlCenter);
+  // Each fitter fills its own box, and the arrow's box is a full-height
+  // quarter while the value's holds three or four characters, so a lone
+  // glyph could come out taller than the digits it qualifies. Hold the arrow
+  // to the value's size: equal when both fit, never larger.
+  if lArrow.Font.Size > lVal.Font.Size then
+    lArrow.Font.Size := lVal.Font.Size;
 
   // Keep the clock tucked into the top-right corner, above the arrow
   lTime.Font.Size := lArrow.Font.Size div 3;
