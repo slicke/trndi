@@ -152,6 +152,7 @@ begin
   TrendLineEnabled := native.GetBoolSetting('ux.dot_line', false);
   TrendLineWidthStep :=
     EnsureRange(native.GetIntSetting('ux.dot_line_width', 2), 1, 3);
+  TrendDotFade := native.GetBoolSetting('ux.dot_fade', true);
 
   // Gate on the *_on flags exactly like the startup load (umain_init.inc):
   // the save path always writes ux.tir_color/ux.tir_color_custom, so reading

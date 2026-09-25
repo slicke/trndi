@@ -34,6 +34,12 @@ system.fresh_threshold=31
 ```
 
 
+## Keep every trend dot at full strength
+Older trend dots fade toward the background the further left they sit, so the newest reading dominates. To draw every dot (and the connecting line and gap rings) at full strength instead:
+```ini
+ux.dot_fade=false
+```
+
 ## Override the number readings fetched
 Trndi defaults to a set amount of minutes it fetches (1440), this only affects time-in-range - not the graph!
 ```ini
