@@ -90,6 +90,8 @@ Setup the users in the _settings_. User edits are stored when you save the setti
 You need to start Trndi multiple times, each instance lets you choose a user. Just open the app multiple times and select a different account. Users can have different sources and run JavaScript plugins independently.
 > NOTE: On macOS, to start multiple instances of Trndi you need to run ```open -n -a "Trndi"```, in a Terminal. the _-n_ parameter allows for multiple instances.
 
+To skip the account dialog and always start the default account (kiosks, scripted launches), start Trndi with `--no-multi`.
+
 # Usage
 ⚠️ Right-click on the reading on the screen to access the menu, this is how you control Trndi.
 

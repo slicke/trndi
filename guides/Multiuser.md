@@ -23,6 +23,14 @@ first letters of a nickname jumps to it. Closing the dialog or pressing
 __Default__ starts the default account. Each account's language setting is
 applied once you have chosen — accounts can run Trndi in different languages.
 
+To skip the dialog and always start the default account — for a kiosk, a
+scripted launch or an autostart entry — add the `--no-multi` flag:
+```bash
+trndi --no-multi
+```
+On macOS: `open -a Trndi --args --no-multi`. The flag does not change which
+account the dialog highlights next time you start without it.
+
 ## Setting up the new user's data source
 Adding a user only creates an empty account: it has no server, thresholds or other settings of its own yet. To fill them in:
 * Restart Trndi and pick the new user in the start-up dialog
