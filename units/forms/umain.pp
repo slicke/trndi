@@ -1716,10 +1716,12 @@ DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
 // slot so further-out forecasts read as less certain at a glance.
 PREDICTION_ALPHA_MIN = 0.35; // × opacity at zero confidence
 PREDICTION_HORIZON_FADE = 0.15; // opacity step per horizon slot further out
-// Interior trend gaps draw a thin hollow ring blended this far toward the
+// Interior trend gaps draw a dashed ring blended this far toward the
 // window's text tone — enough to say "a reading is missing here" without
-// competing with the real dots around it.
-GAP_DOT_BLEND = 0.4;
+// competing with the real dots around it. Half-way: at 0.4 the ring washed
+// out on the yellow high window once it no longer had the halo-less digit
+// behind it for contrast.
+GAP_DOT_BLEND = 0.5;
 // The optional connecting line wears the dots' own display colors, each dot
 // owning the half-segment on either side of it; this is how much of the dot
 // color survives the blend toward the window background. High enough that

@@ -67,7 +67,9 @@
    newest reading dominates. The
    connecting line runs through the dots as a monotone cubic curve
    (SmoothTrace) instead of straight segments. The Display-tab preview
-   shows the delta as the pill under the reading, like the live window. *)
+   shows the delta as the pill under the reading, like the live window.
+   Gap markers are drawn by DrawGapMarker as a dashed ring on a halo, at
+   full strength whatever the slot's age. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -328,6 +330,60 @@ begin
   SetLength(AOutCols, count);
 end;
 
+// A missing reading's marker: a dashed ring, ASize across, in AColor on a
+// knockout halo in ABackdrop. Dashed rather than a thin hollow ring because a
+// hollow ring among solid dots was easy to miss at a glance, and a dashed
+// outline reads as "placeholder" the way a dashed box does -- nothing that
+// could pass for a measurement. Built from short capsule strokes along the
+// circle (two per dash, so each follows the arc), spaced so the gaps stay
+// about as wide as the stroke at every size; small markers get fewer dashes
+// rather than dashes that merge. Uncached: the strokes are few and tiny.
+procedure DrawGapMarker(ACanvas: TCanvas; ASize: integer; AColor, ABackdrop: TColor;
+  ALeft, ATop: integer);
+const
+  SLOT_PER_THICK = 2.6;   // dash + gap, in stroke thicknesses, along the circle
+  GAP_PER_THICK = 0.8;    // the gap's share of that
+var
+  strokes: array of TSmoothStroke;
+  thick, n, i, k: integer;
+  r, cx, cy, seg, core, a0, a1, am, coreAng: double;
+begin
+  if ASize < 4 then
+    Exit;
+  DrawDotHalo(ACanvas, ASize, ALeft, ATop, ABackdrop);
+
+  thick := Max(2, Round(ASize / 6));
+  r := (ASize - thick) / 2.0;          // the stroke's centre line
+  cx := ALeft + ASize / 2.0;
+  cy := ATop + ASize / 2.0;
+
+  n := EnsureRange(Round(2 * Pi * r / (thick * SLOT_PER_THICK)), 3, 10);
+  seg := 2 * Pi * r / n;                          // one dash + one gap
+  // The capsule's round caps add one thickness to the drawn length, so the
+  // centre line of a dash is the slot minus the gap minus the caps.
+  core := Max(0.15 * thick, seg - GAP_PER_THICK * thick - thick);
+  coreAng := core / r;
+
+  SetLength({%H-}strokes, 2 * n);
+  k := 0;
+  for i := 0 to n - 1 do
+  begin
+    // Start at the top, gap centred there, so the pattern is symmetric.
+    a0 := -Pi / 2 + (i + 0.5) * (2 * Pi / n) - coreAng / 2;
+    a1 := a0 + coreAng;
+    am := (a0 + a1) / 2;
+    strokes[k].X1 := cx + r * cos(a0); strokes[k].Y1 := cy + r * sin(a0);
+    strokes[k].X2 := cx + r * cos(am); strokes[k].Y2 := cy + r * sin(am);
+    strokes[k].Color := AColor;
+    Inc(k);
+    strokes[k].X1 := cx + r * cos(am); strokes[k].Y1 := cy + r * sin(am);
+    strokes[k].X2 := cx + r * cos(a1); strokes[k].Y2 := cy + r * sin(a1);
+    strokes[k].Color := AColor;
+    Inc(k);
+  end;
+  DrawSmoothStrokes(ACanvas, strokes, thick);
+end;
+
 procedure TfBG.TrendSurfacePaint(Sender: TObject);
 var
   cnv: TCanvas;
@@ -434,19 +490,18 @@ begin
 
     if slot^.kind = dkGap then
     begin
-      // A gap marker is deliberately quiet: a thin hollow ring sunk most of
-      // the way into the background, sitting at the trace's interpolated
-      // height, so a missing reading says "something should be here" without
-      // competing with the real dots around it. Slightly smaller than the
-      // data dots, and ring-only (clNone disc) so the range bands behind it
-      // stay visible through the hole. Drawn from the window tone — a gap has
-      // no reading and thus no range color.
-      xSize := Max(MIN_DOT_DIAMETER_PX, Round(dd * 0.8));
+      // A gap marker: a dashed ring at the trace's interpolated height,
+      // slightly smaller than the data dots, drawn from the window tone -- a
+      // gap has no reading and thus no range color. It says "a reading
+      // should be here", so unlike the dots it neither fades nor shrinks
+      // with age: a missing reading is a status, not a value, and has to be
+      // as findable at the left edge as at the right. The halo it sits on
+      // is the backdrop at its own row, band tint included.
+      xSize := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
       xOff  := (d - xSize) div 2;
-      DrawSmoothCircle(cnv, xSize, clNone,
-        BlendColors(BlendColors(GetTextColorForBackground(fBG.Color),
-        fBG.Color, GAP_DOT_BLEND), backdrop, keep),
-        Max(1, xSize div 8), r.Left + xOff, r.Top + xOff);
+      DrawGapMarker(cnv, xSize,
+        BlendColors(GetTextColorForBackground(fBG.Color), fBG.Color,
+        GAP_DOT_BLEND), backdrop, r.Left + xOff, r.Top + xOff);
       Continue;
     end;
 
@@ -1007,15 +1062,14 @@ begin
     ageOff := (d - dd) div 2;
 
     // One mid-trend slot renders as a sensor gap when the option is on — the
-    // same quiet hollow ring DotPaint draws, at the height the climb passes
-    // through anyway (the preview's trace is linear).
+    // same dashed ring the live surface draws (unfaded, unshrunk), at the
+    // height the climb passes through anyway (the preview's trace is linear).
     if AData.GapRing and (i = DOT_COUNT div 2) then
     begin
-      gs := Max(MIN_DOT_DIAMETER_PX, Round(dd * 0.8));
-      DrawSmoothCircle(ACanvas, gs, clNone,
-        BlendColors(BlendColors(GetTextColorForBackground(bg), bg,
-        GAP_DOT_BLEND), bg, DotAgeKeep(i + 1, DOT_COUNT)),
-        Max(1, gs div 8), x + (d - gs) div 2, y + (d - gs) div 2);
+      gs := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
+      DrawGapMarker(ACanvas, gs,
+        BlendColors(GetTextColorForBackground(bg), bg, GAP_DOT_BLEND), bg,
+        x + (d - gs) div 2, y + (d - gs) div 2);
       Continue;
     end;
 

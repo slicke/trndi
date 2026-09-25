@@ -36,7 +36,7 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
- * - 2026-09-25: Created.
+ * - 2026-09-25: Created. Struck-out captions use the stock rendering.
  *)
 
 unit utabularlabel;
@@ -166,9 +166,12 @@ var
 begin
   txt := Caption;
   // Only the plain single-line case is typeset here; everything else -- and a
-  // caption with nothing to align -- is the stock label's job.
+  // caption with nothing to align -- is the stock label's job. Struck-out text
+  // too: the OS draws the strike per TextOut call, so glyph-by-glyph cells
+  // would leave the line broken at every cell edge, and the strike only marks
+  // a stale reading, where a stable layout matters least.
   if (not FTabularDigits) or WordWrap or (Font.Orientation <> 0) or
-    (not HasDigit(txt)) then
+    (fsStrikeOut in Font.Style) or (not HasDigit(txt)) then
   begin
     inherited Paint;
     Exit;

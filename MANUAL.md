@@ -155,8 +155,10 @@ a missing reading has no range — and never extends into the predicted ✕ mark
 a forecast is not a measurement.
 
 **Missing readings**: If the sensor skipped a reading between two known ones,
-that slot shows a faint hollow ring at the height the trace would pass through —
-so a sensor gap is visible instead of the dots just sitting further apart. This
+that slot shows a small dashed ring at the height the trace would pass through —
+so a sensor gap is visible instead of the dots just sitting further apart. The
+ring does not fade or shrink with age like the dots do, so an old gap is as
+easy to spot as a recent one. This
 includes the oldest slots when an earlier reading exists beyond the left edge of
 the window. Slots are only left truly empty when nothing proves a reading is
 missing: before your history starts, or on the right while data is outdated
