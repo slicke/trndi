@@ -640,7 +640,7 @@ begin
   lTime.Caption := FormatDateTime(DefaultFormatSettings.ShortTimeFormat, Now);
   // Re-anchor to the top-right corner; the caption width just changed
   lTime.AdjustSize;
-  lTime.Left := ClientWidth - lTime.Width - 8;
+  lTime.Left := ClientWidth - lTime.Width - Scale96ToForm(8);
   if lTime.Visible = false then
     (Sender as TTimer).Enabled := false;
 end;
@@ -748,20 +748,24 @@ begin
 end;
 
 procedure TfFloat.FormResize(Sender: TObject);
-const
-  STRIP_LEFT = 2;  // Inset past the rounded corners so the strip never pokes out
-  STRIP_GAP = 4;   // Clearance between the strip and the value's first digit
 var
   inset, textH, split: integer;
+  edge, corner, stripW: integer;
 begin
+  // Every fixed distance is a 96-dpi design value scaled to the form's dpi
+  edge := Scale96ToForm(8);     // Margin from the window edge to the corner texts
+  corner := Scale96ToForm(4);   // Margin from the top edge, and past the strip
+  stripW := Max(Scale96ToForm(3), ClientWidth div 60);
+
   // Lay the next-refresh strip out first: the value's left edge depends on it.
   inset := 0;
   if Assigned(FProgressBox) then
   begin
-    FProgressBox.SetBounds(STRIP_LEFT, 8, Max(3, ClientWidth div 60),
-      Max(4, ClientHeight - 16));
+    // Inset past the rounded corners so the strip never pokes out of the shape
+    FProgressBox.SetBounds(Scale96ToForm(2), edge, stripW,
+      Max(corner, ClientHeight - 2 * edge));
     if FProgressBox.Visible then
-      inset := FProgressBox.Left + FProgressBox.Width + STRIP_GAP;
+      inset := FProgressBox.Left + FProgressBox.Width + corner;
   end;
 
   // The multi-user bar is aligned to the bottom edge; keep the text above it.
@@ -784,21 +788,23 @@ begin
   if lArrow.Font.Size > lVal.Font.Size then
     lArrow.Font.Size := lVal.Font.Size;
 
-  // Keep the clock tucked into the top-right corner, above the arrow
-  lTime.Font.Size := lArrow.Font.Size div 3;
+  // Keep the clock tucked into the top-right corner, above the arrow. Sized
+  // from the window rather than the arrow's fitted font, so it stays put
+  // when a new reading refits the big text.
+  lTime.Font.Height := -Max(Scale96ToForm(8), ClientHeight div 6);
   lTime.AdjustSize;
-  lTime.Left := ClientWidth - lTime.Width - 8;
-  lTime.Top := 4;
+  lTime.Left := ClientWidth - lTime.Width - edge;
+  lTime.Top := corner;
 
   // Off-range markers live in the top-left corner, mirroring the clock
-  lRangeDown.Font.Size := lTime.Font.Size;
-  lRangeUp.Font.Size := lTime.Font.Size;
+  lRangeDown.Font.Height := lTime.Font.Height;
+  lRangeUp.Font.Height := lTime.Font.Height;
   lRangeDown.AdjustSize;
   lRangeUp.AdjustSize;
-  lRangeDown.Left := 8;
-  lRangeDown.Top := 4;
-  lRangeUp.Left := 8;
-  lRangeUp.Top := 4;
+  lRangeDown.Left := edge;
+  lRangeDown.Top := corner;
+  lRangeUp.Left := edge;
+  lRangeUp.Top := corner;
 
   // Keep the rotating arrow overlay tracking lArrow's bounds. ScaleLbl re-shows
   // lArrow, so re-hide the glyph while the vector arrow is active.
