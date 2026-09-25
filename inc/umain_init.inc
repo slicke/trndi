@@ -360,7 +360,10 @@ var
   end;
 
 begin
-  if native.TryGetCSVSetting('users.names', userList, true) then
+  // --no-multi: the accounts are simply not consulted, so this is the
+  // single-user start below -- default settings scope, no picker, no badge
+  // or name in the title bar, plain alert titles.
+  if (not FNoMultiMode) and native.TryGetCSVSetting('users.names', userList, true) then
   begin // We have more than 1 user
     // Sort case-insensitively so the picker scans predictably regardless of
     // the insertion order stored in users.names.
@@ -402,19 +405,12 @@ begin
           Break;
         end;
 
-    if FNoMultiMode then
-      // --no-multi: the default account, as if the picker had been dismissed
-      // -- but without asking.
-      i := 0
-    else
-    begin
-      SlickeDialogsInTaskbar := true;
-      // The reject button keeps its "Default" caption: closing or escaping the
-      // picker starts the default account, as it always has.
-      i := SlickeAccountPicker(sdsAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE,
-        RS_MULTIUSER_BOX, accounts, preselect, uxmtCog, smbSlickeDefault);
-      SlickeDialogsInTaskbar := false;
-    end;
+    SlickeDialogsInTaskbar := true;
+    // The reject button keeps its "Default" caption: closing or escaping the
+    // picker starts the default account, as it always has.
+    i := SlickeAccountPicker(sdsAuto, RS_MULTIUSER_BOX_TITLE, RS_MULTIUSER_BOX_TITLE,
+      RS_MULTIUSER_BOX, accounts, preselect, uxmtCog, smbSlickeDefault);
+    SlickeDialogsInTaskbar := false;
 
     if i > 0 then
     begin // We chose a named account
@@ -434,10 +430,7 @@ begin
     else
     begin // Standard user: chosen as the first row, or by cancelling
       username := ''; // No username
-      // A --no-multi start is not a choice: leave users.active alone so the
-      // next interactive start still opens the picker on the last account.
-      if not FNoMultiMode then
-        native.SetRootSetting('users.active', username);
+      native.SetRootSetting('users.active', username);
       userNick := accounts[0].Nick; // The standard user's nick
       multinick := userNick; // Set the multi user nickname
       // See above: the badge platforms carry the name in the title-bar badge.
@@ -458,7 +451,10 @@ begin
   end
   else
   begin
-    native.SetRootSetting('users.active', '');
+    // A --no-multi start is not a choice: leave users.active alone so the
+    // next interactive start still opens the picker on the last account.
+    if not FNoMultiMode then
+      native.SetRootSetting('users.active', '');
     multi := false; // No multi user
   end;
 end;
@@ -791,8 +787,9 @@ begin
   // a kiosk can still be configured on first boot. Parsed by hand rather
   // than via Application.HasOption so the test build's Forms mock suffices.
   // --no-multi: with several accounts configured, skip the start-up account
-  // picker and run the default account -- for scripted launches, kiosks and
-  // development runs where a dialog nobody answers would hold the start.
+  // picker and run as a single-user Trndi on the default settings -- for
+  // scripted launches, kiosks and development runs where a dialog nobody
+  // answers would hold the start.
   FKioskMode := false;
   FNoMultiMode := false;
   for paramIx := 1 to ParamCount do
