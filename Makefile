@@ -283,6 +283,13 @@ ifeq ($(UNAME_S),Darwin)
 endif
 DARWIN_LD_FLAGS := $(if $(strip $(LD64_LLD)),--opt=-FD$(CURDIR)/tools/darwin-lld)
 
+# macOS debug info. The Debug modes ask for DWARF 3, but FPC 3.2.x's DWARF 3
+# writer has no case for Objective-C classes and stops with "Internal error
+# 200609171" on the first unit using CocoaAll types; its DWARF 2 writer handles
+# them. -gw2 comes after the mode's -gw3 on the command line, so it wins.
+# Evaluated when used, since debug targets set BUILD_MODE per target.
+DARWIN_DEBUG_FLAGS = $(if $(and $(filter Darwin,$(UNAME_S)),$(filter Debug,$(BUILD_MODE))),--opt=-gw2)
+
 # macOS development bundle identity. Trndi keeps its settings in NSUserDefaults
 # under the bundle identifier, so the .app in $(OUTDIR) gets its own id and name
 # to keep a development build from sharing settings (and a Dock/Spotlight name)
@@ -318,12 +325,12 @@ MARK_DEV_BUNDLE = p="$(OUTDIR)/$(basename $(LPI)).app/Contents/Info.plist"; \
     fi; \
   fi
 
-LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS)
+LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) $(DARWIN_DEBUG_FLAGS)
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
 NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
-NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS)
+NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) $(DARWIN_DEBUG_FLAGS)
 
 .PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
 
