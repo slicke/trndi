@@ -82,3 +82,6 @@ Trndi_Report_*.pdf
 
 # Compiled GSettings schemas (built at install time)
 gnome-shell-extension/trndi-current/schemas/gschemas.compiled
+
+# macOS Finder metadata
+.DS_Store
