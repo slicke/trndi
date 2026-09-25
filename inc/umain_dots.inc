@@ -65,7 +65,8 @@
    connecting line and gap rings with them) fade toward the backdrop by slot
    age (DotAgeKeep, ux.dot_fade) so the newest reading dominates. The
    connecting line runs through the dots as a monotone cubic curve
-   (SmoothTrace) instead of straight segments. *)
+   (SmoothTrace) instead of straight segments. The Display-tab preview
+   shows the delta as the pill under the reading, like the live window. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -741,8 +742,11 @@ var
   dotColor, ringColor, ident, partner: TColor;
   valText, arrowText, agoText, diffText, tirText: string;
   w, h, i, d, x, y, tw, th, ringWidth, r, cols, gs: integer;
+  valTop, valTh, chev, gap, padX, padY, pillH, cy, ccx: integer;
   linePts, curvePts: TPointArray;
   lineCols, curveCols: TColorArray;
+  capsule: array[0..0] of TSmoothStroke;
+  pts: array[0..2] of TPoint;
 
 function HasDigit(const s: string): boolean;
   var
@@ -862,24 +866,62 @@ begin
   SetPreviewFont(AData.ValFont, (h * 2) div 5, []);
   ACanvas.Font.Color := valColor;
   tw := ACanvas.TextWidth(valText);
-  th := ACanvas.TextHeight(valText);
-  ACanvas.TextOut(ARect.Left + (w - tw) div 2,
-    ARect.Top + (h - th) div 2, valText);
+  valTh := ACanvas.TextHeight(valText);
+  valTop := ARect.Top + (h - valTh) div 2;
+  ACanvas.TextOut(ARect.Left + (w - tw) div 2, valTop, valText);
 
-  // Delta, bottom edge, honoring the saved lDiff alignment.
+  // Delta: the pill under the reading's baseline, honoring the saved lDiff
+  // alignment -- the same capsule, tint, padding and chevron PaintDeltaPill
+  // draws live (the chevron from the delta's sign; the preview has no rate).
   SetPreviewFont('', Max(10, h div 11), []);
-  ACanvas.Font.Color := subColor;
   tw := ACanvas.TextWidth(diffText);
   th := ACanvas.TextHeight(diffText);
+  chev := Round(th * DELTA_CHEVRON_FRAC);
+  gap := Max(3, th div 4);
+  padX := Round(th * DELTA_PILL_PAD_X);
+  padY := Round(th * DELTA_PILL_PAD_Y);
+  pillH := th + 2 * padY;
   case lDiff.Alignment of
   taLeftJustify:
-    x := ARect.Left + PAD;
+    x := ARect.Left + PAD + chev + gap;
   taRightJustify:
     x := ARect.Left + w - tw - PAD;
   else
-    x := ARect.Left + (w - tw) div 2;
+    x := ARect.Left + (w - tw + chev + gap) div 2;
   end;
-  ACanvas.TextOut(x, ARect.Top + h - th - 3, diffText);
+  cy := Min(valTop + Round(valTh * 0.8) + padY + pillH div 2,
+    ARect.Bottom - pillH div 2 - 2);
+  capsule[0].X1 := x - gap - chev - padX + pillH / 2;
+  capsule[0].X2 := Max(capsule[0].X1, x + tw + padX - pillH / 2);
+  capsule[0].Y1 := cy;
+  capsule[0].Y2 := cy;
+  capsule[0].Color := BlendColors(valColor, bg, DELTA_PILL_TINT);
+  DrawSmoothStrokes(ACanvas, capsule, pillH);
+  ccx := x - gap - chev div 2;
+  if Pos('+', diffText) = 1 then
+  begin
+    pts[0] := MkPoint(ccx, cy - chev div 2);
+    pts[1] := MkPoint(ccx - chev div 2, cy + chev div 2);
+    pts[2] := MkPoint(ccx + chev div 2, cy + chev div 2);
+    DrawSmoothConvexPolygon(ACanvas, pts, subColor);
+  end
+  else
+  if Pos('-', diffText) = 1 then
+  begin
+    pts[0] := MkPoint(ccx - chev div 2, cy - chev div 2);
+    pts[1] := MkPoint(ccx + chev div 2, cy - chev div 2);
+    pts[2] := MkPoint(ccx, cy + chev div 2);
+    DrawSmoothConvexPolygon(ACanvas, pts, subColor);
+  end
+  else
+  begin
+    capsule[0].X1 := ccx - chev / 2;
+    capsule[0].X2 := ccx + chev / 2;
+    capsule[0].Color := subColor;
+    DrawSmoothStrokes(ACanvas, capsule, Max(2, chev div 4));
+  end;
+  ACanvas.Font.Color := subColor;
+  ACanvas.TextOut(x, cy - th div 2, diffText);
 
   // A rising trend visiting every range band, sized and slotted like the live
   // dots (0.6 of the slot width, clamped), newest on the right carrying the
