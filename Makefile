@@ -283,16 +283,27 @@ ifeq ($(UNAME_S),Darwin)
 endif
 DARWIN_LD_FLAGS := $(if $(strip $(LD64_LLD)),--opt=-FD$(CURDIR)/tools/darwin-lld)
 
+# macOS debug info. The Debug modes ask for DWARF 3, but FPC 3.2.x's DWARF 3
+# writer has no case for Objective-C classes and stops with "Internal error
+# 200609171" on the first unit using CocoaAll types; its DWARF 2 writer handles
+# them. -gw2 comes after the mode's -gw3 on the command line, so it wins.
+# Evaluated when used, since debug targets set BUILD_MODE per target.
+DARWIN_DEBUG_FLAGS = $(if $(and $(filter Darwin,$(UNAME_S)),$(filter Debug,$(BUILD_MODE))),--opt=-gw2)
+
 # macOS development bundle identity. Trndi keeps its settings in NSUserDefaults
 # under the bundle identifier, so the .app in $(OUTDIR) gets its own id and name
 # to keep a development build from sharing settings (and a Dock/Spotlight name)
 # with an installed Trndi (com.slicke.Trndi). Only $(OUTDIR) is touched; the
 # dist/macos*.sh packaging scripts write their own Info.plist.
 #
+# The bundle also gets DEV_BUNDLE_ICON as its icon so it is easy to tell apart
+# from an installed Trndi in the Dock.
+#
 # Set DEV_BUNDLE_ID= (empty) to keep the Info.plist Lazarus generated.
 ifeq ($(UNAME_S),Darwin)
   DEV_BUNDLE_ID ?= com.slicke.Trndi.dev
   DEV_BUNDLE_NAME ?= Trndi Dev
+  DEV_BUNDLE_ICON ?= Trndi-macos-dev.png
 endif
 MARK_DEV_BUNDLE = p="$(OUTDIR)/$(basename $(LPI)).app/Contents/Info.plist"; \
   if [ -n "$(DEV_BUNDLE_ID)" ] && [ -f "$$p" ]; then \
@@ -300,14 +311,27 @@ MARK_DEV_BUNDLE = p="$(OUTDIR)/$(basename $(LPI)).app/Contents/Info.plist"; \
     plutil -replace CFBundleName -string "$(DEV_BUNDLE_NAME)" "$$p" && \
     plutil -replace CFBundleDisplayName -string "$(DEV_BUNDLE_NAME)" "$$p" && \
     echo "Marked $(OUTDIR)/$(basename $(LPI)).app as $(DEV_BUNDLE_ID)"; \
+    if [ -f "$(DEV_BUNDLE_ICON)" ]; then \
+      res="$(OUTDIR)/$(basename $(LPI)).app/Contents/Resources"; set="$(OUTDIR)/Trndi.iconset"; \
+      rm -rf "$$set" && mkdir -p "$$set" "$$res" && \
+      for s in 16 32 128 256 512; do \
+        sips -z $$s $$s "$(DEV_BUNDLE_ICON)" --out "$$set/icon_$${s}x$${s}.png" >/dev/null && \
+        sips -z $$((s*2)) $$((s*2)) "$(DEV_BUNDLE_ICON)" --out "$$set/icon_$${s}x$${s}@2x.png" >/dev/null \
+          || exit 1; \
+      done && \
+      iconutil -c icns "$$set" -o "$$res/Trndi.icns" && rm -rf "$$set" && \
+      plutil -replace CFBundleIconFile -string "Trndi.icns" "$$p" && \
+      touch "$(OUTDIR)/$(basename $(LPI)).app" && \
+      echo "Set $(DEV_BUNDLE_ICON) as icon for $(OUTDIR)/$(basename $(LPI)).app"; \
+    fi; \
   fi
 
-LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS)
+LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) $(DARWIN_DEBUG_FLAGS)
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
 NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
-NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS)
+NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) $(DARWIN_DEBUG_FLAGS)
 
 .PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
 
@@ -349,6 +373,7 @@ help:
 	@echo "  LIBGCC_DIR (Linux; default: asked of gcc, currently '$(LIBGCC_DIR)'). Set empty to opt out."
 	@echo "  LD64_LLD (macOS; default: ld64.lld if installed, currently '$(LD64_LLD)'). Links through LLVM lld instead of Apple ld. Set empty to opt out."
 	@echo "  DEV_BUNDLE_ID / DEV_BUNDLE_NAME (macOS; default: com.slicke.Trndi.dev / Trndi Dev). Identity of the .app in $(OUTDIR), so a dev build keeps its own settings. Set DEV_BUNDLE_ID empty to opt out."
+	@echo "  DEV_BUNDLE_ICON (macOS; default: Trndi-macos-dev.png). Icon for the .app in $(OUTDIR)."
 
 check:
 ifeq ($(OS),Windows_NT)

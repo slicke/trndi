@@ -81,8 +81,8 @@ jobs:
     if: always()
     name: Build (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
-    # Well above the slowest leg (macOS, which builds its toolchain via
-    # MacPorts) but far below the 6h default a hung lazbuild would otherwise burn.
+    # Well above the slowest leg (macOS, which installs its toolchain from
+    # SourceForge/Homebrew) but far below the 6h default a hung lazbuild would otherwise burn.
     timeout-minutes: 120
     permissions:
       contents: read
@@ -435,32 +435,103 @@ jobs:
           fi
 
       # ===================== MACOS BUILDER =====================
-      - name: Build on macOS
+      # The toolchain comes from the official Lazarus release files, as on
+      # Linux and Windows, not from MacPorts any more. MacPorts rebuilds its fpc
+      # port on its own schedule, and revision 3.2.2_7 (2026-09-17) patched the
+      # published-method table layout in the compiler and the RTL but not in
+      # fcl-fpcunit -- every fpcunit runner it built crashed at start-up
+      # (EAccessViolation inside RegisterTest, before a single test ran).
+      # Pinning the release files puts the compiler version under our control.
+      - name: Install Lazarus/FPC toolchain (macOS)
         if: matrix.os_target == 'macos'
+        env:
+          # ---- Pinned toolchain (macOS aarch64) ----------------------------
+          # Lazarus for Apple Silicon ships as a zip (IDE, lazbuild and the FPC
+          # sources) beside an FPC installer dmg. Bump both together with the
+          # Linux and Windows pins; the weekly drift scan compares the Lazarus
+          # version across .github/.
+          FPC_DMG_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20macOS%20aarch64/Lazarus%204.8/fpc-3.2.4rc1a.intelarm64-macosx.dmg/download
+          LAZ_ZIP_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20macOS%20aarch64/Lazarus%204.8/lazarus-darwin-aarch64-4.8.zip/download
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
         run: |
           set -euo pipefail
-          # Determine correct MacPorts pkg for OS
-          OSMAJOR="$(sw_vers -productVersion | cut -d. -f1)"
-          case "$OSMAJOR" in
-            14) OSNAME="14-Sonoma" ;;
-            13) OSNAME="13-Ventura" ;;
-            12) OSNAME="12-Monterey" ;;
-            11) OSNAME="11-BigSur" ;;
-            *) echo "Unsupported macOS version: ${OSMAJOR}" >&2; exit 1 ;;
-          esac
-          # Fetch MacPorts installer directly from official site. Retry hard:
-          # a transient failure here kills the whole leg (see setup-lazarus for
-          # the same treatment of the SourceForge downloads).
+          # The FPC installer wants the Xcode command line tools (see the
+          # README beside the release files). The runner image ships them;
+          # show which toolchain and SDK the compiler will pick up.
+          xcode-select -p
+          xcrun --show-sdk-path
+
+          # Retry hard: a transient SourceForge failure here kills the whole
+          # leg (setup-lazarus treats its downloads the same way).
           CURL_RETRY="--retry 5 --retry-delay 5 --retry-all-errors"
-          PKG_URL="$(curl -fsSL $CURL_RETRY https://www.macports.org/install.php | grep -Eo "https://[^\"[:space:]]*MacPorts-[0-9.]+-${OSNAME}\.pkg" | head -n1 || true)"
-          [ -n "$PKG_URL" ] || { echo "Failed to resolve MacPorts pkg URL" >&2; exit 1; }
-          curl -fsSL $CURL_RETRY -o MacPorts.pkg "$PKG_URL"
-          sudo installer -pkg MacPorts.pkg -target /
-          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
-          sudo port -v selfupdate
-          # gmake: the Makefile is GNU make syntax and macOS ships 3.81 as `make`
-          # (see CLAUDE.md — macOS uses gmake). Needed by the test step below.
-          sudo port -N install fpc lazarus create-dmg gmake
+          curl -fsSL $CURL_RETRY -o fpc.dmg "$FPC_DMG_URL"
+          curl -fsSL $CURL_RETRY -o lazarus.zip "$LAZ_ZIP_URL"
+
+          # FPC: a .pkg inside the dmg. Installs fpc/ppca64 under /usr/local and
+          # writes /etc/fpc.cfg.
+          MNT="$(mktemp -d)"
+          hdiutil attach -nobrowse -readonly -mountpoint "$MNT" fpc.dmg
+          PKG="$(find "$MNT" -maxdepth 2 -name '*.pkg' | head -n1)"
+          [ -n "$PKG" ] || { echo "No .pkg found in the FPC dmg" >&2; ls -R "$MNT" >&2; exit 1; }
+          sudo installer -pkg "$PKG" -target /
+          hdiutil detach "$MNT"
+
+          # gmake (the Makefile is GNU make syntax; macOS ships 3.81 as `make`,
+          # see CLAUDE.md) and create-dmg for dist/macos.sh, from Homebrew.
+          brew install make create-dmg
+
+          # Lazarus: clear the quarantine flag first (the README's xattr -cr),
+          # unzip, and put the folder holding lazbuild at /Applications/lazarus,
+          # where the Makefile looks when lazbuild is not on PATH.
+          xattr -cr lazarus.zip
+          EXTRACT="$(mktemp -d)"
+          unzip -q lazarus.zip -d "$EXTRACT"
+          LB="$(find "$EXTRACT" -maxdepth 3 -name lazbuild -type f | head -n1)"
+          [ -n "$LB" ] || { echo "lazbuild not found in the Lazarus zip" >&2; find "$EXTRACT" -maxdepth 2 >&2; exit 1; }
+          sudo rm -rf /Applications/lazarus
+          sudo mv "$(dirname "$LB")" /Applications/lazarus
+          sudo xattr -cr /Applications/lazarus
+
+          # The zip ships a lazarus.cfg pointing at a portable config dir
+          # (--pcp=config --lazarusdir=.) but no environmentoptions.xml in it:
+          # the IDE writes that on its first start. A bare lazbuild therefore
+          # fell back to the compiled-in default and stopped with 'Invalid
+          # Lazarus directory "/Developer/lazarus/"'. Write both with absolute
+          # paths, so every lazbuild call -- the direct one below and the
+          # Makefile's -- finds the IDE directory, the compiler and the FPC
+          # sources the zip bundles.
+          GMAKE="$(brew --prefix)/bin/gmake"
+          sudo mkdir -p /Applications/lazarus/config
+          printf -- '--pcp=/Applications/lazarus/config\n--lazarusdir=/Applications/lazarus\n' \
+            | sudo tee /Applications/lazarus/lazarus.cfg >/dev/null
+          sudo tee /Applications/lazarus/config/environmentoptions.xml >/dev/null <<'XML'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <CONFIG>
+            <EnvironmentOptions>
+              <Version Value="112" Lazarus="4.8"/>
+              <LazarusDirectory Value="/Applications/lazarus/"/>
+              <CompilerFilename Value="/usr/local/bin/fpc"/>
+              <FPCSourceDirectory Value="$(LazarusDir)/fpc/$(FPCVer)/sources/"/>
+              <MakeFilename Value="__GMAKE__"/>
+              <TestBuildDirectory Value="$ENV(TMPDIR)"/>
+            </EnvironmentOptions>
+          </CONFIG>
+          XML
+          sudo sed -i '' -e 's|__GMAKE__|'"$GMAKE"'|' -e 's/^          //' \
+            /Applications/lazarus/config/environmentoptions.xml
+          sudo chown -R "$(id -u):$(id -g)" /Applications/lazarus/config
+
+          # For the build step below: lazbuild, fpc, gmake and create-dmg.
+          echo "/Applications/lazarus" >> "$GITHUB_PATH"
+          echo "/usr/local/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+
+          export PATH="/Applications/lazarus:/usr/local/bin:$(brew --prefix)/bin:$PATH"
+          fpc -iV
+          lazbuild --version
+          gmake --version | head -n1
+          command -v create-dmg
 
       - name: Write buildinfo (macOS)
         if: matrix.os_target == 'macos'
@@ -500,7 +571,8 @@ jobs:
         if: matrix.os_target == 'macos'
         run: |
           set -euo pipefail
-          export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
+          # lazbuild, fpc, gmake and create-dmg come from the install step's
+          # GITHUB_PATH entries.
           # Build Trndi. The prebuilt quickjs-ng engine and its ABI shim ship
           # unversioned (libqjs.dylib / libtqshim.dylib), so -lqjs links straight
           # against them — no symlink fixup is needed here, unlike on Linux.

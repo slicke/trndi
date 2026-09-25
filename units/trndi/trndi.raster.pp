@@ -46,6 +46,10 @@
  *   with the same alpha bands as the main window.
  * - 2026-09-20: DrawSmoothDashedPolyline compares its dash phase with a
  *   tolerance; a float residue could stall the walk forever.
+ * - 2026-09-25: SHAPE_IMAGE_CACHE_MAX raised to 256: the dot halos take the
+ *   window gradient's tone at their row and the age fade gives every slot
+ *   its own color and size, so a 50-slot paint pass needs far more distinct
+ *   shape images than the flat, uniform dots did.
  * - 2026-09-20: Rasters are rendered in device pixels. CanvasDeviceScale
  *   reads the Cocoa backing scale from the drawing context and every shape
  *   rasterizes at size times scale, then stretches into its canvas
@@ -287,11 +291,16 @@ type
   TShapeImageCache = specialize TObjectDictionary<string, TAlphaImage>;
 
 const
-  // Upper bound on distinct (shape, size, color, ...) combos kept alive. A
-  // layout pass produces a handful of sizes and range colors; the cap only
-  // stops unbounded growth across many window sizes. Clearing wholesale is
-  // fine — entries are cheap to re-render once.
-  SHAPE_IMAGE_CACHE_MAX = 32;
+  // Upper bound on distinct (shape, size, color, ...) combos kept alive.
+  // With the age fade every history slot has its own blend of its range
+  // color and, through the shrink, often its own diameter, so a 50-slot
+  // trend alone needs one disc image per slot plus a halo image per
+  // (gradient step, diameter) pair -- well over a hundred per paint. The cap
+  // has to hold a whole pass, or the wholesale clear below fires every
+  // frame and the 16 ms slide ticks re-rasterize everything. Entries are
+  // dot-sized (a few tens of KB each at Retina scale), so this stays in the
+  // low megabytes; it only stops unbounded growth across many window sizes.
+  SHAPE_IMAGE_CACHE_MAX = 256;
 
 var
   // Rendered-shape cache. The main window repaints every dot on each tick

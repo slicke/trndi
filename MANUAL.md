@@ -58,13 +58,19 @@ This is your current blood sugar reading, shown in your preferred unit (mmol/L o
 - 🔴 **Red**: High - above your target
 - 🟡 **Orange/Yellow**: Low - below your target
 
+The digits are typeset in equal-width cells, so the number does not shift
+around as it ticks from `9.9` to `10.0` (see [Hacks](guides/Hacks.md) if you
+prefer the font's own spacing).
+
 ### The Change Line
-The small number along the bottom (e.g. `+0.3` or `-11`) is how much your
-reading moved over the last five minutes. It stays in the quiet sub-text
-colour while the change is gentle, and takes the high or low colour when you
-are rising or falling fast — the same speeds that give the trend arrow a
-straight up or down glyph. `--` means there was no usable previous reading
-to compare against.
+The small number in the pill just under the reading (e.g. `0.3` or `11`)
+is how much your reading moved over the last five minutes. The little arrow
+beside it points the way it went — ▲ rising, ▼ falling, a dash when steady —
+so the number itself carries no sign. The
+text stays in the quiet sub-text colour while the change is gentle, and takes
+the high or low colour when you are rising or falling fast — the same speeds
+that give the trend arrow a straight up or down glyph. `--` means there was
+no usable previous reading to compare against.
 
 ### "Ago" Time
 The badge in the top-left corner shows how old the reading is: `3 min` (or
@@ -127,14 +133,19 @@ Those small dots you see across the screen show your recent readings over time:
 
 Every new reading steps the whole row one slot to the left. The dots slide
 there instead of jumping, with the new reading arriving from the right, so you
-can see the time pass.
+can see the time pass. Older dots also fade toward the background and get a
+little smaller, step by step, so the newest reading stands out and the row
+reads as a direction at a glance (see [Hacks](guides/Hacks.md) to turn the
+fade off).
 
 **How to use them**: Hover over a dot to see its value in a tooltip, or click it
 to swap the dot for the actual number. (Both are disabled in privacy mode.)
 
 **Connecting the dots**: If you prefer a continuous trace, *Settings → Trend graph →
-Draw a line connecting the trend dots* joins the dots with a subtle line drawn
-underneath them. The line wears the dots' own colors, slightly softened: each
+Draw a line connecting the trend dots* joins the dots with a subtle curve drawn
+underneath them. The curve bends smoothly through every dot but never
+overshoots one, so it doesn't show a dip or a peak that was never measured. It
+wears the dots' own colors, slightly softened: each
 dot's color extends halfway toward its neighbors, so the trace switches color
 midway between two dots of different ranges. The dropdown next to the option
 picks the stroke weight — thin, normal or thick, always relative to the dot
@@ -144,8 +155,10 @@ a missing reading has no range — and never extends into the predicted ✕ mark
 a forecast is not a measurement.
 
 **Missing readings**: If the sensor skipped a reading between two known ones,
-that slot shows a faint hollow ring at the height the trace would pass through —
-so a sensor gap is visible instead of the dots just sitting further apart. This
+that slot shows a small dashed ring at the height the trace would pass through —
+so a sensor gap is visible instead of the dots just sitting further apart. The
+ring does not fade or shrink with age like the dots do, so an old gap is as
+easy to spot as a recent one. This
 includes the oldest slots when an earlier reading exists beyond the left edge of
 the window. Slots are only left truly empty when nothing proves a reading is
 missing: before your history starts, or on the right while data is outdated

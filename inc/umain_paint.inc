@@ -36,6 +36,13 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-25: FormPaint records the range bands it composited in
+ *   FPaintedBands so the trend surface can match the backdrop under each
+ *   dot for its knockout halo. It also paints the delta pill and its
+ *   direction chevron behind lDiff (PaintDeltaPill), and fills the window
+ *   with a slight top-to-bottom gradient of its colour (PaintBackdrop) on
+ *   every widgetset; the progress bar and warning panel paint their
+ *   backgrounds from the same gradient.
  * - 2026-09-20: The warning and stale glyphs and the expand chevrons are
  *   drawn through trndi.raster (convex polygons, capsule strokes, smooth
  *   discs) instead of the aliased Canvas.Polygon/Ellipse/LineTo primitives,
@@ -164,11 +171,13 @@ begin
   else
     radius := RadiusBanner;
 
+  // Behind the rounded card: the window's own gradient slice, so the corners
+  // outside the card match the form around the panel.
+  PaintBackdrop(P.Canvas, Classes.Rect(0, 0, P.Width, P.Height), P.Top);
+
   with P.Canvas do
   begin
-    Brush.Color := fBG.Color;
     Brush.Style := bsSolid;
-    FillRect(0, 0, P.Width, P.Height);
 
     {$ifndef X_WIN}
     panelFillColor := BlendColors(tintColor, fBG.Color, opacityTmp / 255.0);
@@ -437,6 +446,8 @@ begin
     Exit;
 
   cnv := Self.Canvas;
+  // Nothing composited yet this pass; the band branch below fills this in.
+  SetLength(FPaintedBands, 0);
 
   // Shutdown screen (ShowShutdownScreen): a plain splash-style backdrop with
   // the splash's green accent glow along the top — no bands, no guide lines.
@@ -455,18 +466,15 @@ begin
     Exit;
   end;
 
-  {$ifdef LCLGTK3}
-  // LCL-GTK3 ignores TForm.Color: TGtk3Widget.SetColor's body sits behind an
-  // `if IsWidgetOK and (0 > 1)` (gtk3widgets.pas), so the window keeps the GTK
-  // theme background and the whole glucose-coloured backdrop never appears.
-  // Everything below composites *onto* that backdrop -- the range bands are
-  // alpha blends and the label inks come from GetTextColorForBackground(Color)
-  // -- so without this fill they land on white and wash out. Must precede the
-  // high-contrast early exit below, or unstyled mode stays white too.
-  cnv.Brush.Style := bsSolid;
-  cnv.Brush.Color := Self.Color;
-  cnv.FillRect(0, 0, Self.ClientWidth, Self.ClientHeight);
-  {$endif}
+  // The backdrop: the window colour, darkening slightly toward the bottom.
+  // Painted here on every widgetset, since the gradient cannot come from
+  // TForm.Color -- and on LCL-GTK3 the fill is what makes the colour appear
+  // at all: TGtk3Widget.SetColor's body sits behind an `if IsWidgetOK and
+  // (0 > 1)` (gtk3widgets.pas), so the window would otherwise keep the GTK
+  // theme background, and everything below (alpha bands, inks derived from
+  // Color) would land on white and wash out. Must precede the high-contrast
+  // early exit below, or unstyled mode stays white too.
+  PaintBackdrop(cnv, Classes.Rect(0, 0, Self.ClientWidth, Self.ClientHeight), 0);
 
   // The dots render on the client-sized trend surface, so the form's own
   // client height is the value axis they share.
@@ -479,6 +487,7 @@ begin
     not (PaintRange or PaintRangeCGMRange) then
   begin
     PaintGuideLines;
+    PaintDeltaPill(cnv);
     Exit;
   end;
 
@@ -574,6 +583,10 @@ begin
 
   if Length(bands) > 0 then
     DrawRangeBands(cnv, Self.ClientWidth, clientH, bands, BandEdgeGradientPx);
+  // Kept for TrendBackdropColorAt: the child controls (the trend surface among
+  // them) paint after this handler in the same pass, so what it reads is what
+  // is on screen under them.
+  FPaintedBands := Copy(bands);
 
   // Subtle hairline at each band edge so the threshold has a defined
   // boundary even when PaintRangeLines is off. Skipped when PaintRangeLines
@@ -667,6 +680,127 @@ begin
 
   // Last, so the scale sits on top of the range bands rather than under them.
   PaintGuideLines;
+  // And the pill over the scale: the delta is a reading, the scale is paper.
+  PaintDeltaPill(cnv);
+end;
+
+function TfBG.BackdropColorAt(AY: integer; const AQuantized: boolean): TColor;
+var
+  frac: double;
+begin
+  Result := fBG.Color;
+  if FShutdownScreen or native.GetBoolSetting('main.high_contrast', false) then
+    Exit;
+  frac := EnsureRange(AY / Max(1, ClientHeight), 0.0, 1.0);
+  if AQuantized then
+    frac := Round(frac * BACKDROP_GRADIENT_STEPS) / BACKDROP_GRADIENT_STEPS;
+  Result := BlendColors(clBlack, fBG.Color, BACKDROP_GRADIENT_DARKEN * frac);
+end;
+
+procedure TfBG.PaintBackdrop(ACanvas: TCanvas; const ARect: TRect;
+  AClientTop: integer);
+begin
+  if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then
+    Exit;
+  // GradientFill interpolates linearly between the two ends, which is the
+  // same line BackdropColorAt draws, so a child control's slice joins the
+  // form's fill without a seam.
+  ACanvas.Brush.Style := bsSolid;
+  ACanvas.GradientFill(ARect, BackdropColorAt(AClientTop + ARect.Top),
+    BackdropColorAt(AClientTop + ARect.Bottom), gdVertical);
+end;
+
+// The delta pill behind lDiff: a capsule in the reading's ink, faintly, wide
+// enough for the text and the direction chevron LayoutDeltaPill left room
+// for. The chevron says which way the number points before it is read --
+// up/down for any rising or falling trend, a dash for flat -- in the label's
+// own colour, which DiffLabelColor already tints for a fast change. The label
+// paints its text over this in the same pass (children paint after the form).
+procedure TfBG.PaintDeltaPill(ACanvas: TCanvas);
+var
+  tw, th, chev, gap, textX, x0, x1, cy, padX, padY, pillH, ccx: integer;
+  ink, backdrop, fill, glyph: TColor;
+  showChev: boolean;
+  capsule: array[0..0] of TSmoothStroke;
+  pts: array[0..2] of TPoint;
+begin
+  if not (Assigned(lDiff) and lDiff.Visible and (lDiff.Caption <> '')) then
+    Exit;
+  if FShutdownScreen or native.GetBoolSetting('main.high_contrast', false) then
+    Exit;
+
+  ACanvas.Font.Assign(lDiff.Font);
+  tw := ACanvas.TextWidth(lDiff.Caption);
+  th := ACanvas.TextHeight(lDiff.Caption);
+  if (tw <= 0) or (th <= 0) then
+    Exit;
+
+  showChev := DeltaChevronShown;
+  chev := Round(th * DELTA_CHEVRON_FRAC);
+  gap := Max(3, th div 4);
+
+  // Where the label puts its single centred line (TCustomLabel.Paint).
+  case lDiff.Alignment of
+  taLeftJustify:
+    textX := lDiff.Left;
+  taRightJustify:
+    textX := lDiff.Left + lDiff.Width - tw;
+  else
+    textX := lDiff.Left + (lDiff.Width - tw) div 2;
+  end;
+  cy := lDiff.Top + lDiff.Height div 2;
+
+  x0 := textX;
+  if showChev then
+    x0 := x0 - gap - chev;
+  x1 := textX + tw;
+  padX := Round(th * DELTA_PILL_PAD_X);
+  padY := Round(th * DELTA_PILL_PAD_Y);
+  pillH := th + 2 * padY;
+
+  // Tinted from what is actually under it (band included), so the pill reads
+  // as a lift of the surface rather than a patch laid on it.
+  ink := lVal.Font.Color;
+  backdrop := TrendBackdropColorAt(cy);
+  fill := BlendColors(ink, backdrop, DELTA_PILL_TINT);
+
+  // One capsule stroke as thick as the pill: its round caps are the pill's
+  // ends, so the endpoints sit half a height inside the padded extent.
+  capsule[0].X1 := x0 - padX + pillH / 2;
+  capsule[0].X2 := Max(capsule[0].X1, x1 + padX - pillH / 2);
+  capsule[0].Y1 := cy;
+  capsule[0].Y2 := cy;
+  capsule[0].Color := fill;
+  DrawSmoothStrokes(ACanvas, capsule, pillH);
+
+  if not showChev then
+    Exit;
+  glyph := lDiff.Font.Color;
+  ccx := x0 + chev div 2;
+  case CalculateTrendFromDelta(FDiffRateMgdl) of
+  TdDoubleUp, TdSingleUp, TdFortyFiveUp:
+  begin
+    pts[0] := MkPoint(ccx, cy - chev div 2);
+    pts[1] := MkPoint(ccx - chev div 2, cy + chev div 2);
+    pts[2] := MkPoint(ccx + chev div 2, cy + chev div 2);
+    DrawSmoothConvexPolygon(ACanvas, pts, glyph);
+  end;
+  TdFortyFiveDown, TdSingleDown, TdDoubleDown:
+  begin
+    pts[0] := MkPoint(ccx - chev div 2, cy - chev div 2);
+    pts[1] := MkPoint(ccx + chev div 2, cy - chev div 2);
+    pts[2] := MkPoint(ccx, cy + chev div 2);
+    DrawSmoothConvexPolygon(ACanvas, pts, glyph);
+  end;
+  else
+  begin
+    // Flat: a short dash on the text's mid-line.
+    capsule[0].X1 := ccx - chev / 2;
+    capsule[0].X2 := ccx + chev / 2;
+    capsule[0].Color := glyph;
+    DrawSmoothStrokes(ACanvas, capsule, Max(2, chev div 4));
+  end;
+  end;
 end;
 
 procedure TfBG.pnOffReadingPaint(Sender: TObject);
@@ -906,11 +1040,11 @@ begin
   bgCol := fBG.Color;
 
   // The box is painted edge to edge every time — the lines are drawn onto the
-  // window colour, so nothing of the previous frame can survive around them.
+  // window backdrop, so nothing of the previous frame can survive around them.
+  // The backdrop slice, not a flat fill: the window behind is a gradient.
+  PaintBackdrop(cvs, Classes.Rect(0, 0, w, h), box.Top);
   cvs.Brush.Style := bsSolid;
   cvs.Pen.Style := psClear;
-  cvs.Brush.Color := bgCol;
-  cvs.FillRect(Classes.Rect(0, 0, w, h));
 
   if (bgs = nil) or (Length(bgs) = 0) then
     Exit;

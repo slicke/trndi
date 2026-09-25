@@ -200,6 +200,13 @@ begin
   fontName := native.GetSetting('font.val', 'default');
   if fontName <> 'default' then
     lVal.Font.Name := fontName;
+  // Equal-width digits for the reading (ux.tabular_digits), so the number
+  // does not reflow as it ticks. Only when the streamed control really is
+  // the utabularlabel interposer -- the field says so, but a reader that
+  // resolved the .lfm's TLabel to the stock class would make the property
+  // write land past the object.
+  if lVal is TLabel then
+    lVal.TabularDigits := native.GetBoolSetting('ux.tabular_digits', true);
   fontName := native.GetSetting('font.arrow', 'default');
   if fontName <> 'default' then
     lArrow.Font.Name := fontName;
@@ -273,6 +280,7 @@ begin
   TrendLineEnabled := native.GetBoolSetting('ux.dot_line', false);
   TrendLineWidthStep :=
     EnsureRange(native.GetIntSetting('ux.dot_line_width', 2), 1, 3);
+  TrendDotFade := native.GetBoolSetting('ux.dot_fade', true);
 
   // Color title bar (on Windows?)
   titlecolor := native.GetBoolSetting('ux.title_color', true);
@@ -352,7 +360,10 @@ var
   end;
 
 begin
-  if native.TryGetCSVSetting('users.names', userList, true) then
+  // --no-multi: the accounts are simply not consulted, so this is the
+  // single-user start below -- default settings scope, no picker, no badge
+  // or name in the title bar, plain alert titles.
+  if (not FNoMultiMode) and native.TryGetCSVSetting('users.names', userList, true) then
   begin // We have more than 1 user
     // Sort case-insensitively so the picker scans predictably regardless of
     // the insertion order stored in users.names.
@@ -440,7 +451,10 @@ begin
   end
   else
   begin
-    native.SetRootSetting('users.active', '');
+    // A --no-multi start is not a choice: leave users.active alone so the
+    // next interactive start still opens the picker on the last account.
+    if not FNoMultiMode then
+      native.SetRootSetting('users.active', '');
     multi := false; // No multi user
   end;
 end;
@@ -772,12 +786,22 @@ begin
   // update popup. Everything else (setup wizard, menus) behaves as normal so
   // a kiosk can still be configured on first boot. Parsed by hand rather
   // than via Application.HasOption so the test build's Forms mock suffices.
+  // --no-multi: with several accounts configured, skip the start-up account
+  // picker and run as a single-user Trndi on the default settings -- for
+  // scripted launches, kiosks and development runs where a dialog nobody
+  // answers would hold the start.
   FKioskMode := false;
+  FNoMultiMode := false;
   for paramIx := 1 to ParamCount do
     if ParamStr(paramIx) = '--kiosk' then
-      FKioskMode := true;
+      FKioskMode := true
+    else
+    if ParamStr(paramIx) = '--no-multi' then
+      FNoMultiMode := true;
   if FKioskMode then
     TrndiDLog('Kiosk mode requested via --kiosk');
+  if FNoMultiMode then
+    TrndiDLog('Account picker skipped via --no-multi');
 
   InitCriticalSection(FReadingsLock);
 

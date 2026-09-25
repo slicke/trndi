@@ -141,6 +141,13 @@ type
     Clipping: Boolean;
   end;
 
+  // Font metrics as TCanvas.GetTextMetrics reports them in the real LCL.
+  TLCLTextMetric = record
+    Ascender: Integer;
+    Descender: Integer;
+    Height: Integer;
+  end;
+
   TCanvas = class(TObject)
   private
     FPen: TPen;
@@ -159,6 +166,8 @@ type
 
     function TextWidth(const S: string): Integer; virtual;
     function TextHeight(const S: string): Integer; virtual;
+    // No font engine here: reports "unknown" so callers take their fallback.
+    function GetTextMetrics(out TM: TLCLTextMetric): Boolean; virtual;
     procedure TextOut(X, Y: Integer; const S: string); virtual;
     procedure TextRect(const R: TRect; X, Y: Integer; const S: string; const AStyle: TTextStyle); overload; virtual;
     procedure TextRect(const R: TRect; X, Y: Integer; const S: string); overload; virtual;
@@ -300,6 +309,14 @@ function TCanvas.TextWidth(const S: string): Integer;
 begin
   // simple approximation: 8px per char
   Result := Length(S) * 8;
+end;
+
+function TCanvas.GetTextMetrics(out TM: TLCLTextMetric): Boolean;
+begin
+  TM.Ascender := 0;
+  TM.Descender := 0;
+  TM.Height := 0;
+  Result := False;
 end;
 
 function TCanvas.TextHeight(const S: string): Integer;
