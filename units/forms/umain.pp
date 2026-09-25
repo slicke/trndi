@@ -1553,6 +1553,7 @@ ShowCarbOverlay: boolean = false; // Draw carbohydrate entries on the history gr
 DotColorMode: TDotColorMode = DOT_COLOR_MODE_DEFAULT; // ux.dot_color_mode — cached here because DotPaint runs per dot, per paint
 TrendLineEnabled: boolean = false; // ux.dot_line — cached like DotColorMode: the trend surface reads it on every paint
 TrendLineWidthStep: integer = 2; // ux.dot_line_width — 1 thin / 2 normal / 3 thick; cached with TrendLineEnabled
+TrendDotFade: boolean = true; // ux.dot_fade — older dots fade toward the backdrop; cached with TrendLineEnabled
 RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the actual rate of change instead of the 8-direction glyph
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings
@@ -1699,6 +1700,12 @@ TREND_LINE_BLEND = 0.65;
 // into them, and neighbouring dots stay separable where they touch.
 DOT_HALO_FRACTION = 0.12;
 DOT_HALO_MIN_PX = 2;
+// Age fade (ux.dot_fade): history dots blend toward the backdrop the older
+// they are, linearly by slot, so the newest reading dominates and the row
+// reads as a direction at a glance. The oldest slot gives up this much of its
+// distance to the backdrop — enough to rank the dots, little enough that the
+// oldest still clears the contrast floor DotDisplayColor gave it by half.
+DOT_AGE_FADE_MAX = 0.45;
 // Night dim keeps this much of the in-range color; the rest goes to black.
 // Text, dots and every other on-window color derive from the background at
 // paint time, so they mute along with it for free.

@@ -61,7 +61,9 @@
 (* MODIFICATION NOTICE (2026-09-25): Every history dot is drawn on a knockout
    halo in the backdrop color (TrendBackdropColorAt, DOT_HALO_FRACTION) so a
    dot crossing the reading's digits or the arrow glyph keeps a clean edge.
-   The settings previews draw the same halo. *)
+   The settings previews draw the same halo. Older history dots (and the
+   connecting line and gap rings with them) fade toward the backdrop by slot
+   age (DotAgeKeep, ux.dot_fade) so the newest reading dominates. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -208,6 +210,17 @@ begin
     ALeft - halo, ATop - halo);
 end;
 
+// How much of a history marker's own color survives the age fade: 1.0 for the
+// newest slot, falling linearly to 1 - DOT_AGE_FADE_MAX at slot 1. Shared by
+// the live surface and the Display-tab preview. Always 1.0 with the fade off.
+function DotAgeKeep(ASlotIx, ANewestIx: integer): double;
+begin
+  if (not TrendDotFade) or (ANewestIx <= 1) then
+    Exit(1.0);
+  Result := 1.0 - DOT_AGE_FADE_MAX * (ANewestIx - ASlotIx) / (ANewestIx - 1);
+  Result := EnsureRange(Result, 1.0 - DOT_AGE_FADE_MAX, 1.0);
+end;
+
 procedure TfBG.TrendSurfacePaint(Sender: TObject);
 var
   cnv: TCanvas;
@@ -215,8 +228,8 @@ var
   slot: PTrendSlot;
   r: TRect;
   ix, d, ringWidth, xSize, xOff, xThick, fs, nPts: integer;
-  dotColor, ringColor: TColor;
-  xAlpha: double;
+  dotColor, ringColor, backdrop: TColor;
+  xAlpha, keep: double;
   linePts: array of TPoint;
   lineCols: array of TColor;
 begin
@@ -253,6 +266,9 @@ begin
           lineCols[nPts] := BlendColors(DotDisplayColor(TrendSlots[ix].ident,
             DotBandPartner(TrendSlots[ix].ident), fBG.Color, lVal.Font.Color,
             DotColorMode), fBG.Color, TREND_LINE_BLEND);
+        // The trace ages with the dots it connects, toward the tone under it.
+        lineCols[nPts] := BlendColors(lineCols[nPts],
+          TrendBackdropColorAt(linePts[nPts].Y), DotAgeKeep(ix, ACTIVE_DOTS));
         Inc(nPts);
       end;
     SetLength(linePts, nPts);
@@ -296,6 +312,12 @@ begin
     if d < 2 then
       Continue;
 
+    // Age fade: every marker in this slot blends this far toward the backdrop
+    // at its own height (the halo's color), so old dots recede on the band
+    // exactly as they do on the plain window.
+    backdrop := TrendBackdropColorAt(r.Top + d div 2);
+    keep := DotAgeKeep(ix, ACTIVE_DOTS);
+
     if slot^.kind = dkGap then
     begin
       // A gap marker is deliberately quiet: a thin hollow ring sunk most of
@@ -308,8 +330,9 @@ begin
       xSize := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
       xOff  := (d - xSize) div 2;
       DrawSmoothCircle(cnv, xSize, clNone,
-        BlendColors(GetTextColorForBackground(fBG.Color), fBG.Color,
-        GAP_DOT_BLEND), Max(1, xSize div 8), r.Left + xOff, r.Top + xOff);
+        BlendColors(BlendColors(GetTextColorForBackground(fBG.Color),
+        fBG.Color, GAP_DOT_BLEND), backdrop, keep),
+        Max(1, xSize div 8), r.Left + xOff, r.Top + xOff);
       Continue;
     end;
 
@@ -342,11 +365,16 @@ begin
       ringColor := dotColor;
     end;
 
+    // Fade after the ring pick: FreshDotRing and the outline rim derive from
+    // the unfaded dot, and the newest slot keeps everything anyway.
+    dotColor := BlendColors(dotColor, backdrop, keep);
+    if ringWidth > 0 then
+      ringColor := BlendColors(ringColor, backdrop, keep);
+
     // The halo takes the backdrop at the dot's centre row, so it is invisible
     // on the plain window and on the band alike, and only shows as a knockout
     // where a digit or the arrow runs under the dot.
-    DrawDotHalo(cnv, d, r.Left, r.Top,
-      TrendBackdropColorAt(r.Top + d div 2));
+    DrawDotHalo(cnv, d, r.Left, r.Top, backdrop);
     DrawSmoothCircle(cnv, d, dotColor, ringColor, ringWidth, r.Left, r.Top);
   end;
 
@@ -796,6 +824,8 @@ begin
         lineCols[i] := BlendColors(DotDisplayColor(ident, partner, bg,
           valColor, mode), bg, TREND_LINE_BLEND);
       end;
+      lineCols[i] := BlendColors(lineCols[i], bg,
+        DotAgeKeep(i + 1, DOT_COUNT));
     end;
     DrawSmoothPolyline(ACanvas, linePts, lineCols,
       TrendLineStrokePx(d, AData.LineWidth));
@@ -815,7 +845,8 @@ begin
     begin
       gs := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
       DrawSmoothCircle(ACanvas, gs, clNone,
-        BlendColors(GetTextColorForBackground(bg), bg, GAP_DOT_BLEND),
+        BlendColors(BlendColors(GetTextColorForBackground(bg), bg,
+        GAP_DOT_BLEND), bg, DotAgeKeep(i + 1, DOT_COUNT)),
         Max(1, gs div 8), x + (d - gs) div 2, y + (d - gs) div 2);
       Continue;
     end;
@@ -836,6 +867,10 @@ begin
       ringWidth := 0;
       ringColor := dotColor;
     end;
+    // The live surface's age fade, slot 1 oldest.
+    dotColor := BlendColors(dotColor, bg, DotAgeKeep(i + 1, DOT_COUNT));
+    if ringWidth > 0 then
+      ringColor := BlendColors(ringColor, bg, DotAgeKeep(i + 1, DOT_COUNT));
     DrawDotHalo(ACanvas, d, x, y, bg);
     DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
   end;

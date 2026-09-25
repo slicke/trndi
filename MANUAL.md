@@ -127,7 +127,9 @@ Those small dots you see across the screen show your recent readings over time:
 
 Every new reading steps the whole row one slot to the left. The dots slide
 there instead of jumping, with the new reading arriving from the right, so you
-can see the time pass.
+can see the time pass. Older dots also fade a little toward the background,
+step by step, so the newest reading stands out and the row reads as a
+direction at a glance (see [Hacks](guides/Hacks.md) to turn the fade off).
 
 **How to use them**: Hover over a dot to see its value in a tooltip, or click it
 to swap the dot for the actual number. (Both are disabled in privacy mode.)
