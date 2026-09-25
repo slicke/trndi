@@ -806,6 +806,7 @@ private
   FLastArrowAngle: single;  // Last computed trend-arrow angle (shared with the float window)
   FDiffRateMgdl: double;    // The change lDiff shows, as mg/dL per interval (drives its tint)
   FDiffRateKnown: boolean;  // False while lDiff shows the '--' placeholder or is cleared
+  FDiffText: string;        // The delta with its sign, for surfaces without a chevron (the float)
   FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint

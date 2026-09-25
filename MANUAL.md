@@ -456,7 +456,7 @@ Right-click → Position, then choose:
 - **Main window**: Full featured with all options
 - **Floating window**: Smaller, simplified view you can position anywhere
 - Both show the same data from your selected account
-- Right-click the floating window to set its size, visibility (transparency), font color and an optional clock — all choices are remembered between sessions, along with its position
+- Right-click the floating window to set its size, visibility (transparency), font color, an optional clock and whether the change since the previous reading is shown in the bottom-right corner — all choices are remembered between sessions, along with its position
 - Click the floating window (without dragging it) to bring the main window back to the front — handy when it has ended up behind other apps
 
 ### The app disappeared from my screen!

@@ -229,6 +229,7 @@ begin
   if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * DELTA_MAX)) then
   begin
     lDiff.Caption := '--';
+    FDiffText := lDiff.Caption;
     FDiffRateKnown := false;
   end
   else
@@ -257,6 +258,7 @@ begin
     // Rate first, caption after: with the chevron beside it the text drops
     // its sign, and DeltaChevronShown reads the rate state.
     lDiff.Caption := FormatSigned(deltaVal, not DeltaChevronShown);
+    FDiffText := FormatSigned(deltaVal);
   end;
   lArrow.Caption := reading.trend.Img;
   UpdateTrendArrow(reading, havePrev, gapMin);
@@ -419,6 +421,7 @@ begin
   // the fresh path, so without this it would sit on the boot caption for the
   // whole outage.
   lDiff.Caption := '';
+  FDiffText := '';
   FDiffRateKnown := false;
   FAgoBadge.Clear;
   // Same reasoning for time-in-range, which CalcRangeTime only recomputes on
@@ -1101,6 +1104,13 @@ begin
     // derived from the stale background and therefore always legible on it.
     if fFloat.miFontMain.Checked or FTrendDataStale then
       fFloat.SetTextColor(lVal.Font.Color);
+    // The delta with its sign: the float has no chevron to carry the
+    // direction. Its tint follows the main window's only while the float's
+    // text does; a fixed black/white choice keeps the delta in that colour.
+    if fFloat.miFontMain.Checked or FTrendDataStale then
+      fFloat.SetDelta(FDiffText, DiffLabelColor)
+    else
+      fFloat.SetDelta(FDiffText, clNone);
     fFloat.pnMultiUser.Visible := userColorBar;
     if fFloat.pnMultiUser.Visible then
       fFloat.pnMultiUser.Color := pnMultiUser.Color;

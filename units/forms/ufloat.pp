@@ -71,6 +71,7 @@ type
 
 TfFloat = class(TForm)
   lTime: TLabel;
+  lDelta: TLabel;
   lArrow: TLabel;
   lRangeDown: TLabel;
   lRangeUp: TLabel;
@@ -83,6 +84,7 @@ TfFloat = class(TForm)
   miFontColor: TMenuItem;
   miMain: TMenuItem;
   miClock: TMenuItem;
+  miDelta: TMenuItem;
   miCustomSize: TMenuItem;
   Separator1: TMenuItem;
   miXL: TMenuItem;
@@ -113,6 +115,7 @@ TfFloat = class(TForm)
   procedure FormShow({%H-}Sender: TObject);
   procedure MenuItem1Click({%H-}Sender: TObject);
   procedure miClockClick({%H-}Sender: TObject);
+  procedure miDeltaClick({%H-}Sender: TObject);
   procedure miCustomSizeClick({%H-}Sender: TObject);
   procedure miCustomVisibleClick({%H-}Sender: TObject);
   procedure miFontBlackClick({%H-}Sender: TObject);
@@ -143,6 +146,7 @@ private
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
   procedure ApplyClock(AEnabled: boolean);
+  procedure ApplyDelta(AEnabled: boolean);
   procedure SyncSizeMenu;
   procedure SyncOpacityMenu(AOpacity: single);
   procedure ProgressBoxPaint({%H-}Sender: TObject);
@@ -159,6 +163,12 @@ public
       the high-contrast mode asks for.
       @param(ABottom Tone at the bottom edge.) }
   procedure SetBackdrop(ABottom: TColor);
+  {** Mirror the delta since the previous reading into the bottom-right
+      corner. Pushed from the main window on every sync.
+      @param(AText The signed delta text; empty hides the field.)
+      @param(AColor Its text colour, or clNone to keep the colour SetTextColor
+        last applied.) }
+  procedure SetDelta(const AText: string; AColor: TColor);
   {** Colour every piece of text on the float: the value, the trend glyph or
       vector arrow, the clock and the off-range markers. Both the fixed
       black/white menu choice and the main window's colour sync go through
@@ -497,8 +507,9 @@ begin
     end;
   end;
 
-  // Restore the clock
+  // Restore the clock and the delta
   ApplyClock(ReadIntSetting('ux.float.clock', 0) = 1);
+  ApplyDelta(ReadIntSetting('ux.float.delta', 1) = 1);
 end;
 
 procedure TfFloat.SyncSizeMenu;
@@ -547,6 +558,28 @@ begin
   SaveSetting('ux.float.clock', ord(miClock.Checked));
 end;
 
+procedure TfFloat.ApplyDelta(AEnabled: boolean);
+begin
+  miDelta.Checked := AEnabled;
+  lDelta.Visible := AEnabled and (lDelta.Caption <> '');
+end;
+
+procedure TfFloat.miDeltaClick(Sender: TObject);
+begin
+  ApplyDelta(not miDelta.Checked);
+  SaveSetting('ux.float.delta', ord(miDelta.Checked));
+end;
+
+procedure TfFloat.SetDelta(const AText: string; AColor: TColor);
+begin
+  lDelta.Caption := AText;
+  if AColor <> clNone then
+    lDelta.Font.Color := AColor;
+  lDelta.AdjustSize;
+  // FormResize places it; the main window runs that right after this sync
+  ApplyDelta(miDelta.Checked);
+end;
+
 procedure TfFloat.miCustomSizeClick(Sender: TObject);
 begin
   ShowMessage(RS_CUSTOM_SIZE);
@@ -588,6 +621,7 @@ begin
   lVal.Font.Color := AColor;
   lArrow.Font.Color := AColor;
   lTime.Font.Color := AColor;
+  lDelta.Font.Color := AColor;
   lRangeDown.Font.Color := AColor;
   lRangeUp.Font.Color := AColor;
   if Assigned(FTrendArrow) then
@@ -841,6 +875,13 @@ begin
   lRangeUp.Left := edge;
   lRangeUp.Top := corner;
 
+  // The delta sits in the bottom-right corner, under the arrow, in the
+  // clock's size, above the multi-user bar when that shows
+  lDelta.Font.Height := lTime.Font.Height;
+  lDelta.AdjustSize;
+  lDelta.Left := ClientWidth - lDelta.Width - edge;
+  lDelta.Top := textH - lDelta.Height - corner;
+
   // Keep the rotating arrow overlay tracking lArrow's bounds. ScaleLbl re-shows
   // lArrow, so re-hide the glyph while the vector arrow is active.
   if Assigned(FTrendArrow) then
@@ -870,6 +911,12 @@ begin
     FTrendArrow.OnMouseDown := @FormMouseDown;
     FTrendArrow.OnMouseMove := @FormMouseMove;
     FTrendArrow.OnMouseUp := @FormMouseUp;
+    // The overlay is created after the corner texts and would otherwise
+    // paint over them where its bounds reach the corners
+    lTime.BringToFront;
+    lDelta.BringToFront;
+    lRangeDown.BringToFront;
+    lRangeUp.BringToFront;
   end;
 
   FTrendArrow.ArrowColor := AColor;

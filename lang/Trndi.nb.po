@@ -1301,6 +1301,10 @@ msgstr "Stor"
 msgid "Show clock"
 msgstr "Vis klokke"
 
+#: tffloat.midelta.caption
+msgid "Show delta"
+msgstr "Vis delta"
+
 #: tffloat.micustomsize.caption
 msgctxt "tffloat.micustomsize.caption"
 msgid "Custom"

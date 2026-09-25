@@ -1287,6 +1287,10 @@ msgstr ""
 msgid "Show clock"
 msgstr ""
 
+#: tffloat.midelta.caption
+msgid "Show delta"
+msgstr ""
+
 #: tffloat.micustomsize.caption
 msgctxt "tffloat.micustomsize.caption"
 msgid "Custom"
