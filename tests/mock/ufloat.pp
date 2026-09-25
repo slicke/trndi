@@ -42,7 +42,9 @@ unit ufloat;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics, Menus;
+  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics, Menus,
+  // After StdCtrls like the real unit: the main window writes lVal.TabularDigits
+  utabularlabel;
 
 // Minimal mock of the TfFloat form used in the app so tests can run headless.
 // Only expose fields and methods that other units/tests reference.
@@ -67,6 +69,9 @@ type
     procedure Hide; virtual;
     procedure SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor); virtual;
     procedure SetNextProgress(AShow: boolean; AFrac: double; AFill: TColor); virtual;
+    procedure SetBackdrop(ABottom: TColor); virtual;
+    procedure SetTextColor(AColor: TColor); virtual;
+    procedure SetDelta(const AText: string; AColor: TColor); virtual;
     class function Instance: TfFloat; static;
   end;
 
@@ -101,6 +106,21 @@ begin
 end;
 
 procedure TfFloat.SetNextProgress(AShow: boolean; AFrac: double; AFill: TColor);
+begin
+  // no-op for headless tests
+end;
+
+procedure TfFloat.SetBackdrop(ABottom: TColor);
+begin
+  // no-op for headless tests
+end;
+
+procedure TfFloat.SetTextColor(AColor: TColor);
+begin
+  // no-op for headless tests
+end;
+
+procedure TfFloat.SetDelta(const AText: string; AColor: TColor);
 begin
   // no-op for headless tests
 end;
