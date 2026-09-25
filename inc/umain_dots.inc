@@ -767,6 +767,7 @@ var
   valText, arrowText, agoText, diffText, tirText: string;
   w, h, i, d, dd, ageOff, x, y, tw, th, ringWidth, r, cols, gs: integer;
   valTop, valTh, chev, gap, padX, padY, pillH, cy, ccx: integer;
+  diffTrend: BGTrend;
   linePts, curvePts: TPointArray;
   lineCols, curveCols: TColorArray;
   capsule: array[0..0] of TSmoothStroke;
@@ -845,7 +846,7 @@ begin
     agoText := '10 min';
   diffText := lDiff.Caption;
   if (diffText = '') or (diffText = 'lDiff') then
-    diffText := '+0.0';
+    diffText := '0.0';
   diffText := SwapSep(diffText);
   tirText := FTirBadge.Caption;
 
@@ -896,7 +897,7 @@ begin
 
   // Delta: the pill under the reading's baseline, honoring the saved lDiff
   // alignment -- the same capsule, tint, padding and chevron PaintDeltaPill
-  // draws live (the chevron from the delta's sign; the preview has no rate).
+  // draws live.
   SetPreviewFont('', Max(10, h div 11), []);
   tw := ACanvas.TextWidth(diffText);
   th := ACanvas.TextHeight(diffText);
@@ -921,8 +922,14 @@ begin
   capsule[0].Y2 := cy;
   capsule[0].Color := BlendColors(valColor, bg, DELTA_PILL_TINT);
   DrawSmoothStrokes(ACanvas, capsule, pillH);
+  // Direction from the live rate, as PaintDeltaPill does (the text has no
+  // sign to read it from any more); flat when no rate is known.
   ccx := x - gap - chev div 2;
-  if Pos('+', diffText) = 1 then
+  if FDiffRateKnown then
+    diffTrend := CalculateTrendFromDelta(FDiffRateMgdl)
+  else
+    diffTrend := TdFlat;
+  if diffTrend in [TdDoubleUp, TdSingleUp, TdFortyFiveUp] then
   begin
     pts[0] := MkPoint(ccx, cy - chev div 2);
     pts[1] := MkPoint(ccx - chev div 2, cy + chev div 2);
@@ -930,7 +937,7 @@ begin
     DrawSmoothConvexPolygon(ACanvas, pts, subColor);
   end
   else
-  if Pos('-', diffText) = 1 then
+  if diffTrend in [TdFortyFiveDown, TdSingleDown, TdDoubleDown] then
   begin
     pts[0] := MkPoint(ccx - chev div 2, cy - chev div 2);
     pts[1] := MkPoint(ccx + chev div 2, cy - chev div 2);
