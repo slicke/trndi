@@ -477,6 +477,10 @@ jobs:
           sudo installer -pkg "$PKG" -target /
           hdiutil detach "$MNT"
 
+          # gmake (the Makefile is GNU make syntax; macOS ships 3.81 as `make`,
+          # see CLAUDE.md) and create-dmg for dist/macos.sh, from Homebrew.
+          brew install make create-dmg
+
           # Lazarus: clear the quarantine flag first (the README's xattr -cr),
           # unzip, and put the folder holding lazbuild at /Applications/lazarus,
           # where the Makefile looks when lazbuild is not on PATH.
@@ -489,9 +493,34 @@ jobs:
           sudo mv "$(dirname "$LB")" /Applications/lazarus
           sudo xattr -cr /Applications/lazarus
 
-          # gmake (the Makefile is GNU make syntax; macOS ships 3.81 as `make`,
-          # see CLAUDE.md) and create-dmg for dist/macos.sh, from Homebrew.
-          brew install make create-dmg
+          # The zip ships a lazarus.cfg pointing at a portable config dir
+          # (--pcp=config --lazarusdir=.) but no environmentoptions.xml in it:
+          # the IDE writes that on its first start. A bare lazbuild therefore
+          # fell back to the compiled-in default and stopped with 'Invalid
+          # Lazarus directory "/Developer/lazarus/"'. Write both with absolute
+          # paths, so every lazbuild call -- the direct one below and the
+          # Makefile's -- finds the IDE directory, the compiler and the FPC
+          # sources the zip bundles.
+          GMAKE="$(brew --prefix)/bin/gmake"
+          sudo mkdir -p /Applications/lazarus/config
+          printf -- '--pcp=/Applications/lazarus/config\n--lazarusdir=/Applications/lazarus\n' \
+            | sudo tee /Applications/lazarus/lazarus.cfg >/dev/null
+          sudo tee /Applications/lazarus/config/environmentoptions.xml >/dev/null <<'XML'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <CONFIG>
+            <EnvironmentOptions>
+              <Version Value="112" Lazarus="4.8"/>
+              <LazarusDirectory Value="/Applications/lazarus/"/>
+              <CompilerFilename Value="/usr/local/bin/fpc"/>
+              <FPCSourceDirectory Value="$(LazarusDir)/fpc/$(FPCVer)/sources/"/>
+              <MakeFilename Value="__GMAKE__"/>
+              <TestBuildDirectory Value="$ENV(TMPDIR)"/>
+            </EnvironmentOptions>
+          </CONFIG>
+          XML
+          sudo sed -i '' -e 's|__GMAKE__|'"$GMAKE"'|' -e 's/^          //' \
+            /Applications/lazarus/config/environmentoptions.xml
+          sudo chown -R "$(id -u):$(id -g)" /Applications/lazarus/config
 
           # For the build step below: lazbuild, fpc, gmake and create-dmg.
           echo "/Applications/lazarus" >> "$GITHUB_PATH"
