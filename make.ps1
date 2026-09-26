@@ -184,7 +184,14 @@ switch ($firstArg) {
         # Trndi is a GUI app, so & would return at once; Start-Process -Wait
         # blocks until it quits and gives us its exit code.
         $startArgs = @{ FilePath = $exe; WorkingDirectory = $outDir; Wait = $true; PassThru = $true }
-        if ($extraArgs.Count -gt 0) { $startArgs.ArgumentList = $extraArgs }
+        # Start-Process joins ArgumentList with bare spaces, so quote any
+        # argument that is empty or holds whitespace to keep it whole. FPC's
+        # ParamStr treats backslashes literally, so no escaping beyond that.
+        if ($extraArgs.Count -gt 0) {
+            $startArgs.ArgumentList = @($extraArgs | ForEach-Object {
+                if ($_ -eq '' -or $_ -match '\s') { '"' + $_ + '"' } else { $_ }
+            })
+        }
         $proc = Start-Process @startArgs
         exit $proc.ExitCode
     }
