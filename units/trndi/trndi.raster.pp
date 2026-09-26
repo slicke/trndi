@@ -915,6 +915,7 @@ var
   intf: TLazIntfImage;
   img: TAlphaImage;
   n, i, j, x, y, pad, ax, ay, aw, ah, rw, rh, minX, minY, maxX, maxY: integer;
+  validEdges: integer;
   scale, halfW, sx, sy, ex, ey, len, d, dEdge, orient: double;
   covFill, covLine, aOut, invLine: double;
   vx, vy, nx, ny: array of double;
@@ -973,6 +974,7 @@ begin
     orient := -1.0
   else
     orient := 1.0;
+  validEdges := 0;
   for i := 0 to n - 1 do
   begin
     j := (i + 1) mod n;
@@ -988,8 +990,14 @@ begin
       // Left normal of the edge, flipped by the winding so it points inward.
       nx[i] := -ey / len * orient;
       ny[i] := ex / len * orient;
+      Inc(validEdges);
     end;
   end;
+  // Zero-length edges are skipped when sampling, so a polygon with fewer than
+  // three real edges has no interior to measure: d would stay at Infinity and
+  // the whole padded box would come out as solid fill.
+  if validEdges < 3 then
+    Exit;
 
   fc := ColorToRGB(AFillColor);
   fr := Red(fc); fg := Green(fc); fb := Blue(fc);
