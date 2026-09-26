@@ -454,12 +454,15 @@ Defaults by platform:
 - Linux: forces the `Qt6` build modes by default (e.g. `Qt6 (Release)`)
 - Windows / macOS: prefers native `Extensions (Release)` / `No Extensions (Release)`(respectively) style builds for release targets
 
-If `lazbuild` is not on your `PATH`, point `LAZBUILD` at it. This is the normal
-case on macOS with [fpcupdeluxe](https://github.com/LongDirtyAnimAlf/fpcupdeluxe),
-which keeps its whole toolchain inside its install directory and never touches
-`PATH`:
+If `lazbuild` is not on your `PATH`, the Makefile looks for it in the two
+places that commonly leave it off `PATH`: `/Applications/lazarus/lazbuild`
+(the macOS installer) and `~/fpcupdeluxe/lazarus/lazbuild`
+([fpcupdeluxe](https://github.com/LongDirtyAnimAlf/fpcupdeluxe) keeps its whole
+toolchain inside its install directory, on Linux as well as macOS). An
+fpcupdeluxe install in another directory, or any other location, is pointed
+out with `LAZBUILD`:
 ```bash
-LAZBUILD=~/fpcupdeluxe/lazarus/lazbuild gmake
+LAZBUILD=/opt/fpcupdeluxe/lazarus/lazbuild make
 ```
 `WIDGETSET` does not need to be set — it already defaults to `cocoa` on macOS
 and `qt6` on Linux. On Windows the Makefile finds `C:/lazarus/lazbuild.exe` by
