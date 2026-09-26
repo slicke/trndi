@@ -58,13 +58,19 @@ This is your current blood sugar reading, shown in your preferred unit (mmol/L o
 - 🔴 **Red**: High - above your target
 - 🟡 **Orange/Yellow**: Low - below your target
 
+The digits are typeset in equal-width cells, so the number does not shift
+around as it ticks from `9.9` to `10.0` (see [Hacks](guides/Hacks.md) if you
+prefer the font's own spacing).
+
 ### The Change Line
-The small number along the bottom (e.g. `+0.3` or `-11`) is how much your
-reading moved over the last five minutes. It stays in the quiet sub-text
-colour while the change is gentle, and takes the high or low colour when you
-are rising or falling fast — the same speeds that give the trend arrow a
-straight up or down glyph. `--` means there was no usable previous reading
-to compare against.
+The small number in the pill just under the reading (e.g. `0.3` or `11`)
+is how much your reading moved over the last five minutes. The little arrow
+beside it points the way it went — ▲ rising, ▼ falling, a dash when steady —
+so the number itself carries no sign. The
+text stays in the quiet sub-text colour while the change is gentle, and takes
+the high or low colour when you are rising or falling fast — the same speeds
+that give the trend arrow a straight up or down glyph. `--` means there was
+no usable previous reading to compare against.
 
 ### "Ago" Time
 The badge in the top-left corner shows how old the reading is: `3 min` (or
@@ -127,14 +133,19 @@ Those small dots you see across the screen show your recent readings over time:
 
 Every new reading steps the whole row one slot to the left. The dots slide
 there instead of jumping, with the new reading arriving from the right, so you
-can see the time pass.
+can see the time pass. Older dots also fade toward the background and get a
+little smaller, step by step, so the newest reading stands out and the row
+reads as a direction at a glance (see [Hacks](guides/Hacks.md) to turn the
+fade off).
 
 **How to use them**: Hover over a dot to see its value in a tooltip, or click it
 to swap the dot for the actual number. (Both are disabled in privacy mode.)
 
 **Connecting the dots**: If you prefer a continuous trace, *Settings → Trend graph →
-Draw a line connecting the trend dots* joins the dots with a subtle line drawn
-underneath them. The line wears the dots' own colors, slightly softened: each
+Draw a line connecting the trend dots* joins the dots with a subtle curve drawn
+underneath them. The curve bends smoothly through every dot but never
+overshoots one, so it doesn't show a dip or a peak that was never measured. It
+wears the dots' own colors, slightly softened: each
 dot's color extends halfway toward its neighbors, so the trace switches color
 midway between two dots of different ranges. The dropdown next to the option
 picks the stroke weight — thin, normal or thick, always relative to the dot
@@ -144,8 +155,10 @@ a missing reading has no range — and never extends into the predicted ✕ mark
 a forecast is not a measurement.
 
 **Missing readings**: If the sensor skipped a reading between two known ones,
-that slot shows a faint hollow ring at the height the trace would pass through —
-so a sensor gap is visible instead of the dots just sitting further apart. This
+that slot shows a small dashed ring at the height the trace would pass through —
+so a sensor gap is visible instead of the dots just sitting further apart. The
+ring does not fade or shrink with age like the dots do, so an old gap is as
+easy to spot as a recent one. This
 includes the oldest slots when an earlier reading exists beyond the left edge of
 the window. Slots are only left truly empty when nothing proves a reading is
 missing: before your history starts, or on the right while data is outdated
@@ -270,6 +283,21 @@ narrow window the `avg` word and then the mean give way so the percentage
 always fits.
 - **Good**: Above 70% in range
 - **Needs work**: Below 70% in range
+
+### Summary Report
+*Views → Summary report...* in the right-click menu sums up the readings Trndi
+currently holds. It opens with the period it covers, how many readings arrived
+and how much of the period they actually cover, then a small chart of the shape
+of the period, how the readings split across your bands, and the plain numbers:
+average, median, spread, variability (CV), the Glucose Management Indicator,
+your lowest and highest reading with the time each arrived, how many excursions
+past your high and low thresholds there were, and the longest gap in the data.
+
+**Save...** writes the same summary as a plain text file you can keep or send on.
+
+These are descriptive statistics over whatever Trndi has loaded — nothing more.
+They are not a medical assessment, the indicator is not a laboratory A1c, and
+none of it should be acted on without your official device and your care team.
 
 ---
 
@@ -428,7 +456,7 @@ Right-click → Position, then choose:
 - **Main window**: Full featured with all options
 - **Floating window**: Smaller, simplified view you can position anywhere
 - Both show the same data from your selected account
-- Right-click the floating window to set its size, visibility (transparency), font color and an optional clock — all choices are remembered between sessions, along with its position
+- Right-click the floating window to set its size, visibility (transparency), font color, an optional clock and whether the change since the previous reading is shown in the bottom-right corner — all choices are remembered between sessions, along with its position
 - Click the floating window (without dragging it) to bring the main window back to the front — handy when it has ended up behind other apps
 
 ### The app disappeared from my screen!
@@ -474,7 +502,7 @@ Look for:
 
 ## Need More Help?
 
-- 💬 Join the [Discord community](https://discord.gg/QXACfpcW)
+- 💬 Join the [Discord community](https://discord.gg/zYHHDXPHsd)
 - 📖 Check the [full documentation](README.md)
 - 🐛 Report issues on [GitHub](https://github.com/slicke/trndi/issues)
 - 🌍 Help translate Trndi into your language

@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: ApplySettingsInstantly broadcasts settingsCallback to
+ *   extensions once the new settings are in effect.
  *)
 (* MODIFICATION NOTICE (2026-09-18): ApplySettingsInstantly re-lays the
    connection badge out through RefreshConnectionBadge, which keeps the
@@ -103,6 +107,8 @@ begin
   fontName := native.GetSetting('font.val', 'default');
   if fontName <> 'default' then
     lVal.Font.Name := fontName;
+  if lVal is TLabel then
+    lVal.TabularDigits := native.GetBoolSetting('ux.tabular_digits', true);
 
   fontName := native.GetSetting('font.arrow', 'default');
   if fontName <> 'default' then
@@ -148,6 +154,7 @@ begin
   TrendLineEnabled := native.GetBoolSetting('ux.dot_line', false);
   TrendLineWidthStep :=
     EnsureRange(native.GetIntSetting('ux.dot_line_width', 2), 1, 3);
+  TrendDotFade := native.GetBoolSetting('ux.dot_fade', true);
 
   // Gate on the *_on flags exactly like the startup load (umain_init.inc):
   // the save path always writes ux.tir_color/ux.tir_color_custom, so reading
@@ -312,6 +319,12 @@ begin
   RefreshUserBadge;
 
   Self.Invalidate;
+
+  {$ifdef TrndiExt}
+  // Everything above has been applied, so a listener reading settings or
+  // limits now sees the new values.
+  callFunc('settingsCallback', []);
+  {$endif}
 end;
 
 // Handle settings menu click
@@ -1154,7 +1167,9 @@ begin
   versionInfo := versionInfo + ' (macOS)';
   {$endif}
 
-  html := '<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +
+  // The hosted logo is 1024x1024 and TIpHtmlPanel draws images at their
+  // natural size unless both dimensions are given
+  html := '<img src="https://trndi.app/doc/img/trndi-logo.png" width="128" height="128">' + sHTMLLineBreak +
     '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
     '<i>Continuous Glucose Monitor data display</i>' + sHTMLLineBreak +
     'for desktop and embedded devices' + sHTMLLineBreak + sHTMLLineBreak +

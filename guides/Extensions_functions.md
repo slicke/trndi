@@ -5,6 +5,8 @@ Trndi supports ES2023, and provides these functions in addition to it:
 > [extensions/trndi.d.ts](extensions/trndi.d.ts) — use it for editor
 > autocompletion in plain JavaScript or to write extensions in TypeScript.
 > See [Extensions.md](Extensions.md#typescript-and-editor-type-checking).
+> Extensions may also be split into [ES modules](Extensions.md#es-modules):
+> `import Trndi, { data } from "trndi"` and `import { x } from "./lib/x.js"`.
 
 > **Permissions:** Each function belongs to a permission group. `data`, `ui`,
 > and `timers` are always granted — anything else (`net`, `exec`, `settings`)
@@ -80,6 +82,12 @@ Trndi supports ES2023, and provides these functions in addition to it:
    - [uxClick](#uxclick)
    - [clockView](#clockview)
    - [unloadCallback](#unloadcallback)
+   - [alertCallback](#alertcallback)
+   - [snoozeCallback](#snoozecallback)
+   - [connectionCallback](#connectioncallback)
+   - [deviceCallback](#devicecallback)
+   - [settingsCallback](#settingscallback)
+   - [wakeCallback](#wakecallback)
  - [User info](#user-info)
    - [getCurrentUser](#getcurrentuser)
    - [getCurrentNickname](#getcurrentnickname)
@@ -957,6 +965,12 @@ listener receives exactly the same arguments:
 | `"dot"` | [`dotClicked`](#dotclicked) |
 | `"uxclick"` | [`uxClick`](#uxclick) |
 | `"unload"` | [`unloadCallback`](#unloadcallback) |
+| `"alert"` | [`alertCallback`](#alertcallback) |
+| `"snooze"` | [`snoozeCallback`](#snoozecallback) |
+| `"connection"` | [`connectionCallback`](#connectioncallback) |
+| `"device"` | [`deviceCallback`](#devicecallback) |
+| `"settings"` | [`settingsCallback`](#settingscallback) |
+| `"wake"` | [`wakeCallback`](#wakecallback) |
 
 ```javascript
 Trndi.on("reading", () => {
@@ -1064,6 +1078,85 @@ function unloadCallback(){
   Trndi.setSetting("extval.mycounter", String(counter)); // needs `settings` permission
 }
 ```
+
+### alertCallback
+#### Called when Trndi raises an alert
+```alertCallback(kind, mgdl, mmol)```
+
+Fires at the moment an alert fires — the same moment Trndi shows its own
+notice — so it respects the alert settings (thresholds, minimum duration,
+hysteresis, re-alert interval) and is silent while alerts are snoozed. One
+call per kind when several fire at once.
+
+**Parameters:**
+- `kind` (string): `"high"`, `"low"`, `"urgent-low"`, `"missing"`,
+  `"sensor-fault"`, `"rapid-fall"` or `"rapid-rise"`
+- `mgdl` (number), `mmol` (number): the reading that triggered the alert
+  (for `"missing"`, the last reading Trndi has)
+
+```javascript
+Trndi.on("alert", (kind, mgdl, mmol) => {
+  if (kind === "urgent-low") Trndi.sayText(`Low: ${mmol.toFixed(1)}`);
+});
+```
+
+### snoozeCallback
+#### Called when alerts are snoozed or resumed
+```snoozeCallback(active, untilMs)```
+
+**Parameters:**
+- `active` (boolean): `true` while alerts are paused
+- `untilMs` (number): Unix epoch in milliseconds when the pause ends, `0`
+  when not snoozed. The urgent-low alert may come back earlier (it has its
+  own cap).
+
+### connectionCallback
+#### Called when the backend connection status changes
+```connectionCallback(status, detail)```
+
+Fires on a change only, not on every fetch.
+
+**Parameters:**
+- `status` (string): `"ok"`, `"retrying"`, `"rate-limited"`, `"auth-expired"`
+  or `"error"`
+- `detail` (string): the last error text from the backend, `""` when `ok`
+
+```javascript
+let wasDown = false;
+Trndi.on("connection", (status, detail) => {
+  if (status !== "ok") wasDown = true;
+  else if (wasDown) { wasDown = false; console.push("back online"); }
+});
+```
+
+### deviceCallback
+#### Called when a pump or sensor notice is raised
+```deviceCallback(kind, value)```
+
+Mirrors Trndi's own reservoir, sensor-expiry and pump-battery notices, which
+fire once per step (for example at 30/25/20/15/10/5 units left) and only for
+backends that report the figure (Tandem, CareLink). Silent when the notice is
+disabled in settings.
+
+**Parameters:**
+- `kind` (string): `"reservoir"` (units left), `"sensor-expiry"` (hours left)
+  or `"pump-battery"` (percent left)
+- `value` (number): the remaining amount in the unit above
+
+### settingsCallback
+#### Called after settings were applied
+```settingsCallback()```
+
+Fires when the settings dialog is closed with a save (or settings change
+through other means) once the new values are in effect, so `getLimits()`,
+`getUnit()` and `getSetting()` already return them.
+
+### wakeCallback
+#### Called when the computer resumes from sleep
+```wakeCallback()```
+
+Fires when the OS reports a resume; Trndi forces a refresh right after, so a
+`reading` event usually follows. Not every platform reports resume.
 
 ## User info
 ### getCurrentUser

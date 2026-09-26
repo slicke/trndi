@@ -78,6 +78,11 @@
  *   instead of lTir's never-assigned Color, so FLastTirColor became
  *   FLastTirHint; added FTitleTintedFromBanner so setColorMode can take back a
  *   title-bar tint it lent from the off-range banner.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Declared the extension broadcasts for alerts, snooze,
+ *   connection status and device notices, with the fields that keep the
+ *   last state sent.
  *)
 
 unit umain;
@@ -97,7 +102,10 @@ Graphics, Dialogs, StdCtrls, ExtCtrls, LCLProc,
 trndi.types,
 Math, DateUtils, FileUtil, LclIntf, TypInfo, LResources,
 slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collections, trndi.funcs, trndi.funcs.core, trndi.log, trndi.raster, utrendarrow, upredictionstrip, ustatbadge,
-Trndi.native.base, trndi.shared, trndi.theme, buildinfo, fpjson, jsonparser,
+// After StdCtrls on purpose: utabularlabel's TLabel interposer must win the
+// name, so every TLabel on the form (lVal above all) can typeset tabular digits.
+utabularlabel,
+Trndi.native.base, trndi.shared, trndi.theme, trndi.report, buildinfo, fpjson, jsonparser,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, trndi.ext.perm,
@@ -149,6 +157,11 @@ IntfGraphics, FPImage, GraphType;
 type
 TFloatIntDictionary = specialize TDictionary<single, integer>;
   // Specialized TDictionary
+  {** Wording and colour for each band of the summary report, built once in
+      ReportBandLabels and shared by the on-screen and the saveable form so the
+      two can never describe the same band differently. }
+TReportBandLabels = array[TTrndiReportBand] of string;
+TReportBandColors = array[TTrndiReportBand] of TColor;
 TfBG = class;
 TConnectivityCheckThread = class(TThread)
 private
@@ -274,6 +287,10 @@ end;
   // "miss" outside the dots leaves every label/form handler (window drag on
   // lVal, the explain-clicks, the popup menu) untouched.
 TSurfaceHitTest = function(const P: TPoint): boolean of object;
+  // Dynamic point/colour lists for the trend trace helpers (SmoothTrace):
+  // an open array cannot be returned, so the curve comes back in these.
+TPointArray = array of TPoint;
+TColorArray = array of TColor;
 TTrendSurface = class(TPaintBox)
 private
   FOnHitTest: TSurfaceHitTest;
@@ -435,6 +452,8 @@ TfBG = class(TForm)
   miGuidelines: TMenuItem;
   miBasalRate: TMenuItem;
   miReadingsSince: TMenuItem;
+  miReport: TMenuItem;
+  miReportSplit: TMenuItem;
   miExtLog: TMenuItem;
   miSep1: TMenuItem;
   miDNS: TMenuItem;
@@ -559,6 +578,16 @@ TfBG = class(TForm)
   procedure miGuidelinesClick({%H-}Sender: TObject);
   procedure miPredictClick({%H-}Sender: TObject);
   procedure miReadingsSinceClick({%H-}Sender: TObject);
+  procedure miReportClick({%H-}Sender: TObject);
+  {** Summarise the readings currently loaded. @code(valid) is false when
+      there are none. }
+  function BuildGlucoseReport: TTrndiReportStats;
+  {** The report as the dialog shows it. }
+  function ReportAsHTML(const st: TTrndiReportStats): string;
+  {** The report as it is written to a file: fixed-width, no markup. }
+  function ReportAsText(const st: TTrndiReportStats): string;
+  {** Ask for a path and write @code(body) there, reporting either outcome. }
+  procedure SaveGlucoseReport(const body: string);
   procedure pmSettingsClose({%H-}Sender: TObject);
   procedure pnWarningClick({%H-}Sender: TObject);
   procedure pnWarningPaint({%H-}Sender: TObject);
@@ -731,6 +760,7 @@ private
                               // the first network attempt doesn't compete
                               // with the form's first WM_PAINT.
   FUpdateCheckScheduled: boolean;
+  FNoMultiMode: boolean;      // --no-multi on the command line: skip the account picker, run single-user on the default settings
   FKioskMode: boolean;        // --kiosk on the command line: start fullscreen,
                               // keep the system awake, skip the update popup
   FKioskApplied: boolean;     // Fullscreen/keep-awake done (FormShow can rerun)
@@ -776,6 +806,7 @@ private
   FLastArrowAngle: single;  // Last computed trend-arrow angle (shared with the float window)
   FDiffRateMgdl: double;    // The change lDiff shows, as mg/dL per interval (drives its tint)
   FDiffRateKnown: boolean;  // False while lDiff shows the '--' placeholder or is cleared
+  FDiffText: string;        // The delta with its sign, for surfaces without a chevron (the float)
   FWarnSeverity: TWarnSeverity; // Current warning level — drives layout in fixWarningPanel
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
@@ -817,6 +848,10 @@ private
     // Uniform history-dot diameter of the last layout pass; FormPaint anchors
     // the threshold lines against it.
   FTrendDotDiameter: integer;
+    // The range bands FormPaint composited in its last pass (empty when it
+    // drew none), in client rows. TrendBackdropColorAt reads them so a dot's
+    // knockout halo takes the exact tone under the dot, band tint included.
+  FPaintedBands: array of TRangeBand;
     // Reading-arrival slide (see StartTrendSlide). FTrendAnchor is the slot
     // anchor of the last placement (0 before the first); FTrendSlideBy is how
     // many slots the anchor advanced in the placement UpdateTrendDots is about
@@ -845,6 +880,8 @@ private
 
   Chroma: TRazerChromaBase;
   FExtLastLevel: string; // Last level name broadcast to extensions ('' = none yet)
+  FExtLastConnection: string; // Last connection status id broadcast to extensions ('' = none yet)
+  FExtLastSnooze: string; // Last snooze state broadcast to extensions (active|until key)
   FAlertEngine: TAlertEngine;
   FReservoirStep: integer; // Lowest reservoir step already notified (0 = none); persisted in alerts.reservoir.step
   FSensorExpiryStep: integer; // Lowest sensor-expiry step already notified (0 = none); persisted in alerts.sensor.step
@@ -991,6 +1028,22 @@ private
       visible dot, so the surface stays mouse-transparent elsewhere. }
   function TrendSurfaceHit(const P: TPoint): boolean;
   procedure TrendSurfacePaint({%H-}Sender: TObject);
+  {** The color the window shows at client row AY before the trend is drawn:
+      the form color with FormPaint's range bands composited over it. The dot
+      halos are drawn in this so they knock out the digits and arrow behind a
+      dot without leaving a visible ring on the band tint. }
+  function TrendBackdropColorAt(AY: integer): TColor;
+  {** The window backdrop's own colour at client row AY, before the range
+      bands: the form colour with the vertical gradient applied (flat in
+      high-contrast mode and on the shutdown screen). AQuantized snaps the
+      row to BACKDROP_GRADIENT_STEPS so repeated samples share colours. }
+  function BackdropColorAt(AY: integer; const AQuantized: boolean = false): TColor;
+  {** Fill ARect of ACanvas with the slice of the window backdrop that lies
+      under it. AClientTop is the canvas owner's Top in form-client
+      coordinates (0 for the form itself), so a child control painting its
+      own background lands on the same gradient as the form around it. }
+  procedure PaintBackdrop(ACanvas: TCanvas; const ARect: TRect;
+    AClientTop: integer);
   procedure TrendSurfaceMouseDown({%H-}Sender: TObject; {%H-}Button: TMouseButton;
     {%H-}Shift: TShiftState; X, Y: integer);
   procedure TrendSurfaceMouseUp({%H-}Sender: TObject; Button: TMouseButton;
@@ -1100,6 +1153,19 @@ private
   {** Broadcast levelCallback(level, previous) to extensions after a reading
       update. No-op in No Ext builds. }
   procedure NotifyExtensionsLevel(const Fresh: boolean);
+  {** Broadcast alertCallback(kind, mgdl, mmol) to extensions, once per kind
+      in @code(Kinds), beside the web publish of the same alerts. }
+  procedure NotifyExtensionsAlert(const Kinds: TAlertKindSet; const Reading: BGReading);
+  {** Broadcast snoozeCallback(active, untilMs) to extensions when the
+      alert-snooze state changes. }
+  procedure NotifyExtensionsSnooze;
+  {** Broadcast connectionCallback(status, detail) to extensions when the
+      backend connection status changes. @code(StatusText) is the badge text
+      (one of the RS_CONN_* strings), mapped to a stable id. }
+  procedure NotifyExtensionsConnection(const StatusText: string);
+  {** Broadcast deviceCallback(kind, value) to extensions when a pump or
+      sensor notice (reservoir, sensor expiry, pump battery) is raised. }
+  procedure NotifyExtensionsDevice(const Kind: string; const Value: double);
   procedure UpdateOffRangePanel(const Value: double);
   procedure DisplayLowRange;
   procedure DisplayHighRange;
@@ -1212,6 +1278,19 @@ private
       "ago" badge top-left, clear of the progress bar. Re-lays the TIR badge
       so it picks up the refitted font. }
   procedure LayoutAgoBadge;
+  {** Place the delta label (lDiff) as a pill right under the reading's
+      baseline instead of along the bottom edge, leaving room for the
+      direction chevron PaintDeltaPill draws beside the text. Called from
+      ResizeUIElements after lVal has been fitted. }
+  procedure LayoutDeltaPill;
+  {** Paint the delta pill -- a capsule tinted with the reading's ink -- and
+      its direction chevron behind lDiff. Runs at the end of FormPaint; a
+      no-op with the delta hidden, empty, or in high-contrast mode. }
+  procedure PaintDeltaPill(ACanvas: TCanvas);
+  {** Whether the delta carries a direction chevron: only while a rate is
+      known and the data is current. Shared by layout and paint so the text
+      shift and the glyph agree. }
+  function DeltaChevronShown: boolean;
   {** Put a value and caption on the "ago" badge ("3 min", or "14:35" over
       "last reading") and re-layout, since its width just changed. }
   procedure SetAgoText(const AValue, ACaption: string);
@@ -1507,6 +1586,7 @@ ShowCarbOverlay: boolean = false; // Draw carbohydrate entries on the history gr
 DotColorMode: TDotColorMode = DOT_COLOR_MODE_DEFAULT; // ux.dot_color_mode — cached here because DotPaint runs per dot, per paint
 TrendLineEnabled: boolean = false; // ux.dot_line — cached like DotColorMode: the trend surface reads it on every paint
 TrendLineWidthStep: integer = 2; // ux.dot_line_width — 1 thin / 2 normal / 3 thick; cached with TrendLineEnabled
+TrendDotFade: boolean = true; // ux.dot_fade — older dots fade toward the backdrop; cached with TrendLineEnabled
 RotatingArrow: boolean = false; // Rotate the trend arrow continuously by the actual rate of change instead of the 8-direction glyph
 // Cache for dynamic prediction time updates
 PredictionCache: BGResults; // Cached prediction readings
@@ -1637,16 +1717,48 @@ DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
 // slot so further-out forecasts read as less certain at a glance.
 PREDICTION_ALPHA_MIN = 0.35; // × opacity at zero confidence
 PREDICTION_HORIZON_FADE = 0.15; // opacity step per horizon slot further out
-// Interior trend gaps draw a thin hollow ring blended this far toward the
+// Interior trend gaps draw a dashed ring blended this far toward the
 // window's text tone — enough to say "a reading is missing here" without
-// competing with the real dots around it.
-GAP_DOT_BLEND = 0.4;
+// competing with the real dots around it. Half-way: at 0.4 the ring washed
+// out on the yellow high window once it no longer had the halo-less digit
+// behind it for contrast.
+GAP_DOT_BLEND = 0.5;
 // The optional connecting line wears the dots' own display colors, each dot
 // owning the half-segment on either side of it; this is how much of the dot
 // color survives the blend toward the window background. High enough that
 // the ranges stay recognizable in the trace, low enough that the line reads
 // as support for the dots rather than a second row of data.
 TREND_LINE_BLEND = 0.65;
+// Every history dot sits on a halo in the backdrop color, this fraction of the
+// dot's diameter wide (never thinner than the floor), so a dot crossing the
+// reading's digits or the arrow glyph keeps a clean edge instead of merging
+// into them, and neighbouring dots stay separable where they touch.
+DOT_HALO_FRACTION = 0.12;
+DOT_HALO_MIN_PX = 2;
+// Age fade (ux.dot_fade): history dots blend toward the backdrop and shrink
+// the older they are, linearly by slot, so the newest reading dominates and
+// the row reads as a direction at a glance. The oldest slot gives up this
+// much of its distance to the backdrop and this much of its diameter. Tone
+// alone was too quiet on the coloured windows (a green dot blended toward a
+// yellow high window is just a paler green), so the size carries the age too.
+DOT_AGE_FADE_MAX = 0.65;
+DOT_AGE_SHRINK_MAX = 0.15;
+// The delta pill: lDiff sits on a capsule tinted this far toward the reading's
+// ink, padded around the text by these fractions of the text height, with a
+// direction chevron of DELTA_CHEVRON_FRAC text heights beside it.
+// The window backdrop is the state colour at the top edge (so a coloured
+// title bar still matches) darkening toward the bottom by this much of the
+// way to black -- enough depth to lift the number and pill off the surface
+// (six percent was there but hardly seen), too little to read as a second
+// colour. Sampling for the dot halos and the pill is quantised to this many
+// steps so the shape cache sees a handful of backdrop tones rather than one
+// per pixel row.
+BACKDROP_GRADIENT_DARKEN = 0.10;
+BACKDROP_GRADIENT_STEPS = 16;
+DELTA_PILL_TINT = 0.10;
+DELTA_PILL_PAD_X = 0.55;
+DELTA_PILL_PAD_Y = 0.22;
+DELTA_CHEVRON_FRAC = 0.42;
 // Night dim keeps this much of the in-range color; the rest goes to black.
 // Text, dots and every other on-window color derive from the background at
 // paint time, so they mute along with it for free.
@@ -1700,6 +1812,7 @@ procedure ShowMessage(const title, str: string); forward;
 {$I ../../inc/umain_glucose.inc}
 {$I ../../inc/umain_menu.inc}
 {$I ../../inc/umain_paint.inc}
+{$I ../../inc/umain_report.inc}
 {$I ../../inc/umain_settings.inc}
 {$I ../../inc/umain_timers.inc}
 

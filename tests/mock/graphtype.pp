@@ -52,11 +52,20 @@ type
     Height: Cardinal;
     BitsPerPixel: Byte;
     procedure Init_BPP32_B8G8R8A8_BIO_TTB(AWidth, AHeight: Integer);
+    procedure Init_BPP32_R8G8B8A8_BIO_TTB(AWidth, AHeight: Integer);
   end;
 
 implementation
 
 procedure TRawImageDescription.Init_BPP32_B8G8R8A8_BIO_TTB(AWidth, AHeight: Integer);
+begin
+  Width := AWidth;
+  Height := AHeight;
+  BitsPerPixel := 32;
+end;
+
+// The layout trndi.raster picks on Darwin.
+procedure TRawImageDescription.Init_BPP32_R8G8B8A8_BIO_TTB(AWidth, AHeight: Integer);
 begin
   Width := AWidth;
   Height := AHeight;

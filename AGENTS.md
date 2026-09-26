@@ -10,6 +10,7 @@ This file applies to the Trndi repository root and its subdirectories.
 - When a task needs a build or test command, prefer the smallest relevant target such as `make`, `make debug`, `make test`, or `make test-noserver`.
 - Use `make noext` when you need a build path that avoids the QuickJS engine.
 - Check `make help` before inventing a new command or target.
+- When launching the built app for a manual check (screenshots, visual verification), start it with `--no-multi` (macOS: `open build/Trndi.app --args --no-multi`). With several accounts configured, Trndi otherwise opens the account picker at start-up and waits for an answer.
 
 ## Branching & Pull Requests
 - Always branch from `develop` and open PRs targeting `develop`, not `main`.

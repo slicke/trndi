@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-25: The delta label is laid out by LayoutDeltaPill under the
+ *   reading's baseline (with chevron room) instead of along the bottom edge.
+ *   ScaleLbl measures a label with TabularDigits on by its tabular width.
  * - 2026-08-27: UpdateTrendDots reads slot values from the TTrendSlot model
  *   instead of parsing them back out of the dots' Hint strings, and the
  *   resize pass clears the shared FDotsExpanded flag up front instead of
@@ -47,6 +50,9 @@
  *   wrapper semantics as every other fetch trigger.
  * - 2026-08-21: The WSL width tweak is guarded by LCLQt6 alone - isWSL is
  *   always false off Linux now that DetectWSL is in the base contract.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: OnSystemWake broadcasts wakeCallback to extensions.
  *)
 (* MODIFICATION NOTICE (2026-09-18): tAgoTimer clears the snooze chip from the
    connection badge when the alert snooze has lapsed. *)
@@ -739,11 +745,7 @@ begin
 
   ScaleLbl(lVal);
 
-  lDiff.Width := ClientWidth;
-  lDiff.Height := (ClientHeight div 9) - 10;
-  lDiff.Left := 0;
-  lDiff.Top := ClientHeight - lDiff.Height + 1;
-  ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
+  LayoutDeltaPill;
 
   LayoutAgoBadge;
 
@@ -794,6 +796,107 @@ begin
   // Keep the fullscreen clock's band and font in step with the labels that
   // were just re-laid out (it mirrors lAgo's font).
   UpdateClockOverlay(true);
+end;
+
+function TfBG.DeltaChevronShown: boolean;
+begin
+  // Not from the caption: ProcessCurrentReading asks before it writes the
+  // text, since the text loses its sign when the chevron carries it. High
+  // contrast draws neither pill nor chevron, so the sign stays in the text.
+  Result := FDiffRateKnown and (not FTrendDataStale) and
+    (not native.GetBoolSetting('main.high_contrast', false));
+end;
+
+// The delta used to run along the bottom edge, a window's height away from the
+// number it qualifies. It now hangs just under the reading's baseline, so the
+// two read as one group, and its box is shifted to leave room for the chevron
+// PaintDeltaPill draws on its left -- the text plus glyph stay centred (or
+// hug the chosen edge) as a unit. The box keeps the old strip's height so the
+// fitted font size is unchanged.
+procedure TfBG.LayoutDeltaPill;
+var
+  bmp: TBitmap;
+  tm: TLCLTextMetric;
+  th, asc, textTop, pillTop, gapBelow, chev, gap, bottomPad, reserve: integer;
+begin
+  lDiff.Height := (ClientHeight div 9) - 10;
+  lDiff.Left := 0;
+  // Chevron room is taken off the box *before* ScaleLbl fits the caption, or
+  // the fit could use the full width and the shift below would push the box
+  // past the client edge. The exact chevron size follows from the fitted
+  // text height, which is not known yet; the box height bounds it (ScaleLbl
+  // fits the text inside Height - 4), so reserve for that.
+  reserve := 0;
+  if DeltaChevronShown then
+    reserve := Round(lDiff.Height * DELTA_CHEVRON_FRAC) +
+      Max(3, lDiff.Height div 4) + 1;
+  lDiff.Width := ClientWidth - reserve;
+  pillTop := ClientHeight - lDiff.Height + 1;   // the old bottom strip, the fallback
+
+  // Measure on a bitmap: a label's canvas is unsafe outside paint on Cocoa
+  // (see ScaleLbl). The reading is a single line centred in lVal, so its
+  // baseline is the centred line's top plus the font's ascent; when the
+  // widgetset reports no metrics, four fifths of the line height is close for
+  // every face the app ships with.
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(lVal.Font);
+    th := 0;
+    if lVal.Caption <> '' then
+      th := bmp.Canvas.TextHeight(lVal.Caption);
+    if th > 0 then
+    begin
+      if bmp.Canvas.GetTextMetrics(tm) and (tm.Ascender > 0) and
+        (tm.Ascender <= th) then
+        asc := tm.Ascender
+      else
+        asc := Round(th * 0.8);
+      textTop := lVal.Top + (lVal.Height - th) div 2;
+      // The pill's upper padding reaches above the text box, so the gap
+      // leaves room for it and a little air besides.
+      gapBelow := Round(lDiff.Height * DELTA_PILL_PAD_Y) + Scale96ToForm(6);
+      pillTop := textTop + asc + gapBelow;
+      // Never off the bottom (the pill's lower padding needs its own room),
+      // never up among the digits on a squat window.
+      bottomPad := Round(lDiff.Height * DELTA_PILL_PAD_Y) + Scale96ToForm(4);
+      pillTop := Min(pillTop, ClientHeight - lDiff.Height - bottomPad);
+      pillTop := Max(pillTop, ClientHeight div 2);
+    end;
+  finally
+    bmp.Free;
+  end;
+  lDiff.Top := pillTop;
+  ScaleLbl(lDiff, DIFF_ALIGN, tlCenter, true, 10);
+
+  // Chevron room, from the size ScaleLbl settled on. The label paints its
+  // text centred/edge-aligned in its own box, so moving the box is how the
+  // group (chevron + gap + text) ends up where the text alone used to be.
+  if (not DeltaChevronShown) or (lDiff.Caption = '') then
+    Exit;
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(lDiff.Font);
+    th := bmp.Canvas.TextHeight(lDiff.Caption);
+  finally
+    bmp.Free;
+  end;
+  chev := Round(th * DELTA_CHEVRON_FRAC);
+  gap := Max(3, th div 4);
+  // chev + gap <= reserve, so none of these leaves the client area.
+  case lDiff.Alignment of
+  taLeftJustify:
+    lDiff.Left := lDiff.Left + chev + gap;
+  taRightJustify:
+    // Hand the reserved width back on the right so the text keeps its old
+    // right margin; the chevron takes the room on the text's left.
+    lDiff.Left := lDiff.Left + reserve;
+  else
+    // Centre the group, not the text: the box's centre sits half a chevron
+    // right of the window's.
+    lDiff.Left := (ClientWidth - lDiff.Width) div 2 + (chev + gap) div 2;
+  end;
 end;
 
 procedure TfBG.ScaleLbl(ALabel: TLabel; customAl: TAlignment = taCenter;
@@ -882,7 +985,14 @@ begin
       Mid := (Low + High) div 2;
       bmp.Canvas.Font.Size := Mid;
 
-      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+      // A tabular label paints its digits in equal cells, which run wider
+      // than the proportional text whenever a narrow digit is in the number;
+      // fit that width, or the cells will not fit and it falls back to
+      // proportional exactly when it matters.
+      if ALabel.TabularDigits then
+        TextWidth := TLabel.TabularTextWidth(bmp.Canvas, ALabel.Caption)
+      else
+        TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
       TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
 
       if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
@@ -896,7 +1006,10 @@ begin
 
     ALabel.Font.Size := OptimalSize;
     bmp.Canvas.Font.Size := OptimalSize;
-    TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+    if ALabel.TabularDigits then
+      TextWidth := TLabel.TabularTextWidth(bmp.Canvas, ALabel.Caption)
+    else
+      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
     TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
     while ((TextWidth > MaxWidth) or (TextHeight > MaxHeight)) and (ALabel.Font.Size > 1) do
     begin
@@ -904,7 +1017,10 @@ begin
       Dec(i);
       ALabel.Font.Size := i;
       bmp.Canvas.Font.Size := i;
-      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+      if ALabel.TabularDigits then
+        TextWidth := TLabel.TabularTextWidth(bmp.Canvas, ALabel.Caption)
+      else
+        TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
       TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
     end;
   finally
@@ -966,6 +1082,9 @@ begin
   // the next setColorMode should ask again rather than trust the cache.
   TrndiNative.InvalidateThemeCache;
   FForceRefresh := true;
+  {$ifdef TrndiExt}
+  callFunc('wakeCallback', []);
+  {$endif}
   if firstboot then
     Exit;
   updateReading;

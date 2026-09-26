@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Added the extension broadcasts for snooze changes,
+ *   connection status changes and pump/sensor device notices.
  *)
 (* MODIFICATION NOTICE (2026-08-05): Replaced floating-point wrapped-row
    rounding with integer ceiling division for FPC/macOS compatibility. *)
@@ -304,6 +308,7 @@ var
 begin
   FLastConnectionStatus := StatusText;
   FLastConnectionColor := BadgeColor;
+  NotifyExtensionsConnection(StatusText);
   displayStatus := StatusText;
   displayColor := BadgeColor;
   forceShowBadge := false;
@@ -516,6 +521,70 @@ begin
   native.SetSetting('alerts.state', FAlertEngine.SerializeState);
   // Every snooze/resume lands here; the server ignores unchanged states.
   WebPublishSnooze;
+  NotifyExtensionsSnooze;
+end;
+
+procedure TfBG.NotifyExtensionsSnooze;
+{$ifdef TrndiExt}
+var
+  snoozed: boolean;
+  untilMs: int64;
+  key: string;
+begin
+  if TTrndiExtEngine.Existing = nil then
+    Exit;
+  snoozed := FAlertEngine.AnySnoozed;
+  untilMs := 0;
+  if snoozed then
+    untilMs := DateTimeToUnix(FAlertEngine.ActiveSnoozeUntil, false) * 1000;
+  // OnStateChanged also fires for violation bookkeeping; only a change in
+  // the snooze itself is worth an event.
+  key := IntToStr(Ord(snoozed)) + '|' + IntToStr(untilMs);
+  if key = FExtLastSnooze then
+    Exit;
+  FExtLastSnooze := key;
+  callFunc('snoozeCallback', [snoozed, untilMs]);
+end;
+{$else}
+begin
+end;
+{$endif}
+
+procedure TfBG.NotifyExtensionsConnection(const StatusText: string);
+{$ifdef TrndiExt}
+var
+  id: string;
+begin
+  if TTrndiExtEngine.Existing = nil then
+    Exit;
+  // The badge text is localized; extensions get a stable id instead.
+  if StatusText = RS_CONN_OK then
+    id := 'ok'
+  else if StatusText = RS_CONN_RETRYING then
+    id := 'retrying'
+  else if StatusText = RS_CONN_RATE_LIMITED then
+    id := 'rate-limited'
+  else if StatusText = RS_CONN_AUTH_EXPIRED then
+    id := 'auth-expired'
+  else
+    id := 'error';
+  // SetConnectionBadge is re-run for layout reasons (snooze chip, sensor
+  // text); only a change of status is an event.
+  if id = FExtLastConnection then
+    Exit;
+  FExtLastConnection := id;
+  callFunc('connectionCallback', [id, FLastConnectionDetail]);
+end;
+{$else}
+begin
+end;
+{$endif}
+
+procedure TfBG.NotifyExtensionsDevice(const Kind: string; const Value: double);
+begin
+  {$ifdef TrndiExt}
+  callFunc('deviceCallback', [Kind, Value]);
+  {$endif}
 end;
 
 {------------------------------------------------------------------------------
@@ -550,6 +619,7 @@ begin
     native.attention(RS_ATTENTION_RESERVOIR,
       Format(RS_ATTENTION_RESERVOIR_DESC,
       [FormatFloat('0.#', status.reservoirUnits)]));
+    NotifyExtensionsDevice('reservoir', status.reservoirUnits);
   end;
 
   if FReservoirStep <> before then
@@ -593,6 +663,7 @@ begin
     else
       native.attention(RS_ATTENTION_SENSOR_EXPIRY,
         Format(RS_ATTENTION_SENSOR_EXPIRY_DESC, [status.sensorDurationHours]));
+    NotifyExtensionsDevice('sensor-expiry', status.sensorDurationHours);
   end;
 
   if FSensorExpiryStep <> before then
@@ -632,6 +703,7 @@ begin
       [status.pumpBatteryPercent, FPumpBatteryStep]));
     native.attention(RS_ATTENTION_PUMP_BATTERY,
       Format(RS_ATTENTION_PUMP_BATTERY_DESC, [status.pumpBatteryPercent]));
+    NotifyExtensionsDevice('pump-battery', status.pumpBatteryPercent);
   end;
 
   if FPumpBatteryStep <> before then

@@ -58,6 +58,18 @@
    its new one over TREND_SLIDE_MS (tTrendSlide / ApplyTrendSlideFrame), with
    arriving readings entering from the right. Any other relayout while the
    slide runs just moves its finish line. *)
+(* MODIFICATION NOTICE (2026-09-25): Every history dot is drawn on a knockout
+   halo in the backdrop color (TrendBackdropColorAt, DOT_HALO_FRACTION) so a
+   dot crossing the reading's digits or the arrow glyph keeps a clean edge.
+   The settings previews draw the same halo. Older history dots (and the
+   connecting line and gap rings with them) fade toward the backdrop by slot
+   age (DotAgeKeep, ux.dot_fade) and shrink with it (DotAgeDiameter) so the
+   newest reading dominates. The
+   connecting line runs through the dots as a monotone cubic curve
+   (SmoothTrace) instead of straight segments. The Display-tab preview
+   shows the delta as the pill under the reading, like the live window.
+   Gap markers are drawn by DrawGapMarker as a dashed ring with a knockout
+   rim around the dashes only, at full strength whatever the slot's age. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -176,17 +188,223 @@ begin
   Result := DotHitAt(P, isPredict, ix) <> nil;
 end;
 
+function TfBG.TrendBackdropColorAt(AY: integer): TColor;
+var
+  i: integer;
+begin
+  // The gradient's tone at this row (quantised, see BACKDROP_GRADIENT_STEPS)
+  // is the base the bands composite onto.
+  Result := BackdropColorAt(AY, true);
+  // Same order and the same "over" composite DrawRangeBands uses, so a band
+  // listed inside an earlier one deepens it here too. The few edge-gradient
+  // rows are ignored: a halo straddling a band edge is off by a shade nobody
+  // can see.
+  for i := Low(FPaintedBands) to High(FPaintedBands) do
+    if (AY >= FPaintedBands[i].Top) and (AY <= FPaintedBands[i].Bottom) then
+      Result := BlendColors(FPaintedBands[i].Color, Result,
+        FPaintedBands[i].Alpha / 255.0);
+end;
+
+// The knockout halo under a history dot: a disc in the backdrop color a
+// little wider than the dot, drawn first so the dot's own edge lands on a
+// clean field whatever the digits, arrow or connecting line put there.
+procedure DrawDotHalo(ACanvas: TCanvas; ADiameter, ALeft, ATop: integer;
+  ABackdrop: TColor);
+var
+  halo: integer;
+begin
+  halo := Max(DOT_HALO_MIN_PX, Round(ADiameter * DOT_HALO_FRACTION));
+  DrawSmoothCircle(ACanvas, ADiameter + 2 * halo, ABackdrop, clNone, 0,
+    ALeft - halo, ATop - halo);
+end;
+
+// A history slot's age as a fraction: 0 for the newest slot, 1 for slot 1,
+// linear in between. 0 everywhere with the fade off.
+function DotAgeFrac(ASlotIx, ANewestIx: integer): double;
+begin
+  if (not TrendDotFade) or (ANewestIx <= 1) then
+    Exit(0.0);
+  Result := EnsureRange((ANewestIx - ASlotIx) / (ANewestIx - 1), 0.0, 1.0);
+end;
+
+// How much of a history marker's own color survives the age fade: 1.0 for the
+// newest slot, falling linearly to 1 - DOT_AGE_FADE_MAX at slot 1. Shared by
+// the live surface and the Display-tab preview. Always 1.0 with the fade off.
+function DotAgeKeep(ASlotIx, ANewestIx: integer): double;
+begin
+  Result := 1.0 - DOT_AGE_FADE_MAX * DotAgeFrac(ASlotIx, ANewestIx);
+end;
+
+// The diameter an aged marker draws at inside its ADiameter layout box: the
+// newest keeps the full box, the oldest loses DOT_AGE_SHRINK_MAX of it. Never
+// below the smallest legible dot.
+function DotAgeDiameter(ADiameter, ASlotIx, ANewestIx: integer): integer;
+begin
+  Result := Max(MIN_DOT_DIAMETER_PX, Round(ADiameter *
+    (1.0 - DOT_AGE_SHRINK_MAX * DotAgeFrac(ASlotIx, ANewestIx))));
+  Result := Min(Result, ADiameter);
+end;
+
+// Bend the connecting line: expand the dot centres into a curve through them.
+// Fritsch-Carlson monotone cubic Hermite in x: the trace is a value over time
+// with x increasing left to right, and a monotone spline never overshoots a
+// dot -- a Catmull-Rom would dip below a low or arc above a high between two
+// readings, drawing glucose that was never measured. Every original point is
+// kept, and each sub-point takes the colour of the nearer original so
+// DrawSmoothPolyline's mid-segment colour break lands where it did before.
+// A segment whose x does not advance (a mid-slide collision) stays straight.
+procedure SmoothTrace(const APts: array of TPoint; const ACols: array of TColor;
+  out AOutPts: TPointArray; out AOutCols: TColorArray);
+const
+  PX_PER_STEP = 6;   // one sub-point per this many pixels of x
+  MAX_STEPS = 12;
+var
+  n, i, k, steps, count: integer;
+  h, delta, m: array of double;
+  t, t2, t3, h00, h10, h01, h11, y: double;
+begin
+  n := Length(APts);
+  SetLength(AOutPts, 0);
+  SetLength(AOutCols, 0);
+  if n < 2 then
+    Exit;
+
+  SetLength(h, n - 1);
+  SetLength(delta, n - 1);
+  SetLength(m, n);
+  for i := 0 to n - 2 do
+  begin
+    h[i] := APts[i + 1].X - APts[i].X;
+    if h[i] > 0 then
+      delta[i] := (APts[i + 1].Y - APts[i].Y) / h[i]
+    else
+      delta[i] := 0;
+  end;
+  // Endpoint tangents follow their one segment; interior tangents are the
+  // weighted harmonic mean of the two slopes, zero at a local extremum so the
+  // curve turns flat through a peak or trough instead of overshooting it.
+  m[0] := delta[0];
+  m[n - 1] := delta[n - 2];
+  for i := 1 to n - 2 do
+    if (delta[i - 1] * delta[i] <= 0) or (h[i - 1] <= 0) or (h[i] <= 0) then
+      m[i] := 0
+    else
+      m[i] := 3 * (h[i - 1] + h[i]) /
+        ((2 * h[i] + h[i - 1]) / delta[i - 1] + (h[i] + 2 * h[i - 1]) / delta[i]);
+
+  // Upper bound first, trimmed to what was written.
+  SetLength(AOutPts, (n - 1) * MAX_STEPS + 1);
+  SetLength(AOutCols, Length(AOutPts));
+  count := 0;
+  for i := 0 to n - 2 do
+  begin
+    AOutPts[count] := APts[i];
+    AOutCols[count] := ACols[i];
+    Inc(count);
+    if h[i] <= 0 then
+      Continue;
+    steps := EnsureRange(Round(h[i] / PX_PER_STEP), 2, MAX_STEPS);
+    for k := 1 to steps - 1 do
+    begin
+      t := k / steps;
+      t2 := t * t;
+      t3 := t2 * t;
+      h00 := 2 * t3 - 3 * t2 + 1;
+      h10 := t3 - 2 * t2 + t;
+      h01 := -2 * t3 + 3 * t2;
+      h11 := t3 - t2;
+      y := h00 * APts[i].Y + h10 * h[i] * m[i] + h01 * APts[i + 1].Y +
+        h11 * h[i] * m[i + 1];
+      AOutPts[count] := MkPoint(Round(APts[i].X + t * h[i]), Round(y));
+      if t < 0.5 then
+        AOutCols[count] := ACols[i]
+      else
+        AOutCols[count] := ACols[i + 1];
+      Inc(count);
+    end;
+  end;
+  AOutPts[count] := APts[n - 1];
+  AOutCols[count] := ACols[n - 1];
+  Inc(count);
+  SetLength(AOutPts, count);
+  SetLength(AOutCols, count);
+end;
+
+// A missing reading's marker: a dashed ring, ASize across, in AColor. Dashed
+// rather than a thin hollow ring because a hollow ring among solid dots was
+// easy to miss at a glance, and a dashed outline reads as "placeholder" the
+// way a dashed box does -- nothing that could pass for a measurement. Built
+// from short capsule strokes along the circle (two per dash, so each follows
+// the arc), spaced so the gaps stay about as wide as the stroke at every
+// size; small markers get fewer dashes rather than dashes that merge. The
+// knockout is a rim around the dashes only -- the same strokes drawn first,
+// wider, in ABackdrop -- so the ring keeps a clean edge over the digits and
+// the arrow while its inside stays open: a gap has nothing to show, so it
+// should not cover what is behind it either. Uncached: the strokes are few
+// and tiny.
+procedure DrawGapMarker(ACanvas: TCanvas; ASize: integer; AColor, ABackdrop: TColor;
+  ALeft, ATop: integer);
+const
+  SLOT_PER_THICK = 2.6;   // dash + gap, in stroke thicknesses, along the circle
+  GAP_PER_THICK = 0.8;    // the gap's share of that
+var
+  strokes: array of TSmoothStroke;
+  thick, rim, n, i, k: integer;
+  r, cx, cy, seg, core, a0, a1, am, coreAng: double;
+begin
+  if ASize < 4 then
+    Exit;
+
+  thick := Max(2, Round(ASize / 6));
+  rim := Max(1, Round(thick * 0.5));    // knockout width on either side
+  r := (ASize - thick) / 2.0;          // the stroke's centre line
+  cx := ALeft + ASize / 2.0;
+  cy := ATop + ASize / 2.0;
+
+  n := EnsureRange(Round(2 * Pi * r / (thick * SLOT_PER_THICK)), 3, 10);
+  seg := 2 * Pi * r / n;                          // one dash + one gap
+  // The capsule's round caps add one thickness to the drawn length, so the
+  // centre line of a dash is the slot minus the gap minus the caps.
+  core := Max(0.15 * thick, seg - GAP_PER_THICK * thick - thick);
+  coreAng := core / r;
+
+  SetLength({%H-}strokes, 2 * n);
+  k := 0;
+  for i := 0 to n - 1 do
+  begin
+    // Start at the top, gap centred there, so the pattern is symmetric.
+    a0 := -Pi / 2 + (i + 0.5) * (2 * Pi / n) - coreAng / 2;
+    a1 := a0 + coreAng;
+    am := (a0 + a1) / 2;
+    strokes[k].X1 := cx + r * cos(a0); strokes[k].Y1 := cy + r * sin(a0);
+    strokes[k].X2 := cx + r * cos(am); strokes[k].Y2 := cy + r * sin(am);
+    strokes[k].Color := AColor;
+    Inc(k);
+    strokes[k].X1 := cx + r * cos(am); strokes[k].Y1 := cy + r * sin(am);
+    strokes[k].X2 := cx + r * cos(a1); strokes[k].Y2 := cy + r * sin(a1);
+    strokes[k].Color := AColor;
+    Inc(k);
+  end;
+  // Rim first: the dashes in the backdrop tone, one rim wider on each side.
+  for k := 0 to High(strokes) do
+    strokes[k].Color := ABackdrop;
+  DrawSmoothStrokes(ACanvas, strokes, thick + 2 * rim);
+  for k := 0 to High(strokes) do
+    strokes[k].Color := AColor;
+  DrawSmoothStrokes(ACanvas, strokes, thick);
+end;
+
 procedure TfBG.TrendSurfacePaint(Sender: TObject);
 var
   cnv: TCanvas;
   fontn: string;
   slot: PTrendSlot;
   r: TRect;
-  ix, d, ringWidth, xSize, xOff, xThick, fs, nPts: integer;
-  dotColor, ringColor: TColor;
-  xAlpha: double;
-  linePts: array of TPoint;
-  lineCols: array of TColor;
+  ix, d, dd, ageOff, ringWidth, xSize, xOff, xThick, fs, nPts: integer;
+  dotColor, ringColor, backdrop: TColor;
+  xAlpha, keep: double;
+  linePts, curvePts: TPointArray;
+  lineCols, curveCols: TColorArray;
 begin
   if FTrendSurface = nil then
     Exit;
@@ -221,13 +439,19 @@ begin
           lineCols[nPts] := BlendColors(DotDisplayColor(TrendSlots[ix].ident,
             DotBandPartner(TrendSlots[ix].ident), fBG.Color, lVal.Font.Color,
             DotColorMode), fBG.Color, TREND_LINE_BLEND);
+        // The trace ages with the dots it connects, toward the tone under it.
+        lineCols[nPts] := BlendColors(lineCols[nPts],
+          TrendBackdropColorAt(linePts[nPts].Y), DotAgeKeep(ix, ACTIVE_DOTS));
         Inc(nPts);
       end;
     SetLength(linePts, nPts);
     SetLength(lineCols, nPts);
     if nPts >= 2 then
-      DrawSmoothPolyline(cnv, linePts, lineCols,
+    begin
+      SmoothTrace(linePts, lineCols, curvePts, curveCols);
+      DrawSmoothPolyline(cnv, curvePts, curveCols,
         TrendLineStrokePx(FTrendDotDiameter, TrendLineWidthStep));
+    end;
   end;
 
   for ix := 1 to Min(High(TrendSlots), High(FTrendLayout)) do
@@ -264,20 +488,30 @@ begin
     if d < 2 then
       Continue;
 
+    // Age fade: every marker in this slot blends this far toward the backdrop
+    // at its own height (the halo's color), so old dots recede on the band
+    // exactly as they do on the plain window.
+    backdrop := TrendBackdropColorAt(r.Top + d div 2);
+    keep := DotAgeKeep(ix, ACTIVE_DOTS);
+    // ...and draws smaller, centred in the same box, so the trace's centre
+    // line (and the hit box) stay where the layout put them.
+    dd := DotAgeDiameter(d, ix, ACTIVE_DOTS);
+    ageOff := (d - dd) div 2;
+
     if slot^.kind = dkGap then
     begin
-      // A gap marker is deliberately quiet: a thin hollow ring sunk most of
-      // the way into the background, sitting at the trace's interpolated
-      // height, so a missing reading says "something should be here" without
-      // competing with the real dots around it. Slightly smaller than the
-      // data dots, and ring-only (clNone disc) so the range bands behind it
-      // stay visible through the hole. Drawn from the window tone — a gap has
-      // no reading and thus no range color.
+      // A gap marker: a dashed ring at the trace's interpolated height,
+      // slightly smaller than the data dots, drawn from the window tone -- a
+      // gap has no reading and thus no range color. It says "a reading
+      // should be here", so unlike the dots it neither fades nor shrinks
+      // with age: a missing reading is a status, not a value, and has to be
+      // as findable at the left edge as at the right. Its knockout rim is
+      // the backdrop at its own row, band tint included.
       xSize := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
       xOff  := (d - xSize) div 2;
-      DrawSmoothCircle(cnv, xSize, clNone,
+      DrawGapMarker(cnv, xSize,
         BlendColors(GetTextColorForBackground(fBG.Color), fBG.Color,
-        GAP_DOT_BLEND), Max(1, xSize div 8), r.Left + xOff, r.Top + xOff);
+        GAP_DOT_BLEND), backdrop, r.Left + xOff, r.Top + xOff);
       Continue;
     end;
 
@@ -293,7 +527,7 @@ begin
     // The newest reading carries the fresh ring while the data is fresh —
     // derived here rather than stored, so a freshness flip repaints right.
     if (ix = ACTIVE_DOTS) and FLatestIsFresh then
-      FreshDotRing(DotColorMode, dotColor, fBG.Color, d, ringColor, ringWidth)
+      FreshDotRing(DotColorMode, dotColor, fBG.Color, dd, ringColor, ringWidth)
     else
     if DotColorMode = dcmOutline then
     begin
@@ -301,7 +535,7 @@ begin
       // untouched range color and may be the window's own color exactly. Thin,
       // because it has to sit inside dots that get small on a dense trend
       // without eating the color it exists to protect.
-      ringWidth := Max(1, d div 14);
+      ringWidth := Max(1, dd div 14);
       ringColor := DotOutlineColor(fBG.Color);
     end
     else
@@ -310,7 +544,18 @@ begin
       ringColor := dotColor;
     end;
 
-    DrawSmoothCircle(cnv, d, dotColor, ringColor, ringWidth, r.Left, r.Top);
+    // Fade after the ring pick: FreshDotRing and the outline rim derive from
+    // the unfaded dot, and the newest slot keeps everything anyway.
+    dotColor := BlendColors(dotColor, backdrop, keep);
+    if ringWidth > 0 then
+      ringColor := BlendColors(ringColor, backdrop, keep);
+
+    // The halo takes the backdrop at the dot's centre row, so it is invisible
+    // on the plain window and on the band alike, and only shows as a knockout
+    // where a digit or the arrow runs under the dot.
+    DrawDotHalo(cnv, dd, r.Left + ageOff, r.Top + ageOff, backdrop);
+    DrawSmoothCircle(cnv, dd, dotColor, ringColor, ringWidth,
+      r.Left + ageOff, r.Top + ageOff);
   end;
 
   // Prediction × marks in the trailing slots.
@@ -559,6 +804,7 @@ begin
       end;
       x := sw.Left + PAD + j * (sw.Width - 2 * PAD - d) div 4;
       y := sw.Top + PAD + (4 - j) * (swH - 2 * PAD - d) div 4;
+      DrawDotHalo(ACanvas, d, x, y, winBgs[i]);
       DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
     end;
   end;
@@ -584,9 +830,13 @@ var
   bg, valColor, subColor, arrowColor, tirColor: TColor;
   dotColor, ringColor, ident, partner: TColor;
   valText, arrowText, agoText, diffText, tirText: string;
-  w, h, i, d, x, y, tw, th, ringWidth, r, cols, gs: integer;
-  linePts: array of TPoint;
-  lineCols: array of TColor;
+  w, h, i, d, dd, ageOff, x, y, tw, th, ringWidth, r, cols, gs: integer;
+  valTop, valTh, chev, gap, padX, padY, pillH, cy, ccx: integer;
+  diffTrend: BGTrend;
+  linePts, curvePts: TPointArray;
+  lineCols, curveCols: TColorArray;
+  capsule: array[0..0] of TSmoothStroke;
+  pts: array[0..2] of TPoint;
 
 function HasDigit(const s: string): boolean;
   var
@@ -661,7 +911,7 @@ begin
     agoText := '10 min';
   diffText := lDiff.Caption;
   if (diffText = '') or (diffText = 'lDiff') then
-    diffText := '+0.0';
+    diffText := '0.0';
   diffText := SwapSep(diffText);
   tirText := FTirBadge.Caption;
 
@@ -706,24 +956,68 @@ begin
   SetPreviewFont(AData.ValFont, (h * 2) div 5, []);
   ACanvas.Font.Color := valColor;
   tw := ACanvas.TextWidth(valText);
-  th := ACanvas.TextHeight(valText);
-  ACanvas.TextOut(ARect.Left + (w - tw) div 2,
-    ARect.Top + (h - th) div 2, valText);
+  valTh := ACanvas.TextHeight(valText);
+  valTop := ARect.Top + (h - valTh) div 2;
+  ACanvas.TextOut(ARect.Left + (w - tw) div 2, valTop, valText);
 
-  // Delta, bottom edge, honoring the saved lDiff alignment.
+  // Delta: the pill under the reading's baseline, honoring the saved lDiff
+  // alignment -- the same capsule, tint, padding and chevron PaintDeltaPill
+  // draws live.
   SetPreviewFont('', Max(10, h div 11), []);
-  ACanvas.Font.Color := subColor;
   tw := ACanvas.TextWidth(diffText);
   th := ACanvas.TextHeight(diffText);
+  chev := Round(th * DELTA_CHEVRON_FRAC);
+  gap := Max(3, th div 4);
+  padX := Round(th * DELTA_PILL_PAD_X);
+  padY := Round(th * DELTA_PILL_PAD_Y);
+  pillH := th + 2 * padY;
   case lDiff.Alignment of
   taLeftJustify:
-    x := ARect.Left + PAD;
+    x := ARect.Left + PAD + chev + gap;
   taRightJustify:
     x := ARect.Left + w - tw - PAD;
   else
-    x := ARect.Left + (w - tw) div 2;
+    x := ARect.Left + (w - tw + chev + gap) div 2;
   end;
-  ACanvas.TextOut(x, ARect.Top + h - th - 3, diffText);
+  cy := Min(valTop + Round(valTh * 0.8) + padY + pillH div 2,
+    ARect.Bottom - pillH div 2 - 2);
+  capsule[0].X1 := x - gap - chev - padX + pillH / 2;
+  capsule[0].X2 := Max(capsule[0].X1, x + tw + padX - pillH / 2);
+  capsule[0].Y1 := cy;
+  capsule[0].Y2 := cy;
+  capsule[0].Color := BlendColors(valColor, bg, DELTA_PILL_TINT);
+  DrawSmoothStrokes(ACanvas, capsule, pillH);
+  // Direction from the live rate, as PaintDeltaPill does (the text has no
+  // sign to read it from any more); flat when no rate is known.
+  ccx := x - gap - chev div 2;
+  if FDiffRateKnown then
+    diffTrend := CalculateTrendFromDelta(FDiffRateMgdl)
+  else
+    diffTrend := TdFlat;
+  if diffTrend in [TdDoubleUp, TdSingleUp, TdFortyFiveUp] then
+  begin
+    pts[0] := MkPoint(ccx, cy - chev div 2);
+    pts[1] := MkPoint(ccx - chev div 2, cy + chev div 2);
+    pts[2] := MkPoint(ccx + chev div 2, cy + chev div 2);
+    DrawSmoothConvexPolygon(ACanvas, pts, subColor);
+  end
+  else
+  if diffTrend in [TdFortyFiveDown, TdSingleDown, TdDoubleDown] then
+  begin
+    pts[0] := MkPoint(ccx - chev div 2, cy - chev div 2);
+    pts[1] := MkPoint(ccx + chev div 2, cy - chev div 2);
+    pts[2] := MkPoint(ccx, cy + chev div 2);
+    DrawSmoothConvexPolygon(ACanvas, pts, subColor);
+  end
+  else
+  begin
+    capsule[0].X1 := ccx - chev / 2;
+    capsule[0].X2 := ccx + chev / 2;
+    capsule[0].Color := subColor;
+    DrawSmoothStrokes(ACanvas, capsule, Max(2, chev div 4));
+  end;
+  ACanvas.Font.Color := subColor;
+  ACanvas.TextOut(x, cy - th div 2, diffText);
 
   // A rising trend visiting every range band, sized and slotted like the live
   // dots (0.6 of the slot width, clamped), newest on the right carrying the
@@ -758,8 +1052,11 @@ begin
         lineCols[i] := BlendColors(DotDisplayColor(ident, partner, bg,
           valColor, mode), bg, TREND_LINE_BLEND);
       end;
+      lineCols[i] := BlendColors(lineCols[i], bg,
+        DotAgeKeep(i + 1, DOT_COUNT));
     end;
-    DrawSmoothPolyline(ACanvas, linePts, lineCols,
+    SmoothTrace(linePts, lineCols, curvePts, curveCols);
+    DrawSmoothPolyline(ACanvas, curvePts, curveCols,
       TrendLineStrokePx(d, AData.LineWidth));
   end;
 
@@ -770,27 +1067,31 @@ begin
     y := ARect.Top + PAD + (((DOT_COUNT - 1 - i) * (h - 2 * PAD - d))
       div (DOT_COUNT - 1) * 3) div 4;
 
+    // The live surface's age shrink, slot 1 oldest.
+    dd := DotAgeDiameter(d, i + 1, DOT_COUNT);
+    ageOff := (d - dd) div 2;
+
     // One mid-trend slot renders as a sensor gap when the option is on — the
-    // same quiet hollow ring DotPaint draws, at the height the climb passes
-    // through anyway (the preview's trace is linear).
+    // same dashed ring the live surface draws (unfaded, unshrunk), at the
+    // height the climb passes through anyway (the preview's trace is linear).
     if AData.GapRing and (i = DOT_COUNT div 2) then
     begin
       gs := Max(MIN_DOT_DIAMETER_PX, Round(d * 0.8));
-      DrawSmoothCircle(ACanvas, gs, clNone,
-        BlendColors(GetTextColorForBackground(bg), bg, GAP_DOT_BLEND),
-        Max(1, gs div 8), x + (d - gs) div 2, y + (d - gs) div 2);
+      DrawGapMarker(ACanvas, gs,
+        BlendColors(GetTextColorForBackground(bg), bg, GAP_DOT_BLEND), bg,
+        x + (d - gs) div 2, y + (d - gs) div 2);
       Continue;
     end;
 
     PreviewBandColors(ATheme, i div 2, ident, partner);
     dotColor := DotDisplayColor(ident, partner, bg, valColor, mode);
     if (i = DOT_COUNT - 1) and AData.FreshRing then
-      FreshDotRing(mode, dotColor, bg, d, ringColor, ringWidth)
+      FreshDotRing(mode, dotColor, bg, dd, ringColor, ringWidth)
     else
     if mode = dcmOutline then
     begin
       // Same rim rule as DotPaint's non-fresh outline branch.
-      ringWidth := Max(1, d div 14);
+      ringWidth := Max(1, dd div 14);
       ringColor := DotOutlineColor(bg);
     end
     else
@@ -798,7 +1099,13 @@ begin
       ringWidth := 0;
       ringColor := dotColor;
     end;
-    DrawSmoothCircle(ACanvas, d, dotColor, ringColor, ringWidth, x, y);
+    // The live surface's age fade, slot 1 oldest.
+    dotColor := BlendColors(dotColor, bg, DotAgeKeep(i + 1, DOT_COUNT));
+    if ringWidth > 0 then
+      ringColor := BlendColors(ringColor, bg, DotAgeKeep(i + 1, DOT_COUNT));
+    DrawDotHalo(ACanvas, dd, x + ageOff, y + ageOff, bg);
+    DrawSmoothCircle(ACanvas, dd, dotColor, ringColor, ringWidth,
+      x + ageOff, y + ageOff);
   end;
 
   // Prediction × marks in the trailing slots, colored through the same

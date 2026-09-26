@@ -30,6 +30,8 @@ type
   // One row per platform convention: [[win/kde], [mac/gnome]].
   TSlickeMsgDlgBtnRows = array of TSlickeMsgDlgBtns;
   TSlickeMsgDlgLayout = (smdlAuto, smdlAffirmativeFirst, smdlAffirmativeLast);
+  // Per-button captions, mirroring the real unit's overridable table.
+  ButtonLangs = array[TSlickeMsgDlgBtn] of string;
 
   TModalResult = Integer;
 
@@ -48,6 +50,7 @@ const
   mrYes = 6;
   mrSlickeCustom = 110;
   mrSlickeNever = 111;
+  mrSlickeOpenFile = 112;
   sSuccTitle  = 'Information';
   sErrTitle   = 'Error';
   uxclWhite = $00FFFFFF;
@@ -131,6 +134,10 @@ var
   // When @true the real unit gives dialogs their own taskbar button; headless
   // stub keeps the flag so callers (umain_init.inc) compile unchanged.
   SlickeDialogsInTaskbar: boolean = false;
+  // Button captions. The real unit exposes this so a caller can relabel a
+  // button for one dialog (inc/umain_report.inc borrows the OpenFile slot);
+  // headless the values are never rendered, only written and restored.
+  langs: ButtonLangs;
 
 implementation
 

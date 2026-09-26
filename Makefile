@@ -7,6 +7,7 @@
 #   make test-noserver-> build and run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)
 #   make ide-libs     -> copy the QuickJS libraries to the project root (for Lazarus IDE runs)
 #   make clean        -> remove build artifacts
+#   make distclean    -> clean, plus binaries, logs, heaptrc, unit output dirs and Lazarus backups
 #   make install      -> install binary to /usr/local/bin (requires sudo)
 #   make list-modes   -> list available build modes from Trndi.lpi
 
@@ -19,6 +20,24 @@ LAZBUILD ?= lazbuild
 ifeq ($(OS),Windows_NT)
   ifneq ($(wildcard C:/lazarus/lazbuild.exe),)
     LAZBUILD := C:/lazarus/lazbuild.exe
+  endif
+endif
+
+# Unix: two common installs never put lazbuild on PATH. The macOS installer
+# leaves it in /Applications/lazarus, and fpcupdeluxe keeps its whole toolchain
+# under ~/fpcupdeluxe (Linux, BSD and macOS alike). Try those, in that order,
+# when LAZBUILD was not set explicitly and no lazbuild is on PATH. The
+# fpcupdeluxe copy needs no --pcp: lazbuild reads the lazarus.cfg fpcupdeluxe
+# writes next to it, which carries the primary-config-path.
+ifneq ($(OS),Windows_NT)
+  ifeq ($(origin LAZBUILD),file)
+    ifeq ($(shell command -v lazbuild 2>/dev/null),)
+      LAZBUILD_CANDIDATES := /Applications/lazarus/lazbuild $(HOME)/fpcupdeluxe/lazarus/lazbuild
+      LAZBUILD_FOUND := $(firstword $(wildcard $(LAZBUILD_CANDIDATES)))
+      ifneq ($(LAZBUILD_FOUND),)
+        LAZBUILD := $(LAZBUILD_FOUND)
+      endif
+    endif
   endif
 endif
 
@@ -254,14 +273,72 @@ ifeq ($(UNAME_S),Linux)
 endif
 LIBGCC_FLAGS := $(if $(strip $(LIBGCC_DIR)),--opt=-Fl$(strip $(LIBGCC_DIR)))
 
-LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS)
+# macOS linker. Apple's ld from Xcode/CLT 27 refuses the Objective-C method
+# lists FPC 3.2.x emits ("malformed method list atom"), and -ld_classic no
+# longer exists, so when LLVM's ld64.lld is installed (brew install lld) link
+# through it instead: -FD makes FPC run tools/darwin-lld/ld, a shim that
+# translates the few ld64-only flags and execs $(LD64_LLD). Without ld64.lld
+# the build uses Apple's ld as before.
+#
+# Set LD64_LLD= (empty) to opt out, or LD64_LLD=/some/ld64.lld to override.
+ifeq ($(UNAME_S),Darwin)
+  LD64_LLD ?= $(shell command -v ld64.lld 2>/dev/null || \
+    ls /opt/homebrew/bin/ld64.lld /usr/local/bin/ld64.lld 2>/dev/null | head -n1)
+  export LD64_LLD
+endif
+DARWIN_LD_FLAGS := $(if $(strip $(LD64_LLD)),--opt=-FD$(CURDIR)/tools/darwin-lld)
+
+# macOS debug info. The Debug modes ask for DWARF 3, but FPC 3.2.x's DWARF 3
+# writer has no case for Objective-C classes and stops with "Internal error
+# 200609171" on the first unit using CocoaAll types; its DWARF 2 writer handles
+# them. -gw2 comes after the mode's -gw3 on the command line, so it wins.
+# Evaluated when used, since debug targets set BUILD_MODE per target.
+DARWIN_DEBUG_FLAGS = $(if $(and $(filter Darwin,$(UNAME_S)),$(filter Debug,$(BUILD_MODE))),--opt=-gw2)
+
+# macOS development bundle identity. Trndi keeps its settings in NSUserDefaults
+# under the bundle identifier, so the .app in $(OUTDIR) gets its own id and name
+# to keep a development build from sharing settings (and a Dock/Spotlight name)
+# with an installed Trndi (com.slicke.Trndi). Only $(OUTDIR) is touched; the
+# dist/macos*.sh packaging scripts write their own Info.plist.
+#
+# The bundle also gets DEV_BUNDLE_ICON as its icon so it is easy to tell apart
+# from an installed Trndi in the Dock.
+#
+# Set DEV_BUNDLE_ID= (empty) to keep the Info.plist Lazarus generated.
+ifeq ($(UNAME_S),Darwin)
+  DEV_BUNDLE_ID ?= com.slicke.Trndi.dev
+  DEV_BUNDLE_NAME ?= Trndi Dev
+  DEV_BUNDLE_ICON ?= Trndi-macos-dev.png
+endif
+MARK_DEV_BUNDLE = p="$(OUTDIR)/$(basename $(LPI)).app/Contents/Info.plist"; \
+  if [ -n "$(DEV_BUNDLE_ID)" ] && [ -f "$$p" ]; then \
+    plutil -replace CFBundleIdentifier -string "$(DEV_BUNDLE_ID)" "$$p" && \
+    plutil -replace CFBundleName -string "$(DEV_BUNDLE_NAME)" "$$p" && \
+    plutil -replace CFBundleDisplayName -string "$(DEV_BUNDLE_NAME)" "$$p" && \
+    echo "Marked $(OUTDIR)/$(basename $(LPI)).app as $(DEV_BUNDLE_ID)"; \
+    if [ -f "$(DEV_BUNDLE_ICON)" ]; then \
+      res="$(OUTDIR)/$(basename $(LPI)).app/Contents/Resources"; set="$(OUTDIR)/Trndi.iconset"; \
+      rm -rf "$$set" && mkdir -p "$$set" "$$res" && \
+      for s in 16 32 128 256 512; do \
+        sips -z $$s $$s "$(DEV_BUNDLE_ICON)" --out "$$set/icon_$${s}x$${s}.png" >/dev/null && \
+        sips -z $$((s*2)) $$((s*2)) "$(DEV_BUNDLE_ICON)" --out "$$set/icon_$${s}x$${s}@2x.png" >/dev/null \
+          || exit 1; \
+      done && \
+      iconutil -c icns "$$set" -o "$$res/Trndi.icns" && rm -rf "$$set" && \
+      plutil -replace CFBundleIconFile -string "Trndi.icns" "$$p" && \
+      touch "$(OUTDIR)/$(basename $(LPI)).app" && \
+      echo "Set $(DEV_BUNDLE_ICON) as icon for $(OUTDIR)/$(basename $(LPI)).app"; \
+    fi; \
+  fi
+
+LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) $(DARWIN_DEBUG_FLAGS)
 
 # Determine a build-mode suitable for 'noext' (prefer Qt6 No Extensions or No Ext)
 NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
-NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS)
+NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) $(DARWIN_DEBUG_FLAGS)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean dist install uninstall run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
 
 all: release
 
@@ -272,6 +349,7 @@ help:
 	@echo "  release    Build release (default)"
 	@echo "  debug      Build debug"
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
+	@echo "  run        Build, then run Trndi from $(OUTDIR) (macOS: opens the .app bundle; RUN_ARGS forwards arguments)"
 	@echo "  test       Build and run tests (runner spawns an in-process Pascal test server)"
 	@echo "  test-noserver  Run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@echo "  noext-test  Build and run tests without extension support"
@@ -288,22 +366,26 @@ help:
 	@echo "  ptop       Regenerate $(PTOP_CFG) from $(JCF_SETTINGS) (formatter config for ptop)"
 	@echo "  lang-check Audit lang/: list resource strings missing from $(POT) and validate every .po (read-only; needs gettext for the .po half)"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
+	@echo "  distclean  clean, plus the rest of the ignored residue: built binaries, link*.res, heaptrc/log output, $(OUTDIR)/, lib/, backup/ dirs, versioned QuickJS sonames"
 	@echo "  dist       Create a minimal tarball in $(OUTDIR)"
 	@echo "  run        Build (if needed) and run the built binary (use RUN_ARGS to pass args)"
 	@echo "  install    Install binary plus (on Linux/BSD) desktop entry, icon and AppStream metadata to PREFIX (default /usr/local; requires sudo)"
 	@echo "  uninstall  Remove everything 'make install' put under PREFIX (requires sudo)"
 	@echo "Variables:" 
-	@echo "  LAZBUILD (default: lazbuild)"
+	@echo "  LAZBUILD (default: lazbuild on PATH, else /Applications/lazarus/lazbuild (macOS) or ~/fpcupdeluxe/lazarus/lazbuild; currently $(LAZBUILD))"
 	@echo "  WIDGETSET (default: $(WIDGETSET))"
 	@echo "  BUILD_MODE (default: $(BUILD_MODE))"
 	@echo "  CPU_FLAG (default: empty). --cpu=<name> is passed to lazbuild and also picks the prebuilt QuickJS directory (otherwise the host CPU does)."
 	@echo "  LIBGCC_DIR (Linux; default: asked of gcc, currently '$(LIBGCC_DIR)'). Set empty to opt out."
+	@echo "  LD64_LLD (macOS; default: ld64.lld if installed, currently '$(LD64_LLD)'). Links through LLVM lld instead of Apple ld. Set empty to opt out."
+	@echo "  DEV_BUNDLE_ID / DEV_BUNDLE_NAME (macOS; default: com.slicke.Trndi.dev / Trndi Dev). Identity of the .app in $(OUTDIR), so a dev build keeps its own settings. Set DEV_BUNDLE_ID empty to opt out."
+	@echo "  DEV_BUNDLE_ICON (macOS; default: Trndi-macos-dev.png). Icon for the .app in $(OUTDIR)."
 
 check:
 ifeq ($(OS),Windows_NT)
 	@if exist "$(subst /,\,$(LAZBUILD))" (echo "Using $(LAZBUILD)") else (echo "lazbuild not found; please install Lazarus build tools (lazarus_bin) or set LAZBUILD" & exit 1)
 else
-	@command -v $(LAZBUILD) >/dev/null 2>&1 || (echo "lazbuild not found; please install Lazarus build tools (lazarus_bin)" && exit 1)
+	@command -v $(LAZBUILD) >/dev/null 2>&1 || (echo "lazbuild not found; please install Lazarus build tools (lazarus_bin) or set LAZBUILD" && exit 1)
 	@echo "Using $(LAZBUILD)"
 endif
 .PHONY: qjs-links
@@ -346,6 +428,7 @@ build: qjs-links
 	@for f in "$(basename $(LPI))" "$(basename $(LPI)).exe" "$(basename $(LPI)).app"; do \
 	  if [ -e "$$f" ]; then cp -r "$$f" "$(OUTDIR)/" && echo "Copied $$f to $(OUTDIR)"; fi; \
 	done;
+	@$(MARK_DEV_BUNDLE)
 	@if [ -f "$(OUTDIR)/$(basename $(LPI))" ] || [ -f "$(OUTDIR)/$(basename $(LPI)).exe" ] || [ -d "$(OUTDIR)/$(basename $(LPI)).app" ]; then \
 	  echo "Found in $(OUTDIR)"; \
 	else \
@@ -377,7 +460,7 @@ debug: build
 
 test: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -386,7 +469,7 @@ test: check qjs-links
 
 noext-test: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -395,7 +478,7 @@ noext-test: qjs-links
 
 test-noserver: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -404,7 +487,7 @@ test-noserver: check qjs-links
 
 noext-test-noserver: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -519,10 +602,21 @@ show-mode:
 	@echo "QuickJS libraries: $(QJS_DIR)"
 
 # Run the built binary (build first). Use RUN_ARGS to forward arguments to the program.
+# On macOS the app bundle is launched through LaunchServices (open), so it runs
+# with its bundle identity, Dock icon and activation like a Finder launch; the
+# bare $(OUTDIR)/Trndi the build also leaves there is not used. -n starts a new
+# instance even if Trndi is already running (otherwise open just activates the
+# old build), -W waits for it to quit, and --stdout/--stderr keep its output in
+# this terminal. Without a terminal (CI, editor tasks) the bundle's executable
+# is run directly instead.
 run: build
 	@echo "Running Trndi from $(OUTDIR)"
 	@set -e; \
-	if [ -x "$(OUTDIR)/Trndi" ]; then "$(OUTDIR)/Trndi" $(RUN_ARGS); \
+	app="$(abspath $(OUTDIR))/Trndi.app"; \
+	if [ "$(UNAME_S)" = "Darwin" ] && [ -x "$$app/Contents/MacOS/Trndi" ]; then \
+	  if tty=$$(tty 2>/dev/null); then open -n -W --stdout "$$tty" --stderr "$$tty" "$$app" --args $(RUN_ARGS); \
+	  else "$$app/Contents/MacOS/Trndi" $(RUN_ARGS); fi; \
+	elif [ -x "$(OUTDIR)/Trndi" ]; then "$(OUTDIR)/Trndi" $(RUN_ARGS); \
 	elif [ -x "$(OUTDIR)/Trndi.app/Contents/MacOS/Trndi" ]; then "$(OUTDIR)/Trndi.app/Contents/MacOS/Trndi" $(RUN_ARGS); \
 	elif [ -f "$(OUTDIR)/Trndi.exe" ]; then "$(OUTDIR)/Trndi.exe" $(RUN_ARGS); \
 	elif [ -x "./Trndi" ]; then ./Trndi $(RUN_ARGS); \
@@ -547,6 +641,7 @@ noext:
 	    echo "Warning: no executable found in project dir or $(OUTDIR)"; \
 	  fi; \
 	  if [ -d "lang" ]; then mkdir -p "$(OUTDIR)/lang" && cp -r lang/. "$(OUTDIR)/lang/" && echo "Copied translations to $(OUTDIR)/lang"; fi; \
+	  $(MARK_DEV_BUNDLE); \
 	  if [ "$(BUILD_MODE)" = "Release" ] && [ "$(STRIP_RELEASE)" = "1" ]; then \
 	    if [ -f "$(OUTDIR)/Trndi" ]; then \
 	      if command -v "$(STRIP)" >/dev/null 2>&1; then \
@@ -570,6 +665,23 @@ clean:
 	  -o \( -type d -name '*.app' \) \
 	\) -print0 | xargs -0 -r rm -rf || true
 	@echo "(Note: Lazarus project files and sources are not removed, but temporary noext project files (e.g. $(LPI).noext-*) are cleaned.)"
+
+# Everything 'clean' removes, plus the ignored residue a working tree collects
+# over time: the built binaries, linker response files (link*.res), heaptrc and
+# log output, the staging dir, unit output dirs, Lazarus backup dirs and the
+# versioned QuickJS sonames the build copies next to the executables. Sources,
+# project files, assets/ and the committed prebuilt libraries under externals/
+# are never touched. Mirrors what .gitignore lists; keep the two in step.
+distclean: clean
+	@echo "Removing remaining build residue..."
+	@[ -n "$(OUTDIR)" ] && rm -rf "$(OUTDIR)" || true
+	@rm -rf lib tests/lib
+	@find . \( -path ./.git -o -path ./externals \) -prune -o -type d -name backup -print0 | xargs -0 -r rm -rf
+	@rm -f Trndi Trndi-arm64 Trndi-arm Trndi-amd64 Trndi-linux tests/TrndiTest tests/TrndiTestConsole
+	@rm -f Trndi.res link*.res tests/link*.res *.trc tests/*.trc trndi.log trndi.log.locked tests/*.log tests/*.pid tests/*.out
+	@rm -f *.so.[0-9]* tests/*.so.[0-9]* *.lps *.tmp
+	@find . \( -path ./.git -o -path ./externals -o -path ./assets \) -prune -o -type f \( -name '*.dbg' -o -name '*.or' -o -name '*.rsj' -o -name '*.rst' -o -name '*.lrt' -o -name '*.lrs' \) -print0 | xargs -0 -r rm -f
+	@echo "(Note: run 'make ide-libs' or a build to restore the QuickJS libraries next to the executable.)"
 
 dist: build
 	@mkdir -p $(OUTDIR)

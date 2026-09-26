@@ -39,6 +39,11 @@
  * - 2026-09-10: Added the Existing class function, which returns the running
  *   engine or nil and never constructs one, so callers can test for an engine
  *   without starting the QuickJS runtime.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Extensions with static import/export are evaluated as ES
+ *   modules (ExtExecuteModule). Added the module name normalizer, the built-in
+ *   "trndi" module and ModuleRootForContext; see trndi.ext.modules.
  *)
 unit trndi.ext.engine;
 
@@ -52,6 +57,7 @@ SysUtils,
 // StrUtils supplies PosEx, which used to arrive via mormot.core.text
 StrUtils,
 trndi.ext.quickjs,
+trndi.ext.modules,
 Dialogs,
 Classes,
 trndi.native,
@@ -599,6 +605,10 @@ public
     {** Load the file at Ext.FileName into Ext.Ctx and evaluate it. Returns the
         evaluation result (or 'Error: ...' on failure, matching ExecuteFile). }
   function ExtExecuteFile(Ext: PExtContextInfo): RawUtf8;
+    {** Module-shaped extensions are evaluated through @code(import());
+        called by @code(ExtExecuteFile) when the file has static
+        @code(import)/@code(export) statements. }
+  function ExtExecuteModule(Ext: PExtContextInfo): RawUtf8;
 
     {** Iterate every loaded extension context. Lifetime of returned pointers
         is owned by the engine; do not free. }
@@ -615,6 +625,11 @@ public
         for the admin/template context. Unlike the display name this is
         unique per loaded extension, so it is safe to key registries on. }
   function ExtensionIdForContext(ctx: JSContext): string;
+
+    {** Folder of the extension owning @code(ctx) (its script's directory),
+        or '' for the admin/template context. Module imports are confined
+        to it. }
+  function ModuleRootForContext(ctx: JSContext): string;
 
     {** Tear down every per-extension context: cancel JS timers, drain pending
         jobs, free each @code(JSContext) and clear the registry. The shared
@@ -1064,10 +1079,41 @@ end;
   Module loader
 ******************************************************************************}
 
+{** Module name normalizer for QuickJS: maps an import specifier to the
+    absolute path the loader will read, confined to the importing extension's
+    folder (see @code(ResolveModuleSpecifier)).
+
+    QuickJS gives the normalizer no way to fail with a message - a nil return
+    surfaces as a bare exception - so a resolution error is handed back as a
+    name carrying @code(ModuleErrorPrefix), which the loader then throws.
+    @code(opaque) is the engine. }
+function TrndiModuleNormalizer(ctx: JSContext; base_name, name: pansichar;
+opaque: pointer): pansichar; cdecl;
+var
+  root, resolved, err: string;
+begin
+  Result := nil;
+  // Runs inside a C frame: no Pascal exception may unwind out of here.
+  try
+    root := '';
+    if opaque <> nil then
+      root := TTrndiExtEngine(opaque).ModuleRootForContext(ctx);
+    err := ResolveModuleSpecifier(string(base_name), string(name), root, resolved);
+    if err <> '' then
+      resolved := ModuleErrorPrefix + err;
+    Result := js_strdup(ctx, pansichar(RawUtf8(resolved)));
+  except
+    on E: Exception do
+      Result := js_strdup(ctx, pansichar(RawUtf8(ModuleErrorPrefix + E.Message)));
+  end;
+end;
+
 {** Module loader for QuickJS: compiles a module from disk.
 
     QuickJS uses the return value as a @code(JSModuleDef*), so the source has to
-    be compiled here rather than handed back as text.
+    be compiled here rather than handed back as text. The name arrives from
+    @code(TrndiModuleNormalizer): an absolute path, the synthetic
+    @code("trndi") module, or a resolution error to throw.
 
     @returns(JSModuleDef pointer, or nil with an exception pending on @code(ctx)) }
 function TrndiModuleLoader(ctx: JSContext; module_name: pansichar;
@@ -1097,15 +1143,22 @@ var
 
 begin
   Result := nil;
-  // Map module_name to a file path; improve mapping as appropriate
   FileName := string(module_name);
 
-  if not FileExists(FileName) then
+  if Pos(ModuleErrorPrefix, FileName) = 1 then
   begin
-    Fail('module not found: ' + FileName);
+    Fail(Copy(FileName, Length(ModuleErrorPrefix) + 1, MaxInt));
     Exit;
   end;
 
+  if FileName = TrndiModuleSpecifier then
+    Script := TrndiModuleSource
+  else if not FileExists(FileName) then
+  begin
+    Fail('module not found: ' + FileName);
+    Exit;
+  end
+  else
   // Load file contents into Script as UTF-8. This runs inside a C frame, so a
   // Pascal exception must not be allowed to unwind out of it.
   try
@@ -1226,7 +1279,9 @@ begin
 
   // Enable module loading via our loader
   // No cast: it was the cast that let a source-text loader pass as a JSModuleDef one.
-  JS_SetModuleLoaderFunc(FRuntime, nil, @TrndiModuleLoader, nil);
+  // The normalizer confines imports to the extension folder and needs the
+  // engine to find that folder from the importing context.
+  JS_SetModuleLoaderFunc(FRuntime, @TrndiModuleNormalizer, @TrndiModuleLoader, Self);
 
   // Allow callbacks to find this engine from JS context
   JS_SetContextOpaque(FContext, Self);
@@ -2245,6 +2300,18 @@ begin
       Exit(FExtContexts[i]^.ExtId);
 end;
 
+function TTrndiExtEngine.ModuleRootForContext(ctx: JSContext): string;
+var
+  i: integer;
+begin
+  Result := '';
+  if (ctx = nil) or (not Assigned(FExtContexts)) then
+    Exit;
+  for i := 0 to FExtContexts.Count - 1 do
+    if (FExtContexts[i] <> nil) and (FExtContexts[i]^.Ctx = ctx) then
+      Exit(ExtractFilePath(FExtContexts[i]^.FileName));
+end;
+
 procedure TTrndiExtEngine.NotifyUnloadAll;
 var
   i: integer;
@@ -2490,6 +2557,61 @@ begin
   end;
 end;
 
+{** Evaluate a module-shaped extension (static @code(import)/@code(export))
+    through the bootstrap script from @code(trndi.ext.modules): a dynamic
+    @code(import()) of the file, whose exported functions are then published
+    as globals so the name-based callbacks keep working. The module graph is
+    loaded and run inside the PumpJobs call, after which the bootstrap's
+    error slot tells whether the load failed. A rejection that arrives later
+    (a top-level @code(await) still pending) is rethrown by the bootstrap and
+    reported by the unhandled-rejection tracker, like a classic async script. }
+function TTrndiExtEngine.ExtExecuteModule(Ext: PExtContextInfo): RawUtf8;
+var
+  ctx: JSContext;
+  EvalResult: JSValue;
+  err, loadErr: RawUtf8;
+begin
+  Result := '';
+  ctx := Ext^.Ctx;
+
+  EvalResult := ctx^.Eval(ModuleBootstrapScript(Ext^.FileName),
+    ExtractFileName(Ext^.FileName), JS_EVAL_TYPE_GLOBAL, err);
+  if EvalResult.IsException then
+  begin
+    ctx^.Free(EvalResult);
+    ExtError(sdsAuto, 'Error loading', err);
+    Exit('Error: ' + err);
+  end;
+  ctx^.Free(EvalResult);
+
+  // Loads, links and evaluates the module graph: the loader runs synchronously
+  // inside import(), so a parse error or a throw at module top level has
+  // landed in the error slot by the time the queue is drained.
+  PumpJobs;
+
+  EvalResult := ctx^.Eval('String(globalThis.' + ModuleBootstrapGlobal + '.error)',
+    '<module-bootstrap>', JS_EVAL_TYPE_GLOBAL, err);
+  if EvalResult.IsException then
+    loadErr := err
+  else
+    loadErr := JS_ToUtf8(ctx, EvalResult);
+  ctx^.Free(EvalResult);
+
+  // Drop the slot: from now on the bootstrap rethrows instead of recording.
+  EvalResult := ctx^.Eval('delete globalThis.' + ModuleBootstrapGlobal,
+    '<module-bootstrap>', JS_EVAL_TYPE_GLOBAL, err);
+  ctx^.Free(EvalResult);
+
+  if loadErr <> '' then
+  try
+    ExtError(sdsAuto, 'Error loading', loadErr);
+    Result := 'Error: ' + loadErr;
+  except
+    on E: Exception do
+      ExtError(sdsAuto, 'An extension''s code resulted in an error: ' + e.message);
+  end;
+end;
+
 {** Read the extension's file and evaluate it in its own context. Mirrors the
     legacy ExecuteFile contract (error string starts with 'Error:'). }
 function TTrndiExtEngine.ExtExecuteFile(Ext: PExtContextInfo): RawUtf8;
@@ -2521,6 +2643,9 @@ begin
   end;
 
   FOutput := '';
+  if ScriptLooksLikeModule(Script) then
+    Exit(ExtExecuteModule(Ext));
+
   EvalResult := ctx^.Eval(Script, ExtractFileName(Ext^.FileName),
     JS_EVAL_TYPE_GLOBAL, err);
   // When the parse fails and the script uses await, retry in async mode:
@@ -2900,7 +3025,12 @@ begin
     for i := 0 to High(Args) do
       ArgArray[i] := VarRecToJS(ctx, Args[i]);
 
-    RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+    // An empty array has no element 0: with range checks on, taking its
+    // address raises, so zero-argument callbacks pass nil instead.
+    if Length(ArgArray) = 0 then
+      RetVal := JS_Call(ctx, FuncObj, GlobalObj, 0, nil)
+    else
+      RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
     // JS_IsException, not JS_IsError: a throw returns the exception marker
     // rather than an Error object, and DumpJSError has to clear it.
     if JS_IsException(RetVal) then

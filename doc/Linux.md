@@ -3,6 +3,8 @@
 ## Widgetset
 Trndi is built and tested against **Qt6** on Linux. If a build won't start or looks wrong, check that your Qt6 packages are installed — see `doc/Widgetsets.md`.
 
+The one package that is missing most often is the **Qt6Pas** binding, which older releases do not carry at all. The [Linux notes in the main README](/README.md#linux-notes) list the package name and command for every distribution, and where to get prebuilt ones when yours has none.
+
 ## Window take-over
 On X11, Trndi cannot color the native title bar (the desktop/window manager owns that) — the window's client area still changes color with your reading.
 

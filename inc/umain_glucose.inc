@@ -39,6 +39,10 @@
  * - 2026-08-21: setDarkMode is in the native base contract now, so the
  *   {$ifdef windows} argument splice is gone - the handle is passed
  *   unconditionally and ignored off-Windows.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Fired alerts are broadcast to extensions next to the web
+ *   publish (level, sensor fault and missing-reading alerts).
  *)
 (* MODIFICATION NOTICE (2026-08-11): The alert engine is now evaluated once
    per update, before the threshold routing, so its hysteresis band and
@@ -147,11 +151,21 @@ var
   gapMin: integer;
   deltaVal: double;
 
-function FormatSigned(const Value: double): string;
+  // WithSign false gives the bare magnitude: the delta pill's chevron already
+  // says which way, so "+" beside "▲" would say it twice.
+function FormatSigned(const Value: double; const WithSign: boolean = true): string;
   var
     signStr: string;
     fmtStr: string;
+    v: double;
   begin
+    v := Value;
+    if not WithSign then
+    begin
+      signStr := '';
+      v := Abs(Value);
+    end
+    else
     if Value = 0 then
       signStr := '±'
     else
@@ -161,7 +175,7 @@ function FormatSigned(const Value: double): string;
       signStr := '';
 
     fmtStr := StringReplace(BG_MSG_SIG_SHORT[un], '%+', signStr, [rfReplaceAll]);
-    Result := SysUtils.Format(fmtStr, [Value]);
+    Result := SysUtils.Format(fmtStr, [v]);
   end;
 begin
   if firstboot then
@@ -215,6 +229,7 @@ begin
   if (not havePrev) or (gapMin >= (INTERVAL_MINUTES * DELTA_MAX)) then
   begin
     lDiff.Caption := '--';
+    FDiffText := lDiff.Caption;
     FDiffRateKnown := false;
   end
   else
@@ -236,11 +251,14 @@ begin
     // Clamp the divisor to a full interval so samples arriving closer together
     // than usual can't amplify a small drift into a large-looking delta.
     deltaVal := deltaVal * INTERVAL_MINUTES / Max(gapMin, INTERVAL_MINUTES);
-    lDiff.Caption := FormatSigned(deltaVal);
     // The same rate in mg/dL, for the tint: DiffLabelColor classifies it
     // with the arrow's thresholds, which are mg/dL per interval.
     FDiffRateMgdl := deltaVal * BG_CONVERTIONS[mgdl][un];
     FDiffRateKnown := true;
+    // Rate first, caption after: with the chevron beside it the text drops
+    // its sign, and DeltaChevronShown reads the rate state.
+    lDiff.Caption := FormatSigned(deltaVal, not DeltaChevronShown);
+    FDiffText := FormatSigned(deltaVal);
   end;
   lArrow.Caption := reading.trend.Img;
   UpdateTrendArrow(reading, havePrev, gapMin);
@@ -403,6 +421,7 @@ begin
   // the fresh path, so without this it would sit on the boot caption for the
   // whole outage.
   lDiff.Caption := '';
+  FDiffText := '';
   FDiffRateKnown := false;
   FAgoBadge.Clear;
   // Same reasoning for time-in-range, which CalcRangeTime only recomputes on
@@ -1056,6 +1075,9 @@ begin
   if Assigned(fFloat) then
   begin
     fFloat.Color := fBg.Color;
+    // Same gradient as the main window: BackdropColorAt at the bottom edge is
+    // the fully darkened tone, or the flat colour in high-contrast mode.
+    fFloat.SetBackdrop(BackdropColorAt(ClientHeight, false));
     fFloat.lVal.Caption := lval.Caption;
     fFloat.lVal.Visible := true;
     // Carries the stale strike-through. The float has no room for a status
@@ -1063,6 +1085,15 @@ begin
     // Mirrored rather than set from the freshness flag so the fresh path clears
     // it by the same route.
     fFloat.lVal.Font.Style := lVal.Font.Style;
+    // Same faces as the main window (font.val / font.arrow, and the arrow
+    // face the platform picked), and the same equal-width digit cells, so the
+    // float reads as the same instrument and its number does not reflow as
+    // it ticks. Guarded like the main window's own write: TabularDigits only
+    // exists on the utabularlabel interposer.
+    fFloat.lVal.Font.Name := lVal.Font.Name;
+    fFloat.lArrow.Font.Name := lArrow.Font.Name;
+    if (lVal is TLabel) and (fFloat.lVal is TLabel) then
+      fFloat.lVal.TabularDigits := lVal.TabularDigits;
     fFloat.lArrow.Caption := lArrow.Caption;
     fFloat.lArrow.Visible := fFloat.lArrow.Caption <> '';
     // The fixed black/white font choice is a preference about the *live* look,
@@ -1072,10 +1103,14 @@ begin
     // is stale take the main window's computed dimmed tone regardless, which is
     // derived from the stale background and therefore always legible on it.
     if fFloat.miFontMain.Checked or FTrendDataStale then
-    begin
-      fFloat.lVal.font.color := lval.font.color;
-      fFloat.larrow.font.color := fFloat.lVal.font.color;
-    end;
+      fFloat.SetTextColor(lVal.Font.Color);
+    // The delta with its sign: the float has no chevron to carry the
+    // direction. Its tint follows the main window's only while the float's
+    // text does; a fixed black/white choice keeps the delta in that colour.
+    if fFloat.miFontMain.Checked or FTrendDataStale then
+      fFloat.SetDelta(FDiffText, DiffLabelColor)
+    else
+      fFloat.SetDelta(FDiffText, clNone);
     fFloat.pnMultiUser.Visible := userColorBar;
     if fFloat.pnMultiUser.Visible then
       fFloat.pnMultiUser.Color := pnMultiUser.Color;
@@ -1182,6 +1217,7 @@ begin
   // could never fire). The exact thresholds still pick the display color.
   fired := FAlertEngine.EvaluateLevel(reading.val);
   WebPublishAlert(fired, reading);
+  NotifyExtensionsAlert(fired, reading);
 
   if reading.val >= api.cgmHi then
     HandleHighGlucose(reading, fired)
@@ -1198,6 +1234,7 @@ begin
     begin
       native.attention(RS_ATTENTION_SENSOR_FAULT, RS_ATTENTION_SENSOR_FAULT_DESC);
       WebPublishAlert([akSensorFault], reading);
+      NotifyExtensionsAlert([akSensorFault], reading);
     end;
   end
   else
@@ -1561,6 +1598,7 @@ begin
     begin
       native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
       WebPublishAlert([akMissing], lastDataReading);
+      NotifyExtensionsAlert([akMissing], lastDataReading);
     end;
     Exit;
   end;
@@ -1940,7 +1978,6 @@ begin
   begin
     fFloat.lRangeDown.Visible := not UseRangeColor;
     fFloat.lRangeUp.Visible := false;
-    fFloat.Font.color := bg_rel_color_lo_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;
@@ -1967,7 +2004,6 @@ begin
   begin
     fFloat.lRangeUp.Visible := not UseRangeColor;
     fFloat.lRangeDown.Visible := false;
-    fFloat.Font.color := bg_rel_color_hi_txt;
   end;
   CenterPanelToCaption(pnOffRange);
 end;

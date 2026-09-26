@@ -34,6 +34,9 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Registered ext_modules_tests.
  *)
 program TrndiTestConsole;
 
@@ -68,9 +71,11 @@ uses
   api_nightscout3_tests,
   api_nightscout3_treatment_tests,
   alert_engine_tests,
+  report_tests,
   webserver_events_tests,
     system_media_controller_tests,
-  ext_manifest_tests
+  ext_manifest_tests,
+  ext_modules_tests
   // Only where externals/quickjs ships a prebuilt engine (see the project's
   // Conditionals); other targets have nothing to link against.
   {$IFDEF HAVE_QUICKJS}, ext_js_tests{$ENDIF};

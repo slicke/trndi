@@ -46,11 +46,25 @@
  *   with the same alpha bands as the main window.
  * - 2026-09-20: DrawSmoothDashedPolyline compares its dash phase with a
  *   tolerance; a float residue could stall the walk forever.
+ * - 2026-09-25: SHAPE_IMAGE_CACHE_MAX raised to 256: the dot halos take the
+ *   window gradient's tone at their row and the age fade gives every slot
+ *   its own color and size, so a 50-slot paint pass needs far more distinct
+ *   shape images than the flat, uniform dots did.
  * - 2026-09-20: Rasters are rendered in device pixels. CanvasDeviceScale
  *   reads the Cocoa backing scale from the drawing context and every shape
  *   rasterizes at size times scale, then stretches into its canvas
  *   rectangle. Darwin now hands Cocoa an R8G8B8A8 raster it premultiplies
- *   itself, so the premultiplied blit is Windows-only.
+ *   itself, so the premultiplied blit is Windows-only. The Cocoa probe is
+ *   gated on RASTER_COCOA (Darwin outside the -dTEST mock build).
+ * - 2026-09-20: CanvasDeviceScale also reads the Qt6 device pixel ratio
+ *   (QPainter's paint device), so rasters land 1:1 on a scaled Wayland or
+ *   X11 desktop instead of being upsampled from logical pixels. The scaled
+ *   blit goes straight to the QPainter there, because LCL's StretchDraw
+ *   rescales the source to logical size first. Gated on RASTER_QT (LCLQt6
+ *   outside the -dTEST mock build).
+ * - 2026-09-20: Added DrawSmoothConvexPolygon, a signed-distance rasterizer
+ *   for filled convex shapes with an optional mitred outline, so the warning
+ *   triangle and the expand chevrons can leave Canvas.Polygon.
  *)
 
 unit trndi.raster;
@@ -68,9 +82,12 @@ unit trndi.raster;
   Rasters are laid down in device pixels. On Cocoa the canvas counts points
   while a Retina backing store holds two pixels per point, so a raster drawn
   at point size would be upsampled and blurred next to the crisp text.
-  CanvasDeviceScale reads the factor from the drawing context, every shape
-  rasterizes at size times scale and is stretched back into its canvas
-  rectangle, which lands its pixels 1:1 on the device. Elsewhere the scale is
+  Qt6 does the same on a scaled desktop: widgets are laid out in logical
+  pixels and the painter's device pixel ratio says how many device pixels each
+  one covers. CanvasDeviceScale reads the factor from the drawing context,
+  every shape rasterizes at size times scale and is stretched back into its
+  canvas rectangle, which lands its pixels 1:1 on the device. Elsewhere
+  (Win32 draws in physical pixels already; GTK2 has no scaling) the scale is
   1 and the rasters are blitted as they are.
 
   Everything is main-thread only: the rendered-shape caches are plain globals
@@ -78,8 +95,18 @@ unit trndi.raster;
 }
 
 {$mode objfpc}{$H+}
-{$ifdef DARWIN}
+
+// The Cocoa backing-scale probe needs the LCL Cocoa widgetset unit, which the
+// test build (tests/mock, -dTEST) does not carry; there the scale is 1.
+{$if defined(DARWIN) and not defined(TEST)}
+{$define RASTER_COCOA}
 {$modeswitch objectivec1}
+{$endif}
+
+// The Qt6 probe needs the LCL Qt6 binding and device-context units, which the
+// mock build does not carry either.
+{$if defined(LCLQt6) and not defined(TEST)}
+{$define RASTER_QT}
 {$endif}
 
 interface
@@ -87,7 +114,8 @@ interface
 uses
 Classes, SysUtils, Math, Graphics, GraphType, IntfGraphics, FPImage,
 {$ifdef Windows}LCLType,{$endif} // HDC for the msimg32 AlphaBlend import
-{$ifdef DARWIN}MacOSAll, CocoaGDIObjects,{$endif} // context transform + TCocoaContext for CanvasDeviceScale
+{$ifdef RASTER_COCOA}MacOSAll, CocoaGDIObjects,{$endif} // context transform + TCocoaContext for CanvasDeviceScale
+{$ifdef RASTER_QT}Types, qt6, qtobjects,{$endif} // PRect, QPainter + TQtDeviceContext for CanvasDeviceScale and the Qt blit
 Generics.Collections;
 
 type
@@ -195,6 +223,16 @@ procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
 procedure DrawSmoothStrokes(ACanvas: TCanvas;
   const AStrokes: array of TSmoothStroke; AThickness: integer);
 
+{** Antialiased filled convex polygon through APts, optionally outlined by an
+    AOutlineWidth-pixel stroke in AOutlineColor centred on the edge with
+    mitred corners, the way a GDI pen draws it. Vertices sit on pixel edges,
+    so an axis-aligned rectangle covers exactly the pixels FillRect would.
+    Concave input is not detected: the coverage is the distance to the
+    nearest edge line, which only describes a convex outline. Uncached. }
+procedure DrawSmoothConvexPolygon(ACanvas: TCanvas;
+  const APts: array of TPoint; AFillColor: TColor;
+  AOutlineColor: TColor = clNone; AOutlineWidth: integer = 0);
+
 {** Antialiased polyline through APts. AColors runs parallel to APts: each
     point's colour extends halfway toward both of its neighbours, so the
     trace switches colour mid-segment. With ACache the finished raster is
@@ -253,11 +291,16 @@ type
   TShapeImageCache = specialize TObjectDictionary<string, TAlphaImage>;
 
 const
-  // Upper bound on distinct (shape, size, color, ...) combos kept alive. A
-  // layout pass produces a handful of sizes and range colors; the cap only
-  // stops unbounded growth across many window sizes. Clearing wholesale is
-  // fine — entries are cheap to re-render once.
-  SHAPE_IMAGE_CACHE_MAX = 32;
+  // Upper bound on distinct (shape, size, color, ...) combos kept alive.
+  // With the age fade every history slot has its own blend of its range
+  // color and, through the shrink, often its own diameter, so a 50-slot
+  // trend alone needs one disc image per slot plus a halo image per
+  // (gradient step, diameter) pair -- well over a hundred per paint. The cap
+  // has to hold a whole pass, or the wholesale clear below fires every
+  // frame and the 16 ms slide ticks re-rasterize everything. Entries are
+  // dot-sized (a few tens of KB each at Retina scale), so this stays in the
+  // low megabytes; it only stops unbounded growth across many window sizes.
+  SHAPE_IMAGE_CACHE_MAX = 256;
 
 var
   // Rendered-shape cache. The main window repaints every dot on each tick
@@ -304,7 +347,7 @@ end;
 // bitmap context answers 1, so a shape rendered into an offscreen TBitmap is
 // not scaled — that bitmap is blitted in points anyway.
 function CanvasDeviceScale(ACanvas: TCanvas): double;
-{$ifdef DARWIN}
+{$if defined(RASTER_COCOA)}
 var
   cocoaCtx: TCocoaContext;
   t: CGAffineTransform;
@@ -319,6 +362,28 @@ begin
   Result := Abs(t.a);
   // Nothing plausible outside the real backing scales; a degenerate transform
   // is no reason to rasterize at a silly size.
+  if (Result < 0.5) or (Result > 8.0) then
+    Result := 1.0;
+end;
+{$elseif defined(RASTER_QT)}
+// The Qt device context wraps a QPainter (its Widget field); the painter's
+// paint device carries the ratio. A widget being painted on a scaled screen
+// answers 2 (or 1.5 with fractional scaling); an offscreen QPixmap answers 1,
+// so a shape rendered into a TBitmap is not scaled, matching Cocoa above.
+var
+  qtCtx: TQtDeviceContext;
+  device: QPaintDeviceH;
+begin
+  Result := 1.0;
+  if (ACanvas = nil) or not ACanvas.HandleAllocated then
+    Exit;
+  qtCtx := TQtDeviceContext(ACanvas.Handle);
+  if (qtCtx = nil) or (qtCtx.Widget = nil) then
+    Exit;
+  device := QPainter_device(qtCtx.Widget);
+  if device = nil then
+    Exit;
+  Result := QPaintDevice_devicePixelRatioF(device);
   if (Result < 0.5) or (Result > 8.0) then
     Result := 1.0;
 end;
@@ -405,7 +470,7 @@ end;
 
 procedure BlitAlphaImage(ACanvas: TCanvas; AImage: TAlphaImage;
   ASrcW, ASrcH, ADestX, ADestY, ADestW, ADestH: integer);
-{$ifdef Windows}
+{$if defined(Windows)}
 var
   blend: TLocalBlendFunction;
 begin
@@ -415,6 +480,42 @@ begin
   blend.AlphaFormat := LOCAL_AC_SRC_ALPHA;
   LocalAlphaBlend(ACanvas.Handle, ADestX, ADestY, ADestW, ADestH,
                   AImage.Canvas.Handle, 0, 0, ASrcW, ASrcH, blend);
+end;
+{$elseif defined(RASTER_QT)}
+// LCL's StretchDraw on Qt rescales the source pixmap to the logical target
+// size (QPixmap_scaled in StretchMaskBlt) before Qt applies the device pixel
+// ratio, so a device-pixel raster is thrown away and blown back up blocky.
+// Hand the painter the raster and the logical target rectangle directly: the
+// painter's device transform maps the target onto the same number of device
+// pixels the raster holds, so the pixels land 1:1. Smooth sampling is an
+// identity there and only matters for fractional ratios.
+var
+  qtCtx, imgCtx: TQtDeviceContext;
+  target, source: TRect;
+  hints: QPainterRenderHints;
+begin
+  if (ADestW = ASrcW) and (ADestH = ASrcH) then
+  begin
+    ACanvas.Draw(ADestX, ADestY, AImage);
+    Exit;
+  end;
+  qtCtx := TQtDeviceContext(ACanvas.Handle);
+  imgCtx := TQtDeviceContext(AImage.Canvas.Handle);
+  if (qtCtx = nil) or (qtCtx.Widget = nil) or (imgCtx = nil) or
+    (imgCtx.vImage = nil) or (imgCtx.vImage.Handle = nil) then
+  begin
+    ACanvas.StretchDraw(
+      Classes.Rect(ADestX, ADestY, ADestX + ADestW, ADestY + ADestH), AImage);
+    Exit;
+  end;
+  target := Classes.Rect(ADestX, ADestY, ADestX + ADestW, ADestY + ADestH);
+  source := Classes.Rect(0, 0, ASrcW, ASrcH);
+  hints := QPainter_renderHints(qtCtx.Widget);
+  QPainter_setRenderHint(qtCtx.Widget, QPainterSmoothPixmapTransform, True);
+  QPainter_drawImage(qtCtx.Widget, PRect(@target), imgCtx.vImage.Handle,
+    PRect(@source));
+  QPainter_setRenderHint(qtCtx.Widget, QPainterSmoothPixmapTransform,
+    (hints and QPainterSmoothPixmapTransform) <> 0);
 end;
 {$else}
 begin
@@ -787,6 +888,161 @@ begin
     img := AlphaImageFromIntf(intf, rw, rh);
     try
       BlitAlphaImage(ACanvas, img, rw, rh, x, y, w, h);
+    finally
+      img.Free;
+    end;
+  finally
+    intf.Free;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+// Convex polygon
+//------------------------------------------------------------------------------
+
+// The polygon is described by its signed distance field: for a convex shape
+// the inward distance to the nearest edge line is exact inside, and outside
+// it reproduces the mitred corner a pen with a square join would draw. Fill
+// coverage is that distance clamped over one pixel, the outline is a band of
+// half the pen width either side of zero, and the two composite as outline
+// over fill. Samples are taken at pixel centres in a raster laid down at
+// device scale over the polygon's padded bounding box, the same way the
+// stroke rasterizer places its box.
+procedure DrawSmoothConvexPolygon(ACanvas: TCanvas;
+  const APts: array of TPoint; AFillColor: TColor;
+  AOutlineColor: TColor; AOutlineWidth: integer);
+var
+  intf: TLazIntfImage;
+  img: TAlphaImage;
+  n, i, j, x, y, pad, ax, ay, aw, ah, rw, rh, minX, minY, maxX, maxY: integer;
+  validEdges: integer;
+  scale, halfW, sx, sy, ex, ey, len, d, dEdge, orient: double;
+  covFill, covLine, aOut, invLine: double;
+  vx, vy, nx, ny: array of double;
+  fr, fg, fb, lr, lg, lb: byte;
+  fc, lc: TColor;
+  hasLine: boolean;
+begin
+  n := Length(APts);
+  if n < 3 then
+    Exit;
+  hasLine := (AOutlineColor <> clNone) and (AOutlineWidth > 0);
+  if hasLine then
+    halfW := AOutlineWidth / 2.0
+  else
+    halfW := 0.0;
+
+  minX := APts[0].X; maxX := APts[0].X;
+  minY := APts[0].Y; maxY := APts[0].Y;
+  for i := 1 to n - 1 do
+  begin
+    minX := Min(minX, APts[i].X); maxX := Max(maxX, APts[i].X);
+    minY := Min(minY, APts[i].Y); maxY := Max(maxY, APts[i].Y);
+  end;
+  // A mitre reaches halfW / sin(half the corner angle) past the vertex; two
+  // pen widths holds every corner down to 60 degrees, which is the sharpest
+  // shape drawn through here.
+  pad := Math.Ceil(2 * halfW) + 2;
+  ax := minX - pad;
+  ay := minY - pad;
+  aw := maxX + pad - ax;
+  ah := maxY + pad - ay;
+  if (aw < 1) or (ah < 1) then
+    Exit;
+
+  scale := CanvasDeviceScale(ACanvas);
+  rw := Max(1, Round(aw * scale));
+  rh := Max(1, Round(ah * scale));
+  halfW := halfW * scale;
+
+  // Edges in raster space with their unit normals; the sign that makes the
+  // normals point inward comes from the polygon's winding (signed area).
+  SetLength({%H-}vx, n); SetLength({%H-}vy, n);
+  SetLength({%H-}nx, n); SetLength({%H-}ny, n);
+  orient := 0;
+  for i := 0 to n - 1 do
+  begin
+    vx[i] := (APts[i].X - ax) * scale;
+    vy[i] := (APts[i].Y - ay) * scale;
+  end;
+  for i := 0 to n - 1 do
+  begin
+    j := (i + 1) mod n;
+    orient := orient + vx[i] * vy[j] - vx[j] * vy[i];
+  end;
+  if orient < 0 then
+    orient := -1.0
+  else
+    orient := 1.0;
+  validEdges := 0;
+  for i := 0 to n - 1 do
+  begin
+    j := (i + 1) mod n;
+    ex := vx[j] - vx[i];
+    ey := vy[j] - vy[i];
+    len := Sqrt(ex * ex + ey * ey);
+    if len < 1e-9 then
+    begin
+      nx[i] := 0; ny[i] := 0;
+    end
+    else
+    begin
+      // Left normal of the edge, flipped by the winding so it points inward.
+      nx[i] := -ey / len * orient;
+      ny[i] := ex / len * orient;
+      Inc(validEdges);
+    end;
+  end;
+  // Zero-length edges are skipped when sampling, so a polygon with fewer than
+  // three real edges has no interior to measure: d would stay at Infinity and
+  // the whole padded box would come out as solid fill.
+  if validEdges < 3 then
+    Exit;
+
+  fc := ColorToRGB(AFillColor);
+  fr := Red(fc); fg := Green(fc); fb := Blue(fc);
+  lr := 0; lg := 0; lb := 0;
+  if hasLine then
+  begin
+    lc := ColorToRGB(AOutlineColor);
+    lr := Red(lc); lg := Green(lc); lb := Blue(lc);
+  end;
+
+  intf := NewAlphaRaster(rw, rh);
+  try
+    for y := 0 to rh - 1 do
+      for x := 0 to rw - 1 do
+      begin
+        sx := x + 0.5;
+        sy := y + 0.5;
+        d := Infinity;
+        for i := 0 to n - 1 do
+        begin
+          if (nx[i] = 0) and (ny[i] = 0) then
+            Continue;
+          dEdge := (sx - vx[i]) * nx[i] + (sy - vy[i]) * ny[i];
+          if dEdge < d then
+            d := dEdge;
+        end;
+
+        covFill := EnsureRange(d + 0.5, 0.0, 1.0);
+        if hasLine then
+          covLine := EnsureRange(halfW + 0.5 - Abs(d), 0.0, 1.0)
+        else
+          covLine := 0.0;
+        // Every pixel is written: a fresh raster carries whatever the
+        // allocator left behind, so untouched pixels would blit opaque.
+        invLine := 1.0 - covLine;
+        aOut := covLine + covFill * invLine;
+        PutPremultipliedPixel(intf, x, y,
+          lr * covLine + fr * covFill * invLine,
+          lg * covLine + fg * covFill * invLine,
+          lb * covLine + fb * covFill * invLine, aOut);
+      end;
+
+    img := AlphaImageFromIntf(intf, rw, rh);
+    try
+      BlitAlphaImage(ACanvas, img, rw, rh, ax, ay, aw, ah);
     finally
       img.Free;
     end;

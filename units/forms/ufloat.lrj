@@ -26,6 +26,7 @@
 {"hash":6156453,"name":"tffloat.mifontwhite.caption","sourcebytes":[87,104,105,116,101],"value":"White"},
 {"hash":214280706,"name":"tffloat.mifontmain.caption","sourcebytes":[77,97,105,110,32,87,105,110,100,111,119,32,67,111,108,111,114],"value":"Main Window Color"},
 {"hash":158190331,"name":"tffloat.miclock.caption","sourcebytes":[83,104,111,119,32,99,108,111,99,107],"value":"Show clock"},
+{"hash":158284993,"name":"tffloat.midelta.caption","sourcebytes":[83,104,111,119,32,100,101,108,116,97],"value":"Show delta"},
 {"hash":70287671,"name":"tffloat.mimain.caption","sourcebytes":[83,104,111,119,47,72,105,100,101,32,77,97,105,110,32,87,105,110,100,111,119],"value":"Show/Hide Main Window"},
 {"hash":2813861,"name":"tffloat.menuitem1.caption","sourcebytes":[38,72,105,100,101],"value":"&Hide"}
 ]}

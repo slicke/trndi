@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Bound js_strdup so a module normalizer can hand QuickJS a
+ *   name it releases with js_free.
  *)
 
 {** Direct QuickJS binding for Trndi, replacing @code(mormot.lib.quickjs).
@@ -401,6 +405,9 @@ function JS_AddIntrinsicRegExp(ctx: JSContext): integer; cdecl; external QJSLIB;
 procedure JS_FreeCString(ctx: JSContext; s: pansichar); cdecl; external QJSLIB;
 procedure JS_FreeAtom(ctx: JSContext; a: JSAtom); cdecl; external QJSLIB;
 procedure js_free(ctx: JSContext; p: pointer); cdecl; external QJSLIB;
+{** Duplicate a C string with the runtime's allocator. This is what a module
+    normalizer must return: QuickJS releases the name with @code(js_free). }
+function js_strdup(ctx: JSContext; const str: pansichar): pansichar; cdecl; external QJSLIB;
 
 { NOTE: quickjs-ng added the JSRuntime parameter; Bellard's took only pid. }
 function JS_NewClassID(rt: JSRuntime; pid: PCardinal): JSClassID; cdecl; external QJSLIB;

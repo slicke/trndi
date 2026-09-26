@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-20: Added the module normalizer test and the end-to-end tests of
+ *   the ES module bootstrap from trndi.ext.modules.
  *)
 
 unit ext_js_tests;
@@ -55,7 +59,8 @@ unit ext_js_tests;
 interface
 
 uses
-  fpcunit, testregistry, SysUtils, Variants, trndi.ext.quickjs;
+  fpcunit, testregistry, SysUtils, Classes, Variants, trndi.ext.quickjs,
+  trndi.ext.modules;
 
 type
   TQuickJSBindingTests = class(TTestCase)
@@ -87,6 +92,9 @@ type
     procedure TestBigIntToVariant;
     procedure TestGetValueReferenceIsOwned;
     procedure TestModuleLoaderReturnsModuleDef;
+    procedure TestModuleNormalizerRenamesImport;
+    procedure TestModuleBootstrapPublishesExports;
+    procedure TestModuleBootstrapReportsLoadError;
     procedure TestPromiseJobsRun;
     procedure TestJobPumpDrainsQueueFully;
     procedure TestJobPumpBudgetStopsRunawayChain;
@@ -704,6 +712,7 @@ var
   TestModuleName: string;
   TestModuleSource: RawUtf8;
   TestModuleTag: system.int64;
+  TestNormalizerBase: string;
 
 { A module loader shaped the way QuickJS expects: it compiles the source and
   returns the JSModuleDef, never the source text. }
@@ -763,6 +772,229 @@ begin
 
   AssertEquals('the imported binding should be visible', '42',
     EvalToString('String(globalThis.imported)'));
+end;
+
+{ Normalizer that redirects any relative specifier to TestModuleName. The
+  returned string must come from the runtime's allocator (js_strdup), since
+  QuickJS releases it with js_free. }
+function TestModuleNormalizer(ctx: JSContext; base_name, name: pansichar;
+opaque: pointer): pansichar; cdecl;
+begin
+  TestNormalizerBase := string(base_name);
+  if (Length(name) > 1) and (name[0] = '.') then
+    Result := js_strdup(ctx, pansichar(RawUtf8(TestModuleName)))
+  else
+    Result := js_strdup(ctx, name);
+end;
+
+procedure TQuickJSBindingTests.TestModuleNormalizerRenamesImport;
+var
+  v: JSValue;
+  jobCtx: JSContext;
+  pumped: integer;
+begin
+  // The engine's normalizer maps "./x.js" to an absolute path before the
+  // loader sees it. Pin the two contracts it depends on: the normalizer gets
+  // the importing file as base_name, and a js_strdup'd result is accepted
+  // (and freed) by QuickJS without a crash.
+  TestModuleName := 'renamed-by-normalizer.js';
+  TestModuleSource := 'export const answer = 7;';
+  TestNormalizerBase := '';
+  JS_SetModuleLoaderFunc(FRuntime, @TestModuleNormalizer, @TestModuleLoader, nil);
+
+  v := JS_Eval(FContext,
+    'import { answer } from "./whatever.js"; globalThis.renamed = answer;',
+    'entry.js', JS_EVAL_TYPE_MODULE);
+  try
+    AssertFalse('importing through the normalizer should not raise', JS_IsException(v));
+  finally
+    JS_FreeValue(FContext, v);
+  end;
+
+  jobCtx := FContext;
+  pumped := 0;
+  while JS_IsJobPending(FRuntime) and (pumped < 100) do
+  begin
+    if JS_ExecutePendingJob(FRuntime, @jobCtx) <= 0 then
+      Break;
+    Inc(pumped);
+  end;
+
+  AssertEquals('the importer is passed as base_name', 'entry.js', TestNormalizerBase);
+  AssertEquals('the redirected module was evaluated', '7',
+    EvalToString('String(globalThis.renamed)'));
+end;
+
+{ The engine's module pipeline without the engine: the normalizer resolves
+  against a folder through ResolveModuleSpecifier and the loader compiles the
+  resolved file (or the synthetic "trndi" module), exactly as
+  trndi.ext.engine's TrndiModuleNormalizer/TrndiModuleLoader do. }
+var
+  FileModuleRoot: string;
+
+function FileModuleNormalizer(ctx: JSContext; base_name, name: pansichar;
+opaque: pointer): pansichar; cdecl;
+var
+  resolved, err: string;
+begin
+  err := ResolveModuleSpecifier(string(base_name), string(name), FileModuleRoot, resolved);
+  if err <> '' then
+    resolved := ModuleErrorPrefix + err;
+  Result := js_strdup(ctx, pansichar(RawUtf8(resolved)));
+end;
+
+function FileModuleLoader(ctx: JSContext; module_name: pansichar;
+opaque: pointer): pointer; cdecl;
+var
+  name: string;
+  src: RawUtf8;
+  compiled, thrown: JSValue;
+  f: TFileStream;
+  ss: TStringStream;
+begin
+  Result := nil;
+  name := string(module_name);
+  if Pos(ModuleErrorPrefix, name) = 1 then
+  begin
+    thrown := JS_Eval(ctx, RawUtf8('throw new ReferenceError(' +
+      JSStringLiteral(Copy(name, Length(ModuleErrorPrefix) + 1, MaxInt)) + ')'),
+      '<module-loader>', JS_EVAL_TYPE_GLOBAL);
+    JS_FreeValue(ctx, thrown);
+    Exit;
+  end;
+  if name = TrndiModuleSpecifier then
+    src := TrndiModuleSource
+  else
+  begin
+    f := TFileStream.Create(name, fmOpenRead or fmShareDenyWrite);
+    ss := TStringStream.Create;
+    try
+      ss.CopyFrom(f, f.Size);
+      src := ss.DataString;
+    finally
+      ss.Free;
+      f.Free;
+    end;
+  end;
+  compiled := JS_Eval(ctx, src, RawUtf8(name), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+  if JS_IsException(compiled) then
+    Exit;
+  Result := JS_VALUE_GET_PTR(compiled);
+  JS_FreeValue(ctx, compiled);
+end;
+
+procedure WriteTextFile(const path, text: string);
+var
+  f: TFileStream;
+begin
+  f := TFileStream.Create(path, fmCreate);
+  try
+    if text <> '' then
+      f.WriteBuffer(text[1], Length(text));
+  finally
+    f.Free;
+  end;
+end;
+
+procedure TQuickJSBindingTests.TestModuleBootstrapPublishesExports;
+var
+  v: JSValue;
+  jobCtx: JSContext;
+  pumped: integer;
+  entry: string;
+begin
+  // A module entry that imports a helper and the built-in "trndi" module,
+  // loaded through the same bootstrap script the engine evaluates. The
+  // exported function must land on globalThis (that is how name-based
+  // callbacks like clockView are found), the private one must not, and the
+  // error slot must be empty.
+  FileModuleRoot := IncludeTrailingPathDelimiter(GetTempDir(false)) +
+    'trndi-bootstrap-' + IntToStr(GetProcessID);
+  ForceDirectories(FileModuleRoot + DirectorySeparator + 'lib');
+  entry := FileModuleRoot + DirectorySeparator + 'main.js';
+  WriteTextFile(FileModuleRoot + DirectorySeparator + 'lib' + DirectorySeparator + 'util.js',
+    'export const twice = (n) => n * 2;');
+  WriteTextFile(entry,
+    'import T, { data } from "trndi";' + LineEnding +
+    'import { twice } from "./lib/util";' + LineEnding +   // extension-less on purpose
+    'function hidden() { return 1; }' + LineEnding +
+    'export function clockView() { return "v" + twice(21) + T.tag + data.tag; }' + LineEnding +
+    'export const notAFunction = 5;');
+  try
+    JS_SetModuleLoaderFunc(FRuntime, @FileModuleNormalizer, @FileModuleLoader, nil);
+    // Stand-in for the engine's Trndi object.
+    JS_FreeValue(FContext, JS_Eval(FContext,
+      'globalThis.Trndi = { tag: "!", data: { tag: "?" } };', 'setup.js', JS_EVAL_TYPE_GLOBAL));
+
+    v := JS_Eval(FContext, ModuleBootstrapScript(entry), 'main.js', JS_EVAL_TYPE_GLOBAL);
+    try
+      AssertFalse('bootstrap must not raise', JS_IsException(v));
+    finally
+      JS_FreeValue(FContext, v);
+    end;
+
+    jobCtx := FContext;
+    pumped := 0;
+    while JS_IsJobPending(FRuntime) and (pumped < 100) do
+    begin
+      if JS_ExecutePendingJob(FRuntime, @jobCtx) <= 0 then
+        Break;
+      Inc(pumped);
+    end;
+
+    AssertEquals('no load error', '',
+      EvalToString('String(globalThis.' + ModuleBootstrapGlobal + '.error)'));
+    AssertEquals('exported function is a global callback', 'v42!?',
+      EvalToString('typeof clockView === "function" ? clockView() : "missing"'));
+    AssertEquals('private function stays private', 'undefined',
+      EvalToString('typeof globalThis.hidden'));
+    AssertEquals('non-function exports are not published', 'undefined',
+      EvalToString('typeof globalThis.notAFunction'));
+  finally
+    DeleteFile(FileModuleRoot + DirectorySeparator + 'lib' + DirectorySeparator + 'util.js');
+    DeleteFile(entry);
+    RemoveDir(FileModuleRoot + DirectorySeparator + 'lib');
+    RemoveDir(FileModuleRoot);
+  end;
+end;
+
+procedure TQuickJSBindingTests.TestModuleBootstrapReportsLoadError;
+var
+  v: JSValue;
+  jobCtx: JSContext;
+  pumped: integer;
+  entry, err: string;
+begin
+  // A bare specifier is rejected by the normalizer; the loader throws the
+  // message and the bootstrap has to surface it through the error slot, with
+  // the offending file named, while the slot still exists.
+  FileModuleRoot := IncludeTrailingPathDelimiter(GetTempDir(false)) +
+    'trndi-bootstrap-err-' + IntToStr(GetProcessID);
+  ForceDirectories(FileModuleRoot);
+  entry := FileModuleRoot + DirectorySeparator + 'main.js';
+  WriteTextFile(entry, 'import x from "lodash";' + LineEnding + 'export function clockView() {}');
+  try
+    JS_SetModuleLoaderFunc(FRuntime, @FileModuleNormalizer, @FileModuleLoader, nil);
+    v := JS_Eval(FContext, ModuleBootstrapScript(entry), 'main.js', JS_EVAL_TYPE_GLOBAL);
+    JS_FreeValue(FContext, v);
+
+    jobCtx := FContext;
+    pumped := 0;
+    while JS_IsJobPending(FRuntime) and (pumped < 100) do
+    begin
+      if JS_ExecutePendingJob(FRuntime, @jobCtx) <= 0 then
+        Break;
+      Inc(pumped);
+    end;
+
+    err := EvalToString('String(globalThis.' + ModuleBootstrapGlobal + '.error)');
+    AssertTrue('error slot names the problem: ' + err, Pos('bare module', err) > 0);
+    AssertTrue('error slot names the specifier: ' + err, Pos('lodash', err) > 0);
+    AssertEquals('nothing was published', 'undefined', EvalToString('typeof globalThis.clockView'));
+  finally
+    DeleteFile(entry);
+    RemoveDir(FileModuleRoot);
+  end;
 end;
 
 procedure TQuickJSBindingTests.TestPromiseJobsRun;

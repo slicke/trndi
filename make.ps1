@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|ide-libs|list-modules|test|assets|ptop|clean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|run|ide-libs|list-modules|test|assets|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -167,6 +167,34 @@ switch ($firstArg) {
         if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
+    "run" {
+        # Build release, then start the staged build\Trndi.exe, like the
+        # Makefile's run target. Arguments after 'run' go to Trndi, not lazbuild.
+        if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
+        $mode = 'Extensions (Release)'
+        Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
+        & $laz "--build-mode=$mode" 'Trndi.lpi'
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        Copy-QuickJSLibs; Publish-Build -WithQuickJS
+
+        $outDir = if ($env:OUTDIR) { $env:OUTDIR } else { Join-Path $PSScriptRoot 'build' }
+        $exe = Join-Path $outDir 'Trndi.exe'
+        if (-not (Test-Path $exe)) { Write-Error "Trndi.exe not found in $outDir; build first."; exit 1 }
+        Write-Host "Running Trndi from $outDir" -ForegroundColor Cyan
+        # Trndi is a GUI app, so & would return at once; Start-Process -Wait
+        # blocks until it quits and gives us its exit code.
+        $startArgs = @{ FilePath = $exe; WorkingDirectory = $outDir; Wait = $true; PassThru = $true }
+        # Start-Process joins ArgumentList with bare spaces, so quote any
+        # argument that is empty or holds whitespace to keep it whole. FPC's
+        # ParamStr treats backslashes literally, so no escaping beyond that.
+        if ($extraArgs.Count -gt 0) {
+            $startArgs.ArgumentList = @($extraArgs | ForEach-Object {
+                if ($_ -eq '' -or $_ -match '\s') { '"' + $_ + '"' } else { $_ }
+            })
+        }
+        $proc = Start-Process @startArgs
+        exit $proc.ExitCode
+    }
     "ide-libs" {
         # The Lazarus IDE builds and runs Trndi.exe in the project root, so the
         # QuickJS libraries have to sit there for an Extensions build started
@@ -214,7 +242,8 @@ switch ($firstArg) {
         & 'tests/TrndiTestConsole.exe' @extraArgs
         exit $LASTEXITCODE
     }
-    "clean" {
+    { $_ -in "clean", "distclean" } {
+        $distclean = ($_ -eq "distclean")
         Write-Host "Cleaning common products..." -ForegroundColor Cyan
 
         # Accept optional dry-run flag: -n or --dry-run
@@ -263,6 +292,46 @@ switch ($firstArg) {
             Write-Host "(no matching build artifacts found)" -ForegroundColor Yellow
         }
 
+        if ($distclean) {
+            # Same list as the Makefile's distclean: built binaries, link*.res,
+            # heaptrc/log output, the staging dir, unit output dirs, Lazarus backup
+            # dirs and the versioned QuickJS sonames. Sources, project files, assets\
+            # and externals\ are never touched. Keep in step with .gitignore.
+            Write-Host "Removing remaining build residue..." -ForegroundColor Cyan
+            $residue = @()
+            $stage = if ($env:OUTDIR) { $env:OUTDIR } else { "build" }
+            foreach ($d in @($stage, "lib", "tests\lib")) {
+                if (Test-Path -LiteralPath $d -PathType Container) { $residue += Get-Item -LiteralPath $d -Force }
+            }
+            $residue += Get-ChildItem -Path . -Recurse -Force -Directory -Filter backup -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -notmatch "[\\/](\.git|externals)[\\/]" }
+            $files = @("Trndi", "Trndi.res", "tests\TrndiTest", "tests\TrndiTestConsole", "trndi.log", "trndi.log.locked") |
+                Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | ForEach-Object { Get-Item -LiteralPath $_ -Force }
+            $residue += $files
+            $residue += Get-ChildItem -Path . -File -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -match "^link\d+\.res$|\.(trc|lps|tmp)$|\.so\.\d" }
+            $residue += Get-ChildItem -Path tests -File -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -match "^link\d+\.res$|\.(trc|log|pid|out)$|\.so\.\d" }
+            $residue += Get-ChildItem -Path . -Recurse -File -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -notmatch "[\\/](\.git|externals|assets)[\\/]" -and $_.Name -match "\.(dbg|or|rsj|rst|lrt|lrs)$" }
+            $residue = $residue | Sort-Object FullName -Unique
+            $residueCount = ($residue | Measure-Object).Count
+            if ($residueCount -eq 0) {
+                Write-Host "(no remaining build residue found)" -ForegroundColor Yellow
+            }
+            elseif ($dryRun) {
+                Write-Host "DRY RUN: residue that would be removed:" -ForegroundColor Yellow
+                foreach ($m in $residue) { Write-Host "  $($m.FullName)" }
+                Write-Host "Would remove $residueCount items." -ForegroundColor Yellow
+            }
+            else {
+                foreach ($m in $residue) {
+                    try { Remove-Item -LiteralPath $m.FullName -Force -Recurse -ErrorAction SilentlyContinue } catch { }
+                }
+                Write-Host "Removed $residueCount residue items." -ForegroundColor Green
+            }
+            Write-Host "(Note: run .\make.ps1 ide-libs or a build to restore the QuickJS DLLs next to the executable.)" -ForegroundColor Cyan
+        }
         Write-Host "(Note: Lazarus project files and sources are not removed; temporary noext project files are cleaned.)" -ForegroundColor Cyan
         exit 0
     }
@@ -489,6 +558,7 @@ switch ($firstArg) {
         Write-Host "  debug            Build debug ('Extensions (Debug)' mode)"
         Write-Host "  noext            Build without extensions ('No Ext (Release)' mode; no QuickJS dependency)"
         Write-Host "  noext-debug      Build without extensions, debug ('No Ext (Debug)' mode)"
+        Write-Host "  run              Build release, then start build\Trndi.exe (arguments after 'run' go to Trndi)"
         Write-Host "  test             Build tests/TrndiTestConsole.lpi and run it (spawns an in-process test server;"
         Write-Host "                   set TRNDI_NO_TESTSERVER=1 to skip integration tests)"
         Write-Host "  ide-libs         Copy the QuickJS engine + ABI shim to the project root, for Extensions builds run from the Lazarus IDE (F9)"
@@ -499,6 +569,7 @@ switch ($firstArg) {
         Write-Host "  lang-check       Audit lang/: resource strings missing from Trndi.pot, plus per-catalog stats"
         Write-Host "                   (read-only; -all lists design-time placeholders; .po validation needs gettext)"
         Write-Host "  clean            Remove build artifacts (*.o, *.ppu, executables, ...); use -n or --dry-run to preview"
+        Write-Host "  distclean        clean, plus binaries, link*.res, heaptrc/log output, build\, lib\, backup\ dirs and versioned QuickJS sonames; -n previews"
         Write-Host "  help             Show this help"
         Write-Host "Notes:" -ForegroundColor Cyan
         Write-Host "  Extra arguments after a target are forwarded to lazbuild (or the test runner for 'test')."

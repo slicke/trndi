@@ -1308,6 +1308,10 @@ msgstr "Stor"
 msgid "Show clock"
 msgstr "Visa klocka"
 
+#: tffloat.midelta.caption
+msgid "Show delta"
+msgstr "Visa delta"
+
 #: tffloat.micustomsize.caption
 msgctxt "tffloat.micustomsize.caption"
 msgid "Custom"
@@ -1851,6 +1855,10 @@ msgctxt "trndi.ext.functions.sexttitle"
 msgid "Extension error"
 msgstr "Tilläggsfel"
 
+#: trndi.strings.rs_ago_time_caption
+msgid "last reading"
+msgstr "senaste"
+
 #: trndi.strings.rs_alert_snooze
 msgid "Snooze alerts"
 msgstr "Pausa varningar"
@@ -1876,6 +1884,11 @@ msgstr "Varningspaus av"
 #: trndi.strings.rs_alert_snooze_resume
 msgid "Resume alerts"
 msgstr "Aktivera varningar igen"
+
+#: trndi.strings.rs_alert_snooze_urgent_cap
+#, object-pascal-format
+msgid "Urgent low alerts can only be snoozed briefly and resume at %s"
+msgstr "Akuta låga varningar kan endast snoozas kortvarigt och återupptas vid %s"
 
 #: trndi.strings.rs_api_notice
 msgid "Data source notice"
@@ -2078,10 +2091,6 @@ msgstr "Din internetanslutning fungerar!"
 msgid "The following extension file returned an error while loading: %s"
 msgstr "Följande tilläggsfil returnerade ett fel när den laddades: %s"
 
-#: trndi.strings.rs_ext_none_loaded
-msgid "No extensions are loaded"
-msgstr "Inga tillägg är laddade"
-
 #: trndi.strings.rs_ext_confirm
 msgctxt "trndi.strings.rs_ext_confirm"
 msgid "Extension Confirmation"
@@ -2112,6 +2121,10 @@ msgstr "Filen \"%s\" hittades inte"
 msgctxt "trndi.strings.rs_ext_msg"
 msgid "Extension Message"
 msgstr "Tilläggsmeddelande"
+
+#: trndi.strings.rs_ext_none_loaded
+msgid "No extensions are loaded"
+msgstr "Inga tillägg är laddade"
 
 #: trndi.strings.rs_ext_user_info
 msgctxt "trndi.strings.rs_ext_user_info"
@@ -2459,22 +2472,6 @@ msgstr "Dina förutspådda avläsningar visas i det nedra högra hörnet; skilln
 msgid "No change predicted →"
 msgstr "Ingen förändring förutspås →"
 
-#: trndi.strings.rs_predict_header
-msgid "+%d min"
-msgstr "+%d min"
-
-#: trndi.strings.rs_tir_caption
-msgid "in range"
-msgstr "inom mål"
-
-#: trndi.strings.rs_tir_mean_caption
-msgid "avg"
-msgstr "snitt"
-
-#: trndi.strings.rs_ago_time_caption
-msgid "last reading"
-msgstr "senaste"
-
 #: trndi.strings.rs_predictions_unavailable
 msgid "Predictions unavailable"
 msgstr "Förutspåelser otillgängliga"
@@ -2501,6 +2498,11 @@ msgstr "Ange antalet avläsningar att förutspå (1-20)"
 #: trndi.strings.rs_predict_amount_title
 msgid "Force a prediction"
 msgstr "Tvinga en förutspåelse"
+
+#: trndi.strings.rs_predict_header
+#, object-pascal-format
+msgid "+%d min"
+msgstr "+%d min"
 
 #: trndi.strings.rs_prom_err_capt
 #, object-pascal-format
@@ -2569,6 +2571,160 @@ msgstr "⟳ Uppdaterad: %s (Nästa uppdatering: %s)"
 msgctxt "trndi.strings.rs_refresh_prompt"
 msgid "Refresh?"
 msgstr "Läs om?"
+
+#: trndi.strings.rs_report_at
+#, object-pascal-format
+msgctxt "trndi.strings.rs_report_at"
+msgid "%s at %s"
+msgstr "%s vid %s"
+
+#: trndi.strings.rs_report_band_high
+#, object-pascal-format
+msgid "High, over %s"
+msgstr "Högt, över %s"
+
+#: trndi.strings.rs_report_band_in
+#, object-pascal-format
+msgid "In range, %s-%s"
+msgstr "Inom mål, %s-%s"
+
+#: trndi.strings.rs_report_band_low
+#, object-pascal-format
+msgid "Low, under %s"
+msgstr "Lågt, under %s"
+
+#: trndi.strings.rs_report_band_over
+#, object-pascal-format
+msgid "Over range, %s-%s"
+msgstr "Över område, %s-%s"
+
+#: trndi.strings.rs_report_band_under
+#, object-pascal-format
+msgid "Under range, %s-%s"
+msgstr "Under område, %s-%s"
+
+#: trndi.strings.rs_report_cv
+msgid "Variability (CV)"
+msgstr "Variabilitet (CV)"
+
+#: trndi.strings.rs_report_distribution
+msgid "Where the readings fell"
+msgstr "Var avläsningarna föll"
+
+#: trndi.strings.rs_report_excursions
+msgid "Excursions"
+msgstr "Exkursioner"
+
+#: trndi.strings.rs_report_excursions_value
+#, object-pascal-format
+msgid "%d low, %d high (runs of %d or more readings past the limit)"
+msgstr "%d lågt, %d högt (serier om %d eller fler avläsningar i följd utanför gränsen)"
+
+#: trndi.strings.rs_report_footer
+msgid "These are plain statistics over the readings Trndi happens to hold. They are not a medical assessment, the indicator above is not a laboratory A1c, and nothing here should be acted on without your official device and your care team."
+msgstr "Detta är enbart statistik över de mätvärden som Trndi råkar innehålla. De utgör inte en medicinsk bedömning, indikatorn ovan är inte ett laboratorie-HbA1c, och ingenting här bör ageras utifrån utan din officiella enhet och ditt vårdteam."
+
+#: trndi.strings.rs_report_gap
+msgid "Longest gap"
+msgstr "Längst gap"
+
+#: trndi.strings.rs_report_gap_none
+msgid "none beyond the usual spacing"
+msgstr "ingen utöver normala mellanrum"
+
+#: trndi.strings.rs_report_gap_value
+#, object-pascal-format
+msgid "%d min, from %s"
+msgstr "%d min, från %s"
+
+#: trndi.strings.rs_report_gmi
+msgid "Glucose Management Indicator"
+msgstr "Indikator för glukoshantering (GMI)"
+
+#: trndi.strings.rs_report_gmi_value
+#, object-pascal-format
+msgid "%.1f%% (%.0f mmol/mol)"
+msgstr "%.1f%% (%.0f mmol/mol)"
+
+#: trndi.strings.rs_report_highest
+msgid "Highest reading"
+msgstr "Högsta avläsning"
+
+#: trndi.strings.rs_report_lowest
+msgid "Lowest reading"
+msgstr "Lägsta avläsning"
+
+#: trndi.strings.rs_report_mean
+msgid "Average"
+msgstr "Medel"
+
+#: trndi.strings.rs_report_median
+msgid "Median"
+msgstr "Median"
+
+#: trndi.strings.rs_report_nodata
+msgid "There are no readings loaded to summarise yet."
+msgstr "Det finns inga avläsningar laddade att sammanfatta än."
+
+#: trndi.strings.rs_report_numbers
+msgid "Numbers"
+msgstr "Nummer"
+
+#: trndi.strings.rs_report_period
+#, object-pascal-format
+msgid "%s to %s (%s)"
+msgstr "%s till %s (%s)"
+
+#: trndi.strings.rs_report_samples
+#, object-pascal-format
+msgid "%d readings, roughly %s apart, covering %.0f%% of the period"
+msgstr "%d avläsningar, grovt %s emellan, täcker %.0f%% av perioden"
+
+#: trndi.strings.rs_report_save
+msgid "Save..."
+msgstr "Spara…"
+
+#: trndi.strings.rs_report_save_error
+#, object-pascal-format
+msgid "The summary could not be saved: %s"
+msgstr "Sammanfattningen kunde inte sparas: %s"
+
+#: trndi.strings.rs_report_save_filter
+msgid "Text file|*.txt|All files|*.*"
+msgstr "Textfil|*.txt|Alla filer|*.*"
+
+#: trndi.strings.rs_report_save_ok
+#, object-pascal-format
+msgid "Summary saved to %s"
+msgstr "Sammanfattningen sparades till %s"
+
+#: trndi.strings.rs_report_save_title
+msgid "Save summary"
+msgstr "Spara sammanfattning"
+
+#: trndi.strings.rs_report_sd
+msgid "Spread (standard deviation)"
+msgstr "Spridning (standardavvikelse)"
+
+#: trndi.strings.rs_report_shape
+msgid "Shape of the period"
+msgstr "Periodens trendförlopp"
+
+#: trndi.strings.rs_report_span_hm
+#, object-pascal-format
+msgctxt "trndi.strings.rs_report_span_hm"
+msgid "%d h %d min"
+msgstr "%d tim %d min"
+
+#: trndi.strings.rs_report_span_m
+#, object-pascal-format
+msgctxt "trndi.strings.rs_report_span_m"
+msgid "%d min"
+msgstr "%d min"
+
+#: trndi.strings.rs_report_title
+msgid "Glucose summary"
+msgstr "Glukossammanfattning"
 
 #: trndi.strings.rs_restart_apply
 msgid "Trndi must be restarted for settings to take effect"
@@ -2775,6 +2931,7 @@ msgstr "%d d %d tim"
 
 #: trndi.strings.rs_stale_age_hour
 #, object-pascal-format
+msgctxt "trndi.strings.rs_stale_age_hour"
 msgid "%d h %d min"
 msgstr "%d tim %d min"
 
@@ -2822,6 +2979,10 @@ msgstr "Försöker igen nu…"
 msgid "Waiting for data"
 msgstr "Väntar på data"
 
+#: trndi.strings.rs_tir_caption
+msgid "in range"
+msgstr "inom mål"
+
 #: trndi.strings.rs_tir_h
 #, object-pascal-format
 msgid "This is your time in range for the last %s hours and %s minutes"
@@ -2836,6 +2997,10 @@ msgstr "Detta är din tid i målområdet under den senaste timmen och %s minuter
 #, object-pascal-format
 msgid "This is your time in range for the last %s minutes"
 msgstr "Detta är din tid i målområdet under de senaste %s minuterna"
+
+#: trndi.strings.rs_tir_mean_caption
+msgid "avg"
+msgstr "snitt"
 
 #: trndi.strings.rs_tir_row2
 #, object-pascal-format
@@ -3086,6 +3251,24 @@ msgstr "Vänligen ange en serveradress eller användarnamn."
 #: trndi.strings.rs_wizard_next
 msgid "Next →"
 msgstr "Nästa →"
+
+#: trndi.strings.rs_wizard_progress_body
+msgid ""
+"Trndi can show a slim bar along the left edge of the window that fills up as the next reading approaches. If a reading runs late, a second line beside it fills while Trndi retries.\n"
+"\n"
+"You can change this later via right-click → Settings."
+msgstr ""
+"Trndi kan visa en smal linje till vänster om fönstret som fylls upp medan nästa avläsning närmar sig. Om en avläsning är sen, visas en andra linje bredvid som fylls medan Trndi försöker hämta igen.\n"
+"\n"
+"Du kan ändra detta senare genom höger-klick → Inställningar."
+
+#: trndi.strings.rs_wizard_progress_check
+msgid "Show the refresh countdown bar"
+msgstr "Visa uppdateringsnedräknaren"
+
+#: trndi.strings.rs_wizard_progress_head
+msgid "Refresh countdown"
+msgstr "Uppdateringsnedräkning"
 
 #: trndi.strings.rs_wizard_source
 msgid "Data source:"
@@ -3359,23 +3542,6 @@ msgstr ""
 "- Fönstret kan hållas över andra fönster\n"
 "- Fönstrets kanter kan döljas (kan bero på operativsystem)"
 
-#: uconf.rs_dot_line
-msgid "Draw a line connecting the trend dots"
-msgstr "Rita en linje mellan trendpunkterna"
-
-#: uconf.rs_dot_line_normal
-msgctxt "uconf.rs_dot_line_normal"
-msgid "Normal"
-msgstr "Normal"
-
-#: uconf.rs_dot_line_thick
-msgid "Thick"
-msgstr "Tjock"
-
-#: uconf.rs_dot_line_thin
-msgid "Thin"
-msgstr "Tunn"
-
 #: uconf.rs_dots_auto
 msgid "Adapt to background"
 msgstr "Anpassa till bakgrund"
@@ -3405,6 +3571,23 @@ msgstr "Endast svart eller vitt"
 #: uconf.rs_dots_outline
 msgid "True colors, outlined"
 msgstr "Riktiga färger, med kontur"
+
+#: uconf.rs_dot_line
+msgid "Draw a line connecting the trend dots"
+msgstr "Rita en linje mellan trendpunkterna"
+
+#: uconf.rs_dot_line_normal
+msgctxt "uconf.rs_dot_line_normal"
+msgid "Normal"
+msgstr "Normal"
+
+#: uconf.rs_dot_line_thick
+msgid "Thick"
+msgstr "Tjock"
+
+#: uconf.rs_dot_line_thin
+msgid "Thin"
+msgstr "Tunn"
 
 #: uconf.rs_driver_contributor
 msgid "Driver contributor: "
@@ -4215,11 +4398,6 @@ msgstr "Klicka på en punkt för att se detaljer om avläsningen"
 msgid "Hover or click dots for details. Right-click to choose a time range."
 msgstr "Placera musen över en punkt för info. Högerklicka för att välja en tidpunkt."
 
-#: uhistorygraph.rs_history_graph_hover_fmt
-#, object-pascal-format
-msgid "%s at %s"
-msgstr "%s vid %s"
-
 #: uhistorygraph.rs_history_graph_key_basal
 msgid "Basal"
 msgstr "Basal"
@@ -4399,18 +4577,7 @@ msgstr "Automatisk inloggning ej tillgänglig"
 
 #: uwizard.wz_weblogin_help
 #, object-pascal-format
-msgid ""
-"CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.\n"
-"\n"
-"It needs Node.js installed. In a terminal, run:\n"
-"\n"
-"    cd \"%s\"\n"
-"    npm install\n"
-"    %s\n"
-"\n"
-"A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field and click Test.\n"
-"\n"
-"Open the helper folder now?"
+msgid "CareLink needs a one-time browser login (with CAPTCHA), so Trndi uses a small login helper to capture your token.<br><br>It needs Node.js installed. In a terminal, run:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>A browser opens — sign in with your Care Partner account and solve the CAPTCHA. The helper then prints a block of JSON: copy it into the token field and click Test.<br><br>Open the helper folder now?"
 msgstr "CareLink kräver att du logga in via en webbläsare (med CAPTCHA), så Trndi använder en liten loginhjälpare för att fånga nyckeln.<br><br>Den kräver att Node.js installerats. I en terminal, kör:<br><br>> cd \"%s\"<br>> npm install<br>> %s<br><br>En webbläsare öppnas — logga in med ditt Care Partner-konto och lös CAPTCHA:n. Hjälparen kommer sedan att skriva ut ett block med JSON: kopiera det i nyckel/token-fältet under och tryck Test.<br><br>Öppna mappen nu?"
 
 #: uwizard.wz_weblogin_installing
@@ -4443,18 +4610,8 @@ msgid "Login captured. Click Test to verify."
 msgstr "Inloggning fångad. Klicka på Test för att verifiera."
 
 #: uwizard.wz_weblogin_run_prompt
-msgid ""
-"Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token automatically.\n"
-"\n"
-"The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.\n"
-"\n"
-"Start now?"
-msgstr ""
-"Trndi kommer att öppna ett webbläsarfönster så att du kan logga in till CareLink (med CAPTCHA), för att sedan ladda in nyckeln/token automatiskt.\n"
-"\n"
-"Första gången du utför detta kommer beroenden för hjälpprogrammet att laddas in, vilket kan ta en kort stund. Håll detta fönster öppet tills dess inloggningen är klar.\n"
-"\n"
-"Börja nu?"
+msgid "Trndi will open a browser window for you to sign in to CareLink (with CAPTCHA), then capture the token automatically.<br><br>The first run also downloads the login helper's dependencies, which can take a minute. Keep this window open and complete the sign-in in the browser.<br><br>Start now?"
+msgstr "Trndi kommer att öppna ett webbläsarfönster så att du kan logga in till CareLink (med CAPTCHA), för att sedan ladda in nyckeln/token automatiskt.<br><br>Första gången du utför detta kommer beroenden för hjälpprogrammet att laddas in, vilket kan ta en kort stund. Håll detta fönster öppet tills dess inloggningen är klar.<br><br>Börja nu?"
 
 #: uwizard.wz_weblogin_run_title
 msgctxt "uwizard.wz_weblogin_run_title"

@@ -111,6 +111,22 @@ type TrndiLevel = "high" | "low" | "normal" | "range-high" | "range-low" | "stal
 /** Permission group names used in `@perms` and `Trndi.permissions`. */
 type TrndiPermission = "data" | "ui" | "timers" | "net" | "exec" | "settings";
 
+/** Alert kinds reported by the `alert` event (global: `alertCallback`). */
+type TrndiAlertKind =
+  | "high"
+  | "low"
+  | "urgent-low"
+  | "missing"
+  | "sensor-fault"
+  | "rapid-fall"
+  | "rapid-rise";
+
+/** Backend connection status reported by the `connection` event. */
+type TrndiConnectionStatus = "ok" | "retrying" | "rate-limited" | "auth-expired" | "error";
+
+/** Pump/sensor notice kinds reported by the `device` event. */
+type TrndiDeviceKind = "reservoir" | "sensor-expiry" | "pump-battery";
+
 /**
  * Event names accepted by `Trndi.on`/`Trndi.off` and the signature each
  * listener is called with (identical to the equivalent callback global).
@@ -163,6 +179,31 @@ interface TrndiEventMap {
    * will not fire afterwards.
    */
   unload: () => void;
+  /**
+   * An alert fired (global: `alertCallback`), at the moment Trndi shows its
+   * own notice: alert settings and snooze are respected. One call per kind.
+   * `mgdl`/`mmol` is the reading that triggered it.
+   */
+  alert: (kind: TrndiAlertKind, mgdl: number, mmol: number) => void;
+  /**
+   * Alerts were snoozed or resumed (global: `snoozeCallback`). `untilMs` is
+   * a Unix epoch in milliseconds, 0 when not snoozed.
+   */
+  snooze: (active: boolean, untilMs: number) => void;
+  /**
+   * The backend connection status changed (global: `connectionCallback`).
+   * `detail` is the last backend error text, "" when ok.
+   */
+  connection: (status: TrndiConnectionStatus, detail: string) => void;
+  /**
+   * A pump/sensor notice was raised (global: `deviceCallback`): units,
+   * hours or percent left depending on `kind`.
+   */
+  device: (kind: TrndiDeviceKind, value: number) => void;
+  /** Settings were applied (global: `settingsCallback`); getters see the new values. */
+  settings: () => void;
+  /** The computer resumed from sleep (global: `wakeCallback`); a refresh follows. */
+  wake: () => void;
 }
 
 /** Metadata about the running extension, from the v2 facade. */
@@ -480,4 +521,24 @@ declare class TextDecoder {
   decode(input?: Uint8Array | ArrayBuffer | number[]): string;
   readonly encoding: "utf-8";
   readonly fatal: boolean;
+}
+
+// ---- "trndi" module ----------------------------------------------------------
+//
+// Extensions written as ES modules (a file with static import/export) can
+// import the API instead of using the global:
+//
+//   import Trndi, { data, on } from "trndi";
+//
+// See guides/Extensions.md, "ES modules".
+declare module "trndi" {
+  const api: typeof Trndi;
+  export default api;
+  export const api: typeof Trndi.api;
+  export const permissions: typeof Trndi.permissions;
+  export const data: typeof Trndi.data;
+  export const net: typeof Trndi.net;
+  export const storage: typeof Trndi.storage;
+  export const on: typeof Trndi.on;
+  export const off: typeof Trndi.off;
 }

@@ -34,6 +34,18 @@ system.fresh_threshold=31
 ```
 
 
+## Keep every trend dot at full strength
+Older trend dots fade toward the background and shrink the further left they sit, so the newest reading dominates. To draw every dot (and the connecting line and gap rings) at full strength and size instead:
+```ini
+ux.dot_fade=false
+```
+
+## Let the reading's digits reflow
+The big reading is typeset with equal-width digits, so `9.9` and `10.0` keep every digit in place as the value ticks. To use the font's own proportional digits instead:
+```ini
+ux.tabular_digits=false
+```
+
 ## Override the number readings fetched
 Trndi defaults to a set amount of minutes it fetches (1440), this only affects time-in-range - not the graph!
 ```ini
