@@ -1301,6 +1301,10 @@ msgstr "Groß"
 msgid "Show clock"
 msgstr "Uhr anzeigen"
 
+#: tffloat.midelta.caption
+msgid "Show delta"
+msgstr "Delta anzeigen"
+
 #: tffloat.micustomsize.caption
 msgctxt "tffloat.micustomsize.caption"
 msgid "Custom"

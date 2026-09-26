@@ -54,12 +54,15 @@ interface
 
 uses
 Classes, ExtCtrls, Menus, StdCtrls, SysUtils, Math, Forms, Controls, Graphics,
-Dialogs, LCLIntf, LCLType, InterfaceBase, trndi.native, trndi.shared, utrendarrow
+Dialogs, LCLIntf, LCLType, InterfaceBase, trndi.native, trndi.shared, utrendarrow,
+// After StdCtrls on purpose: utabularlabel's TLabel interposer must win the
+// name so the value can typeset its digits in equal cells like the main window
+utabularlabel
 {$IFDEF DARWIN},
 CocoaAll
 {$ENDIF}
 {$IFDEF LCLQT6},
-qt6, qtwidgets
+qt6, qtwidgets, LMessages
 {$ENDIF};
 
 type
@@ -68,6 +71,7 @@ type
 
 TfFloat = class(TForm)
   lTime: TLabel;
+  lDelta: TLabel;
   lArrow: TLabel;
   lRangeDown: TLabel;
   lRangeUp: TLabel;
@@ -80,6 +84,7 @@ TfFloat = class(TForm)
   miFontColor: TMenuItem;
   miMain: TMenuItem;
   miClock: TMenuItem;
+  miDelta: TMenuItem;
   miCustomSize: TMenuItem;
   Separator1: TMenuItem;
   miXL: TMenuItem;
@@ -105,10 +110,12 @@ TfFloat = class(TForm)
   procedure FormMouseMove({%H-}Sender: TObject; {%H-}Shift: TShiftState; X, Y: integer);
   procedure FormMouseUp(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: integer);
+  procedure FormPaint({%H-}Sender: TObject);
   procedure FormResize({%H-}Sender: TObject);
   procedure FormShow({%H-}Sender: TObject);
   procedure MenuItem1Click({%H-}Sender: TObject);
   procedure miClockClick({%H-}Sender: TObject);
+  procedure miDeltaClick({%H-}Sender: TObject);
   procedure miCustomSizeClick({%H-}Sender: TObject);
   procedure miCustomVisibleClick({%H-}Sender: TObject);
   procedure miFontBlackClick({%H-}Sender: TObject);
@@ -134,18 +141,40 @@ private
   FProgFrac: double;        // Fill fraction the strip currently shows
   FProgFill: TColor;        // Fill colour pushed from the main window
   FProgLevel: integer;      // Quantised fill level (px) last shown — change gate
+  FOpacity: double;         // Window opacity currently applied, 0..1
+  FBackdropBottom: TColor;  // Gradient tone at the bottom edge; clNone = flat
   procedure SetFormOpacity(Opacity: double);
   procedure ApplyRoundedCorners;
   procedure ApplyClock(AEnabled: boolean);
-  procedure SetFixedFontColor(AColor: TColor);
+  procedure ApplyDelta(AEnabled: boolean);
   procedure SyncSizeMenu;
   procedure SyncOpacityMenu(AOpacity: single);
   procedure ProgressBoxPaint({%H-}Sender: TObject);
   procedure RaiseMainWindow;
   {$IFDEF LCLQt6}
   function StartSystemMove: boolean;
+  procedure ApplyQtStyle;
+  procedure CMColorChanged(var Message: TLMessage); message CM_COLORCHANGED;
   {$ENDIF}
 public
+  {** Mirror the main window's backdrop gradient: Color at the top edge
+      running to ABottom at the bottom edge, the same slope the main window
+      paints. Pass Color itself (or clNone) for a flat fill, which is what
+      the high-contrast mode asks for.
+      @param(ABottom Tone at the bottom edge.) }
+  procedure SetBackdrop(ABottom: TColor);
+  {** Mirror the delta since the previous reading into the bottom-right
+      corner. Pushed from the main window on every sync.
+      @param(AText The signed delta text; empty hides the field.)
+      @param(AColor Its text colour, or clNone to keep the colour SetTextColor
+        last applied.) }
+  procedure SetDelta(const AText: string; AColor: TColor);
+  {** Colour every piece of text on the float: the value, the trend glyph or
+      vector arrow, the clock and the off-range markers. Both the fixed
+      black/white menu choice and the main window's colour sync go through
+      here, so the small corner texts never fall out of step with the value.
+      @param(AColor The text colour.) }
+  procedure SetTextColor(AColor: TColor);
   {** Mirror the main window's rotating trend arrow.
       @param(AEnabled Whether the rotating arrow replaces the glyph.)
       @param(AAngle Rotation in degrees (0 = flat, + = up, - = down).)
@@ -227,7 +256,13 @@ begin
       Mid := (Low + High) div 2;
       bmp.Canvas.Font.Size := Mid;
 
-      TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
+      // A tabular label paints its digits in equal cells, wider than the
+      // proportional run whenever a narrow digit is in the number; fit that
+      // width or the cells will not fit exactly when it matters.
+      if ALabel.TabularDigits then
+        TextWidth := TLabel.TabularTextWidth(bmp.Canvas, ALabel.Caption)
+      else
+        TextWidth := bmp.Canvas.TextWidth(ALabel.Caption);
       TextHeight := bmp.Canvas.TextHeight(ALabel.Caption);
 
       if (TextWidth <= MaxWidth) and (TextHeight <= MaxHeight) then
@@ -293,9 +328,13 @@ procedure TfFloat.FormCreate({%H-}Sender: TObject);
 {$IFDEF LCLQt6}
 var
   QtWidget: TQtWidget;
-  style: string;
 {$endif}
 begin
+  // Opacity is applied through the same path everywhere, so seed it from the
+  // stored value before anything paints with it.
+  FOpacity := ReadFloatSetting('ux.float.opacity', 0.5);
+  FBackdropBottom := clNone;
+
   {$IFDEF LCLQt6}
   if HandleAllocated then
   begin
@@ -304,8 +343,7 @@ begin
     begin
       QtWidget.setAttribute(QtWA_TranslucentBackground, true);
       QtWidget.setWindowFlags(QtWidget.windowFlags or QtFramelessWindowHint);
-      style := 'border-radius:15px; background-color:rgba(255,255,255,200);';
-      QWidget_setStyleSheet(QtWidget.Widget, PWideString(style));
+      ApplyQtStyle;
     end;
   end;
   {$ENDIF}
@@ -323,16 +361,17 @@ begin
 end;
 
 procedure TfFloat.ApplyRoundedCorners;
+// Qt6 needs no locals: the style sheet does the rounding. The var keyword
+// has to go inside the conditionals, since an empty var section is a syntax
+// error.
+{$IF DEFINED(DARWIN)}
 var
-  {$IF DEFINED(DARWIN)}
   NSViewHandle: NSView;
   NSWin: NSWindow;
-  Mask: NSBezierPath;
-  {$ELSEIF DEFINED(LCLQT6)}
-  StyleStr: widestring;
-  {$ELSE}
+{$ELSEIF NOT DEFINED(LCLQT6)}
+var
   ABitmap: TBitmap;
-  {$ENDIF}
+{$ENDIF}
 begin
   {$IF DEFINED(DARWIN)}
   try
@@ -365,10 +404,8 @@ begin
     // Ignore any errors
   end;
   {$ELSEIF DEFINED(LCLQT6)}
-  StyleStr := 'border-radius: 10px; background-color: rgba(240, 240, 240, 255);';
   Self.BorderStyle := bsNone; // Remove border
-  if HandleAllocated then
-    QWidget_setStyleSheet(TQtWidget(Handle).Widget, @stylestr);
+  ApplyQtStyle;
   {$ELSE}
   Self.BorderStyle := bsNone; // Remove border
   // Use LCL stuff when Windows (or not Qt really)
@@ -393,17 +430,13 @@ begin
 end;
 
 procedure TfFloat.SetFormOpacity(Opacity: double);
-{$IF DEFINED(LCLQt6) OR DEFINED(DARWIN)}
+{$IFDEF DARWIN}
 var
-{$endif}
-  {$IFDEF DARWIN}
   NSViewHandle: NSView;
   NSWin: NSWindow;
-  {$ENDIF}
-  {$IFDEF LCLQt6}
-  StyleStr: widestring;
-  {$ENDIF}
+{$ENDIF}
 begin
+  FOpacity := Opacity;
   {$IFDEF DARWIN}
   if HandleAllocated then
   try
@@ -419,12 +452,8 @@ begin
   end;
   {$ELSE}
   {$IFDEF LCLQt6}
-  if HandleAllocated then
-  begin
-      // For Qt6, use style sheets to set opacity
-    StyleStr := Format('background-color: rgba(240, 240, 240, %.0f);', [Opacity * 255]);
-    QWidget_setStyleSheet(TQtWidget(Handle).Widget, @StyleStr);
-  end;
+  // Qt6 carries the opacity in the same style sheet as the corners and colour
+  ApplyQtStyle;
   {$ENDIF}
   // Standard LCL approach for other platforms
   AlphaBlend := Opacity < 1.0;
@@ -469,19 +498,20 @@ begin
   1:
     begin
       miFontWhite.Checked := true;
-      SetFixedFontColor(clWhite);
+      SetTextColor(clWhite);
     end;
   2:
     miFontMain.Checked := true; // colors arrive with the next main-window sync
   else
     begin
       miFontBlack.Checked := true;
-      SetFixedFontColor(clBlack);
+      SetTextColor(clBlack);
     end;
   end;
 
-  // Restore the clock
+  // Restore the clock and the delta
   ApplyClock(ReadIntSetting('ux.float.clock', 0) = 1);
+  ApplyDelta(ReadIntSetting('ux.float.delta', 1) = 1);
 end;
 
 procedure TfFloat.SyncSizeMenu;
@@ -530,6 +560,28 @@ begin
   SaveSetting('ux.float.clock', ord(miClock.Checked));
 end;
 
+procedure TfFloat.ApplyDelta(AEnabled: boolean);
+begin
+  miDelta.Checked := AEnabled;
+  lDelta.Visible := AEnabled and (lDelta.Caption <> '');
+end;
+
+procedure TfFloat.miDeltaClick(Sender: TObject);
+begin
+  ApplyDelta(not miDelta.Checked);
+  SaveSetting('ux.float.delta', ord(miDelta.Checked));
+end;
+
+procedure TfFloat.SetDelta(const AText: string; AColor: TColor);
+begin
+  lDelta.Caption := AText;
+  if AColor <> clNone then
+    lDelta.Font.Color := AColor;
+  lDelta.AdjustSize;
+  // FormResize places it; the main window runs that right after this sync
+  ApplyDelta(miDelta.Checked);
+end;
+
 procedure TfFloat.miCustomSizeClick(Sender: TObject);
 begin
   ShowMessage(RS_CUSTOM_SIZE);
@@ -540,23 +592,53 @@ begin
   ShowMessage(RS_CUSTOM_OP);
 end;
 
-procedure TfFloat.SetFixedFontColor(AColor: TColor);
+procedure TfFloat.SetBackdrop(ABottom: TColor);
+begin
+  if ABottom = Color then
+    ABottom := clNone;
+  if ABottom = FBackdropBottom then
+    Exit;
+  FBackdropBottom := ABottom;
+  Invalidate;
+end;
+
+{------------------------------------------------------------------------------
+  The backdrop gradient. Not on Qt6: there the style sheet owns the background
+  (rounded corners and the translucent fill), and a canvas fill would paint
+  square, opaque corners over it.
+ ------------------------------------------------------------------------------}
+procedure TfFloat.FormPaint(Sender: TObject);
+begin
+  {$IFNDEF LCLQt6}
+  if FBackdropBottom = clNone then
+    Exit;
+  Canvas.Brush.Style := bsSolid;
+  Canvas.GradientFill(ClientRect, ColorToRGB(Color), ColorToRGB(FBackdropBottom),
+    gdVertical);
+  {$ENDIF}
+end;
+
+procedure TfFloat.SetTextColor(AColor: TColor);
 begin
   lVal.Font.Color := AColor;
   lArrow.Font.Color := AColor;
+  lTime.Font.Color := AColor;
+  lDelta.Font.Color := AColor;
+  lRangeDown.Font.Color := AColor;
+  lRangeUp.Font.Color := AColor;
   if Assigned(FTrendArrow) then
     FTrendArrow.ArrowColor := AColor;
 end;
 
 procedure TfFloat.miFontBlackClick(Sender: TObject);
 begin
-  SetFixedFontColor(clBlack);
+  SetTextColor(clBlack);
   SaveSetting('ux.float.fontcolor', 0);
 end;
 
 procedure TfFloat.miFontWhiteClick(Sender: TObject);
 begin
-  SetFixedFontColor(clWhite);
+  SetTextColor(clWhite);
   SaveSetting('ux.float.fontcolor', 1);
 end;
 
@@ -629,7 +711,7 @@ begin
   lTime.Caption := FormatDateTime(DefaultFormatSettings.ShortTimeFormat, Now);
   // Re-anchor to the top-right corner; the caption width just changed
   lTime.AdjustSize;
-  lTime.Left := ClientWidth - lTime.Width - 8;
+  lTime.Left := ClientWidth - lTime.Width - Scale96ToForm(8);
   if lTime.Visible = false then
     (Sender as TTimer).Enabled := false;
 end;
@@ -737,35 +819,70 @@ begin
 end;
 
 procedure TfFloat.FormResize(Sender: TObject);
+var
+  inset, textH, split: integer;
+  edge, corner, stripW: integer;
 begin
-  lVal.Left := 0;
-  lVal.Top := 0;
-  lVal.Height := ClientHeight;
-  lVal.Width := Round(ClientWidth * 0.75);
+  // Every fixed distance is a 96-dpi design value scaled to the form's dpi
+  edge := Scale96ToForm(8);     // Margin from the window edge to the corner texts
+  corner := Scale96ToForm(4);   // Margin from the top edge, and past the strip
+  stripW := Max(Scale96ToForm(3), ClientWidth div 60);
 
-  lArrow.Left := lVal.Width;
-  lArrow.Top := 0;
-  lArrow.Height := ClientHeight;
-  lArrow.Width := ClientWidth - lVal.Width;
+  // Lay the next-refresh strip out first: the value's left edge depends on it.
+  inset := 0;
+  if Assigned(FProgressBox) then
+  begin
+    // Inset past the rounded corners so the strip never pokes out of the shape
+    FProgressBox.SetBounds(Scale96ToForm(2), edge, stripW,
+      Max(corner, ClientHeight - 2 * edge));
+    if FProgressBox.Visible then
+      inset := FProgressBox.Left + FProgressBox.Width + corner;
+  end;
+
+  // The multi-user bar is aligned to the bottom edge; keep the text above it.
+  textH := ClientHeight;
+  if pnMultiUser.Visible then
+    textH := textH - pnMultiUser.Height;
+
+  // Value on the left three quarters, arrow on the right quarter. The value is
+  // left-justified, so it starts past the strip rather than under it.
+  split := Round(ClientWidth * 0.75);
+  lVal.SetBounds(inset, 0, Max(1, split - inset), textH);
+  lArrow.SetBounds(split, 0, ClientWidth - split, textH);
 
   ScaleLbl(lVal, taLeftJustify, tlCenter);
   ScaleLbl(lArrow, taCenter, tlCenter);
+  // Each fitter fills its own box, and the arrow's box is a full-height
+  // quarter while the value's holds three or four characters, so a lone
+  // glyph could come out taller than the digits it qualifies. Hold the arrow
+  // to the value's size: equal when both fit, never larger.
+  if lArrow.Font.Size > lVal.Font.Size then
+    lArrow.Font.Size := lVal.Font.Size;
 
-  // Keep the clock tucked into the top-right corner, above the arrow
-  lTime.Font.Size := lArrow.Font.Size div 3;
+  // Keep the clock tucked into the top-right corner, above the arrow. Sized
+  // from the window rather than the arrow's fitted font, so it stays put
+  // when a new reading refits the big text.
+  lTime.Font.Height := -Max(Scale96ToForm(8), ClientHeight div 6);
   lTime.AdjustSize;
-  lTime.Left := ClientWidth - lTime.Width - 8;
-  lTime.Top := 4;
+  lTime.Left := ClientWidth - lTime.Width - edge;
+  lTime.Top := corner;
 
   // Off-range markers live in the top-left corner, mirroring the clock
-  lRangeDown.Font.Size := lTime.Font.Size;
-  lRangeUp.Font.Size := lTime.Font.Size;
+  lRangeDown.Font.Height := lTime.Font.Height;
+  lRangeUp.Font.Height := lTime.Font.Height;
   lRangeDown.AdjustSize;
   lRangeUp.AdjustSize;
-  lRangeDown.Left := 8;
-  lRangeDown.Top := 4;
-  lRangeUp.Left := 8;
-  lRangeUp.Top := 4;
+  lRangeDown.Left := edge;
+  lRangeDown.Top := corner;
+  lRangeUp.Left := edge;
+  lRangeUp.Top := corner;
+
+  // The delta sits in the bottom-right corner, under the arrow, in the
+  // clock's size, above the multi-user bar when that shows
+  lDelta.Font.Height := lTime.Font.Height;
+  lDelta.AdjustSize;
+  lDelta.Left := ClientWidth - lDelta.Width - edge;
+  lDelta.Top := textH - lDelta.Height - corner;
 
   // Keep the rotating arrow overlay tracking lArrow's bounds. ScaleLbl re-shows
   // lArrow, so re-hide the glyph while the vector arrow is active.
@@ -775,12 +892,6 @@ begin
     if FTrendArrow.Visible then
       lArrow.Visible := false;
   end;
-
-  // Keep the next-refresh strip hugging the left edge, inset past the rounded
-  // corners so it never pokes out of the window shape.
-  if Assigned(FProgressBox) then
-    FProgressBox.SetBounds(2, 8, Max(3, ClientWidth div 60),
-      Max(4, ClientHeight - 16));
 end;
 
 procedure TfFloat.SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor);
@@ -802,6 +913,12 @@ begin
     FTrendArrow.OnMouseDown := @FormMouseDown;
     FTrendArrow.OnMouseMove := @FormMouseMove;
     FTrendArrow.OnMouseUp := @FormMouseUp;
+    // The overlay is created after the corner texts and would otherwise
+    // paint over them where its bounds reach the corners
+    lTime.BringToFront;
+    lDelta.BringToFront;
+    lRangeDown.BringToFront;
+    lRangeUp.BringToFront;
   end;
 
   FTrendArrow.ArrowColor := AColor;
@@ -819,7 +936,12 @@ begin
     Exit;
   if not AShow then
   begin
-    FProgressBox.Visible := false;
+    if FProgressBox.Visible then
+    begin
+      // Give the value its left edge back
+      FProgressBox.Visible := false;
+      FormResize(Self);
+    end;
     Exit;
   end;
 
@@ -832,7 +954,12 @@ begin
   FProgFrac := AFrac;
   FProgFill := AFill;
   FProgLevel := lvl;
-  FProgressBox.Visible := true;
+  if not FProgressBox.Visible then
+  begin
+    // The strip takes a slice off the value's left edge: relayout the labels
+    FProgressBox.Visible := true;
+    FormResize(Self);
+  end;
   FProgressBox.Invalidate;
 end;
 
@@ -890,6 +1017,39 @@ begin
     // implicit capture or it sticks to the pressed control and hijacks every
     // later press.
     SetCaptureControl(nil);
+end;
+
+{------------------------------------------------------------------------------
+  Qt6 draws the float through one style sheet, and a style sheet wins over
+  the widget palette. Corner radius, the range colour pushed into Color and
+  the opacity therefore all have to travel together: setting any one of them
+  alone used to drop the other two, leaving a square grey window.
+ ------------------------------------------------------------------------------}
+procedure TfFloat.ApplyQtStyle;
+const
+  CORNER_RADIUS = 10;
+var
+  QtWidget: TQtWidget;
+  rgb: longint;
+  StyleStr: widestring;
+begin
+  if not HandleAllocated then
+    Exit;
+  QtWidget := TQtWidget(Handle);
+  if (QtWidget = nil) or (QtWidget.Widget = nil) then
+    Exit;
+  rgb := ColorToRGB(Color);
+  StyleStr := UTF8Decode(Format('border-radius: %dpx; background-color: rgba(%d, %d, %d, %d);',
+    [CORNER_RADIUS, Red(rgb), Green(rgb), Blue(rgb), Round(FOpacity * 255)]));
+  QWidget_setStyleSheet(QtWidget.Widget, @StyleStr);
+end;
+
+// The main window mirrors its range colour into Color; on Qt6 that only
+// shows once it is written into the style sheet as well.
+procedure TfFloat.CMColorChanged(var Message: TLMessage);
+begin
+  inherited;
+  ApplyQtStyle;
 end;
 {$ENDIF}
 
