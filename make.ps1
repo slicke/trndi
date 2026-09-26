@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|ide-libs|list-modules|test|assets|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|run|ide-libs|list-modules|test|assets|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -166,6 +166,27 @@ switch ($firstArg) {
         & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
+    }
+    "run" {
+        # Build release, then start the staged build\Trndi.exe, like the
+        # Makefile's run target. Arguments after 'run' go to Trndi, not lazbuild.
+        if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
+        $mode = 'Extensions (Release)'
+        Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
+        & $laz "--build-mode=$mode" 'Trndi.lpi'
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        Copy-QuickJSLibs; Publish-Build -WithQuickJS
+
+        $outDir = if ($env:OUTDIR) { $env:OUTDIR } else { Join-Path $PSScriptRoot 'build' }
+        $exe = Join-Path $outDir 'Trndi.exe'
+        if (-not (Test-Path $exe)) { Write-Error "Trndi.exe not found in $outDir; build first."; exit 1 }
+        Write-Host "Running Trndi from $outDir" -ForegroundColor Cyan
+        # Trndi is a GUI app, so & would return at once; Start-Process -Wait
+        # blocks until it quits and gives us its exit code.
+        $startArgs = @{ FilePath = $exe; WorkingDirectory = $outDir; Wait = $true; PassThru = $true }
+        if ($extraArgs.Count -gt 0) { $startArgs.ArgumentList = $extraArgs }
+        $proc = Start-Process @startArgs
+        exit $proc.ExitCode
     }
     "ide-libs" {
         # The Lazarus IDE builds and runs Trndi.exe in the project root, so the
@@ -530,6 +551,7 @@ switch ($firstArg) {
         Write-Host "  debug            Build debug ('Extensions (Debug)' mode)"
         Write-Host "  noext            Build without extensions ('No Ext (Release)' mode; no QuickJS dependency)"
         Write-Host "  noext-debug      Build without extensions, debug ('No Ext (Debug)' mode)"
+        Write-Host "  run              Build release, then start build\Trndi.exe (arguments after 'run' go to Trndi)"
         Write-Host "  test             Build tests/TrndiTestConsole.lpi and run it (spawns an in-process test server;"
         Write-Host "                   set TRNDI_NO_TESTSERVER=1 to skip integration tests)"
         Write-Host "  ide-libs         Copy the QuickJS engine + ABI shim to the project root, for Extensions builds run from the Lazarus IDE (F9)"
