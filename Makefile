@@ -349,6 +349,7 @@ help:
 	@echo "  release    Build release (default)"
 	@echo "  debug      Build debug"
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
+	@echo "  run        Build, then run Trndi from $(OUTDIR) (macOS: opens the .app bundle; RUN_ARGS forwards arguments)"
 	@echo "  test       Build and run tests (runner spawns an in-process Pascal test server)"
 	@echo "  test-noserver  Run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@echo "  noext-test  Build and run tests without extension support"
@@ -601,10 +602,21 @@ show-mode:
 	@echo "QuickJS libraries: $(QJS_DIR)"
 
 # Run the built binary (build first). Use RUN_ARGS to forward arguments to the program.
+# On macOS the app bundle is launched through LaunchServices (open), so it runs
+# with its bundle identity, Dock icon and activation like a Finder launch; the
+# bare $(OUTDIR)/Trndi the build also leaves there is not used. -n starts a new
+# instance even if Trndi is already running (otherwise open just activates the
+# old build), -W waits for it to quit, and --stdout/--stderr keep its output in
+# this terminal. Without a terminal (CI, editor tasks) the bundle's executable
+# is run directly instead.
 run: build
 	@echo "Running Trndi from $(OUTDIR)"
 	@set -e; \
-	if [ -x "$(OUTDIR)/Trndi" ]; then "$(OUTDIR)/Trndi" $(RUN_ARGS); \
+	app="$(abspath $(OUTDIR))/Trndi.app"; \
+	if [ "$(UNAME_S)" = "Darwin" ] && [ -x "$$app/Contents/MacOS/Trndi" ]; then \
+	  if tty=$$(tty 2>/dev/null); then open -n -W --stdout "$$tty" --stderr "$$tty" "$$app" --args $(RUN_ARGS); \
+	  else "$$app/Contents/MacOS/Trndi" $(RUN_ARGS); fi; \
+	elif [ -x "$(OUTDIR)/Trndi" ]; then "$(OUTDIR)/Trndi" $(RUN_ARGS); \
 	elif [ -x "$(OUTDIR)/Trndi.app/Contents/MacOS/Trndi" ]; then "$(OUTDIR)/Trndi.app/Contents/MacOS/Trndi" $(RUN_ARGS); \
 	elif [ -f "$(OUTDIR)/Trndi.exe" ]; then "$(OUTDIR)/Trndi.exe" $(RUN_ARGS); \
 	elif [ -x "./Trndi" ]; then ./Trndi $(RUN_ARGS); \
