@@ -23,14 +23,19 @@ ifeq ($(OS),Windows_NT)
   endif
 endif
 
-# macOS: the Lazarus installer puts lazbuild in /Applications/lazarus without
-# adding it to PATH. Use that copy when LAZBUILD was not set explicitly and no
-# lazbuild is on PATH.
+# Unix: two common installs never put lazbuild on PATH. The macOS installer
+# leaves it in /Applications/lazarus, and fpcupdeluxe keeps its whole toolchain
+# under ~/fpcupdeluxe (Linux, BSD and macOS alike). Try those, in that order,
+# when LAZBUILD was not set explicitly and no lazbuild is on PATH. The
+# fpcupdeluxe copy needs no --pcp: lazbuild reads the lazarus.cfg fpcupdeluxe
+# writes next to it, which carries the primary-config-path.
 ifneq ($(OS),Windows_NT)
-  ifeq ($(origin LAZBUILD)$(shell uname -s),fileDarwin)
+  ifeq ($(origin LAZBUILD),file)
     ifeq ($(shell command -v lazbuild 2>/dev/null),)
-      ifneq ($(wildcard /Applications/lazarus/lazbuild),)
-        LAZBUILD := /Applications/lazarus/lazbuild
+      LAZBUILD_CANDIDATES := /Applications/lazarus/lazbuild $(HOME)/fpcupdeluxe/lazarus/lazbuild
+      LAZBUILD_FOUND := $(firstword $(wildcard $(LAZBUILD_CANDIDATES)))
+      ifneq ($(LAZBUILD_FOUND),)
+        LAZBUILD := $(LAZBUILD_FOUND)
       endif
     endif
   endif
@@ -366,7 +371,7 @@ help:
 	@echo "  install    Install binary plus (on Linux/BSD) desktop entry, icon and AppStream metadata to PREFIX (default /usr/local; requires sudo)"
 	@echo "  uninstall  Remove everything 'make install' put under PREFIX (requires sudo)"
 	@echo "Variables:" 
-	@echo "  LAZBUILD (default: lazbuild on PATH; on macOS /Applications/lazarus/lazbuild if not on PATH; currently $(LAZBUILD))"
+	@echo "  LAZBUILD (default: lazbuild on PATH, else /Applications/lazarus/lazbuild (macOS) or ~/fpcupdeluxe/lazarus/lazbuild; currently $(LAZBUILD))"
 	@echo "  WIDGETSET (default: $(WIDGETSET))"
 	@echo "  BUILD_MODE (default: $(BUILD_MODE))"
 	@echo "  CPU_FLAG (default: empty). --cpu=<name> is passed to lazbuild and also picks the prebuilt QuickJS directory (otherwise the host CPU does)."
@@ -379,7 +384,7 @@ check:
 ifeq ($(OS),Windows_NT)
 	@if exist "$(subst /,\,$(LAZBUILD))" (echo "Using $(LAZBUILD)") else (echo "lazbuild not found; please install Lazarus build tools (lazarus_bin) or set LAZBUILD" & exit 1)
 else
-	@command -v $(LAZBUILD) >/dev/null 2>&1 || (echo "lazbuild not found; please install Lazarus build tools (lazarus_bin)" && exit 1)
+	@command -v $(LAZBUILD) >/dev/null 2>&1 || (echo "lazbuild not found; please install Lazarus build tools (lazarus_bin) or set LAZBUILD" && exit 1)
 	@echo "Using $(LAZBUILD)"
 endif
 .PHONY: qjs-links
