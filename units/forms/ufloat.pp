@@ -1029,15 +1029,19 @@ procedure TfFloat.ApplyQtStyle;
 const
   CORNER_RADIUS = 10;
 var
+  QtWidget: TQtWidget;
   rgb: longint;
   StyleStr: widestring;
 begin
   if not HandleAllocated then
     Exit;
+  QtWidget := TQtWidget(Handle);
+  if (QtWidget = nil) or (QtWidget.Widget = nil) then
+    Exit;
   rgb := ColorToRGB(Color);
   StyleStr := UTF8Decode(Format('border-radius: %dpx; background-color: rgba(%d, %d, %d, %d);',
     [CORNER_RADIUS, Red(rgb), Green(rgb), Blue(rgb), Round(FOpacity * 255)]));
-  QWidget_setStyleSheet(TQtWidget(Handle).Widget, @StyleStr);
+  QWidget_setStyleSheet(QtWidget.Widget, @StyleStr);
 end;
 
 // The main window mirrors its range colour into Color; on Qt6 that only
