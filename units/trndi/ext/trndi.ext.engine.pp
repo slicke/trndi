@@ -3025,7 +3025,12 @@ begin
     for i := 0 to High(Args) do
       ArgArray[i] := VarRecToJS(ctx, Args[i]);
 
-    RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
+    // An empty array has no element 0: with range checks on, taking its
+    // address raises, so zero-argument callbacks pass nil instead.
+    if Length(ArgArray) = 0 then
+      RetVal := JS_Call(ctx, FuncObj, GlobalObj, 0, nil)
+    else
+      RetVal := JS_Call(ctx, FuncObj, GlobalObj, Length(ArgArray), @ArgArray[0]);
     // JS_IsException, not JS_IsError: a throw returns the exception marker
     // rather than an Error object, and DumpJSError has to clear it.
     if JS_IsException(RetVal) then

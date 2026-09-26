@@ -216,8 +216,12 @@ var
   limits: TTrndiReportLimits;
   hasRange: boolean;
 begin
-  hasRange := (api <> nil) and
-    (api.cgmRangeHi <> TrndiAPI.CGM_RANGE_HI_DISABLED) and
+  // No backend yet (the menu is reachable before a driver has connected):
+  // hand back an invalid report so the caller shows RS_REPORT_NODATA.
+  if api = nil then
+    Exit(Default(TTrndiReportStats));
+
+  hasRange := (api.cgmRangeHi <> TrndiAPI.CGM_RANGE_HI_DISABLED) and
     (api.cgmRangeLo <> TrndiAPI.CGM_RANGE_LO_DISABLED);
 
   // Thresholds are held in mg/dL whatever the display unit; BG_CONVERTIONS is
