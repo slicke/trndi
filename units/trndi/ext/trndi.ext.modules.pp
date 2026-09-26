@@ -94,7 +94,8 @@ function ScriptLooksLikeModule(const Src: UTF8String): boolean;
       without a directory part for the entry point; relative specifiers are
       resolved against its directory, falling back to @code(Root).)
     @param(Name The specifier as written in the @code(import) statement.)
-    @param(Root The extension folder. Every resolved file must stay inside it.)
+    @param(Root The extension folder. Every resolved file must stay inside it,
+      and no path component below it may be a symbolic link or junction.)
     @param(Resolved Receives the absolute path (or @link(TrndiModuleSpecifier)).)
     @returns(An empty string on success, otherwise the error message.) }
 function ResolveModuleSpecifier(const BaseName, Name, Root: string;
@@ -225,6 +226,46 @@ begin
     Result := SameText(A, B);
 end;
 
+{ Is Path a symbolic link, or on Windows any reparse point (junctions too)? }
+function IsLinkPath(const Path: string): boolean;
+var
+  link: TRawbyteSymLinkRec;
+  sr: TSearchRec;
+begin
+  Result := FileGetSymLinkTarget(Path, link);
+  if (not Result) and (FindFirst(Path, faAnyFile or faSymLink, sr) = 0) then
+  begin
+    Result := (sr.Attr and faSymLink) <> 0;
+    FindClose(sr);
+  end;
+end;
+
+{ Does any component of Candidate below RootDir (which ends in a delimiter)
+  go through a link? A link would point the textual confinement check at a
+  file outside the folder, so every step from the root down is checked. }
+function PathHasLinkBelowRoot(const RootDir, Candidate: string): boolean;
+var
+  rest, current, part: string;
+  sep: integer;
+begin
+  Result := False;
+  rest := Copy(Candidate, Length(RootDir) + 1, MaxInt);
+  current := ExcludeTrailingPathDelimiter(RootDir);
+  while rest <> '' do
+  begin
+    sep := Pos(DirectorySeparator, rest);
+    if sep = 0 then
+      sep := Length(rest) + 1;
+    part := Copy(rest, 1, sep - 1);
+    Delete(rest, 1, sep);
+    if part = '' then
+      Continue;
+    current := current + DirectorySeparator + part;
+    if IsLinkPath(current) then
+      Exit(True);
+  end;
+end;
+
 function ResolveModuleSpecifier(const BaseName, Name, Root: string;
 out Resolved: string): string;
 var
@@ -269,6 +310,12 @@ begin
   if not SamePathText(Copy(candidate, 1, Length(rootDir)), rootDir) then
     Exit(Format('cannot import "%s": modules must live inside the extension ' +
       'folder %s', [Name, Root]));
+
+  // The check above is textual; a symlink or junction inside the folder could
+  // still lead out of it, so refuse module paths that pass through one.
+  if PathHasLinkBelowRoot(rootDir, candidate) then
+    Exit(Format('cannot import "%s": modules may not be reached through a ' +
+      'symbolic link', [Name]));
 
   Resolved := candidate;
 end;

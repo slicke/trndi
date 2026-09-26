@@ -56,7 +56,8 @@ unit ext_modules_tests;
 interface
 
 uses
-  fpcunit, testregistry, SysUtils, Classes, trndi.ext.modules;
+  fpcunit, testregistry, SysUtils, Classes, trndi.ext.modules
+  {$IFDEF UNIX}, BaseUnix{$ENDIF};
 
 type
   TExtModulesTests = class(TTestCase)
@@ -79,6 +80,7 @@ type
     procedure TestEntryWithoutDirectoryUsesRoot;
     procedure TestParentInsideRootIsAllowed;
     procedure TestEscapingRootIsRejected;
+    procedure TestSymlinkEscapeIsRejected;
     procedure TestBareSpecifierIsRejected;
     procedure TestMissingExtensionFallsBackToJs;
     procedure TestNoRootRejectsFileImports;
@@ -235,6 +237,35 @@ begin
     IncludeTrailingPathDelimiter(GetTempDir(false)) + 'elsewhere.js', FRoot, resolved);
   AssertTrue('absolute escape rejected: ' + err, Pos('extension folder', err) > 0);
 end;
+
+procedure TExtModulesTests.TestSymlinkEscapeIsRejected;
+{$IFDEF UNIX}
+var
+  resolved, err, outside, link: string;
+begin
+  // lib/out -> a folder outside the root: the path text stays inside, the
+  // file does not.
+  outside := FRoot + '-outside';
+  link := FRoot + DirectorySeparator + 'lib' + DirectorySeparator + 'out';
+  ForceDirectories(outside);
+  FileClose(FileCreate(outside + DirectorySeparator + 'evil.js'));
+  AssertEquals('symlink created', 0, fpSymlink(pchar(outside), pchar(link)));
+  try
+    err := ResolveModuleSpecifier(FRoot + DirectorySeparator + 'main.js',
+      './lib/out/evil.js', FRoot, resolved);
+    AssertTrue('link escape rejected: ' + err, Pos('symbolic link', err) > 0);
+    AssertEquals('nothing resolved', '', resolved);
+  finally
+    DeleteFile(link);
+    DeleteFile(outside + DirectorySeparator + 'evil.js');
+    RemoveDir(outside);
+  end;
+end;
+{$ELSE}
+begin
+  // Creating symlinks needs extra privileges on Windows.
+end;
+{$ENDIF}
 
 procedure TExtModulesTests.TestBareSpecifierIsRejected;
 var
