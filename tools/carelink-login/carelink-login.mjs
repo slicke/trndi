@@ -36,6 +36,9 @@ import { fileURLToPath } from 'node:url';
 const DISCOVERY_URL = 'https://clcloud.minimed.eu/connect/carepartner/v13/discover/android/3.6';
 const ANDROID_UA = 'Dalvik/2.1.0 (Linux; U; Android 10; Nexus 5X Build/QQ3A.200805.001)';
 const LOGIN_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes to complete the browser login
+// First-run browser download (~150 MB). With the login timeout it stays inside
+// the 7 minutes Trndi allows the whole helper run.
+const BROWSER_INSTALL_TIMEOUT_MS = 3 * 60 * 1000;
 
 const region = process.argv.includes('--us') ? 'US' : 'EU';
 
@@ -111,7 +114,18 @@ function buildAuthorizeUrl(cfg, state) {
 function ensureBrowser() {
   const installer = fileURLToPath(new URL('./node_modules/puppeteer/install.mjs', import.meta.url));
   if (!existsSync(installer)) return;
-  const r = spawnSync(process.execPath, [installer], { stdio: ['ignore', 2, 2] });
+  const r = spawnSync(process.execPath, [installer], {
+    stdio: ['ignore', 2, 2],
+    timeout: BROWSER_INSTALL_TIMEOUT_MS,
+  });
+  // A timed-out download leaves no usable browser, so launching would only fail
+  // with a less helpful message.
+  if (r.error && r.error.code === 'ETIMEDOUT') {
+    throw new Error(
+      `The browser download did not finish within ${BROWSER_INSTALL_TIMEOUT_MS / 60000} minutes. ` +
+      'Check the connection and try again.'
+    );
+  }
   if (r.status !== 0) log('warning: the browser download did not complete; launching anyway');
 }
 
