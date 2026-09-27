@@ -532,8 +532,8 @@ declare class TextDecoder {
 //
 // See guides/Extensions.md, "ES modules".
 declare module "trndi" {
-  const api: typeof Trndi;
-  export default api;
+  const trndiDefault: typeof Trndi;
+  export default trndiDefault;
   export const api: typeof Trndi.api;
   export const permissions: typeof Trndi.permissions;
   export const data: typeof Trndi.data;

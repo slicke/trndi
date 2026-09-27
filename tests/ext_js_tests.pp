@@ -851,21 +851,33 @@ var
   compiled, thrown: JSValue;
   f: TFileStream;
   ss: TStringStream;
+
+  { Leave the reason pending on ctx, as the engine's loader does. }
+  procedure Fail(const reason: string);
+  begin
+    thrown := JS_Eval(ctx, RawUtf8('throw new ReferenceError(' +
+      JSStringLiteral(reason) + ')'), '<module-loader>', JS_EVAL_TYPE_GLOBAL);
+    JS_FreeValue(ctx, thrown);
+  end;
+
 begin
   Result := nil;
   name := string(module_name);
   if Pos(ModuleErrorPrefix, name) = 1 then
   begin
-    thrown := JS_Eval(ctx, RawUtf8('throw new ReferenceError(' +
-      JSStringLiteral(Copy(name, Length(ModuleErrorPrefix) + 1, MaxInt)) + ')'),
-      '<module-loader>', JS_EVAL_TYPE_GLOBAL);
-    JS_FreeValue(ctx, thrown);
+    Fail(Copy(name, Length(ModuleErrorPrefix) + 1, MaxInt));
     Exit;
   end;
   if name = TrndiModuleSpecifier then
     src := TrndiModuleSource
-  else
+  else if not FileExists(name) then
   begin
+    Fail('module not found: ' + name);
+    Exit;
+  end
+  else
+  // Runs inside a C frame: no Pascal exception may unwind out of here.
+  try
     f := TFileStream.Create(name, fmOpenRead or fmShareDenyWrite);
     ss := TStringStream.Create;
     try
@@ -874,6 +886,12 @@ begin
     finally
       ss.Free;
       f.Free;
+    end;
+  except
+    on E: Exception do
+    begin
+      Fail('cannot read module ' + name + ': ' + E.Message);
+      Exit;
     end;
   end;
   compiled := JS_Eval(ctx, src, RawUtf8(name), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
