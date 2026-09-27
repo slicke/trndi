@@ -70,6 +70,10 @@
    shows the delta as the pill under the reading, like the live window.
    Gap markers are drawn by DrawGapMarker as a dotted ring of round beads,
    each with a hairline knockout, at full strength whatever the slot's age. *)
+(* MODIFICATION NOTICE (2026-09-27): TrendSurfacePaint paints the delta pill
+   (PaintDeltaPill) before the trace, so the pill lies over the reading and a
+   decimal comma's tail no longer covers its chevron. The settings preview
+   draws no dash for a flat rate and keeps the text's sign, like the window. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -398,6 +402,10 @@ begin
   if FTrendSurface = nil then
     Exit;
   cnv := FTrendSurface.Canvas;
+
+  // The delta pill first: over the reading (this surface sits in front of
+  // lVal), under the trace and dots. See PaintDeltaPill.
+  PaintDeltaPill(cnv);
 
   // The optional connecting line (ux.dot_line): consecutive visible history
   // slots joined center to center, drawn first so the dots sit on top of it.
@@ -955,8 +963,24 @@ begin
   SetPreviewFont('', Max(10, h div 11), []);
   tw := ACanvas.TextWidth(diffText);
   th := ACanvas.TextHeight(diffText);
-  chev := Round(th * DELTA_CHEVRON_FRAC);
-  gap := Max(3, th div 4);
+  // Direction from the live rate, as DeltaChevronShown decides it: a chevron
+  // only for a real rise or fall; flat, or no rate known, keeps the sign in
+  // the text and takes no chevron room.
+  if FDiffRateKnown then
+    diffTrend := CalculateTrendFromDelta(FDiffRateMgdl)
+  else
+    diffTrend := TdFlat;
+  if diffTrend in [TdDoubleUp, TdSingleUp, TdFortyFiveUp,
+    TdFortyFiveDown, TdSingleDown, TdDoubleDown] then
+  begin
+    chev := Round(th * DELTA_CHEVRON_FRAC);
+    gap := Max(3, th div 4);
+  end
+  else
+  begin
+    chev := 0;
+    gap := 0;
+  end;
   padX := Round(th * DELTA_PILL_PAD_X);
   padY := Round(th * DELTA_PILL_PAD_Y);
   pillH := th + 2 * padY;
@@ -976,13 +1000,7 @@ begin
   capsule[0].Y2 := cy;
   capsule[0].Color := BlendColors(valColor, bg, DELTA_PILL_TINT);
   DrawSmoothStrokes(ACanvas, capsule, pillH);
-  // Direction from the live rate, as PaintDeltaPill does (the text has no
-  // sign to read it from any more); flat when no rate is known.
   ccx := x - gap - chev div 2;
-  if FDiffRateKnown then
-    diffTrend := CalculateTrendFromDelta(FDiffRateMgdl)
-  else
-    diffTrend := TdFlat;
   if diffTrend in [TdDoubleUp, TdSingleUp, TdFortyFiveUp] then
   begin
     pts[0] := MkPoint(ccx, cy - chev div 2);
@@ -997,13 +1015,6 @@ begin
     pts[1] := MkPoint(ccx + chev div 2, cy - chev div 2);
     pts[2] := MkPoint(ccx, cy + chev div 2);
     DrawSmoothConvexPolygon(ACanvas, pts, subColor);
-  end
-  else
-  begin
-    capsule[0].X1 := ccx - chev / 2;
-    capsule[0].X2 := ccx + chev / 2;
-    capsule[0].Color := subColor;
-    DrawSmoothStrokes(ACanvas, capsule, Max(2, chev div 4));
   end;
   ACanvas.Font.Color := subColor;
   ACanvas.TextOut(x, cy - th div 2, diffText);

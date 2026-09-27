@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-27: DeltaChevronShown is false for a flat rate, so the delta
+ *   keeps its sign instead of a dash that read as a minus.
  * - 2026-09-25: The delta label is laid out by LayoutDeltaPill under the
  *   reading's baseline (with chevron room) instead of along the bottom edge.
  *   ScaleLbl measures a label with TabularDigits on by its tabular width.
@@ -803,8 +805,13 @@ begin
   // Not from the caption: ProcessCurrentReading asks before it writes the
   // text, since the text loses its sign when the chevron carries it. High
   // contrast draws neither pill nor chevron, so the sign stays in the text.
+  // A flat rate gets no glyph either: the dash that stood for it, beside a
+  // magnitude stripped of its sign, read as a minus -- a rising "+0,2"
+  // showed as "- 0,2". Flat keeps its signed text instead.
   Result := FDiffRateKnown and (not FTrendDataStale) and
-    (not native.GetBoolSetting('main.high_contrast', false));
+    (not native.GetBoolSetting('main.high_contrast', false)) and
+    (CalculateTrendFromDelta(FDiffRateMgdl) in [TdDoubleUp, TdSingleUp,
+    TdFortyFiveUp, TdFortyFiveDown, TdSingleDown, TdDoubleDown]);
 end;
 
 // The delta used to run along the bottom edge, a window's height away from the
