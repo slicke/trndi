@@ -542,10 +542,13 @@ class var touchOverride: TTrndiBool;
         calls relabel an existing menu. Base: no-op. }
   procedure SetStatusItemMenu(const showCaption, hideCaption, quitCaption: string;
     const onShow, onHide, onQuit: TTrndiWakeCallback); virtual;
-    {** Show or refresh the menu-bar status item: @param(Text) in a pill
-        painted @param(bg)/@param(textColor).
+    {** Show or refresh the menu-bar status item: @param(Value) (the reading)
+        followed by the less prominent @param(Detail) (trend arrow and change,
+        may be empty), in a pill painted @param(bg)/@param(textColor). An
+        empty @param(Value) hides the item.
         @returns(@true when the item is shown.) Base: no-op returning @false. }
-  function ShowStatusItem(const Text: string; bg, textColor: TColor): boolean; virtual;
+  function ShowStatusItem(const Value, Detail: string;
+    bg, textColor: TColor): boolean; virtual;
     {** Remove the status item if present. Base: no-op. }
   procedure HideStatusItem; virtual;
     {** Play an audio file using native facilities (safe file check included).
@@ -2163,7 +2166,8 @@ begin
   // No menu-bar status item on the base class.
 end;
 
-function TTrndiNativeBase.ShowStatusItem(const Text: string; bg, textColor: TColor): boolean;
+function TTrndiNativeBase.ShowStatusItem(const Value, Detail: string;
+bg, textColor: TColor): boolean;
 begin
   Result := false;
 end;

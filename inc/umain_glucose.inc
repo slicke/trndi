@@ -2551,7 +2551,7 @@ end;
 
 procedure TfBG.UpdateStatusItem;
 var
-  txt: string;
+  txt, detail: string;
 begin
   if not native.SupportsStatusItem then
     Exit;
@@ -2567,6 +2567,7 @@ begin
 
   // During an outage the value is gone, not frozen: an old number next to the
   // clock is worse than none. Same '--' the dock badge shows.
+  detail := '';
   if FTrendDataStale then
     txt := '--'
   else
@@ -2577,15 +2578,15 @@ begin
     if not privacyMode then
     begin
       if native.GetBoolSetting('badge.trend', true) then
-        txt := txt + ' ' + lastReading.trend.Img;
+        detail := lastReading.trend.Img;
       if (FDiffText <> '') and (FDiffText <> '--') then
-        txt := txt + ' ' + FDiffText;
+        detail := Trim(detail + ' ' + FDiffText);
     end;
   end;
 
   // The window's own background and value colours, so the pill reads the
   // same as the main window (range colour when fresh, dimmed when stale).
-  native.ShowStatusItem(txt, fBG.Color, lVal.Font.Color);
+  native.ShowStatusItem(txt, detail, fBG.Color, lVal.Font.Color);
 end;
 
 procedure TfBG.StatusItemShowClicked;

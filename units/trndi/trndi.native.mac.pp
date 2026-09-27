@@ -105,7 +105,8 @@ type
     procedure SetStatusItemMenu(const showCaption, hideCaption, quitCaption: string;
       const onShow, onHide, onQuit: TTrndiWakeCallback); override;
     {** Create/refresh the menu-bar pill. See base. }
-    function ShowStatusItem(const Text: string; bg, textColor: TColor): boolean; override;
+    function ShowStatusItem(const Value, Detail: string;
+      bg, textColor: TColor): boolean; override;
     {** Take the status item out of the menu bar. }
     procedure HideStatusItem; override;
 
@@ -2065,22 +2066,36 @@ end;
   who keep the Dock hidden (where the dock badge never shows). LCL's TTrayIcon
   can only hold an icon on Cocoa, so this talks to NSStatusBar directly.
 
-  The pill is rasterised into an NSImage rather than set as an attributed
-  title: a status-bar button draws its own background, so a coloured
+  The pill is drawn into an NSImage rather than set as an attributed title: a
+  status-bar button draws its own background, so a coloured
   NSBackgroundColorAttributeName comes out as a hard rectangle that ignores the
-  bar's height. The image is not a template, so it keeps the range colour in
-  both light and dark menu bars.
+  bar's height. The image carries an NSCustomImageRep instead of a bitmap, so
+  AppKit asks for the drawing at whatever backing scale the menu bar is on at
+  the time -- sharp on Retina and non-Retina alike, and across a move between
+  the two. The image is not a template, so it keeps the range colour in both
+  light and dark menu bars.
+
+  Type follows the menu bar clock: the system font with monospaced digits, so
+  the pill keeps its width as the value changes. The value is semibold; the
+  arrow and change beside it are regular and slightly faded, so the number
+  reads first.
 
   Menu entries are marshalled to the main thread through TTrndiWakeBridge,
   like the user badge: "Quit" closes the main form, and doing that from inside
   AppKit's menu tracking loop invites a wedged event loop.
  ------------------------------------------------------------------------------}
 const
-  SITEM_H_PAD   = 7;    // px of breathing room left/right of the text
-  SITEM_V_INSET = 3;    // px between the pill and the menu bar's edges
-  SITEM_MIN_H   = 14;   // floor for the pill height
-  SITEM_MAX_H   = 20;   // ceiling, so the tall notch-era bar gets no slab
-  SITEM_FONT_SZ = 12;
+  SITEM_H_PAD    = 6;     // pt of breathing room left/right of the text
+  SITEM_V_INSET  = 3;     // pt between the pill and the menu bar's edges
+  SITEM_MIN_H    = 16;    // floor for the pill height
+  SITEM_MAX_H    = 18;    // ceiling, so the tall notch-era bar gets no slab
+  SITEM_RADIUS   = 5;     // pt; macOS control-style corners, not a capsule
+  SITEM_FONT_SZ  = 13;    // the menu bar's own text size
+  SITEM_DETAIL_ALPHA = 0.72; // arrow + change, a step behind the value
+  // NSFontWeight values (NSFontWeightSemibold / NSFontWeightRegular); the
+  // exported constants are not in CocoaAll.
+  SITEM_WEIGHT_VALUE  = 0.3;
+  SITEM_WEIGHT_DETAIL = 0.0;
 
 type
   // Target for the menu entries; NSMenuItem needs an object with selectors.
@@ -2088,6 +2103,8 @@ type
     procedure showClicked(sender: id); message 'showClicked:';
     procedure hideClicked(sender: id); message 'hideClicked:';
     procedure quitClicked(sender: id); message 'quitClicked:';
+    // NSCustomImageRep draw callback; paints the pill from the globals below.
+    procedure drawPill(rep: NSCustomImageRep); message 'drawPill:';
   end;
 
 var
@@ -2100,6 +2117,42 @@ var
   gStatusShowBridge: TTrndiWakeBridge = nil; // shared class, this unit's instances
   gStatusHideBridge: TTrndiWakeBridge = nil;
   gStatusQuitBridge: TTrndiWakeBridge = nil;
+  // What drawPill paints. Retained; replaced on every ShowStatusItem.
+  gStatusText: NSAttributedString = nil;
+  gStatusBg: TColor = clBlack;
+
+// +[NSFont monospacedDigitSystemFontOfSize:weight:] (10.11+) takes two
+// CGFloats, which none of the msgSend shapes above carry.
+function objc_msgSend_font(cls: id; sel: SEL; size, weight: CGFloat): id;
+  cdecl; external ObjCLib name 'objc_msgSend';
+
+// Menu-bar font at @param(weight), digits monospaced; plain system font where
+// the selector is missing.
+function StatusItemFont(weight: CGFloat): NSFont;
+var
+  fontSel: SEL;
+begin
+  fontSel := sel_registerName('monospacedDigitSystemFontOfSize:weight:');
+  if objc_msgSend_bool_sel(NSFont, sel_registerName('respondsToSelector:'), fontSel) then
+    Result := NSFont(objc_msgSend_font(NSFont, fontSel, SITEM_FONT_SZ, weight))
+  else if weight > 0 then
+    Result := NSFont.boldSystemFontOfSize(SITEM_FONT_SZ)
+  else
+    Result := NSFont.systemFontOfSize(SITEM_FONT_SZ);
+end;
+
+// Autoreleased run of @param(Text) in @param(font)/@param(color).
+function StatusItemRun(const Text: string; font: NSFont; color: NSColor): NSAttributedString;
+var
+  attrs: NSMutableDictionary;
+begin
+  attrs := NSMutableDictionary.dictionaryWithCapacity(2);
+  attrs.setObject_forKey(font, NSFontAttributeName);
+  attrs.setObject_forKey(color, NSForegroundColorAttributeName);
+  Result := NSAttributedString.alloc.initWithString_attributes(
+    NSString.stringWithUTF8String(PChar(Text)), attrs);
+  Result.autorelease;
+end;
 
 procedure TTrndiStatusTarget.showClicked(sender: id);
 begin
@@ -2119,6 +2172,39 @@ begin
     gStatusQuitBridge.Queue;
 end;
 
+procedure TTrndiStatusTarget.drawPill(rep: NSCustomImageRep);
+var
+  sz: NSSize;
+  pill: NSRect;
+  path: NSBezierPath;
+  font: NSFont;
+  baseline: CGFloat;
+begin
+  if gStatusText = nil then
+    Exit;
+  sz := rep.size;
+  pill := NSMakeRect(0, 0, sz.width, sz.height);
+  path := NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(pill,
+    SITEM_RADIUS, SITEM_RADIUS);
+  UserBadgeColor(gStatusBg).setFill;
+  path.fill;
+  // Hairline edge a shade darker than the fill, inset half a point so it
+  // stays inside the pill: keeps the shape against a wallpaper or menu bar of
+  // a similar colour without reading as an outline.
+  path := NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(
+    NSInsetRect(pill, 0.5, 0.5), SITEM_RADIUS - 0.5, SITEM_RADIUS - 0.5);
+  path.setLineWidth(1);
+  UserBadgeColor(gStatusBg).shadowWithLevel(0.25).colorWithAlphaComponent(0.5).setStroke;
+  path.stroke;
+
+  // Centre on the cap height, not the line box: digits carry no descenders,
+  // so centring the line would sit them visibly high. drawAtPoint places the
+  // line's bottom (the descender) at the point in this unflipped context.
+  font := StatusItemFont(SITEM_WEIGHT_VALUE);
+  baseline := (sz.height - font.capHeight) / 2;
+  gStatusText.drawAtPoint(NSMakePoint(SITEM_H_PAD, baseline + font.descender));
+end;
+
 // Autoreleased menu item bound to gStatusTarget. UTF-8 explicitly, as elsewhere.
 function StatusMenuItem(const caption: string; action: SEL): NSMenuItem;
 begin
@@ -2128,19 +2214,26 @@ begin
   Result.autorelease;
 end;
 
-// Render the pill. Autoreleased; the button retains what it is given.
-function StatusItemImage(const Text: string; bg, textColor: TColor): NSImage;
+// Store the text for drawPill and return a pill-sized image that draws
+// through it. Autoreleased; the button retains what it is given.
+function StatusItemImage(const Value, Detail: string; bg, textColor: TColor): NSImage;
 var
-  attrs: NSMutableDictionary;
-  s: NSString;
-  textSize: NSSize;
+  text: NSMutableAttributedString;
+  fg: NSColor;
+  rep: NSCustomImageRep;
   w, h: CGFloat;
 begin
-  s := NSString.stringWithUTF8String(PChar(Text));
-  attrs := NSMutableDictionary.dictionaryWithCapacity(2);
-  attrs.setObject_forKey(NSFont.boldSystemFontOfSize(SITEM_FONT_SZ), NSFontAttributeName);
-  attrs.setObject_forKey(UserBadgeColor(textColor), NSForegroundColorAttributeName);
-  textSize := s.sizeWithAttributes(attrs);
+  fg := UserBadgeColor(textColor);
+  text := NSMutableAttributedString.alloc.init;
+  text.appendAttributedString(StatusItemRun(Value,
+    StatusItemFont(SITEM_WEIGHT_VALUE), fg));
+  if Detail <> '' then
+    text.appendAttributedString(StatusItemRun(' ' + Detail,
+      StatusItemFont(SITEM_WEIGHT_DETAIL), fg.colorWithAlphaComponent(SITEM_DETAIL_ALPHA)));
+  if gStatusText <> nil then
+    gStatusText.release;
+  gStatusText := text; // owned from alloc
+  gStatusBg := bg;
 
   h := NSStatusBar.systemStatusBar.thickness - 2 * SITEM_V_INSET;
   if h < SITEM_MIN_H then
@@ -2148,20 +2241,17 @@ begin
   else if h > SITEM_MAX_H then
     h := SITEM_MAX_H;
   // Whole points, so the pill edges land on pixel boundaries.
-  w := Round(textSize.width + 0.5) + 2 * SITEM_H_PAD;
+  w := Round(text.size.width + 0.5) + 2 * SITEM_H_PAD;
 
+  if gStatusTarget = nil then
+    gStatusTarget := TTrndiStatusTarget.alloc.init;
+  rep := NSCustomImageRep.alloc.initWithDrawSelector_delegate(
+    objcselector('drawPill:'), gStatusTarget);
+  rep.setSize(NSMakeSize(w, h));
   Result := NSImage.alloc.initWithSize(NSMakeSize(w, h));
+  Result.addRepresentation(rep);
+  rep.release;
   Result.autorelease;
-  Result.lockFocus;
-  try
-    UserBadgeColor(bg).setFill;
-    NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(
-      NSMakeRect(0, 0, w, h), h / 3, h / 3).fill;
-    s.drawAtPoint_withAttributes(
-      NSMakePoint(SITEM_H_PAD, (h - textSize.height) / 2), attrs);
-  finally
-    Result.unlockFocus;
-  end;
   Result.setTemplate(false);
 end;
 
@@ -2226,11 +2316,13 @@ begin
     gStatusItem.setMenu(gStatusMenu);
 end;
 
-function TTrndiNativeMac.ShowStatusItem(const Text: string;
+function TTrndiNativeMac.ShowStatusItem(const Value, Detail: string;
 bg, textColor: TColor): boolean;
+var
+  tip: string;
 begin
   Result := false;
-  if Text = '' then
+  if Value = '' then
   begin
     HideStatusItem;
     Exit;
@@ -2251,8 +2343,11 @@ begin
 
   if gStatusItem.button = nil then
     Exit;
-  gStatusItem.button.setImage(StatusItemImage(Text, bg, textColor));
-  gStatusItem.button.setToolTip(NSString.stringWithUTF8String(PChar('Trndi: ' + Text)));
+  gStatusItem.button.setImage(StatusItemImage(Value, Detail, bg, textColor));
+  tip := 'Trndi: ' + Value;
+  if Detail <> '' then
+    tip := tip + ' ' + Detail;
+  gStatusItem.button.setToolTip(NSString.stringWithUTF8String(PChar(tip)));
   Result := true;
 end;
 
