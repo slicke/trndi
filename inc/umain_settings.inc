@@ -39,6 +39,9 @@
  * - 2026-09-20: ApplySettingsInstantly broadcasts settingsCallback to
  *   extensions once the new settings are in effect.
  *)
+(* MODIFICATION NOTICE (2026-09-27): The menubar.reading setting (macOS
+   menu-bar status item) is loaded, saved and applied instantly; it is only
+   stored once it differs from the Dock-based default or was set before. *)
 (* MODIFICATION NOTICE (2026-09-18): ApplySettingsInstantly re-lays the
    connection badge out through RefreshConnectionBadge, which keeps the
    status colour instead of reading back whatever the badge shape shows. *)
@@ -310,6 +313,10 @@ begin
       {$endif}
       );
   end;
+  // Unlike the badge, this also runs during an outage: toggling the setting
+  // must add or remove the item either way, and UpdateStatusItem shows '--'
+  // itself while the data is stale.
+  UpdateStatusItem;
 
   if Assigned(fFloat) then
     UpdateFloatingWindow;
@@ -516,6 +523,11 @@ procedure LoadUserSettings(f: TfConf);
       {$else}
       cbBadgeTrend.Visible := false;
       {$endif}
+      // Reading in the menu bar next to the clock (macOS only)
+      if native.SupportsStatusItem then
+        cbMenuBarReading.Checked := GetBoolSetting('menubar.reading', StatusItemDefault)
+      else
+        cbMenuBarReading.Visible := false;
       cbWarnLoHi.Checked := GetBoolSetting('predictions.warn');
       cbPredictShortFullArrows.Checked := GetBoolSetting('predictions.short.fullarrows');
       if GetBoolSetting('predictions.short.showvalue') then
@@ -958,6 +970,11 @@ procedure SaveUserSettings(f: TfConf);
       {$if defined(X_WIN) or defined(X_MAC) or defined(X_PC)}
       SetSetting('badge.trend', cbBadgeTrend.Checked);
       {$endif}
+      // Only store a choice the user made: saving the dialog for anything else
+      // must not freeze the Dock-based default into an explicit value.
+      if native.SupportsStatusItem and ((GetSetting('menubar.reading') <> '')
+        or (cbMenuBarReading.Checked <> StatusItemDefault)) then
+        SetSetting('menubar.reading', cbMenuBarReading.Checked);
       SetSetting('predictions.short.fullarrows', cbPredictShortFullArrows.Checked);
       SetSetting('predictions.short.showvalue', rbPredictShortShowValue.Checked);
       if cbPredictShortSize.ItemIndex >= 0 then

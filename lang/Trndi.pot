@@ -420,6 +420,10 @@ msgstr ""
 msgid "Show trend arrow in taskbar/dock"
 msgstr ""
 
+#: tfconf.cbmenubarreading.caption
+msgid "Show reading in the menu bar"
+msgstr ""
+
 #: tfconf.cbbolusoverlay.caption
 msgid "Show insulin doses on the history graph"
 msgstr ""
@@ -1878,6 +1882,25 @@ msgstr ""
 #: trndi.strings.rs_conn_ok
 msgctxt "trndi.strings.rs_conn_ok"
 msgid "OK"
+msgstr ""
+
+#: trndi.strings.rs_status_item_hidden
+msgid ""
+"The reading is no longer shown in the menu bar.\n"
+"\n"
+"You can turn it back on under Settings > Display > \"Show reading in the menu bar\"."
+msgstr ""
+
+#: trndi.strings.rs_status_item_hide
+msgid "Hide from menu bar"
+msgstr ""
+
+#: trndi.strings.rs_status_item_quit
+msgid "Quit Trndi"
+msgstr ""
+
+#: trndi.strings.rs_status_item_show
+msgid "Show Trndi"
 msgstr ""
 
 #: trndi.strings.rs_conn_ok_info
