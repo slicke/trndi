@@ -68,8 +68,9 @@
    connecting line runs through the dots as a monotone cubic curve
    (SmoothTrace) instead of straight segments. The Display-tab preview
    shows the delta as the pill under the reading, like the live window.
-   Gap markers are drawn by DrawGapMarker as a dashed ring with a knockout
-   rim around the dashes only, at full strength whatever the slot's age. *)
+   Gap markers are drawn by DrawGapMarker as a dotted ring of round beads
+   with a knockout rim around the beads only, at full strength whatever the
+   slot's age. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -330,68 +331,55 @@ begin
   SetLength(AOutCols, count);
 end;
 
-// A missing reading's marker: a dashed ring, ASize across, in AColor. Dashed
-// rather than a thin hollow ring because a hollow ring among solid dots was
-// easy to miss at a glance, and a dashed outline reads as "placeholder" the
-// way a dashed box does -- nothing that could pass for a measurement. Built
-// from short capsule strokes along the circle (two per dash, so each follows
-// the arc), spaced so the gaps stay about as wide as the stroke at every
-// size; small markers get fewer dashes rather than dashes that merge. The
-// knockout is a rim around the dashes only -- the same strokes drawn first,
+// A missing reading's marker: a dotted ring, ASize across, in AColor. The
+// open centre keeps it from passing for a measurement; the dots make it read
+// as "placeholder" the way a dotted outline does. Round beads rather than
+// dashes: at trend-dot sizes a dashed circle only fits a handful of dashes
+// and reads as a loose cluster of specks, while evenly spaced beads still
+// trace a clear circle. Each bead is a zero-length capsule stroke, which the
+// stroke rasterizer draws as an antialiased disc at sub-pixel positions, so
+// the spacing stays even where snapped circles would wobble. The bead count
+// follows the circumference so the gaps stay about a bead wide at every size.
+// The knockout is a rim around the beads only -- the same beads drawn first,
 // wider, in ABackdrop -- so the ring keeps a clean edge over the digits and
 // the arrow while its inside stays open: a gap has nothing to show, so it
-// should not cover what is behind it either. Uncached: the strokes are few
-// and tiny.
+// should not cover what is behind it either. Uncached: the beads are few and
+// tiny.
 procedure DrawGapMarker(ACanvas: TCanvas; ASize: integer; AColor, ABackdrop: TColor;
   ALeft, ATop: integer);
 const
-  SLOT_PER_THICK = 2.6;   // dash + gap, in stroke thicknesses, along the circle
-  GAP_PER_THICK = 0.8;    // the gap's share of that
+  PITCH_PER_BEAD = 1.9;   // bead + gap, in bead diameters, along the circle
 var
-  strokes: array of TSmoothStroke;
-  thick, rim, n, i, k: integer;
-  r, cx, cy, seg, core, a0, a1, am, coreAng: double;
+  beads: array of TSmoothStroke;
+  bead, rim, n, i: integer;
+  r, cx, cy, a: double;
 begin
   if ASize < 4 then
     Exit;
 
-  thick := Max(2, Round(ASize / 6));
-  rim := Max(1, Round(thick * 0.5));    // knockout width on either side
-  r := (ASize - thick) / 2.0;          // the stroke's centre line
+  bead := Max(2, Round(ASize / 5.5));
+  rim := Max(1, Round(bead * 0.5));    // knockout width on either side
+  r := (ASize - bead) / 2.0;          // the beads' centre line
   cx := ALeft + ASize / 2.0;
   cy := ATop + ASize / 2.0;
+  n := EnsureRange(Round(2 * Pi * r / (bead * PITCH_PER_BEAD)), 6, 16);
 
-  n := EnsureRange(Round(2 * Pi * r / (thick * SLOT_PER_THICK)), 3, 10);
-  seg := 2 * Pi * r / n;                          // one dash + one gap
-  // The capsule's round caps add one thickness to the drawn length, so the
-  // centre line of a dash is the slot minus the gap minus the caps.
-  core := Max(0.15 * thick, seg - GAP_PER_THICK * thick - thick);
-  coreAng := core / r;
-
-  SetLength({%H-}strokes, 2 * n);
-  k := 0;
+  SetLength({%H-}beads, n);
   for i := 0 to n - 1 do
   begin
-    // Start at the top, gap centred there, so the pattern is symmetric.
-    a0 := -Pi / 2 + (i + 0.5) * (2 * Pi / n) - coreAng / 2;
-    a1 := a0 + coreAng;
-    am := (a0 + a1) / 2;
-    strokes[k].X1 := cx + r * cos(a0); strokes[k].Y1 := cy + r * sin(a0);
-    strokes[k].X2 := cx + r * cos(am); strokes[k].Y2 := cy + r * sin(am);
-    strokes[k].Color := AColor;
-    Inc(k);
-    strokes[k].X1 := cx + r * cos(am); strokes[k].Y1 := cy + r * sin(am);
-    strokes[k].X2 := cx + r * cos(a1); strokes[k].Y2 := cy + r * sin(a1);
-    strokes[k].Color := AColor;
-    Inc(k);
+    // Start half a pitch past the top so the pattern is symmetric about it.
+    a := -Pi / 2 + (i + 0.5) * (2 * Pi / n);
+    beads[i].X1 := cx + r * cos(a);
+    beads[i].Y1 := cy + r * sin(a);
+    beads[i].X2 := beads[i].X1;
+    beads[i].Y2 := beads[i].Y1;
+    beads[i].Color := ABackdrop;
   end;
-  // Rim first: the dashes in the backdrop tone, one rim wider on each side.
-  for k := 0 to High(strokes) do
-    strokes[k].Color := ABackdrop;
-  DrawSmoothStrokes(ACanvas, strokes, thick + 2 * rim);
-  for k := 0 to High(strokes) do
-    strokes[k].Color := AColor;
-  DrawSmoothStrokes(ACanvas, strokes, thick);
+  // Rim first: the beads in the backdrop tone, one rim wider on each side.
+  DrawSmoothStrokes(ACanvas, beads, bead + 2 * rim);
+  for i := 0 to n - 1 do
+    beads[i].Color := AColor;
+  DrawSmoothStrokes(ACanvas, beads, bead);
 end;
 
 procedure TfBG.TrendSurfacePaint(Sender: TObject);
@@ -500,7 +488,7 @@ begin
 
     if slot^.kind = dkGap then
     begin
-      // A gap marker: a dashed ring at the trace's interpolated height,
+      // A gap marker: a dotted ring at the trace's interpolated height,
       // slightly smaller than the data dots, drawn from the window tone -- a
       // gap has no reading and thus no range color. It says "a reading
       // should be here", so unlike the dots it neither fades nor shrinks
@@ -1072,7 +1060,7 @@ begin
     ageOff := (d - dd) div 2;
 
     // One mid-trend slot renders as a sensor gap when the option is on — the
-    // same dashed ring the live surface draws (unfaded, unshrunk), at the
+    // same dotted ring the live surface draws (unfaded, unshrunk), at the
     // height the climb passes through anyway (the preview's trace is linear).
     if AData.GapRing and (i = DOT_COUNT div 2) then
     begin
