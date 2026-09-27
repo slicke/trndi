@@ -38,6 +38,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-27: UpdateStatusItem and the status item's menu handlers
  *   (macOS menu-bar reading), including "Hide from menu bar".
+ * - 2026-09-27: PaintDeltaPill and DeltaChevronShown documentation follow the
+ *   pill onto the trend surface and drop the chevron for a flat rate.
  * - 2026-08-27: Trend/prediction dot state moved into a proper model
  *   (TDotKind/TTrendSlot, TrendSlots/PredictionSlots, FDotsExpanded). The
  *   old encoding — sentinel control chars in Caption, the value as a locale
@@ -1285,13 +1287,15 @@ private
       direction chevron PaintDeltaPill draws beside the text. Called from
       ResizeUIElements after lVal has been fitted. }
   procedure LayoutDeltaPill;
-  {** Paint the delta pill -- a capsule tinted with the reading's ink -- and
-      its direction chevron behind lDiff. Runs at the end of FormPaint; a
-      no-op with the delta hidden, empty, or in high-contrast mode. }
+  {** Paint the delta pill -- a capsule tinted with the reading's ink -- with
+      its direction chevron and the delta text, over lDiff. Runs first in
+      TrendSurfacePaint, so it lies in front of the reading and under the
+      dots; a no-op with the delta hidden, empty, or in high-contrast mode. }
   procedure PaintDeltaPill(ACanvas: TCanvas);
   {** Whether the delta carries a direction chevron: only while a rate is
-      known and the data is current. Shared by layout and paint so the text
-      shift and the glyph agree. }
+      known, the data is current and the rate is a rise or a fall (a flat
+      rate keeps its sign in the text). Shared by layout and paint so the
+      text shift and the glyph agree. }
   function DeltaChevronShown: boolean;
   {** Put a value and caption on the "ago" badge ("3 min", or "14:35" over
       "last reading") and re-layout, since its width just changed. }

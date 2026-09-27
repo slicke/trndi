@@ -36,6 +36,10 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-27: The delta pill is painted by the trend surface, in front of
+ *   lVal, instead of by FormPaint behind it: a decimal comma's tail covered
+ *   the chevron. PaintDeltaPill now draws the delta text over its capsule,
+ *   and no longer draws a dash for a flat rate (see DeltaChevronShown).
  * - 2026-09-25: FormPaint records the range bands it composited in
  *   FPaintedBands so the trend surface can match the backdrop under each
  *   dot for its knockout halo. It also paints the delta pill and its
@@ -487,7 +491,6 @@ begin
     not (PaintRange or PaintRangeCGMRange) then
   begin
     PaintGuideLines;
-    PaintDeltaPill(cnv);
     Exit;
   end;
 
@@ -679,9 +682,8 @@ begin
   end;
 
   // Last, so the scale sits on top of the range bands rather than under them.
+  // The delta pill is not painted here but by the trend surface, over lVal.
   PaintGuideLines;
-  // And the pill over the scale: the delta is a reading, the scale is paper.
-  PaintDeltaPill(cnv);
 end;
 
 function TfBG.BackdropColorAt(AY: integer; const AQuantized: boolean): TColor;
@@ -710,12 +712,20 @@ begin
     BackdropColorAt(AClientTop + ARect.Bottom), gdVertical);
 end;
 
-// The delta pill behind lDiff: a capsule in the reading's ink, faintly, wide
+// The delta pill over lDiff: a capsule in the reading's ink, faintly, wide
 // enough for the text and the direction chevron LayoutDeltaPill left room
 // for. The chevron says which way the number points before it is read --
-// up/down for any rising or falling trend, a dash for flat -- in the label's
-// own colour, which DiffLabelColor already tints for a fast change. The label
-// paints its text over this in the same pass (children paint after the form).
+// up/down for any rising or falling trend; a flat one keeps its sign in the
+// text instead -- in the label's own colour, which DiffLabelColor already
+// tints for a fast change.
+//
+// Painted by the trend surface, which sits in front of lVal: under a one-digit
+// reading a decimal comma's tail hangs into the pill, and painted behind the
+// number the tail covered the chevron, so a rising "+0,2" read as "-0,2". On
+// top, the capsule covers the tail instead (the comma's head stays above it,
+// on the baseline). The capsule is opaque, so the text is drawn here too, in
+// the place lDiff paints it -- lDiff's own copy stays underneath, and keeps
+// the clicks, the popup menu and the high-contrast rendering.
 procedure TfBG.PaintDeltaPill(ACanvas: TCanvas);
 var
   tw, th, chev, gap, textX, x0, x1, cy, padX, padY, pillH, ccx: integer;
@@ -773,34 +783,31 @@ begin
   capsule[0].Color := fill;
   DrawSmoothStrokes(ACanvas, capsule, pillH);
 
-  if not showChev then
-    Exit;
   glyph := lDiff.Font.Color;
-  ccx := x0 + chev div 2;
-  case CalculateTrendFromDelta(FDiffRateMgdl) of
-  TdDoubleUp, TdSingleUp, TdFortyFiveUp:
+  if showChev then
   begin
-    pts[0] := MkPoint(ccx, cy - chev div 2);
-    pts[1] := MkPoint(ccx - chev div 2, cy + chev div 2);
-    pts[2] := MkPoint(ccx + chev div 2, cy + chev div 2);
+    ccx := x0 + chev div 2;
+    // DeltaChevronShown admits only a rise or a fall; flat has no glyph.
+    if CalculateTrendFromDelta(FDiffRateMgdl) in
+      [TdDoubleUp, TdSingleUp, TdFortyFiveUp] then
+    begin
+      pts[0] := MkPoint(ccx, cy - chev div 2);
+      pts[1] := MkPoint(ccx - chev div 2, cy + chev div 2);
+      pts[2] := MkPoint(ccx + chev div 2, cy + chev div 2);
+    end
+    else
+    begin
+      pts[0] := MkPoint(ccx - chev div 2, cy - chev div 2);
+      pts[1] := MkPoint(ccx + chev div 2, cy - chev div 2);
+      pts[2] := MkPoint(ccx, cy + chev div 2);
+    end;
     DrawSmoothConvexPolygon(ACanvas, pts, glyph);
   end;
-  TdFortyFiveDown, TdSingleDown, TdDoubleDown:
-  begin
-    pts[0] := MkPoint(ccx - chev div 2, cy - chev div 2);
-    pts[1] := MkPoint(ccx + chev div 2, cy - chev div 2);
-    pts[2] := MkPoint(ccx, cy + chev div 2);
-    DrawSmoothConvexPolygon(ACanvas, pts, glyph);
-  end;
-  else
-  begin
-    // Flat: a short dash on the text's mid-line.
-    capsule[0].X1 := ccx - chev / 2;
-    capsule[0].X2 := ccx + chev / 2;
-    capsule[0].Color := glyph;
-    DrawSmoothStrokes(ACanvas, capsule, Max(2, chev div 4));
-  end;
-  end;
+
+  // The text, where the label's centred single line lands (tlCenter).
+  ACanvas.Brush.Style := bsClear;
+  ACanvas.Font.Color := glyph;
+  ACanvas.TextOut(textX, lDiff.Top + (lDiff.Height - th) div 2, lDiff.Caption);
 end;
 
 procedure TfBG.pnOffReadingPaint(Sender: TObject);
