@@ -22,7 +22,9 @@ exactly that, then does the token exchange for you.
 ## Requirements
 
 - **Node.js 22.12+** (required by Puppeteer 25; also provides the built-in `fetch`)
-- **Puppeteer** (installed below; it downloads a browser the first time)
+- **Puppeteer** (installed below; it downloads a browser the first time — the
+  helper fetches it on start if npm skipped Puppeteer's install script, as
+  npm 12+ does for dependencies unless they are listed in `allowScripts`)
 - A **Care Partner** (follower) CareLink account — not the patient's own account
 
 ## Install (once)

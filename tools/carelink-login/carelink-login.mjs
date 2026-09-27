@@ -28,6 +28,9 @@
  */
 
 import puppeteer from 'puppeteer';
+import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 // One discovery URL serves every region; the app uses this exact Android UA.
 const DISCOVERY_URL = 'https://clcloud.minimed.eu/connect/carepartner/v13/discover/android/3.6';
@@ -98,12 +101,28 @@ function buildAuthorizeUrl(cfg, state) {
 }
 
 /**
+ * Make sure Puppeteer's browser is downloaded. Puppeteer fetches it from its
+ * postinstall script, but npm 12+ skips dependency install scripts unless the
+ * project allows them, and an existing node_modules is never revisited once a
+ * skipped script is approved. Running the same installer here covers both; it
+ * returns at once when the browser is already in the cache. Its output goes to
+ * stderr so stdout stays reserved for the token JSON.
+ */
+function ensureBrowser() {
+  const installer = fileURLToPath(new URL('./node_modules/puppeteer/install.mjs', import.meta.url));
+  if (!existsSync(installer)) return;
+  const r = spawnSync(process.execPath, [installer], { stdio: ['ignore', 2, 2] });
+  if (r.status !== 0) log('warning: the browser download did not complete; launching anyway');
+}
+
+/**
  * Open a browser to the authorize URL and resolve with the authorization code.
  * The final step is a 302 to the custom-scheme redirect_uri; we catch it from
  * either the response headers or the (blocked) navigation request before the
  * browser gives up on the unknown scheme.
  */
 async function captureCode(cfg, authorizeUrl) {
+  ensureBrowser();
   const browser = await puppeteer.launch({
     headless: false,
     defaultViewport: null,
