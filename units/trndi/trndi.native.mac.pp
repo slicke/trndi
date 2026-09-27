@@ -19,7 +19,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-27: Optional menu-bar status item (NSStatusItem) showing the
  *   reading as a coloured pill next to the clock, with a Show/Hide/Quit
- *   menu; on by default while the Dock auto-hides.
+ *   menu; on by default while the Dock auto-hides. Each pill image rep owns
+ *   the text and colour it draws, rather than reading shared globals.
  * - 2026-08-21: start is an override of the (newly virtual) base hook rather
  *   than a shadow; setDarkMode overrides the new base contract (handle
  *   ignored - the whole app is themed); ImportSettings became the base
@@ -2085,7 +2086,7 @@ end;
   The pill is drawn into an NSImage rather than set as an attributed title: a
   status-bar button draws its own background, so a coloured
   NSBackgroundColorAttributeName comes out as a hard rectangle that ignores the
-  bar's height. The image carries an NSCustomImageRep instead of a bitmap, so
+  bar's height. The image carries a custom image rep instead of a bitmap, so
   AppKit asks for the drawing at whatever backing scale the menu bar is on at
   the time -- sharp on Retina and non-Retina alike, and across a move between
   the two. The image is not a template, so it keeps the range colour in both
@@ -2119,8 +2120,21 @@ type
     procedure showClicked(sender: id); message 'showClicked:';
     procedure hideClicked(sender: id); message 'hideClicked:';
     procedure quitClicked(sender: id); message 'quitClicked:';
-    // NSCustomImageRep draw callback; paints the pill from the globals below.
-    procedure drawPill(rep: NSCustomImageRep); message 'drawPill:';
+  end;
+
+  // The pill as an image rep. Each rep owns the text and colour it paints, so
+  // a redraw (AppKit may do it off the main thread, and again on a scale
+  // change) never reads state a newer ShowStatusItem has replaced or freed.
+  TTrndiPillRep = objcclass(NSImageRep)
+  private
+    fText: NSAttributedString; // retained; released in dealloc
+    fBg: TColor;
+  public
+    function draw: ObjCBOOL; override;
+    // NSImageRep declares it with objc's id and objcbase's PNSZone, which
+    // the same names in scope here do not match.
+    function copyWithZone(zone_: objcbase.PNSZone): objc.id; override;
+    procedure dealloc; override;
   end;
 
 var
@@ -2133,9 +2147,6 @@ var
   gStatusShowBridge: TTrndiWakeBridge = nil; // shared class, this unit's instances
   gStatusHideBridge: TTrndiWakeBridge = nil;
   gStatusQuitBridge: TTrndiWakeBridge = nil;
-  // What drawPill paints. Retained; replaced on every ShowStatusItem.
-  gStatusText: NSAttributedString = nil;
-  gStatusBg: TColor = clBlack;
 
 // +[NSFont monospacedDigitSystemFontOfSize:weight:] (10.11+) takes two
 // CGFloats, which none of the msgSend shapes above carry.
@@ -2188,7 +2199,7 @@ begin
     gStatusQuitBridge.Queue;
 end;
 
-procedure TTrndiStatusTarget.drawPill(rep: NSCustomImageRep);
+function TTrndiPillRep.draw: ObjCBOOL;
 var
   sz: NSSize;
   pill: NSRect;
@@ -2198,13 +2209,14 @@ var
 begin
   // AppKit may render image reps off the main thread.
   MaskFPUExceptionsForAppleFrameworks;
-  if gStatusText = nil then
+  Result := fText <> nil;
+  if not Result then
     Exit;
-  sz := rep.size;
+  sz := size;
   pill := NSMakeRect(0, 0, sz.width, sz.height);
   path := NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(pill,
     SITEM_RADIUS, SITEM_RADIUS);
-  UserBadgeColor(gStatusBg).setFill;
+  UserBadgeColor(fBg).setFill;
   path.fill;
   // Hairline edge a shade darker than the fill, inset half a point so it
   // stays inside the pill: keeps the shape against a wallpaper or menu bar of
@@ -2212,7 +2224,7 @@ begin
   path := NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(
     NSInsetRect(pill, 0.5, 0.5), SITEM_RADIUS - 0.5, SITEM_RADIUS - 0.5);
   path.setLineWidth(1);
-  UserBadgeColor(gStatusBg).shadowWithLevel(0.25).colorWithAlphaComponent(0.5).setStroke;
+  UserBadgeColor(fBg).shadowWithLevel(0.25).colorWithAlphaComponent(0.5).setStroke;
   path.stroke;
 
   // Centre on the cap height, not the line box: digits carry no descenders,
@@ -2220,7 +2232,29 @@ begin
   // line's bottom (the descender) at the point in this unflipped context.
   font := StatusItemFont(SITEM_WEIGHT_VALUE);
   baseline := (sz.height - font.capHeight) / 2;
-  gStatusText.drawAtPoint(NSMakePoint(SITEM_H_PAD, baseline + font.descender));
+  fText.drawAtPoint(NSMakePoint(SITEM_H_PAD, baseline + font.descender));
+end;
+
+// NSImage copies its reps, and the inherited copy may carry fText over bit for
+// bit without a reference of its own. Set it on the copy with one either way,
+// so each rep's dealloc releases exactly what it holds.
+function TTrndiPillRep.copyWithZone(zone_: objcbase.PNSZone): objc.id;
+begin
+  Result := inherited copyWithZone(zone_);
+  if Result <> nil then
+  begin
+    TTrndiPillRep(Result).fText := fText;
+    if fText <> nil then
+      fText.retain;
+    TTrndiPillRep(Result).fBg := fBg;
+  end;
+end;
+
+procedure TTrndiPillRep.dealloc;
+begin
+  if fText <> nil then
+    fText.release;
+  inherited dealloc;
 end;
 
 // Autoreleased menu item bound to gStatusTarget. UTF-8 explicitly, as elsewhere.
@@ -2232,13 +2266,13 @@ begin
   Result.autorelease;
 end;
 
-// Store the text for drawPill and return a pill-sized image that draws
-// through it. Autoreleased; the button retains what it is given.
+// A pill-sized image whose rep owns this text and colour. Autoreleased; the
+// button retains what it is given.
 function StatusItemImage(const Value, Detail: string; bg, textColor: TColor): NSImage;
 var
   text: NSMutableAttributedString;
   fg: NSColor;
-  rep: NSCustomImageRep;
+  rep: TTrndiPillRep;
   w, h: CGFloat;
 begin
   fg := UserBadgeColor(textColor);
@@ -2248,11 +2282,6 @@ begin
   if Detail <> '' then
     text.appendAttributedString(StatusItemRun(' ' + Detail,
       StatusItemFont(SITEM_WEIGHT_DETAIL), fg.colorWithAlphaComponent(SITEM_DETAIL_ALPHA)));
-  if gStatusText <> nil then
-    gStatusText.release;
-  gStatusText := text; // owned from alloc
-  gStatusBg := bg;
-
   h := NSStatusBar.systemStatusBar.thickness - 2 * SITEM_V_INSET;
   if h < SITEM_MIN_H then
     h := SITEM_MIN_H
@@ -2261,10 +2290,9 @@ begin
   // Whole points, so the pill edges land on pixel boundaries.
   w := Round(text.size.width + 0.5) + 2 * SITEM_H_PAD;
 
-  if gStatusTarget = nil then
-    gStatusTarget := TTrndiStatusTarget.alloc.init;
-  rep := NSCustomImageRep.alloc.initWithDrawSelector_delegate(
-    objcselector('drawPill:'), gStatusTarget);
+  rep := TTrndiPillRep.alloc.init;
+  rep.fText := text; // owned from alloc; the rep releases it
+  rep.fBg := bg;
   rep.setSize(NSMakeSize(w, h));
   Result := NSImage.alloc.initWithSize(NSMakeSize(w, h));
   Result.addRepresentation(rep);
