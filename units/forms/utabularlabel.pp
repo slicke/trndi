@@ -37,6 +37,8 @@
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-25: Created. Struck-out captions use the stock rendering.
+ * - 2026-09-27: Disabled labels and captions with an accelerator '&' use the
+ *   stock rendering.
  *)
 
 unit utabularlabel;
@@ -169,9 +171,12 @@ begin
   // caption with nothing to align -- is the stock label's job. Struck-out text
   // too: the OS draws the strike per TextOut call, so glyph-by-glyph cells
   // would leave the line broken at every cell edge, and the strike only marks
-  // a stale reading, where a stable layout matters least.
+  // a stale reading, where a stable layout matters least. Disabled text and
+  // accelerator markers are also the stock label's: TextOut draws neither the
+  // greyed look nor the underline, and would print the '&' itself.
   if (not FTabularDigits) or WordWrap or (Font.Orientation <> 0) or
-    (fsStrikeOut in Font.Style) or (not HasDigit(txt)) then
+    (fsStrikeOut in Font.Style) or (not HasDigit(txt)) or (not Enabled) or
+    (ShowAccelChar and (Pos('&', txt) > 0)) then
   begin
     inherited Paint;
     Exit;
