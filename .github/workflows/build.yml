@@ -465,13 +465,18 @@ jobs:
           # Retry hard: a transient SourceForge failure here kills the whole
           # leg (setup-lazarus treats its downloads the same way).
           CURL_RETRY="--retry 5 --retry-delay 5 --retry-all-errors"
-          curl -fsSL $CURL_RETRY -o fpc.dmg "$FPC_DMG_URL"
-          curl -fsSL $CURL_RETRY -o lazarus.zip "$LAZ_ZIP_URL"
+          # Download outside the checkout: the upload step globs *.dmg and
+          # *.zip from the workspace root, which once shipped the FPC
+          # installer as a release asset.
+          DL="$RUNNER_TEMP/toolchain"
+          mkdir -p "$DL"
+          curl -fsSL $CURL_RETRY -o "$DL/fpc.dmg" "$FPC_DMG_URL"
+          curl -fsSL $CURL_RETRY -o "$DL/lazarus.zip" "$LAZ_ZIP_URL"
 
           # FPC: a .pkg inside the dmg. Installs fpc/ppca64 under /usr/local and
           # writes /etc/fpc.cfg.
           MNT="$(mktemp -d)"
-          hdiutil attach -nobrowse -readonly -mountpoint "$MNT" fpc.dmg
+          hdiutil attach -nobrowse -readonly -mountpoint "$MNT" "$DL/fpc.dmg"
           PKG="$(find "$MNT" -maxdepth 2 -name '*.pkg' | head -n1)"
           [ -n "$PKG" ] || { echo "No .pkg found in the FPC dmg" >&2; ls -R "$MNT" >&2; exit 1; }
           sudo installer -pkg "$PKG" -target /
@@ -484,9 +489,9 @@ jobs:
           # Lazarus: clear the quarantine flag first (the README's xattr -cr),
           # unzip, and put the folder holding lazbuild at /Applications/lazarus,
           # where the Makefile looks when lazbuild is not on PATH.
-          xattr -cr lazarus.zip
+          xattr -cr "$DL/lazarus.zip"
           EXTRACT="$(mktemp -d)"
-          unzip -q lazarus.zip -d "$EXTRACT"
+          unzip -q "$DL/lazarus.zip" -d "$EXTRACT"
           LB="$(find "$EXTRACT" -maxdepth 3 -name lazbuild -type f | head -n1)"
           [ -n "$LB" ] || { echo "lazbuild not found in the Lazarus zip" >&2; find "$EXTRACT" -maxdepth 2 >&2; exit 1; }
           sudo rm -rf /Applications/lazarus
