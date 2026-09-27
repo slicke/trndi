@@ -163,6 +163,7 @@ type
     property Handle: PtrUInt read FHandle write FHandle; // Provide a mock Handle for Windows-specific APIs
     property Anchors: TAnchors read FAnchors write FAnchors;
     property ShowHint: Boolean read FShowHint write FShowHint;
+    function IsEnabled: Boolean; // checks parent too, like the LCL
     function ClientRect: TRect; virtual;
     function GetClientWidth: Integer; virtual;
     function GetClientHeight: Integer; virtual;
@@ -353,6 +354,20 @@ end;
 function TWinControl.GetControlByIndex(Index: Integer): TControl;
 begin
   Result := TControl(FChildControls[Index]);
+end;
+
+function TControl.IsEnabled: Boolean;
+var
+  c: TControl;
+begin
+  c := Self;
+  while c <> nil do
+  begin
+    if not c.Enabled then
+      Exit(False);
+    c := c.Parent;
+  end;
+  Result := True;
 end;
 
 function TControl.ClientRect: TRect;
