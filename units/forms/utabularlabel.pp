@@ -171,11 +171,12 @@ begin
   // caption with nothing to align -- is the stock label's job. Struck-out text
   // too: the OS draws the strike per TextOut call, so glyph-by-glyph cells
   // would leave the line broken at every cell edge, and the strike only marks
-  // a stale reading, where a stable layout matters least. Disabled text and
+  // a stale reading, where a stable layout matters least. Disabled text (the
+  // label's own flag or a disabled parent, as the stock paint checks it) and
   // accelerator markers are also the stock label's: TextOut draws neither the
   // greyed look nor the underline, and would print the '&' itself.
   if (not FTabularDigits) or WordWrap or (Font.Orientation <> 0) or
-    (fsStrikeOut in Font.Style) or (not HasDigit(txt)) or (not Enabled) or
+    (fsStrikeOut in Font.Style) or (not HasDigit(txt)) or (not IsEnabled) or
     (ShowAccelChar and (Pos('&', txt) > 0)) then
   begin
     inherited Paint;
