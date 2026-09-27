@@ -54,6 +54,7 @@ type
     FWordWrap: Boolean;
     FAutoSize: Boolean;
     FTransparent: Boolean;
+    FShowAccelChar: Boolean;
   public
     constructor Create(AOwner: Controls.TComponent = nil);
     destructor Destroy; override;
@@ -65,6 +66,7 @@ type
     property WordWrap: Boolean read FWordWrap write FWordWrap;
     property AutoSize: Boolean read FAutoSize write FAutoSize;
     property Transparent: Boolean read FTransparent write FTransparent;
+    property ShowAccelChar: Boolean read FShowAccelChar write FShowAccelChar;
   end;
 
   TButton = class(TControl)
@@ -182,6 +184,7 @@ begin
   FAlignment := Classes.taLeftJustify; // TAlignment and its values come from Classes
   FLayout := Graphics.tlTop;
   FWordWrap := False;
+  FShowAccelChar := True; // LCL default
   // Ensure a canvas exists for drawing helpers
   if FCanvas = nil then
     FCanvas := TCanvas.Create;
