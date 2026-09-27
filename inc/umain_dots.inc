@@ -68,9 +68,8 @@
    connecting line runs through the dots as a monotone cubic curve
    (SmoothTrace) instead of straight segments. The Display-tab preview
    shows the delta as the pill under the reading, like the live window.
-   Gap markers are drawn by DrawGapMarker as a dotted ring of round beads
-   with a knockout rim around the beads only, at full strength whatever the
-   slot's age. *)
+   Gap markers are drawn by DrawGapMarker as a dotted ring of round beads,
+   each with a hairline knockout, at full strength whatever the slot's age. *)
 
 // Stroke width in pixels for the connecting line at dot diameter ADiameter,
 // per the thin/normal/thick pick (ux.dot_line_width). Proportional to the
@@ -340,25 +339,27 @@ end;
 // stroke rasterizer draws as an antialiased disc at sub-pixel positions, so
 // the spacing stays even where snapped circles would wobble. The bead count
 // follows the circumference so the gaps stay about a bead wide at every size.
-// The knockout is a rim around the beads only -- the same beads drawn first,
-// wider, in ABackdrop -- so the ring keeps a clean edge over the digits and
-// the arrow while its inside stays open: a gap has nothing to show, so it
-// should not cover what is behind it either. Uncached: the beads are few and
-// tiny.
+// The knockout is a hairline around each bead -- the same beads drawn first,
+// one pixel wider on each side, in ABackdrop -- so over the digits and the
+// arrow the dots keep a clean edge while the ring's inside stays open: a gap
+// has nothing to show, so it should not cover what is behind it either. The
+// hairline stays one pixel at every size: a knockout that scaled with the
+// bead merged into a fat scalloped outline over a large digit, and a smooth
+// annulus under the beads turned the ring into a solid donut. Uncached: the
+// beads are few and tiny.
 procedure DrawGapMarker(ACanvas: TCanvas; ASize: integer; AColor, ABackdrop: TColor;
   ALeft, ATop: integer);
 const
   PITCH_PER_BEAD = 1.9;   // bead + gap, in bead diameters, along the circle
 var
   beads: array of TSmoothStroke;
-  bead, rim, n, i: integer;
+  bead, n, i: integer;
   r, cx, cy, a: double;
 begin
   if ASize < 4 then
     Exit;
 
   bead := Max(2, Round(ASize / 5.5));
-  rim := Max(1, Round(bead * 0.5));    // knockout width on either side
   r := (ASize - bead) / 2.0;          // the beads' centre line
   cx := ALeft + ASize / 2.0;
   cy := ATop + ASize / 2.0;
@@ -375,8 +376,8 @@ begin
     beads[i].Y2 := beads[i].Y1;
     beads[i].Color := ABackdrop;
   end;
-  // Rim first: the beads in the backdrop tone, one rim wider on each side.
-  DrawSmoothStrokes(ACanvas, beads, bead + 2 * rim);
+  // Knockout first: each bead one hairline wider, in the backdrop tone.
+  DrawSmoothStrokes(ACanvas, beads, bead + 2);
   for i := 0 to n - 1 do
     beads[i].Color := AColor;
   DrawSmoothStrokes(ACanvas, beads, bead);
