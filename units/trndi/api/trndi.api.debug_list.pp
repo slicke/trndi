@@ -34,6 +34,9 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-27: The series is trimmed to the requested size (DebugSlotCount).
  *)
 
 {** Debug backend that replays an explicit list of readings typed into the
@@ -63,7 +66,7 @@ protected
   procedure ParseSeries(const list, unitHint: string);
 public
   constructor Create(user, pass: string); override;
-  function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
+  function getReadings(min, maxNum: integer; {%H-}extras: string;
     out res: string; noCache: boolean): BGResults; override;
 
   class function ParamLabel(LabelName: APIParamLabel): string; override;
@@ -185,9 +188,13 @@ begin
 
   nodata.exists := false;
 
+  // The typed list is the whole scenario, so no backfill beyond it - only
+  // the usual padding, trimmed to what the caller asked for.
   total := Length(series);
   if total < MinSlots then
     total := MinSlots;
+  if total > DebugSlotCount(min, maxNum) then
+    total := DebugSlotCount(min, maxNum);
 
   // Flip to the newest-first order the UI expects, padding the older end
   SetLength(vals, total);

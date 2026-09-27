@@ -40,6 +40,8 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-09-27: Returns the requested window, 24 hours by default, instead of
+ *   a fixed 11 readings.
  *)
 
 unit trndi.api.debug_missing;
@@ -77,26 +79,17 @@ end;
 function DebugMissingAPI.getReadings(min, maxNum: integer; extras: string;
 out res: string; {%H-}noCache: boolean): BGResults;
 var
-  fNow, ts: TDateTime;
+  newest: TDateTime;
   i: integer;
-  val, diff: integer;
   nodata: maybeint;
 begin
   res := '';
   nodata.exists := false;
-  fNow := IncHour(Now, -2);
-  SetLength(Result, 11);
-  for i := 0 to 10 do
+  newest := FakeTime(0, IncHour(Now, -2));
+  SetLength(Result, DebugSlotCount(min, maxNum));
+  for i := 0 to High(Result) do
   begin
-    ts := FakeTime(i * 5, fNow);
-    val := FakeReading(ts);
-    diff := val - FakeReading(IncMinute(ts, -5));
-
-    Result[i].Init(mgdl, self.systemName);
-    Result[i].date := ts;
-    Result[i].update(val, diff);
-    Result[i].trend := CalculateTrendFromDelta(diff);
-    Result[i].level := getLevel(Result[i].val);
+    FakeCurveReading(Result[i], IncMinute(newest, -(i * 5)));
     Result[i].updateEnv('Debug', nodata, nodata);
   end;
 

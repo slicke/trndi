@@ -39,6 +39,9 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-09-27: Returns the requested window, 24 hours by default; the
+ *   scenario stays in the newest readings and older history follows the
+ *   regular debug curve.
  *)
 
 unit trndi.api.debug_sensorexpiry;
@@ -70,6 +73,8 @@ const
   // walk the whole expiry ladder: outside it, every step in turn, then a sensor
   // change that re-arms it. Wraps, so the run can be repeated without a restart.
   SENSOR_LIFE_SEQUENCE: array[0..7] of integer = (26, 24, 20, 8, 4, 2, 1, 168);
+  // Newest readings on the gentle scripted fall; older ones follow the curve
+  SCENARIO_SLOTS = 11;
 
 function DebugSensorExpiryAPI.getSystemName: string;
 begin
@@ -96,9 +101,16 @@ begin
   sensorText := 'Debug (sensor 3d 6h left)';
 
   newestTime := RecodeSecond(RecodeMilliSecond(Now, 0), 0);
-  SetLength(Result, 11);
+  SetLength(Result, DebugSlotCount(min, maxNum));
   for i := 0 to High(Result) do
   begin
+    if i >= SCENARIO_SLOTS then
+    begin
+      FakeCurveReading(Result[i], IncMinute(newestTime, -(i * 5)));
+      Result[i].updateEnv(sensorText, rssi, noise);
+      Continue;
+    end;
+
     readingValue := 118 - i;
     Result[i].Init(mgdl, Self.systemName);
     Result[i].date := IncMinute(newestTime, -(i * 5));

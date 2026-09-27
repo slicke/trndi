@@ -39,6 +39,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-16: Dropped the unused Dialogs import so the unit compiles in LCL-
  *   free (console) builds.
+ * - 2026-09-27: Returns the requested window, 24 hours by default, instead of
+ *   a fixed 11 readings.
  *)
 
 unit trndi.api.debug_custom;
@@ -49,7 +51,7 @@ interface
 
 uses
 Classes, SysUtils, trndi.types,
-trndi.api.debug, fpjson, jsonparser, trndi.api;
+trndi.api.debug, fpjson, jsonparser, trndi.api, dateutils;
 
 type
   // Main class
@@ -58,7 +60,7 @@ protected
   function getSystemName: string; override;
 public
   setval: integer;
-  function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
+  function getReadings(min, maxNum: integer; {%H-}extras: string;
     out res: string; noCache: boolean): BGResults; override;
   constructor Create(user, pass: string); override;
 
@@ -97,14 +99,16 @@ out res: string; {%H-}noCache: boolean): BGResults;
 var
   nodata: maybeint;
   i: integer;
+  newest: TDateTime;
 begin
   res := '';
   nodata.exists := false;
-  SetLength(Result, 11);
-  for i := 0 to 10 do
+  newest := FakeTime(0);
+  SetLength(Result, DebugSlotCount(min, maxNum));
+  for i := 0 to High(Result) do
   begin
     Result[i].Init(mgdl, self.systemName);
-    Result[i].date := FakeTime(i * 5); // Get the time
+    Result[i].date := IncMinute(newest, -(i * 5));
     Result[i].update(setval, 0); // Set reading
     Result[i].trend := tdFlat;  // Always flat
     Result[i].level := BGRange;
