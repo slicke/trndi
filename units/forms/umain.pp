@@ -1734,8 +1734,8 @@ TREND_LINE_BLEND = 0.65;
 // dot's diameter wide (never thinner than the floor), so a dot crossing the
 // reading's digits or the arrow glyph keeps a clean edge instead of merging
 // into them, and neighbouring dots stay separable where they touch.
-DOT_HALO_FRACTION = 0.12;
-DOT_HALO_MIN_PX = 2;
+DOT_HALO_FRACTION = 0.06;
+DOT_HALO_MIN_PX = 1;
 // Age fade (ux.dot_fade): history dots blend toward the backdrop and shrink
 // the older they are, linearly by slot, so the newest reading dominates and
 // the row reads as a direction at a glance. The oldest slot gives up this
