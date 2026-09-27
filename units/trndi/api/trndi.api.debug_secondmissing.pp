@@ -40,6 +40,8 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-09-27: Guards the second slot now that the inherited series follows
+ *   the requested size and can hold a single reading.
  *)
 
 unit trndi.api.debug_secondmissing;
@@ -75,7 +77,7 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Generate fake readings over the last 50 minutes at 5-minute intervals,
+  Generate fake readings over the requested window at 5-minute intervals,
   with the first reading missing
 ------------------------------------------------------------------------------}
 function DebugSecondMissingAPI.getReadings(min, maxNum: integer; extras: string;
@@ -84,7 +86,9 @@ var
   i: integer;
 begin
   result := inherited getReadings(min, maxNum, extras, res, noCache);
-  result[1].init(mmol, 'No reading');
+  // A one-reading request (getLast, getCurrent) has no second slot to clear
+  if Length(result) > 1 then
+    result[1].init(mmol, 'No reading');
 end;
 
 end.

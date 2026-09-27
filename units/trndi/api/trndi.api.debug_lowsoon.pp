@@ -39,6 +39,9 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-09-27: Returns the requested window, 24 hours by default; the
+ *   scenario stays in the newest readings and older history follows the
+ *   regular debug curve.
  *)
 
 unit trndi.api.debug_lowsoon;
@@ -72,14 +75,24 @@ function DebugLowSoonAPI.getReadings(min, maxNum: integer; extras: string;
   out res: string; {%H-}noCache: boolean): BGResults;
 const
   // Linear fall from ~10 mmol/L (180 mg/dL) down to ~3.7 mmol/L (67 mg/dL)
-  // across the 11 generated readings (i=10 oldest, i=0 newest).
+  // over FALL_STEPS readings (i=FALL_STEPS at 180, i=0 newest).
   START_MGDL = 180;
   END_MGDL   = 67;
+  FALL_STEPS = 10;
+  // Readings kept on that line. predictReadings fits the newest 12, so the
+  // fall covers all of them; anything older follows the regular debug curve.
+  SCENARIO_SLOTS = 12;
 var
   i: integer;
-  readingValue, nextValue, readingDelta: integer;
+  readingValue, readingDelta: integer;
   rssi, noise: MaybeInt;
   newestTime: TDateTime;
+
+  function LineValue(slot: integer): integer;
+  begin
+    Result := END_MGDL + (slot * (START_MGDL - END_MGDL)) div FALL_STEPS;
+  end;
+
 begin
   res := '';
   rssi.exists := true;
@@ -91,17 +104,18 @@ begin
   // render as distinct dots, and the steep falling slope drives the prediction
   // path toward low within the existing "soon" warning window.
   newestTime := RecodeMilliSecond(Now, 0);
-  SetLength(Result, 11);
+  SetLength(Result, DebugSlotCount(min, maxNum));
   for i := 0 to High(Result) do
   begin
-    readingValue := END_MGDL + (i * (START_MGDL - END_MGDL)) div High(Result);
-    if i < High(Result) then
+    if i >= SCENARIO_SLOTS then
     begin
-      nextValue := END_MGDL + ((i + 1) * (START_MGDL - END_MGDL)) div High(Result);
-      readingDelta := readingValue - nextValue;
-    end
-    else
-      readingDelta := -((START_MGDL - END_MGDL) div High(Result));
+      FakeCurveReading(Result[i], IncMinute(newestTime, -(i * 5)));
+      Result[i].updateEnv('Debug', rssi, noise);
+      Continue;
+    end;
+
+    readingValue := LineValue(i);
+    readingDelta := readingValue - LineValue(i + 1);
 
     Result[i].Init(mgdl, self.systemname);
     Result[i].date := IncMinute(newestTime, -(i * 5));

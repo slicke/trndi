@@ -39,6 +39,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-16: Dropped the unused Dialogs import so the unit compiles in LCL-
  *   free (console) builds.
+ * - 2026-09-27: Returns the requested window, 24 hours by default, instead of
+ *   a fixed 11 readings.
  *)
 
 unit trndi.api.debug_edge;
@@ -48,7 +50,7 @@ unit trndi.api.debug_edge;
 interface
 
 uses
-Classes, SysUtils, trndi.types, trndi.api, trndi.native,
+Classes, SysUtils, trndi.types, trndi.api, trndi.api.debug, trndi.native,
 fpjson, jsonparser, dateutils;
 
 type
@@ -128,9 +130,9 @@ var
 begin
   nodata.exists := false;
   res := '';
-  SetLength(Result, 11);
+  SetLength(Result, DebugSlotCount(min, maxNum));
   dbase := IncMinute(now, 5);
-  for i := 0 to 10 do
+  for i := 0 to High(Result) do
   begin
     hi := MinuteOf(dbase) mod 2 = 0;
     dbase := IncMinute(dbase, -5);

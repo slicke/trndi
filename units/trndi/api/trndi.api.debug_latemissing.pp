@@ -39,6 +39,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs.
+ * - 2026-09-27: Window size comes from DebugSlotCount, so an unlimited request
+ *   gets 24 hours rather than a single reading.
  *)
 
 (*
@@ -64,7 +66,7 @@ unit trndi.api.debug_latemissing;
 interface
 
 uses
-  Classes, SysUtils, trndi.types, trndi.api, trndi.funcs.core,
+  Classes, SysUtils, trndi.types, trndi.api, trndi.api.debug, trndi.funcs.core,
   dateutils;
 
 type
@@ -175,10 +177,9 @@ begin
   if MinutesBetween(Now, newestReading) >= DROPOUT_AGE_MIN then
     Exit;
 
-  // Return at most maxNum readings going back by 5-minute slots.
-  count := min div 5;
-  if count > maxNum then count := maxNum;
-  if count < 1     then count := 1;
+  // Return the requested window going back by 5-minute slots (24 hours when
+  // the caller sets no limit).
+  count := DebugSlotCount(min, maxNum);
 
   SetLength(Result, count);
   for i := 0 to count - 1 do

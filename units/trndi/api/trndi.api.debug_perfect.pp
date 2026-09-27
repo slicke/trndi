@@ -39,6 +39,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-16: Dropped the unused Dialogs import so the unit compiles in LCL-
  *   free (console) builds.
+ * - 2026-09-27: Returns the requested window, 24 hours by default, instead of
+ *   a fixed 11 readings.
  *)
 
 unit trndi.api.debug_perfect; // 5.5 mmol/L
@@ -49,7 +51,7 @@ interface
 
 uses
 Classes, SysUtils, trndi.types,
-trndi.api.debug, fpjson, jsonparser;
+trndi.api.debug, fpjson, jsonparser, dateutils;
 
 type
   // Main class
@@ -57,7 +59,7 @@ DebugPerfectAPI = class(DebugAPI)
 protected
   function getSystemName: string;
 public
-  function getReadings({%H-}min, {%H-}maxNum: integer; {%H-}extras: string;
+  function getReadings(min, maxNum: integer; {%H-}extras: string;
     out res: string; noCache: boolean): BGResults; override;
 end;
 
@@ -77,16 +79,18 @@ function DebugPerfectAPI.getReadings(min, maxNum: integer; extras: string;
 out res: string; {%H-}noCache: boolean): BGResults;
 var
   i: integer;
+  newest: TDateTime;
   noise, rssi: maybeint;
 begin
   res := '';
   noise.exists := true;
   rssi.exists := true;
-  SetLength(Result, 11);
-  for i := 0 to 10 do
+  newest := FakeTime(0);
+  SetLength(Result, DebugSlotCount(min, maxNum));
+  for i := 0 to High(Result) do
   begin
     Result[i].Init(mgdl, self.systemName);
-    Result[i].date := FakeTime(i * 5); // Get the time
+    Result[i].date := IncMinute(newest, -(i * 5));
     Result[i].update(99, 0); // Set reading
     Result[i].trend := tdFlat;  // Always flat
     Result[i].level := BGRange;

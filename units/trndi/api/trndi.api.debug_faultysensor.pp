@@ -39,6 +39,9 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-09-27: Returns the requested window, 24 hours by default; the
+ *   scenario stays in the newest readings and older history follows the
+ *   regular debug curve.
  *)
 
 unit trndi.api.debug_faultysensor;
@@ -73,6 +76,8 @@ function DebugFaultySensorAPI.getReadings(min, maxNum: integer; extras: string;
 const
   // 2 -> 16 -> 5 -> 17 -> 3 -> 20 mmol/L in mg/dL
   FaultyPattern: array[0..5] of integer = (36, 288, 90, 306, 54, 360);
+  // Newest readings that show the fault; anything older is a working sensor
+  SCENARIO_SLOTS = 11;
 var
   i: integer;
   readingValue: integer;
@@ -88,9 +93,16 @@ begin
   noise.value := 22;
 
   newestTime := RecodeSecond(RecodeMilliSecond(Now, 0), 0);
-  SetLength(Result, 11);
+  SetLength(Result, DebugSlotCount(min, maxNum));
   for i := 0 to High(Result) do
   begin
+    if i >= SCENARIO_SLOTS then
+    begin
+      FakeCurveReading(Result[i], IncMinute(newestTime, -(i * 5)));
+      Result[i].updateEnv('Debug', rssi, noise);
+      Continue;
+    end;
+
     readingValue := FaultyPattern[i mod Length(FaultyPattern)];
     previousValue := FaultyPattern[(i + 1) mod Length(FaultyPattern)];
     deltaValue := readingValue - previousValue;

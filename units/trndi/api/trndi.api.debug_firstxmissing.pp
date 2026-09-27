@@ -40,6 +40,8 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-09-27: Clamps the missing count per call instead of overwriting the
+ *   configured value, now that the inherited series follows the requested size.
  *)
 
 unit trndi.api.debug_firstxmissing;
@@ -173,7 +175,7 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Generate fake readings over the last 50 minutes at 5-minute intervals,
+  Generate fake readings over the requested window at 5-minute intervals,
   with the First X readings missing
 ------------------------------------------------------------------------------}
 function DebugFirstXMissingAPI.getReadings(min, maxNum: integer; extras: string;
@@ -187,34 +189,38 @@ var
   // helper for processing multiple targets
   offs: array of integer;
   i2, j2, tmp: integer;
+  drop: integer;
 begin
   result := inherited getReadings(min, maxNum, extras, res, noCache);
-  // Clamp requested missing count to available results and ensure non-negative
-  if missing <= 0 then
-    missing := 0
+  // Clamp requested missing count to available results and ensure non-negative.
+  // Clamped per call: a short request (getLast asks for one reading) must not
+  // shrink the configured count for the calls after it.
+  drop := missing;
+  if drop <= 0 then
+    drop := 0
   else
-  if missing > Length(Result) then
-    missing := Length(Result);
+  if drop > Length(Result) then
+    drop := Length(Result);
 
   // If requested count removes all available results, return an empty array
-  if missing <= 0 then
-    missing := 0
-  else if missing >= Length(Result) then
+  if drop <= 0 then
+    drop := 0
+  else if drop >= Length(Result) then
   begin
     SetLength(Result, 0);
-    log(Format('DebugFirstXMissing: Cleared all %d readings', [missing]));
+    log(Format('DebugFirstXMissing: Cleared all %d readings', [drop]));
     Exit;
   end
   else
   begin
     // Remove the first N readings by shifting remaining readings to the front
-    rem := Length(Result) - missing;
+    rem := Length(Result) - drop;
     for i := 0 to rem - 1 do
-      Result[i] := Result[i + missing];
+      Result[i] := Result[i + drop];
     SetLength(Result, rem);
 
     // Short debug trace to help when testing the provider
-    log(Format('DebugFirstXMissing: Removed %d readings; newest remaining at %s', [missing, DateTimeToStr(Result[0].date)]));
+    log(Format('DebugFirstXMissing: Removed %d readings; newest remaining at %s', [drop, DateTimeToStr(Result[0].date)]));
 
     // Optionally inject a Dexcom-like reading into the newest remaining slot
     if dexcomMode then
@@ -247,7 +253,7 @@ begin
         end
         else
         begin
-          gapMinutes := (missing * 5) + 10;
+          gapMinutes := (drop * 5) + 10;
           temp.date := IncMinute(Result[0].date, gapMinutes);
         end;
 
@@ -345,7 +351,7 @@ begin
               end
               else
               begin
-                gapMinutes := ((missing + off) * 5) + 10;
+                gapMinutes := ((drop + off) * 5) + 10;
                 temp.date := IncMinute(Result[idx].date, gapMinutes); // large gap
               end;
 

@@ -40,6 +40,9 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-09-27: Readings honour the requested window and default to 24 hours
+ *   of history (DebugSlotCount), generated from a smooth daily curve with meal
+ *   peaks instead of the old 30-hour sawtooth.
  *)
 
 unit trndi.api.debug;
@@ -51,6 +54,11 @@ interface
 uses
 Classes, SysUtils, trndi.types, trndi.api, trndi.funcs.core,
 fpjson, jsonparser, dateutils;
+
+const
+  {** Readings a debug backend returns when the caller sets no limit: 24 hours
+      at the 5-minute cadence. }
+  DEBUG_DEFAULT_SLOTS = 288;
 
 type
   // Main class
@@ -89,9 +97,31 @@ protected
     {** Deterministic synthetic reading (mg/dL) for the given timestamp.
   }
   function FakeReading(const ts: TDateTime): integer;
+
+    {** Fill r with the FakeReading curve at ts: value, delta, trend and level.
+        The environment (sensor text, RSSI, noise) is left to the caller. }
+  procedure FakeCurveReading(var r: BGReading; const ts: TDateTime);
 end;
 
+{** Number of 5-minute readings a debug backend returns for a getReadings
+    request: enough to cover @code(minutes), capped at @code(maxNum). A value of
+    zero or less means "no limit" for either; with neither set the answer is
+    @link(DEBUG_DEFAULT_SLOTS). Never less than one. }
+function DebugSlotCount(minutes, maxNum: integer): integer;
+
 implementation
+
+function DebugSlotCount(minutes, maxNum: integer): integer;
+begin
+  if minutes > 0 then
+    Result := minutes div 5
+  else
+    Result := DEBUG_DEFAULT_SLOTS;
+  if (maxNum > 0) and (Result > maxNum) then
+    Result := maxNum;
+  if Result < 1 then
+    Result := 1;
+end;
 
 {------------------------------------------------------------------------------
   getSystemName
@@ -155,40 +185,93 @@ end;
 {------------------------------------------------------------------------------
   FakeReading
   --------------------
-  Deterministic synthetic reading (mg/dL) derived from the timestamp.
+  Deterministic synthetic reading (mg/dL) derived from the timestamp: a daily
+  shape with a quick rise and slow fall after breakfast, lunch and dinner and a
+  dip in the small hours, on top of a slow 7-hour drift so no two days are
+  identical. Spans roughly 55-230 mg/dL, so a day of history crosses low, in
+  range and high.
 ------------------------------------------------------------------------------}
 function DebugAPI.FakeReading(const ts: TDateTime): integer;
+var
+  unixMin: int64;
+  dayMin: integer;
+  v: double;
+
+  // Skewed bell around centre (minute of day), wrapping across midnight
+  function Bump(centre, height, rise, fall: integer): double;
+  var
+    d, w: integer;
+  begin
+    d := dayMin - centre;
+    if d >= 720 then
+      Dec(d, 1440)
+    else
+    if d < -720 then
+      Inc(d, 1440);
+    if d < 0 then
+      w := rise
+    else
+      w := fall;
+    Result := height * Exp(-Sqr(d) / (2 * Sqr(w)));
+  end;
+
 begin
-  Result := 40 + ((DateTimeToUnix(ts) div 300) mod 360);
+  unixMin := DateTimeToUnix(ts) div 60;
+  dayMin := unixMin mod 1440;
+
+  v := 115 + 20 * Sin(2 * Pi * unixMin / 420)
+    + Bump(8 * 60, 85, 25, 70)        // Breakfast
+    + Bump(12 * 60 + 30, 60, 25, 70)  // Lunch
+    + Bump(18 * 60 + 30, 95, 25, 80)  // Dinner
+    - Bump(3 * 60, 40, 90, 90);       // Night dip
+
+  Result := Round(v);
+  if Result < 40 then
+    Result := 40
+  else
+  if Result > 400 then
+    Result := 400;
 end;
 
 {------------------------------------------------------------------------------
-  Generate fake readings over the last 50 minutes at 5-minute intervals
+  FakeCurveReading
+  --------------------
+  One reading on the FakeReading curve, delta taken against the slot before.
+------------------------------------------------------------------------------}
+procedure DebugAPI.FakeCurveReading(var r: BGReading; const ts: TDateTime);
+var
+  val, diff: integer;
+begin
+  val := FakeReading(ts);
+  diff := val - FakeReading(IncMinute(ts, -5));
+
+  r.Init(mgdl, self.systemname);
+  r.date := ts;
+  r.update(val, diff);
+  r.trend := CalculateTrendFromDelta(diff);
+  r.level := getLevel(r.val);
+end;
+
+{------------------------------------------------------------------------------
+  Generate fake readings at 5-minute intervals ending now, covering the
+  requested window (24 hours when the caller sets no limit)
 ------------------------------------------------------------------------------}
 function DebugAPI.getReadings(min, maxNum: integer; extras: string;
 out res: string; {%H-}noCache: boolean): BGResults;
 var
   i: integer;
-  ts: TDateTime;
-  val, diff: integer;
+  newest: TDateTime;
   rssi, noise: maybeint;
 begin
   res := '';
   noise.exists := true;
   rssi.exists := true;
 
-  SetLength(Result, 11);
-  for i := 0 to 10 do
+  newest := FakeTime(0);
+  SetLength(Result, DebugSlotCount(min, maxNum));
+  for i := 0 to High(Result) do
   begin
-    ts := FakeTime(i * 5);
-    val := FakeReading(ts);
-    diff := val - FakeReading(IncMinute(ts, -5));
-
-    Result[i].Init(mgdl, self.systemname);
-    Result[i].date := ts;
-    Result[i].update(val, diff);
-    Result[i].trend := CalculateTrendFromDelta(diff);
-    Result[i].level := getLevel(Result[i].val);
+    FakeCurveReading(Result[i], IncMinute(newest, -(i * 5)));
     rssi.value := Random(100);
     noise.value := random(25);
     Result[i].updateEnv('Debug', rssi, noise);

@@ -40,6 +40,8 @@
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and dropped the unused Dialogs import so the unit compiles in
  *   LCL-free (console) builds.
+ * - 2026-09-27: Comment updated; the inherited series now covers the requested
+ *   window, 24 hours by default.
  *)
 
 unit trndi.api.debug_firstmissing;
@@ -75,7 +77,7 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Generate fake readings over the last 50 minutes at 5-minute intervals,
+  Generate fake readings over the requested window at 5-minute intervals,
   with the first reading missing
 ------------------------------------------------------------------------------}
 function DebugFirstMissingAPI.getReadings(min, maxNum: integer; extras: string;
