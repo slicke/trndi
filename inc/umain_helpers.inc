@@ -35,6 +35,8 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-09-27): The shutdown notice also removes the macOS
+   menu-bar status item. *)
 (* MODIFICATION NOTICE (2026-08-27): AppExceptionHandler was an empty body that
    silently discarded every unhandled exception app-wide. It now logs via
    TrndiELog and shows each distinct exception once in an error dialog; it
@@ -695,6 +697,8 @@ begin
     FTitleBar.ClearUserBadge
   else
     native.HideUserBadge;
+  // The status item's menu leads back into the closing window; take it away.
+  native.HideStatusItem;
 
   // lVal normally renders a reading at fill-the-window size; a sentence at
   // that size just clips. Give it a deliberate, moderate size instead.

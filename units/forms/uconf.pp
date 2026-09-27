@@ -39,6 +39,7 @@
 
 (*
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-27: Added cbMenuBarReading (macOS menu-bar status item).
  * - 2026-08-21: The {$ifndef X_WIN} around setDarkMode is documented as
  *   purely behavioral - the call compiles everywhere now that the method
  *   is in the base contract.
@@ -203,6 +204,7 @@ TfConf = class(TForm)
   cbAlternate: TCheckBox;
   cbAutoStart: TCheckBox;
   cbBadgeTrend: TCheckBox;
+  cbMenuBarReading: TCheckBox;
   cbBolusOverlay: TCheckBox;
   cbBolusOverlayAuto: TCheckBox;
   cbCarbOverlay: TCheckBox;

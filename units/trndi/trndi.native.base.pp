@@ -18,6 +18,9 @@
  * GitHub: https://github.com/slicke/trndi
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-27: Added the menu-bar status item contract (SupportsStatusItem,
+ *   StatusItemDefault, SetStatusItemMenu, ShowStatusItem, HideStatusItem);
+ *   base is a no-op.
  * - 2026-08-21: Structural refactor. SafeThreadJoin/Release moved to the new
  *   trndi.native.threading unit and the Windows-only settings cache into
  *   trndi.native.win, removing this unit's platform {$IFDEF}s (the Haiku
@@ -527,6 +530,24 @@ class var touchOverride: TTrndiBool;
     const onClick: TTrndiWakeCallback): boolean; virtual;
     {** Remove any active user badge. Base: no-op. }
   procedure HideUserBadge; virtual;
+    {** True when the platform can show the current reading as a status item
+        in the system menu bar, next to the clock. Base: @false. }
+  class function SupportsStatusItem: boolean; virtual;
+    {** Default for the status item setting while the user has not chosen:
+        on when the platform's dock/taskbar is set to hide itself, so the
+        reading has somewhere visible to live. Base: @false. }
+  class function StatusItemDefault: boolean; virtual;
+    {** Captions and click targets for the status item's menu. All callbacks
+        fire on the main thread. Call before @link(ShowStatusItem); later
+        calls relabel an existing menu. Base: no-op. }
+  procedure SetStatusItemMenu(const showCaption, hideCaption, quitCaption: string;
+    const onShow, onHide, onQuit: TTrndiWakeCallback); virtual;
+    {** Show or refresh the menu-bar status item: @param(Text) in a pill
+        painted @param(bg)/@param(textColor).
+        @returns(@true when the item is shown.) Base: no-op returning @false. }
+  function ShowStatusItem(const Text: string; bg, textColor: TColor): boolean; virtual;
+    {** Remove the status item if present. Base: no-op. }
+  procedure HideStatusItem; virtual;
     {** Play an audio file using native facilities (safe file check included).
         Default base implementation is a no-op; platform units override to spawn
         the appropriate player (mplay32/aplay/afplay). }
@@ -2124,6 +2145,32 @@ end;
 procedure TTrndiNativeBase.HideUserBadge;
 begin
   // No title-bar badge support on the base class.
+end;
+
+class function TTrndiNativeBase.SupportsStatusItem: boolean;
+begin
+  Result := false;
+end;
+
+class function TTrndiNativeBase.StatusItemDefault: boolean;
+begin
+  Result := false;
+end;
+
+procedure TTrndiNativeBase.SetStatusItemMenu(const showCaption, hideCaption,
+  quitCaption: string; const onShow, onHide, onQuit: TTrndiWakeCallback);
+begin
+  // No menu-bar status item on the base class.
+end;
+
+function TTrndiNativeBase.ShowStatusItem(const Text: string; bg, textColor: TColor): boolean;
+begin
+  Result := false;
+end;
+
+procedure TTrndiNativeBase.HideStatusItem;
+begin
+  // No menu-bar status item on the base class.
 end;
 
 end.

@@ -41,6 +41,10 @@
 
 (* MODIFICATION NOTICE (2026-09-18): Added RS_ALERT_SNOOZE_URGENT_CAP for the
    snooze confirmation, which used to claim the full pause for urgent low. *)
+
+(* MODIFICATION NOTICE (2026-09-27): Added RS_STATUS_ITEM_SHOW,
+   RS_STATUS_ITEM_HIDE, RS_STATUS_ITEM_QUIT and RS_STATUS_ITEM_HIDDEN for the
+   macOS menu-bar status item's menu. *)
 unit trndi.strings;
 
 interface
@@ -302,6 +306,10 @@ RS_ALERT_SNOOZE_RESUME = 'Resume alerts';
 RS_ALERT_SNOOZE_NOT_ACTIVE = 'Snooze is not active';
 RS_ALERT_SNOOZE_URGENT_CAP = 'Urgent low alerts can only be snoozed briefly and resume at %s';
 RS_CONN_OK = 'OK';
+RS_STATUS_ITEM_SHOW = 'Show Trndi';
+RS_STATUS_ITEM_QUIT = 'Quit Trndi';
+RS_STATUS_ITEM_HIDE = 'Hide from menu bar';
+RS_STATUS_ITEM_HIDDEN = 'The reading is no longer shown in the menu bar.'+sLineBreak+sLineBreak+'You can turn it back on under Settings > Display > "Show reading in the menu bar".';
 RS_CONN_RETRYING = 'Retrying';
 RS_CONN_AUTH_EXPIRED = 'Auth expired';
 RS_CONN_RATE_LIMITED = 'Rate-limited';

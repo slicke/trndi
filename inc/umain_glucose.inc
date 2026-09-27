@@ -88,6 +88,11 @@
    anchor of each placement and how many slots it advanced (FTrendAnchor /
    FTrendSlideBy), which UpdateTrendDots turns into the reading-arrival
    slide. *)
+(* MODIFICATION NOTICE (2026-09-27): UpdateStatusItem mirrors the reading into
+   the optional macOS menu-bar status item, from FinalizeUpdate and
+   ApplyStaleDisplayState alongside the dock badge. It defaults to on while
+   the Dock auto-hides, and its menu can switch it off ("Hide from menu
+   bar"). *)
 (* Glucose update pipeline, data fetching, UI state and color logic for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -499,6 +504,7 @@ begin
 
   native.badgeTrend := '';
   native.setBadge('--', clBlack, badge_width, badge_font);
+  UpdateStatusItem;
 
   // The float mirrors the main window's value, colours and arrow, but it only
   // ever got them from FinalizeUpdate — which sits on the fresh path, so an
@@ -748,6 +754,7 @@ begin
     ,badge_width,badge_font
     {$endif}
     );
+  UpdateStatusItem;
   native.WriteCurrentIndicatorCache(lVal.Caption, lastReading.date,
     native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES));
   native.done;
@@ -2540,6 +2547,72 @@ end;
 procedure TfBG.UserBadgeClicked;
 begin
   miSettingsClick(Self);
+end;
+
+procedure TfBG.UpdateStatusItem;
+var
+  txt: string;
+begin
+  if not native.SupportsStatusItem then
+    Exit;
+  if (not StatusItemEnabled) or firstboot or lastReading.empty then
+  begin
+    native.HideStatusItem;
+    Exit;
+  end;
+
+  native.SetStatusItemMenu(RS_STATUS_ITEM_SHOW, RS_STATUS_ITEM_HIDE,
+    RS_STATUS_ITEM_QUIT, @StatusItemShowClicked, @StatusItemHideClicked,
+    @StatusItemQuitClicked);
+
+  // During an outage the value is gone, not frozen: an old number next to the
+  // clock is worse than none. Same '--' the dock badge shows.
+  if FTrendDataStale then
+    txt := '--'
+  else
+  begin
+    txt := lVal.Caption;
+    // Privacy mode replaces the value with an icon; the arrow and delta would
+    // give the number back, so they stay out.
+    if not privacyMode then
+    begin
+      if native.GetBoolSetting('badge.trend', true) then
+        txt := txt + ' ' + lastReading.trend.Img;
+      if (FDiffText <> '') and (FDiffText <> '--') then
+        txt := txt + ' ' + FDiffText;
+    end;
+  end;
+
+  // The window's own background and value colours, so the pill reads the
+  // same as the main window (range colour when fresh, dimmed when stale).
+  native.ShowStatusItem(txt, fBG.Color, lVal.Font.Color);
+end;
+
+procedure TfBG.StatusItemShowClicked;
+begin
+  if WindowState = wsMinimized then
+    WindowState := wsNormal;
+  Show;
+  Application.BringToFront;
+  BringToFront;
+end;
+
+function TfBG.StatusItemEnabled: boolean;
+begin
+  Result := native.GetBoolSetting('menubar.reading', native.StatusItemDefault);
+end;
+
+procedure TfBG.StatusItemHideClicked;
+begin
+  // Stored explicitly, so the Dock-based default no longer applies.
+  native.SetSetting('menubar.reading', false);
+  native.HideStatusItem;
+  ShowMessage(RS_STATUS_ITEM_HIDDEN);
+end;
+
+procedure TfBG.StatusItemQuitClicked;
+begin
+  miExitClick(Self);
 end;
 
 // True when the name has somewhere better to live than the caption text: the

@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-27: UpdateStatusItem and the status item's menu handlers
+ *   (macOS menu-bar reading), including "Hide from menu bar".
  * - 2026-08-27: Trend/prediction dot state moved into a proper model
  *   (TDotKind/TTrendSlot, TrendSlots/PredictionSlots, FDotsExpanded). The
  *   old encoding — sentinel control chars in Caption, the value as a locale
@@ -1478,6 +1480,20 @@ private
   procedure ApplyUserCaption(const withNick: boolean);
   {** Click handler for the title-bar badge — opens Settings. }
   procedure UserBadgeClicked;
+  {** Mirror the current reading into the menu-bar status item (macOS), or
+      remove it when the @code(menubar.reading) setting is off. Shows '--' in
+      the stale colours during an outage, like the dock badge. }
+  procedure UpdateStatusItem;
+  {** The @code(menubar.reading) setting, defaulting to
+      @link(TTrndiNativeBase.StatusItemDefault) while the user has not chosen. }
+  function StatusItemEnabled: boolean;
+  {** Status item menu: bring the main window to the front. }
+  procedure StatusItemShowClicked;
+  {** Status item menu: turn the setting off, remove the item and tell the
+      user where to turn it back on. }
+  procedure StatusItemHideClicked;
+  {** Status item menu: close the main window (same path as Exit). }
+  procedure StatusItemQuitClicked;
   procedure CheckAndAcceptLicense;
   function InitializeAPI: boolean;
   {** Seed the level-based alert rules (high, low, urgent low) from the active

@@ -431,6 +431,10 @@ msgstr "Start med systemet"
 msgid "Show trend arrow in taskbar/dock"
 msgstr "Vis trendpil i oppgavelinjen/dock"
 
+#: tfconf.cbmenubarreading.caption
+msgid "Show reading in the menu bar"
+msgstr "Vis verdien i menylinjen"
+
 #: tfconf.cbbolusoverlay.caption
 msgid "Show insulin doses on the history graph"
 msgstr ""
@@ -1894,6 +1898,28 @@ msgstr "Ingen tilkoblingsdetaljer tilgjengelig ennå."
 msgctxt "trndi.strings.rs_conn_ok"
 msgid "OK"
 msgstr "OK"
+
+#: trndi.strings.rs_status_item_hidden
+msgid ""
+"The reading is no longer shown in the menu bar.\n"
+"\n"
+"You can turn it back on under Settings > Display > \"Show reading in the menu bar\"."
+msgstr ""
+"Verdien vises ikke lenger i menylinjen.\n"
+"\n"
+"Du kan slå den på igjen under Innstillinger > Visning > \"Vis verdien i menylinjen\"."
+
+#: trndi.strings.rs_status_item_hide
+msgid "Hide from menu bar"
+msgstr "Skjul fra menylinjen"
+
+#: trndi.strings.rs_status_item_quit
+msgid "Quit Trndi"
+msgstr "Avslutt Trndi"
+
+#: trndi.strings.rs_status_item_show
+msgid "Show Trndi"
+msgstr "Vis Trndi"
 
 #: trndi.strings.rs_conn_ok_info
 msgid "Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs."
