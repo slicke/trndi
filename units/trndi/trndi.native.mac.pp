@@ -204,7 +204,20 @@ implementation
 uses
   // CGBase carries CGFloat, the type NSRect/NSSize are built from; CocoaAll
   // itself does not re-export it.
-  DateUtils, CGBase, trndi.native.async;
+  DateUtils, CGBase, Math, trndi.native.async;
+
+{ Apple frameworks expect FP exceptions masked. When FPC adopts a GCD thread
+  (first threadvar access -- e.g. the stack check in a Debug build's
+  prologue) it unmasks FP traps there, and the pool thread keeps that state:
+  later CFNetwork or CoreImage work on it dies with an FPC runtime error that
+  the exception handler then tries to report with a dialog, off the main
+  thread. Every ObjC callback that can arrive on a framework queue calls this
+  first. }
+procedure MaskFPUExceptionsForAppleFrameworks;
+begin
+  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide,
+    exOverflow, exUnderflow, exPrecision]);
+end;
 
 const
   ObjCLib = '/usr/lib/libobjc.A.dylib';
@@ -334,6 +347,7 @@ procedure TUNCenterDelegate.userNotificationCenter_willPresentNotification_withC
 var
   opts: NSUInteger;
 begin
+  MaskFPUExceptionsForAppleFrameworks;
   // Banner/list options exist on macOS 11+ (AppKit 2022); older systems use
   // the then-current alert option. Sound is requested in both cases.
   if NSAppKitVersionNumber >= 2022 then
@@ -349,6 +363,7 @@ end;
 procedure UNAuthCompletion({%H-}block: Pointer; granted: Boolean; {%H-}error: id); cdecl;
 begin
   // Invoked on a framework background queue; a plain boolean store is fine.
+  MaskFPUExceptionsForAppleFrameworks;
   gNotifyAuthDenied := not granted;
 end;
 
@@ -1755,6 +1770,7 @@ var
 
 procedure TWakeObserver.systemDidWake(notification: NSNotification);
 begin
+  MaskFPUExceptionsForAppleFrameworks;
   if Assigned(gWakeBridge) then
     gWakeBridge.Queue;
 end;
@@ -2180,6 +2196,8 @@ var
   font: NSFont;
   baseline: CGFloat;
 begin
+  // AppKit may render image reps off the main thread.
+  MaskFPUExceptionsForAppleFrameworks;
   if gStatusText = nil then
     Exit;
   sz := rep.size;
