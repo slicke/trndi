@@ -17,6 +17,9 @@
  * GitHub: https://github.com/slicke/trndi
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-27: Optional menu-bar status item (NSStatusItem) showing the
+ *   reading as a coloured pill next to the clock, with a Show/Hide/Quit
+ *   menu; on by default while the Dock auto-hides.
  * - 2026-08-21: start is an override of the (newly virtual) base hook rather
  *   than a shadow; setDarkMode overrides the new base contract (handle
  *   ignored - the whole app is themed); ImportSettings became the base
@@ -34,6 +37,7 @@ unit trndi.native.mac;
   - Text-to-speech via the built-in @code(say) command
   - Enabling dark appearance via @code(SimpleDarkMode)
   - Dock badge label updates
+  - Optional menu-bar status item carrying the reading
   - Simple HTTP GET using an NS-based helper
 
   Use the façade unit @code(trndi.native) which provides the platform alias.
@@ -93,6 +97,17 @@ type
       const onClick: TTrndiWakeCallback): boolean; override;
     {** Detach the title-bar accessory if present. }
     procedure HideUserBadge; override;
+    {** @true — the reading can ride in an NSStatusItem next to the clock. }
+    class function SupportsStatusItem: boolean; override;
+    {** @true when the Dock hides itself (@code(com.apple.dock autohide)). }
+    class function StatusItemDefault: boolean; override;
+    {** Build (or relabel) the status item's menu. See base. }
+    procedure SetStatusItemMenu(const showCaption, hideCaption, quitCaption: string;
+      const onShow, onHide, onQuit: TTrndiWakeCallback); override;
+    {** Create/refresh the menu-bar pill. See base. }
+    function ShowStatusItem(const Text: string; bg, textColor: TColor): boolean; override;
+    {** Take the status item out of the menu bar. }
+    procedure HideStatusItem; override;
 
     // Settings API overrides (NSUserDefaults/CFPreferences)
     {** Read a string from preferences; returns @param(def) when missing.
@@ -2041,6 +2056,213 @@ begin
   gUserBadgeNick := '';
   if Assigned(gUserBadgeBridge) then
     gUserBadgeBridge.Callback := nil;
+end;
+
+{------------------------------------------------------------------------------
+  Menu-bar status item
+  --------------------
+  Optional NSStatusItem that carries the reading next to the clock, for users
+  who keep the Dock hidden (where the dock badge never shows). LCL's TTrayIcon
+  can only hold an icon on Cocoa, so this talks to NSStatusBar directly.
+
+  The pill is rasterised into an NSImage rather than set as an attributed
+  title: a status-bar button draws its own background, so a coloured
+  NSBackgroundColorAttributeName comes out as a hard rectangle that ignores the
+  bar's height. The image is not a template, so it keeps the range colour in
+  both light and dark menu bars.
+
+  Menu entries are marshalled to the main thread through TTrndiWakeBridge,
+  like the user badge: "Quit" closes the main form, and doing that from inside
+  AppKit's menu tracking loop invites a wedged event loop.
+ ------------------------------------------------------------------------------}
+const
+  SITEM_H_PAD   = 7;    // px of breathing room left/right of the text
+  SITEM_V_INSET = 3;    // px between the pill and the menu bar's edges
+  SITEM_MIN_H   = 14;   // floor for the pill height
+  SITEM_MAX_H   = 20;   // ceiling, so the tall notch-era bar gets no slab
+  SITEM_FONT_SZ = 12;
+
+type
+  // Target for the menu entries; NSMenuItem needs an object with selectors.
+  TTrndiStatusTarget = objcclass(NSObject)
+    procedure showClicked(sender: id); message 'showClicked:';
+    procedure hideClicked(sender: id); message 'hideClicked:';
+    procedure quitClicked(sender: id); message 'quitClicked:';
+  end;
+
+var
+  gStatusItem: NSStatusItem = nil;
+  gStatusTarget: TTrndiStatusTarget = nil;
+  gStatusMenu: NSMenu = nil;
+  gStatusShowItem: NSMenuItem = nil;
+  gStatusHideItem: NSMenuItem = nil;
+  gStatusQuitItem: NSMenuItem = nil;
+  gStatusShowBridge: TTrndiWakeBridge = nil; // shared class, this unit's instances
+  gStatusHideBridge: TTrndiWakeBridge = nil;
+  gStatusQuitBridge: TTrndiWakeBridge = nil;
+
+procedure TTrndiStatusTarget.showClicked(sender: id);
+begin
+  if Assigned(gStatusShowBridge) then
+    gStatusShowBridge.Queue;
+end;
+
+procedure TTrndiStatusTarget.hideClicked(sender: id);
+begin
+  if Assigned(gStatusHideBridge) then
+    gStatusHideBridge.Queue;
+end;
+
+procedure TTrndiStatusTarget.quitClicked(sender: id);
+begin
+  if Assigned(gStatusQuitBridge) then
+    gStatusQuitBridge.Queue;
+end;
+
+// Autoreleased menu item bound to gStatusTarget. UTF-8 explicitly, as elsewhere.
+function StatusMenuItem(const caption: string; action: SEL): NSMenuItem;
+begin
+  Result := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
+    NSString.stringWithUTF8String(PChar(caption)), action, NSSTR(''));
+  Result.setTarget(gStatusTarget);
+  Result.autorelease;
+end;
+
+// Render the pill. Autoreleased; the button retains what it is given.
+function StatusItemImage(const Text: string; bg, textColor: TColor): NSImage;
+var
+  attrs: NSMutableDictionary;
+  s: NSString;
+  textSize: NSSize;
+  w, h: CGFloat;
+begin
+  s := NSString.stringWithUTF8String(PChar(Text));
+  attrs := NSMutableDictionary.dictionaryWithCapacity(2);
+  attrs.setObject_forKey(NSFont.boldSystemFontOfSize(SITEM_FONT_SZ), NSFontAttributeName);
+  attrs.setObject_forKey(UserBadgeColor(textColor), NSForegroundColorAttributeName);
+  textSize := s.sizeWithAttributes(attrs);
+
+  h := NSStatusBar.systemStatusBar.thickness - 2 * SITEM_V_INSET;
+  if h < SITEM_MIN_H then
+    h := SITEM_MIN_H
+  else if h > SITEM_MAX_H then
+    h := SITEM_MAX_H;
+  // Whole points, so the pill edges land on pixel boundaries.
+  w := Round(textSize.width + 0.5) + 2 * SITEM_H_PAD;
+
+  Result := NSImage.alloc.initWithSize(NSMakeSize(w, h));
+  Result.autorelease;
+  Result.lockFocus;
+  try
+    UserBadgeColor(bg).setFill;
+    NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(
+      NSMakeRect(0, 0, w, h), h / 3, h / 3).fill;
+    s.drawAtPoint_withAttributes(
+      NSMakePoint(SITEM_H_PAD, (h - textSize.height) / 2), attrs);
+  finally
+    Result.unlockFocus;
+  end;
+  Result.setTemplate(false);
+end;
+
+class function TTrndiNativeMac.SupportsStatusItem: boolean;
+begin
+  Result := true;
+end;
+
+// Read through a suite rather than CFPreferences so the answer comes from the
+// same cache the Dock itself writes to; a missing key reads as false.
+class function TTrndiNativeMac.StatusItemDefault: boolean;
+var
+  dock: NSUserDefaults;
+begin
+  Result := false;
+  dock := NSUserDefaults.alloc.initWithSuiteName(NSSTR('com.apple.dock'));
+  if dock = nil then
+    Exit;
+  try
+    Result := dock.boolForKey(NSSTR('autohide'));
+  finally
+    dock.release;
+  end;
+end;
+
+procedure TTrndiNativeMac.SetStatusItemMenu(const showCaption, hideCaption,
+  quitCaption: string; const onShow, onHide, onQuit: TTrndiWakeCallback);
+begin
+  if gStatusTarget = nil then
+    gStatusTarget := TTrndiStatusTarget.alloc.init;
+  if gStatusShowBridge = nil then
+    gStatusShowBridge := TTrndiWakeBridge.Create;
+  if gStatusHideBridge = nil then
+    gStatusHideBridge := TTrndiWakeBridge.Create;
+  if gStatusQuitBridge = nil then
+    gStatusQuitBridge := TTrndiWakeBridge.Create;
+  gStatusShowBridge.Callback := onShow;
+  gStatusHideBridge.Callback := onHide;
+  gStatusQuitBridge.Callback := onQuit;
+
+  if gStatusMenu = nil then
+  begin
+    gStatusMenu := NSMenu.alloc.init;
+    gStatusMenu.setAutoenablesItems(false);
+    gStatusShowItem := StatusMenuItem(showCaption, objcselector('showClicked:'));
+    gStatusHideItem := StatusMenuItem(hideCaption, objcselector('hideClicked:'));
+    gStatusQuitItem := StatusMenuItem(quitCaption, objcselector('quitClicked:'));
+    gStatusMenu.addItem(gStatusShowItem);
+    gStatusMenu.addItem(gStatusHideItem);
+    gStatusMenu.addItem(NSMenuItem.separatorItem);
+    gStatusMenu.addItem(gStatusQuitItem);
+  end
+  else
+  begin
+    // The menu retains its items, so these references stay valid.
+    gStatusShowItem.setTitle(NSString.stringWithUTF8String(PChar(showCaption)));
+    gStatusHideItem.setTitle(NSString.stringWithUTF8String(PChar(hideCaption)));
+    gStatusQuitItem.setTitle(NSString.stringWithUTF8String(PChar(quitCaption)));
+  end;
+
+  if gStatusItem <> nil then
+    gStatusItem.setMenu(gStatusMenu);
+end;
+
+function TTrndiNativeMac.ShowStatusItem(const Text: string;
+bg, textColor: TColor): boolean;
+begin
+  Result := false;
+  if Text = '' then
+  begin
+    HideStatusItem;
+    Exit;
+  end;
+
+  if gStatusItem = nil then
+  begin
+    // statusItemWithLength hands back an item we do not own; keep our own
+    // reference until HideStatusItem removes it.
+    gStatusItem := NSStatusBar.systemStatusBar.statusItemWithLength(
+      NSVariableStatusItemLength);
+    if gStatusItem = nil then
+      Exit;
+    gStatusItem.retain;
+    if gStatusMenu <> nil then
+      gStatusItem.setMenu(gStatusMenu);
+  end;
+
+  if gStatusItem.button = nil then
+    Exit;
+  gStatusItem.button.setImage(StatusItemImage(Text, bg, textColor));
+  gStatusItem.button.setToolTip(NSString.stringWithUTF8String(PChar('Trndi: ' + Text)));
+  Result := true;
+end;
+
+procedure TTrndiNativeMac.HideStatusItem;
+begin
+  if gStatusItem = nil then
+    Exit;
+  NSStatusBar.systemStatusBar.removeStatusItem(gStatusItem);
+  gStatusItem.release;
+  gStatusItem := nil;
 end;
 
 const

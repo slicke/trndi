@@ -1953,6 +1953,14 @@ object fConf: TfConf
             Caption = 'Show trend arrow in taskbar/dock'
             TabOrder = 6
           end
+          object cbMenuBarReading: TCheckBox
+            Left = 300
+            Height = 22
+            Top = 78
+            Width = 200
+            Caption = 'Show reading in the menu bar'
+            TabOrder = 7
+          end
           object bRotatingArrowHelp: TButton
             Left = 584
             Height = 22
