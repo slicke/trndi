@@ -2668,7 +2668,7 @@ msgstr "Det finns inga avläsningar laddade att sammanfatta än."
 
 #: trndi.strings.rs_report_numbers
 msgid "Numbers"
-msgstr "Nummer"
+msgstr "Nyckeltal"
 
 #: trndi.strings.rs_report_period
 #, object-pascal-format
