@@ -48,7 +48,7 @@
 #### Fedora Linux (KDE)
 ![Linux](doc/img/img_lin_range.png)
 
-#### macOS Tahoe
+#### macOS Golden Gate
 ![macOS](doc/img/img_macos.png)
 
 #### Physical Display
