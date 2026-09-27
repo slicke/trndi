@@ -85,7 +85,7 @@ function DebugSensorExpiryAPI.getReadings(min, maxNum: integer; extras: string;
   out res: string; {%H-}noCache: boolean): BGResults;
 var
   i: integer;
-  readingValue: integer;
+  readingValue, readingDelta: integer;
   rssi, noise: MaybeInt;
   newestTime: TDateTime;
   sensorText: string;
@@ -112,10 +112,16 @@ begin
     end;
 
     readingValue := 118 - i;
+    readingDelta := -1;
+    // The oldest scripted reading sits on the generated history, so measure
+    // its change against that rather than the script's own continuation.
+    if (i = SCENARIO_SLOTS - 1) and (i < High(Result)) then
+      readingDelta := readingValue - FakeReading(IncMinute(newestTime, -((i + 1) * 5)));
+
     Result[i].Init(mgdl, Self.systemName);
     Result[i].date := IncMinute(newestTime, -(i * 5));
-    Result[i].update(readingValue, -1);
-    Result[i].trend := CalculateTrendFromDelta(-1);
+    Result[i].update(readingValue, readingDelta);
+    Result[i].trend := CalculateTrendFromDelta(readingDelta);
     Result[i].level := getLevel(Result[i].val);
     Result[i].updateEnv(sensorText, rssi, noise);
   end;

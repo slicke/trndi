@@ -106,6 +106,10 @@ begin
     readingValue := FaultyPattern[i mod Length(FaultyPattern)];
     previousValue := FaultyPattern[(i + 1) mod Length(FaultyPattern)];
     deltaValue := readingValue - previousValue;
+    // The oldest scripted reading sits on the generated history, so measure
+    // its change against that rather than the script's own continuation.
+    if (i = SCENARIO_SLOTS - 1) and (i < High(Result)) then
+      deltaValue := readingValue - FakeReading(IncMinute(newestTime, -((i + 1) * 5)));
 
     Result[i].Init(mgdl, Self.systemName);
     Result[i].date := IncMinute(newestTime, -(i * 5));
