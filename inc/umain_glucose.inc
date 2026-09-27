@@ -2555,7 +2555,12 @@ var
 begin
   if not native.SupportsStatusItem then
     Exit;
-  if (not StatusItemEnabled) or firstboot or lastReading.empty then
+  // An outage keeps the item even with no readings at all (lastReading is then
+  // empty): it shows '--' below, like the dock badge, rather than vanishing as
+  // if the setting were off. Outside an outage an empty reading has nothing to
+  // show yet.
+  if (not StatusItemEnabled) or firstboot
+    or ((not FTrendDataStale) and lastReading.empty) then
   begin
     native.HideStatusItem;
     Exit;
