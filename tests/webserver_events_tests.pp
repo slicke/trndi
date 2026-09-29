@@ -105,6 +105,10 @@ type
     procedure TestHubReplayAndRingOverflow;
   end;
 
+{** Connect a TCP socket to 127.0.0.1:APort, retrying while the server's
+    listener thread is still binding. Raises when it never answers. }
+function ConnectLoopback(APort: word): TSocket;
+
 implementation
 
 const
@@ -224,38 +228,36 @@ begin
   Result := false;
 end;
 
-{ TSseClient }
-
-constructor TSseClient.Create(APort: word; const ARequest: string);
+function ConnectLoopback(APort: word): TSocket;
 var
   Addr: TInetSockAddr;
   Attempt: integer;
-  Connected: boolean;
 begin
-  inherited Create;
-  FReader := nil;
-  Connected := false;
   // The listener thread needs a moment to bind after Start.
   for Attempt := 1 to 100 do
   begin
-    FSocket := fpSocket(AF_INET, SOCK_STREAM, 0);
-    if FSocket < 0 then
+    Result := fpSocket(AF_INET, SOCK_STREAM, 0);
+    if Result < 0 then
       raise Exception.Create('fpSocket failed');
     FillChar(Addr, SizeOf(Addr), 0);
     Addr.sin_family := AF_INET;
     Addr.sin_port := htons(APort);
     Addr.sin_addr.s_addr := htonl($7F000001);
-    if fpConnect(FSocket, @Addr, SizeOf(Addr)) = 0 then
-    begin
-      Connected := true;
-      Break;
-    end;
-    CloseSocket(FSocket);
-    FSocket := -1;
+    if fpConnect(Result, @Addr, SizeOf(Addr)) = 0 then
+      Exit;
+    CloseSocket(Result);
     Sleep(20);
   end;
-  if not Connected then
-    raise Exception.CreateFmt('could not connect to test web server on port %d', [APort]);
+  raise Exception.CreateFmt('could not connect to test web server on port %d', [APort]);
+end;
+
+{ TSseClient }
+
+constructor TSseClient.Create(APort: word; const ARequest: string);
+begin
+  inherited Create;
+  FReader := nil;
+  FSocket := ConnectLoopback(APort);
   if fpSend(FSocket, @ARequest[1], Length(ARequest), 0) <> Length(ARequest) then
     raise Exception.Create('fpSend failed');
   FReader := TSseReader.Create(FSocket);
