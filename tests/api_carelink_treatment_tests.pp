@@ -246,26 +246,26 @@ end;
  ------------------------------------------------------------------------------}
 procedure TCareLinkTreatmentTests.TestDeviceStatus;
 var
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
 begin
   FeedFixture;
-  AssertTrue('Device status reported', FAPI.getDeviceStatus(status));
+  AssertTrue('Device status reported', FAPI.getDeviceStatus(devStatus));
 
-  AssertEquals('Sensor duration hours', 126, status.sensorDurationHours);
-  AssertEquals('Reservoir percent', 5, status.reservoirPercent);
-  AssertEquals('Reservoir units', 15.4, status.reservoirUnits, 0.01);
-  AssertEquals('Pump battery percent', 50, status.pumpBatteryPercent);
-  AssertFalse('Pump not suspended', status.pumpSuspended);
-  AssertTrue('Sensor reports no fault', status.sensorOK);
+  AssertEquals('Sensor duration hours', 126, devStatus.sensorDurationHours);
+  AssertEquals('Reservoir percent', 5, devStatus.reservoirPercent);
+  AssertEquals('Reservoir units', 15.4, devStatus.reservoirUnits, 0.01);
+  AssertEquals('Pump battery percent', 50, devStatus.pumpBatteryPercent);
+  AssertFalse('Pump not suspended', devStatus.pumpSuspended);
+  AssertTrue('Sensor reports no fault', devStatus.sensorOK);
   AssertEquals('Sensor state carried through',
-    'NO_ERROR_MESSAGE', status.sensorState);
+    'NO_ERROR_MESSAGE', devStatus.sensorState);
   AssertEquals('No status message when the payload says NO_ERROR_MESSAGE',
-    '', status.statusMessage);
+    '', devStatus.statusMessage);
 
   // gstBatteryLevel 255 is the device's "no reading" marker, not a 255%
   // battery, and must come back as unknown rather than as a full one.
   AssertEquals('Transmitter battery unknown, not 255',
-    DEVICE_STATUS_UNKNOWN, status.transmitterBatteryPercent);
+    DEVICE_STATUS_UNKNOWN, devStatus.transmitterBatteryPercent);
 
   // IOB is stated by the payload rather than derived, so it is assertable here.
   AssertEquals('Active insulin', 2.5, FAPI.ActiveInsulin, 0.0001);
@@ -298,13 +298,13 @@ procedure TCareLinkTreatmentTests.TestNothingReportedBeforeAFetch;
 var
   boluses: TBolusList;
   carbs: TCarbList;
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
 begin
   AssertFalse('No boluses before a fetch', FAPI.getBoluses(boluses));
   AssertEquals('Bolus list is empty', 0, Length(boluses));
   AssertFalse('No carbs before a fetch', FAPI.getCarbs(carbs));
   AssertEquals('Carb list is empty', 0, Length(carbs));
-  AssertFalse('No device status before a fetch', FAPI.getDeviceStatus(status));
+  AssertFalse('No device status before a fetch', FAPI.getDeviceStatus(devStatus));
   AssertEquals('No basal rate before a fetch', 0.0, FAPI.getBasalRate, 0.0001);
 end;
 
