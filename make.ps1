@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|run|ide-libs|list-modules|test|assets|dashboard|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|run|run-single|ide-libs|list-modules|test|assets|dashboard|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -43,6 +43,13 @@ $extraArgs = if ($MakeArgs.Length -gt 1) { $MakeArgs[1..($MakeArgs.Length - 1)] 
 if ($firstArg -like '--cpu=*') {
     $extraArgs = @($MakeArgs)
     $firstArg = ""
+}
+
+# 'run-single' is 'run' with --no-multi in front of Trndi's own arguments, so it
+# starts on the default account instead of opening the account picker.
+if ($firstArg -eq 'run-single') {
+    $extraArgs = @('--no-multi') + @($extraArgs)
+    $firstArg = 'run'
 }
 
 function Find-Lazbuild {
@@ -604,6 +611,7 @@ switch ($firstArg) {
         Write-Host "  noext            Build without extensions ('No Ext (Release)' mode; no QuickJS dependency)"
         Write-Host "  noext-debug      Build without extensions, debug ('No Ext (Debug)' mode)"
         Write-Host "  run              Build release, then start build\Trndi.exe (arguments after 'run' go to Trndi)"
+        Write-Host "  run-single       Like run, but starts Trndi with --no-multi (skips the account picker)"
         Write-Host "  test             Build tests/TrndiTestConsole.lpi and run it (spawns an in-process test server;"
         Write-Host "                   set TRNDI_NO_TESTSERVER=1 to skip integration tests)"
         Write-Host "  ide-libs         Copy the QuickJS engine + ABI shim to the project root, for Extensions builds run from the Lazarus IDE (F9)"
