@@ -250,7 +250,7 @@ end;
 procedure TAPICareLinkTester.TestCareLinkPayloadMetadata;
 var
   api: CareLink;
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
   BaseURL, creds: string;
 begin
   if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
@@ -289,20 +289,20 @@ begin
       // fixture must not be counted.
       AssertEquals('Auto-basal rate over the last hour', 0.175, api.getBasalRate, 0.0001);
 
-      AssertTrue('Device status reported', api.getDeviceStatus(status));
-      AssertEquals('Sensor duration hours', 126, status.sensorDurationHours);
-      AssertEquals('Reservoir percent', 5, status.reservoirPercent);
-      AssertEquals('Reservoir units', 15.4, status.reservoirUnits, 0.01);
-      AssertEquals('Pump battery percent', 50, status.pumpBatteryPercent);
-      AssertTrue('Sensor reports no fault', status.sensorOK);
-      AssertFalse('Pump not suspended', status.pumpSuspended);
+      AssertTrue('Device status reported', api.getDeviceStatus(devStatus));
+      AssertEquals('Sensor duration hours', 126, devStatus.sensorDurationHours);
+      AssertEquals('Reservoir percent', 5, devStatus.reservoirPercent);
+      AssertEquals('Reservoir units', 15.4, devStatus.reservoirUnits, 0.01);
+      AssertEquals('Pump battery percent', 50, devStatus.pumpBatteryPercent);
+      AssertTrue('Sensor reports no fault', devStatus.sensorOK);
+      AssertFalse('Pump not suspended', devStatus.pumpSuspended);
       AssertEquals('No status message when the payload says NO_ERROR_MESSAGE',
-        '', status.statusMessage);
+        '', devStatus.statusMessage);
 
       // gstBatteryLevel 255 is the device's "no reading" marker, not a
       // 255% battery, so it must come back as unknown.
       AssertEquals('Transmitter battery unknown, not 255',
-        DEVICE_STATUS_UNKNOWN, status.transmitterBatteryPercent);
+        DEVICE_STATUS_UNKNOWN, devStatus.transmitterBatteryPercent);
     finally
       api.Free;
     end;
@@ -458,18 +458,18 @@ end;
 procedure TAPICareLinkTester.TestDeviceStatusDefaultsAreUnknown;
 var
   api: CareLink;
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
   boluses: TBolusList;
   carbs: TCarbList;
 begin
   api := CareLinkEU.Create('', '{"refresh_token":"r","client_id":"c"}');
   try
-    AssertFalse('No status before a fetch', api.getDeviceStatus(status));
+    AssertFalse('No status before a fetch', api.getDeviceStatus(devStatus));
     AssertEquals('Sensor duration unknown',
-      DEVICE_STATUS_UNKNOWN, status.sensorDurationHours);
+      DEVICE_STATUS_UNKNOWN, devStatus.sensorDurationHours);
     AssertEquals('Reservoir unknown',
-      DEVICE_STATUS_UNKNOWN, status.reservoirPercent);
-    AssertTrue('Absent fault data does not mean a fault', status.sensorOK);
+      DEVICE_STATUS_UNKNOWN, devStatus.reservoirPercent);
+    AssertTrue('Absent fault data does not mean a fault', devStatus.sensorOK);
     AssertEquals('No basal rate before a fetch', 0.0, api.getBasalRate, 0.0001);
     AssertFalse('No boluses before a fetch', api.getBoluses(boluses));
     AssertEquals('Bolus list is empty, not stale', 0, Length(boluses));

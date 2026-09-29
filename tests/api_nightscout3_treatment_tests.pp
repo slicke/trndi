@@ -230,33 +230,33 @@ end;
  ------------------------------------------------------------------------------}
 procedure TNightscout3TreatmentTests.TestDeviceStatus;
 var
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
 begin
   FeedDeviceStatus(6.5);
-  AssertTrue('Device status reported', FAPI.getDeviceStatus(status));
+  AssertTrue('Device status reported', FAPI.getDeviceStatus(devStatus));
 
   // 42.5 U from the 09:45 rig record, not the 120 U of the 08:00 one
   AssertEquals('Reservoir from the newest record that has one',
-    42.5, status.reservoirUnits, 0.0001);
+    42.5, devStatus.reservoirUnits, 0.0001);
   AssertEquals('Pump battery from the newest record that has one',
-    78, status.pumpBatteryPercent);
+    78, devStatus.pumpBatteryPercent);
 
   // The older record was suspended; the newer one is not, and the newer wins
-  AssertFalse('Suspend state from the newest record', status.pumpSuspended);
-  AssertEquals('Pump status text', 'normal', status.statusMessage);
+  AssertFalse('Suspend state from the newest record', devStatus.pumpSuspended);
+  AssertEquals('Pump status text', 'normal', devStatus.statusMessage);
 
   // 6.5 hours out truncates to 6 whole hours of sensor life left
   AssertEquals('Sensor life counts down in whole hours',
-    6, status.sensorDurationHours);
-  AssertEquals('Sensor state text', 'OK', status.sensorState);
-  AssertTrue('A healthy state is not a fault', status.sensorOK);
+    6, devStatus.sensorDurationHours);
+  AssertEquals('Sensor state text', 'OK', devStatus.sensorState);
+  AssertTrue('A healthy state is not a fault', devStatus.sensorOK);
 
   // Nightscout has no percentage for the cartridge, and the transmitter figure
   // it carries is a voltage — neither may be invented from what is there.
   AssertEquals('Reservoir percent not reported by Nightscout',
-    DEVICE_STATUS_UNKNOWN, status.reservoirPercent);
+    DEVICE_STATUS_UNKNOWN, devStatus.reservoirPercent);
   AssertEquals('Transmitter battery not derived from a voltage',
-    DEVICE_STATUS_UNKNOWN, status.transmitterBatteryPercent);
+    DEVICE_STATUS_UNKNOWN, devStatus.transmitterBatteryPercent);
 end;
 
 {------------------------------------------------------------------------------
@@ -266,12 +266,12 @@ end;
  ------------------------------------------------------------------------------}
 procedure TNightscout3TreatmentTests.TestExpiredSensorReportsNoLifeLeft;
 var
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
 begin
   FeedDeviceStatus(-1);
-  AssertTrue('Device status reported', FAPI.getDeviceStatus(status));
+  AssertTrue('Device status reported', FAPI.getDeviceStatus(devStatus));
   AssertEquals('An expired sensor has no hours left',
-    0, status.sensorDurationHours);
+    0, devStatus.sensorDurationHours);
 end;
 
 {------------------------------------------------------------------------------
@@ -281,16 +281,16 @@ end;
  ------------------------------------------------------------------------------}
 procedure TNightscout3TreatmentTests.TestUploaderBatteryIsNotThePumpBattery;
 var
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
 begin
   TNightscout3Probe(FAPI).FeedStatus(
     '[{"device":"phone","created_at":"2026-08-11T09:55:00.000Z",' +
     '"uploader":{"battery":7}}]');
 
   AssertFalse('A phone battery alone is not a device status',
-    FAPI.getDeviceStatus(status));
+    FAPI.getDeviceStatus(devStatus));
   AssertEquals('Pump battery stays unreported',
-    DEVICE_STATUS_UNKNOWN, status.pumpBatteryPercent);
+    DEVICE_STATUS_UNKNOWN, devStatus.pumpBatteryPercent);
 end;
 
 {------------------------------------------------------------------------------
@@ -301,7 +301,7 @@ procedure TNightscout3TreatmentTests.TestUnreadablePayloadReportsNothing;
 var
   boluses: TBolusList;
   carbs: TCarbList;
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
 begin
   FeedTreatments;
   AssertTrue('Boluses reported after a good payload', FAPI.getBoluses(boluses));
@@ -315,12 +315,12 @@ begin
 
   FeedDeviceStatus(6.5);
   AssertTrue('Device status reported after a good payload',
-    FAPI.getDeviceStatus(status));
+    FAPI.getDeviceStatus(devStatus));
   TNightscout3Probe(FAPI).FeedStatus('');
   AssertFalse('An empty body reports no device status',
-    FAPI.getDeviceStatus(status));
+    FAPI.getDeviceStatus(devStatus));
   AssertEquals('Reservoir is unknown again',
-    DEVICE_STATUS_UNKNOWN, status.reservoirUnits, 0.0001);
+    DEVICE_STATUS_UNKNOWN, devStatus.reservoirUnits, 0.0001);
 end;
 
 {------------------------------------------------------------------------------
@@ -333,7 +333,7 @@ end;
  ------------------------------------------------------------------------------}
 procedure TNightscout3TreatmentTests.TestNullStringFieldsAreTolerated;
 var
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
   boluses: TBolusList;
   carbs: TCarbList;
   expiry: string;
@@ -350,16 +350,16 @@ begin
     '{"device":"rig","created_at":"2026-08-11T09:00:00.000Z",' +
     '"pump":{"status":{"status":"normal"}}}]');
 
-  AssertTrue('Device status still reported', FAPI.getDeviceStatus(status));
+  AssertTrue('Device status still reported', FAPI.getDeviceStatus(devStatus));
   AssertEquals('Reservoir read from the record with the null status',
-    33.5, status.reservoirUnits, 0.0001);
+    33.5, devStatus.reservoirUnits, 0.0001);
   AssertEquals('Sensor life read despite the null state text',
-    5, status.sensorDurationHours);
+    5, devStatus.sensorDurationHours);
   AssertEquals('A null sensor state reads as not reported',
-    '', status.sensorState);
-  AssertTrue('A null state is not a fault', status.sensorOK);
+    '', devStatus.sensorState);
+  AssertTrue('A null state is not a fault', devStatus.sensorOK);
   AssertEquals('A null status text does not mask the older real one',
-    'normal', status.statusMessage);
+    'normal', devStatus.statusMessage);
 
   TNightscout3Probe(FAPI).FeedTreatmentList(
     '[{"eventType":null,"created_at":"2026-08-11T09:00:00.000Z","insulin":1.5},' +
@@ -384,7 +384,7 @@ end;
  ------------------------------------------------------------------------------}
 procedure TNightscout3TreatmentTests.TestSensorStateReadWithoutAnExpiry;
 var
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
   expiry: string;
 begin
   // A state and nothing else: no expiry anywhere in the payload.
@@ -392,12 +392,12 @@ begin
     '[{"device":"rig","created_at":"2026-08-11T10:00:00.000Z",' +
     '"xdripjs":{"stateString":"Sensor Failed"}}]');
 
-  AssertTrue('A state alone is a device status', FAPI.getDeviceStatus(status));
+  AssertTrue('A state alone is a device status', FAPI.getDeviceStatus(devStatus));
   AssertEquals('Sensor state read without an expiry',
-    'Sensor Failed', status.sensorState);
-  AssertFalse('A failed state is a fault', status.sensorOK);
+    'Sensor Failed', devStatus.sensorState);
+  AssertFalse('A failed state is a fault', devStatus.sensorOK);
   AssertEquals('Sensor life stays unknown without an expiry',
-    DEVICE_STATUS_UNKNOWN, status.sensorDurationHours);
+    DEVICE_STATUS_UNKNOWN, devStatus.sensorDurationHours);
 
   // Newest record: an expiry and no state. The state belongs to the older
   // record and the expiry to the newer one, and both must survive.
@@ -409,11 +409,11 @@ begin
     '{"device":"rig","created_at":"2026-08-11T09:00:00.000Z",' +
     '"xdripjs":{"stateStringShort":"SF"}}]');
 
-  AssertTrue('Device status reported', FAPI.getDeviceStatus(status));
+  AssertTrue('Device status reported', FAPI.getDeviceStatus(devStatus));
   AssertEquals('Sensor life from the record that carries it',
-    3, status.sensorDurationHours);
+    3, devStatus.sensorDurationHours);
   AssertEquals('The short state survives a newer expiry-only record',
-    'SF', status.sensorState);
+    'SF', devStatus.sensorState);
 end;
 
 {------------------------------------------------------------------------------
@@ -424,15 +424,15 @@ procedure TNightscout3TreatmentTests.TestNothingReportedBeforeAFetch;
 var
   boluses: TBolusList;
   carbs: TCarbList;
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
 begin
   AssertFalse('No boluses before a fetch', FAPI.getBoluses(boluses));
   AssertEquals('Bolus list is empty', 0, Length(boluses));
   AssertFalse('No carbs before a fetch', FAPI.getCarbs(carbs));
   AssertEquals('Carb list is empty', 0, Length(carbs));
-  AssertFalse('No device status before a fetch', FAPI.getDeviceStatus(status));
+  AssertFalse('No device status before a fetch', FAPI.getDeviceStatus(devStatus));
   AssertEquals('Sensor life is unknown',
-    DEVICE_STATUS_UNKNOWN, status.sensorDurationHours);
+    DEVICE_STATUS_UNKNOWN, devStatus.sensorDurationHours);
 end;
 
 initialization

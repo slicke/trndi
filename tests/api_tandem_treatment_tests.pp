@@ -205,33 +205,33 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTandemTreatmentTests.TestDeviceStatus;
 var
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
 begin
   FeedFixture;
-  AssertTrue('Device status reported', FAPI.getDeviceStatus(status));
+  AssertTrue('Device status reported', FAPI.getDeviceStatus(devStatus));
 
   // Latest code 9 is 21:00 (36 U), not the 06:00 one (120 U)
   AssertEquals('Reservoir from the last pump-state event',
-    36.0, status.reservoirUnits, 0.0001);
+    36.0, devStatus.reservoirUnits, 0.0001);
 
   // The 22:00 battery-detail event is later than the 21:00 pump state, so its
   // ibc wins; the 05:00 event's 255 is a no-reading marker and must lose to
   // both rather than becoming a 255% battery.
   AssertEquals('Battery from the latest event that carries one',
-    35, status.pumpBatteryPercent);
+    35, devStatus.pumpBatteryPercent);
 
   AssertTrue('Suspend state from the last control-mode change',
-    status.pumpSuspended);
+    devStatus.pumpSuspended);
 
   // Nothing in the payload reports these, so they must stay unknown rather
   // than defaulting to zero.
   AssertEquals('Sensor life not reported by Tandem',
-    DEVICE_STATUS_UNKNOWN, status.sensorDurationHours);
+    DEVICE_STATUS_UNKNOWN, devStatus.sensorDurationHours);
   AssertEquals('Transmitter battery not reported by Tandem',
-    DEVICE_STATUS_UNKNOWN, status.transmitterBatteryPercent);
+    DEVICE_STATUS_UNKNOWN, devStatus.transmitterBatteryPercent);
   AssertEquals('Reservoir percent not reported by Tandem',
-    DEVICE_STATUS_UNKNOWN, status.reservoirPercent);
-  AssertTrue('No fault information means no fault', status.sensorOK);
+    DEVICE_STATUS_UNKNOWN, devStatus.reservoirPercent);
+  AssertTrue('No fault information means no fault', devStatus.sensorOK);
 end;
 
 {------------------------------------------------------------------------------
@@ -258,21 +258,21 @@ end;
  ------------------------------------------------------------------------------}
 procedure TTandemTreatmentTests.TestBasalStatus;
 var
-  status: TBasalStatus;
+  basalStatus: TBasalStatus;
 begin
   FeedFixture;
 
-  AssertTrue('Basal status reported after a fetch', FAPI.getBasalStatus(status));
+  AssertTrue('Basal status reported after a fetch', FAPI.getBasalStatus(basalStatus));
   AssertEquals('Commanded rate, from commandedRate 1250 mU/hr',
-    1.25, status.commanded, 0.0001);
+    1.25, basalStatus.commanded, 0.0001);
   AssertEquals('Programmed rate, from profileBasalRate 850 mU/hr',
-    0.85, status.programmed, 0.0001);
+    0.85, basalStatus.programmed, 0.0001);
 
   // Both came from the 23:30 event, and the age shown beside them dates from it
   AssertEquals('Dated from the event the figures came from',
-    EncodeDate(2026, 8, 10) + EncodeTime(23, 30, 0, 0), status.time, 1 / SecsPerDay);
+    EncodeDate(2026, 8, 10) + EncodeTime(23, 30, 0, 0), basalStatus.time, 1 / SecsPerDay);
   AssertTrue('Names the event the commanded rate came from',
-    Pos('279', status.source) > 0);
+    Pos('279', basalStatus.source) > 0);
 
   // getBasalRate keeps its own contract: the commanded rate, unchanged
   AssertEquals('Commanded rate still what getBasalRate reports',
@@ -288,14 +288,14 @@ procedure TTandemTreatmentTests.TestNothingReportedBeforeAFetch;
 var
   boluses: TBolusList;
   carbs: TCarbList;
-  status: TCGMDeviceStatus;
+  devStatus: TCGMDeviceStatus;
   basal: TBasalStatus;
 begin
   AssertFalse('No boluses before a fetch', FAPI.getBoluses(boluses));
   AssertEquals('Bolus list is empty', 0, Length(boluses));
   AssertFalse('No carbs before a fetch', FAPI.getCarbs(carbs));
   AssertEquals('Carb list is empty', 0, Length(carbs));
-  AssertFalse('No device status before a fetch', FAPI.getDeviceStatus(status));
+  AssertFalse('No device status before a fetch', FAPI.getDeviceStatus(devStatus));
   AssertEquals('No basal rate before a fetch', 0.0, FAPI.getBasalRate, 0.0001);
 
   // Unreported rates stay negative: a zero here would read as a suspended pump
