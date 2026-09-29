@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|run|ide-libs|list-modules|test|assets|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|run|ide-libs|list-modules|test|assets|dashboard|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
@@ -435,6 +435,51 @@ switch ($firstArg) {
         Write-Host "Normalized $out to LF" -ForegroundColor Cyan
         exit 0
     }
+    "dashboard" {
+        # Regenerate inc\web_dashboard.inc from assets\web_dashboard.html. Twin of
+        # tools/gen-dashboard.awk (used by 'make dashboard'); the two must produce
+        # byte-identical output, since 'make check-dashboard' diffs the committed
+        # include against the awk output.
+        $src = 'assets\web_dashboard.html'
+        $out = 'inc\web_dashboard.inc'
+        Write-Host "Regenerating $out from $src" -ForegroundColor Cyan
+        $lines = [IO.File]::ReadAllLines($src)
+        $sb = New-Object System.Text.StringBuilder
+        $hdr = ($lines.Length -gt 0) -and $lines[0].StartsWith('<!--')
+        $started = $false
+        foreach ($l in $lines) {
+            if ($hdr) {
+                $s = $l -replace '^<!--', '' -replace ' *-->$', ''
+                [void]$sb.Append("//$s`n")
+                if ($l -match '-->') {
+                    $hdr = $false
+                    [void]$sb.Append("//`n")
+                    [void]$sb.Append("// GENERATED FILE - do not edit. Source: assets/web_dashboard.html;`n")
+                    [void]$sb.Append("// regenerate with ``make dashboard`` (Unix) or ``.\make.ps1 dashboard`` (Windows).`n")
+                    [void]$sb.Append("//`n")
+                    [void]$sb.Append("// The embedded web dashboard served by trndi.webserver.threaded at GET /.`n")
+                    [void]$sb.Append("WEB_DASHBOARD_HTML =`n")
+                    $started = $true
+                }
+                continue
+            }
+            if (-not $started) { [void]$sb.Append("WEB_DASHBOARD_HTML =`n"); $started = $true }
+            $s = $l
+            # Split long lines before escaping quotes, so an escaped quote never
+            # straddles two literals.
+            while ($s.Length -gt 200) {
+                $p = $s.Substring(0, 200).Replace("'", "''")
+                [void]$sb.Append("  '$p' +`n")
+                $s = $s.Substring(200)
+            }
+            $s = $s.Replace("'", "''")
+            [void]$sb.Append("  '$s' + LineEnding +`n")
+        }
+        [void]$sb.Append("  '';`n")
+        # LF and no BOM, matching the awk output on Linux/macOS.
+        [IO.File]::WriteAllText($out, $sb.ToString(), (New-Object System.Text.UTF8Encoding($false)))
+        exit 0
+    }
     "ptop" {
         # Regenerate ptop.cfg from JCFSettings.xml, so the JEDI Code Formatter
         # profile stays the only place formatting is described. ptop maps just a
@@ -565,6 +610,7 @@ switch ($firstArg) {
         Write-Host "                   (the build targets above already do this on Windows)"
         Write-Host "  list-modules     Show Pascal 'unit' modules found under units/ as a tree"
         Write-Host "  assets           Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
+        Write-Host "  dashboard        Regenerate inc\web_dashboard.inc (the web API's embedded dashboard page) from assets\web_dashboard.html"
         Write-Host "  ptop             Regenerate ptop.cfg from JCFSettings.xml (formatter config for ptop; needs perl)"
         Write-Host "  lang-check       Audit lang/: resource strings missing from Trndi.pot, plus per-catalog stats"
         Write-Host "                   (read-only; -all lists design-time placeholders; .po validation needs gettext)"

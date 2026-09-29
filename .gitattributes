@@ -30,3 +30,10 @@
 # Windows regenerates a different .lrs than an LF checkout in CI.
 tools/carelink-login/*.mjs text eol=lf
 tools/carelink-login/*.json text eol=lf
+
+# The web dashboard page and the include generated from it (make dashboard /
+# make.ps1 dashboard). Pin both to LF so the generated literals are the same
+# bytes on every platform and `make check-dashboard` compares cleanly.
+assets/web_dashboard.html text eol=lf
+inc/web_dashboard.inc text eol=lf
+tools/gen-dashboard.awk text eol=lf
