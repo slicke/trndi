@@ -466,7 +466,9 @@ LAZBUILD=/opt/fpcupdeluxe/lazarus/lazbuild make
 ```
 `WIDGETSET` does not need to be set — it already defaults to `cocoa` on macOS
 and `qt6` on Linux. On Windows the Makefile finds `C:/lazarus/lazbuild.exe` by
-itself, and `make.ps1` does the same.
+itself; `make.ps1` does the same and also falls back to
+`C:\fpcupdeluxe\lazarus\lazbuild.exe`, putting fpcupdeluxe's
+`fpc\bin\<cpu>-win64` on `PATH` for the run when no `fpc` is on it.
 
 Examples:
 ```bash
