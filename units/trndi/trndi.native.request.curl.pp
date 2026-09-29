@@ -34,6 +34,12 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-09-29: Every request sets CURLOPT_NOSIGNAL. The connect/total
+ *   timeouts would otherwise rely on SIGALRM when libcurl uses its blocking
+ *   resolver, which is unsafe in a multithreaded process and can leave a slow
+ *   name lookup hanging past the timeout.
  *)
 
 {**
@@ -269,6 +275,7 @@ var
     curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
     curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
     curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+    curl_easy_setopt(handle, CURLOPT_NOSIGNAL, clong(1));
 
     // Set proxy if configured and requested
     if withProxy and (proxy.host <> '') then
@@ -384,6 +391,7 @@ var
     curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
     curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
     curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+    curl_easy_setopt(handle, CURLOPT_NOSIGNAL, clong(1));
 
     curl_easy_setopt(handle, CURLOPT_POST, clong(1));
     curl_easy_setopt(handle, CURLOPT_POSTFIELDS, pchar(body));
@@ -490,6 +498,7 @@ begin
       curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(DEFAULT_USER_AGENT));
       curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
       curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+      curl_easy_setopt(handle, CURLOPT_NOSIGNAL, clong(1));
 
       curl_easy_setopt(handle, CURLOPT_PROXY, pchar(host));
       if portS <> '' then
@@ -627,6 +636,7 @@ begin
       curl_easy_setopt(handle, CURLOPT_URL, pchar(address));
       curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
       curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+      curl_easy_setopt(handle, CURLOPT_NOSIGNAL, clong(1));
       curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, pchar(''));
       {$ifdef DEBUG}
       curl_easy_setopt(handle, CURLOPT_VERBOSE, clong(1));
@@ -868,6 +878,7 @@ var
     curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, clong(1));
     curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, clong(10));
     curl_easy_setopt(handle, CURLOPT_TIMEOUT, clong(30));
+    curl_easy_setopt(handle, CURLOPT_NOSIGNAL, clong(1));
 
     if useragent <> '' then
       curl_easy_setopt(handle, CURLOPT_USERAGENT, pchar(useragent));
