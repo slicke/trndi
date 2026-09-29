@@ -24,8 +24,7 @@ param(
 
 # Install locations that leave lazbuild off PATH, tried in order: the standard
 # Lazarus installer, then fpcupdeluxe's default install directory. The
-# fpcupdeluxe copy needs no --pcp: lazbuild reads the lazarus.cfg fpcupdeluxe
-# writes next to it, which carries the primary-config-path.
+# fpcupdeluxe copy gets its --pcp from the lazarus.cfg next to it (see $lazOpts).
 $lazCandidates = @('C:\lazarus\lazbuild.exe', 'C:\fpcupdeluxe\lazarus\lazbuild.exe')
 
 # If LAZBUILD not set, prefer a standard install location
@@ -82,6 +81,24 @@ function Find-Lazbuild {
     return $lazCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
 $laz = Find-Lazbuild
+
+# fpcupdeluxe writes a lazarus.cfg next to its lazbuild naming its own config
+# directory. lazbuild reads it, but on Windows still ends up on the default
+# %LOCALAPPDATA%\lazarus config and fails with 'Invalid Lazarus directory ""',
+# so pass that primary-config-path explicitly. It goes first, so a --pcp given
+# on the command line still wins.
+$lazOpts = @()
+if ($laz) {
+    $lazCfg = Join-Path (Split-Path -Parent $laz) 'lazarus.cfg'
+    if (Test-Path $lazCfg) {
+        $pcp = Get-Content $lazCfg | ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -match '^--?(pcp|primary-config-path)=' } | Select-Object -First 1
+        if ($pcp) {
+            $pcpDir = ($pcp -replace '^--?(pcp|primary-config-path)=', '').Trim('"')
+            $lazOpts = @("--pcp=$pcpDir")
+        }
+    }
+}
 
 # 'ptop' runs a Perl script. Unlike 'list-modules' there is no PowerShell twin --
 # duplicating the generator would defeat the point of a single formatting source
@@ -175,7 +192,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
@@ -183,7 +200,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
@@ -191,7 +208,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Debug)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
@@ -201,7 +218,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz "--build-mode=$mode" 'Trndi.lpi'
+        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi'
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         Copy-QuickJSLibs; Publish-Build -WithQuickJS
 
@@ -237,7 +254,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'No Ext (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         # No QuickJS staging: a No Ext build compiles without TrndiExt and never
         # loads the engine.
         if ($LASTEXITCODE -eq 0) { Publish-Build }
@@ -247,7 +264,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'No Ext (Debug)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Publish-Build }
         exit $LASTEXITCODE
     }
@@ -255,7 +272,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
 
         Write-Host "Building console tests (tests/TrndiTestConsole.lpi)" -ForegroundColor Cyan
-        & $laz -B 'tests/TrndiTestConsole.lpi' @extraArgs
+        & $laz @lazOpts -B 'tests/TrndiTestConsole.lpi' @extraArgs
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
         # ext_js_tests links the QuickJS engine and its ABI shim, which Windows
@@ -662,6 +679,6 @@ switch ($firstArg) {
 if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
 if ($env:LAZBUILD) { Write-Host "Using LAZBUILD: $env:LAZBUILD" -ForegroundColor Cyan }
 Write-Host "Forwarding to lazbuild: $laz $MakeArgs" -ForegroundColor Cyan
-& $laz @MakeArgs
+& $laz @lazOpts @MakeArgs
 $exitCode = $LASTEXITCODE
 exit $exitCode
