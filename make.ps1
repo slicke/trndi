@@ -6,7 +6,7 @@ Usage:
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe`, else `C:\fpcupdeluxe\lazarus\lazbuild.exe`, if present and `LAZBUILD` is not already set
- - With the fpcupdeluxe lazbuild and no `fpc` on PATH, puts fpcupdeluxe's `fpc\bin\<cpu>-win64` on PATH for this run
+ - With an fpcupdeluxe lazbuild, passes its --pcp, --lazarusdir and --compiler, and puts its fpc on PATH if none is there
  - Ensures `OS=Windows_NT` environment variable is set for compatibility with the Makefile
  - Provides shortcuts (release, debug, noext, noext-debug, list-modules) that invoke `lazbuild` or enumerate units
  - Build targets stage a runnable layout in `build/` (override with the `OUTDIR` environment variable), like the Makefile's OUTDIR
@@ -23,30 +23,14 @@ param(
 # Unknown arguments are forwarded to lazbuild below.
 
 # Install locations that leave lazbuild off PATH, tried in order: the standard
-# Lazarus installer, then fpcupdeluxe's default install directory. The
-# fpcupdeluxe copy gets its --pcp from the lazarus.cfg next to it (see $lazOpts).
+# Lazarus installer, then fpcupdeluxe's default install directory. An
+# fpcupdeluxe lazbuild gets extra options (see $lazOpts).
 $lazCandidates = @('C:\lazarus\lazbuild.exe', 'C:\fpcupdeluxe\lazarus\lazbuild.exe')
 
 # If LAZBUILD not set, prefer a standard install location
 if (-not $env:LAZBUILD) {
     $stdLaz = $lazCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
     if ($stdLaz) { $env:LAZBUILD = $stdLaz }
-}
-
-# fpcupdeluxe keeps FPC beside its Lazarus, in fpc\bin\<cpu>-<os>, and puts
-# neither on PATH. Its lazarus config already names that fpc.exe, so this is a
-# fallback for when it does not resolve, and it also gives the tools that are
-# called by name (instantfpc runs `fpc`) something to find. The native CPU's
-# directory is preferred; any other one found is used after it. PATH is only
-# changed for this process.
-if ($env:LAZBUILD -and $env:LAZBUILD -like 'C:\fpcupdeluxe\*' -and
-    -not (Get-Command fpc -ErrorAction SilentlyContinue)) {
-    $nativeCpu = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
-    $fpcBin = @("C:\fpcupdeluxe\fpc\bin\$nativeCpu-win64") +
-        @(Get-ChildItem 'C:\fpcupdeluxe\fpc\bin' -Directory -ErrorAction SilentlyContinue |
-            ForEach-Object { $_.FullName }) |
-        Where-Object { Test-Path (Join-Path $_ 'fpc.exe') } | Select-Object -First 1
-    if ($fpcBin) { $env:PATH = "$fpcBin;$env:PATH" }
 }
 
 # Ensure OS is set so the Makefile can detect Windows
@@ -83,19 +67,35 @@ function Find-Lazbuild {
 $laz = Find-Lazbuild
 
 # fpcupdeluxe writes a lazarus.cfg next to its lazbuild naming its own config
-# directory. lazbuild reads it, but on Windows still ends up on the default
-# %LOCALAPPDATA%\lazarus config and fails with 'Invalid Lazarus directory ""',
-# so pass that primary-config-path explicitly. It goes first, so a --pcp given
-# on the command line still wins.
+# directory, and keeps FPC beside its Lazarus in fpc\bin\<cpu>-<os>. lazbuild
+# parses that primary-config-path -- from lazarus.cfg or from --pcp alike -- but
+# still ends up on the default %LOCALAPPDATA%\lazarus config and fails with
+# 'Invalid Lazarus directory ""'. So, besides --pcp, name the Lazarus directory
+# (lazbuild's own) and the compiler outright, which does not depend on which
+# config gets loaded. They go first, so the same options given on the command
+# line still win. fpc's directory also goes on PATH for this process when no fpc
+# is there, for the tools that call it by name (instantfpc runs `fpc`). The
+# native CPU's fpc is preferred; any other one found is used after it.
 $lazOpts = @()
 if ($laz) {
-    $lazCfg = Join-Path (Split-Path -Parent $laz) 'lazarus.cfg'
-    if (Test-Path $lazCfg) {
-        $pcp = Get-Content $lazCfg | ForEach-Object { $_.Trim() } |
+    $lazDir = Split-Path -Parent $laz
+    $lazCfg = Join-Path $lazDir 'lazarus.cfg'
+    $pcp = if (Test-Path $lazCfg) {
+        Get-Content $lazCfg | ForEach-Object { $_.Trim() } |
             Where-Object { $_ -match '^--?(pcp|primary-config-path)=' } | Select-Object -First 1
-        if ($pcp) {
-            $pcpDir = ($pcp -replace '^--?(pcp|primary-config-path)=', '').Trim('"')
-            $lazOpts = @("--pcp=$pcpDir")
+    }
+    if ($pcp) {
+        $pcpDir = ($pcp -replace '^--?(pcp|primary-config-path)=', '').Trim('"')
+        $lazOpts = @("--pcp=$pcpDir", "--lazarusdir=$lazDir")
+        $fpcRoot = Join-Path (Split-Path -Parent $lazDir) 'fpc\bin'
+        $nativeCpu = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
+        $fpcBin = @(Join-Path $fpcRoot "$nativeCpu-win64") +
+            @(Get-ChildItem $fpcRoot -Directory -ErrorAction SilentlyContinue |
+                ForEach-Object { $_.FullName }) |
+            Where-Object { Test-Path (Join-Path $_ 'fpc.exe') } | Select-Object -First 1
+        if ($fpcBin) {
+            $lazOpts += "--compiler=$(Join-Path $fpcBin 'fpc.exe')"
+            if (-not (Get-Command fpc -ErrorAction SilentlyContinue)) { $env:PATH = "$fpcBin;$env:PATH" }
         }
     }
 }
