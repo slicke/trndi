@@ -5,7 +5,8 @@ Usage:
   ./make.ps1 [release|debug|noext|noext-debug|run|run-single|ide-libs|list-modules|test|assets|dashboard|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
- - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe` if present and `LAZBUILD` is not already set
+ - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe`, else `C:\fpcupdeluxe\lazarus\lazbuild.exe`, if present and `LAZBUILD` is not already set
+ - With the fpcupdeluxe lazbuild and no `fpc` on PATH, puts fpcupdeluxe's `fpc\bin\<cpu>-win64` on PATH for this run
  - Ensures `OS=Windows_NT` environment variable is set for compatibility with the Makefile
  - Provides shortcuts (release, debug, noext, noext-debug, list-modules) that invoke `lazbuild` or enumerate units
  - Build targets stage a runnable layout in `build/` (override with the `OUTDIR` environment variable), like the Makefile's OUTDIR
@@ -21,10 +22,32 @@ param(
 # This script focuses on calling lazbuild directly; it no longer searches for or invokes make.exe.
 # Unknown arguments are forwarded to lazbuild below.
 
-# If LAZBUILD not set, prefer standard Lazarus install location
+# Install locations that leave lazbuild off PATH, tried in order: the standard
+# Lazarus installer, then fpcupdeluxe's default install directory. The
+# fpcupdeluxe copy needs no --pcp: lazbuild reads the lazarus.cfg fpcupdeluxe
+# writes next to it, which carries the primary-config-path.
+$lazCandidates = @('C:\lazarus\lazbuild.exe', 'C:\fpcupdeluxe\lazarus\lazbuild.exe')
+
+# If LAZBUILD not set, prefer a standard install location
 if (-not $env:LAZBUILD) {
-    $stdLaz = "C:\lazarus\lazbuild.exe"
-    if (Test-Path $stdLaz) { $env:LAZBUILD = $stdLaz }
+    $stdLaz = $lazCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($stdLaz) { $env:LAZBUILD = $stdLaz }
+}
+
+# fpcupdeluxe keeps FPC beside its Lazarus, in fpc\bin\<cpu>-<os>, and puts
+# neither on PATH. Its lazarus config already names that fpc.exe, so this is a
+# fallback for when it does not resolve, and it also gives the tools that are
+# called by name (instantfpc runs `fpc`) something to find. The native CPU's
+# directory is preferred; any other one found is used after it. PATH is only
+# changed for this process.
+if ($env:LAZBUILD -and $env:LAZBUILD -like 'C:\fpcupdeluxe\*' -and
+    -not (Get-Command fpc -ErrorAction SilentlyContinue)) {
+    $nativeCpu = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
+    $fpcBin = @("C:\fpcupdeluxe\fpc\bin\$nativeCpu-win64") +
+        @(Get-ChildItem 'C:\fpcupdeluxe\fpc\bin' -Directory -ErrorAction SilentlyContinue |
+            ForEach-Object { $_.FullName }) |
+        Where-Object { Test-Path (Join-Path $_ 'fpc.exe') } | Select-Object -First 1
+    if ($fpcBin) { $env:PATH = "$fpcBin;$env:PATH" }
 }
 
 # Ensure OS is set so the Makefile can detect Windows
@@ -56,9 +79,7 @@ function Find-Lazbuild {
     if ($env:LAZBUILD -and (Test-Path $env:LAZBUILD)) { return $env:LAZBUILD }
     $cmd = Get-Command lazbuild -ErrorAction SilentlyContinue
     if ($cmd) { return $cmd.Path }
-    $std = "C:\lazarus\lazbuild.exe"
-    if (Test-Path $std) { return $std }
-    return $null
+    return $lazCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
 $laz = Find-Lazbuild
 
@@ -629,7 +650,7 @@ switch ($firstArg) {
         Write-Host "  Extra arguments after a target are forwarded to lazbuild (or the test runner for 'test')."
         Write-Host "  Unknown targets are forwarded to lazbuild as-is."
         Write-Host "  A leading --cpu=<name> (no target) builds release for that CPU, e.g. .\make.ps1 --cpu=aarch64."
-        Write-Host "  Set LAZBUILD to override the lazbuild location (default: C:\lazarus\lazbuild.exe or PATH)."
+        Write-Host "  Set LAZBUILD to override the lazbuild location (default: C:\lazarus\lazbuild.exe, then C:\fpcupdeluxe\lazarus\lazbuild.exe, then PATH)."
         Write-Host "  Builds land in the project directory and are staged into build\ (binary + lang\, plus the"
         Write-Host "  QuickJS libraries for extensions modes). Set OUTDIR to stage somewhere else."
         exit 0
