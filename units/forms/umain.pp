@@ -87,6 +87,8 @@
  * - 2026-09-20: Declared the extension broadcasts for alerts, snooze,
  *   connection status and device notices, with the fields that keep the
  *   last state sent.
+ * - 2026-09-29: Declared WebCommand and its helpers, the web dashboard's
+ *   settings/snooze entry point.
  *)
 
 unit umain;
@@ -1271,6 +1273,19 @@ private
     {** Push the forecast to /events subscribers; nil clears it.
      }
   procedure WebPublishPredictions(const Preds: BGResults);
+    {** Serve a web dashboard command (settings.get, settings.set, snooze).
+      The web server calls this on the main thread; see TWebCommandFunc.
+      Wire values are mg/dL integers, like the readings.
+      @returns(False with AError set when the command is refused.)
+     }
+  function WebCommand(const ACommand: string; const AParams: TJSONObject;
+    AReply: TJSONObject; out AError: string): boolean;
+    {** Describe the unit, limits, prediction and snooze state for the web
+      dashboard (the reply of settings.get and settings.set).
+     }
+  procedure WebSettingsToJSON(AReply: TJSONObject);
+    {** The alert-snooze state as the dashboard reads it. }
+  function WebSnoozeJSON: TJSONObject;
 
   {** Recalculate left of the TIR badge when next progress bar is visible }
   procedure nextProgressChange;

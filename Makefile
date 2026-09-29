@@ -64,6 +64,13 @@ LAZRES ?= $(shell \
 # CareLink login helper: source files -> generated resource (in repo-root assets/).
 CARELINK_ASSET_LRS  = assets/carelink_assets.lrs
 CARELINK_ASSET_SRCS = tools/carelink-login/carelink-login.mjs tools/carelink-login/package.json tools/carelink-login/package-lock.json
+
+# Web dashboard: the page served at GET / by the embedded web API, compiled in
+# as one string constant. Edit the .html and regenerate the .inc (both are
+# committed). tools/gen-dashboard.awk holds the format; make.ps1 mirrors it.
+DASHBOARD_HTML = assets/web_dashboard.html
+DASHBOARD_INC  = inc/web_dashboard.inc
+DASHBOARD_GEN  = tools/gen-dashboard.awk
 # Formatter config for FPC's ptop, generated from JCFSettings.xml (see 'make ptop').
 JCF_SETTINGS = JCFSettings.xml
 PTOP_CFG     = ptop.cfg
@@ -338,7 +345,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) $(DARWIN_DEBUG_FLAGS)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run list-modes list-modules check-module-names assets check-assets ide-libs shim ptop lang-check
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run list-modes list-modules check-module-names assets check-assets dashboard check-dashboard ide-libs shim ptop lang-check
 
 all: release
 
@@ -363,6 +370,8 @@ help:
 	@echo "  noext      Build without JavaScript extension support (no QuickJS libraries needed) - use noext-release/noext-debug to override mode"
 	@echo "  assets     Regenerate compiled-in resource bundles (.lrs), e.g. the CareLink login helper (needs lazres)"
 	@echo "  check-assets  Fail if a committed .lrs is out of sync with its sources (CI guard)"
+	@echo "  dashboard  Regenerate $(DASHBOARD_INC) (the web API's embedded dashboard page) from $(DASHBOARD_HTML)"
+	@echo "  check-dashboard  Fail if $(DASHBOARD_INC) is out of sync with $(DASHBOARD_HTML) (CI guard)"
 	@echo "  ptop       Regenerate $(PTOP_CFG) from $(JCF_SETTINGS) (formatter config for ptop)"
 	@echo "  lang-check Audit lang/: list resource strings missing from $(POT) and validate every .po (read-only; needs gettext for the .po half)"
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
@@ -516,6 +525,24 @@ check-assets:
 	 fi; \
 	 rm -f "$$tmp"; \
 	 echo "$(CARELINK_ASSET_LRS) is up to date."
+
+# Regenerate the embedded dashboard include from its HTML source. Plain awk, so
+# it runs everywhere the Makefile does; 'make.ps1 dashboard' is the Windows twin.
+dashboard:
+	@echo "Regenerating $(DASHBOARD_INC) from $(DASHBOARD_HTML)"
+	@awk -f $(DASHBOARD_GEN) $(DASHBOARD_HTML) > $(DASHBOARD_INC)
+
+# Fail if the committed include no longer matches the HTML (CI guard).
+check-dashboard:
+	@tmp=$$(mktemp); \
+	 awk -f $(DASHBOARD_GEN) $(DASHBOARD_HTML) > $$tmp; \
+	 if ! diff --strip-trailing-cr -q "$$tmp" "$(DASHBOARD_INC)" >/dev/null 2>&1; then \
+	   rm -f "$$tmp"; \
+	   echo "ERROR: $(DASHBOARD_INC) is stale — run 'make dashboard' and commit the result."; \
+	   exit 1; \
+	 fi; \
+	 rm -f "$$tmp"; \
+	 echo "$(DASHBOARD_INC) is up to date."
 
 # Regenerate the ptop formatter config from JCFSettings.xml, keeping the JEDI
 # Code Formatter profile the only place formatting is described. ptop maps just
