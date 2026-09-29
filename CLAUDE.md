@@ -12,6 +12,7 @@ Windows (this machine — `lazbuild` is not on PATH; the scripts find it at `C:\
 .\make.ps1              # release build (Extensions (Release) mode)
 .\make.ps1 debug        # debug build
 .\make.ps1 noext        # build without extensions (no QuickJS dependency)
+.\make.ps1 run-single   # build, then start Trndi with --no-multi (skips the account picker)
 .\make.ps1 test         # build tests/TrndiTestConsole.lpi and run it
 .\make.ps1 clean        # remove build artifacts (-n for dry run)
 .\make.ps1 distclean    # clean + binaries, link*.res, logs, build/, lib/, backup/ (-n for dry run)
@@ -31,7 +32,7 @@ Two tools this machine has but not on PATH:
   instantfpc probe.pas
   ```
 
-Linux/BSD/Haiku use `make` with the same target names (`make`, `make debug`, `make test`, `make test-noserver`, `make noext`, `make list-modes`); macOS uses `gmake`. On this Windows machine, Linux-side checks can be run through WSL (e.g. `wsl fpc`). Prefer the smallest relevant target; run `make help` before inventing commands.
+Linux/BSD/Haiku use `make` with the same target names (`make`, `make debug`, `make test`, `make test-noserver`, `make noext`, `make run-single`, `make list-modes`); macOS uses `gmake`. On this Windows machine, Linux-side checks can be run through WSL (e.g. `wsl fpc`). Prefer the smallest relevant target; run `make help` before inventing commands.
 
 ### Tests
 

@@ -3,6 +3,7 @@
 #   make              -> release build (default)
 #   make debug        -> debug build
 #   make release      -> release build
+#   make run-single   -> build and run Trndi with --no-multi (no account picker)
 #   make test         -> build and run tests (runner spawns an in-process Pascal test server)
 #   make test-noserver-> build and run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)
 #   make ide-libs     -> copy the QuickJS libraries to the project root (for Lazarus IDE runs)
@@ -345,7 +346,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) $(DARWIN_DEBUG_FLAGS)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run list-modes list-modules check-module-names assets check-assets dashboard check-dashboard ide-libs shim ptop lang-check
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run run-single list-modes list-modules check-module-names assets check-assets dashboard check-dashboard ide-libs shim ptop lang-check
 
 all: release
 
@@ -357,6 +358,7 @@ help:
 	@echo "  debug      Build debug"
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
 	@echo "  run        Build, then run Trndi from $(OUTDIR) (macOS: opens the .app bundle; RUN_ARGS forwards arguments)"
+	@echo "  run-single Like run, but starts Trndi with --no-multi (skips the account picker)"
 	@echo "  test       Build and run tests (runner spawns an in-process Pascal test server)"
 	@echo "  test-noserver  Run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@echo "  noext-test  Build and run tests without extension support"
@@ -377,7 +379,6 @@ help:
 	@echo "  clean      Remove common build artifacts (*.o, *.ppu, *.compiled, executables)"
 	@echo "  distclean  clean, plus the rest of the ignored residue: built binaries, link*.res, heaptrc/log output, $(OUTDIR)/, lib/, backup/ dirs, versioned QuickJS sonames"
 	@echo "  dist       Create a minimal tarball in $(OUTDIR)"
-	@echo "  run        Build (if needed) and run the built binary (use RUN_ARGS to pass args)"
 	@echo "  install    Install binary plus (on Linux/BSD) desktop entry, icon and AppStream metadata to PREFIX (default /usr/local; requires sudo)"
 	@echo "  uninstall  Remove everything 'make install' put under PREFIX (requires sudo)"
 	@echo "Variables:" 
@@ -649,6 +650,12 @@ run: build
 	elif [ -x "./Trndi" ]; then ./Trndi $(RUN_ARGS); \
 	elif [ -f "./Trndi.exe" ]; then ./Trndi.exe $(RUN_ARGS); \
 	else echo "Executable not found in $(OUTDIR) or project dir; build first"; exit 1; fi
+
+# run, started with --no-multi: skips the account picker Trndi opens at start-up
+# when several accounts are configured, so the app comes straight up on the
+# default account (manual checks, screenshots). RUN_ARGS still adds to it.
+run-single: override RUN_ARGS += --no-multi
+run-single: run
 
 # Build without JavaScript extension support. The "No Ext" build modes compile
 # without TrndiExt, so nothing links QuickJS and no shared libraries are needed.
