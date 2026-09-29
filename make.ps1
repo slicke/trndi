@@ -6,7 +6,7 @@ Usage:
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe`, else `C:\fpcupdeluxe\lazarus\lazbuild.exe`, if present and `LAZBUILD` is not already set
- - With an fpcupdeluxe lazbuild, passes its --pcp, --lazarusdir and --compiler, and puts its fpc on PATH if none is there
+ - With no `fpc` on PATH, puts the `fpc\bin\<cpu>-win64` found beside lazbuild's directory (fpcupdeluxe's layout) on PATH for this run
  - Ensures `OS=Windows_NT` environment variable is set for compatibility with the Makefile
  - Provides shortcuts (release, debug, noext, noext-debug, list-modules) that invoke `lazbuild` or enumerate units
  - Build targets stage a runnable layout in `build/` (override with the `OUTDIR` environment variable), like the Makefile's OUTDIR
@@ -23,8 +23,9 @@ param(
 # Unknown arguments are forwarded to lazbuild below.
 
 # Install locations that leave lazbuild off PATH, tried in order: the standard
-# Lazarus installer, then fpcupdeluxe's default install directory. An
-# fpcupdeluxe lazbuild gets extra options (see $lazOpts).
+# Lazarus installer, then fpcupdeluxe's default install directory. The
+# fpcupdeluxe copy needs no --pcp: lazbuild reads the lazarus.cfg fpcupdeluxe
+# writes next to it, which carries the primary-config-path.
 $lazCandidates = @('C:\lazarus\lazbuild.exe', 'C:\fpcupdeluxe\lazarus\lazbuild.exe')
 
 # If LAZBUILD not set, prefer a standard install location
@@ -66,38 +67,20 @@ function Find-Lazbuild {
 }
 $laz = Find-Lazbuild
 
-# fpcupdeluxe writes a lazarus.cfg next to its lazbuild naming its own config
-# directory, and keeps FPC beside its Lazarus in fpc\bin\<cpu>-<os>. lazbuild
-# parses that primary-config-path -- from lazarus.cfg or from --pcp alike -- but
-# still ends up on the default %LOCALAPPDATA%\lazarus config and fails with
-# 'Invalid Lazarus directory ""'. So, besides --pcp, name the Lazarus directory
-# (lazbuild's own) and the compiler outright, which does not depend on which
-# config gets loaded. They go first, so the same options given on the command
-# line still win. fpc's directory also goes on PATH for this process when no fpc
-# is there, for the tools that call it by name (instantfpc runs `fpc`). The
-# native CPU's fpc is preferred; any other one found is used after it.
-$lazOpts = @()
-if ($laz) {
-    $lazDir = Split-Path -Parent $laz
-    $lazCfg = Join-Path $lazDir 'lazarus.cfg'
-    $pcp = if (Test-Path $lazCfg) {
-        Get-Content $lazCfg | ForEach-Object { $_.Trim() } |
-            Where-Object { $_ -match '^--?(pcp|primary-config-path)=' } | Select-Object -First 1
-    }
-    if ($pcp) {
-        $pcpDir = ($pcp -replace '^--?(pcp|primary-config-path)=', '').Trim('"')
-        $lazOpts = @("--pcp=$pcpDir", "--lazarusdir=$lazDir")
-        $fpcRoot = Join-Path (Split-Path -Parent $lazDir) 'fpc\bin'
-        $nativeCpu = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
-        $fpcBin = @(Join-Path $fpcRoot "$nativeCpu-win64") +
-            @(Get-ChildItem $fpcRoot -Directory -ErrorAction SilentlyContinue |
-                ForEach-Object { $_.FullName }) |
-            Where-Object { Test-Path (Join-Path $_ 'fpc.exe') } | Select-Object -First 1
-        if ($fpcBin) {
-            $lazOpts += "--compiler=$(Join-Path $fpcBin 'fpc.exe')"
-            if (-not (Get-Command fpc -ErrorAction SilentlyContinue)) { $env:PATH = "$fpcBin;$env:PATH" }
-        }
-    }
+# fpcupdeluxe keeps FPC beside its Lazarus, in fpc\bin\<cpu>-<os>, and puts
+# neither on PATH. lazbuild itself finds that fpc through the lazarus.cfg next
+# to it, which names fpcupdeluxe's own config directory; this is for the tools
+# that call fpc by name (instantfpc runs `fpc`). The native CPU's directory is
+# preferred; any other one found is used after it. PATH is only changed for
+# this process.
+if ($laz -and -not (Get-Command fpc -ErrorAction SilentlyContinue)) {
+    $fpcRoot = Join-Path (Split-Path -Parent (Split-Path -Parent $laz)) 'fpc\bin'
+    $nativeCpu = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'aarch64' } else { 'x86_64' }
+    $fpcBin = @(Join-Path $fpcRoot "$nativeCpu-win64") +
+        @(Get-ChildItem $fpcRoot -Directory -ErrorAction SilentlyContinue |
+            ForEach-Object { $_.FullName }) |
+        Where-Object { Test-Path (Join-Path $_ 'fpc.exe') } | Select-Object -First 1
+    if ($fpcBin) { $env:PATH = "$fpcBin;$env:PATH" }
 }
 
 # 'ptop' runs a Perl script. Unlike 'list-modules' there is no PowerShell twin --
@@ -192,7 +175,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
@@ -200,7 +183,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
@@ -208,7 +191,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Debug)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Copy-QuickJSLibs; Publish-Build -WithQuickJS }
         exit $LASTEXITCODE
     }
@@ -218,7 +201,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'Extensions (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi'
+        & $laz "--build-mode=$mode" 'Trndi.lpi'
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         Copy-QuickJSLibs; Publish-Build -WithQuickJS
 
@@ -254,7 +237,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'No Ext (Release)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         # No QuickJS staging: a No Ext build compiles without TrndiExt and never
         # loads the engine.
         if ($LASTEXITCODE -eq 0) { Publish-Build }
@@ -264,7 +247,7 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
         $mode = 'No Ext (Debug)'
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
-        & $laz @lazOpts "--build-mode=$mode" 'Trndi.lpi' @extraArgs
+        & $laz "--build-mode=$mode" 'Trndi.lpi' @extraArgs
         if ($LASTEXITCODE -eq 0) { Publish-Build }
         exit $LASTEXITCODE
     }
@@ -272,7 +255,12 @@ switch ($firstArg) {
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
 
         Write-Host "Building console tests (tests/TrndiTestConsole.lpi)" -ForegroundColor Cyan
-        & $laz @lazOpts -B 'tests/TrndiTestConsole.lpi' @extraArgs
+        # --build-all, not -B: FPC trunk's TCustomApplication.FindOptionIndex
+        # scans from the last argument and fixes case sensitivity by the first
+        # option it meets. A trailing short -B makes every long-option lookup
+        # fail, so lazbuild drops the --pcp from fpcupdeluxe's lazarus.cfg and
+        # stops with 'Invalid Lazarus directory ""'.
+        & $laz --build-all 'tests/TrndiTestConsole.lpi' @extraArgs
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
         # ext_js_tests links the QuickJS engine and its ABI shim, which Windows
@@ -679,6 +667,6 @@ switch ($firstArg) {
 if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
 if ($env:LAZBUILD) { Write-Host "Using LAZBUILD: $env:LAZBUILD" -ForegroundColor Cyan }
 Write-Host "Forwarding to lazbuild: $laz $MakeArgs" -ForegroundColor Cyan
-& $laz @lazOpts @MakeArgs
+& $laz @MakeArgs
 $exitCode = $LASTEXITCODE
 exit $exitCode

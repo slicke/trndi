@@ -468,9 +468,13 @@ release: build
 debug: BUILD_MODE := Debug
 debug: build
 
+# The test builds use --build-all, not -B: FPC trunk's TCustomApplication
+# fixes option case sensitivity by the last option on the command line, so a
+# trailing short -B makes lazbuild ignore every long option before it
+# (--widgetset, --cpu, and the --pcp from fpcupdeluxe's lazarus.cfg).
 test: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) --build-all tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -479,7 +483,7 @@ test: check qjs-links
 
 noext-test: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) --build-all tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -488,7 +492,7 @@ noext-test: qjs-links
 
 test-noserver: check qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi)"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) --build-all tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
@@ -497,7 +501,7 @@ test-noserver: check qjs-links
 
 noext-test-noserver: qjs-links
 	@echo "Building console tests (tests/TrndiTestConsole.lpi) without extension support"
-	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) -B tests/TrndiTestConsole.lpi
+	@$(LAZBUILD) --widgetset=$(WIDGETSET) $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) --build-all tests/TrndiTestConsole.lpi
 	@# ext_js_tests links the QuickJS engine and its ABI shim; the test binary
 	@# carries a runpath relative to itself, so put them beside it.
 	$(call stage-qjs-libs,$(QJS_TEST_DESTS))
