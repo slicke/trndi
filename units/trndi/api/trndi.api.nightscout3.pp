@@ -78,6 +78,9 @@
  *   trndi.funcs.
  * - 2026-08-17: An absent bgHigh/bgLow in settings.thresholds now keeps the
  *   existing limit instead of defaulting to 0.
+ * - 2026-09-29: connect rejects an address without an http(s) scheme before
+ *   making any request, like the v1 driver; it used to hand it to the
+ *   transport, which on Linux could stall on resolving the bare name.
  *)
 unit trndi.api.nightscout3;
 
@@ -963,6 +966,13 @@ var
 begin
   Result := false;
   lastErr := '';
+
+  // 0) Quick sanity check on URL; avoids a network round-trip on obvious mistakes.
+  if Copy(FSiteBase, 1, 4) <> 'http' then
+  begin
+    lastErr := 'Invalid address. Must start with http:// or https://!';
+    Exit;
+  end;
 
   // 1) Acquire JWT via v2 authorization flow (only if a token suffix is configured)
   if FTokenSuffix <> '' then
