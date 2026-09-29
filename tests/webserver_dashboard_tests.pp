@@ -280,7 +280,6 @@ procedure TWebServerDashboardTests.TestBodySplitAcrossPackets;
 var
   Req: string;
   Sock: TSocket;
-  Addr: TInetSockAddr;
   Buf: array[0..4095] of byte;
   N, Cut: integer;
   Response: string;
@@ -290,14 +289,8 @@ begin
   // Send the headers plus the first byte of the body, then the rest a
   // moment later: the server must wait for Content-Length bytes.
   Cut := Pos(#13#10#13#10, Req) + 4;
-  Sock := fpSocket(AF_INET, SOCK_STREAM, 0);
-  AssertTrue('socket', Sock >= 0);
+  Sock := ConnectLoopback(Port);
   try
-    FillChar(Addr, SizeOf(Addr), 0);
-    Addr.sin_family := AF_INET;
-    Addr.sin_port := htons(Port);
-    Addr.sin_addr.s_addr := htonl($7F000001);
-    AssertEquals('connect', 0, fpConnect(Sock, @Addr, SizeOf(Addr)));
     AssertEquals('send headers', Cut, fpSend(Sock, @Req[1], Cut, 0));
     Sleep(150);
     AssertEquals('send body', Length(Req) - Cut, fpSend(Sock, @Req[Cut + 1], Length(Req) - Cut, 0));
