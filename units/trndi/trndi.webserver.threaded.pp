@@ -40,6 +40,9 @@
  *   Haiku, since FPC 3.2.2's sockets unit carries the BSD value there.
  * - 2026-09-15: Capped concurrent /events streams at MAX_EVENT_STREAMS with
  *   a dedicated counter; a subscriber past the cap is answered 503.
+ * - 2026-09-29: Added the embedded dashboard (GET /), the /settings and
+ *   /snooze endpoints backed by a command callback run on the main thread,
+ *   Content-Length request bodies, and the loopback-or-token write policy.
  *)
 unit trndi.webserver.threaded;
 
@@ -48,7 +51,16 @@ unit trndi.webserver.threaded;
 {
   Minimal HTTP server for exposing current glucose readings and predictions,
   plus a server-sent-events stream (/events) that pushes state changes to
-  subscribers instead of making them poll.
+  subscribers instead of making them poll, and a small built-in dashboard
+  page (GET /) that consumes those endpoints from a browser.
+
+  The dashboard's write side (/settings, /snooze) goes through one command
+  callback (TWebCommandFunc). Unlike the reading callbacks it is run on the
+  MAIN thread via TThread.Synchronize, so the owner can apply settings the
+  way its settings dialog does. Writes are accepted only from a loopback peer
+  or, when a token is configured, from any authenticated peer; the server is
+  otherwise reachable by anyone on the network, and reading glucose is one
+  thing, changing limits another.
 
   Threading model:
     - TWebServerThread owns the listening socket and runs the accept loop.
@@ -93,6 +105,18 @@ type
   { Callback function types for thread-safe data access }
 TGetCurrentReadingFunc = function: BGResults of object;
 TGetPredictionsFunc = function: BGResults of object;
+
+  {** Serve one dashboard command. Invoked ON THE MAIN THREAD (the handler
+      marshals through TThread.Synchronize), so the implementation may touch
+      UI state freely, but it must return promptly: the connection and the
+      main thread both wait on it. ACommand is one of
+        @unorderedList(
+          @item(@code(settings.get): AParams is nil; describe the settings in AReply)
+          @item(@code(settings.set): AParams holds the changes; apply them, then describe the result in AReply)
+          @item(@code(snooze): AParams.minutes, 0 to resume; describe the snooze state in AReply))
+      @returns(False to refuse the command; the client then gets 400 with AError.) }
+TWebCommandFunc = function(const ACommand: string; const AParams: TJSONObject;
+  AReply: TJSONObject; out AError: string): boolean of object;
 
   {** One event on the /events stream. }
 TWebEvent = record
@@ -157,8 +181,19 @@ private
   FActiveCounter: PLongInt;
   FStreamCounter: PLongInt;   // open /events streams, capped at MAX_EVENT_STREAMS
   FHub: TWebEventHub;
+  FCommand: TWebCommandFunc;
+  FPeerIsLoopback: boolean;   // the connection came from 127.0.0.0/8
+  // Parameters of the command in flight, handed across Synchronize.
+  FCmdName: string;
+  FCmdParams: TJSONObject;
+  FCmdReply: TJSONObject;
+  FCmdError: string;
+  FCmdOk: boolean;
   function HandleRequest(const Request: string): string;
   function CheckAuth(const Headers, QueryToken: string): boolean;
+  function WriteAllowed: boolean;
+  function ServeCommand(const ACommand: string; AParams, AReply: TJSONObject): string;
+  procedure RunCommandSync;
   function ReadRequest(out Request: string; out TooLarge: boolean): boolean;
   function SendAll(const Data: string): boolean;
   function SendEvent(const Event: TWebEvent): boolean;
@@ -172,7 +207,8 @@ public
     AGetCurrentReading: TGetCurrentReadingFunc;
     AGetPredictions: TGetPredictionsFunc;
     const AStartedAtUtc: TDateTime; APort: word;
-    AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub);
+    AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub;
+    ACommand: TWebCommandFunc; APeerIsLoopback: boolean);
 end;
 
   { TWebServerThread - listens and dispatches connections }
@@ -188,6 +224,7 @@ private
   FActiveCounter: PLongInt;
   FStreamCounter: PLongInt;
   FHub: TWebEventHub;
+  FCommand: TWebCommandFunc;
 protected
   procedure Execute; override;
 public
@@ -195,7 +232,8 @@ public
     AGetCurrentReading: TGetCurrentReadingFunc;
     AGetPredictions: TGetPredictionsFunc;
     ALoopbackOnly: boolean;
-    AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub);
+    AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub;
+    ACommand: TWebCommandFunc);
   destructor Destroy; override;
   procedure CloseServerSocket;
 end;
@@ -210,10 +248,13 @@ private
   FActiveStreams: LongInt;   // subset of FActiveClients that serve /events
   FHub: TWebEventHub;
 public
+  {** ACommand backs the dashboard's /settings and /snooze; without it those
+      endpoints answer 501 and the page hides its settings card. }
   constructor Create(APort: word; const AAuthToken: string;
     AGetCurrentReading: TGetCurrentReadingFunc;
     AGetPredictions: TGetPredictionsFunc;
-    ALoopbackOnly: boolean = false);
+    ALoopbackOnly: boolean = false;
+    ACommand: TWebCommandFunc = nil);
   destructor Destroy; override;
   procedure Start;
   procedure Stop;
@@ -250,6 +291,9 @@ function ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean = true): 
 function LevelName(const Level: BGValLevel): string;
 
 implementation
+
+const
+{$I ../../inc/web_dashboard.inc}
 
 const
 INVALID_SOCKET = TSocket(-1);
@@ -311,6 +355,11 @@ begin
   Result := WinSock2.htonl(v);
 end;
 
+function NetToHostLong(v: longword): longword;
+begin
+  Result := WinSock2.ntohl(v);
+end;
+
 {$ELSE}
 // Unix-specific socket wrapper functions
 function SocketShutdown(s: TSocket; how: integer): integer;
@@ -342,7 +391,47 @@ function HostToNetLong(v: longword): longword;
 begin
   Result := htonl(v);
 end;
+
+function NetToHostLong(v: longword): longword;
+begin
+  Result := ntohl(v);
+end;
 {$ENDIF}
+
+// True for any 127.0.0.0/8 address (network byte order in).
+function IsLoopbackAddr(const NetAddr: longword): boolean;
+begin
+  Result := (NetToHostLong(NetAddr) shr 24) = 127;
+end;
+
+// Parses a JSON object body. An empty body counts as an empty object; a
+// non-object or malformed body fails. The caller owns Obj on success.
+function ParseJSONBody(const Body: string; out Obj: TJSONObject): boolean;
+var
+  Data: TJSONData;
+begin
+  Obj := nil;
+  if Trim(Body) = '' then
+  begin
+    Obj := TJSONObject.Create;
+    Exit(true);
+  end;
+  try
+    Data := GetJSON(Body);
+  except
+    Exit(false);
+  end;
+  if Data is TJSONObject then
+  begin
+    Obj := TJSONObject(Data);
+    Result := true;
+  end
+  else
+  begin
+    Data.Free;
+    Result := false;
+  end;
+end;
 
 // Length-leaking-resistant string compare. Always walks min(LenA, LenB)
 // bytes and folds the length mismatch into the diff, so timing does not
@@ -665,7 +754,8 @@ constructor TClientHandlerThread.Create(AClientSocket: TSocket; const AAuthToken
 AGetCurrentReading: TGetCurrentReadingFunc;
 AGetPredictions: TGetPredictionsFunc;
 const AStartedAtUtc: TDateTime; APort: word;
-AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub);
+AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub;
+ACommand: TWebCommandFunc; APeerIsLoopback: boolean);
 begin
   inherited Create(true); // suspended; caller calls Start after setup is complete
   FreeOnTerminate := true;
@@ -678,6 +768,8 @@ begin
   FActiveCounter := AActiveCounter;
   FStreamCounter := AStreamCounter;
   FHub := AHub;
+  FCommand := ACommand;
+  FPeerIsLoopback := APeerIsLoopback;
 end;
 
 // Take one of the MAX_EVENT_STREAMS slots. Increment first and test after:
@@ -728,15 +820,78 @@ begin
   Result := ConstantTimeEquals(Token, FAuthToken);
 end;
 
+// The write policy for /settings and /snooze. Reading glucose off the LAN is
+// what the server is for; changing the app's limits is not something an
+// unauthenticated peer elsewhere on the network gets to do. A loopback peer
+// is the same user as the one at the keyboard; anyone else needs the token
+// (which CheckAuth has verified by the time this is asked).
+function TClientHandlerThread.WriteAllowed: boolean;
+begin
+  Result := FPeerIsLoopback or (FAuthToken <> '');
+end;
+
+// Body of the callback, on the main thread. The try/except is here rather
+// than around Synchronize because an exception raised inside a synchronized
+// method is re-raised in the calling thread, but we also want the message.
+procedure TClientHandlerThread.RunCommandSync;
+begin
+  try
+    FCmdOk := FCommand(FCmdName, FCmdParams, FCmdReply, FCmdError);
+  except
+    on E: Exception do
+    begin
+      FCmdOk := false;
+      FCmdError := E.Message;
+    end;
+  end;
+end;
+
+// Runs ACommand on the main thread and leaves its answer in AReply.
+// @returns(The HTTP status line for the response.)
+function TClientHandlerThread.ServeCommand(const ACommand: string;
+  AParams, AReply: TJSONObject): string;
+begin
+  if not Assigned(FCommand) then
+  begin
+    AReply.Add('error', 'Not supported');
+    Exit('HTTP/1.1 501 Not Implemented'#13#10);
+  end;
+  // The owner is tearing down: its Stop drains handlers while servicing
+  // Synchronize, but a command started now would land on a form that is
+  // going away.
+  if Assigned(FHub) and FHub.IsShutdown then
+  begin
+    AReply.Add('error', 'Shutting down');
+    Exit('HTTP/1.1 503 Service Unavailable'#13#10);
+  end;
+
+  FCmdName := ACommand;
+  FCmdParams := AParams;
+  FCmdReply := AReply;
+  FCmdError := '';
+  FCmdOk := false;
+  Synchronize(@RunCommandSync);
+  FCmdParams := nil;
+  FCmdReply := nil;
+
+  if FCmdOk then
+    Exit('HTTP/1.1 200 OK'#13#10);
+  AReply.Clear;
+  if FCmdError = '' then
+    FCmdError := 'Rejected';
+  AReply.Add('error', FCmdError);
+  Result := 'HTTP/1.1 400 Bad Request'#13#10;
+end;
+
 function TClientHandlerThread.HandleRequest(const Request: string): string;
 var
   Lines: TStringList;
-  Method, URIPath, Query, Headers: string;
-  ResponseObj: TJSONObject;
+  Method, URIPath, Query, Headers, Body: string;
+  ResponseObj, Params: TJSONObject;
   CurrentReadings: BGResults;
   Predictions: BGResults;
   PredArray, Endpoints: TJSONArray;
-  i: integer;
+  i, P: integer;
   NowUtc: TDateTime;
   UptimeSeconds: integer;
 begin
@@ -750,7 +905,33 @@ begin
     end;
 
     ParseRequestLine(Request, Method, URIPath, Query);
-    Headers := Lines.Text;
+    // Headers end at the first blank line; whatever follows is the body
+    // (ReadRequest has already waited for Content-Length bytes of it).
+    P := Pos(#13#10#13#10, Request);
+    if P > 0 then
+    begin
+      Headers := Copy(Request, 1, P + 1);
+      Body := Copy(Request, P + 4, MaxInt);
+    end
+    else
+    begin
+      Headers := Request;
+      Body := '';
+    end;
+
+    // The dashboard page. Served without auth: a browser navigating here
+    // cannot send a header, and the page holds nothing but markup - every
+    // value on it comes from the authenticated endpoints it calls.
+    if (Method = 'GET') and ((URIPath = '/') or (URIPath = '/dashboard')) then
+    begin
+      Result := 'HTTP/1.1 200 OK'#13#10 +
+        'Content-Type: text/html; charset=utf-8'#13#10 +
+        'Content-Length: ' + IntToStr(Length(WEB_DASHBOARD_HTML)) + #13#10 +
+        'Cache-Control: no-cache'#13#10 +
+        'Connection: close'#13#10#13#10 +
+        WEB_DASHBOARD_HTML;
+      Exit;
+    end;
 
     // CORS preflight
     if Method = 'OPTIONS' then
@@ -822,6 +1003,47 @@ begin
         Result := 'HTTP/1.1 200 OK'#13#10;
       end
       else
+      if (URIPath = '/settings') and (Method = 'GET') then
+      begin
+        Result := ServeCommand('settings.get', nil, ResponseObj);
+        if Result.StartsWith('HTTP/1.1 200') then
+          ResponseObj.Add('writable', WriteAllowed);
+      end
+      else
+      if ((URIPath = '/settings') or (URIPath = '/snooze')) and (Method = 'POST') then
+      begin
+        if not WriteAllowed then
+        begin
+          ResponseObj.Add('error', 'Changes need a localhost connection or a configured token');
+          Result := 'HTTP/1.1 403 Forbidden'#13#10;
+        end
+        else
+        if not ParseJSONBody(Body, Params) then
+        begin
+          ResponseObj.Add('error', 'Body must be a JSON object');
+          Result := 'HTTP/1.1 400 Bad Request'#13#10;
+        end
+        else
+          try
+            if URIPath = '/snooze' then
+              Result := ServeCommand('snooze', Params, ResponseObj)
+            else
+            begin
+              Result := ServeCommand('settings.set', Params, ResponseObj);
+              if Result.StartsWith('HTTP/1.1 200') then
+                ResponseObj.Add('writable', true);
+            end;
+          finally
+            Params.Free;
+          end;
+      end
+      else
+      if (URIPath = '/settings') or (URIPath = '/snooze') then
+      begin
+        ResponseObj.Add('error', 'Method not allowed');
+        Result := 'HTTP/1.1 405 Method Not Allowed'#13#10;
+      end
+      else
       if URIPath = '/health' then
       begin
         NowUtc := LocalTimeToUniversal(Now);
@@ -838,12 +1060,16 @@ begin
         ResponseObj.Add('data_available', Assigned(FGetCurrentReading));
 
         Endpoints := TJSONArray.Create;
+        Endpoints.Add('/');
         Endpoints.Add('/glucose');
         Endpoints.Add('/predict');
         Endpoints.Add('/status');
         Endpoints.Add('/health');
         Endpoints.Add('/events');
+        Endpoints.Add('/settings');
+        Endpoints.Add('/snooze');
         ResponseObj.Add('endpoints', Endpoints);
+        ResponseObj.Add('command_support', Assigned(FCommand));
 
         Result := 'HTTP/1.1 200 OK'#13#10;
       end
@@ -866,15 +1092,17 @@ begin
   end;
 end;
 
-// Reads bytes from the client up to MAX_REQUEST_SIZE or until CRLFCRLF
-// (end of headers). Bounded by REQUEST_READ_TIMEOUT_MS total wall time
-// across all recv calls so a slow/silent peer cannot tie up the handler.
+// Reads bytes from the client up to MAX_REQUEST_SIZE: the headers (until
+// CRLFCRLF) plus, when they announce one, a Content-Length body. Bounded by
+// REQUEST_READ_TIMEOUT_MS total wall time across all recv calls so a
+// slow/silent peer cannot tie up the handler.
 function TClientHandlerThread.ReadRequest(out Request: string; out TooLarge: boolean): boolean;
 var
   Buffer: array[0..2047] of byte;
   BytesRead: integer;
   ReqStream: TMemoryStream;
   StartScan, j: NativeInt;
+  HeaderEnd, Needed: NativeInt;   // byte counts; Needed < 0 until the headers are in
   PBuf: PByte;
   Found: boolean;
   Deadline, NowMs: QWord;
@@ -890,6 +1118,8 @@ begin
   ReqStream := TMemoryStream.Create;
   try
     Found := false;
+    HeaderEnd := 0;
+    Needed := -1;
     while not Terminated do
     begin
       NowMs := GetTickCount64;
@@ -930,25 +1160,46 @@ begin
       else
         StartScan := 0;
 
-      if ReqStream.Size >= 4 then
+      if (not Found) and (ReqStream.Size >= 4) then
       begin
         PBuf := PByte(ReqStream.Memory);
         for j := StartScan to ReqStream.Size - 4 do
           if (PBuf[j] = 13) and (PBuf[j+1] = 10) and (PBuf[j+2] = 13) and (PBuf[j+3] = 10) then
           begin
             Found := true;
+            HeaderEnd := j + 4;
             Break;
           end;
       end;
       if Found then
-        Break;
+      begin
+        if Needed < 0 then
+        begin
+          // End of headers. A POST announces its body with Content-Length;
+          // keep reading until that many bytes follow the blank line.
+          SetLength(Request, HeaderEnd);
+          Move(ReqStream.Memory^, Request[1], HeaderEnd);
+          Needed := HeaderEnd +
+            StrToIntDef(HeaderValue(Request, 'content-length'), 0);
+          if Needed < HeaderEnd then
+            Needed := HeaderEnd;
+          if Needed > MAX_REQUEST_SIZE then
+          begin
+            TooLarge := true;
+            Exit;
+          end;
+        end;
+        if ReqStream.Size >= Needed then
+          Break;
+      end;
     end;
 
     if ReqStream.Size > 0 then
     begin
       SetLength(Request, ReqStream.Size);
       Move(ReqStream.Memory^, Request[1], ReqStream.Size);
-      Result := Found; // only "good" if we actually saw end-of-headers
+      // Only "good" if we saw end-of-headers and the announced body arrived.
+      Result := Found and (ReqStream.Size >= Needed);
     end;
   finally
     ReqStream.Free;
@@ -1203,7 +1454,8 @@ constructor TWebServerThread.Create(APort: word; const AAuthToken: string;
 AGetCurrentReading: TGetCurrentReadingFunc;
 AGetPredictions: TGetPredictionsFunc;
 ALoopbackOnly: boolean;
-AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub);
+AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub;
+ACommand: TWebCommandFunc);
 begin
   inherited Create(true); // Create suspended
   FreeOnTerminate := false; // Owner stops + frees thread (needed for safe shutdown)
@@ -1215,6 +1467,7 @@ begin
   FActiveCounter := AActiveCounter;
   FStreamCounter := AStreamCounter;
   FHub := AHub;
+  FCommand := ACommand;
   FServerSocket := INVALID_SOCKET;
   FStartedAtUtc := LocalTimeToUniversal(Now);
 end;
@@ -1252,6 +1505,7 @@ var
   TimeVal: TTimeVal;
   SelectResult: integer;
   BindAddr: longword;
+  PeerLoopback: boolean;
   {$IFDEF WINDOWS}
   WSAData: TWSAData;
   InetAddr: TInetSockAddr;
@@ -1355,6 +1609,11 @@ begin
       if ClientSocket = INVALID_SOCKET then
         Continue;
 
+      // Where the peer is decides whether it may change settings; see
+      // TClientHandlerThread.WriteAllowed.
+      PeerLoopback := (SockLen >= SizeOf(SockAddr)) and
+        IsLoopbackAddr(SockAddr.sin_addr.s_addr);
+
       // Hand off to a per-connection worker so concurrent clients do not
       // block each other. Increment BEFORE Start so the owner's Stop()
       // sees the in-flight worker even if scheduling delays it.
@@ -1363,7 +1622,8 @@ begin
       try
         Client := TClientHandlerThread.Create(ClientSocket, FAuthToken,
           FGetCurrentReading, FGetPredictions,
-          FStartedAtUtc, FPort, FActiveCounter, FStreamCounter, FHub);
+          FStartedAtUtc, FPort, FActiveCounter, FStreamCounter, FHub,
+          FCommand, PeerLoopback);
         // Worker owns ClientSocket from here on.
         Client.Start;
       except
@@ -1393,7 +1653,7 @@ end;
 constructor TTrndiWebServer.Create(APort: word; const AAuthToken: string;
 AGetCurrentReading: TGetCurrentReadingFunc;
 AGetPredictions: TGetPredictionsFunc;
-ALoopbackOnly: boolean);
+ALoopbackOnly: boolean; ACommand: TWebCommandFunc);
 begin
   inherited Create;
   FPort := APort;
@@ -1403,7 +1663,7 @@ begin
   FHub := TWebEventHub.Create;
   FThread := TWebServerThread.Create(APort, AAuthToken,
     AGetCurrentReading, AGetPredictions,
-    ALoopbackOnly, @FActiveClients, @FActiveStreams, FHub);
+    ALoopbackOnly, @FActiveClients, @FActiveStreams, FHub, ACommand);
 end;
 
 destructor TTrndiWebServer.Destroy;
@@ -1454,9 +1714,12 @@ begin
     //    parent free us -- the workers hold method pointers into the owner
     //    and a pointer to FActiveClients. A plain request is bounded by
     //    REQUEST_READ_TIMEOUT_MS plus handler time and a stream notices the
-    //    shutdown within EVENT_POLL_MS, so this is finite.
+    //    shutdown within EVENT_POLL_MS, so this is finite. Stop runs on the
+    //    main thread, and a handler may be parked in Synchronize waiting
+    //    for that very thread: CheckSynchronize services it (and sleeps
+    //    the poll interval otherwise) so the drain cannot deadlock on it.
     while InterlockedExchangeAdd(FActiveClients, 0) > 0 do
-      Sleep(CLIENT_DRAIN_POLL_MS);
+      CheckSynchronize(CLIENT_DRAIN_POLL_MS);
 
     FreeAndNil(FThread);
     FEnabled := false;

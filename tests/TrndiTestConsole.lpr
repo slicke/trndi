@@ -73,6 +73,7 @@ uses
   alert_engine_tests,
   report_tests,
   webserver_events_tests,
+  webserver_dashboard_tests,
     system_media_controller_tests,
   ext_manifest_tests,
   ext_modules_tests

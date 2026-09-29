@@ -38,6 +38,9 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-20: Added NotifyExtensionsAlert, the extension-side twin of
  *   WebPublishAlert.
+ * - 2026-09-29: Added WebCommand (and WebSettingsToJSON/WebSnoozeJSON), the
+ *   main-thread command handler behind the web dashboard's /settings and
+ *   /snooze; StartWebServer hands it to the server.
  *)
 (* MODIFICATION NOTICE (2026-08-17): The high/low/urgent-low alert rules are now
    seeded after Connect and the wizard/override adjustments instead of before
@@ -1425,7 +1428,8 @@ begin
   Port := native.GetIntSetting('webserver.port', 8080);
   Token := native.GetSetting('webserver.token', '');
   
-  FWebServer := TTrndiWebServer.Create(Port, Token, @GetCurrentReadingForWeb, @GetPredictionsForWeb);
+  FWebServer := TTrndiWebServer.Create(Port, Token, @GetCurrentReadingForWeb,
+    @GetPredictionsForWeb, false, @WebCommand);
   TTrndiWebServer(FWebServer).Start;
 
   // Seed the /events snapshot with what the UI already knows. The reading
@@ -1550,4 +1554,212 @@ procedure TfBG.WebPublishPredictions(const Preds: BGResults);
 begin
   if Assigned(FWebServer) then
     TTrndiWebServer(FWebServer).PublishPredictions(Preds);
+end;
+
+{------------------------------------------------------------------------------
+  WebCommand and helpers
+  ----------------------
+  The web dashboard's settings card and snooze buttons end up here. The
+  server runs WebCommand on the main thread (TWebCommandFunc), so it may read
+  api/FAlertEngine and re-apply settings the way the Settings dialog does:
+  write the same keys, then ApplySettingsInstantly. Values on the wire are
+  mg/dL integers, the unit the readings already carry; the page converts for
+  display. The server itself decides who may write (loopback or token), so
+  nothing here needs to.
+ ------------------------------------------------------------------------------}
+function TfBG.WebSnoozeJSON: TJSONObject;
+var
+  untilLocal: TDateTime;
+begin
+  Result := TJSONObject.Create;
+  if Assigned(FAlertEngine) and FAlertEngine.AnySnoozed then
+  begin
+    untilLocal := FAlertEngine.ActiveSnoozeUntil;
+    Result.Add('active', true);
+    Result.Add('until_utc', FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss"Z"',
+      LocalTimeToUniversal(untilLocal)));
+  end
+  else
+  begin
+    Result.Add('active', false);
+    Result.Add('until_utc', '');
+  end;
+end;
+
+procedure TfBG.WebSettingsToJSON(AReply: TJSONObject);
+var
+  ov, th: TJSONObject;
+  lo, hi, rangeLo, rangeHi: integer;
+begin
+  // The effective limits: what the readings are classified against right now.
+  // Before a backend is connected (setup screen) fall back to the defaults
+  // the Settings dialog shows in the same state.
+  if Assigned(api) then
+  begin
+    lo := api.cgmLo;
+    hi := api.cgmHi;
+    rangeLo := api.cgmRangeLo;
+    rangeHi := api.cgmRangeHi;
+  end
+  else
+  begin
+    lo := 60;
+    hi := 180;
+    rangeLo := TrndiAPI.CGM_RANGE_LO_DISABLED;
+    rangeHi := TrndiAPI.CGM_RANGE_HI_DISABLED;
+  end;
+
+  AReply.Add('unit', IfThen(native.GetSetting('unit', 'mmol') = 'mmol', 'mmol', 'mgdl'));
+  AReply.Add('predictions', native.GetBoolSetting('predictions.enable', false));
+
+  // The stored overrides, with the effective limits as the values the page
+  // shows while an override is off (mirrors the dialog's ApplyRangeBounds:
+  // an unset band falls back to the limits rather than the sentinels).
+  ov := TJSONObject.Create;
+  ov.Add('enabled', native.GetBoolSetting('override.enabled', false));
+  ov.Add('lo', native.GetIntSetting('override.lo', lo));
+  ov.Add('hi', native.GetIntSetting('override.hi', hi));
+  ov.Add('range', native.GetBoolSetting('override.range', false));
+  if rangeLo = TrndiAPI.CGM_RANGE_LO_DISABLED then
+    ov.Add('range_lo', native.GetIntSetting('override.rangelo', lo))
+  else
+    ov.Add('range_lo', native.GetIntSetting('override.rangelo', rangeLo));
+  if rangeHi = TrndiAPI.CGM_RANGE_HI_DISABLED then
+    ov.Add('range_hi', native.GetIntSetting('override.rangehi', hi))
+  else
+    ov.Add('range_hi', native.GetIntSetting('override.rangehi', rangeHi));
+  AReply.Add('override', ov);
+
+  th := TJSONObject.Create;
+  th.Add('lo', lo);
+  th.Add('hi', hi);
+  if rangeLo = TrndiAPI.CGM_RANGE_LO_DISABLED then
+    th.Add('range_lo', TJSONNull.Create)
+  else
+    th.Add('range_lo', rangeLo);
+  if rangeHi = TrndiAPI.CGM_RANGE_HI_DISABLED then
+    th.Add('range_hi', TJSONNull.Create)
+  else
+    th.Add('range_hi', rangeHi);
+  AReply.Add('thresholds', th);
+
+  AReply.Add('snooze', WebSnoozeJSON);
+end;
+
+function TfBG.WebCommand(const ACommand: string; const AParams: TJSONObject;
+  AReply: TJSONObject; out AError: string): boolean;
+
+  function Refuse(const Msg: string): boolean;
+  begin
+    AError := Msg;
+    Result := false;
+  end;
+
+var
+  ov: TJSONObject;
+  data: TJSONData;
+  unitStr: string;
+  ovEnabled, ovRange: boolean;
+  lo, hi, rangeLo, rangeHi, minutes: integer;
+begin
+  AError := '';
+  Result := true;
+
+  if ACommand = 'settings.get' then
+    WebSettingsToJSON(AReply)
+  else
+  if ACommand = 'settings.set' then
+  begin
+    if AParams = nil then
+      Exit(Refuse('Missing body'));
+
+    // Validate everything first, so a refused request changes nothing.
+    ovEnabled := false;
+    ovRange := false;
+    lo := 0;
+    hi := 0;
+    rangeLo := 0;
+    rangeHi := 0;
+    unitStr := AParams.Get('unit', '');
+    if (unitStr <> '') and (unitStr <> 'mmol') and (unitStr <> 'mgdl') then
+      Exit(Refuse('unit must be mmol or mgdl'));
+
+    ov := nil;
+    data := AParams.Find('override');
+    if data <> nil then
+    begin
+      if not (data is TJSONObject) then
+        Exit(Refuse('override must be an object'));
+      ov := TJSONObject(data);
+      ovEnabled := ov.Get('enabled', native.GetBoolSetting('override.enabled', false));
+      ovRange := ov.Get('range', native.GetBoolSetting('override.range', false));
+      lo := ov.Get('lo', native.GetIntSetting('override.lo', 60));
+      hi := ov.Get('hi', native.GetIntSetting('override.hi', 180));
+      rangeLo := ov.Get('range_lo', native.GetIntSetting('override.rangelo', lo));
+      rangeHi := ov.Get('range_hi', native.GetIntSetting('override.rangehi', hi));
+      if ovEnabled and ((lo < 20) or (hi > 600) or (lo >= hi)) then
+        Exit(Refuse('Low must be below high, within 20-600 mg/dL'));
+      if ovRange and ((rangeLo >= rangeHi) or (rangeLo < 20) or (rangeHi > 600)) then
+        Exit(Refuse('The in-range band must run from a lower to a higher value'));
+      if ovRange and ovEnabled and ((rangeLo < lo) or (rangeHi > hi)) then
+        Exit(Refuse('The in-range band must sit between the low and high limits'));
+    end;
+
+    if unitStr <> '' then
+      native.SetSetting('unit', unitStr);
+    if AParams.Find('predictions') <> nil then
+      native.SetSetting('predictions.enable', AParams.Get('predictions', false));
+    if ov <> nil then
+    begin
+      // Same keys, same on/off handling as the Settings dialog: an override
+      // that is off has its values removed so the backend's own apply.
+      native.SetSetting('override.enabled', ovEnabled);
+      if ovEnabled then
+      begin
+        native.SetSetting('override.lo', lo);
+        native.SetSetting('override.hi', hi);
+      end
+      else
+      begin
+        native.DeleteSetting('override.lo');
+        native.DeleteSetting('override.hi');
+      end;
+      native.SetSetting('override.range', ovRange);
+      if ovRange then
+      begin
+        native.SetSetting('override.rangelo', rangeLo);
+        native.SetSetting('override.rangehi', rangeHi);
+      end
+      else
+      begin
+        native.DeleteSetting('override.rangelo');
+        native.DeleteSetting('override.rangehi');
+      end;
+    end;
+
+    ApplySettingsInstantly;
+    WebSettingsToJSON(AReply);
+  end
+  else
+  if ACommand = 'snooze' then
+  begin
+    if not Assigned(FAlertEngine) then
+      Exit(Refuse('Alerts are not available'));
+    minutes := -1;
+    if AParams <> nil then
+      minutes := AParams.Get('minutes', -1);
+    if (minutes < 0) or (minutes > 1440) then
+      Exit(Refuse('minutes must be 0 (resume) to 1440'));
+    // Same as the tray menu: pause every rule, per-rule caps still apply.
+    // The engine's state callback publishes the new state to /events.
+    if minutes = 0 then
+      FAlertEngine.ResumeAll
+    else
+      FAlertEngine.SnoozeAll(minutes);
+    UpdateAlertSnoozeMenu;
+    RefreshConnectionBadge;
+    AReply.Add('snooze', WebSnoozeJSON);
+  end
+  else
+    Result := Refuse('Unknown command');
 end;

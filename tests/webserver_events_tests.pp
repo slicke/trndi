@@ -204,7 +204,9 @@ begin
       Exit(true);
     if Eof then
       Exit(Pos(ASubstr, Snapshot) > 0);
-    Sleep(20);
+    // The tests run on the main thread, which a handler serving /settings or
+    // /snooze waits on (TThread.Synchronize); service it while we wait.
+    CheckSynchronize(20);
   until GetTickCount64 >= Deadline;
   Result := false;
 end;
@@ -217,7 +219,7 @@ begin
   repeat
     if Eof then
       Exit(true);
-    Sleep(20);
+    CheckSynchronize(20); // see WaitForText
   until GetTickCount64 >= Deadline;
   Result := false;
 end;

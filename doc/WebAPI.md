@@ -5,6 +5,8 @@
 Trndi includes an embedded HTTP API server that exposes glucose readings and predictions via REST endpoints, and pushes changes to subscribers over a live event stream (`/events`). The server runs in a separate thread and does not interfere with the GUI's responsiveness.
 > This is especially useful for Dexcom users, as they have no easy API access
 
+It also serves a small **dashboard** page at `/` (see [Dashboard](#dashboard)): open `http://localhost:8080/` in any browser, including a phone on the same network, to see the current reading, a short history graph, the forecast and alerts, and to change the basic settings.
+
 ## Configuration
 
 ### Enabling via the GUI
@@ -54,9 +56,26 @@ A browser `EventSource` cannot set request headers, so `/events` alone also acce
 http://localhost:8080/events?token=your_token_here
 ```
 
-The other endpoints (`/glucose`, `/predict`, `/status`, `/health`) ignore the query parameter and require the `Authorization` header, so the token does not end up in URLs, browser history, or proxy logs.
+The other endpoints (`/glucose`, `/predict`, `/status`, `/health`, `/settings`, `/snooze`) ignore the query parameter and require the `Authorization` header, so the token does not end up in URLs, browser history, or proxy logs.
 
-If no token is configured, all requests are allowed.
+If no token is configured, all requests are allowed. The dashboard page itself (`/`) never needs the token; it is plain markup and fetches every value through the endpoints above.
+
+### Who may change settings
+
+`POST /settings` and `POST /snooze` change how Trndi behaves, so they are held to a stricter rule than reading glucose: a request is accepted only when it comes from **the same computer** (a `127.x.x.x` peer) or when **a token is configured** and the request carries it. Without a token, a request from elsewhere on the network gets `403 Forbidden`. The dashboard reads this as the `writable` flag in `/settings` and shows its settings card read-only when writes are not allowed.
+
+## Dashboard
+
+`GET /` (alias `/dashboard`) returns a self-contained HTML page, about 14 KB with no external assets, that works offline on the local network. It subscribes to `/events` for live updates and uses the other endpoints for the rest, so it shows exactly what the API exposes:
+
+- the current reading in the app's unit, with trend arrow, delta and age, coloured by the reading's level
+- a graph of the last three hours from `/glucose`, with the high/low limits, the personal in-range band and the forecast dashed in
+- the forecast (`/predict`), the connection state and the alert-snooze state
+- alerts as they fire while the page is open
+- **Alerts**: snooze buttons (15/30/60 minutes, resume) that call `/snooze`
+- **Settings**: unit (mmol/L or mg/dL), custom high/low limits, custom in-range band and the predictions toggle, saved through `/settings` and applied immediately, like the Settings dialog
+
+When a token is configured the page asks for it once and keeps it in the browser's local storage. The page is served by the same thread-per-connection server as the API, and it is compiled into the binary as a string constant (`inc/web_dashboard.inc`, generated from `assets/web_dashboard.html` with `make dashboard` or `.\make.ps1 dashboard`).
 
 ## Endpoints
 
@@ -190,12 +209,16 @@ Returns a richer health payload suitable for uptime/monitoring checks.
   "auth_required": false,
   "data_available": true,
   "endpoints": [
+    "/",
     "/glucose",
     "/predict",
     "/status",
     "/health",
-    "/events"
-  ]
+    "/events",
+    "/settings",
+    "/snooze"
+  ],
+  "command_support": true
 }
 ```
 
@@ -208,11 +231,74 @@ Returns a richer health payload suitable for uptime/monitoring checks.
 - `auth_required`: Whether bearer token auth is enabled
 - `data_available`: Whether a glucose callback is configured
 - `endpoints`: Current endpoint list exposed by the server
+- `command_support`: Whether `/settings` and `/snooze` are backed by a handler (false in embeddings that only expose readings)
 
 **Example:**
 ```bash
 curl -s http://localhost:8080/health | jq
 ```
+
+### GET /settings
+
+Returns the settings the dashboard can change, plus the effective limits. All glucose values are **mg/dL integers**, like the readings' `mgdl` field; convert on the client when showing mmol/L.
+
+**Response Format:**
+```json
+{
+  "unit": "mmol",
+  "predictions": true,
+  "override": {
+    "enabled": true, "lo": 70, "hi": 180,
+    "range": false, "range_lo": 80, "range_hi": 160
+  },
+  "thresholds": { "lo": 70, "hi": 180, "range_lo": null, "range_hi": null },
+  "snooze": { "active": false, "until_utc": "" },
+  "writable": true
+}
+```
+
+**Fields:**
+- `unit`: The app's display unit, `mmol` or `mgdl`
+- `predictions`: Whether the forecast is enabled
+- `override`: The stored personal limits. `enabled` switches the custom high/low limits (`lo`, `hi`) on; `range` switches the custom in-range band (`range_lo`, `range_hi`) on. While an override is off its values show what the page would start from (the effective limits)
+- `thresholds`: The limits readings are classified against right now (the backend's, or the override when enabled). `range_lo`/`range_hi` are `null` when no band applies
+- `snooze`: The alert-snooze state, as the `snooze` event carries it
+- `writable`: Whether this client may `POST` (see [Who may change settings](#who-may-change-settings))
+
+**Status Codes:**
+- `200 OK`
+- `401 Unauthorized`: Token required and missing or wrong
+- `501 Not Implemented`: The embedding application provided no settings handler
+
+### POST /settings
+
+Changes any of the fields above. Send a JSON object with only the keys to change; `override` may be partial too. Values are validated before anything is written: the low limit must be below the high one (20–600 mg/dL) and an enabled band must run from a lower to a higher value inside the limits. The change is applied at once (no restart) and the response is the same object `GET /settings` returns.
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"unit":"mgdl","override":{"enabled":true,"lo":70,"hi":180}}' \
+  http://localhost:8080/settings
+```
+
+**Status Codes:**
+- `200 OK`: Applied; body is the new state
+- `400 Bad Request`: Malformed JSON, or a value that was refused (`error` says which)
+- `401 Unauthorized`, `403 Forbidden`: See authentication and the write rule above
+- `501 Not Implemented`: No settings handler
+
+### POST /snooze
+
+Pauses every alert for `minutes` (1–1440), or resumes them with `0`. Per-alert caps still apply (urgent low comes back earlier). The new state is returned and also published as a `snooze` event.
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"minutes":30}' http://localhost:8080/snooze
+```
+
+```json
+{ "snooze": { "active": true, "until_utc": "2026-09-29T09:35:00Z" } }
+```
+
+Same status codes as `POST /settings`. Both `POST` endpoints read the body up to the announced `Content-Length`; the whole request (headers and body) is capped at 16 KB.
 
 ### GET /events
 
@@ -325,6 +411,16 @@ These callbacks are called from the web server thread and must:
 2. Access only cached/pre-fetched data
 3. Handle empty/missing data gracefully
 
+The dashboard's write side is different. `/settings` and `/snooze` go through one command callback:
+
+```pascal
+type
+  TWebCommandFunc = function(const ACommand: string; const AParams: TJSONObject;
+    AReply: TJSONObject; out AError: string): boolean of object;
+```
+
+The handler thread runs it **on the main thread** through `TThread.Synchronize`, so the implementation (`TfBG.WebCommand` in `inc/umain_init.inc`) can write settings and call `ApplySettingsInstantly` exactly as the Settings dialog does. Because the main thread is involved, `TTrndiWebServer.Stop` services `CheckSynchronize` while it drains handlers, so a command in flight during shutdown cannot deadlock it. `ACommand` is `settings.get`, `settings.set` or `snooze`; returning `False` with `AError` set turns into a `400` response.
+
 ### Startup Sequence
 
 1. Web server configuration is read from `Trndi.cfg`
@@ -427,6 +523,8 @@ template:
 ### Local Network Only
 
 The web server binds to all interfaces (`INADDR_ANY`). To restrict to localhost only, you would need to modify the bind address in the code.
+
+Reading endpoints are open to the whole network unless a token is set; the two writing endpoints (`/settings`, `/snooze`) additionally refuse any non-loopback peer while no token is configured, so exposing the API cannot by itself let someone else change your limits. Set a token if you want to change settings from a phone.
 
 ### Authentication Token
 
