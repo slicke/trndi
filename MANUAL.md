@@ -376,6 +376,11 @@ before you rely on it.
 
 ## Settings You Should Know
 
+### Finding Your Way Around Settings
+- The list on the left groups every page; the search box above it narrows the list to pages that mention your word and marks the matching setting on the page.
+- The band at the bottom explains whichever setting your mouse is over (or that has keyboard focus). When an explanation is longer than the band, a **More** link opens the full text.
+- **OK** saves and closes, **Cancel** closes without saving.
+
 ### High and Low Thresholds
 These are YOUR personal limits. Everyone's different!
 - **Low threshold**: Below this, Trndi shows warnings (e.g., 4.0 mmol/L or 70 mg/dL)

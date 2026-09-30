@@ -145,58 +145,28 @@ TDisplayPreviewEvent = procedure(ACanvas: TCanvas; const ARect: TRect;
 
 TfConf = class(TForm)
   bAdd: TButton;
-  bAlertDurHelp: TButton;
-  bAlertHystHelp: TButton;
-  bBackendHelp: TButton;
-  bDisplayGeneralHelp: TButton;
-  bDisplayAdvancedHelp: TButton;
-  bDisplayWindowHelp: TButton;
-  bConnectHelp: TButton;
-  bDecimalHelp: TButton;
-  bDeltaMaxHelp: TButton;
   bExportSettings: TButton;
   bExtOpen: TButton;
   bFontReading: TButton;
   bFontArrow: TButton;
   bFontTime: TButton;
   bFontReset: TButton;
-  bWarnHiLowHelp: TButton;
   bImportSettings: TButton;
-  bLanguageHelp: TButton;
-  bNotificationHelp: TButton;
-  bColorGraphHelp: TButton;
-  bMultiUserHelp: TButton;
-  bOutdatedHelp: TButton;
-  bOutdatedHelp1: TButton;
-  bOverrideHelp1: TButton;
-  bShortModeHelp: TButton;
-  bPredictHorizon: TButton;
-  bDiffRightHelp: TButton;
-  bScaleHelp: TButton;
-  bPredScaleHelp: TButton;
-  bFullArrowSetHelp: TButton;
-  bRotatingArrowHelp: TButton;
   bTestSpeech: TButton;
-  bTimeStampHelp: TButton;
-  bUseURLHelp: TButton;
-  bThreasholdLinesHelp: TButton;
-  bBadgeFlashHelp: TButton;
   bResetHints: TButton;
-  bPrivacyHelp: TButton;
-  bPredictHelp: TButton;
   bTest: TButton;
   bLogin: TButton;
   bTestProxy: TButton;
-  bOverrideHelp: TButton;
   bRemove: TButton;
   bSysNotice: TButton;
-  bMinMinutesHelp: TButton;
-  bCustomRangeHelp: TButton;
   bCommon: TButton;
   bOK: TButton;
   bCancel: TButton;
   pnFooter: TPanel;
-  bDisableMediaHelp: TButton;
+  pnHelpStrip: TPanel;
+  bvHelpStrip: TBevel;
+  lHelpText: TLabel;
+  lHelpMore: TLabel;
   bWebAPI: TButton;
   bSysTouch: TButton;
   bTestAnnounce: TButton;
@@ -538,31 +508,15 @@ TfConf = class(TForm)
   tsIntegration: TTabSheet;
   tsMulti: TTabSheet;
   tsSystem: TTabSheet;
-  procedure bConnectHelpClick(Sender: TObject);
-  procedure bDecimalHelpClick(Sender: TObject);
-  procedure bDiffRightHelpClick(Sender: TObject);
-  procedure bDisableMediaHelpClick(Sender: TObject);
-  procedure bDisplayAdvancedHelpClick(Sender: TObject);
-  procedure bDisplayGeneralHelpClick(Sender: TObject);
-  procedure bDisplayWindowHelpClick(Sender: TObject);
   procedure cbBolusOverlayChange(Sender: TObject);
   procedure cbDotLineChange(Sender: TObject);
-  procedure bFullArrowSetHelpClick(Sender: TObject);
-  procedure bRotatingArrowHelpClick(Sender: TObject);
-  procedure bPredScaleHelpClick(Sender: TObject);
   procedure bScaleAgoClick(Sender: TObject);
-  procedure bScaleHelpClick(Sender: TObject);
-  procedure bShortModeHelpClick(Sender: TObject);
-  procedure bWarnHiLowHelpClick(Sender: TObject);
   procedure cbMediaDisableChange(Sender: TObject);
   procedure cbOnTopChange(Sender: TObject);
   function validateUser(var error: string): boolean;
   procedure bAddClick({%H-}Sender: TObject);
-  procedure bBadgeFlashHelpClick({%H-}Sender: TObject);
-  procedure bColorGraphHelpClick({%H-}Sender: TObject);
   procedure bResetHintsClick({%H-}Sender: TObject);
   procedure bCommonClick({%H-}Sender: TObject);
-  procedure bCustomRangeHelpClick({%H-}Sender: TObject);
   procedure bExtOpenClick({%H-}Sender: TObject);
   procedure bExtReloadClick({%H-}Sender: TObject);
   procedure bExtResetPermsClick({%H-}Sender: TObject);
@@ -570,21 +524,8 @@ TfConf = class(TForm)
   procedure bFontArrowClick(Sender: TObject);
   procedure bFontTimeClick(Sender: TObject);
   procedure bFontResetClick(Sender: TObject);
-  procedure bLanguageHelpClick(Sender: TObject);
   procedure bLimitsClick(Sender: TObject);
-  procedure bAlertDurHelpClick({%H-}Sender: TObject);
-  procedure bAlertHystHelpClick({%H-}Sender: TObject);
-  procedure bMinMinutesHelpClick(Sender: TObject);
-  procedure bMultiUserHelpClick(Sender: TObject);
-  procedure bNotificationHelpClick(Sender: TObject);
-  procedure bDeltaMaxHelpClick(Sender: TObject);
-  procedure bOutdatedHelpClick(Sender: TObject);
-  procedure bOverrideHelpClick({%H-}Sender: TObject);
-  procedure bPredictHelpClick({%H-}Sender: TObject);
-  procedure bPredictHorizonClick({%H-}Sender: TObject);
-  procedure bPrivacyHelpClick({%H-}Sender: TObject);
   procedure bRemoveClick({%H-}Sender: TObject);
-  procedure bBackendHelpClick({%H-}Sender: TObject);
   procedure bSysNoticeClick({%H-}Sender: TObject);
   procedure bSysTouchClick({%H-}Sender: TObject);
   procedure bTestAnnounceClick(Sender: TObject);
@@ -594,8 +535,6 @@ TfConf = class(TForm)
   procedure bTestSpeechClick(Sender: TObject);
   procedure cbTTSChange(Sender: TObject);
   procedure PopulateTTSVoices;
-  procedure bThreasholdLinesHelpClick(Sender: TObject);
-  procedure bTimeStampHelpClick(Sender: TObject);
   procedure bExportSettingsClick(Sender: TObject);
   procedure bImportSettingsClick(Sender: TObject);
   procedure btResetClick(Sender: TObject);
@@ -604,7 +543,6 @@ TfConf = class(TForm)
   procedure pbDisplayPreviewPaint(Sender: TObject);
   procedure pbDisplayPreviewMouseDown(Sender: TObject; Button: TMouseButton;
     {%H-}Shift: TShiftState; X, Y: integer);
-  procedure bUseURLHelpClick(Sender: TObject);
   procedure Button1Click(Sender: TObject);
   procedure Button3Click(Sender: TObject);
   procedure bWebAPIClick(Sender: TObject);
@@ -665,6 +603,7 @@ TfConf = class(TForm)
   procedure tsProxyShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
   procedure bOKClick({%H-}Sender: TObject);
+  procedure lHelpMoreClick({%H-}Sender: TObject);
   procedure edSearchKeyDown({%H-}Sender: TObject; var Key: word;
     {%H-}Shift: TShiftState);
 private
@@ -700,6 +639,12 @@ private
       and the timer that takes them down again. See ShowHighlight. }
   FHighlight: array[0..3] of TShape;
   FHighlightTimer: TTimer;
+  {** The control whose help the strip at the bottom currently shows; nil
+      while it shows the idle prompt. See ShowHelpFor. }
+  FHelpSource: TControl;
+  {** ActiveControl as AppUserInput last saw it, so a keyboard focus change
+      can be told apart from the mouse merely moving. }
+  FLastFocus: TWinControl;
   {** The fonts being picked for the reading, arrow and "ago" readouts. The
       Display miniature draws with these; only the names are persisted. }
   FFontVal, FFontArrow, FFontAgo: TFont;
@@ -776,6 +721,28 @@ private
       order - affirmative first on Windows, last on macOS and GNOME, the
       same rule the Slicke dialogs follow. }
   procedure LayoutFooterButtons;
+  {** Attach the explanation of each setting to its control (or to the
+      group/row holding it) as the control's Hint. The help strip and the
+      search both read from there. Runs on show, so a text that quotes a
+      run-time value (MAX_MIN) is current. }
+  procedure AssignHelpTexts;
+  {** AControl or its nearest ancestor that carries a Hint; nil when none
+      does before the form is reached. }
+  function HelpSourceOf(AControl: TControl): TControl;
+  {** Put ASource's help in the strip, with the "More" link when the text
+      does not fit or the setting has a longer write-up; nil shows the idle
+      prompt. Idempotent, so it can run on every mouse move. }
+  procedure ShowHelpFor(ASource: TControl);
+  {** True when AText needs more lines than the strip's label has. }
+  function HelpOverflows(const AText: string): boolean;
+  {** Application-wide input hook: re-aim the help strip at the control
+      that just took focus, else at the setting under the mouse. Over
+      anything else - the strip itself, a gap, the sidebar - the text is
+      held, so "More" can be reached and clicked. }
+  procedure AppUserInput({%H-}Sender: TObject; {%H-}Msg: cardinal);
+  {** The selected data source's description and driver credit, in a
+      dialog (the long form of cbSys's help). }
+  procedure ShowBackendInfo;
   {** Flip the page control to APage and rewrite the header title and
       description. Idempotent; the one place a nav choice takes effect. }
   procedure ActivateNavPage(APage: TTabSheet);
@@ -875,6 +842,9 @@ resourcestring
 // (assigned in ApplyCaptionsFromResources — .lfm captions are placeholders,
 // see the note above that procedure).
 RS_NAV_SEARCH = 'Search settings';
+// Help strip at the bottom of every page
+RS_HELP_IDLE = 'Point at a setting, or tab to it, to read what it does.';
+RS_HELP_MORE = 'More...';
 RS_NAV_CONNECTION = 'Connection';
 RS_NAV_GLUCOSE = 'Glucose';
 RS_NAV_APPEARANCE = 'Appearance';
@@ -945,15 +915,19 @@ RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
 
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
 
-RS_Display_General_Help = '- A progressbar can show the time until the next update on the left hand side of the screen'+LineEnding+
-'- The time can we displayed every 20 seconds, instead of the Reading'+LineEnding+
-'- The reading and trend arrow can alternate positions';
+RS_PROGRESS_HELP = 'Shows a bar along the left edge that counts down to the next update.';
+RS_CLOCK_HELP = 'Every 20 seconds the reading gives way to the current time for 5 seconds. In fullscreen and kiosk mode the time shows at the top instead.';
+RS_ALTERNATE_HELP = 'Swaps the positions of the reading and the trend arrow at every update.';
+RS_BADGE_TREND_HELP = 'Puts the current trend arrow on Trndi''s taskbar or Dock icon.';
+RS_MENUBAR_READING_HELP = 'Shows the current reading in the system menu bar, where the platform has one.';
 
 RS_DISPLAY_ADVANCED_HELP = 'When supported by the backend, the sensor expiration time can be shown in Trndi';
 
-RS_DISPLAY_WINDOW_HELP = '- The background color can be set to the current glucose range color'+LineEnding+
-'- The window can stay over other windows'+LineEnding+
-'- The window''s borders can be hidden (may depend on operating system)';
+RS_RANGE_COLOR_HELP = 'Fills the window background with the color of your current range: in range, high or low.';
+RS_ON_TOP_HELP = 'Keeps the Trndi window above every other window.';
+RS_NO_BORDERS_HELP = 'Hides the window frame and title bar. Whether this works depends on the operating system.';
+RS_WINDOW_POS_HELP = 'Where on the screen Trndi opens when it starts.';
+RS_REMEMBER_SIZE_HELP = 'Restores the window to the size it had when Trndi was last closed.';
 
 RS_Multi_User_Help =
   'Trndi supports <b>more than one user</b>, this is called the <i>multi user mode</i>.'+sHTMLLineBreak+'In this section you can add/remove accounts. There''s <i>always</i> a default account which cannot be deleted.'+LineEnding+
@@ -1253,6 +1227,9 @@ implementation
 
 {$R *.lfm}
 
+// Defined with the help strip below; cbSysChange uses it first.
+function HtmlToPlain(const AHtml: string): string; forward;
+
 {$I ../../inc/languages.inc }
 
 procedure ShowMessage(const str: string);
@@ -1365,6 +1342,8 @@ begin
   tsGraphColors.Caption := RS_PAGE_GRAPH_COLORS;
   Label17.Caption := RS_ESSENTIALS_INTRO;
   edSearch.TextHint := RS_NAV_SEARCH;
+  lHelpMore.Caption := RS_HELP_MORE;
+  lHelpText.Caption := RS_HELP_IDLE;
   bOK.Caption := smbUXOK;
   bCancel.Caption := smbUXCancel;
   gbGraphDots.Caption := RS_GB_TREND_DOTS;
@@ -1574,6 +1553,7 @@ begin
   lPageTitle.Caption := APage.Caption;
   lPageDesc.Caption := PageDescription(APage);
   HighlightSearchMatch;
+  ShowHelpFor(nil); // Help from the previous page must not linger
 end;
 
 procedure TfConf.tvNavChange(Sender: TObject; Node: TTreeNode);
@@ -1612,9 +1592,10 @@ end;
   Settings search: type a word, and only pages mentioning it stay in the
   sidebar; the first control on the shown page that mentions it is framed
   for a moment, and Enter in the search box moves focus to it. Matching runs
-  over the translated captions the user actually sees (labels, check boxes,
-  group boxes, radio/check group items), so it works in every language
-  without a keyword table to maintain.
+  over the translated captions and help texts the user actually sees
+  (labels, check boxes, group boxes, radio/check group items, and the
+  explanations the help strip shows), so it works in every language without
+  a keyword table to maintain.
 ------------------------------------------------------------------------------}
 function TfConf.FirstMatchingControl(AParent: TWinControl;
   const Query: string): TControl;
@@ -1634,6 +1615,10 @@ begin
       Continue;
     if (not (c is TCustomEdit)) and
       (UTF8Pos(Query, UTF8LowerCase(c.Caption)) > 0) then
+      Exit(c);
+    // The explanation counts too (see AssignHelpTexts), so "frame" finds
+    // "Hide window borders" even though its caption never says frame.
+    if UTF8Pos(Query, UTF8LowerCase(c.Hint)) > 0 then
       Exit(c);
     if (c is TCustomRadioGroup) and
       (UTF8Pos(Query, UTF8LowerCase(TCustomRadioGroup(c).Items.Text)) > 0) then
@@ -2349,6 +2334,17 @@ begin
   label15.caption := user;
   lPass.Caption := pass;
   updateWebLoginUI;
+  // The help strip shows the chosen backend's own description; the credit
+  // and the formatted version stay behind "More" (ShowBackendInfo).
+  if selectedAPIClass <> nil then
+    cbSys.Hint := HtmlToPlain(selectedAPIClass.ParamLabel(APLDescHTML))
+  else
+    cbSys.Hint := RS_CHOOSE_SYSTEM;
+  if FHelpSource = cbSys then
+  begin
+    FHelpSource := nil; // force a refresh of the strip
+    ShowHelpFor(cbSys);
+  end;
 end;
 
 procedure TfConf.cbUserClick(Sender: TObject);
@@ -2386,6 +2382,204 @@ end;
 procedure TfConf.ePassExit({%H-}Sender: TObject);
 begin
   ePass.PasswordChar := '*';
+end;
+
+{------------------------------------------------------------------------------
+  Help strip: the explanation of whatever setting the mouse is over (or, with
+  the keyboard, the focused one) sits in a band under the page, replacing the
+  "?" buttons that used to open a popup per setting. Help is stored as the
+  control's Hint - the property the LCL has for exactly this - so the search
+  can match on it too. Nothing in the dialog turns ShowHint on, so no tooltip
+  doubles the strip; the two preview controls that do want a tooltip keep it.
+------------------------------------------------------------------------------}
+function HtmlToPlain(const AHtml: string): string;
+var
+  i: integer;
+  tag: string;
+begin
+  // The texts shared with the HTML dialogs use <b>, <i> and <br> only
+  Result := '';
+  i := 1;
+  while i <= Length(AHtml) do
+  begin
+    if AHtml[i] = '<' then
+    begin
+      tag := '';
+      Inc(i);
+      while (i <= Length(AHtml)) and (AHtml[i] <> '>') do
+      begin
+        tag := tag + AHtml[i];
+        Inc(i);
+      end;
+      if LowerCase(Copy(Trim(tag), 1, 2)) = 'br' then
+        Result := Result + LineEnding;
+    end
+    else
+      Result := Result + AHtml[i];
+    Inc(i);
+  end;
+  Result := StringReplace(Result, '&lt;', '<', [rfReplaceAll]);
+  Result := StringReplace(Result, '&gt;', '>', [rfReplaceAll]);
+  Result := StringReplace(Result, '&amp;', '&', [rfReplaceAll]);
+end;
+
+procedure TfConf.AssignHelpTexts;
+begin
+  // Essentials
+  cbLang.Hint := RS_OVERRIDE_LANGUAGE;
+  edCommaSep1.Hint := RS_DECIMAL_HELP;
+  gbOverride1.Hint := RS_OVERRIDE_HELP;
+  pnMisc1.Hint := RS_OUTDATED_HELP;
+  // Data source: cbSys is filled by cbSysChange, per backend
+  // Glucose & ranges
+  gbOverride.Hint := RS_OVERRIDE_HELP;
+  Panel17.Hint := Format(RS_MIN_MINUTES, [MAX_MIN]);
+  GroupBox7.Hint := RS_Custom_Range_Help;
+  // Alerts
+  cbFlash.Hint := RS_BADGE_FLASH_HELP;
+  cgNotifications.Hint := RS_NOTIFICATION_HELP;
+  pnMisc.Hint := RS_OUTDATED_HELP;
+  lAlertDurRow.Hint := RS_MUST_PERSIST_HELP;
+  spAlertDurHi.Hint := RS_MUST_PERSIST_HELP;
+  spAlertDurLo.Hint := RS_MUST_PERSIST_HELP;
+  spAlertDurUrg.Hint := RS_MUST_PERSIST_HELP;
+  lAlertHystRow.Hint := RS_CLEAR_MARGIN_HELP;
+  fsAlertHystHi.Hint := RS_CLEAR_MARGIN_HELP;
+  fsAlertHystLo.Hint := RS_CLEAR_MARGIN_HELP;
+  fsAlertHystUrg.Hint := RS_CLEAR_MARGIN_HELP;
+  // Predictions
+  cbPredictions.Hint := RS_PREDICTION_HELP;
+  cbPredictShort.Hint := RS_SHORT_MODE_HELP;
+  cbPredictShortFullArrows.Hint := RS_Full_Arrow_Set_Help;
+  cbWarnLoHi.Hint := RS_Warn_HiLow;
+  lPredictShortMinutes.Hint := RS_PREDICTION_HORIZON;
+  cbPredictShortMinutes.Hint := RS_PREDICTION_HORIZON;
+  // Display
+  cbProgress.Hint := RS_PROGRESS_HELP;
+  cbClock.Hint := RS_CLOCK_HELP;
+  cbAlternate.Hint := RS_ALTERNATE_HELP;
+  cbRotatingArrow.Hint := RS_ROTATING_ARROW_HELP;
+  cbBadgeTrend.Hint := RS_BADGE_TREND_HELP;
+  cbMenuBarReading.Hint := RS_MENUBAR_READING_HELP;
+  cbRangeColor.Hint := RS_RANGE_COLOR_HELP;
+  cbOnTop.Hint := RS_ON_TOP_HELP;
+  cbNoBorders.Hint := RS_NO_BORDERS_HELP;
+  Label4.Hint := RS_WINDOW_POS_HELP;
+  cbPos.Hint := RS_WINDOW_POS_HELP;
+  cbSize.Hint := RS_REMEMBER_SIZE_HELP;
+  // Colors / graph
+  cbPaintHiLo.Hint := RS_COLOR_BG;
+  cbPaintHiLoRange.Hint := RS_COLOR_BG;
+  cbPaintLines.Hint := RS_Threashold_Lines_Help;
+  // Fine-tuning
+  cbPrivacy.Hint := RS_PRIVACY_HELP;
+  cbTimeStamp.Hint := RS_TIMESTAMP_HELP;
+  cbConnectivityButton.Hint := RS_CONNECT_HELP;
+  cbShowSensorExpiry.Hint := RS_DISPLAY_ADVANCED_HELP;
+  pnDeltaMax.Hint := RS_DELTA_MAX;
+  Label39.Hint := RS_SCALE_DIFF_HELP;
+  fsDiffScale.Hint := RS_SCALE_DIFF_HELP;
+  Panel25.Hint := RS_PRED_SCALE_HELP;
+  Panel26.Hint := RS_DIFF_RIGHT_HELP;
+  pDecimal.Hint := RS_DECIMAL_HELP;
+  // Music & links
+  gbURL.Hint := RS_Use_URL_Help;
+  cbMediaDisable.Hint := RS_DISABLE_MEDIA;
+  // Accounts
+  gbUsers.Hint := HtmlToPlain(RS_Multi_User_Help);
+  gbMulti.Hint := gbUsers.Hint;
+end;
+
+function TfConf.HelpSourceOf(AControl: TControl): TControl;
+begin
+  Result := AControl;
+  while (Result <> nil) and not (Result is TCustomForm) do
+  begin
+    if Result.Hint <> '' then
+      Exit;
+    Result := Result.Parent;
+  end;
+  Result := nil;
+end;
+
+function TfConf.HelpOverflows(const AText: string): boolean;
+var
+  r: TRect;
+begin
+  r := Rect(0, 0, lHelpText.Width, 0);
+  pnHelpStrip.Canvas.Font := lHelpText.Font;
+  DrawText(pnHelpStrip.Canvas.Handle, PChar(AText), Length(AText), r,
+    DT_CALCRECT or DT_WORDBREAK or DT_NOPREFIX);
+  Result := r.Bottom > lHelpText.Height;
+end;
+
+procedure TfConf.ShowHelpFor(ASource: TControl);
+var
+  txt: string;
+begin
+  if ASource = FHelpSource then
+    Exit;
+  FHelpSource := ASource;
+  if ASource = nil then
+  begin
+    lHelpText.Caption := RS_HELP_IDLE;
+    lHelpMore.Visible := false;
+    Exit;
+  end;
+  txt := ASource.Hint;
+  lHelpText.Caption := txt;
+  // A longer write-up exists for the data source (its full description and
+  // driver credit) and for delta slots (a doc page); everything else only
+  // needs the link when the strip cannot hold it.
+  lHelpMore.Visible := (ASource = cbSys) or (ASource = pnDeltaMax) or
+    HelpOverflows(txt);
+end;
+
+procedure TfConf.lHelpMoreClick(Sender: TObject);
+begin
+  if FHelpSource = nil then
+    Exit;
+  if FHelpSource = cbSys then
+    ShowBackendInfo
+  else
+  if FHelpSource = pnDeltaMax then
+    OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md')
+  else
+  if (FHelpSource = gbUsers) or (FHelpSource = gbMulti) then
+    ShowHTMLMessage(RS_Multi_User_Help)
+  else
+    ShowMessage(FHelpSource.Hint);
+end;
+
+procedure TfConf.AppUserInput(Sender: TObject; Msg: cardinal);
+var
+  c, src: TControl;
+begin
+  if not Showing then
+    Exit;
+  // Keyboard: a focus change re-aims the strip at the new control
+  if ActiveControl <> FLastFocus then
+  begin
+    FLastFocus := ActiveControl;
+    src := HelpSourceOf(ActiveControl);
+    if src <> nil then
+    begin
+      ShowHelpFor(src);
+      Exit;
+    end;
+  end;
+  c := FindLCLControl(Mouse.CursorPos);
+  if (c = nil) or (GetParentForm(c) <> Self) then
+    Exit;
+  // Over the strip itself: hold what it shows, or "More" could never be
+  // reached - the pointer leaves the setting on the way there.
+  if (c = pnHelpStrip) or (c.Parent = pnHelpStrip) then
+    Exit;
+  src := HelpSourceOf(c);
+  // Over something without help (a gap, the header, the sidebar) the last
+  // text stays rather than blanking; a page change resets it instead.
+  if src <> nil then
+    ShowHelpFor(src);
 end;
 
 procedure TfConf.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -2429,43 +2623,6 @@ end;
 
 procedure TfConf.bLimitsClick({%H-}Sender: TObject);
 begin
-end;
-
-procedure TfConf.bAlertDurHelpClick({%H-}Sender: TObject);
-begin
-  ShowMessage(RS_MUST_PERSIST_HELP);
-end;
-
-procedure TfConf.bAlertHystHelpClick({%H-}Sender: TObject);
-begin
-  ShowMessage(RS_CLEAR_MARGIN_HELP);
-end;
-
-procedure TfConf.bMinMinutesHelpClick({%H-}Sender: TObject);
-begin
-  ShowMessage(Format(RS_MIN_MINUTES, [MAX_MIN]));
-end;
-
-procedure TfConf.bMultiUserHelpClick({%H-}Sender: TObject);
-begin
-  ShowHTMLMessage(RS_Multi_User_Help);
-end;
-
-procedure TfConf.bNotificationHelpClick({%H-}Sender: TObject);
-begin
-  ShowMessage(RS_NOTIFICATION_HELP);
-end;
-
-procedure TfConf.bDeltaMaxHelpClick({%H-}Sender: TObject);
-begin
-  if SlickeDialog(sdsAuto,'Delta', RS_DELTA_MAX,
-    [[mbOK, mbSlickeRead], [mbSlickeRead, mbOK]]) <> mrOK then
-    OpenURL('https://github.com/slicke/trndi/blob/main/doc/DeltaMax.md');
-end;
-
-procedure TfConf.bOutdatedHelpClick({%H-}Sender: TObject);
-begin
-  ShowMessage(RS_OUTDATED_HELP);
 end;
 
 function TfConf.validateUser(var error: string): boolean;
@@ -2512,26 +2669,6 @@ begin
     ShowMessage(RS_WAYLAND);
 end;
 
-procedure TfConf.bDisableMediaHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_DISABLE_MEDIA);
-end;
-
-procedure TfConf.bDisplayAdvancedHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_DISPLAY_ADVANCED_HELP);
-end;
-
-procedure TfConf.bDisplayGeneralHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_Display_General_Help);
-end;
-
-procedure TfConf.bDisplayWindowHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_DISPLAY_WINDOW_HELP);
-end;
-
 // The automatic-doses box only means anything while the overlay is on.
 procedure TfConf.cbBolusOverlayChange(Sender: TObject);
 begin
@@ -2546,54 +2683,9 @@ begin
   RefreshDotPreview(Sender);
 end;
 
-procedure TfConf.bFullArrowSetHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_Full_Arrow_Set_Help);
-end;
-
-procedure TfConf.bRotatingArrowHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_ROTATING_ARROW_HELP);
-end;
-
-procedure TfConf.bDiffRightHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_DIFF_RIGHT_HELP);
-end;
-
-procedure TfConf.bDecimalHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_DECIMAL_HELP);
-end;
-
-procedure TfConf.bConnectHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_CONNECT_HELP);
-end;
-
-procedure TfConf.bPredScaleHelpClick(Sender: TObject);
-begin
- ShowMessage(RS_PRED_SCALE_HELP);
-end;
-
 procedure TfConf.bScaleAgoClick(Sender: TObject);
 begin
 
-end;
-
-procedure TfConf.bScaleHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_SCALE_DIFF_HELP);
-end;
-
-procedure TfConf.bShortModeHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_SHORT_MODE_HELP);
-end;
-
-procedure TfConf.bWarnHiLowHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_Warn_HiLow);
 end;
 
 procedure TfConf.bAddClick(Sender: TObject);
@@ -2636,16 +2728,6 @@ begin
   end;
 end;
 
-procedure TfConf.bBadgeFlashHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_BADGE_FLASH_HELP);
-end;
-
-procedure TfConf.bColorGraphHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_COLOR_BG);
-end;
-
 { Forget every hint the user dismissed, so all of them explain themselves once
   more. Deliberately separate from the master switch above it: that one hides
   the hints without discarding which ones were already answered. }
@@ -2658,11 +2740,6 @@ end;
 procedure TfConf.bCommonClick(Sender: TObject);
 begin
   SelectPage(tsCommon);
-end;
-
-procedure TfConf.bCustomRangeHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_Custom_Range_Help);
 end;
 
 procedure TfConf.bExtOpenClick(Sender: TObject);
@@ -2728,31 +2805,6 @@ begin
   PickDisplayFont(FFontAgo, RS_SELECT_FONT_TIME, '10 min');
 end;
 
-procedure TfConf.bLanguageHelpClick(Sender: TObject);
-begin
-  ShowMEssage(RS_OVERRIDE_LANGUAGE);
-end;
-
-procedure TfConf.bOverrideHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_OVERRIDE_HELP);
-end;
-
-procedure TfConf.bPredictHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_PREDICTION_HELP);
-end;
-
-procedure TfConf.bPredictHorizonClick(Sender: TObject);
-begin
-  ShowMessage(RS_PREDICTION_HORIZON);
-end;
-
-procedure TfConf.bPrivacyHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_PRIVACY_HELP);
-end;
-
 procedure TfConf.bRemoveClick(Sender: TObject);
 var
   uname: string;
@@ -2800,7 +2852,7 @@ begin
   end;
 end;
 
-procedure TfConf.bBackendHelpClick(Sender: TObject);
+procedure TfConf.ShowBackendInfo;
 function HtmlEscapeBasic(const S: string): string;
   begin
     Result := StringReplace(S, '<', '&lt;', [rfReplaceAll]);
@@ -3155,16 +3207,6 @@ begin
   end;
 end;
 
-procedure TfConf.bThreasholdLinesHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_Threashold_Lines_Help);
-end;
-
-procedure TfConf.bTimeStampHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_TIMESTAMP_HELP);
-end;
-
 procedure TfConf.bExportSettingsClick(Sender: TObject);
 var
   settingsData, encodedData: string;
@@ -3370,11 +3412,6 @@ begin
   end;
 
   tnative.configUser := '';
-end;
-
-procedure TfConf.bUseURLHelpClick(Sender: TObject);
-begin
-  ShowMessage(RS_Use_URL_Help);
 end;
 
 procedure TfConf.Button1Click(Sender: TObject);
@@ -3587,6 +3624,13 @@ begin
   FHighlightTimer.OnTimer := @HighlightTimerTick;
   edSearch.OnKeyDown := @edSearchKeyDown;
 
+  // Help strip typography; the texts come in AssignHelpTexts on show
+  lHelpText.Font.Color := clGrayText;
+  lHelpMore.Font.Color := clHighlight;
+  lHelpMore.Font.Style := [fsUnderline];
+  lHelpMore.Cursor := crHandPoint;
+  Application.AddOnUserInputHandler(@AppUserInput);
+
   // The Display miniature previews these; umain seeds them from the live
   // labels in SetupUIElements. Created before ApplyCaptionsFromResources so
   // every later step can assume they exist.
@@ -3715,6 +3759,7 @@ end;
 
 procedure TfConf.FormDestroy(Sender: TObject);
 begin
+  Application.RemoveOnUserInputHandler(@AppUserInput);
   tnative.Free;
   FExtPaths.Free;
   FFontVal.Free;
@@ -3781,6 +3826,8 @@ procedure TfConf.FormShow(Sender: TObject);
 var
   i, need, room, target: integer;
 begin
+  AssignHelpTexts;
+
   need := 0;
   for i := 0 to pcMain.PageCount - 1 do
     if pcMain.Pages[i].TabVisible then

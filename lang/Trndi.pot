@@ -3255,6 +3255,10 @@ msgstr ""
 msgid "Clear margin (mmol/L)"
 msgstr ""
 
+#: uconf.rs_alternate_help
+msgid "Swaps the positions of the reading and the trend arrow at every update."
+msgstr ""
+
 #: uconf.rs_announce_not_available
 #, object-pascal-format
 msgctxt "uconf.rs_announce_not_available"
@@ -3283,6 +3287,10 @@ msgstr ""
 msgid "This controls how Trndi's icon in the status bar and/or tray will notify you visually."
 msgstr ""
 
+#: uconf.rs_badge_trend_help
+msgid "Puts the current trend arrow on Trndi's taskbar or Dock icon."
+msgstr ""
+
 #: uconf.rs_beta
 msgid ""
 "This backend is in a beta stage, it may not work as intended!\n"
@@ -3302,6 +3310,10 @@ msgstr ""
 
 #: uconf.rs_clear_margin_help
 msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
+msgstr ""
+
+#: uconf.rs_clock_help
+msgid "Every 20 seconds the reading gives way to the current time for 5 seconds. In fullscreen and kiosk mode the time shows at the top instead."
 msgstr ""
 
 #: uconf.rs_color_bg
@@ -3591,6 +3603,14 @@ msgstr ""
 msgid "Shows if Trndi detected a touch screen"
 msgstr ""
 
+#: uconf.rs_help_idle
+msgid "Point at a setting, or tab to it, to read what it does."
+msgstr ""
+
+#: uconf.rs_help_more
+msgid "More..."
+msgstr ""
+
 #: uconf.rs_hints_enable
 msgctxt "uconf.rs_hints_enable"
 msgid "Explain parts of the window when they are clicked"
@@ -3628,6 +3648,10 @@ msgid ""
 "This backend is in alpha stage, it may not work as intended!\n"
 "Sign in with your LibreLinkUp (follower) account, not the LibreLink account on the phone wearing the sensor.\n"
 "Sharing must already be set up and the invitation accepted — see the LibreLinkUp guide."
+msgstr ""
+
+#: uconf.rs_menubar_reading_help
+msgid "Shows the current reading in the system menu bar, where the platform has one."
 msgstr ""
 
 #: uconf.rs_min_minutes
@@ -3713,6 +3737,10 @@ msgstr ""
 msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to receive notices."
 msgstr ""
 
+#: uconf.rs_no_borders_help
+msgid "Hides the window frame and title bar. Whether this works depends on the operating system."
+msgstr ""
+
 #: uconf.rs_no_copyright
 msgid "- Extension has no copyright info -"
 msgstr ""
@@ -3728,6 +3756,10 @@ msgstr ""
 #: uconf.rs_no_extensions_system
 #, object-pascal-format
 msgid "Due to hardware limitations, %s on %s cannot support extensions"
+msgstr ""
+
+#: uconf.rs_on_top_help
+msgid "Keeps the Trndi window above every other window."
 msgstr ""
 
 #: uconf.rs_outdated_help
@@ -3947,6 +3979,18 @@ msgstr ""
 
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
+msgstr ""
+
+#: uconf.rs_progress_help
+msgid "Shows a bar along the left edge that counts down to the next update."
+msgstr ""
+
+#: uconf.rs_range_color_help
+msgid "Fills the window background with the color of your current range: in range, high or low."
+msgstr ""
+
+#: uconf.rs_remember_size_help
+msgid "Restores the window to the size it had when Trndi was last closed."
 msgstr ""
 
 #: uconf.rs_remove_acc
@@ -4186,6 +4230,10 @@ msgstr ""
 #: uconf.rs_weblogin_waiting
 msgctxt "uconf.rs_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
+msgstr ""
+
+#: uconf.rs_window_pos_help
+msgid "Where on the screen Trndi opens when it starts."
 msgstr ""
 
 #: uconf.rs_xdrip
