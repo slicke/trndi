@@ -1133,20 +1133,8 @@ begin
     // Wayland: swap the compositor's forced decorations for the drawn bar
     // before the window maps, so Settings matches the rest of the app.
     DressModalForm(fConf);
-    ShowFormModalSafe(fConf);
-
-    if not firstboot then
-    begin
-      if IsProblematicWM then
-        fBG.Hide;
-      if SlickePrompt(sdsAuto, RS_SETTINGS_SAVE, RS_SETTINGS_SAVE_DESC,
-        [[mbYes, mbNo], [mbNo, mbYes]]) <> mrYes then
-      begin
-        fBG.Show;
-        Exit;
-      end;
-      fBG.Show;
-    end;
+    if ShowFormModalSafe(fConf) <> mrOK then
+      Exit; // Cancelled: the store is untouched
 
     SaveUserSettings(fConf);
 
@@ -1168,9 +1156,7 @@ begin
   ApplySettingsInstantly;
 
   if needsRestart then
-    ShowMessage(RS_RESTART_APPLY)
-  else
-    ShowMessage(RS_SETTINGS_SAVED);
+    ShowMessage(RS_RESTART_APPLY);
 end;
 
 {$ifdef DARWIN}
