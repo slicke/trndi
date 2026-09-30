@@ -170,19 +170,6 @@ object fConf: TfConf
           Style = csDropDownList
           TabOrder = 0
         end
-        object bLanguageHelp: TButton
-          Left = 600
-          Height = 26
-          Top = 10
-          Width = 29
-          Align = alRight
-          BorderSpacing.Left = 10
-          BorderSpacing.Top = 10
-          BorderSpacing.Right = 10
-          Caption = '?'
-          TabOrder = 1
-          OnClick = bLanguageHelpClick
-        end
       end
       object Label33: TLabel
         Left = 5
@@ -228,16 +215,6 @@ object fConf: TfConf
           Caption = 'Use custom values'
           TabOrder = 0
           OnChange = cbCust1Change
-        end
-        object bOverrideHelp1: TButton
-          Left = 588
-          Height = 24
-          Top = 0
-          Width = 27
-          Align = alRight
-          Caption = '?'
-          TabOrder = 1
-          OnClick = bOverrideHelpClick
         end
         object Panel20: TPanel
           Left = 0
@@ -322,15 +299,6 @@ object fConf: TfConf
           Width = 624
           Align = alTop
           Caption = 'Readings are outdated after (minutes):'
-        end
-        object bOutdatedHelp1: TButton
-          Left = 104
-          Height = 22
-          Top = 24
-          Width = 27
-          Caption = '?'
-          TabOrder = 1
-          OnClick = bOutdatedHelpClick
         end
       end
       object lConfigPredict: TLabel
@@ -1236,18 +1204,6 @@ object fConf: TfConf
           Text = 'NightScout'
           OnChange = cbSysChange
         end
-        object bBackendHelp: TButton
-          Left = 596
-          Height = 33
-          Top = 5
-          Width = 38
-          Align = alRight
-          BorderSpacing.Bottom = 5
-          BorderSpacing.Around = 5
-          Caption = '?'
-          TabOrder = 1
-          OnClick = bBackendHelpClick
-        end
         object bTest: TButton
           Left = 553
           Height = 33
@@ -1746,24 +1702,6 @@ object fConf: TfConf
               Font.Style = [fsItalic]
               ParentFont = False
             end
-            object bColorGraphHelp: TButton
-              Left = 584
-              Height = 22
-              Top = 0
-              Width = 27
-              Caption = '?'
-              TabOrder = 5
-              OnClick = bColorGraphHelpClick
-            end
-            object bThreasholdLinesHelp: TButton
-              Left = 584
-              Height = 22
-              Top = 92
-              Width = 27
-              Caption = '?'
-              TabOrder = 6
-              OnClick = bThreasholdLinesHelpClick
-            end
           end
         end
       end
@@ -1961,24 +1899,6 @@ object fConf: TfConf
             Caption = 'Show reading in the menu bar'
             TabOrder = 7
           end
-          object bRotatingArrowHelp: TButton
-            Left = 584
-            Height = 22
-            Top = 57
-            Width = 27
-            Caption = '?'
-            TabOrder = 5
-            OnClick = bRotatingArrowHelpClick
-          end
-          object bDisplayGeneralHelp: TButton
-            Left = 584
-            Height = 22
-            Top = 0
-            Width = 27
-            Caption = '?'
-            TabOrder = 3
-            OnClick = bDisplayGeneralHelpClick
-          end
         end
         object GroupBox13: TGroupBox
           Left = 0
@@ -2014,15 +1934,6 @@ object fConf: TfConf
             Width = 155
             Caption = 'Hide window borders'
             TabOrder = 2
-          end
-          object bDisplayWindowHelp: TButton
-            Left = 584
-            Height = 22
-            Top = 0
-            Width = 27
-            Caption = '?'
-            TabOrder = 3
-            OnClick = bDisplayWindowHelpClick
           end
           object Label4: TLabel
             Left = 16
@@ -2252,16 +2163,6 @@ object fConf: TfConf
           TabOrder = 0
           OnChange = cbCustChange
         end
-        object bOverrideHelp: TButton
-          Left = 588
-          Height = 24
-          Top = 0
-          Width = 27
-          Align = alRight
-          Caption = '?'
-          TabOrder = 1
-          OnClick = bOverrideHelpClick
-        end
         object Panel2: TPanel
           Left = 0
           Height = 35
@@ -2385,18 +2286,6 @@ object fConf: TfConf
             TabOrder = 0
             Value = 5
           end
-          object bMinMinutesHelp: TButton
-            Left = 615
-            Height = 30
-            Top = 0
-            Width = 20
-            Align = alLeft
-            AutoSize = True
-            BorderSpacing.Left = 5
-            Caption = '?'
-            TabOrder = 1
-            OnClick = bMinMinutesHelpClick
-          end
         end
         object cbTirIcon: TCheckBox
           Left = 0
@@ -2488,15 +2377,6 @@ object fConf: TfConf
             OnEditingDone = fsLoRangeEditingDone
           end
         end
-        object bCustomRangeHelp: TButton
-          Left = 584
-          Height = 22
-          Top = 0
-          Width = 27
-          Caption = '?'
-          TabOrder = 2
-          OnClick = bCustomRangeHelpClick
-        end
       end
       object Label20: TLabel
         Left = 5
@@ -2558,16 +2438,6 @@ object fConf: TfConf
           Caption = 'Flash on perfect reading (5.5mmol/L / 100mg/dL)'
           TabOrder = 2
         end
-      end
-      object bBadgeFlashHelp: TButton
-        Left = 608
-        Height = 22
-        Top = 445
-        Width = 27
-        Caption = '?'
-        TabOrder = 4
-        Visible = False
-        OnClick = bBadgeFlashHelpClick
       end
       object cgNotifications: TCheckGroup
         Left = 0
@@ -2665,15 +2535,6 @@ object fConf: TfConf
           Align = alTop
           Caption = 'Readings are outdated after (minutes):'
         end
-        object bOutdatedHelp: TButton
-          Left = 104
-          Height = 22
-          Top = 24
-          Width = 27
-          Caption = '?'
-          TabOrder = 1
-          OnClick = bOutdatedHelpClick
-        end
       end
       object gbAlertBehavior: TGroupBox
         Left = 0
@@ -2770,33 +2631,6 @@ object fConf: TfConf
           MaxValue = 50
           TabOrder = 5
         end
-        object bAlertDurHelp: TButton
-          Left = 552
-          Height = 22
-          Top = 25
-          Width = 27
-          Caption = '?'
-          TabOrder = 6
-          OnClick = bAlertDurHelpClick
-        end
-        object bAlertHystHelp: TButton
-          Left = 552
-          Height = 22
-          Top = 54
-          Width = 27
-          Caption = '?'
-          TabOrder = 7
-          OnClick = bAlertHystHelpClick
-        end
-      end
-      object bNotificationHelp: TButton
-        Left = 608
-        Height = 22
-        Top = 5
-        Width = 27
-        Caption = '?'
-        TabOrder = 6
-        OnClick = bNotificationHelpClick
       end
     end
     object tsAccess: TTabSheet
@@ -3011,24 +2845,6 @@ object fConf: TfConf
           Caption = 'Privacy Mode (Hide glucose value)'
           TabOrder = 1
         end
-        object bPrivacyHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 0
-          Width = 27
-          Caption = '?'
-          TabOrder = 3
-          OnClick = bPrivacyHelpClick
-        end
-        object bTimeStampHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 24
-          Width = 27
-          Caption = '?'
-          TabOrder = 2
-          OnClick = bTimeStampHelpClick
-        end
         object cbConnectivityButton: TCheckBox
           Left = 10
           Height = 22
@@ -3037,15 +2853,6 @@ object fConf: TfConf
           Caption = 'Enable connectivity button'
           TabOrder = 4
         end
-        object bConnectHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 48
-          Width = 27
-          Caption = '?'
-          TabOrder = 5
-          OnClick = bConnectHelpClick
-        end
         object cbShowSensorExpiry: TCheckBox
           Left = 10
           Height = 22
@@ -3053,15 +2860,6 @@ object fConf: TfConf
           Width = 266
           Caption = 'Show sensor expiry in top-center badge'
           TabOrder = 6
-        end
-        object bDisplayAdvancedHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 74
-          Width = 27
-          Caption = '?'
-          TabOrder = 7
-          OnClick = bDisplayAdvancedHelpClick
         end
       end
       object Panel27: TPanel
@@ -3108,15 +2906,6 @@ object fConf: TfConf
             Align = alTop
             Caption = 'Maximum delta slots'
           end
-          object bDeltaMaxHelp: TButton
-            Left = 104
-            Height = 22
-            Top = 24
-            Width = 27
-            Caption = '?'
-            TabOrder = 1
-            OnClick = bDeltaMaxHelpClick
-          end
         end
       end
       object GroupBox10: TGroupBox
@@ -3148,15 +2937,6 @@ object fConf: TfConf
           TabOrder = 0
           Value = 0.1
         end
-        object bScaleHelp: TButton
-          Left = 88
-          Height = 22
-          Top = 24
-          Width = 27
-          Caption = '?'
-          TabOrder = 1
-          OnClick = bScaleHelpClick
-        end
         object Panel25: TPanel
           Left = 440
           Height = 58
@@ -3185,15 +2965,6 @@ object fConf: TfConf
             Width = 100
             Caption = 'Prediction scale:'
           end
-          object bPredScaleHelp: TButton
-            Left = 112
-            Height = 22
-            Top = 26
-            Width = 27
-            Caption = '?'
-            TabOrder = 1
-            OnClick = bPredScaleHelpClick
-          end
         end
         object Panel26: TPanel
           Left = 270
@@ -3219,15 +2990,6 @@ object fConf: TfConf
             Top = 2
             Width = 78
             Caption = 'Diff position:'
-          end
-          object bDiffRightHelp: TButton
-            Left = 136
-            Height = 22
-            Top = 24
-            Width = 27
-            Caption = '?'
-            TabOrder = 1
-            OnClick = bDiffRightHelpClick
           end
         end
       end
@@ -3263,15 +3025,6 @@ object fConf: TfConf
           Align = alTop
           BorderSpacing.Left = 5
           Caption = 'Decimal separator:'
-        end
-        object bDecimalHelp: TButton
-          Left = 176
-          Height = 22
-          Top = 0
-          Width = 27
-          Caption = '?'
-          TabOrder = 0
-          OnClick = bDecimalHelpClick
         end
       end
     end
@@ -3387,19 +3140,6 @@ object fConf: TfConf
             Text = '10 minutes'
             OnChange = cbPredictShortMinutesChange
           end
-          object bPredictHorizon: TButton
-            Left = 603
-            Height = 16
-            Top = 3
-            Width = 27
-            Align = alRight
-            BorderSpacing.Top = -2
-            BorderSpacing.Bottom = 10
-            BorderSpacing.Around = 5
-            Caption = '?'
-            TabOrder = 2
-            OnClick = bPredictHorizonClick
-          end
         end
         object cbPredictShort: TCheckBox
           Left = 15
@@ -3449,15 +3189,6 @@ object fConf: TfConf
           TabOrder = 5
           OnChange = cbPredictShortFullArrowsChange
         end
-        object bPredictHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 0
-          Width = 27
-          Caption = '?'
-          TabOrder = 6
-          OnClick = bPredictHelpClick
-        end
         object cbWarnLoHi: TCheckBox
           Left = 15
           Height = 22
@@ -3469,33 +3200,6 @@ object fConf: TfConf
           BorderSpacing.Bottom = 25
           Caption = 'Warn when going high or low'
           TabOrder = 7
-        end
-        object bShortModeHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 28
-          Width = 27
-          Caption = '?'
-          TabOrder = 8
-          OnClick = bShortModeHelpClick
-        end
-        object bFullArrowSetHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 96
-          Width = 27
-          Caption = '?'
-          TabOrder = 9
-          OnClick = bFullArrowSetHelpClick
-        end
-        object bWarnHiLowHelp: TButton
-          Left = 384
-          Height = 22
-          Top = 134
-          Width = 27
-          Caption = '?'
-          TabOrder = 10
-          OnClick = bWarnHiLowHelpClick
         end
         object cbPredictDots: TCheckBox
           Left = 15
@@ -3709,15 +3413,6 @@ object fConf: TfConf
             end
           end
         end
-        object bUseURLHelp: TButton
-          Left = 578
-          Height = 22
-          Top = 0
-          Width = 27
-          Caption = '?'
-          TabOrder = 2
-          OnClick = bUseURLHelpClick
-        end
       end
       object cbMediaDisable: TCheckBox
         Left = 10
@@ -3727,15 +3422,6 @@ object fConf: TfConf
         Caption = 'Disable the entire media system'
         TabOrder = 2
         OnChange = cbMediaDisableChange
-      end
-      object bDisableMediaHelp: TButton
-        Left = 592
-        Height = 22
-        Top = 454
-        Width = 27
-        Caption = '?'
-        TabOrder = 3
-        OnClick = bDisableMediaHelpClick
       end
     end
     object tsSystem: TTabSheet
@@ -4113,18 +3799,6 @@ object fConf: TfConf
           Constraints.MaxHeight = 30
           TabOrder = 0
           OnClick = bAddClick
-        end
-        object bMultiUserHelp: TButton
-          Left = 597
-          Height = 30
-          Top = 0
-          Width = 32
-          Align = alRight
-          BorderSpacing.Right = 10
-          Caption = '?'
-          Constraints.MaxHeight = 30
-          TabOrder = 1
-          OnClick = bMultiUserHelpClick
         end
       end
       object GroupBox4: TGroupBox
@@ -4709,6 +4383,57 @@ object fConf: TfConf
         Width = 423
         Caption = 'Enter a proxy server below, to have Trndi connect using it.'#10'Trndi will not connect around it: if the proxy fails, the connection fails.'#10#10'Proxy support is available for Windows, Linux, BSD and Haiku.'#10'macOS users must set the proxy settings in their System Settings.'#10#10'Leave empty to follow your system''s own network settings.'
       end
+    end
+  end
+  object pnHelpStrip: TPanel
+    Left = 0
+    Height = 60
+    Top = 640
+    Width = 720
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 60
+    ClientWidth = 720
+    TabOrder = 2
+    object bvHelpStrip: TBevel
+      Left = 10
+      Height = 2
+      Top = 0
+      Width = 700
+      Align = alTop
+      BorderSpacing.Left = 10
+      BorderSpacing.Right = 10
+      Shape = bsTopLine
+    end
+    object lHelpMore: TLabel
+      Left = 646
+      Height = 16
+      Top = 8
+      Width = 62
+      Align = alRight
+      Alignment = taRightJustify
+      BorderSpacing.Top = 6
+      BorderSpacing.Right = 12
+      BorderSpacing.Bottom = 6
+      Caption = 'More'
+      Layout = tlTop
+      ShowAccelChar = False
+      OnClick = lHelpMoreClick
+    end
+    object lHelpText: TLabel
+      Left = 12
+      Height = 46
+      Top = 8
+      Width = 626
+      Align = alClient
+      BorderSpacing.Left = 12
+      BorderSpacing.Top = 6
+      BorderSpacing.Right = 8
+      BorderSpacing.Bottom = 6
+      Caption = '-'
+      Layout = tlTop
+      ShowAccelChar = False
+      WordWrap = True
     end
   end
   end
