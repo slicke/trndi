@@ -3366,8 +3366,8 @@ msgstr ""
 
 #: uconf.rs_dex
 msgid ""
-"Dexcom servers do not provide custom high and low blood sugar values.\n"
-"Please set your own thresholds in the Customization tab."
+"Dexcom servers do not provide high and low limits.\n"
+"Set your own on the Glucose & ranges page, or under Essentials."
 msgstr ""
 
 #: uconf.rs_dex_old
@@ -3768,13 +3768,11 @@ msgstr ""
 
 #: uconf.rs_override_help
 msgid ""
-"Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
+"Set your own high and low limits here. They take precedence over whatever your data source reports.\n"
 "\n"
-"NightScout:\n"
-"Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.\n"
+"Nightscout, xDrip, CareLink and LibreLinkUp all send their own limits, so with those this is normally not needed.\n"
 "\n"
-"Dexcom:\n"
-"Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data."
+"Dexcom and Tandem Source do not provide any limits, so with those you set them here."
 msgstr ""
 
 #: uconf.rs_override_language
