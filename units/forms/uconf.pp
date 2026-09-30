@@ -98,7 +98,7 @@ unit uconf;
 interface
 
 uses
-Classes, Types, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls, LazUTF8,
+Classes, Types, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls, LazUTF8, LCLType,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
 slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, trndi.theme, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
@@ -193,6 +193,9 @@ TfConf = class(TForm)
   bMinMinutesHelp: TButton;
   bCustomRangeHelp: TButton;
   bCommon: TButton;
+  bOK: TButton;
+  bCancel: TButton;
+  pnFooter: TPanel;
   bDisableMediaHelp: TButton;
   bWebAPI: TButton;
   bSysTouch: TButton;
@@ -661,7 +664,9 @@ TfConf = class(TForm)
   procedure tsExtShow({%H-}Sender: TObject);
   procedure tsProxyShow(Sender: TObject);
   procedure tsSystemShow(Sender: TObject);
-  procedure closeClick(Sender: TObject);
+  procedure bOKClick({%H-}Sender: TObject);
+  procedure edSearchKeyDown({%H-}Sender: TObject; var Key: word;
+    {%H-}Shift: TShiftState);
 private
   FProxyLoading: boolean;
   {** True while umain fills the dialog from the stored settings. See the
@@ -687,6 +692,14 @@ private
   FOnDotPreview: TDotPreviewEvent;
   {** Display preview renderer injected by umain. See TDisplayPreviewEvent. }
   FOnDisplayPreview: TDisplayPreviewEvent;
+  {** The control on the shown page that the search box last matched;
+      Enter in the search box moves focus to it. Nil when the page matched
+      by its title/description only, or when nothing is being searched. }
+  FSearchHit: TControl;
+  {** Four bars framing FSearchHit for a moment after a search lands on it,
+      and the timer that takes them down again. See ShowHighlight. }
+  FHighlight: array[0..3] of TShape;
+  FHighlightTimer: TTimer;
   {** The fonts being picked for the reading, arrow and "ago" readouts. The
       Display miniature draws with these; only the names are persisted. }
   FFontVal, FFontArrow, FFontAgo: TFont;
@@ -740,6 +753,29 @@ private
   {** True when the page's caption, description or any visible control
       caption on it contains Query (case-insensitive). }
   function PageMatchesSearch(APage: TTabSheet; const Query: string): boolean;
+  {** First visible control under AParent (depth first, in layout order)
+      whose caption - or, for radio/check groups, item list - contains
+      Query; nil when none does. }
+  function FirstMatchingControl(AParent: TWinControl;
+    const Query: string): TControl;
+  {** Frame the first control on the shown page that matches the search
+      box, revealing it first; clears the frame when nothing matches or
+      the box is empty. Runs whenever the query or the shown page changes. }
+  procedure HighlightSearchMatch;
+  {** Make AControl visible on screen: flip any nested tab it sits on and
+      scroll any scroll box it sits in. }
+  procedure RevealControl(AControl: TControl);
+  {** Draw the four highlight bars around AControl and start the timer that
+      hides them again. }
+  procedure ShowHighlight(AControl: TControl);
+  procedure HideHighlight;
+  procedure HighlightTimerTick({%H-}Sender: TObject);
+  {** Move keyboard focus to FSearchHit (or the control it labels). }
+  procedure FocusSearchHit;
+  {** Place OK/Cancel along the footer's right edge in this platform's
+      order - affirmative first on Windows, last on macOS and GNOME, the
+      same rule the Slicke dialogs follow. }
+  procedure LayoutFooterButtons;
   {** Flip the page control to APage and rewrite the header title and
       description. Idempotent; the one place a nav choice takes effect. }
   procedure ActivateNavPage(APage: TTabSheet);
@@ -1261,11 +1297,6 @@ begin
   end;
 end;
 
-procedure TfConf.CloseClick(Sender: TObject);
-begin
-  Close;
-end;
-
 procedure TfConf.lAckClick(Sender: TObject);
 const
   txt = 'Trndi makes use of the following 3rd party libraries:' + sHTMLLineBreak +
@@ -1334,6 +1365,8 @@ begin
   tsGraphColors.Caption := RS_PAGE_GRAPH_COLORS;
   Label17.Caption := RS_ESSENTIALS_INTRO;
   edSearch.TextHint := RS_NAV_SEARCH;
+  bOK.Caption := smbUXOK;
+  bCancel.Caption := smbUXCancel;
   gbGraphDots.Caption := RS_GB_TREND_DOTS;
   gbGraphOverlays.Caption := RS_GB_GRAPH_OVERLAYS;
   cbDotLine.Caption := RS_DOT_LINE;
@@ -1540,6 +1573,7 @@ begin
   pcMain.ActivePage := APage;
   lPageTitle.Caption := APage.Caption;
   lPageDesc.Caption := PageDescription(APage);
+  HighlightSearchMatch;
 end;
 
 procedure TfConf.tvNavChange(Sender: TObject; Node: TTreeNode);
@@ -1576,40 +1610,179 @@ end;
 
 {------------------------------------------------------------------------------
   Settings search: type a word, and only pages mentioning it stay in the
-  sidebar. Matching runs over the translated captions the user actually sees
-  (labels, check boxes, group boxes, radio/check group items), so it works in
-  every language without a keyword table to maintain.
+  sidebar; the first control on the shown page that mentions it is framed
+  for a moment, and Enter in the search box moves focus to it. Matching runs
+  over the translated captions the user actually sees (labels, check boxes,
+  group boxes, radio/check group items), so it works in every language
+  without a keyword table to maintain.
 ------------------------------------------------------------------------------}
-function TfConf.PageMatchesSearch(APage: TTabSheet; const Query: string): boolean;
-
-function ControlMatches(AControl: TControl): boolean;
-  var
-    i: integer;
-    wc: TWinControl;
+function TfConf.FirstMatchingControl(AParent: TWinControl;
+  const Query: string): TControl;
+var
+  i: integer;
+  c: TControl;
+begin
+  Result := nil;
+  for i := 0 to AParent.ControlCount - 1 do
   begin
-    Result := true;
-    if (not (AControl is TCustomEdit)) and
-      (UTF8Pos(Query, UTF8LowerCase(AControl.Caption)) > 0) then
-      Exit;
-    if (AControl is TCustomRadioGroup) and
-      (UTF8Pos(Query, UTF8LowerCase(TCustomRadioGroup(AControl).Items.Text)) > 0) then
-      Exit;
-    if (AControl is TCheckGroup) and
-      (UTF8Pos(Query, UTF8LowerCase(TCheckGroup(AControl).Items.Text)) > 0) then
-      Exit;
-    if AControl is TWinControl then
+    c := AParent.Controls[i];
+    // Hidden rows (a backend-specific field, a platform-only switch) are
+    // not settings the user can see, so they are not matches either. Tab
+    // sheets keep Visible even while another tab is shown, so a nested
+    // page control is still searched through.
+    if not c.Visible then
+      Continue;
+    if (not (c is TCustomEdit)) and
+      (UTF8Pos(Query, UTF8LowerCase(c.Caption)) > 0) then
+      Exit(c);
+    if (c is TCustomRadioGroup) and
+      (UTF8Pos(Query, UTF8LowerCase(TCustomRadioGroup(c).Items.Text)) > 0) then
+      Exit(c);
+    if (c is TCheckGroup) and
+      (UTF8Pos(Query, UTF8LowerCase(TCheckGroup(c).Items.Text)) > 0) then
+      Exit(c);
+    if c is TWinControl then
     begin
-      wc := TWinControl(AControl);
-      for i := 0 to wc.ControlCount - 1 do
-        if ControlMatches(wc.Controls[i]) then
-          Exit;
+      Result := FirstMatchingControl(TWinControl(c), Query);
+      if Result <> nil then
+        Exit;
     end;
-    Result := false;
   end;
+end;
+
+function TfConf.PageMatchesSearch(APage: TTabSheet; const Query: string): boolean;
 begin
   Result := (UTF8Pos(Query, UTF8LowerCase(APage.Caption)) > 0) or
     (UTF8Pos(Query, UTF8LowerCase(PageDescription(APage))) > 0) or
-    ControlMatches(APage);
+    (FirstMatchingControl(APage, Query) <> nil);
+end;
+
+procedure TfConf.HighlightSearchMatch;
+var
+  q: string;
+begin
+  HideHighlight;
+  FSearchHit := nil;
+  q := UTF8LowerCase(Trim(edSearch.Text));
+  if (q = '') or (pcMain.ActivePage = nil) then
+    Exit;
+  FSearchHit := FirstMatchingControl(pcMain.ActivePage, q);
+  if FSearchHit = nil then
+    Exit; // The page matched by its title or description alone
+  RevealControl(FSearchHit);
+  ShowHighlight(FSearchHit);
+end;
+
+procedure TfConf.RevealControl(AControl: TControl);
+var
+  c: TControl;
+  p: TWinControl;
+begin
+  c := AControl;
+  p := c.Parent;
+  while p <> nil do
+  begin
+    // A sub-tab (the Colors page has its own tab strip): flip to it. pcMain
+    // itself is driven by the sidebar, so it is left to ActivateNavPage.
+    if (p is TTabSheet) and (p.Parent is TPageControl) and (p.Parent <> pcMain) then
+      TPageControl(p.Parent).ActivePage := TTabSheet(p);
+    if p is TScrollBox then
+      TScrollBox(p).ScrollInView(c);
+    c := p;
+    p := p.Parent;
+  end;
+end;
+
+procedure TfConf.ShowHighlight(AControl: TControl);
+const
+  PAD = 3;   // Breathing room between the bars and the control
+  BAR = 2;   // Bar thickness
+var
+  r: TRect;
+  i: integer;
+begin
+  if AControl.Parent = nil then
+    Exit;
+  r := AControl.BoundsRect;
+  InflateRect(r, PAD, PAD);
+  // Top, bottom, left, right - four bars rather than one frame shape, so
+  // the control underneath still takes clicks while they are showing.
+  FHighlight[0].SetBounds(r.Left, r.Top, r.Width, BAR);
+  FHighlight[1].SetBounds(r.Left, r.Bottom - BAR, r.Width, BAR);
+  FHighlight[2].SetBounds(r.Left, r.Top, BAR, r.Height);
+  FHighlight[3].SetBounds(r.Right - BAR, r.Top, BAR, r.Height);
+  for i := Low(FHighlight) to High(FHighlight) do
+  begin
+    FHighlight[i].Parent := AControl.Parent;
+    FHighlight[i].Visible := true;
+    FHighlight[i].BringToFront;
+  end;
+  FHighlightTimer.Enabled := false;
+  FHighlightTimer.Enabled := true;
+end;
+
+procedure TfConf.HideHighlight;
+var
+  i: integer;
+begin
+  if FHighlightTimer = nil then
+    Exit; // Nothing built yet (FormCreate has not run)
+  FHighlightTimer.Enabled := false;
+  for i := Low(FHighlight) to High(FHighlight) do
+    FHighlight[i].Visible := false;
+end;
+
+procedure TfConf.HighlightTimerTick(Sender: TObject);
+begin
+  HideHighlight;
+end;
+
+procedure TfConf.FocusSearchHit;
+var
+  target: TWinControl;
+  i: integer;
+begin
+  if FSearchHit = nil then
+    Exit;
+  target := nil;
+  if (FSearchHit is TLabel) and (TLabel(FSearchHit).FocusControl <> nil) then
+    target := TLabel(FSearchHit).FocusControl
+  else
+  if FSearchHit is TWinControl then
+    target := TWinControl(FSearchHit);
+  // A group box or panel matched by its caption: land on its first field.
+  if (target <> nil) and not target.CanFocus then
+    target := nil;
+  if (target = nil) and (FSearchHit is TWinControl) then
+    for i := 0 to TWinControl(FSearchHit).ControlCount - 1 do
+      if (TWinControl(FSearchHit).Controls[i] is TWinControl) and
+        TWinControl(TWinControl(FSearchHit).Controls[i]).CanFocus then
+      begin
+        target := TWinControl(TWinControl(FSearchHit).Controls[i]);
+        Break;
+      end;
+  if target <> nil then
+    target.SetFocus;
+end;
+
+procedure TfConf.edSearchKeyDown(Sender: TObject; var Key: word; Shift: TShiftState);
+begin
+  case Key of
+  VK_RETURN:
+  begin
+    // Enter jumps to the match instead of firing the default (OK) button
+    FocusSearchHit;
+    Key := 0;
+  end;
+  VK_ESCAPE:
+    // First Escape clears the search; with the box already empty it falls
+    // through to the Cancel button like anywhere else in the dialog
+    if edSearch.Text <> '' then
+    begin
+      edSearch.Clear;
+      Key := 0;
+    end;
+  end;
 end;
 
 procedure TfConf.edSearchChange(Sender: TObject);
@@ -1655,6 +1828,9 @@ begin
   // pages mention it" rather than a dead list.
   if (hit <> nil) and ((tvNav.Selected = nil) or not tvNav.Selected.Visible) then
     tvNav.Selected := hit;
+  // The page may not have changed (ActivateNavPage then did not run), but
+  // the word did - re-aim the frame either way.
+  HighlightSearchMatch;
 end;
 
 procedure TfConf.ClearExtensionInfo;
@@ -2216,11 +2392,39 @@ procedure TfConf.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 var
   err: string;
 begin
-  if not validateUser(err) then
+  // Only a save needs a usable data source; Cancel (and the window's own
+  // close button, which the LCL maps to mrCancel) must always get out.
+  if (ModalResult = mrOK) and not validateUser(err) then
   begin
-    SHowMessage(err);
-    closeaction := caNone;
+    ShowMessage(err);
+    CloseAction := caNone;
   end;
+end;
+
+procedure TfConf.bOKClick(Sender: TObject);
+begin
+  ModalResult := mrOK; // FormClose validates and may veto
+end;
+
+procedure TfConf.LayoutFooterButtons;
+const
+  GAP = 8;
+  MARGIN = 12;
+var
+  first, last: TButton;
+begin
+  if SlickeUseReversedButtons then
+  begin
+    first := bCancel;
+    last := bOK;
+  end
+  else
+  begin
+    first := bOK;
+    last := bCancel;
+  end;
+  last.Left := pnFooter.ClientWidth - MARGIN - last.Width;
+  first.Left := last.Left - GAP - first.Width;
 end;
 
 procedure TfConf.bLimitsClick({%H-}Sender: TObject);
@@ -3364,9 +3568,25 @@ var
   wi: integer;
   {$endif}
   os, arch: string;
-  bottombar: tpanel;
-  bottomclose: tbutton;
+  i: integer;
 begin
+  // Search-hit frame: four bars parked until a search lands on a control
+  // (see ShowHighlight), and the timer that takes them down again. Created
+  // first, as HighlightSearchMatch runs from the page selection below.
+  for i := Low(FHighlight) to High(FHighlight) do
+  begin
+    FHighlight[i] := TShape.Create(Self);
+    FHighlight[i].Shape := stRectangle;
+    FHighlight[i].Brush.Color := clHighlight;
+    FHighlight[i].Pen.Style := psClear;
+    FHighlight[i].Visible := false;
+  end;
+  FHighlightTimer := TTimer.Create(Self);
+  FHighlightTimer.Enabled := false;
+  FHighlightTimer.Interval := 2500;
+  FHighlightTimer.OnTimer := @HighlightTimerTick;
+  edSearch.OnKeyDown := @edSearchKeyDown;
+
   // The Display miniature previews these; umain seeds them from the live
   // labels in SetupUIElements. Created before ApplyCaptionsFromResources so
   // every later step can assume they exist.
@@ -3487,21 +3707,7 @@ begin
   {$ifdef X_WIN}
   cbTitleColor.Visible := false;
   {$endif}
-  if tnative.nobuttonsVM then
-  begin
-    bottombar := TPanel.Create(self);
-    bottombar.Align:=alBottom;
-    bottombar.height := 30;
-    bottombar.parent := self;
-
-    bottomclose := TButton.Create(bottombar);
-    bottomclose.Caption := 'Close';
-    bottomclose.parent := bottombar;
-    bottomclose.left := 5;
-    bottomclose.onclick := @CloseClick;
-
-    self.height := self.height + 30;
-  end;
+  LayoutFooterButtons;
 
   // Initialize TTS controls
   cbTTSChange(Self);
@@ -3586,7 +3792,7 @@ begin
   // the very rows this is meant to reveal, and on a frameless (own title bar)
   // window there is no way to drag it back into view. The clamp only ever
   // caps the growth - a dialog that is already over the limit (own title bar
-  // plus the nobuttonsVM close strip on a short screen) is left alone rather
+  // plus the button footer on a short screen) is left alone rather
   // than shrunk, which would clip a tab that fits today.
   target := Height + need;
   room := Screen.WorkAreaHeight;
