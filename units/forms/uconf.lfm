@@ -1,11 +1,11 @@
 object fConf: TfConf
   Left = 748
-  Height = 700
+  Height = 748
   Top = 250
   Width = 920
   BorderStyle = bsSizeToolWin
   Caption = 'Settings'
-  ClientHeight = 700
+  ClientHeight = 748
   ClientWidth = 920
   Position = poDesktopCenter
   LCLVersion = '4.8.0.0'
@@ -4711,6 +4711,39 @@ object fConf: TfConf
       end
     end
   end
+  end
+  object pnFooter: TPanel
+    Left = 0
+    Height = 48
+    Top = 700
+    Width = 920
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 48
+    ClientWidth = 920
+    TabOrder = 3
+    object bOK: TButton
+      Left = 616
+      Height = 30
+      Top = 9
+      Width = 90
+      Anchors = [akTop, akRight]
+      Caption = 'OK'
+      Default = True
+      TabOrder = 0
+      OnClick = bOKClick
+    end
+    object bCancel: TButton
+      Left = 714
+      Height = 30
+      Top = 9
+      Width = 90
+      Anchors = [akTop, akRight]
+      Cancel = True
+      Caption = 'Cancel'
+      ModalResult = 2
+      TabOrder = 1
+    end
   end
   object Label19: TLabel
     Left = 5

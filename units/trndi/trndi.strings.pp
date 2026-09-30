@@ -181,7 +181,6 @@ RS_PREDICT_AMOUNT_DESC = 'Enter the amount of readings to predict (1-20)';
 RS_LATEST_READING = 'Latest Reading: Value = %.2f, Date = %s';
 
 RS_RESTART_APPLY = 'Trndi must be restarted for settings to take effect';
-RS_SETTINGS_SAVED = 'Settings saved and applied. Some settings may require a restart';
 RS_QUIT_CAPTION =  'Exit Trndi?';
 RS_QUIT_MINIMIZE_TITLE = 'Quit or Minimize?';
 RS_QUIT_MINIMIZE = 'Would you like to minimize to the Dock, or close Trndi?';
@@ -190,8 +189,6 @@ RS_QUIT_MSG = 'Quit the app?';
 RS_LAST_UPDATE = '%d min';
 RS_COMPUTE_FAILED_AGO = 'Long ago';
 RS_FORCE_QUIT_SETUP = 'Trndi will now shut down to apply settings, please re-start it manually!';
-RS_SETTINGS_SAVE = 'Save settings?';
-RS_SETTINGS_SAVE_DESC = 'Would you like to save any changes made?';
 
 RS_LO_PREDICT = 'Low Predicted in %d minutes!';
 RS_HI_PREDICT = 'High Predicted in %d minutes!';

@@ -6,7 +6,7 @@
 * Right-click and open settings
 * Open the __Accounts__ page (under _App & system_ in the sidebar)
 * Click __+ Add__ and enter a name
-* Close the window and __save settings__
+* Click __OK__
 * __A new user has been created__
 ![User select](/doc/img/user_config.png)
 
@@ -38,14 +38,14 @@ Adding a user only creates an empty account: it has no server, thresholds or oth
 * Restart Trndi and pick the new user in the start-up dialog
 * Right-click and open settings
 * Configure the backend (Nightscout, Dexcom, etc.) and anything else, just as for a single-user Trndi
-* Close the window and __save settings__
+* Click __OK__
 
 Repeat for every user you added. Each user's settings are stored separately, so changing one never affects another. This is also what makes a user appear in [trndi-multi](https://github.com/slicke/trndi-multi): users without a backend are skipped there.
 
 ## Customizing a user
 * In the user list, click the user's username
 * In the __Account Settings__ panel next to the list, choose an account color and nickname
-> Edits are kept while you browse the user list, but nothing is stored until you close the settings window and __save settings__ — closing without saving discards them, just like every other setting.
+> Edits are kept while you browse the user list, but nothing is stored until you click __OK__ — __Cancel__ discards them, just like every other setting.
 
 The color chosen will be assigned to the window when Trndi loads the user.
 The username is also displayed in the title bar.
