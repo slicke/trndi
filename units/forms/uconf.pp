@@ -967,11 +967,11 @@ RS_FONT_HELP =
   'You can change the font of the reading, time and arrow. Click on the respective item here to change the font';
 
 RS_OVERRIDE_HELP =
-  'Setting values here allows you to define your own high and low blood sugar limits in Trndi.'
-  + #10 + #10 + 'NightScout:'#10 +
-  'Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.'
-  + #10 + #10 + 'Dexcom:' + #10 +
-  'Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data.';
+  'Set your own high and low limits here. They take precedence over whatever your data source reports.'
+  + #10 + #10 +
+  'Nightscout, xDrip, CareLink and LibreLinkUp all send their own limits, so with those this is normally not needed.'
+  + #10 + #10 +
+  'Dexcom and Tandem Source do not provide any limits, so with those you set them here.';
 RS_OVERRIDE_NS =
   'You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default';
 
@@ -994,7 +994,7 @@ RS_TIMESTAMP_HELP =
   'By default Trndi shows the amount of minutes since the last reading, this setting allows you to display the time of the last reading instead.';
 
 RS_DEX =
-  'Dexcom servers do not provide custom high and low blood sugar values.'+sLineBreak+'Please set your own thresholds in the Customization tab.';
+  'Dexcom servers do not provide high and low limits.'+sLineBreak+'Set your own on the Glucose & ranges page, or under Essentials.';
 
 RS_DEX_OLD =
   'The "Dexcom New" backend is recommended - new features are added there.';
