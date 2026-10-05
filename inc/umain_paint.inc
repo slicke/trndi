@@ -844,10 +844,11 @@ end;
 // drawing would change anything, and StartProgressDrain needs it to know the
 // level a fresh reading resets the bar to.
 //
-// The bar is two parallel lines on a shared time scale of one refresh cycle
-// each: the primary line fills over the cycle the scheduler targets (full
-// exactly when the next fetch fires), then the overtime line fills over a
-// second cycle-length — the retry window. Both are strictly monotone; v1's
+// The bar is two fills on a shared time scale of one refresh cycle each: the
+// primary fill rises over the cycle the scheduler targets (full exactly when
+// the next fetch fires), then the overtime overlay — diagonal stripes on top
+// of it — rises over a second cycle-length, the retry window. Both are
+// strictly monotone; v1's
 // stretched-scale-plus-marker rework of the level on every reschedule read as
 // the gauge running backwards.
 procedure TfBG.ComputeProgressState(out AFrac1, AFrac2: double;
@@ -873,9 +874,9 @@ begin
   // leaves the primary line pegged full through that padding every cycle.
   spanMs := BG_REFRESH + REFRESH_RESYNC_BUFFER_MS;
 
-  // Combined progress on a 0..2 scale: 0..1 is the primary line, 1..2 the
-  // overtime line. Once both are full the bar breathes until a reading lands —
-  // no extra grace: the whole second line *was* the grace.
+  // Combined progress on a 0..2 scale: 0..1 is the primary fill, 1..2 the
+  // overtime overlay. Once both are full the bar breathes until a reading
+  // lands — no extra grace: the whole overlay *was* the grace.
   total := Min(2.0, elapsedMs / spanMs);
   APulsing := total >= 2.0;
 
@@ -883,7 +884,7 @@ begin
   // frames, ease from the level last painted down to the fresh level. The
   // eased fraction converges on the real one, so the animation can never
   // leave the bar out of sync with the schedule. Run on the combined scale,
-  // the drain empties the overtime line first, then the primary — the fill
+  // the drain empties the overtime overlay first, then the primary — the fill
   // order in reverse.
   if FProgressDrainFrom > 0 then
   begin
@@ -931,10 +932,11 @@ begin
       AFrac / WARM_FROM);
 end;
 
-// Colour of the overtime line — the retry window. Kept in the overdue palette
-// so it reads as "the late part", distinct from the primary line's cycle
+// Colour of the overtime part — the retry window. Kept in the overdue palette
+// so it reads as "the late part", distinct from the primary fill's cycle
 // colours. Steady mid-tone while it is still filling, the breathing blend once
-// both lines are full (the pulse ramp is the same one ProgressFillColor uses).
+// both are full (the pulse ramp is the same one ProgressFillColor uses). The
+// bar's stripes are a darkened shade of it; the float's strip uses it as is.
 function TfBG.ProgressOvertimeColor(const APulsing: boolean): TColor;
 begin
   if APulsing then
@@ -1007,14 +1009,13 @@ end;
 
 // Paint handler for the left-side "next reading" progress indicator.
 //
-// Two parallel vertical lines on recessed tracks, both filling bottom-up:
-// the wider primary line covers one refresh cycle (full exactly when the
-// next fetch fires), the slimmer overtime line beside it covers the retry
-// window after that. The overtime line is only drawn once it holds some fill —
-// during a normal cycle a permanently visible empty second channel just begs
-// the question of what it is for; its slot stays reserved so nothing shifts
-// when it appears. Flat FillRects only — the lines are a few pixels wide, so
-// any capsule/shading treatment just reads as noise at this size.
+// One vertical line on a recessed track, filling bottom-up over one refresh
+// cycle (full exactly when the next fetch fires). The retry window after that
+// is drawn onto the same line as an overlay of diagonal stripes, rising from
+// the bottom again — a late reading restripes the bar it already filled
+// instead of opening a second channel beside it. Flat FillRects only — the
+// line is a few pixels wide, so any capsule/shading treatment just reads as
+// noise at this size.
 procedure TfBG.pbNextProgressPaint(Sender: TObject);
 var
   box: TPaintBox;
@@ -1022,9 +1023,9 @@ var
   bgCol, trackCol, fillCol, overCol: TColor;
   frac1, frac2: double;
   pulsing, draining: boolean;
-  m, w, h, span, iw, w1, w2: integer;
+  m, w, h, span, iw: integer;
 
-  // One line: recessed track over the full span, fill from the bottom.
+  // The line: recessed track over the full span, fill from the bottom.
   procedure DrawLine(x0, lineW: integer; const frac: double; col: TColor);
   var
     lvl: integer;
@@ -1039,6 +1040,43 @@ var
     end;
   end;
 
+  // The overtime overlay: 45° stripes over the bottom lvl rows of the line.
+  // Drawn by hand, one pixel row at a time, and not with a bsFDiagonal brush —
+  // hatch brushes differ between GDI, Qt and Cocoa and ignore the DPI, while
+  // this gives the same stripes everywhere and scales them with the bar. The
+  // pattern is anchored to the bottom of the line, so a rising level reveals
+  // more of it and the stripes themselves never crawl.
+  procedure DrawStripes(x0, lineW, lvl: integer; col: TColor);
+  var
+    band, period, xx, yy, y, runStart: integer;
+    lit: boolean;
+  begin
+    band := Max(2, lineW div 3);    // stripe thickness; the gaps are as wide
+    period := 2 * band;
+    cvs.Brush.Color := col;
+    for yy := 0 to lvl - 1 do
+    begin
+      y := h - m - 1 - yy;
+      runStart := -1;
+      // xx = lineW is a sentinel that closes a run touching the right edge.
+      for xx := 0 to lineW do
+      begin
+        // lineW keeps the dividend positive; it only shifts the phase.
+        lit := (xx < lineW) and ((yy + lineW - xx) mod period < band);
+        if lit then
+        begin
+          if runStart < 0 then
+            runStart := xx;
+        end
+        else if runStart >= 0 then
+        begin
+          cvs.FillRect(Classes.Rect(x0 + runStart, y, x0 + xx, y + 1));
+          runStart := -1;
+        end;
+      end;
+    end;
+  end;
+
 begin
   box := Sender as TPaintBox;
   cvs := box.Canvas;
@@ -1046,8 +1084,8 @@ begin
   h := box.Height;
   bgCol := fBG.Color;
 
-  // The box is painted edge to edge every time — the lines are drawn onto the
-  // window backdrop, so nothing of the previous frame can survive around them.
+  // The box is painted edge to edge every time — the line is drawn onto the
+  // window backdrop, so nothing of the previous frame can survive around it.
   // The backdrop slice, not a flat fill: the window behind is a gradient.
   PaintBackdrop(cvs, Classes.Rect(0, 0, w, h), box.Top);
   cvs.Brush.Style := bsSolid;
@@ -1056,19 +1094,11 @@ begin
   if (bgs = nil) or (Length(bgs) = 0) then
     Exit;
 
-  m := Max(1, w div 10);          // margin, so the lines never touch the box edge
-  iw := w - 2 * m;                // inner width shared by both lines
-  span := h - 2 * m;              // full-fill height of either line
+  m := Max(1, w div 10);          // margin, so the line never touches the box edge
+  iw := w - 2 * m;                // inner width of the line
+  span := h - 2 * m;              // full-fill height of the line
   if (iw < 3) or (span < 8) then
     Exit;
-  // The lines sit flush against each other — they describe one continuous
-  // wait, so they should read as one unit. While the overtime line shows, the
-  // primary is always pegged full (amber/red against the recessed track), so
-  // the colours keep the two legible without a gap. The overtime line is a
-  // thin accent stroke beside the bar, not a second bar: overtime is the
-  // exception, and its width should say so.
-  w2 := Max(1, iw div 5);
-  w1 := iw - w2;
 
   // Elapsed/span/drain arithmetic lives in ComputeProgressState so the
   // timer's skip check and the drain trigger see exactly what will be painted.
@@ -1076,23 +1106,27 @@ begin
   FProgressPulsing := pulsing;
 
   // Track: a recessed channel, darker than the window on light backgrounds and
-  // lighter on dark ones, so the empty part of a line stays visible either way.
+  // lighter on dark ones, so the empty part of the line stays visible either way.
   if IsLightColor(bgCol) then
     trackCol := BlendColors(clBlack, bgCol, 0.16)
   else
     trackCol := BlendColors(clWhite, bgCol, 0.10);
 
-  // Primary carries the cycle colours (teal → amber as the reading falls due);
-  // the overtime line carries the retry red. Once both are full the same
-  // breathing blend takes both over, which is the whole "overdue" signal.
+  // The fill carries the cycle colours (teal → amber as the reading falls
+  // due); the overlay carries the retry red. Once both are full the breathing
+  // blend takes the fill over, which is the whole "overdue" signal.
   fillCol := ProgressFillColor(frac1, pulsing);
   overCol := ProgressOvertimeColor(pulsing);
 
-  DrawLine(m, w1, frac1, fillCol);
+  DrawLine(m, iw, frac1, fillCol);
+  // While the overlay shows, the fill under it is always pegged full — amber,
+  // then the breathing red. The stripes are the overtime red darkened, which
+  // stands out against the amber and stays visible through the whole breath
+  // (undarkened, they would be the very colour of the fill once it pulses).
   // Same quantisation as the recorded level, so visibility and the frame-skip
-  // gate agree on when the line winks in and out.
+  // gate agree on when the stripes wink in and out.
   if Round(frac2 * span) > 0 then
-    DrawLine(m + w1, w2, frac2, overCol);
+    DrawStripes(m, iw, Round(frac2 * span), BlendColors(clBlack, overCol, 0.35));
 
   // Record what this frame showed: ProgressFrameChanged compares against these
   // to skip identical repaints, and StartProgressDrain animates from the total.

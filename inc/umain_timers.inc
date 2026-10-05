@@ -239,7 +239,7 @@ begin
     if ProgressFrameChanged then
       pbNextProgress.Repaint;
     UpdateFloatProgress;
-    // pbNextProgressPaint sets FProgressPulsing while both lines are full;
+    // pbNextProgressPaint sets FProgressPulsing while both fills are full;
     // the pulse needs real frames, the rest of the cycle does not. The
     // reading-arrival drain is shorter and faster still.
     if FProgressDrainFrom > 0 then
