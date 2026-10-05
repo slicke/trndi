@@ -161,8 +161,8 @@ protected
   procedure RememberNoticeId(id: cardinal);
   procedure ForgetNoticeId(id: cardinal);
   function IsLiveNoticeId(id: cardinal): boolean;
-    {** Resolve the INI/CFG file path with backward compatibility.
-        Preference order: Lazarus app config, ~/.config/Trndi/trndi.ini, legacy ~/.config/Trndi.cfg }
+    {** Resolve the settings file path (Lazarus app config file,
+        typically ~/.config/Trndi.cfg). }
   function ResolveIniPath: string; virtual;
 public
   {** Prefer session-bus notifications under Qt6 — libdbus first, the gdbus
@@ -1216,7 +1216,7 @@ end;
 {------------------------------------------------------------------------------
   ResolveIniPath
   --------------
-  Always use Lazarus' app config file path (typically ~/.config/Trndi/trndi.ini).
+  Always use Lazarus' app config file path (typically ~/.config/Trndi.cfg).
  ------------------------------------------------------------------------------}
 function TTrndiNativeLinux.ResolveIniPath: string;
 begin

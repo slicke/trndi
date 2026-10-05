@@ -2,20 +2,36 @@
 Running without extensions? These are hacks you can do using the config file!
 
 ## Linux
-Trndi saves it's configuration in 
+Trndi saves its configuration in
 ```bash
 ~/.config/Trndi.cfg
+```
+All keys go in the `[trndi]` section, e.g.
+```ini
+[trndi]
+system.fresh_threshold=31
 ```
 > If your system defaults have changed this might be located elsewhere. Look for your default config folder.
 
 ## Windows
-Trndi stores it's settings in the registry under
+Trndi stores its settings in the registry under
 ```powershell
 HKEY_CURRENT_USER\SOFTWARE\Trndi
 ```
 
 ## macOS
-On macOS, Trndi stores it's settings in the app's preference file
+On macOS, Trndi stores its settings in the app's preferences (`~/Library/Preferences/com.slicke.Trndi.plist`). Quit Trndi first, then edit them with `defaults`:
+```bash
+defaults read com.slicke.Trndi                                # list all settings
+defaults write com.slicke.Trndi system.fresh_threshold "31"   # set a value
+defaults delete com.slicke.Trndi system.fresh_threshold       # remove a value
+```
+- Always write values as plain strings — don't use `-bool` or `-int`.
+- Development builds use the domain `com.slicke.Trndi.dev`.
+- Use `defaults` rather than editing the `.plist` file directly; macOS caches preferences, so direct edits may be ignored or overwritten.
+
+## Multiple users
+When Trndi runs with several user profiles, most keys are prefixed with the profile name, e.g. `anna_system.fresh_threshold`.
 
 # Color notice
 Colors are stored as integer representations of ```TColor```.

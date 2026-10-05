@@ -16,17 +16,17 @@ The simplest way to turn the web server on is from the Settings dialog: open **S
 ### Enabling via configuration
 
 #### Linux
-Enable the web server in your configuration file (eg `~/.config/Trndi.cfg`):
+Enable the web server in your configuration file (`~/.config/Trndi.cfg`), in the `[trndi]` section:
 
 ```ini
-[webserver]
-enable=true
-port=8080
-token=your_optional_auth_token_here
+[trndi]
+webserver.enable=true
+webserver.port=8080
+webserver.token=your_optional_auth_token_here
 ```
 #### Windows
 In the Registry, access ```HKEY_CURRENT_USER\Software\Trndi```
-Add these keys:
+Add these string values:
 ```ini
 webserver.enable=true
 webserver.port=8080
@@ -34,7 +34,15 @@ webserver.token=your_optional_auth_token_here
 ```
 
 #### macOS
-In your app's config add the values seen under Windows
+Quit Trndi, then set the values with `defaults` (development builds use the domain `com.slicke.Trndi.dev`):
+```bash
+defaults write com.slicke.Trndi webserver.enable "true"
+defaults write com.slicke.Trndi webserver.port "8080"
+defaults write com.slicke.Trndi webserver.token "your_optional_auth_token_here"
+```
+Write the values as plain strings (no `-bool`/`-int`).
+
+> With multiple user profiles, prefix each key with the profile name, e.g. `anna_webserver.enable`.
 
 ### Configuration Options
 
@@ -423,7 +431,7 @@ The handler thread runs it **on the main thread** through `TThread.Synchronize`,
 
 ### Startup Sequence
 
-1. Web server configuration is read from `Trndi.cfg`
+1. Web server configuration is read from the platform settings store (INI file, Registry or macOS preferences)
 2. If `webserver.enable=true`, the `StartWebServer` function is called
 3. A `TTrndiWebServer` instance is created with callbacks
 4. The server thread starts and binds to the configured port
@@ -552,7 +560,7 @@ sudo ufw allow from 192.168.1.0/24 to any port 8080
 **Problem:** Web server doesn't respond to requests
 
 **Solutions:**
-1. Check configuration file: `cat ~/.config/Trndi.cfg | grep webserver`
+1. Check the configuration: `grep webserver ~/.config/Trndi.cfg` (Linux) or `defaults read com.slicke.Trndi | grep webserver` (macOS)
 2. Verify port is not in use: `sudo lsof -i :8080`
 3. Check logs/terminal output for errors
 4. Try a different port in configuration
