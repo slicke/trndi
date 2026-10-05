@@ -343,7 +343,7 @@ target, not a port.
 **Features on BSD:**
 - Native notification support (via `notify-send` if available)
 - Text-to-speech support (via `espeak` if available)
-- Settings stored in `~/.config/trndi/trndi.ini`
+- Settings stored in `~/.config/Trndi.cfg`
 - HTTP/HTTPS support via libcurl
 
 # Setup
@@ -563,7 +563,7 @@ ldd ./Trndi | grep -i 'not found'   # lists anything else Trndi is missing
 Trndi stores settings per platform in the standard location:
 - Windows: Registry under HKCU\Software\Trndi
 - macOS: NSUserDefaults (Preferences), typically domain com.slicke.Trndi (often stored in ~/Library/Preferences/com.slicke.Trndi.plist)
-- Linux: Lazarus GetAppConfigFile path, typically ~/.config/Trndi/trndi.ini in section [trndi]
+- Linux: Lazarus GetAppConfigFile path, typically ~/.config/Trndi.cfg in section [trndi]
 
 On Linux, this is a single INI file consistently used for Get/Set/Delete operations — no legacy paths or multiple files.
 

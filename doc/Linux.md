@@ -8,7 +8,7 @@ The one package that is missing most often is the **Qt6Pas** binding, which olde
 ## Window take-over
 On X11, Trndi cannot color the native title bar (the desktop/window manager owns that) — the window's client area still changes color with your reading.
 
-On **Wayland** sessions Trndi draws its own title bar instead: the compositor's forced decorations are dropped and replaced with a bar that follows the window color (so title-bar coloring works just like on Windows/macOS), with working drag-to-move, edge resize, double-click maximize and min/max/close buttons. This is automatic on Wayland; you can control it with the `ux.own_titlebar` setting in `trndi.ini` (`auto` (default), `on` — also use it on X11, `off` — never). The bar is skipped when "no borders" mode is enabled, and hidden in fullscreen/kiosk mode.
+On **Wayland** sessions Trndi draws its own title bar instead: the compositor's forced decorations are dropped and replaced with a bar that follows the window color (so title-bar coloring works just like on Windows/macOS), with working drag-to-move, edge resize, double-click maximize and min/max/close buttons. This is automatic on Wayland; you can control it with the `ux.own_titlebar` setting in `Trndi.cfg` (`auto` (default), `on` — also use it on X11, `off` — never). The bar is skipped when "no borders" mode is enabled, and hidden in fullscreen/kiosk mode.
 
 **Tiling compositors** (Hyprland, sway, river, …) are an exception: they intentionally draw no title bar and windows are managed with keybinds, so `auto` skips the drawn bar there and the window simply keeps the compositor's border. Set `ux.own_titlebar=on` if you run Trndi floating and want the colored bar anyway.
 
@@ -33,4 +33,4 @@ Trndi ships optional GNOME Shell and KDE Plasma panel widgets that show the curr
 `trndi --kiosk` keeps the screen lit by holding an idle inhibition with logind (`systemd-inhibit`/`elogind-inhibit`), with the desktop session's own power manager (GNOME and KDE ignore the logind one, so this is what a Wayland kiosk depends on — asked over D-Bus via the desktop portal, the freedesktop screensaver service or gnome-session, falling back to spawning `gnome-session-inhibit`/`kde-inhibit`), and by turning off X11 blanking with `xset`. Missing tools and services are skipped. sway/Hyprland and other wlroots compositors need their idle daemon configured directly — see the [Display guide](/guides/Display.md#keep-awake-on-linux).
 
 ## Settings storage
-Settings are stored at `~/.config/Trndi/trndi.ini`.
+Settings are stored at `~/.config/Trndi.cfg`.
