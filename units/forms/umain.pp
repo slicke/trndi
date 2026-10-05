@@ -817,7 +817,7 @@ private
   FWarnExpanded: boolean;       // Inline-expand toggle (set by pnWarningClick)
   FWarnBannerBaseH: integer;    // Collapsed banner height (px) — read by pnWarningPaint
   FWarnPulseSecond: integer;    // Second the wsSoon pulse last repainted on
-  FProgressPulsing: boolean;    // Set by pbNextProgressPaint while both lines are full
+  FProgressPulsing: boolean;    // Set by pbNextProgressPaint while both fills are full
   FProgressDrainFrom: double;   // Combined progress (0..2) the arrival drain animates down from (0 = no drain running)
   FProgressDrainStart: QWord;   // GetTickCount64 when the arrival drain started
   FProgressPaintedFrac: double; // Combined progress (0..2) of the last frame actually painted
@@ -1315,16 +1315,16 @@ private
   {** Put a value and caption on the "ago" badge ("3 min", or "14:35" over
       "last reading") and re-layout, since its width just changed. }
   procedure SetAgoText(const AValue, ACaption: string);
-  {** Compute the progress bar's current state: the primary line's fill
-      fraction (one refresh cycle), the overtime line's fill fraction (the
-      retry window after it), whether the both-full pulse is active, and
+  {** Compute the progress bar's current state: the primary fill's
+      fraction (one refresh cycle), the striped overtime overlay's fraction
+      (the retry window after it), whether the both-full pulse is active, and
       whether the reading-arrival drain animation is running. }
   procedure ComputeProgressState(out AFrac1, AFrac2: double;
     out APulsing, ADraining: boolean);
-  {** Fill colour of the primary line at the given fill fraction. }
+  {** Colour of the primary fill at the given fill fraction. }
   function ProgressFillColor(const AFrac: double; const APulsing: boolean): TColor;
-  {** Colour of the overtime line — the retry window's red, breathing once
-      both lines are full, steady before that. }
+  {** Colour of the overtime part — the retry window's red, breathing once
+      both fills are full, steady before that. }
   function ProgressOvertimeColor(const APulsing: boolean): TColor;
   {** True when the bar would paint differently from its last painted frame —
       lets tProgressTimer skip repaints that would reproduce the same pixels. }

@@ -242,17 +242,18 @@ When enabled, Trndi can show where your blood sugar might be heading in the next
 during first-run setup): a slim line along the window's left edge that fills
 from the bottom.
 
-- The **primary line** covers one refresh cycle — **teal** for most of it,
-  warming to **amber** as the reading falls due. It is full exactly when Trndi
-  fetches the next reading.
-- If the reading runs late, a slimmer **overtime line** appears beside it and
-  fills in **red** across the retry window while Trndi keeps trying (it goes
-  away again once a reading lands). Both lines only ever rise — nothing jumps
-  back when a retry is rescheduled.
-- Once both lines are full the bar **breathes red** until a reading arrives.
+- The **fill** covers one refresh cycle — **teal** for most of it, warming to
+  **amber** as the reading falls due. It is full exactly when Trndi fetches the
+  next reading.
+- If the reading runs late, **dark red diagonal stripes** rise over the full
+  line from the bottom, across the retry window while Trndi keeps trying (they
+  go away again once a reading lands). Fill and stripes only ever rise —
+  nothing jumps back when a retry is rescheduled.
+- Once the stripes reach the top the bar **breathes red** until a reading
+  arrives.
 - When a fresh reading arrives the fill drains down with a short animation.
 - While the bar is enabled, the floating window mirrors it as a thin strip along
-  its left edge (the strip covers both lines end to end: its first half is the
+  its left edge (the strip shows both stages end to end: its first half is the
   cycle, its second half the retry window).
 
 ### Night Dimming

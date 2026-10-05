@@ -3269,7 +3269,7 @@ msgstr "Suivant →"
 
 #: trndi.strings.rs_wizard_progress_body
 msgid ""
-"Trndi can show a slim bar along the left edge of the window that fills up as the next reading approaches. If a reading runs late, a second line beside it fills while Trndi retries.\n"
+"Trndi can show a slim bar along the left edge of the window that fills up as the next reading approaches. If a reading runs late, diagonal stripes rise over it while Trndi retries.\n"
 "\n"
 "You can change this later via right-click → Settings."
 msgstr ""
