@@ -98,7 +98,7 @@ unit uconf;
 interface
 
 uses
-Classes, Types, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls, LazUTF8, LCLType,
+Classes, Types, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls, LazUTF8, LCLType, LCLVersion, LMessages,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
 slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, trndi.theme, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
@@ -738,8 +738,10 @@ private
   {** Application-wide input hook: re-aim the help strip at the control
       that just took focus, else at the setting under the mouse. Over
       anything else - the strip itself, a gap, the sidebar - the text is
-      held, so "More" can be reached and clicked. }
-  procedure AppUserInput({%H-}Sender: TObject; {%H-}Msg: cardinal);
+      held, so "More" can be reached and clicked. Lazarus 4.99+ passes
+      the whole message record instead of just its number. }
+  procedure AppUserInput({%H-}Sender: TObject;
+    {$IF LCL_FULLVERSION >= 4990000}var {%H-}Msg: TLMessage{$ELSE}{%H-}Msg: cardinal{$ENDIF});
   {** The selected data source's description and driver credit, in a
       dialog (the long form of cbSys's help). }
   procedure ShowBackendInfo;
@@ -2551,7 +2553,8 @@ begin
     ShowMessage(FHelpSource.Hint);
 end;
 
-procedure TfConf.AppUserInput(Sender: TObject; Msg: cardinal);
+procedure TfConf.AppUserInput(Sender: TObject;
+  {$IF LCL_FULLVERSION >= 4990000}var Msg: TLMessage{$ELSE}Msg: cardinal{$ENDIF});
 var
   c, src: TControl;
 begin
