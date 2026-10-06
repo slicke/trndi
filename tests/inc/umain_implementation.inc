@@ -93,3 +93,17 @@ procedure TfBG.UpdateUIBasedOnGlucoseForTests;
 begin
   UpdateUIBasedOnGlucose;
 end;
+
+// Publish a forecast the way the fetch path does, then read it back the way
+// the web server's /predict does. FormCreate, which sets up the lock both
+// sides take, does not run in the console build, so it is set up here.
+function TfBG.WebPredictionsForTests(const Preds: BGResults): BGResults;
+begin
+  InitCriticalSection(FReadingsLock);
+  try
+    WebPublishPredictions(Preds);
+    Result := GetPredictionsForWeb;
+  finally
+    DoneCriticalSection(FReadingsLock);
+  end;
+end;

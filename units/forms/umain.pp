@@ -89,6 +89,7 @@
  *   last state sent.
  * - 2026-09-29: Declared WebCommand and its helpers, the web dashboard's
  *   settings/snooze entry point.
+ * - 2026-10-06: Declared FCachedPredictions, the forecast /predict serves.
  *)
 
 unit umain;
@@ -712,6 +713,7 @@ private
                             // ApplyFetchedReadings, which owns the verdict.
   FLastAPICall: TDateTime; // Timestamp of the last successful API call
   FCachedReadings: array of BGReading; // Readings saved from last fetch
+  FCachedPredictions: BGResults; // Forecast last published to the web API; guarded by FReadingsLock
   FLastUIColor: TColor;
   FLastUICaption: string;
   FLastTir: string;
@@ -1248,8 +1250,10 @@ private
       @returns(Array of BGReading representing the current reading(s).)
      }
   function GetCurrentReadingForWeb: BGResults;
-    {** Return predictions formatted as BGResults for web clients.
-      Useful for simple web-based display of short-term predictions.
+    {** Return the forecast last handed to WebPublishPredictions, for the web
+      API's /predict. Called on a web server thread.
+      @returns(A copy of the cached forecast; empty while predictions are off
+      or none has been computed.)
      }
   function GetPredictionsForWeb: BGResults;
     {** Indicates whether the web server is active and serving connections.
@@ -1270,7 +1274,8 @@ private
     {** Push the alert-snooze state to /events subscribers.
      }
   procedure WebPublishSnooze;
-    {** Push the forecast to /events subscribers; nil clears it.
+    {** Push the forecast to /events subscribers and keep it for /predict;
+      nil clears it.
      }
   procedure WebPublishPredictions(const Preds: BGResults);
     {** Serve a web dashboard command (settings.get, settings.set, snooze).

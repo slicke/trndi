@@ -49,3 +49,4 @@
   function DotOutlineColorForTests(Background: TColor): TColor;
   procedure ProcessCurrentReadingForTests;
   procedure UpdateUIBasedOnGlucoseForTests;
+  function WebPredictionsForTests(const Preds: BGResults): BGResults;

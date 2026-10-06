@@ -153,7 +153,7 @@ Output:
 
 ### GET /predict
 
-Returns predicted glucose readings (if predictions are enabled).
+Returns the predicted glucose readings from the latest fetch (if predictions are enabled).
 
 **Response Format:**
 ```json
@@ -183,7 +183,7 @@ Returns predicted glucose readings (if predictions are enabled).
 }
 ```
 
-**Note:** The Trndi app does not fill this endpoint at present: it always answers with an empty array. The forecast is delivered as the `predict` event on [`/events`](#get-events) instead, in the format shown above.
+**Note:** This is the same forecast the `predict` event on [`/events`](#get-events) carries. The array is empty while predictions are switched off, before the first forecast has been computed, and after a fetch that failed to bring in fresh readings.
 
 **Example:**
 ```bash

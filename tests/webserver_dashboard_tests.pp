@@ -61,6 +61,7 @@ type
   private
     FServer: TTrndiWebServer;
     FReadings: BGResults;
+    FPredictions: BGResults;
     FCommands: TStringList;   // one "name|params-json" per command served
     FRefuseWith: string;      // when set, the callback refuses with this text
     function GetReadings: BGResults;
@@ -78,6 +79,7 @@ type
     procedure TestDashboardServed;
     procedure TestDashboardNeedsNoToken;
     procedure TestHealthListsNewEndpoints;
+    procedure TestPredictServesCallback;
     procedure TestSettingsWithoutCommand;
     procedure TestSettingsGet;
     procedure TestSettingsPost;
@@ -133,7 +135,7 @@ end;
 
 function TWebServerDashboardTests.GetPredictions: BGResults;
 begin
-  Result := nil;
+  Result := Copy(FPredictions);
 end;
 
 function TWebServerDashboardTests.Command(const ACommand: string;
@@ -186,6 +188,7 @@ begin
   FServer := nil;
   FCommands := TStringList.Create;
   FRefuseWith := '';
+  FPredictions := nil;
   SetLength(FReadings, 1);
   FReadings[0].Init(mgdl);
   FReadings[0].update(120, 4, mgdl);
@@ -235,6 +238,28 @@ begin
   AssertTrue('lists /snooze', Pos('"/snooze"', S) > 0);
   AssertTrue('lists the page', Pos('"/"', S) > 0);
   AssertTrue('reports command support', Pos('"command_support" : true', S) > 0);
+end;
+
+procedure TWebServerDashboardTests.TestPredictServesCallback;
+var
+  S: string;
+begin
+  StartServer;
+  S := Exchange(Get('/predict'));
+  AssertEquals('status without a forecast', 'HTTP/1.1 200 OK', StatusLine(S));
+  AssertTrue('an empty list', Pos('"predictions" : []', S) > 0);
+
+  SetLength(FPredictions, 2);
+  FPredictions[0].Init(mgdl);
+  FPredictions[0].update(130, 5, mgdl);
+  FPredictions[0].date := EncodeDate(2026, 9, 29) + EncodeTime(10, 5, 0, 0);
+  FPredictions[1].Init(mgdl);
+  FPredictions[1].update(135, 5, mgdl);
+  FPredictions[1].date := EncodeDate(2026, 9, 29) + EncodeTime(10, 10, 0, 0);
+  S := Exchange(Get('/predict'));
+  AssertEquals('status with a forecast', 'HTTP/1.1 200 OK', StatusLine(S));
+  AssertTrue('first prediction', Pos('"mgdl" : 130', S) > 0);
+  AssertTrue('second prediction', Pos('"mgdl" : 135', S) > 0);
 end;
 
 procedure TWebServerDashboardTests.TestSettingsWithoutCommand;
