@@ -2,7 +2,7 @@
 make.ps1 — Windows helper to run `lazbuild` and provide common shortcuts
 
 Usage:
-  ./make.ps1 [release|debug|noext|noext-debug|run|run-single|ide-libs|list-modules|test|assets|dashboard|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
+  ./make.ps1 [release|debug|noext|noext-debug|run|run-single|run-debug|ide-libs|list-modules|test|assets|dashboard|ptop|clean[-n|--dry-run]|distclean[-n|--dry-run]|help] or ./make.ps1 [lazbuild-args...]
 
 Behavior:
  - Sets `LAZBUILD` to `C:\lazarus\lazbuild.exe`, else `C:\fpcupdeluxe\lazarus\lazbuild.exe`, if present and `LAZBUILD` is not already set
@@ -56,6 +56,13 @@ if ($firstArg -like '--cpu=*') {
 # starts on the default account instead of opening the account picker.
 if ($firstArg -eq 'run-single') {
     $extraArgs = @('--no-multi') + @($extraArgs)
+    $firstArg = 'run'
+}
+
+# 'run-debug' is 'run' on a debug build.
+$runMode = 'Extensions (Release)'
+if ($firstArg -eq 'run-debug') {
+    $runMode = 'Extensions (Debug)'
     $firstArg = 'run'
 }
 
@@ -196,10 +203,11 @@ switch ($firstArg) {
         exit $LASTEXITCODE
     }
     "run" {
-        # Build release, then start the staged build\Trndi.exe, like the
-        # Makefile's run target. Arguments after 'run' go to Trndi, not lazbuild.
+        # Build (release; debug for run-debug), then start the staged
+        # build\Trndi.exe, like the Makefile's run target. Arguments after 'run'
+        # go to Trndi, not lazbuild.
         if (-not $laz) { Write-Error "lazbuild not found. Install Lazarus or set LAZBUILD."; exit 1 }
-        $mode = 'Extensions (Release)'
+        $mode = $runMode
         Write-Host "Running: $laz --build-mode=`"$mode`" Trndi.lpi" -ForegroundColor Cyan
         & $laz "--build-mode=$mode" 'Trndi.lpi'
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -638,6 +646,7 @@ switch ($firstArg) {
         Write-Host "  noext-debug      Build without extensions, debug ('No Ext (Debug)' mode)"
         Write-Host "  run              Build release, then start build\Trndi.exe (arguments after 'run' go to Trndi)"
         Write-Host "  run-single       Like run, but starts Trndi with --no-multi (skips the account picker)"
+        Write-Host "  run-debug        Like run, but on a debug build ('Extensions (Debug)' mode)"
         Write-Host "  test             Build tests/TrndiTestConsole.lpi and run it (spawns an in-process test server;"
         Write-Host "                   set TRNDI_NO_TESTSERVER=1 to skip integration tests)"
         Write-Host "  ide-libs         Copy the QuickJS engine + ABI shim to the project root, for Extensions builds run from the Lazarus IDE (F9)"
