@@ -46,6 +46,9 @@
  * - 2026-10-06: Added the Nightscout-compatible read endpoints
  *   (/api/v1/entries.json and aliases, /api/v1/status.json, /pebble,
  *   /sgv.json), authenticated the Nightscout way (api-secret or ?token=).
+ * - 2026-10-06: Added GET /report and GET /history.png, both served through
+ *   the command callback (report.get, history.png); the image comes back
+ *   from the owner base64-encoded and is sent as image/png.
  *)
 unit trndi.webserver.threaded;
 
@@ -99,7 +102,7 @@ unit trndi.webserver.threaded;
 interface
 
 uses
-Classes, SysUtils, Sockets, fpjson, jsonparser, syncobjs, trndi.types, DateUtils, sha1
+Classes, SysUtils, Math, Sockets, fpjson, jsonparser, syncobjs, trndi.types, DateUtils, sha1, base64
 {$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
 
 const
@@ -122,10 +125,24 @@ TGetPredictionsFunc = function: BGResults of object;
         @unorderedList(
           @item(@code(settings.get): AParams is nil; describe the settings in AReply)
           @item(@code(settings.set): AParams holds the changes; apply them, then describe the result in AReply)
-          @item(@code(snooze): AParams.minutes, 0 to resume; describe the snooze state in AReply))
+          @item(@code(snooze): AParams.minutes, 0 to resume; describe the snooze state in AReply)
+          @item(@code(report.get): AParams.minutes when the client gave one (0 means everything held); describe the summary statistics in AReply)
+          @item(@code(history.png): AParams.minutes, width and height when the client gave them; put the rendered graph in AReply.png_base64))
       @returns(False to refuse the command; the client then gets 400 with AError.) }
 TWebCommandFunc = function(const ACommand: string; const AParams: TJSONObject;
   AReply: TJSONObject; out AError: string): boolean of object;
+
+  {** A JSON number written with at most a fixed number of decimals. fpjson's
+      own float prints through Str(), which turns the 5.0 the UI shows into
+      5.0000000000000009E+000 on the wire; this prints what the UI shows. }
+TWebDecimal = class(TJSONFloatNumber)
+private
+  FDecimals: integer;
+protected
+  function GetAsString: TJSONStringType; override;
+public
+  constructor Create(const AValue: double; const ADecimals: integer); reintroduce;
+end;
 
   {** One event on the /events stream. }
 TWebEvent = record
@@ -298,6 +315,10 @@ end;
 
 {** Serialise one reading the way every endpoint and event does it. }
 function ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean = true): TJSONObject;
+
+  {** @code(AValue) as a JSON number with at most @code(ADecimals) decimals
+      (trailing zeros dropped), for the owner's command replies. }
+function WebDecimal(const AValue: double; const ADecimals: integer = 2): TJSONData;
 
 {** Name of a reading's classification as exposed on the wire. }
 function LevelName(const Level: BGValLevel): string;
@@ -485,6 +506,38 @@ begin
   else
     Result := 'normal';
   end;
+end;
+
+{ TWebDecimal }
+
+constructor TWebDecimal.Create(const AValue: double; const ADecimals: integer);
+begin
+  inherited Create(AValue);
+  FDecimals := ADecimals;
+end;
+
+function TWebDecimal.GetAsString: TJSONStringType;
+var
+  fs: TFormatSettings;
+  v: double;
+begin
+  fs := DefaultFormatSettings;
+  fs.DecimalSeparator := '.';
+  fs.ThousandSeparator := #0;
+  // Round first: FormatFloat keeps the sign of a value that rounds to zero
+  // and would print -0.001 as "-0.00".
+  v := RoundTo(AsFloat, -FDecimals);
+  if v = 0 then
+    v := 0;
+  Result := FormatFloat('0.' + StringOfChar('#', FDecimals), v, fs);
+  // FormatFloat leaves a bare "0." behind for a value that rounds to zero.
+  if (Result <> '') and (Result[Length(Result)] = '.') then
+    SetLength(Result, Length(Result) - 1);
+end;
+
+function WebDecimal(const AValue: double; const ADecimals: integer): TJSONData;
+begin
+  Result := TWebDecimal.Create(AValue, ADecimals);
 end;
 
 function ReadingToJSON(const Reading: BGReading; IncludeDelta: boolean): TJSONObject;
@@ -868,6 +921,18 @@ begin
   Result := StrToIntDef(QueryValue(Query, 'count'), ADefault);
   if Result < 1 then
     Result := ADefault;
+end;
+
+// Copies the integer query parameter AName into Params when the client sent
+// it. A value that is not a number goes in as -1, so the command refuses it
+// with a message instead of quietly taking its default.
+procedure AddIntQueryParam(Params: TJSONObject; const Query, AName: string);
+var
+  V: string;
+begin
+  V := QueryValue(Query, AName);
+  if V <> '' then
+    Params.Add(AName, StrToIntDef(V, -1));
 end;
 
 { TWebEventHub }
@@ -1265,7 +1330,7 @@ end;
 function TClientHandlerThread.HandleRequest(const Request: string): string;
 var
   Lines: TStringList;
-  Method, URIPath, Query, Headers, Body, NsResponse: string;
+  Method, URIPath, Query, Headers, Body, NsResponse, Png: string;
   ResponseObj, Params: TJSONObject;
   CurrentReadings: BGResults;
   Predictions: BGResults;
@@ -1425,7 +1490,47 @@ begin
           end;
       end
       else
-      if (URIPath = '/settings') or (URIPath = '/snooze') then
+      if (URIPath = '/report') and (Method = 'GET') then
+      begin
+        Params := TJSONObject.Create;
+        try
+          AddIntQueryParam(Params, Query, 'minutes');
+          Result := ServeCommand('report.get', Params, ResponseObj);
+        finally
+          Params.Free;
+        end;
+      end
+      else
+      if (URIPath = '/history.png') and (Method = 'GET') then
+      begin
+        Params := TJSONObject.Create;
+        try
+          AddIntQueryParam(Params, Query, 'minutes');
+          AddIntQueryParam(Params, Query, 'width');
+          AddIntQueryParam(Params, Query, 'height');
+          Result := ServeCommand('history.png', Params, ResponseObj);
+        finally
+          Params.Free;
+        end;
+        // The owner hands the image over base64-encoded inside the JSON
+        // reply; the client gets the bytes. A refusal stays a JSON error
+        // below, like every other endpoint's.
+        if Result.StartsWith('HTTP/1.1 200') then
+        begin
+          Png := DecodeStringBase64(ResponseObj.Get('png_base64', ''));
+          Result := Result +
+            'Content-Type: image/png'#13#10 +
+            'Content-Length: ' + IntToStr(Length(Png)) + #13#10 +
+            'Cache-Control: no-cache'#13#10 +
+            'Access-Control-Allow-Origin: *'#13#10 +
+            'Connection: close'#13#10#13#10 +
+            Png;
+          Exit;
+        end;
+      end
+      else
+      if (URIPath = '/settings') or (URIPath = '/snooze') or
+        (URIPath = '/report') or (URIPath = '/history.png') then
       begin
         ResponseObj.Add('error', 'Method not allowed');
         Result := 'HTTP/1.1 405 Method Not Allowed'#13#10;
@@ -1455,6 +1560,8 @@ begin
         Endpoints.Add('/events');
         Endpoints.Add('/settings');
         Endpoints.Add('/snooze');
+        Endpoints.Add('/report');
+        Endpoints.Add('/history.png');
         Endpoints.Add('/api/v1/entries.json');
         Endpoints.Add('/api/v1/status.json');
         Endpoints.Add('/pebble');

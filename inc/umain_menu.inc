@@ -44,6 +44,9 @@
    TTrndiExtEngine.Existing before touching Instance, so opening the
    extension log no longer builds the QuickJS engine when no extension is
    loaded; it reports that nothing is loaded instead. *)
+(* MODIFICATION NOTICE (2026-10-06): The overlay helpers (AutoEnableBasalOverlay
+   and friends) take the graph they fill instead of reaching for the global
+   fHistoryGraph, so the web API can fill its own hidden instance. *)
 (* Menu event handlers and UI click handlers for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -103,33 +106,30 @@ begin
   ShowMessage(msg);
 end;
 
-procedure TfBG.AutoEnableBasalOverlay;
+procedure TfBG.AutoEnableBasalOverlay(AGraph: TfHistoryGraph);
 var
   profile: TBasalProfile;
   ok: boolean;
 begin
-  if not api.supportsBasal then
+  if (api = nil) or (AGraph = nil) or (not api.supportsBasal) then
     Exit;
 
   ok := api.getBasalProfile(profile);
   if not ok then
     Exit;
 
-  if fHistoryGraph <> nil then
-  begin
-    fHistoryGraph.SetBasalProfile(profile);
-    fHistoryGraph.SetBasalOverlayEnabled(true);
-  end;
+  AGraph.SetBasalProfile(profile);
+  AGraph.SetBasalOverlayEnabled(true);
 end;
 
 // Hand the history graph whatever insulin deliveries the backend cached during
 // the last fetch. Opt-in: most backends cannot report any, and on a pump that
 // can, a user watching glucose may not want the treatment detail on screen.
-procedure TfBG.AutoEnableBolusOverlay;
+procedure TfBG.AutoEnableBolusOverlay(AGraph: TfHistoryGraph);
 var
   boluses: TBolusList;
 begin
-  if (api = nil) or (fHistoryGraph = nil) then
+  if (api = nil) or (AGraph = nil) then
     Exit;
 
   // The graph form is reused between openings, so every path out of here must
@@ -139,44 +139,44 @@ begin
   if (not ShowBolusOverlay) or (not api.supportsBoluses) or
     (not api.getBoluses(boluses)) then
   begin
-    fHistoryGraph.SetBolusOverlayEnabled(false);
-    fHistoryGraph.SetBoluses(nil);
+    AGraph.SetBolusOverlayEnabled(false);
+    AGraph.SetBoluses(nil);
     Exit;
   end;
 
-  fHistoryGraph.SetBoluses(boluses);
-  fHistoryGraph.SetBolusOverlayEnabled(true, ShowAutoBolusOverlay);
+  AGraph.SetBoluses(boluses);
+  AGraph.SetBolusOverlayEnabled(true, ShowAutoBolusOverlay);
 end;
 
 // Carbohydrates, on the same terms as the insulin overlay: opt-in, cached from
 // the last fetch, and cleared on every path that has nothing to show.
-procedure TfBG.AutoEnableCarbOverlay;
+procedure TfBG.AutoEnableCarbOverlay(AGraph: TfHistoryGraph);
 var
   carbs: TCarbList;
 begin
-  if (api = nil) or (fHistoryGraph = nil) then
+  if (api = nil) or (AGraph = nil) then
     Exit;
 
   if (not ShowCarbOverlay) or (not api.supportsCarbs) or
     (not api.getCarbs(carbs)) then
   begin
-    fHistoryGraph.SetCarbOverlayEnabled(false);
-    fHistoryGraph.SetCarbs(nil);
+    AGraph.SetCarbOverlayEnabled(false);
+    AGraph.SetCarbs(nil);
     Exit;
   end;
 
-  fHistoryGraph.SetCarbs(carbs);
-  fHistoryGraph.SetCarbOverlayEnabled(true);
+  AGraph.SetCarbs(carbs);
+  AGraph.SetCarbOverlayEnabled(true);
 end;
 
-procedure TfBG.AutoAddPredictionOverlay;
+procedure TfBG.AutoAddPredictionOverlay(AGraph: TfHistoryGraph);
 var
   predictions: BGResults;
 begin
-  if (api = nil) or (fHistoryGraph = nil) then
+  if (api = nil) or (AGraph = nil) then
     Exit;
   if api.predictReadings(6, predictions) then
-    fHistoryGraph.SetPredictions(predictions);
+    AGraph.SetPredictions(predictions);
 end;
 
 procedure TfBG.miDNSClick(Sender: TObject);
@@ -654,10 +654,10 @@ procedure TfBG.miHistoryClick(Sender: TObject);
 begin
   ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
     api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
-  AutoEnableBasalOverlay;
-  AutoEnableBolusOverlay;
-  AutoEnableCarbOverlay;
-  AutoAddPredictionOverlay;
+  AutoEnableBasalOverlay(fHistoryGraph);
+  AutoEnableBolusOverlay(fHistoryGraph);
+  AutoEnableCarbOverlay(fHistoryGraph);
+  AutoAddPredictionOverlay(fHistoryGraph);
 end;
 
 // Force update on menu click

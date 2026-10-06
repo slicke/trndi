@@ -35,6 +35,8 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-10-06): Added the RenderToStream and
+   SetRangeMinutes stubs the real graph grew for the web API's /history.png. *)
 unit uhistorygraph;
 
 {$mode ObjFPC}{$H+}
@@ -72,6 +74,8 @@ type
     procedure SetCarbs(const Carbs: TCarbList);
     procedure SetCarbOverlayEnabled(aEnabled: boolean);
     procedure SetPredictions(const Predictions: BGResults);
+    procedure RenderToStream(AStream: TStream);
+    procedure SetRangeMinutes(const AMinutes: integer);
   end;
 
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit); overload;
@@ -153,6 +157,16 @@ begin
 end;
 
 procedure TfHistoryGraph.SetPredictions(const Predictions: BGResults);
+begin
+  // no-op for tests
+end;
+
+procedure TfHistoryGraph.RenderToStream(AStream: TStream);
+begin
+  // no-op for tests: nothing is written
+end;
+
+procedure TfHistoryGraph.SetRangeMinutes(const AMinutes: integer);
 begin
   // no-op for tests
 end;
