@@ -119,4 +119,69 @@ The repository's own build entry points are `make` on Linux/BSD/Haiku, `gmake`
 on macOS and `make.ps1` on Windows — see `CLAUDE.md` for the target list
 (`make`, `make debug`, `make test`, `make noext`). Wiring those into
 `.vscode/tasks.json` is left to individual contributors, since `.vscode/` is not
-tracked.
+tracked; the macOS debugging section below has a complete example.
+
+## Debugging on macOS
+
+`GDB Debugger - Beyond` needs GDB, which does not run on Apple Silicon. Use
+LLDB through `vadimcn.vscode-lldb` (CodeLLDB) instead. Build with `gmake debug`;
+on macOS the Makefile emits DWARF 2, which LLDB reads, and breakpoints in the
+`inc/*.inc` files resolve to the right lines.
+
+Launch the executable inside the bundle directly, not through `open`, so the
+debugger owns the process:
+
+```jsonc
+{
+  "name": "Trndi (debug)",
+  "type": "lldb",
+  "request": "launch",
+  "program": "${workspaceFolder}/build/Trndi.app/Contents/MacOS/Trndi",
+  "args": ["--no-multi"],
+  "cwd": "${workspaceFolder}/build",
+  "preLaunchTask": "Trndi: build debug"
+}
+```
+
+`preLaunchTask` names a task by its `label` in `.vscode/tasks.json`, so F5
+builds first and only starts the debugger if the build succeeds:
+
+```jsonc
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Trndi: build debug",
+      "type": "shell",
+      "command": "gmake debug",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": {
+        "owner": "fpc",
+        "fileLocation": ["autoDetect", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.+)\\((\\d+),(\\d+)\\)\\s+(Error|Fatal|Warning|Note|Hint):\\s+(.*)$",
+          "file": 1, "line": 2, "column": 3, "severity": 4, "message": 5
+        }
+      }
+    }
+  ]
+}
+```
+
+Marking it as the default build task also binds it to Cmd+Shift+B, and the
+problem matcher turns FPC's `file(line,col) Error: …` output into entries in
+the Problems panel.
+
+If CodeLLDB reports `could not find 'debugserver'`, point it at Apple's copy
+from the Command Line Tools (or Xcode) in `.vscode/settings.json`:
+
+```jsonc
+"lldb.adapterEnv": {
+  "LLDB_DEBUGSERVER_PATH": "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/Resources/debugserver"
+}
+```
+
+To stop where an exception is raised, set a breakpoint on
+`FPC_RAISEEXCEPTION`. LCL raises and handles exceptions of its own, so leave
+it disabled until you need it.
