@@ -80,12 +80,14 @@ If no token is configured, all requests are allowed. The dashboard page itself (
 
 ## Dashboard
 
-`GET /` (alias `/dashboard`) returns a self-contained HTML page, about 14 KB with no external assets, that works offline on the local network. It subscribes to `/events` for live updates and uses the other endpoints for the rest, so it shows exactly what the API exposes:
+`GET /` (alias `/dashboard`) returns a self-contained HTML page, about 18 KB with no external assets, that works offline on the local network. It subscribes to `/events` for live updates and uses the other endpoints for the rest, so it shows exactly what the API exposes:
 
 - the current reading in the app's unit, with trend arrow, delta and age, coloured by the reading's level
 - a graph of the last three hours from `/glucose`, with the high/low limits, the personal in-range band and the forecast dashed in
 - the forecast (the `predict` event), the connection state and the alert-snooze state
 - alerts as they fire while the page is open
+- **Summary**: time in range, mean, GMI, variability, lowest and highest reading and the sparkline from [`/report`](#get-report), over a window you pick (3 h to everything held); refreshed with every new reading
+- **History**: the history graph image from [`/history.png`](#get-historypng) for the same window, fetched with the token and sized to the page, refreshed with each new reading (at most every 30 seconds)
 - **Alerts**: snooze buttons (15/30/60 minutes, resume) that call `/snooze`
 - **Settings**: unit (mmol/L or mg/dL), custom high/low limits, custom in-range band and the predictions toggle, saved through `/settings` and applied immediately, like the Settings dialog
 
