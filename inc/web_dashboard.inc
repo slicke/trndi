@@ -133,7 +133,7 @@ WEB_DASHBOARD_HTML =
   '(function(){' + LineEnding +
   '"use strict";' + LineEnding +
   'var $=function(id){return document.getElementById(id)};' + LineEnding +
-  'var ARROWS=["\u21C8","\u2191","\u2197","\u2192","\u2198","\u2193","\u21CA","?"];' + LineEnding +
+  'var ARROWS=["\u21C8","\u2191","\u2197","\u2192","\u2198","\u2193","\u21CA","?","X"];' + LineEnding +
   'var MGDL=18.0156;' + LineEnding +
   'var token=null;' + LineEnding +
   'try{token=localStorage.getItem("trndi.token")||""}catch(e){token=""}' + LineEnding +

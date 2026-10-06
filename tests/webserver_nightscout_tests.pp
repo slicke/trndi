@@ -536,6 +536,19 @@ begin
   S := Exchange(Get('/api/v1/status.json'));
   AssertEquals('status is protected too', 'HTTP/1.1 401 Unauthorized', StatusLine(S));
 
+  // One valid form is enough, whatever else the request carries.
+  S := Exchange(Get('/api/v1/entries.json?token=secret',
+    'api-secret: ' + SHA1Print(SHA1String('other')) + #13#10));
+  AssertEquals('wrong api-secret, right query token', 'HTTP/1.1 200 OK', StatusLine(S));
+  S := Exchange(Get('/api/v1/entries.json?token=nope', 'api-secret: ' + Hash + #13#10));
+  AssertEquals('right api-secret, wrong query token', 'HTTP/1.1 200 OK', StatusLine(S));
+  S := Exchange(Get('/api/v1/entries.json?token=nope',
+    'api-secret: nope'#13#10 + 'Authorization: Bearer secret'#13#10));
+  AssertEquals('only the bearer is right', 'HTTP/1.1 200 OK', StatusLine(S));
+  S := Exchange(Get('/api/v1/entries.json?token=nope',
+    'api-secret: nope'#13#10 + 'Authorization: Bearer nope'#13#10));
+  AssertEquals('all three wrong', 'HTTP/1.1 401 Unauthorized', StatusLine(S));
+
   // The Nightscout forms are for the Nightscout endpoints only.
   S := Exchange(Get('/glucose?token=secret'));
   AssertEquals('/glucose ignores a query token', 'HTTP/1.1 401 Unauthorized', StatusLine(S));

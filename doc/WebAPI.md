@@ -444,7 +444,7 @@ Other Nightscout query filters (`find[...]` and so on) are ignored.
 }
 ```
 
-`trend` here is Nightscout's number for the direction (1 `DoubleUp` to 7 `DoubleDown`, 4 is `Flat`, 8 `NOT COMPUTABLE`, 0 `NONE`), which is one higher than the [trend value](#trend-values) the other endpoints use.
+`trend` here is Nightscout's number for the direction (1 `DoubleUp` to 7 `DoubleDown`, 4 is `Flat`, 8 `NOT COMPUTABLE`, 0 `NONE`). For the [trend values](#trend-values) 0–7 that the other endpoints use, it is one higher; value 8 (no trend available) becomes `NONE`, 0.
 
 **Authentication.** Without a configured token these endpoints are open, like the rest of the API. With one, a request must carry it in one of these forms:
 
@@ -483,9 +483,9 @@ The `trend` field of `/glucose`, `/predict` and the `/events` payloads uses the 
 | 5 | SingleDown | ↓ |
 | 6 | DoubleDown | ⇊ |
 | 7 | NotComputable | ? |
-| 8 | No trend available | - |
+| 8 | No trend available | X |
 
-These are Trndi's own numbers, each one lower than Nightscout's for the same direction. The Nightscout-compatible `/pebble` is the exception: its `trend` uses Nightscout's numbering, and the entries endpoints name the direction instead.
+These are Trndi's own numbers; 0–7 are each one lower than Nightscout's for the same direction, and 8 corresponds to Nightscout's `NONE` (0). The Nightscout-compatible `/pebble` is the exception: its `trend` uses Nightscout's numbering, and the entries endpoints name the direction instead.
 
 ## CORS Support
 
