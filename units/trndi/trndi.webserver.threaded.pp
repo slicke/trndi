@@ -43,6 +43,9 @@
  * - 2026-09-29: Added the embedded dashboard (GET /), the /settings and
  *   /snooze endpoints backed by a command callback run on the main thread,
  *   Content-Length request bodies, and the loopback-or-token write policy.
+ * - 2026-10-06: Added the Nightscout-compatible read endpoints
+ *   (/api/v1/entries.json and aliases, /api/v1/status.json, /pebble,
+ *   /sgv.json), authenticated the Nightscout way (api-secret or ?token=).
  *)
 unit trndi.webserver.threaded;
 
@@ -61,6 +64,12 @@ unit trndi.webserver.threaded;
   or, when a token is configured, from any authenticated peer; the server is
   otherwise reachable by anyone on the network, and reading glucose is one
   thing, changing limits another.
+
+  The same readings are also served in Nightscout's shape (/api/v1/entries.json
+  and its aliases, /api/v1/status.json, /pebble, and xDrip's /sgv.json), so a
+  client written for Nightscout can be pointed at Trndi. Those endpoints are
+  read-only and take the token the way Nightscout clients send a secret; see
+  ServeNightscout.
 
   Threading model:
     - TWebServerThread owns the listening socket and runs the accept loop.
@@ -90,7 +99,7 @@ unit trndi.webserver.threaded;
 interface
 
 uses
-Classes, SysUtils, Sockets, fpjson, jsonparser, syncobjs, trndi.types, DateUtils
+Classes, SysUtils, Sockets, fpjson, jsonparser, syncobjs, trndi.types, DateUtils, sha1
 {$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
 
 const
@@ -191,6 +200,9 @@ private
   FCmdOk: boolean;
   function HandleRequest(const Request: string): string;
   function CheckAuth(const Headers, QueryToken: string): boolean;
+  function CheckNightscoutAuth(const Headers, Query: string): boolean;
+  function ServeNightscout(const Method, URIPath, Query, Headers: string;
+    out Response: string): boolean;
   function WriteAllowed: boolean;
   function ServeCommand(const ACommand: string; AParams, AReply: TJSONObject): string;
   procedure RunCommandSync;
@@ -302,6 +314,11 @@ REQUEST_READ_TIMEOUT_MS = 5000;        // total budget to receive headers
 EVENT_RING_SIZE = 128;                 // events kept for Last-Event-ID replay
 EVENT_POLL_MS = 250;                   // how often a stream handler looks for news
 EVENT_KEEPALIVE_MS = 15000;            // idle comment so proxies/NATs keep the stream
+NS_DEFAULT_COUNT = 10;                 // entries Nightscout returns when "count" is absent
+// Reported in the Nightscout status document. Deliberately lower than any
+// real Nightscout release: a client that gates features on the version then
+// settles for the plain v1 read API, which is all that is served here.
+NS_COMPAT_VERSION = '0.0.0-trndi';
 LOOPBACK_ADDR_HOST_ORDER = $7F000001;  // 127.0.0.1
 {$IFDEF WINDOWS}
 SHUT_RDWR = SD_BOTH;
@@ -602,6 +619,257 @@ begin
     URIPath := URI;
 end;
 
+{ Nightscout-compatible documents }
+
+type
+  // The Nightscout (and xDrip web service) resources this server answers.
+TNightscoutRoute = (nrNone, nrEntries, nrCurrent, nrStatus, nrPebble, nrEmptyList);
+
+// Maps a request path to the Nightscout resource it names. Nightscout serves
+// its v1 resources with and without ".json". xDrip's two spellings (/sgv.json,
+// /status.json) exist only with the suffix, and /status without it is this
+// server's own endpoint. Repeated slashes count as one: clients that join a
+// base URL ending in "/" to a path (Trndi's own Nightscout driver among them)
+// ask for "/api/v1//entries.json", and the proxies in front of a real
+// Nightscout merge that for them.
+function NightscoutRouteOf(const URIPath: string): TNightscoutRoute;
+var
+  P: string;
+begin
+  P := URIPath;
+  while Pos('//', P) > 0 do
+    P := StringReplace(P, '//', '/', [rfReplaceAll]);
+
+  if P = '/sgv.json' then
+    Exit(nrEntries);
+  if P = '/status.json' then
+    Exit(nrStatus);
+  if P = '/pebble' then
+    Exit(nrPebble);
+
+  if P.EndsWith('.json') then
+    SetLength(P, Length(P) - 5);
+  case P of
+  '/api/v1/entries', '/api/v1/entries/sgv':
+    Result := nrEntries;
+  '/api/v1/entries/current':
+    Result := nrCurrent;
+  '/api/v1/status':
+    Result := nrStatus;
+  // Trndi relays readings only, so these lists are served empty: a client
+  // that asks for them gets "nothing there" rather than a 404 to trip over.
+  '/api/v1/devicestatus', '/api/v1/treatments':
+    Result := nrEmptyList;
+  else
+    Result := nrNone;
+  end;
+end;
+
+// Milliseconds since the Unix epoch, the form Nightscout carries in "date".
+function EpochMs(const ALocalTime: TDateTime): int64;
+begin
+  Result := Round((LocalTimeToUniversal(ALocalTime) - UnixDateDelta) * MSecsPerDay);
+end;
+
+function FormatUtcIsoMs(const ALocalTime: TDateTime): string;
+begin
+  Result := FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss"."zzz"Z"',
+    LocalTimeToUniversal(ALocalTime));
+end;
+
+// Nightscout's name for a trend. BG_TRENDS_STRING already holds those names;
+// only the placeholder has none of its own.
+function NightscoutDirection(const Trend: BGTrend): string;
+begin
+  if Trend = TdPlaceholder then
+    Result := 'NONE'
+  else
+    Result := BG_TRENDS_STRING[Trend];
+end;
+
+// Nightscout's number for a trend, as /pebble reports it: 0 is NONE, then
+// DoubleUp (1) through NOT COMPUTABLE (8) in BGTrend's own order.
+function NightscoutTrendNumber(const Trend: BGTrend): integer;
+begin
+  if Trend = TdPlaceholder then
+    Result := 0
+  else
+    Result := Ord(Trend) + 1;
+end;
+
+// One reading as a Nightscout "sgv" entry. Values are whole mg/dL, which is
+// what Nightscout stores whatever unit it displays.
+function ReadingToNightscoutEntry(const Reading: BGReading): TJSONObject;
+var
+  Ms: int64;
+  Stamp: string;
+begin
+  Ms := EpochMs(Reading.date);
+  Stamp := FormatUtcIsoMs(Reading.date);
+  Result := TJSONObject.Create;
+  try
+    // Nightscout ids are 24 hex digits; derive a stable one from the time.
+    Result.Add('_id', LowerCase(IntToHex(Ms, 24)));
+    Result.Add('device', 'Trndi');
+    Result.Add('date', Ms);
+    Result.Add('dateString', Stamp);
+    Result.Add('sysTime', Stamp);
+    Result.Add('sgv', Round(Reading.convert(mgdl, BGPrimary)));
+    if not Reading.deltaEmpty then
+      Result.Add('delta', Round(Reading.convert(mgdl, BGDelta)));
+    Result.Add('direction', NightscoutDirection(Reading.trend));
+    Result.Add('type', 'sgv');
+    Result.Add('utcOffset', -GetLocalTimeOffset);
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+// The newest MaxCount readings as a Nightscout entries array. Readings
+// without a value are left out, as Nightscout has no entry for them either.
+function NightscoutEntries(const Readings: BGResults; MaxCount: integer): TJSONArray;
+var
+  i: integer;
+begin
+  Result := TJSONArray.Create;
+  try
+    for i := 0 to High(Readings) do
+    begin
+      if Result.Count >= MaxCount then
+        Break;
+      if Readings[i].empty then
+        Continue;
+      Result.Add(ReadingToNightscoutEntry(Readings[i]));
+    end;
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+// The /pebble document: server time plus the newest readings, with values as
+// strings in the display unit (the one resource where Nightscout converts).
+function NightscoutPebble(const Readings: BGResults; MaxCount: integer;
+  AsMmol: boolean): TJSONObject;
+var
+  fs: TFormatSettings;
+  Status, Bgs: TJSONArray;
+  NowObj, Bg: TJSONObject;
+  u: BGUnit;
+  Fmt: string;
+  i: integer;
+begin
+  fs := DefaultFormatSettings;
+  fs.DecimalSeparator := '.';
+  if AsMmol then
+  begin
+    u := mmol;
+    Fmt := '0.0';
+  end
+  else
+  begin
+    u := mgdl;
+    Fmt := '0';
+  end;
+
+  Result := TJSONObject.Create;
+  try
+    NowObj := TJSONObject.Create;
+    NowObj.Add('now', EpochMs(Now));
+    Status := TJSONArray.Create;
+    Status.Add(NowObj);
+    Result.Add('status', Status);
+
+    Bgs := TJSONArray.Create;
+    Result.Add('bgs', Bgs);
+    for i := 0 to High(Readings) do
+    begin
+      if Bgs.Count >= MaxCount then
+        Break;
+      if Readings[i].empty then
+        Continue;
+      Bg := TJSONObject.Create;
+      Bgs.Add(Bg);
+      Bg.Add('sgv', FormatFloat(Fmt, Readings[i].convert(u, BGPrimary), fs));
+      Bg.Add('trend', NightscoutTrendNumber(Readings[i].trend));
+      Bg.Add('direction', NightscoutDirection(Readings[i].trend));
+      Bg.Add('datetime', EpochMs(Readings[i].date));
+      if not Readings[i].deltaEmpty then
+        Bg.Add('bgdelta', FormatFloat(Fmt, Readings[i].convert(u, BGDelta), fs));
+    end;
+
+    Result.Add('cals', TJSONArray.Create);
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+// The Nightscout status document. ASettings is the reply of the settings.get
+// command, or nil when the owner serves none; the unit then reads mg/dl and
+// the thresholds are left out. Thresholds are mg/dL, as in Nightscout. A
+// disabled in-range band is reported as the limits themselves, since
+// Nightscout always carries all four values and clients expect them.
+function NightscoutStatus(const ASettings: TJSONObject): TJSONObject;
+var
+  Settings, Thresholds, Src: TJSONObject;
+  Data: TJSONData;
+  NowLocal: TDateTime;
+  Lo, Hi: integer;
+begin
+  NowLocal := Now;
+  Result := TJSONObject.Create;
+  try
+    Result.Add('status', 'ok');
+    Result.Add('name', 'Trndi');
+    Result.Add('version', NS_COMPAT_VERSION);
+    Result.Add('serverTime', FormatUtcIsoMs(NowLocal));
+    Result.Add('serverTimeEpoch', EpochMs(NowLocal));
+    Result.Add('apiEnabled', true);
+    Result.Add('careportalEnabled', false);
+
+    Settings := TJSONObject.Create;
+    Result.Add('settings', Settings);
+    if Assigned(ASettings) and (ASettings.Get('unit', '') = 'mmol') then
+      Settings.Add('units', 'mmol')
+    else
+      Settings.Add('units', 'mg/dl');
+
+    Src := nil;
+    if Assigned(ASettings) then
+    begin
+      Data := ASettings.Find('thresholds');
+      if Data is TJSONObject then
+        Src := TJSONObject(Data);
+    end;
+    if Assigned(Src) then
+    begin
+      Lo := Src.Get('lo', 0);
+      Hi := Src.Get('hi', 0);
+      Thresholds := TJSONObject.Create;
+      Settings.Add('thresholds', Thresholds);
+      Thresholds.Add('bgHigh', Hi);
+      // Get falls back to its default for the null of a disabled band.
+      Thresholds.Add('bgTargetTop', Src.Get('range_hi', Hi));
+      Thresholds.Add('bgTargetBottom', Src.Get('range_lo', Lo));
+      Thresholds.Add('bgLow', Lo);
+    end;
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+// The "count" query value, or ADefault when it is absent or not a positive
+// number.
+function CountParam(const Query: string; ADefault: integer): integer;
+begin
+  Result := StrToIntDef(QueryValue(Query, 'count'), ADefault);
+  if Result < 1 then
+    Result := ADefault;
+end;
+
 { TWebEventHub }
 
 constructor TWebEventHub.Create;
@@ -820,6 +1088,115 @@ begin
   Result := ConstantTimeEquals(Token, FAuthToken);
 end;
 
+// Auth for the Nightscout-compatible endpoints. A Nightscout client has no
+// way to send a bearer token: it carries the secret as an "api-secret" header
+// holding the secret's SHA-1 in hex, or as a "?token=" query value. Both are
+// accepted here, with the configured token standing in for the secret; the
+// bearer header keeps working too. Unlike the plain endpoints this lets the
+// token into a URL, which is the price of serving clients (watch faces,
+// widgets) that can be given nothing but one.
+function TClientHandlerThread.CheckNightscoutAuth(const Headers, Query: string): boolean;
+var
+  Secret, Token: string;
+begin
+  if FAuthToken = '' then
+    Exit(true);
+
+  Secret := HeaderValue(Headers, 'api-secret');
+  if Secret <> '' then
+    Exit(ConstantTimeEquals(LowerCase(Secret), SHA1Print(SHA1String(FAuthToken))));
+
+  Token := QueryValue(Query, 'token');
+  if Token <> '' then
+    Exit(ConstantTimeEquals(Token, FAuthToken));
+
+  Result := CheckAuth(Headers, '');
+end;
+
+// Answers the Nightscout-compatible read endpoints (see NightscoutRouteOf).
+// Units and limits are the owner's, so the status document (and /pebble,
+// when the request names no unit) asks for them through the settings.get
+// command, which runs on the main thread like any other command.
+// @returns(False when URIPath is not one of them; Response is then empty.)
+function TClientHandlerThread.ServeNightscout(const Method, URIPath, Query,
+  Headers: string; out Response: string): boolean;
+var
+  Route: TNightscoutRoute;
+  StatusLine, Body, Units: string;
+  Readings: BGResults;
+  Settings: TJSONObject;
+  Data: TJSONData;
+begin
+  Response := '';
+  Route := NightscoutRouteOf(URIPath);
+  if Route = nrNone then
+    Exit(false);
+  Result := true;
+
+  if Method <> 'GET' then
+  begin
+    StatusLine := 'HTTP/1.1 405 Method Not Allowed';
+    Body := '{"error":"Method not allowed"}';
+  end
+  else
+  if not CheckNightscoutAuth(Headers, Query) then
+  begin
+    // The body Nightscout itself sends, for clients that look at it.
+    StatusLine := 'HTTP/1.1 401 Unauthorized';
+    Body := '{"status":401,"message":"Unauthorized","description":"Invalid/Missing"}';
+  end
+  else
+  begin
+    Readings := nil;
+    if (Route in [nrEntries, nrCurrent, nrPebble]) and Assigned(FGetCurrentReading) then
+      Readings := FGetCurrentReading();
+
+    Units := QueryValue(Query, 'units');
+    Settings := nil;
+    Data := nil;
+    try
+      if (Route = nrStatus) or ((Route = nrPebble) and (Units = '')) then
+      begin
+        Settings := TJSONObject.Create;
+        if not ServeCommand('settings.get', nil, Settings).StartsWith('HTTP/1.1 200') then
+          FreeAndNil(Settings);
+      end;
+
+      case Route of
+      nrEntries:
+        Data := NightscoutEntries(Readings, CountParam(Query, NS_DEFAULT_COUNT));
+      nrCurrent:
+        Data := NightscoutEntries(Readings, 1);
+      nrStatus:
+        Data := NightscoutStatus(Settings);
+      nrPebble:
+      begin
+        if Assigned(Settings) then
+          Units := Settings.Get('unit', '');
+        Data := NightscoutPebble(Readings, CountParam(Query, 1), Units = 'mmol');
+      end;
+      else
+        Data := TJSONArray.Create;
+      end;
+      StatusLine := 'HTTP/1.1 200 OK';
+      Body := Data.AsJSON;
+    finally
+      Data.Free;
+      Settings.Free;
+    end;
+  end;
+
+  // Content-Length is spelled out for these: the clients are often small
+  // embedded HTTP stacks that do not read until the connection closes.
+  Response := StatusLine + #13#10 +
+    'Content-Type: application/json; charset=utf-8'#13#10 +
+    'Content-Length: ' + IntToStr(Length(Body)) + #13#10 +
+    'Access-Control-Allow-Origin: *'#13#10 +
+    'Cache-Control: no-cache'#13#10 +
+    'Connection: close'#13#10#13#10 +
+    Body;
+end;
+
 // The write policy for /settings and /snooze. Reading glucose off the LAN is
 // what the server is for; changing the app's limits is not something an
 // unauthenticated peer elsewhere on the network gets to do. A loopback peer
@@ -886,7 +1263,7 @@ end;
 function TClientHandlerThread.HandleRequest(const Request: string): string;
 var
   Lines: TStringList;
-  Method, URIPath, Query, Headers, Body: string;
+  Method, URIPath, Query, Headers, Body, NsResponse: string;
   ResponseObj, Params: TJSONObject;
   CurrentReadings: BGResults;
   Predictions: BGResults;
@@ -939,7 +1316,15 @@ begin
       Result := 'HTTP/1.1 204 No Content'#13#10 +
         'Access-Control-Allow-Origin: *'#13#10 +
         'Access-Control-Allow-Methods: GET, POST, OPTIONS'#13#10 +
-        'Access-Control-Allow-Headers: Content-Type, Authorization'#13#10#13#10;
+        'Access-Control-Allow-Headers: Content-Type, Authorization, api-secret'#13#10#13#10;
+      Exit;
+    end;
+
+    // The Nightscout-compatible endpoints authenticate the Nightscout way,
+    // so they are answered ahead of the bearer check below.
+    if ServeNightscout(Method, URIPath, Query, Headers, NsResponse) then
+    begin
+      Result := NsResponse;
       Exit;
     end;
 
@@ -1068,6 +1453,10 @@ begin
         Endpoints.Add('/events');
         Endpoints.Add('/settings');
         Endpoints.Add('/snooze');
+        Endpoints.Add('/api/v1/entries.json');
+        Endpoints.Add('/api/v1/status.json');
+        Endpoints.Add('/pebble');
+        Endpoints.Add('/sgv.json');
         ResponseObj.Add('endpoints', Endpoints);
         ResponseObj.Add('command_support', Assigned(FCommand));
 

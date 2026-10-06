@@ -5,6 +5,8 @@
 Trndi includes an embedded HTTP API server that exposes glucose readings and predictions via REST endpoints, and pushes changes to subscribers over a live event stream (`/events`). The server runs in a separate thread and does not interfere with the GUI's responsiveness.
 > This is especially useful for Dexcom users, as they have no easy API access
 
+The same readings are also served in **Nightscout's format** (see [Nightscout-compatible endpoints](#nightscout-compatible-endpoints)), so watch faces, widgets and other apps written for Nightscout can read from Trndi directly, whichever backend Trndi itself gets its data from.
+
 It also serves a small **dashboard** page at `/` (see [Dashboard](#dashboard)): open `http://localhost:8080/` in any browser, including a phone on the same network, to see the current reading, a short history graph, the forecast and alerts, and to change the basic settings.
 
 ## Configuration
@@ -65,6 +67,8 @@ http://localhost:8080/events?token=your_token_here
 ```
 
 The other endpoints (`/glucose`, `/predict`, `/status`, `/health`, `/settings`, `/snooze`) ignore the query parameter and require the `Authorization` header, so the token does not end up in URLs, browser history, or proxy logs.
+
+The [Nightscout-compatible endpoints](#nightscout-compatible-endpoints) are the second exception: Nightscout clients cannot send a bearer token, so those endpoints also take the token the way such clients send a Nightscout secret (an `api-secret` header or a `token` query parameter).
 
 If no token is configured, all requests are allowed. The dashboard page itself (`/`) never needs the token; it is plain markup and fetches every value through the endpoints above.
 
@@ -224,7 +228,11 @@ Returns a richer health payload suitable for uptime/monitoring checks.
     "/health",
     "/events",
     "/settings",
-    "/snooze"
+    "/snooze",
+    "/api/v1/entries.json",
+    "/api/v1/status.json",
+    "/pebble",
+    "/sgv.json"
   ],
   "command_support": true
 }
@@ -365,6 +373,102 @@ es.addEventListener('alert', e => console.warn('alert', JSON.parse(e.data).kinds
 
 ## Trend Values
 
+## Nightscout-compatible endpoints
+
+Trndi answers the read side of the Nightscout v1 API, plus the two paths xDrip's local web service uses. Point a Nightscout client at `http://<trndi-host>:8080` and it gets the readings Trndi is showing. This is handy when Trndi reads from Dexcom, LibreLinkUp, CareLink or Tandem and you have no Nightscout site of your own.
+
+| Path | Returns |
+|------|---------|
+| `/api/v1/entries.json`, `/api/v1/entries/sgv.json`, `/sgv.json` | The newest readings, newest first |
+| `/api/v1/entries/current.json` | The newest reading, as a one-element array |
+| `/api/v1/status.json`, `/status.json` | Server time, display unit and thresholds |
+| `/pebble` | Server time and the newest reading, values as strings in the display unit |
+| `/api/v1/devicestatus.json`, `/api/v1/treatments.json` | Always an empty array (`[]`) |
+
+The `/api/v1/...` paths also work without the `.json` suffix. All of them are `GET` only; Trndi does not accept uploads, and anything else gets `405 Method Not Allowed`.
+
+**Query parameters:**
+- `count`: How many readings to return. Defaults to 10 for the entries paths and 1 for `/pebble`; you never get more than Trndi currently holds.
+- `units` (`/pebble` only): `mmol` for mmol/L strings, anything else for mg/dL. Without it, the unit Trndi is set to is used.
+- `token`: The access token, when one is configured (see below).
+
+Other Nightscout query filters (`find[...]` and so on) are ignored.
+
+**Entry format** (`/api/v1/entries.json?count=1`):
+```json
+[
+  {
+    "_id": "00000000000001a0eca484c0",
+    "device": "Trndi",
+    "date": 1790676600000,
+    "dateString": "2026-09-29T10:10:00.000Z",
+    "sysTime": "2026-09-29T10:10:00.000Z",
+    "sgv": 120,
+    "delta": 4,
+    "direction": "FortyFiveUp",
+    "type": "sgv",
+    "utcOffset": 120
+  }
+]
+```
+
+`sgv` and `delta` are whole mg/dL values, as in Nightscout, whatever unit Trndi displays. `direction` is the Nightscout trend name (`DoubleUp`, `SingleUp`, `FortyFiveUp`, `Flat`, `FortyFiveDown`, `SingleDown`, `DoubleDown`, `NOT COMPUTABLE` or `NONE`). `delta` is left out for a reading that has none. `_id` is derived from the timestamp, so it is stable between requests.
+
+**Status format** (`/api/v1/status.json`):
+```json
+{
+  "status": "ok",
+  "name": "Trndi",
+  "version": "0.0.0-trndi",
+  "serverTime": "2026-09-29T10:12:03.512Z",
+  "serverTimeEpoch": 1790676723512,
+  "apiEnabled": true,
+  "careportalEnabled": false,
+  "settings": {
+    "units": "mmol",
+    "thresholds": { "bgHigh": 180, "bgTargetTop": 140, "bgTargetBottom": 80, "bgLow": 70 }
+  }
+}
+```
+
+`settings.units` is `mmol` or `mg/dl`. The thresholds are the limits Trndi classifies readings against, in mg/dL. When Trndi has no separate in-range band, `bgTargetTop` and `bgTargetBottom` repeat `bgHigh` and `bgLow`.
+
+**Pebble format** (`/pebble?units=mmol`):
+```json
+{
+  "status": [ { "now": 1790676723512 } ],
+  "bgs": [
+    { "sgv": "6.7", "trend": 3, "direction": "FortyFiveUp", "datetime": 1790676600000, "bgdelta": "0.2" }
+  ],
+  "cals": []
+}
+```
+
+`trend` here is Nightscout's number for the direction (1 `DoubleUp` to 7 `DoubleDown`, 4 is `Flat`, 8 `NOT COMPUTABLE`, 0 `NONE`), which is one higher than the [trend value](#trend-values) the other endpoints use.
+
+**Authentication.** Without a configured token these endpoints are open, like the rest of the API. With one, a request must carry it in one of these forms:
+
+```bash
+# As Nightscout clients send an API secret: the SHA-1 of the token, in hex
+curl -H "api-secret: $(printf %s your_token_here | shasum | cut -d' ' -f1)" \
+  http://localhost:8080/api/v1/entries.json
+
+# As a query parameter, for clients that can only be given a URL
+curl "http://localhost:8080/api/v1/entries.json?token=your_token_here"
+
+# Or the bearer header the other endpoints use
+curl -H "Authorization: Bearer your_token_here" http://localhost:8080/api/v1/entries.json
+```
+
+In a client that asks for a Nightscout "API secret", enter the Trndi token; the client hashes it itself. Keep in mind that a token in a URL ends up in logs and browser history, so prefer the header where the client allows it. The Nightscout forms of the token are accepted on these endpoints only.
+
+**What is not there.** Only glucose readings are relayed: no treatments, device status, profiles or uploads, and no Nightscout v3 API or websocket. A client that needs those needs a real Nightscout.
+
+**Status codes:**
+- `200 OK`: Success (an empty array when Trndi has no readings yet)
+- `401 Unauthorized`: Token required and missing or wrong
+- `405 Method Not Allowed`: Anything but `GET`
+
 The `trend` field uses the following numeric values:
 
 | Value | Meaning | Arrow |
@@ -387,7 +491,7 @@ The API includes full CORS support with the following headers:
 ```
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Methods: GET, POST, OPTIONS
-Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Allow-Headers: Content-Type, Authorization, api-secret
 ```
 
 All endpoints support `OPTIONS` preflight requests.

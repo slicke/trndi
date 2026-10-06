@@ -74,6 +74,7 @@ uses
   report_tests,
   webserver_events_tests,
   webserver_dashboard_tests,
+  webserver_nightscout_tests,
     system_media_controller_tests,
   ext_manifest_tests,
   ext_modules_tests
