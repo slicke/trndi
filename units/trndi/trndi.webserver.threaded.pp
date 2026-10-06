@@ -1094,7 +1094,8 @@ end;
 // accepted here, with the configured token standing in for the secret; the
 // bearer header keeps working too. Unlike the plain endpoints this lets the
 // token into a URL, which is the price of serving clients (watch faces,
-// widgets) that can be given nothing but one.
+// widgets) that can be given nothing but one. Any one valid form is enough:
+// a client that sends a stale api-secret next to a good token is let in.
 function TClientHandlerThread.CheckNightscoutAuth(const Headers, Query: string): boolean;
 var
   Secret, Token: string;
@@ -1103,12 +1104,13 @@ begin
     Exit(true);
 
   Secret := HeaderValue(Headers, 'api-secret');
-  if Secret <> '' then
-    Exit(ConstantTimeEquals(LowerCase(Secret), SHA1Print(SHA1String(FAuthToken))));
+  if (Secret <> '') and
+    ConstantTimeEquals(LowerCase(Secret), SHA1Print(SHA1String(FAuthToken))) then
+    Exit(true);
 
   Token := QueryValue(Query, 'token');
-  if Token <> '' then
-    Exit(ConstantTimeEquals(Token, FAuthToken));
+  if (Token <> '') and ConstantTimeEquals(Token, FAuthToken) then
+    Exit(true);
 
   Result := CheckAuth(Headers, '');
 end;

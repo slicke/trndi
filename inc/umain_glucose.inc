@@ -43,6 +43,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-20: Fired alerts are broadcast to extensions next to the web
  *   publish (level, sensor fault and missing-reading alerts).
+ * - 2026-10-06: UpdatePredictionLabel clears the web API's forecast while
+ *   predictions are switched off.
  *)
 (* MODIFICATION NOTICE (2026-08-11): The alert engine is now evaluated once
    per update, before the threshold routing, so its hysteresis band and
@@ -783,6 +785,10 @@ begin
   begin
     FPredictStrip.Visible := false;
     HidePredictionDots;
+    // Drop the forecast the web API still holds from before the switch, so
+    // /events subscribers stop seeing it and /predict has nothing stale to
+    // serve if predictions are switched back on before the next one is ready.
+    WebPublishPredictions(nil);
     Exit;
   end;
 
