@@ -82,7 +82,7 @@ If no token is configured, all requests are allowed. The dashboard page itself (
 
 - the current reading in the app's unit, with trend arrow, delta and age, coloured by the reading's level
 - a graph of the last three hours from `/glucose`, with the high/low limits, the personal in-range band and the forecast dashed in
-- the forecast (`/predict`), the connection state and the alert-snooze state
+- the forecast (the `predict` event), the connection state and the alert-snooze state
 - alerts as they fire while the page is open
 - **Alerts**: snooze buttons (15/30/60 minutes, resume) that call `/snooze`
 - **Settings**: unit (mmol/L or mg/dL), custom high/low limits, custom in-range band and the predictions toggle, saved through `/settings` and applied immediately, like the Settings dialog
@@ -93,15 +93,15 @@ When a token is configured the page asks for it once and keeps it in the browser
 
 ### GET /glucose
 
-Returns the current glucose reading with both mg/dL and mmol/L values.
+Returns the readings Trndi currently holds, with both mg/dL and mmol/L values. The response is an object keyed by position: `"0"` is the newest reading, `"1"` the one before it, and so on.
 
 **Response Format:**
 ```json
 {
   "0": {
-    "mgdl": "163.0",
+    "mgdl": 163,
     "mmol": "9.0",
-    "mgdl_delta": "0.0",
+    "mgdl_delta": 0,
     "mmol_delta": "0.0",
     "trend": 3,
     "level": "normal",
@@ -109,9 +109,9 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
     "timestamp_utc": "2025-11-13T13:30:00Z"
   },
   "1": {
-    "mgdl": "163.0",
+    "mgdl": 163,
     "mmol": "9.0",
-    "mgdl_delta": "-5.0",
+    "mgdl_delta": -5,
     "mmol_delta": "-0.3",
     "trend": 3,
     "level": "normal",
@@ -123,10 +123,10 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
 ```
 
 **Fields:**
-- `mgdl`: Current glucose value in mg/dL
-- `mmol`: Current glucose value in mmol/L (converted)
-- `mgdl_delta`: Change since last reading in mg/dL
-- `mmol_delta`: Change since last reading in mmol/L
+- `mgdl`: Glucose value in mg/dL, as a whole number
+- `mmol`: Glucose value in mmol/L, as a string with one decimal
+- `mgdl_delta`: Change since the previous reading in mg/dL, as a whole number
+- `mmol_delta`: Change since the previous reading in mmol/L, as a string with one decimal
 - `trend`: Trend arrow (see Trend Values below)
 - `level`: Classification against the configured thresholds: `low`, `range_low`, `normal`, `range_high` or `high`
 - `timestamp`: Reading timestamp in local time (`YYYY-MM-DD HH:MM:SS`, no zone) — kept for backwards compatibility
@@ -139,13 +139,13 @@ Returns the current glucose reading with both mg/dL and mmol/L values.
 
 **Example:**
 ```bash
-curl -s http://localhost:8080/glucose | jq '.current | {mgdl, mmol, trend}'
+curl -s http://localhost:8080/glucose | jq '.["0"] | {mgdl, mmol, trend}'
 ```
 
 Output:
 ```json
 {
-  "mgdl": "87.0",
+  "mgdl": 87,
   "mmol": "4.8",
   "trend": 3
 }
@@ -160,20 +160,22 @@ Returns predicted glucose readings (if predictions are enabled).
 {
   "predictions": [
     {
-      "mgdl": "157.4",
+      "mgdl": 157,
       "mmol": "8.7",
-      "mgdl_delta": "-5.6",
+      "mgdl_delta": -6,
       "mmol_delta": "-0.3",
       "trend": 7,
+      "level": "normal",
       "timestamp": "2025-11-13 14:35:00",
       "timestamp_utc": "2025-11-13T13:35:00Z"
     },
     {
-      "mgdl": "152.0",
+      "mgdl": 152,
       "mmol": "8.4",
-      "mgdl_delta": "-5.4",
+      "mgdl_delta": -5,
       "mmol_delta": "-0.3",
       "trend": 7,
+      "level": "normal",
       "timestamp": "2025-11-13 14:40:00",
       "timestamp_utc": "2025-11-13T13:40:00Z"
     }
@@ -181,7 +183,7 @@ Returns predicted glucose readings (if predictions are enabled).
 }
 ```
 
-**Note:** Returns an empty array if predictions are not enabled or unavailable.
+**Note:** The Trndi app does not fill this endpoint at present: it always answers with an empty array. The forecast is delivered as the `predict` event on [`/events`](#get-events) instead, in the format shown above.
 
 **Example:**
 ```bash
@@ -371,8 +373,6 @@ es.addEventListener('alert', e => console.warn('alert', JSON.parse(e.data).kinds
 - `401 Unauthorized`: Token required and missing or wrong
 - `503 Service Unavailable`: All 16 stream slots are taken; retry after the `Retry-After` delay
 
-## Trend Values
-
 ## Nightscout-compatible endpoints
 
 Trndi answers the read side of the Nightscout v1 API, plus the two paths xDrip's local web service uses. Point a Nightscout client at `http://<trndi-host>:8080` and it gets the readings Trndi is showing. This is handy when Trndi reads from Dexcom, LibreLinkUp, CareLink or Tandem and you have no Nightscout site of your own.
@@ -469,20 +469,23 @@ In a client that asks for a Nightscout "API secret", enter the Trndi token; the 
 - `401 Unauthorized`: Token required and missing or wrong
 - `405 Method Not Allowed`: Anything but `GET`
 
-The `trend` field uses the following numeric values:
+## Trend Values
+
+The `trend` field of `/glucose`, `/predict` and the `/events` payloads uses the following numeric values:
 
 | Value | Meaning | Arrow |
 |-------|---------|-------|
-| 0 | None | - |
-| 1 | DoubleUp | ⇈ |
-| 2 | SingleUp | ↑ |
-| 3 | FortyFiveUp | ↗ |
-| 4 | Flat | → |
-| 5 | FortyFiveDown | ↘ |
-| 6 | SingleDown | ↓ |
-| 7 | DoubleDown | ⇊ |
-| 8 | NotComputable | ? |
-| 9 | RateOutOfRange | ⚠ |
+| 0 | DoubleUp | ⇈ |
+| 1 | SingleUp | ↑ |
+| 2 | FortyFiveUp | ↗ |
+| 3 | Flat | → |
+| 4 | FortyFiveDown | ↘ |
+| 5 | SingleDown | ↓ |
+| 6 | DoubleDown | ⇊ |
+| 7 | NotComputable | ? |
+| 8 | No trend available | - |
+
+These are Trndi's own numbers, each one lower than Nightscout's for the same direction. The Nightscout-compatible `/pebble` is the exception: its `trend` uses Nightscout's numbering, and the entries endpoints name the direction instead.
 
 ## CORS Support
 
@@ -507,18 +510,18 @@ The web server is implemented using:
 
 ### Thread Safety
 
-The server uses a simple callback pattern where the main GUI thread maintains cached glucose readings that the web server thread reads. Since the web server only reads cached data and doesn't make API calls, no mutex or critical section is required.
+The server uses a simple callback pattern where the main GUI thread maintains cached glucose readings that the web server's handler threads read. The callbacks run on those handler threads, not on the GUI thread and not serialized with each other, so the cache is guarded by a critical section and the callback returns a copy of it.
 
 The event stream goes the other way: the GUI thread publishes into `TWebEventHub`, a lock-protected fan-out object owned by `TTrndiWebServer`. Each `/events` connection is served by its own handler thread, which keeps the socket open, polls the hub every 250 ms for events newer than the last one it sent, and ends when the peer closes or the server stops. The hub keeps the latest payload of every state event (for the snapshot a new subscriber gets) and a ring of the last 128 events (for `Last-Event-ID` replay).
 
 **Callback Functions:**
 ```pascal
 type
-  TGetCurrentReadingFunc = function: BGReading of object;
+  TGetCurrentReadingFunc = function: BGResults of object;
   TGetPredictionsFunc = function: BGResults of object;
 ```
 
-These callbacks are called from the web server thread and must:
+These callbacks are called from the handler threads and must:
 1. Return quickly (no blocking operations)
 2. Access only cached/pre-fetched data
 3. Handle empty/missing data gracefully
@@ -560,9 +563,10 @@ async function getCurrentGlucose() {
     const response = await fetch('http://localhost:8080/glucose');
     const data = await response.json();
     
-    if (data.current) {
-      console.log(`Glucose: ${data.current.mmol} mmol/L`);
-      console.log(`Trend: ${data.current.trend}`);
+    const current = data["0"];   // the newest reading
+    if (current) {
+      console.log(`Glucose: ${current.mmol} mmol/L`);
+      console.log(`Trend: ${current.trend}`);
     }
   } catch (error) {
     console.error('Failed to fetch glucose data:', error);
@@ -591,8 +595,8 @@ def get_glucose():
         response = requests.get('http://localhost:8080/glucose')
         data = response.json()
         
-        if 'current' in data:
-            current = data['current']
+        if '0' in data:
+            current = data['0']  # the newest reading
             print(f"Glucose: {current['mmol']} mmol/L")
             print(f"Delta: {current['mmol_delta']} mmol/L")
             print(f"Trend: {current['trend']}")
@@ -612,20 +616,20 @@ sensor:
   - platform: rest
     name: "Trndi Glucose"
     resource: "http://localhost:8080/glucose"
-    value_template: "{{ value_json.current.mmol }}"
+    value_template: "{{ value_json['0'].mmol }}"
     unit_of_measurement: "mmol/L"
     json_attributes:
-      - current
+      - "0"
     scan_interval: 60
 
 template:
   - sensor:
       - name: "Trndi Glucose Trend"
         state: >
-          {% set trend = state_attr('sensor.trndi_glucose', 'current').trend %}
+          {% set trend = state_attr('sensor.trndi_glucose', '0').trend %}
           {% set arrows = {
-            1: '⇈', 2: '↑', 3: '↗', 4: '→',
-            5: '↘', 6: '↓', 7: '⇊'
+            0: '⇈', 1: '↑', 2: '↗', 3: '→',
+            4: '↘', 5: '↓', 6: '⇊'
           } %}
           {{ arrows.get(trend, '?') }}
 ```
@@ -715,11 +719,7 @@ Typical response times on localhost:
 
 ### Concurrent Requests
 
-The current implementation handles requests sequentially (one at a time). This is sufficient for typical use cases (polling every 30-60 seconds). If you need high concurrency, consider:
-
-1. Using a reverse proxy (nginx, Apache)
-2. Implementing connection pooling
-3. Caching responses with short TTL
+Every connection is handled on its own thread, so requests are served concurrently and a slow client does not hold up the others. Connections are not kept alive: each request gets its response and the connection is closed. Only `/events` streams are limited in number (16 at once).
 
 ## Advanced Configuration
 
@@ -728,8 +728,8 @@ The current implementation handles requests sequentially (one at a time). This i
 To use a port other than 8080:
 
 ```ini
-[webserver]
-port=3000
+[trndi]
+webserver.port=3000
 ```
 
 Remember to update firewall rules and client code accordingly.
@@ -739,10 +739,10 @@ Remember to update firewall rules and client code accordingly.
 For trusted local network environments:
 
 ```ini
-[webserver]
-enable=true
-port=8080
-# token= (leave empty or omit)
+[trndi]
+webserver.enable=true
+webserver.port=8080
+# webserver.token= (leave empty or omit)
 ```
 
 ### Integration with Reverse Proxy
