@@ -374,6 +374,7 @@ var
 {$ENDIF}
 begin
   {$IF DEFINED(DARWIN)}
+  Self.BorderStyle := bsNone; // Remove title bar
   try
     // Get NSView + NSWindow from handle
     if HandleAllocated then
