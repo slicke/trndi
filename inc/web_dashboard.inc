@@ -34,6 +34,11 @@
 // *   license terms.
 // *
 // * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+// *
+// * MODIFICATION NOTICE (GPLv3 Section 5):
+// * - 2026-10-07: Added the Summary card (from /report) and the History card
+// *   (the /history.png image, fetched with the token and shown as a blob),
+// *   with a shared time-window picker; both follow each new reading.
 //
 //
 // GENERATED FILE - do not edit. Source: assets/web_dashboard.html;
@@ -85,6 +90,13 @@ WEB_DASHBOARD_HTML =
   '.pred div{min-width:72px;text-align:center;padding:8px 6px;border-radius:10px;background:var(--bg)}' + LineEnding +
   '.pred b{display:block;font-size:20px;font-variant-numeric:tabular-nums}' + LineEnding +
   '.pred small{color:var(--muted)}' + LineEnding +
+  'button.sel{background:var(--accent);border-color:var(--accent);color:#fff}' + LineEnding +
+  '.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin-top:10px}' + LineEnding +
+  '.stats div{background:var(--bg);border-radius:10px;padding:8px 6px;text-align:center}' + LineEnding +
+  '.stats b{display:block;font-size:20px;font-variant-numeric:tabular-nums}' + LineEnding +
+  '.stats small{color:var(--muted)}' + LineEnding +
+  '.spark{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;line-height:1;letter-spacing:1px;margin:12px 0 0;color:var(--ok);overflow-x:auto;white-space:nowrap}' + LineEnding +
+  '#hist{width:100%;height:auto;display:block;border-radius:10px;background:#fff}' + LineEnding +
   'ul{margin:8px 0 0;padding-left:18px;color:var(--muted)}' + LineEnding +
   '.hidden{display:none}' + LineEnding +
   '.note{font-size:13px;color:var(--muted);margin:8px 0 0}' + LineEnding +
@@ -108,6 +120,17 @@ WEB_DASHBOARD_HTML =
   '<p id="status" class="note"></p>' + LineEnding +
   '</section>' + LineEnding +
   '<section class="card"><h2>Forecast</h2><div class="pred" id="pred"><span class="sub">No forecast</span></div></section>' + LineEnding +
+  '<section class="card hidden" id="summaryCard"><h2>Summary</h2>' + LineEnding +
+  '<div class="row" id="win"><button data-w="180">3 h</button><button data-w="360">6 h</button><button data-w="720">12 h</button><button data-w="1440">24 h</button><button data-w="0" class="sel">All</but' +
+  'ton></div>' + LineEnding +
+  '<div class="stats" id="stats"></div>' + LineEnding +
+  '<p id="spark" class="spark"></p>' + LineEnding +
+  '<p id="sumNote" class="note"></p>' + LineEnding +
+  '</section>' + LineEnding +
+  '<section class="card hidden" id="historyCard"><h2>History</h2>' + LineEnding +
+  '<img id="hist" alt="History graph">' + LineEnding +
+  '<p class="note">The same graph as the History window, with any insulin and carbohydrate overlays enabled in Settings.</p>' + LineEnding +
+  '</section>' + LineEnding +
   '<section class="card"><h2>Alerts</h2>' + LineEnding +
   '<div class="row"><span id="snooze">Alerts active</span>' + LineEnding +
   '<span id="snoozeBtns" class="row hidden"><button data-m="15">15 min</button><button data-m="30">30 min</button><button data-m="60">60 min</button><button data-m="0">Resume</button></span></div>' + LineEnding +
@@ -138,6 +161,7 @@ WEB_DASHBOARD_HTML =
   'var token=null;' + LineEnding +
   'try{token=localStorage.getItem("trndi.token")||""}catch(e){token=""}' + LineEnding +
   'var unit="mmol",settings=null,readings=[],preds=[],last=null,alerts=[],es=null,hasApi=true;' + LineEnding +
+  'var win=0,histUrl=null,histBusy=false,histAt=0;' + LineEnding +
   'function hdr(){return token?{"Authorization":"Bearer "+token}:{}}' + LineEnding +
   'function api(path,opts){opts=opts||{};opts.headers=Object.assign({},opts.headers||{},hdr());' + LineEnding +
   ' return fetch(path,opts).then(function(r){if(r.status===401){needToken();throw new Error("unauthorized")}return r})}' + LineEnding +
@@ -198,6 +222,43 @@ WEB_DASHBOARD_HTML =
   ' for(var t=Math.ceil(t0/3600e3)*3600e3;t<=t1;t+=3600e3)s+="<text x="+X(t).toFixed(1)+" y="+(H-4)+" font-size=11 fill=\"var(--muted)\" text-anchor=middle>"+hhmm(t)+"</text>";' + LineEnding +
   ' svg.innerHTML=s;' + LineEnding +
   '}' + LineEnding +
+  'function renderReport(j){' + LineEnding +
+  ' var el=$("stats");el.innerHTML="";$("spark").textContent="";$("sumNote").textContent="";' + LineEnding +
+  ' if(!j.valid){el.innerHTML="<span class=sub>No readings in this window</span>";return}' + LineEnding +
+  ' var u=j.unit==="mgdl"?"mg/dL":"mmol/L";' + LineEnding +
+  ' function tile(v,l){var d=document.createElement("div");d.innerHTML="<b></b><small></small>";d.firstChild.textContent=v;d.lastChild.textContent=l;el.appendChild(d)}' + LineEnding +
+  ' tile(Math.round(j.in_limits_percent)+"%","In range");' + LineEnding +
+  ' tile(j.mean,"Mean "+u);' + LineEnding +
+  ' tile(j.gmi_percent+"%","GMI");' + LineEnding +
+  ' tile(j.cv_percent+"%","CV");' + LineEnding +
+  ' tile(j.lowest.value,"Low "+hhmm(j.lowest.at_utc));' + LineEnding +
+  ' tile(j.highest.value,"High "+hhmm(j.highest.at_utc));' + LineEnding +
+  ' $("spark").textContent=j.sparkline;' + LineEnding +
+  ' $("sumNote").textContent=j.count+" readings, "+hhmm(j.first_utc)+" – "+hhmm(j.last_utc)+", "+Math.round(j.coverage_percent)+"% coverage. Descriptive only: not a medical assessment.";' + LineEnding +
+  '}' + LineEnding +
+  'function loadReport(){' + LineEnding +
+  ' if(!hasApi)return Promise.resolve();' + LineEnding +
+  ' return api("/report"+(win?"?minutes="+win:"")).then(function(r){' + LineEnding +
+  '  if(r.status===501){hasApi=false;return null}' + LineEnding +
+  '  return r.ok?r.json():null}).then(function(j){if(j){$("summaryCard").classList.remove("hidden");renderReport(j)}}).catch(function(){})' + LineEnding +
+  '}' + LineEnding +
+  'function loadHistory(force){' + LineEnding +
+  ' if(!hasApi||histBusy)return Promise.resolve();' + LineEnding +
+  ' if(!force&&Date.now()-histAt<30000)return Promise.resolve();' + LineEnding +
+  ' // The card may still be hidden, so size the image from the column: main''s' + LineEnding +
+  ' // 16px gutters and the card''s 16px padding plus 1px border on each side.' + LineEnding +
+  ' var css=Math.max(240,Math.min(720,window.innerWidth)-66),dpr=window.devicePixelRatio||1;' + LineEnding +
+  ' var w=Math.max(240,Math.min(2400,Math.round(css*dpr))),h=Math.max(160,Math.min(1600,Math.round(w*0.55)));' + LineEnding +
+  ' histBusy=true;' + LineEnding +
+  ' return api("/history.png?width="+w+"&height="+h+(win?"&minutes="+win:"")).then(function(r){' + LineEnding +
+  '  if(r.status===501){hasApi=false;return null}' + LineEnding +
+  '  return r.ok?r.blob():null}).then(function(b){' + LineEnding +
+  '  if(!b)return;' + LineEnding +
+  '  var img=$("hist"),u=URL.createObjectURL(b);' + LineEnding +
+  '  img.onload=function(){if(histUrl&&histUrl!==u)URL.revokeObjectURL(histUrl);histUrl=u};' + LineEnding +
+  '  img.src=u;$("historyCard").classList.remove("hidden");histAt=Date.now()' + LineEnding +
+  ' }).catch(function(){}).then(function(){histBusy=false})' + LineEnding +
+  '}' + LineEnding +
   'function loadReadings(){' + LineEnding +
   ' return api("/glucose").then(function(r){return r.ok?r.json():{}}).then(function(j){' + LineEnding +
   '  readings=Object.keys(j).filter(function(k){return /^\d+$/.test(k)}).map(function(k){return j[k]});' + LineEnding +
@@ -227,7 +288,7 @@ WEB_DASHBOARD_HTML =
   ' es=new EventSource("/events"+(token?"?token="+encodeURIComponent(token):""));' + LineEnding +
   ' es.onopen=function(){setConn("Live","on")};' + LineEnding +
   ' es.onerror=function(){setConn("Reconnecting","")};' + LineEnding +
-  ' es.addEventListener("reading",function(e){last=JSON.parse(e.data);render();loadReadings()});' + LineEnding +
+  ' es.addEventListener("reading",function(e){last=JSON.parse(e.data);render();loadReadings();loadReport();loadHistory()});' + LineEnding +
   ' es.addEventListener("predict",function(e){preds=JSON.parse(e.data).predictions||[];renderPred()});' + LineEnding +
   ' es.addEventListener("status",function(e){var s=JSON.parse(e.data);' + LineEnding +
   '  $("status").textContent=(s.connected?"Connected to CGM source":"Not connected")+(s.fresh?"":" \u00B7 data is not fresh")+(s.detail?" \u00B7 "+s.detail:"")});' + LineEnding +
@@ -236,7 +297,7 @@ WEB_DASHBOARD_HTML =
   '}' + LineEnding +
   'function boot(){' + LineEnding +
   ' api("/health").then(function(r){if(!r.ok)throw new Error("health");$("auth").classList.add("hidden");' + LineEnding +
-  '  return loadSettings().then(loadReadings).then(connect)' + LineEnding +
+  '  return loadSettings().then(loadReadings).then(loadReport).then(function(){return loadHistory(true)}).then(connect)' + LineEnding +
   ' }).catch(function(e){if(e.message!=="unauthorized")setConn("Offline","bad")});' + LineEnding +
   '}' + LineEnding +
   '$("authForm").addEventListener("submit",function(e){e.preventDefault();token=$("token").value.trim();' + LineEnding +
@@ -248,7 +309,7 @@ WEB_DASHBOARD_HTML =
   ' $("saveMsg").textContent="Saving\u2026";$("saveMsg").className="note";' + LineEnding +
   ' api("/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})})' + LineEnding +
   ' .then(function(x){if(x.ok){applySettings(x.j);$("saveMsg").textContent="Saved"}else{$("saveMsg").textContent=x.j.error||"Rejected";$("saveMsg").className="note err"}' + LineEnding +
-  '  loadReadings()}).catch(function(){$("saveMsg").textContent="Failed";$("saveMsg").className="note err"});' + LineEnding +
+  '  loadReadings();loadReport();loadHistory(true)}).catch(function(){$("saveMsg").textContent="Failed";$("saveMsg").className="note err"});' + LineEnding +
   '});' + LineEnding +
   '$("settings").unit.forEach(function(r){r.addEventListener("change",function(){' + LineEnding +
   ' var f=$("settings"),old=unit;unit=r.value;if(old===unit)return;' + LineEnding +
@@ -257,6 +318,9 @@ WEB_DASHBOARD_HTML =
   '$("snoozeBtns").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;' + LineEnding +
   ' api("/snooze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({minutes:+b.dataset.m})})' + LineEnding +
   ' .then(function(r){return r.json()}).then(function(j){if(j.snooze)showSnooze(j.snooze)}).catch(function(){})});' + LineEnding +
+  '$("win").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;' + LineEnding +
+  ' win=+b.dataset.w;Array.prototype.forEach.call($("win").children,function(c){c.classList.toggle("sel",c===b)});' + LineEnding +
+  ' loadReport();loadHistory(true)});' + LineEnding +
   'setInterval(renderAgo,10000);' + LineEnding +
   'boot();' + LineEnding +
   '})();' + LineEnding +
