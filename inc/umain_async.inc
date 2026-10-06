@@ -41,6 +41,8 @@
  *   and made the OpenDNS fallback probe a byte-swapped address.
  * - 2026-09-17: ApplyConnectResult's shutdown branch closes the native
  *   progress indicator, since FormClose's quit prompt can be declined.
+ * - 2026-10-06: The history fetch passes fHistoryGraph to the overlay
+ *   helpers, which now take the graph they fill.
  *)
 (* Async helpers: thread implementations moved out of umain_helpers.inc
    This include defines background worker threads used by the main form.
@@ -658,11 +660,11 @@ begin
 
     ShowHistoryGraph(FResults, un, CurrentHistoryGraphPalette,
       cgmHi, cgmLo, cgmRangeHi, cgmRangeLo);
-    FOwner.AutoEnableBasalOverlay;
-    FOwner.AutoEnableBolusOverlay;
-    FOwner.AutoEnableCarbOverlay;
+    FOwner.AutoEnableBasalOverlay(fHistoryGraph);
+    FOwner.AutoEnableBolusOverlay(fHistoryGraph);
+    FOwner.AutoEnableCarbOverlay(fHistoryGraph);
     if FMode = hfm24h then
-      FOwner.AutoAddPredictionOverlay;
+      FOwner.AutoAddPredictionOverlay(fHistoryGraph);
   finally
     FOwner.FApiCallInFlight := false;
     if Assigned(FOwner.mi24h) then

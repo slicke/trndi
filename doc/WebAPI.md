@@ -9,6 +9,8 @@ The same readings are also served in **Nightscout's format** (see [Nightscout-co
 
 It also serves a small **dashboard** page at `/` (see [Dashboard](#dashboard)): open `http://localhost:8080/` in any browser, including a phone on the same network, to see the current reading, a short history graph, the forecast and alerts, and to change the basic settings.
 
+For home automation and dashboards of your own, [`/report`](#get-report) returns the summary statistics (time in range, mean, GMI, ...) as JSON and [`/history.png`](#get-historypng) the history graph as an image.
+
 ## Configuration
 
 ### Enabling via the GUI
@@ -190,6 +192,94 @@ Returns the predicted glucose readings from the latest fetch (if predictions are
 curl -s http://localhost:8080/predict | jq '.predictions[0] | {mgdl, mmol}'
 ```
 
+### GET /report
+
+Returns the same summary statistics as *Views → Summary report...* in the right-click menu, computed over the readings Trndi currently holds. Unlike the readings endpoints, every glucose value here is in the **display unit** named by `unit`, so the numbers match what the dialog shows.
+
+**Query parameters:**
+- `minutes` (optional): only summarise the last N minutes (1–10080). Omit, or pass 0, for everything Trndi holds.
+
+**Response Format:**
+```json
+{
+  "valid": true,
+  "unit": "mmol",
+  "first_utc": "2026-10-06T06:02:11Z",
+  "last_utc": "2026-10-06T09:57:08Z",
+  "span_minutes": 234,
+  "count": 47,
+  "cadence_minutes": 5,
+  "coverage_percent": 97.9,
+  "limits": { "lo": 3.9, "hi": 10, "range_lo": 4.5, "range_hi": 8 },
+  "bands": {
+    "low":         { "count": 0,  "percent": 0 },
+    "below_range": { "count": 3,  "percent": 6.38 },
+    "in_range":    { "count": 38, "percent": 80.85 },
+    "above_range": { "count": 6,  "percent": 12.77 },
+    "high":        { "count": 0,  "percent": 0 }
+  },
+  "in_limits_percent": 100,
+  "mean": 6.42,
+  "median": 6.3,
+  "sd": 1.08,
+  "cv_percent": 16.8,
+  "gmi_percent": 6.07,
+  "gmi_mmol_mol": 42.8,
+  "lowest":  { "value": 4.2, "at_utc": "2026-10-06T07:12:08Z" },
+  "highest": { "value": 8.9, "at_utc": "2026-10-06T09:02:10Z" },
+  "low_excursions": 0,
+  "high_excursions": 0,
+  "longest_gap_minutes": 10,
+  "longest_gap_at_utc": "2026-10-06T08:17:09Z",
+  "sparkline": "▃▃▂▁▂▃▄▅▆▇█▇▆▅▄▄▃▃▃▄▄▃▃▃",
+  "buckets": [
+    { "starts_utc": "2026-10-06T06:02:11Z", "count": 2, "mean": 5.6 },
+    { "starts_utc": "2026-10-06T06:11:58Z", "count": 0, "mean": null }
+  ]
+}
+```
+
+**Fields:**
+- `valid`: `false` when no reading fell inside the window; only `unit` and `count` (0) are then present
+- `unit`: `mmol` or `mgdl`, the unit every glucose value in the reply uses
+- `first_utc`, `last_utc`, `span_minutes`, `count`: the readings actually used
+- `cadence_minutes`, `coverage_percent`: the sensor's typical spacing and how much of the span the readings cover
+- `limits`: the thresholds the bands were cut at; `range_lo`/`range_hi` are `null` when no personal range is set
+- `bands`: reading count and share per band. `below_range`, `in_range` and `above_range` sit between the clinical limits; with no personal range, `in_range` covers all of it
+- `in_limits_percent`: share between the low and high limits, whatever the personal range (what the TIR badge shows when the range is off)
+- `mean`, `median`, `sd`, `cv_percent`: the plain statistics (sample standard deviation, coefficient of variation in percent)
+- `gmi_percent`, `gmi_mmol_mol`: the Glucose Management Indicator, NGSP percent and IFCC mmol/mol
+- `lowest`, `highest`: the extreme readings and when they arrived
+- `low_excursions`, `high_excursions`: runs of two or more consecutive readings past a clinical limit
+- `longest_gap_minutes`, `longest_gap_at_utc`: the widest spacing between consecutive readings and where it starts
+- `sparkline`: the shape of the window as block characters, oldest first
+- `buckets`: the 24 slices behind the sparkline; `mean` is `null` for a slice without readings
+
+Glucose values are rounded to two decimals. These are descriptive statistics over whatever Trndi has loaded, nothing more: not a medical assessment, and the indicator is not a laboratory A1c.
+
+**Example:**
+```bash
+curl -s "http://localhost:8080/report?minutes=180" | jq '{unit, mean, in_limits_percent, gmi_percent}'
+```
+
+### GET /history.png
+
+Returns the history graph as a PNG image: the same picture *📈 History* opens, with the threshold bands, trend dots, insulin/carbohydrate overlays (when enabled in Settings) and the forecast, rendered off-screen. The user's own graph window is not touched.
+
+**Query parameters:**
+- `width` (optional): image width in pixels, 240–2400 (default 760)
+- `height` (optional): image height in pixels, 160–1600 (default 460)
+- `minutes` (optional): only plot the last N minutes (1–10080). Omit, or pass 0, for everything Trndi holds
+
+**Response:** `Content-Type: image/png` with the image bytes. A request with a parameter out of range is answered `400` with a JSON `error`, like the other endpoints; before a backend has connected the reply is `400` with `"No backend connected"`.
+
+The image is rendered on the main thread while the request waits, so keep polling intervals sensible (a reading arrives every five minutes at most). Browsers cannot send an `Authorization` header for an `<img>` tag, so when a token is configured fetch the image with `fetch()` and show it through a blob URL, or leave the token off on a trusted network.
+
+**Example:**
+```bash
+curl -s "http://localhost:8080/history.png?width=1200&height=600&minutes=360" -o history.png
+```
+
 ### GET /status
 
 Returns server status and data availability.
@@ -231,6 +321,8 @@ Returns a richer health payload suitable for uptime/monitoring checks.
     "/events",
     "/settings",
     "/snooze",
+    "/report",
+    "/history.png",
     "/api/v1/entries.json",
     "/api/v1/status.json",
     "/pebble",

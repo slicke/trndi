@@ -90,6 +90,9 @@
  * - 2026-09-29: Declared WebCommand and its helpers, the web dashboard's
  *   settings/snooze entry point.
  * - 2026-10-06: Declared FCachedPredictions, the forecast /predict serves.
+ * - 2026-10-06: Declared FWebGraph, WebReportToJSON and WebHistoryPNG behind
+ *   the web API's /report and /history.png; the overlay helpers take the
+ *   graph they fill, and BuildGlucoseReport takes a window.
  *)
 
 unit umain;
@@ -112,7 +115,7 @@ slicke.ux.alert, slicke.ux.native, slicke.ux.titlebar, usplash, Generics.Collect
 // After StdCtrls on purpose: utabularlabel's TLabel interposer must win the
 // name, so every TLabel on the form (lVal above all) can typeset tabular digits.
 utabularlabel,
-Trndi.native.base, trndi.shared, trndi.theme, trndi.report, buildinfo, fpjson, jsonparser,
+Trndi.native.base, trndi.shared, trndi.theme, trndi.report, buildinfo, fpjson, jsonparser, base64,
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, trndi.ext.perm,
@@ -562,10 +565,15 @@ TfBG = class(TForm)
   procedure lDiffClick({%H-}Sender: TObject);
   procedure lPredictClick({%H-}Sender: TObject);
   procedure miBasalRateClick({%H-}Sender: TObject);
-  procedure AutoEnableBasalOverlay;
-  procedure AutoEnableBolusOverlay;
-  procedure AutoEnableCarbOverlay;
-  procedure AutoAddPredictionOverlay;
+  {** Hand @code(AGraph) the backend's basal profile, when it has one. }
+  procedure AutoEnableBasalOverlay(AGraph: TfHistoryGraph);
+  {** Hand @code(AGraph) the insulin deliveries cached by the last fetch, or
+      clear the overlay when the setting or the backend rules them out. }
+  procedure AutoEnableBolusOverlay(AGraph: TfHistoryGraph);
+  {** Carbohydrates, on the same terms as the insulin overlay. }
+  procedure AutoEnableCarbOverlay(AGraph: TfHistoryGraph);
+  {** Draw the forecast past the last reading on @code(AGraph). }
+  procedure AutoAddPredictionOverlay(AGraph: TfHistoryGraph);
   procedure miDNSClick({%H-}Sender: TObject);
   procedure miDotsInViewClick({%H-}Sender: TObject);
   procedure miExitClick({%H-}Sender: TObject);
@@ -586,9 +594,10 @@ TfBG = class(TForm)
   procedure miPredictClick({%H-}Sender: TObject);
   procedure miReadingsSinceClick({%H-}Sender: TObject);
   procedure miReportClick({%H-}Sender: TObject);
-  {** Summarise the readings currently loaded. @code(valid) is false when
-      there are none. }
-  function BuildGlucoseReport: TTrndiReportStats;
+  {** Summarise the readings currently loaded, or only the last
+      @code(sinceMinutes) of them when that is above 0. @code(valid) is false
+      when there are none. }
+  function BuildGlucoseReport(const sinceMinutes: integer = 0): TTrndiReportStats;
   {** The report as the dialog shows it. }
   function ReportAsHTML(const st: TTrndiReportStats): string;
   {** The report as it is written to a file: fixed-width, no markup. }
@@ -884,6 +893,7 @@ private
   multinick: string;
   MediaController: TSystemMediaController;
   FWebServer: TObject; // TTrndiWebServer - using TObject to avoid circular dependency
+  FWebGraph: TfHistoryGraph; // Never-shown graph the web API renders /history.png from
   tWebServerStart: TTimer;
 
   Chroma: TRazerChromaBase;
@@ -1291,6 +1301,21 @@ private
   procedure WebSettingsToJSON(AReply: TJSONObject);
     {** The alert-snooze state as the dashboard reads it. }
   function WebSnoozeJSON: TJSONObject;
+    {** Describe a summary report for GET /report: every figure the summary
+      dialog shows, in the display unit, with the band counts and the
+      sparkline buckets. An invalid report comes out as @code(valid) false
+      and little else.
+     }
+  procedure WebReportToJSON(const st: TTrndiReportStats; AReply: TJSONObject);
+    {** Render the history graph for GET /history.png into a hidden
+      TfHistoryGraph (FWebGraph) at the requested size and window, and hand
+      the PNG back base64-encoded in @code(png_base64). The user's own graph
+      window is left alone.
+      @returns(False with AError set when the parameters are out of range
+        or no backend is connected.)
+     }
+  function WebHistoryPNG(const AParams: TJSONObject; AReply: TJSONObject;
+    out AError: string): boolean;
 
   {** Recalculate left of the TIR badge when next progress bar is visible }
   procedure nextProgressChange;

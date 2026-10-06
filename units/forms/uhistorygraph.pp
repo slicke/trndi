@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-06: Added RenderToStream, the PNG render behind SaveAsPNG and
+ *   the web API's /history.png, and SetRangeMinutes so a caller can pick
+ *   the time window the context menu offers.
  * - 2026-09-20: The dots, the trace, the hover ring and the prediction
  *   overlay are drawn antialiased through trndi.raster instead of the
  *   aliased canvas Ellipse/LineTo primitives.
@@ -281,6 +284,16 @@ public
     {** SaveAsPNG: Export the current graph to a PNG file. Shows a save dialog
       and renders the full graph to the selected file. }
   procedure SaveAsPNG(Sender: TObject);
+    {** RenderToStream: Encode the graph as it stands - the same static
+      render Paint caches, minus the hover overlay - as a PNG of the form's
+      client size into @code(AStream). Needs no window handle, so a form
+      that has never been shown renders too; size it with ClientWidth and
+      ClientHeight first. }
+  procedure RenderToStream(AStream: TStream);
+    {** SetRangeMinutes: Limit the plot to the last @code(AMinutes) of data,
+      counted back from now; 0 shows everything. The same filter the
+      context menu's range items apply, and reflected there. }
+  procedure SetRangeMinutes(const AMinutes: integer);
     {** SaveAsCSV: Export the readings data to a CSV file for analysis in
       spreadsheet applications. }
   procedure SaveAsCSV(Sender: TObject);
@@ -1652,7 +1665,12 @@ begin
   if not (Sender is TMenuItem) then
     Exit;
 
-  FSelectedRangeMinutes := TMenuItem(Sender).Tag;
+  SetRangeMinutes(TMenuItem(Sender).Tag);
+end;
+
+procedure TfHistoryGraph.SetRangeMinutes(const AMinutes: integer);
+begin
+  FSelectedRangeMinutes := Max(0, AMinutes);
   UpdateRangeMenuChecks;
   ApplyRangeFilter;
   if HasData then
@@ -1801,13 +1819,46 @@ begin
   Invalidate;
 end;
 
-procedure TfHistoryGraph.SaveAsPNG(Sender: TObject);
+procedure TfHistoryGraph.RenderToStream(AStream: TStream);
 var
-  saveDialog: TSavePictureDialog;
   bmp: TBitmap;
   intfImg: TLazIntfImage;
   writer: TFPWriterPNG;
-  plotRect: TRect;
+begin
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(ClientWidth, ClientHeight);
+
+    // The same static render Paint caches in FBackground, so the export is
+    // what is on screen minus the hover overlay. Repeating the individual
+    // draw calls here is what let the bolus and carb overlays fall out of
+    // exported images while they were visible in the window.
+    RenderBackground(bmp, GetPlotRect);
+
+    intfImg := TLazIntfImage.Create(0, 0);
+    try
+      intfImg.LoadFromBitmap(bmp.Handle, bmp.MaskHandle);
+      writer := TFPWriterPNG.Create;
+      try
+        writer.Indexed := false;
+        writer.WordSized := false;
+        writer.UseAlpha := false;
+        intfImg.SaveToStream(AStream, writer);
+      finally
+        writer.Free;
+      end;
+    finally
+      intfImg.Free;
+    end;
+  finally
+    bmp.Free;
+  end;
+end;
+
+procedure TfHistoryGraph.SaveAsPNG(Sender: TObject);
+var
+  saveDialog: TSavePictureDialog;
+  fileStream: TFileStream;
 begin
   // Can be called from keyboard shortcut or context menu
   if not HasData then
@@ -1825,34 +1876,11 @@ begin
       if not saveDialog.Execute then
         Exit;
 
-      bmp := TBitmap.Create;
+      fileStream := TFileStream.Create(saveDialog.FileName, fmCreate);
       try
-        bmp.SetSize(ClientWidth, ClientHeight);
-
-        // The same static render Paint caches in FBackground, so the export is
-        // what is on screen minus the hover overlay. Repeating the individual
-        // draw calls here is what let the bolus and carb overlays fall out of
-        // exported images while they were visible in the window.
-        plotRect := GetPlotRect;
-        RenderBackground(bmp, plotRect);
-
-        intfImg := TLazIntfImage.Create(0, 0);
-        try
-          intfImg.LoadFromBitmap(bmp.Handle, bmp.MaskHandle);
-          writer := TFPWriterPNG.Create;
-          try
-            writer.Indexed := false;
-            writer.WordSized := false;
-            writer.UseAlpha := false;
-            intfImg.SaveToFile(saveDialog.FileName, writer);
-          finally
-            writer.Free;
-          end;
-        finally
-          intfImg.Free;
-        end;
+        RenderToStream(fileStream);
       finally
-        bmp.Free;
+        fileStream.Free;
       end;
     except
       on E: Exception do

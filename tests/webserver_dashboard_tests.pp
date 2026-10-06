@@ -35,6 +35,9 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-10-06): Added the /report and /history.png cases:
+   the query parameters reach the command callback, the image comes back as
+   image/png bytes, and both answer 501 without a callback and 405 to POST. *)
 unit webserver_dashboard_tests;
 
 {$mode objfpc}{$H+}
@@ -53,7 +56,7 @@ unit webserver_dashboard_tests;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, Sockets, fpjson,
+  Classes, SysUtils, fpcunit, testregistry, Sockets, fpjson, base64,
   trndi.types, trndi.webserver.threaded, webserver_events_tests;
 
 type
@@ -89,6 +92,10 @@ type
     procedure TestBadJsonBody;
     procedure TestSettingsNeedsToken;
     procedure TestMethodNotAllowed;
+    procedure TestReportGet;
+    procedure TestHistoryPngGet;
+    procedure TestReportWithoutCommand;
+    procedure TestWebDecimal;
   end;
 
 implementation
@@ -96,6 +103,9 @@ implementation
 const
   TEST_PORT_BASE = 18570;
   WAIT_MS = 4000;
+  // What the mock hands back for history.png: a PNG signature and some
+  // bytes a text comparison would mangle (NUL, high bit).
+  FAKE_PNG = #137'PNG'#13#10#26#10#0#255'trndi';
 
 var
   PortCounter: integer = 0;
@@ -151,6 +161,8 @@ begin
   begin
     AReply.Add('served', ACommand);
     AReply.Add('unit', 'mmol');
+    if ACommand = 'history.png' then
+      AReply.Add('png_base64', EncodeStringBase64(FAKE_PNG));
   end;
 end;
 
@@ -236,6 +248,8 @@ begin
   S := Exchange(Get('/health'));
   AssertTrue('lists /settings', Pos('"/settings"', S) > 0);
   AssertTrue('lists /snooze', Pos('"/snooze"', S) > 0);
+  AssertTrue('lists /report', Pos('"/report"', S) > 0);
+  AssertTrue('lists /history.png', Pos('"/history.png"', S) > 0);
   AssertTrue('lists the page', Pos('"/"', S) > 0);
   AssertTrue('reports command support', Pos('"command_support" : true', S) > 0);
 end;
@@ -391,7 +405,108 @@ begin
   StartServer;
   S := Exchange(Get('/snooze'));
   AssertEquals('GET /snooze', 'HTTP/1.1 405 Method Not Allowed', StatusLine(S));
+  S := Exchange(Post('/report', '{}'));
+  AssertEquals('POST /report', 'HTTP/1.1 405 Method Not Allowed', StatusLine(S));
+  S := Exchange(Post('/history.png', '{}'));
+  AssertEquals('POST /history.png', 'HTTP/1.1 405 Method Not Allowed', StatusLine(S));
   AssertEquals('nothing served', 0, FCommands.Count);
+end;
+
+procedure TWebServerDashboardTests.TestReportGet;
+var
+  S: string;
+begin
+  StartServer;
+  S := Exchange(Get('/report'));
+  AssertEquals('status', 'HTTP/1.1 200 OK', StatusLine(S));
+  AssertTrue('json content type', Pos('Content-Type: application/json', S) > 0);
+  AssertTrue('the command reply', Pos('"served" : "report.get"', S) > 0);
+  AssertEquals('one command served', 1, FCommands.Count);
+  AssertEquals('no window when none given', 'report.get|{}', FCommands[0]);
+
+  S := Exchange(Get('/report?minutes=180'));
+  AssertEquals('status with a window', 'HTTP/1.1 200 OK', StatusLine(S));
+  AssertEquals('two commands served', 2, FCommands.Count);
+  AssertTrue('the window reaches the command', Pos('"minutes" : 180', FCommands[1]) > 0);
+
+  S := Exchange(Get('/report?minutes=soon'));
+  AssertTrue('a non-number is passed as -1 for the command to refuse',
+    Pos('"minutes" : -1', FCommands[2]) > 0);
+end;
+
+procedure TWebServerDashboardTests.TestHistoryPngGet;
+var
+  S, Body: string;
+  P: integer;
+begin
+  StartServer;
+  S := Exchange(Get('/history.png?width=300&height=200&minutes=60'));
+  AssertEquals('status', 'HTTP/1.1 200 OK', StatusLine(S));
+  AssertTrue('png content type', Pos('Content-Type: image/png', S) > 0);
+  AssertTrue('content length', Pos('Content-Length: ' + IntToStr(Length(FAKE_PNG)), S) > 0);
+  P := Pos(#13#10#13#10, S);
+  AssertTrue('headers end', P > 0);
+  Body := Copy(S, P + 4, MaxInt);
+  AssertEquals('the decoded bytes are the body', FAKE_PNG, Body);
+  AssertEquals('one command served', 1, FCommands.Count);
+  AssertTrue('named history.png', Pos('history.png|', FCommands[0]) = 1);
+  AssertTrue('width reaches the command', Pos('"width" : 300', FCommands[0]) > 0);
+  AssertTrue('height reaches the command', Pos('"height" : 200', FCommands[0]) > 0);
+  AssertTrue('minutes reaches the command', Pos('"minutes" : 60', FCommands[0]) > 0);
+
+  // A refusal is a JSON error, not an image.
+  FRefuseWith := 'width must be 240-2400 and height 160-1600';
+  S := Exchange(Get('/history.png?width=10'));
+  AssertEquals('refused status', 'HTTP/1.1 400 Bad Request', StatusLine(S));
+  AssertTrue('refused as json', Pos('Content-Type: application/json', S) > 0);
+  AssertTrue('with the message', Pos(FRefuseWith, S) > 0);
+end;
+
+procedure TWebServerDashboardTests.TestWebDecimal;
+
+  function S(const V: double; const Decimals: integer = 2): string;
+  var
+    D: TJSONData;
+  begin
+    D := WebDecimal(V, Decimals);
+    try
+      Result := D.AsJSON;
+    finally
+      D.Free;
+    end;
+  end;
+
+var
+  O: TJSONObject;
+begin
+  AssertEquals('whole number', '5', S(5.0000000000000009));
+  AssertEquals('one decimal kept', '88.1', S(88.10000000000001));
+  AssertEquals('two decimals kept', '19.58', S(19.580000000000005));
+  AssertEquals('rounded to two', '6.07', S(6.0749));
+  AssertEquals('zero', '0', S(0));
+  AssertEquals('negative zero', '0', S(-0.001));
+  AssertEquals('negative', '-0.3', S(-0.3));
+  AssertEquals('one decimal asked', '100', S(99.96, 1));
+  AssertEquals('no decimals asked', '42', S(42.4, 0));
+
+  O := TJSONObject.Create;
+  try
+    O.Add('mean', WebDecimal(5.8900000000000015));
+    AssertEquals('inside an object', '{ "mean" : 5.89 }', O.AsJSON);
+  finally
+    O.Free;
+  end;
+end;
+
+procedure TWebServerDashboardTests.TestReportWithoutCommand;
+var
+  S: string;
+begin
+  StartServer('', false);
+  S := Exchange(Get('/report'));
+  AssertEquals('report status', 'HTTP/1.1 501 Not Implemented', StatusLine(S));
+  S := Exchange(Get('/history.png'));
+  AssertEquals('history status', 'HTTP/1.1 501 Not Implemented', StatusLine(S));
 end;
 
 initialization

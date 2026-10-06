@@ -43,6 +43,8 @@
  *   /snooze; StartWebServer hands it to the server.
  * - 2026-10-06: GetPredictionsForWeb returns the forecast WebPublishPredictions
  *   last cached, so /predict is no longer always empty.
+ * - 2026-10-06: WebCommand serves report.get and history.png (WebReportToJSON,
+ *   WebHistoryPNG) behind the web API's /report and /history.png.
  *)
 (* MODIFICATION NOTICE (2026-08-17): The high/low/urgent-low alert rules are now
    seeded after Connect and the wizard/override adjustments instead of before
@@ -1666,6 +1668,187 @@ begin
   AReply.Add('snooze', WebSnoozeJSON);
 end;
 
+procedure TfBG.WebReportToJSON(const st: TTrndiReportStats; AReply: TJSONObject);
+const
+  BAND_KEYS: array[TTrndiReportBand] of string =
+    ('low', 'below_range', 'in_range', 'above_range', 'high');
+
+  function UtcIso(const t: TDateTime): string;
+  begin
+    Result := FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss"Z"', LocalTimeToUniversal(t));
+  end;
+
+  // Two decimals is what the dialog prints; the raw doubles would only add
+  // floating-point noise to the wire.
+  function Num(const v: double): TJSONData;
+  begin
+    Result := WebDecimal(v, 2);
+  end;
+
+  function Mark(const value: double; const at: TDateTime): TJSONObject;
+  begin
+    Result := TJSONObject.Create;
+    Result.Add('value', Num(value));
+    Result.Add('at_utc', UtcIso(at));
+  end;
+
+var
+  bands, bandObj, lim: TJSONObject;
+  buckets: TJSONArray;
+  bucket: TJSONObject;
+  b: TTrndiReportBand;
+  i: integer;
+begin
+  AReply.Add('valid', st.valid);
+  AReply.Add('unit', IfThen(un = BGUnit.mmol, 'mmol', 'mgdl'));
+  if not st.valid then
+  begin
+    AReply.Add('count', 0);
+    Exit;
+  end;
+
+  AReply.Add('first_utc', UtcIso(st.first));
+  AReply.Add('last_utc', UtcIso(st.last));
+  AReply.Add('span_minutes', st.spanMinutes);
+  AReply.Add('count', st.count);
+  AReply.Add('cadence_minutes', Num(st.cadenceMinutes));
+  AReply.Add('coverage_percent', Num(st.coverage));
+
+  lim := TJSONObject.Create;
+  lim.Add('lo', Num(st.limits.lo));
+  lim.Add('hi', Num(st.limits.hi));
+  if st.limits.hasRange then
+  begin
+    lim.Add('range_lo', Num(st.limits.rangeLo));
+    lim.Add('range_hi', Num(st.limits.rangeHi));
+  end
+  else
+  begin
+    lim.Add('range_lo', TJSONNull.Create);
+    lim.Add('range_hi', TJSONNull.Create);
+  end;
+  AReply.Add('limits', lim);
+
+  bands := TJSONObject.Create;
+  for b := Low(TTrndiReportBand) to High(TTrndiReportBand) do
+  begin
+    bandObj := TJSONObject.Create;
+    bandObj.Add('count', st.bands[b]);
+    bandObj.Add('percent', Num(TrndiReportBandPercent(st, b)));
+    bands.Add(BAND_KEYS[b], bandObj);
+  end;
+  AReply.Add('bands', bands);
+  // Between the clinical limits, whatever the personal band: the figure the
+  // TIR badge shows when the band is off.
+  AReply.Add('in_limits_percent', Num(TrndiReportBandPercent(st, rbBelowRange) +
+    TrndiReportBandPercent(st, rbInRange) + TrndiReportBandPercent(st, rbAboveRange)));
+
+  AReply.Add('mean', Num(st.mean));
+  AReply.Add('median', Num(st.median));
+  AReply.Add('sd', Num(st.sd));
+  AReply.Add('cv_percent', Num(st.cv));
+  AReply.Add('gmi_percent', Num(st.gmiPercent));
+  AReply.Add('gmi_mmol_mol', Num(st.gmiMmolMol));
+  AReply.Add('lowest', Mark(st.lowest, st.lowestAt));
+  AReply.Add('highest', Mark(st.highest, st.highestAt));
+  AReply.Add('low_excursions', st.lowExcursions);
+  AReply.Add('high_excursions', st.highExcursions);
+  AReply.Add('longest_gap_minutes', st.longestGap);
+  AReply.Add('longest_gap_at_utc', UtcIso(st.longestGapAt));
+  AReply.Add('sparkline', TrndiReportSparkline(st));
+
+  buckets := TJSONArray.Create;
+  for i := 0 to High(st.buckets) do
+  begin
+    bucket := TJSONObject.Create;
+    bucket.Add('starts_utc', UtcIso(st.buckets[i].starts));
+    bucket.Add('count', st.buckets[i].count);
+    if st.buckets[i].count > 0 then
+      bucket.Add('mean', Num(st.buckets[i].mean))
+    else
+      bucket.Add('mean', TJSONNull.Create);
+    buckets.Add(bucket);
+  end;
+  AReply.Add('buckets', buckets);
+end;
+
+function TfBG.WebHistoryPNG(const AParams: TJSONObject; AReply: TJSONObject;
+  out AError: string): boolean;
+const
+  DEFAULT_WIDTH = 760;   // The graph window's own 96 dpi design size
+  DEFAULT_HEIGHT = 460;
+  MIN_WIDTH = 240;
+  MAX_WIDTH = 2400;
+  MIN_HEIGHT = 160;
+  MAX_HEIGHT = 1600;
+  MAX_MINUTES = 7 * 24 * 60;
+var
+  w, h, minutes: integer;
+  ms: TMemoryStream;
+  png: string;
+begin
+  Result := false;
+  AError := '';
+  if api = nil then
+  begin
+    AError := 'No backend connected';
+    Exit;
+  end;
+
+  w := DEFAULT_WIDTH;
+  h := DEFAULT_HEIGHT;
+  minutes := 0;
+  if AParams <> nil then
+  begin
+    w := AParams.Get('width', DEFAULT_WIDTH);
+    h := AParams.Get('height', DEFAULT_HEIGHT);
+    minutes := AParams.Get('minutes', 0);
+  end;
+  if (w < MIN_WIDTH) or (w > MAX_WIDTH) or (h < MIN_HEIGHT) or (h > MAX_HEIGHT) then
+  begin
+    AError := Format('width must be %d-%d and height %d-%d',
+      [MIN_WIDTH, MAX_WIDTH, MIN_HEIGHT, MAX_HEIGHT]);
+    Exit;
+  end;
+  if (minutes < 0) or (minutes > MAX_MINUTES) then
+  begin
+    AError := Format('minutes must be 0 (everything held) to %d', [MAX_MINUTES]);
+    Exit;
+  end;
+
+  // A form of its own, never shown: drawing into the user's open graph would
+  // resize it and change its range under them. It renders without a window
+  // handle, and lives until the main form goes.
+  if FWebGraph = nil then
+    FWebGraph := TfHistoryGraph.Create(Self);
+  FWebGraph.ClientWidth := w;
+  FWebGraph.ClientHeight := h;
+  FWebGraph.SetPalette(CurrentHistoryGraphPalette);
+  FWebGraph.SetThresholds(api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+  FWebGraph.SetRangeMinutes(minutes);
+  FWebGraph.SetReadings(bgs, un);
+  AutoEnableBasalOverlay(FWebGraph);
+  AutoEnableBolusOverlay(FWebGraph);
+  AutoEnableCarbOverlay(FWebGraph);
+  AutoAddPredictionOverlay(FWebGraph);
+
+  ms := TMemoryStream.Create;
+  try
+    FWebGraph.RenderToStream(ms);
+    SetLength(png, ms.Size);
+    if ms.Size > 0 then
+      Move(ms.Memory^, png[1], ms.Size);
+  finally
+    ms.Free;
+  end;
+
+  AReply.Add('png_base64', EncodeStringBase64(png));
+  AReply.Add('width', w);
+  AReply.Add('height', h);
+  AReply.Add('minutes', minutes);
+  Result := true;
+end;
+
 function TfBG.WebCommand(const ACommand: string; const AParams: TJSONObject;
   AReply: TJSONObject; out AError: string): boolean;
 
@@ -1780,6 +1963,19 @@ begin
     RefreshConnectionBadge;
     AReply.Add('snooze', WebSnoozeJSON);
   end
+  else
+  if ACommand = 'report.get' then
+  begin
+    minutes := 0;
+    if AParams <> nil then
+      minutes := AParams.Get('minutes', 0);
+    if (minutes < 0) or (minutes > 7 * 24 * 60) then
+      Exit(Refuse('minutes must be 0 (everything held) to 10080'));
+    WebReportToJSON(BuildGlucoseReport(minutes), AReply);
+  end
+  else
+  if ACommand = 'history.png' then
+    Result := WebHistoryPNG(AParams, AReply, AError)
   else
     Result := Refuse('Unknown command');
 end;
