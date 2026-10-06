@@ -81,6 +81,9 @@ type
     // Placeholder readings must never drive the display or the alert engine
     procedure TestProcessCurrentReadingIgnoresPlaceholder;
     procedure TestUpdateUIBasedOnGlucoseIgnoresPlaceholder;
+
+    // The forecast published to /events is what /predict serves
+    procedure TestWebPredictionsServedFromCache;
   end;
 
 implementation
@@ -1061,6 +1064,58 @@ begin
     end;
   finally
     a.Free;
+    n.Free;
+    native := nil;
+  end;
+end;
+
+procedure TUmainTests.TestWebPredictionsServedFromCache;
+var
+  g: TfBG;
+  n: TrndiNative;
+  preds, got: BGResults;
+  wasEnabled: boolean;
+begin
+  n := TrndiNative.Create;
+  wasEnabled := PredictGlucoseReading;
+  try
+    native := n;
+    g := TfBG.Create;
+    try
+      fBG := g;
+      SetLength(preds, 2);
+      preds[0].Init(mgdl);
+      preds[0].update(130, 5, mgdl);
+      preds[0].date := Now + 5 / MinsPerDay;
+      preds[1].Init(mgdl);
+      preds[1].update(135, 5, mgdl);
+      preds[1].date := Now + 10 / MinsPerDay;
+
+      PredictGlucoseReading := true;
+      got := g.WebPredictionsForTests(preds);
+      AssertEquals('The published forecast is served', 2, Length(got));
+      AssertEquals('First value', 130, got[0].val, 0.01);
+      AssertEquals('Second value', 135, got[1].val, 0.01);
+      AssertTrue('Time is kept', got[1].date = preds[1].date);
+
+      // The server thread gets its own copy, not the publisher's array.
+      preds[0].update(40, 0, mgdl);
+      AssertEquals('A later change to the source does not show through',
+        130, got[0].val, 0.01);
+
+      got := g.WebPredictionsForTests(nil);
+      AssertEquals('Publishing nil clears the forecast', 0, Length(got));
+
+      // A forecast is not offered once predictions are switched off.
+      PredictGlucoseReading := false;
+      got := g.WebPredictionsForTests(preds);
+      AssertEquals('Nothing is served while predictions are off', 0, Length(got));
+    finally
+      fBG := nil;
+      g.Free;
+    end;
+  finally
+    PredictGlucoseReading := wasEnabled;
     n.Free;
     native := nil;
   end;
