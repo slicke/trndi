@@ -89,14 +89,8 @@ Trndi uses __JEDI__ to format code, in Lazarus: Source > JEDI Code Format > Glob
 Units should end with ```.pp```, 
 
 ### VSCode
-Should you choose not to use Lazarus IDE, these are the recommendations for Visual Studio Code:
-* Language Support: https://marketplace.visualstudio.com/items?itemName=alefragnani.pascal
-
-* Formatting: Name: Pascal Formatter
-VS Marketplace Link: https://marketplace.visualstudio.com/items?itemName=alefragnani.pascal-formatter
-
-* Debugging: https://marketplace.visualstudio.com/items?itemName=CNOC.fpdebug
-* Debugging with GDB: https://marketplace.visualstudio.com/items?itemName=coolchyni.beyond-debug
+Should you choose not to use Lazarus IDE, see [doc/VSCODE.md](../doc/VSCODE.md) for the recommended
+extensions (FreePascal Toolkit and GDB Debugger - Beyond) and language-server setup.
 
 ### Ubuntu notice
 If your Ubuntu installation complains about -lgcc, consider making a symlink:
