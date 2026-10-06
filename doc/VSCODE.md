@@ -182,6 +182,42 @@ from the Command Line Tools (or Xcode) in `.vscode/settings.json`:
 }
 ```
 
-To stop where an exception is raised, set a breakpoint on
-`FPC_RAISEEXCEPTION`. LCL raises and handles exceptions of its own, so leave
-it disabled until you need it.
+CodeLLDB's "C++: on throw / on catch" filters in the Breakpoints view do not
+apply: FPC does not use C++ exceptions. To stop where a Pascal exception is
+raised, add a function breakpoint (`+` in the Breakpoints view) on
+`FPC_RAISEEXCEPTION`, upper case as FPC exports it. LCL raises and handles
+exceptions of its own, so keep it unchecked until you need it.
+
+### Useful function breakpoints
+
+The Debug build modes compile with range and overflow checks
+(`-Cr -Co`), so these RTL entry points fire on the actual fault rather
+than on the exception SysUtils later turns it into. They are quiet in normal
+use and safe to leave enabled:
+
+| Breakpoint | Stops when |
+|---|---|
+| `FPC_RANGEERROR` | an index or assignment is out of range |
+| `FPC_OVERFLOW` | integer arithmetic overflows |
+| `FPC_DIVBYZERO` | integer division by zero |
+| `FPC_ABSTRACTERROR` | an abstract method is called |
+| `FPC_ASSERT` | an `Assert(...)` fails |
+
+Broader catches:
+
+| Breakpoint | Stops when |
+|---|---|
+| `FPC_BREAK_ERROR` | any runtime error, including access violations |
+| `FORMS$_$TAPPLICATION_$__$$_HANDLEEXCEPTION$TOBJECT` | an exception went unhandled and LCL is about to show its error dialog; the call stack shows where it came from |
+| `FPC_RERAISE` | an `except ... raise;` block passes an exception on |
+| `FPC_RAISEEXCEPTION` | any exception is raised (noisy, see above) |
+
+Avoid the checkers themselves, which run on every call rather than only on
+failure: `FPC_STACKCHECK` (every procedure entry, with `-Ct`), `FPC_IOCHECK`
+(every I/O operation under `{$I+}`), `FPC_CHECK_OBJECT` (every method call)
+and `FPC_DYNARRAY_RANGECHECK` (every dynamic-array access). Stack overflow
+and I/O errors still reach `FPC_BREAK_ERROR`.
+
+Function breakpoints are stored in VS Code's per-workspace state, not in
+`.vscode/`, so they persist across sessions but are not shared through the
+repository.
