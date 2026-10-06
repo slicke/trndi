@@ -4,6 +4,7 @@
 #   make debug        -> debug build
 #   make release      -> release build
 #   make run-single   -> build and run Trndi with --no-multi (no account picker)
+#   make run-debug    -> debug build, then run Trndi
 #   make test         -> build and run tests (runner spawns an in-process Pascal test server)
 #   make test-noserver-> build and run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)
 #   make ide-libs     -> copy the QuickJS libraries to the project root (for Lazarus IDE runs)
@@ -346,7 +347,7 @@ NOEXT_BUILD_MODE_NAME = No Ext ($(BUILD_MODE))
 
 NOEXT_LAZBUILD_FLAGS = --widgetset=$(WIDGETSET) --build-mode="$(NOEXT_BUILD_MODE_NAME)" $(CPU_FLAG) $(LIBGCC_FLAGS) $(DARWIN_LD_FLAGS) $(DARWIN_DEBUG_FLAGS)
 
-.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run run-single list-modes list-modules check-module-names assets check-assets dashboard check-dashboard ide-libs shim ptop lang-check
+.PHONY: all help check build release debug test test-noserver noext-test noext-test-noserver clean distclean dist install uninstall run run-single run-debug list-modes list-modules check-module-names assets check-assets dashboard check-dashboard ide-libs shim ptop lang-check
 
 all: release
 
@@ -359,6 +360,7 @@ help:
 	@echo "  build      Generic build (honors BUILD_MODE and WIDGETSET)"
 	@echo "  run        Build, then run Trndi from $(OUTDIR) (macOS: opens the .app bundle; RUN_ARGS forwards arguments)"
 	@echo "  run-single Like run, but starts Trndi with --no-multi (skips the account picker)"
+	@echo "  run-debug  Like run, but on a debug build (RUN_ARGS=--no-multi skips the account picker)"
 	@echo "  test       Build and run tests (runner spawns an in-process Pascal test server)"
 	@echo "  test-noserver  Run console tests, skipping the embedded test server (TRNDI_NO_TESTSERVER=1)"
 	@echo "  noext-test  Build and run tests without extension support"
@@ -660,6 +662,11 @@ run: build
 # default account (manual checks, screenshots). RUN_ARGS still adds to it.
 run-single: override RUN_ARGS += --no-multi
 run-single: run
+
+# run on a debug build. The mode reaches build through run, so this is the same
+# as 'make run BUILD_MODE=Debug'.
+run-debug: BUILD_MODE := Debug
+run-debug: run
 
 # Build without JavaScript extension support. The "No Ext" build modes compile
 # without TrndiExt, so nothing links QuickJS and no shared libraries are needed.
