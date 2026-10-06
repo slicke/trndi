@@ -41,6 +41,8 @@
  * - 2026-09-29: Added WebCommand (and WebSettingsToJSON/WebSnoozeJSON), the
  *   main-thread command handler behind the web dashboard's /settings and
  *   /snooze; StartWebServer hands it to the server.
+ * - 2026-10-06: GetPredictionsForWeb returns the forecast WebPublishPredictions
+ *   last cached, so /predict is no longer always empty.
  *)
 (* MODIFICATION NOTICE (2026-08-17): The high/low/urgent-low alert rules are now
    seeded after Connect and the wizard/override adjustments instead of before
@@ -1468,9 +1470,18 @@ end;
 
 function TfBG.GetPredictionsForWeb: BGResults;
 begin
-  // Return empty array - predictions should be cached separately if needed
-  // We cannot make API calls from the web server thread as they would block
-  SetLength(Result, 0);
+  Result := nil;
+  // Computing a forecast means API calls, which this (web server) thread must
+  // not make; serve the one WebPublishPredictions cached. A forecast from
+  // before predictions were switched off is not offered as current.
+  if not PredictGlucoseReading then
+    Exit;
+  EnterCriticalSection(FReadingsLock);
+  try
+    Result := Copy(FCachedPredictions);
+  finally
+    LeaveCriticalSection(FReadingsLock);
+  end;
 end;
 
 function TfBG.WebServerActive: boolean;
@@ -1484,7 +1495,9 @@ end;
   Relay state changes to the web API's /events stream. Each is a no-op while
   no server is running, and the server drops sticky events whose payload did
   not change, so the callers publish unconditionally from the paths that
-  apply readings, alerts, forecasts and snoozes.
+  apply readings, alerts, forecasts and snoozes. The forecast is also kept
+  for /predict (GetPredictionsForWeb), so that endpoint and the predict event
+  always carry the same thing.
  ------------------------------------------------------------------------------}
 procedure TfBG.WebPublishReading(const Reading: BGReading);
 begin
@@ -1552,6 +1565,13 @@ end;
 
 procedure TfBG.WebPublishPredictions(const Preds: BGResults);
 begin
+  EnterCriticalSection(FReadingsLock);
+  try
+    FCachedPredictions := Copy(Preds);
+  finally
+    LeaveCriticalSection(FReadingsLock);
+  end;
+
   if Assigned(FWebServer) then
     TTrndiWebServer(FWebServer).PublishPredictions(Preds);
 end;
