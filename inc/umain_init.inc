@@ -50,6 +50,8 @@
  * - 2026-10-07: WebHistoryPNG takes a theme parameter (light, the default,
  *   or dark) and hands it to the graph as SetDarkTheme; the help-banner call
  *   went with the banner.
+ * - 2026-10-07: WebHistoryPNG plots HeldReadings (the day-long cache merged
+ *   with the live readings), and a backend change drops the cache.
  * - 2026-10-07: StartWebServer tries the ports after the configured one when
  *   it is taken (another Trndi, usually) and tells the user which port it
  *   got, or that it got none.
@@ -1367,6 +1369,9 @@ begin
   end;
 
   FreeAndNil(api);
+  // The cache belongs to the backend that filled it.
+  FHistoryCache := nil;
+  FHistoryCacheAt := 0;
   if not InitializeAPI then
   begin
     EnterSetupScreen;
@@ -1878,7 +1883,7 @@ begin
   // dashboard's card, whose colours follow the page.
   FWebGraph.SetDarkTheme(theme = 'dark');
   FWebGraph.SetRangeMinutes(minutes);
-  FWebGraph.SetReadings(bgs, un);
+  FWebGraph.SetReadings(HeldReadings, un);
   AutoEnableBasalOverlay(FWebGraph);
   AutoEnableBolusOverlay(FWebGraph);
   AutoEnableCarbOverlay(FWebGraph);

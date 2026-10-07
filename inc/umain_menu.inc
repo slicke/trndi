@@ -47,6 +47,10 @@
 (* MODIFICATION NOTICE (2026-10-06): The overlay helpers (AutoEnableBasalOverlay
    and friends) take the graph they fill instead of reaching for the global
    fHistoryGraph, so the web API can fill its own hidden instance. *)
+(* MODIFICATION NOTICE (2026-10-07): "Show history" plots HeldReadings, the
+   day-long cache merged with the live readings, instead of bgs alone, and
+   fetches the day first when the cache has not loaded yet; the separate
+   "Show last-day readings" item and mi24hClick are gone. *)
 (* Menu event handlers and UI click handlers for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -645,14 +649,15 @@ begin
   miFloatOn.Checked := fFloat.Showing;
 end;
 
-procedure TfBG.mi24hClick(Sender: TObject);
-begin
-  RequestHistoryFetch(1440, 288, hfm24h);
-end;
-
 procedure TfBG.miHistoryClick(Sender: TObject);
 begin
-  ShowHistoryGraph(bgs, un, CurrentHistoryGraphPalette,
+  // Before the day-long cache has loaded, fetch the day now and open the
+  // graph from the worker; if that cannot start (another call holds the
+  // api), fall through and show what the poll has.
+  if (FHistoryCacheAt = 0) and (api <> nil) and
+    RequestHistoryFetch(HISTORY_CACHE_SPAN_MINUTES, DayFetchMaxReadings, hfm24h) then
+    Exit;
+  ShowHistoryGraph(HeldReadings, un, CurrentHistoryGraphPalette,
     api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
   AutoEnableBasalOverlay(fHistoryGraph);
   AutoEnableBolusOverlay(fHistoryGraph);

@@ -95,6 +95,10 @@
    ApplyStaleDisplayState alongside the dock badge. It defaults to on while
    the Dock auto-hides, and its menu can switch it off ("Hide from menu
    bar"). *)
+(* MODIFICATION NOTICE (2026-10-07): Added the day-long reading cache
+   (RefreshHistoryCache, StoreHistoryCache, HeldReadings) that the history
+   graph, the summary report and the web API read instead of the poll's
+   bgs alone. *)
 (* Glucose update pipeline, data fetching, UI state and color logic for TfBG.
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
@@ -1774,8 +1778,6 @@ begin
   end;
 
   FApiCallInFlight := true;
-  if Assigned(mi24h) then
-    mi24h.Enabled := false;
   if Assigned(miReadingsSince) then
     miReadingsSince.Enabled := false;
 
@@ -1784,6 +1786,117 @@ begin
 
   FHistoryFetchThread := THistoryFetchThread.Create(Self, Minutes, MaxReadings, Mode);
   Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  The day-long reading cache
+  --------------------------
+  The live poll keeps only what the trend dots need (MAX_RESULT readings, a
+  couple of hours on a five-minute sensor), which left the history graph,
+  the summary report and the web API's /report and /history.png describing
+  "everything Trndi holds" as two or three hours. The cache is a separate
+  day-long fetch, refilled in the background once it is half an hour old,
+  that those views read merged with the live readings. The poll itself is
+  unchanged.
+ ------------------------------------------------------------------------------}
+const
+  HISTORY_CACHE_MINUTES = 30;         // Refill once the cache is this old
+  HISTORY_CACHE_SPAN_MINUTES = 1440;  // How far back a refill reaches
+
+procedure TfBG.RefreshHistoryCache;
+begin
+  if FShuttingDown or (api = nil) then
+    Exit;
+  if (FHistoryCacheAt > 0) and
+    (MinutesBetween(Now, FHistoryCacheAt) < HISTORY_CACHE_MINUTES) then
+    Exit;
+  // Guards inside RequestHistoryFetch drop the request while another worker
+  // holds the api; the next poll's completion queues it again.
+  if FApiCallInFlight then
+    Exit;
+  if Assigned(FPredictionThread) and (not FPredictionThread.Finished) then
+    Exit;
+  RequestHistoryFetch(HISTORY_CACHE_SPAN_MINUTES, DayFetchMaxReadings, hfmCache);
+end;
+
+function TfBG.DayFetchMaxReadings: integer;
+begin
+  // Enough readings to cover the day at the backend's own cadence, so a
+  // one-minute uploader fills it as fully as a five-minute one.
+  Result := 288;
+  if api <> nil then
+    Result := Max(288, HISTORY_CACHE_SPAN_MINUTES div Max(1, api.getReportingInterval));
+end;
+
+procedure TfBG.DeferredHistoryCacheRefresh(Data: PtrInt);
+begin
+  RefreshHistoryCache;
+end;
+
+procedure TfBG.StoreHistoryCache(const Readings: BGResults);
+var
+  i, n: integer;
+begin
+  n := 0;
+  for i := 0 to High(Readings) do
+    if not Readings[i].empty then
+      Inc(n);
+  if n = 0 then
+  begin
+    // Keep what there is and try again in a few minutes rather than on
+    // every poll - a backend that answers the day fetch with nothing is
+    // more likely down than empty.
+    if FHistoryCacheAt = 0 then
+      FHistoryCacheAt := IncMinute(Now, -(HISTORY_CACHE_MINUTES - 5));
+    Exit;
+  end;
+  SetLength(FHistoryCache, n);
+  n := 0;
+  for i := 0 to High(Readings) do
+    if not Readings[i].empty then
+    begin
+      FHistoryCache[n] := Readings[i];
+      Inc(n);
+    end;
+  SortReadingsDescending(FHistoryCache);
+  FHistoryCacheAt := Now;
+  TrndiDLog(Format('StoreHistoryCache: %d readings', [n]));
+end;
+
+function TfBG.HeldReadings: BGResults;
+var
+  i, j, n: integer;
+  dup: boolean;
+begin
+  // The live readings first: they are the freshest copy of the overlap, and
+  // the cache only adds what lies before them.
+  Result := nil;
+  SetLength(Result, Length(bgs) + Length(FHistoryCache));
+  n := 0;
+  for i := 0 to High(bgs) do
+    if not bgs[i].empty then
+    begin
+      Result[n] := bgs[i];
+      Inc(n);
+    end;
+  for i := 0 to High(FHistoryCache) do
+  begin
+    dup := false;
+    for j := 0 to High(bgs) do
+      if (not bgs[j].empty) and
+        (Abs(SecondsBetween(bgs[j].date, FHistoryCache[i].date)) < 60) then
+      begin
+        dup := true;
+        Break;
+      end;
+    if not dup then
+    begin
+      Result[n] := FHistoryCache[i];
+      Inc(n);
+    end;
+  end;
+  SetLength(Result, n);
+  SortReadingsDescending(Result);
 end;
 
 procedure TfBG.UpdateOffRangePanel(const Value: double);

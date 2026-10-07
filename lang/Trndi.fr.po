@@ -173,10 +173,6 @@ msgctxt "tfbg.lval.caption"
 msgid "Setup"
 msgstr "Configuration"
 
-#: tfbg.mi24h.caption
-msgid "Show last-day readings"
-msgstr "Afficher les lectures du dernier jour"
-
 #: tfbg.miadotadjust.caption
 msgid "Adjust Dot Positions"
 msgstr "Ajuster la position des points"

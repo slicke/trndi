@@ -43,6 +43,10 @@
  *   progress indicator, since FormClose's quit prompt can be declined.
  * - 2026-10-06: The history fetch passes fHistoryGraph to the overlay
  *   helpers, which now take the graph they fill.
+ * - 2026-10-07: The history worker's hfmCache mode stores its result as the
+ *   day-long reading cache instead of opening the graph, and a menu-driven
+ *   day fetch refills the cache too; the glucose and prediction workers
+ *   queue a cache refresh when they finish.
  *)
 (* Async helpers: thread implementations moved out of umain_helpers.inc
    This include defines background worker threads used by the main form.
@@ -331,6 +335,9 @@ begin
   PredictionLastReadingTime := FOwner.lastReading.date;
   PredictionConfidence := FConfidence;
   FOwner.RenderPredictionCache(FPreds);
+  // The cache refresh the glucose worker queued is dropped while this
+  // worker runs, so queue it again now that it is done.
+  Application.QueueAsyncCall(@FOwner.DeferredHistoryCacheRefresh, 0);
 end;
 
 procedure TPredictionThread.Execute;
@@ -557,6 +564,10 @@ begin
       native.updateDone;
     // The thread reference owned by TfBG will be cleared by the next
     // RequestAsyncFetch (which creates a fresh instance) or at shutdown.
+    // Top up the day-long cache once the api is free again; queued rather
+    // than called, since this worker still counts as in flight here.
+    if applied then
+      Application.QueueAsyncCall(@FOwner.DeferredHistoryCacheRefresh, 0);
   end;
 end;
 
@@ -629,6 +640,17 @@ begin
   end;
 
   try
+    // The silent refill of the day-long cache: nothing to show, and an
+    // empty result is not worth a dialog - the next poll retries.
+    if FMode = hfmCache then
+    begin
+      FOwner.StoreHistoryCache(FResults);
+      Exit;
+    end;
+    // A full day fetched for the menu is as good as a refill.
+    if FMode = hfm24h then
+      FOwner.StoreHistoryCache(FResults);
+
     if Length(FResults) = 0 then
     begin
       case FMode of
@@ -667,8 +689,6 @@ begin
       FOwner.AutoAddPredictionOverlay(fHistoryGraph);
   finally
     FOwner.FApiCallInFlight := false;
-    if Assigned(FOwner.mi24h) then
-      FOwner.mi24h.Enabled := true;
     if Assigned(FOwner.miReadingsSince) then
       FOwner.miReadingsSince.Enabled := true;
   end;

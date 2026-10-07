@@ -405,10 +405,6 @@ object fBG: TfBG
         ShortCut = 16456
         OnClick = miHistoryClick
       end
-      object mi24h: TMenuItem
-        Caption = 'Show last-day readings'
-        OnClick = mi24hClick
-      end
       object miReadingsSince: TMenuItem
         Caption = 'Show readings since..'
         OnClick = miReadingsSinceClick

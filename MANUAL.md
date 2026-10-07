@@ -287,7 +287,7 @@ always fits.
 
 ### Summary Report
 *Views → Summary report...* in the right-click menu sums up the readings Trndi
-currently holds. It opens with the period it covers, how many readings arrived
+currently holds, which is the last day once the background fetch has run. It opens with the period it covers, how many readings arrived
 and how much of the period they actually cover, then a small chart of the shape
 of the period, how the readings split across your bands, and the plain numbers:
 average, median, spread, variability (CV), the Glucose Management Indicator,
@@ -302,11 +302,14 @@ none of it should be acted on without your official device and your care team.
 
 ### History Graph
 *Show history* in the right-click menu opens the readings Trndi holds as a
-graph: one dot per reading in its colour, your high/low range as a shaded band
-(with your custom range as a deeper band inside it), a line at each threshold,
-and the forecast as a dashed line past the last reading. A key above the plot
-names the colours; the line under it says how many readings are in view and
-the span they cover.
+graph. Trndi keeps the last day of readings for this view, the summary report
+and the web dashboard, fetched in the background shortly after it connects and
+refreshed every half hour, on top of the handful the main window polls for its
+dots. The graph shows one dot per reading in its colour, your high/low range
+as a shaded band (with your custom range as a deeper band inside it), a line at
+each threshold, and the forecast as a dashed line past the last reading. A key
+above the plot names the colours; the line under it says how many readings are
+in view and the span they cover.
 
 The toolbar picks the time window — **All**, or the last **1h** to **24h**,
 counted back from now — and, when your source provides them, switches the
