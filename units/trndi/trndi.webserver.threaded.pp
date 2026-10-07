@@ -49,6 +49,10 @@
  * - 2026-10-06: Added GET /report and GET /history.png, both served through
  *   the command callback (report.get, history.png); the image comes back
  *   from the owner base64-encoded and is sent as image/png.
+ * - 2026-10-07: The listening socket is now bound by TWebServerThread.Listen
+ *   on the caller's thread, so Start can report whether the port was had and
+ *   walk on to the next ones (Start's AMaxAttempts). Windows binds with
+ *   SO_EXCLUSIVEADDRUSE, since SO_REUSEADDR there let two Trndis share a port.
  *)
 unit trndi.webserver.threaded;
 
@@ -254,6 +258,9 @@ private
   FStreamCounter: PLongInt;
   FHub: TWebEventHub;
   FCommand: TWebCommandFunc;
+  {$IFDEF WINDOWS}
+  FWinsockUp: boolean;
+  {$ENDIF}
 protected
   procedure Execute; override;
 public
@@ -264,6 +271,10 @@ public
     AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub;
     ACommand: TWebCommandFunc);
   destructor Destroy; override;
+  {** Bind and listen on APort, on the caller's thread. False when the port
+      could not be had (typically it is held by another process); nothing is
+      left open then and another port may be tried. }
+  function Listen(APort: word): boolean;
   procedure CloseServerSocket;
 end;
 
@@ -285,7 +296,10 @@ public
     ALoopbackOnly: boolean = false;
     ACommand: TWebCommandFunc = nil);
   destructor Destroy; override;
-  procedure Start;
+  {** Bind the port given to Create and begin serving. When that port is
+      taken, the next ones are tried in turn, up to AMaxAttempts ports in
+      all; Port then tells which one was bound. False when none could be. }
+  function Start(AMaxAttempts: integer = 1): boolean;
   procedure Stop;
   function Active: boolean;
 
@@ -308,6 +322,7 @@ public
       when AActive is false. }
   procedure PublishSnooze(const AActive: boolean; const AUntilLocal: TDateTime);
 
+  {** The port given to Create until Start succeeds; the bound port after. }
   property Port: word read FPort;
   property Enabled: boolean read FEnabled;
   property Hub: TWebEventHub read FHub;
@@ -359,6 +374,12 @@ SEND_FLAGS = 0;
 SEND_FLAGS = $0800;
 {$ELSE}
 SEND_FLAGS = MSG_NOSIGNAL;
+{$ENDIF}
+
+{$IFDEF WINDOWS}
+{$IF NOT DECLARED(SO_EXCLUSIVEADDRUSE)}
+SO_EXCLUSIVEADDRUSE = integer(not SO_REUSEADDR);
+{$ENDIF}
 {$ENDIF}
 
 {$IFDEF WINDOWS}
@@ -1974,7 +1995,93 @@ destructor TWebServerThread.Destroy;
 begin
   if FServerSocket <> INVALID_SOCKET then
     CloseSocket(FServerSocket);
+  {$IFDEF WINDOWS}
+  if FWinsockUp then
+    WSACleanup;
+  {$ENDIF}
   inherited Destroy;
+end;
+
+{------------------------------------------------------------------------------
+  TWebServerThread.Listen
+  -----------------------
+  Create the listening socket on APort. This runs on the caller's thread
+  rather than in Execute so the owner learns at once whether the port could
+  be bound: a second Trndi serving another user, or any other program, may
+  already hold it. A failed bind or listen leaves no socket behind.
+ -----------------------------------------------------------------------------}
+function TWebServerThread.Listen(APort: word): boolean;
+var
+  {$IFDEF WINDOWS}
+  SockAddr: WinSock2.TSockAddr;
+  InetAddr: TInetSockAddr;
+  WSAData: TWSAData;
+  {$ELSE}
+  SockAddr: TInetSockAddr;
+  {$ENDIF}
+  OptVal: integer;
+  BindAddr: longword;
+begin
+  Result := false;
+  if FServerSocket <> INVALID_SOCKET then
+    Exit; // Already listening
+
+  {$IFDEF WINDOWS}
+  if not FWinsockUp then
+  begin
+    if WSAStartup($0202, WSAData) <> 0 then  // Version 2.2
+      Exit;
+    FWinsockUp := true;
+  end;
+  FServerSocket := WinSock2.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  {$ELSE}
+  FServerSocket := fpSocket(AF_INET, SOCK_STREAM, 0);
+  {$ENDIF}
+  if FServerSocket = INVALID_SOCKET then
+    Exit;
+
+  OptVal := 1;
+  {$IFDEF WINDOWS}
+  // On Windows SO_REUSEADDR lets a second socket bind a port another process
+  // already listens on, and connections then land on either of them. Asking
+  // for exclusive use makes the bind fail instead, so the owner can move on
+  // to another port.
+  SocketSetOpt(FServerSocket, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, pchar(@OptVal), SizeOf(OptVal));
+  {$ELSE}
+  // Lets a restart rebind while old connections linger in TIME_WAIT; it does
+  // not let two listeners share a port.
+  SocketSetOpt(FServerSocket, SOL_SOCKET, SO_REUSEADDR, pchar(@OptVal), SizeOf(OptVal));
+  {$ENDIF}
+
+  if FLoopbackOnly then
+    BindAddr := HostToNetLong(LOOPBACK_ADDR_HOST_ORDER)
+  else
+    BindAddr := INADDR_ANY;
+
+  {$IFDEF WINDOWS}
+  FillChar(InetAddr, SizeOf(InetAddr), 0);
+  InetAddr.sin_family := AF_INET;
+  InetAddr.sin_port := WinSock2.htons(APort);
+  InetAddr.sin_addr.s_addr := BindAddr;
+  Move(InetAddr, SockAddr, SizeOf(InetAddr));
+  if (WinSock2.bind(FServerSocket, SockAddr, SizeOf(SockAddr)) <> 0) or
+    (WinSock2.listen(FServerSocket, 16) <> 0) then
+  {$ELSE}
+  FillChar(SockAddr, SizeOf(SockAddr), 0);
+  SockAddr.sin_family := AF_INET;
+  SockAddr.sin_port := htons(APort);
+  SockAddr.sin_addr.s_addr := BindAddr;
+  if (fpBind(FServerSocket, @SockAddr, SizeOf(SockAddr)) <> 0) or
+    (fpListen(FServerSocket, 16) <> 0) then
+  {$ENDIF}
+  begin
+    CloseSocket(FServerSocket);
+    FServerSocket := INVALID_SOCKET;
+    Exit;
+  end;
+
+  FPort := APort;
+  Result := true;
 end;
 
 procedure TWebServerThread.CloseServerSocket;
@@ -1998,80 +2105,17 @@ var
   SockAddr: TInetSockAddr;
   {$ENDIF}
   SockLen: TSockLen;
-  OptVal: integer;
   ReadFDs: TFDSet;
   TimeVal: TTimeVal;
   SelectResult: integer;
-  BindAddr: longword;
   PeerLoopback: boolean;
-  {$IFDEF WINDOWS}
-  WSAData: TWSAData;
-  InetAddr: TInetSockAddr;
-  {$ENDIF}
 begin
-  {$IFDEF WINDOWS}
-  // Initialize Winsock on Windows
-  if WSAStartup($0202, WSAData) <> 0 then  // Version 2.2
+  // Listen set the socket up on the owner's thread; without one there is
+  // nothing to serve (the owner frees a thread it never got a port for).
+  if FServerSocket = INVALID_SOCKET then
     Exit;
-  {$ENDIF}
 
   try
-    // Create socket
-    {$IFDEF WINDOWS}
-    FServerSocket := WinSock2.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    {$ELSE}
-    FServerSocket := fpSocket(AF_INET, SOCK_STREAM, 0);
-    {$ENDIF}
-    if FServerSocket = INVALID_SOCKET then
-      Exit;
-
-    // Set socket options
-    OptVal := 1;
-    SocketSetOpt(FServerSocket, SOL_SOCKET, SO_REUSEADDR, pchar(@OptVal), SizeOf(OptVal));
-
-    if FLoopbackOnly then
-      BindAddr := HostToNetLong(LOOPBACK_ADDR_HOST_ORDER)
-    else
-      BindAddr := INADDR_ANY;
-
-    // Bind to port
-    {$IFDEF WINDOWS}
-    FillChar(InetAddr, SizeOf(InetAddr), 0);
-    InetAddr.sin_family := AF_INET;
-    InetAddr.sin_port := WinSock2.htons(FPort);
-    InetAddr.sin_addr.s_addr := BindAddr;
-    Move(InetAddr, SockAddr, SizeOf(InetAddr));
-    if WinSock2.bind(FServerSocket, SockAddr, SizeOf(SockAddr)) <> 0 then
-    begin
-      CloseSocket(FServerSocket);
-      FServerSocket := INVALID_SOCKET;
-      Exit;
-    end;
-    {$ELSE}
-    FillChar(SockAddr, SizeOf(SockAddr), 0);
-    SockAddr.sin_family := AF_INET;
-    SockAddr.sin_port := htons(FPort);
-    SockAddr.sin_addr.s_addr := BindAddr;
-    if fpBind(FServerSocket, @SockAddr, SizeOf(SockAddr)) <> 0 then
-    begin
-      CloseSocket(FServerSocket);
-      FServerSocket := INVALID_SOCKET;
-      Exit;
-    end;
-    {$ENDIF}
-
-    // Listen
-    {$IFDEF WINDOWS}
-    if WinSock2.listen(FServerSocket, 16) <> 0 then
-      {$ELSE}
-      if fpListen(FServerSocket, 16) <> 0 then
-        {$ENDIF}
-      begin
-        CloseSocket(FServerSocket);
-        FServerSocket := INVALID_SOCKET;
-        Exit;
-      end;
-
     // Accept loop with select timeout
     while not Terminated do
     begin
@@ -2140,10 +2184,6 @@ begin
     CloseSocket(FServerSocket);
     FServerSocket := INVALID_SOCKET;
   end;
-
-  {$IFDEF WINDOWS}
-  WSACleanup;
-  {$ENDIF}
 end;
 
 { TTrndiWebServer }
@@ -2167,17 +2207,43 @@ end;
 destructor TTrndiWebServer.Destroy;
 begin
   Stop;
+  if Assigned(FThread) then
+  begin
+    // Start never ran, or found no port: the thread still exists suspended.
+    // Let its Execute run (it exits at once without a socket) so it can be
+    // joined; Haiku polls instead of joining, see Stop.
+    FThread.Terminate;
+    FThread.Start;
+    {$IFDEF HAIKU}
+    while not FThread.Finished do
+      Sleep(1);
+    {$ENDIF}
+    FreeAndNil(FThread);
+  end;
   // Stop drained every client handler, so nothing references the hub now.
   FreeAndNil(FHub);
   inherited Destroy;
 end;
 
-procedure TTrndiWebServer.Start;
+function TTrndiWebServer.Start(AMaxAttempts: integer): boolean;
+var
+  Attempt, Candidate: integer;
 begin
-  if not FEnabled and Assigned(FThread) then
+  Result := FEnabled;
+  if FEnabled or not Assigned(FThread) then
+    Exit;
+  for Attempt := 0 to Max(1, AMaxAttempts) - 1 do
   begin
-    FThread.Start;
-    FEnabled := true;
+    Candidate := FPort + Attempt;
+    if Candidate > High(word) then
+      Break;
+    if FThread.Listen(Candidate) then
+    begin
+      FPort := Candidate;
+      FThread.Start;
+      FEnabled := true;
+      Exit(true);
+    end;
   end;
 end;
 

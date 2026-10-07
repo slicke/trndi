@@ -45,6 +45,9 @@
 (* MODIFICATION NOTICE (2026-09-27): Added RS_STATUS_ITEM_SHOW,
    RS_STATUS_ITEM_HIDE, RS_STATUS_ITEM_QUIT and RS_STATUS_ITEM_HIDDEN for the
    macOS menu-bar status item's menu. *)
+
+(* MODIFICATION NOTICE (2026-10-07): Added RS_WEBAPI_TITLE, RS_WEBAPI_PORT_MOVED
+   and RS_WEBAPI_NO_PORT for the notices the web server's port fallback gives. *)
 unit trndi.strings;
 
 interface
@@ -283,6 +286,9 @@ RS_SAFEMODE = 'Safe Mode Enabled';
 RS_SAFEMODE_DESC = 'Trndi is running in <b>Safe Mode</b>!<ul><li>No start-up actions from extensions will run</li><li>You cannot use, and no actions will trigger from, extensions</li></ul><br>Extensions will load next run, unless you press <b>CTRL</b>!';
 
 RS_API_NOTICE = 'Data source notice';
+RS_WEBAPI_TITLE = 'Web API';
+RS_WEBAPI_PORT_MOVED = 'Port %d is in use by another program, so Trndi''s web server started on port %d instead.';
+RS_WEBAPI_NO_PORT = 'Trndi could not start its web server: there is no free port between %d and %d.';
 RS_ATTENTION_MISSING = 'Outdated Readings!';
 RS_ATTENTION_MISSING_DESC = 'Readings are not fresh, have your phone lost connection to the sensor?';
 RS_SENSOR_FAULT_SUSPECT = 'Sensor may be faulty: multiple abrupt reading jumps detected.';
