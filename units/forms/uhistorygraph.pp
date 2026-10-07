@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-07: Added SetShowHelpPanel so a static render (the web API's
+ *   /history.png) can drop the hover/right-click hint and give the plot
+ *   the height the banner took.
  * - 2026-10-06: Added RenderToStream, the PNG render behind SaveAsPNG and
  *   the web API's /history.png, and SetRangeMinutes so a caller can pick
  *   the time window the context menu offers.
@@ -158,6 +161,7 @@ private
   FShowAutoBolus: boolean; // Whether automatic micro-deliveries are included
   FCarbs: TCarbList; // Optional carbohydrate entries to draw as overlay
   FShowCarbs: boolean; // Whether to render carbohydrate overlay
+  FShowHelpPanel: boolean; // Whether the interaction hint is drawn under the plot
   FPredictions: array of TGraphPoint; // Predicted future readings
   FInvTimeSpan: double; // 1 / (FMaxTime - FMinTime); 0 if degenerate
   FInvValueSpan: double; // 1 / (FMaxValue - FMinValue); 0 if degenerate
@@ -294,6 +298,11 @@ public
       counted back from now; 0 shows everything. The same filter the
       context menu's range items apply, and reflected there. }
   procedure SetRangeMinutes(const AMinutes: integer);
+    {** SetShowHelpPanel: Show or hide the one-line interaction hint drawn
+      beneath the plot (hover, click, right-click). Default on; a render
+      nobody can interact with, such as the web API's PNG, turns it off and
+      the plot takes the freed height. }
+  procedure SetShowHelpPanel(const AShow: boolean);
     {** SaveAsCSV: Export the readings data to a CSV file for analysis in
       spreadsheet applications. }
   procedure SaveAsCSV(Sender: TObject);
@@ -390,6 +399,7 @@ GRAPH_MARGIN_LEFT = 72;
 GRAPH_MARGIN_TOP = 40;
 GRAPH_MARGIN_RIGHT = 220;
 GRAPH_MARGIN_BOTTOM = 120;
+GRAPH_MARGIN_BOTTOM_NO_HELP = 84; // Axis title only, no help banner
 GRAPH_DIVISIONS = 5;
   // Hover overlay: the box keeps a fixed light face whatever the widgetset
   // theme, since the graph background is light too, and the hairline is a
@@ -460,6 +470,7 @@ begin
   FPalette := DefaultHistoryGraphPalette;
   FSelectedRangeMinutes := 0;
   FHoveredPoint := -1;
+  FShowHelpPanel := true;
   
   // Create context menu
   FPopupMenu := TPopupMenu.Create(Self);
@@ -1001,6 +1012,8 @@ procedure DrawHelpPanel;
   var
     panelTop: integer;
   begin
+    if not FShowHelpPanel then
+      Exit;
     panelTop := PlotRect.Bottom + Px(92);
     helpRect := Rect(PlotRect.Left - gap,
       panelTop,
@@ -1280,7 +1293,10 @@ begin
   topEdge := Px(GRAPH_MARGIN_TOP);
   minSpan := Px(10);
   rightEdge := ClientWidth - Px(GRAPH_MARGIN_RIGHT);
-  bottomEdge := ClientHeight - Px(GRAPH_MARGIN_BOTTOM);
+  if FShowHelpPanel then
+    bottomEdge := ClientHeight - Px(GRAPH_MARGIN_BOTTOM)
+  else
+    bottomEdge := ClientHeight - Px(GRAPH_MARGIN_BOTTOM_NO_HELP);
   if rightEdge <= leftEdge + minSpan then
     rightEdge := leftEdge + minSpan;
   if bottomEdge <= topEdge + minSpan then
@@ -1666,6 +1682,15 @@ begin
     Exit;
 
   SetRangeMinutes(TMenuItem(Sender).Tag);
+end;
+
+procedure TfHistoryGraph.SetShowHelpPanel(const AShow: boolean);
+begin
+  if FShowHelpPanel = AShow then
+    Exit;
+  FShowHelpPanel := AShow;
+  InvalidateBackground;
+  Invalidate;
 end;
 
 procedure TfHistoryGraph.SetRangeMinutes(const AMinutes: integer);
