@@ -58,7 +58,9 @@ Write the values as plain strings (no `-bool`/`-int`).
 
 If the configured port is held by another program, Trndi tries the following ports in turn (up to 15 ports in all, so `8080` through `8094` by default) and shows a notification naming the port it ended up on, for example *"Port 8080 is in use by another program, so Trndi's web server started on port 8081 instead."* If none of them is free, a notification says so and Trndi runs without the web server. [`/health`](#get-health) always reports the port actually bound.
 
-This is what happens when several Trndi instances run at once (see [multi-user support](../guides/Multiuser.md)): each profile reads its own `webserver.port`, and profiles left on the default all ask for `8080`. The first instance to start gets it and the others move up one port each. To give each user a fixed port instead, set a different `webserver.port` per profile (`anna_webserver.port=8081`, ...).
+This is what happens when several Trndi instances run at once (see [multi-user support](../guides/Multiuser.md)): each profile reads its own `webserver.port`, and profiles left on the default all ask for `8080`. The first instance to start gets it and the others move up one port each. To give each user a fixed port instead, set a different `webserver.port` per profile (`anna_webserver.port=8081`, ...). Whichever way the ports fall, `/health` and `/status` name the account in their `user` field, and the dashboard shows it in its heading, so a probe of the port range can tell the instances apart.
+
+> The account name is served to anyone who can reach the API, just like the readings. If the API is open on your network without a token, that name identifies whose glucose it is.
 
 ## Authentication
 
@@ -88,6 +90,7 @@ If no token is configured, all requests are allowed. The dashboard page itself (
 
 `GET /` (alias `/dashboard`) returns a self-contained HTML page, about 18 KB with no external assets, that works offline on the local network. It subscribes to `/events` for live updates and uses the other endpoints for the rest, so it shows exactly what the API exposes:
 
+- the account's name in the heading when Trndi runs in multi-user mode
 - the current reading in the app's unit, with trend arrow, delta and age, coloured by the reading's level
 - a graph of the last three hours from `/glucose`, with the high/low limits, the personal in-range band and the forecast dashed in
 - the forecast (the `predict` event), the connection state and the alert-snooze state
@@ -296,13 +299,15 @@ Returns server status and data availability.
 ```json
 {
   "status": "ok",
-  "data_available": true
+  "data_available": true,
+  "user": null
 }
 ```
 
 **Fields:**
 - `status`: Always "ok" if server is running
 - `data_available`: Boolean indicating if glucose data callbacks are configured
+- `user`: The name of the account this Trndi shows when it runs in [multi-user mode](../guides/Multiuser.md), otherwise `null`
 
 This endpoint is kept for compatibility with existing clients.
 
@@ -318,6 +323,7 @@ Returns a richer health payload suitable for uptime/monitoring checks.
   "timestamp_utc": "2026-03-27T10:21:38Z",
   "uptime_seconds": 123,
   "port": 8080,
+  "user": null,
   "auth_required": false,
   "data_available": true,
   "endpoints": [
@@ -346,6 +352,7 @@ Returns a richer health payload suitable for uptime/monitoring checks.
 - `timestamp_utc`: Server time in UTC (`YYYY-MM-DDTHH:MM:SSZ`)
 - `uptime_seconds`: Seconds since this web server instance started
 - `port`: Bound listening port (this differs from `webserver.port` when that port was taken, see [When the port is taken](#when-the-port-is-taken))
+- `user`: The account's name in [multi-user mode](../guides/Multiuser.md), `null` for a single-user Trndi. With several instances running a port apart, this is how to tell whose server you reached
 - `auth_required`: Whether bearer token auth is enabled
 - `data_available`: Whether a glucose callback is configured
 - `endpoints`: Current endpoint list exposed by the server
@@ -365,6 +372,7 @@ Returns the settings the dashboard can change, plus the effective limits. All gl
 {
   "unit": "mmol",
   "predictions": true,
+  "user": "Anna",
   "override": {
     "enabled": true, "lo": 70, "hi": 180,
     "range": false, "range_lo": 80, "range_hi": 160
@@ -378,6 +386,7 @@ Returns the settings the dashboard can change, plus the effective limits. All gl
 **Fields:**
 - `unit`: The app's display unit, `mmol` or `mgdl`
 - `predictions`: Whether the forecast is enabled
+- `user`: The account's name in multi-user mode, `null` otherwise; the dashboard puts it in its heading
 - `override`: The stored personal limits. `enabled` switches the custom high/low limits (`lo`, `hi`) on; `range` switches the custom in-range band (`range_lo`, `range_hi`) on. While an override is off its values show what the page would start from (the effective limits)
 - `thresholds`: The limits readings are classified against right now (the backend's, or the override when enabled). `range_lo`/`range_hi` are `null` when no band applies
 - `snooze`: The alert-snooze state, as the `snooze` event carries it

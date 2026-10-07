@@ -53,6 +53,8 @@
  *   on the caller's thread, so Start can report whether the port was had and
  *   walk on to the next ones (Start's AMaxAttempts). Windows binds with
  *   SO_EXCLUSIVEADDRUSE, since SO_REUSEADDR there let two Trndis share a port.
+ * - 2026-10-07: Added UserLabel, the multi-user account's name, reported as
+ *   "user" by /health and /status (null when the owner runs single-user).
  *)
 unit trndi.webserver.threaded;
 
@@ -212,7 +214,8 @@ private
   FStreamCounter: PLongInt;   // open /events streams, capped at MAX_EVENT_STREAMS
   FHub: TWebEventHub;
   FCommand: TWebCommandFunc;
-  FPeerIsLoopback: boolean;   // the connection came from 127.0.0.0/8
+  FPeerIsLoopback: boolean;
+  FUserLabel: string;   // the connection came from 127.0.0.0/8
   // Parameters of the command in flight, handed across Synchronize.
   FCmdName: string;
   FCmdParams: TJSONObject;
@@ -233,6 +236,7 @@ private
   procedure ServeEventStream(const Headers: string);
   function ReserveStreamSlot: boolean;
   procedure ReleaseStreamSlot;
+  procedure AddUserField(AObj: TJSONObject);
 protected
   procedure Execute; override;
 public
@@ -241,7 +245,8 @@ public
     AGetPredictions: TGetPredictionsFunc;
     const AStartedAtUtc: TDateTime; APort: word;
     AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub;
-    ACommand: TWebCommandFunc; APeerIsLoopback: boolean);
+    ACommand: TWebCommandFunc; APeerIsLoopback: boolean;
+    const AUserLabel: string);
 end;
 
   { TWebServerThread - listens and dispatches connections }
@@ -258,6 +263,7 @@ private
   FStreamCounter: PLongInt;
   FHub: TWebEventHub;
   FCommand: TWebCommandFunc;
+  FUserLabel: string;
   {$IFDEF WINDOWS}
   FWinsockUp: boolean;
   {$ENDIF}
@@ -276,6 +282,8 @@ public
       left open then and another port may be tried. }
   function Listen(APort: word): boolean;
   procedure CloseServerSocket;
+  {** Handed to every client handler; set before Start, read-only after. }
+  property UserLabel: string read FUserLabel write FUserLabel;
 end;
 
   { TTrndiWebServer }
@@ -287,6 +295,8 @@ private
   FActiveClients: LongInt;
   FActiveStreams: LongInt;   // subset of FActiveClients that serve /events
   FHub: TWebEventHub;
+  FUserLabel: string;
+  procedure SetUserLabel(const AValue: string);
 public
   {** ACommand backs the dashboard's /settings and /snooze; without it those
       endpoints answer 501 and the page hides its settings card. }
@@ -324,6 +334,11 @@ public
 
   {** The port given to Create until Start succeeds; the bound port after. }
   property Port: word read FPort;
+  {** Name of the account this instance serves, reported as "user" by /health
+      and /status so one of several Trndis can be told apart; empty (null on
+      the wire) for a single-user Trndi. Set it before Start: handlers read
+      it without a lock, so a change while serving is ignored. }
+  property UserLabel: string read FUserLabel write SetUserLabel;
   property Enabled: boolean read FEnabled;
   property Hub: TWebEventHub read FHub;
 end;
@@ -1109,11 +1124,13 @@ AGetCurrentReading: TGetCurrentReadingFunc;
 AGetPredictions: TGetPredictionsFunc;
 const AStartedAtUtc: TDateTime; APort: word;
 AActiveCounter, AStreamCounter: PLongInt; AHub: TWebEventHub;
-ACommand: TWebCommandFunc; APeerIsLoopback: boolean);
+ACommand: TWebCommandFunc; APeerIsLoopback: boolean;
+const AUserLabel: string);
 begin
   inherited Create(true); // suspended; caller calls Start after setup is complete
   FreeOnTerminate := true;
   FClientSocket := AClientSocket;
+  FUserLabel := AUserLabel;
   FAuthToken := AAuthToken;
   FGetCurrentReading := AGetCurrentReading;
   FGetPredictions := AGetPredictions;
@@ -1124,6 +1141,16 @@ begin
   FHub := AHub;
   FCommand := ACommand;
   FPeerIsLoopback := APeerIsLoopback;
+end;
+
+// "user": the account name, or null for a single-user Trndi. Always present,
+// so a client probing several instances can read it without checking.
+procedure TClientHandlerThread.AddUserField(AObj: TJSONObject);
+begin
+  if FUserLabel <> '' then
+    AObj.Add('user', FUserLabel)
+  else
+    AObj.Add('user', TJSONNull.Create);
 end;
 
 // Take one of the MAX_EVENT_STREAMS slots. Increment first and test after:
@@ -1473,6 +1500,7 @@ begin
       begin
         ResponseObj.Add('status', 'ok');
         ResponseObj.Add('data_available', Assigned(FGetCurrentReading));
+        AddUserField(ResponseObj);
         Result := 'HTTP/1.1 200 OK'#13#10;
       end
       else
@@ -1569,6 +1597,7 @@ begin
         ResponseObj.Add('timestamp_utc', FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss"Z"', NowUtc));
         ResponseObj.Add('uptime_seconds', UptimeSeconds);
         ResponseObj.Add('port', FPort);
+        AddUserField(ResponseObj);
         ResponseObj.Add('auth_required', FAuthToken <> '');
         ResponseObj.Add('data_available', Assigned(FGetCurrentReading));
 
@@ -2165,7 +2194,7 @@ begin
         Client := TClientHandlerThread.Create(ClientSocket, FAuthToken,
           FGetCurrentReading, FGetPredictions,
           FStartedAtUtc, FPort, FActiveCounter, FStreamCounter, FHub,
-          FCommand, PeerLoopback);
+          FCommand, PeerLoopback, FUserLabel);
         // Worker owns ClientSocket from here on.
         Client.Start;
       except
@@ -2223,6 +2252,13 @@ begin
   // Stop drained every client handler, so nothing references the hub now.
   FreeAndNil(FHub);
   inherited Destroy;
+end;
+
+procedure TTrndiWebServer.SetUserLabel(const AValue: string);
+begin
+  FUserLabel := AValue;
+  if Assigned(FThread) then
+    FThread.UserLabel := AValue;
 end;
 
 function TTrndiWebServer.Start(AMaxAttempts: integer): boolean;

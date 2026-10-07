@@ -48,6 +48,9 @@
  * - 2026-10-07: StartWebServer tries the ports after the configured one when
  *   it is taken (another Trndi, usually) and tells the user which port it
  *   got, or that it got none.
+ * - 2026-10-07: The web server is handed the multi-user account name
+ *   (UserLabel) and WebSettingsToJSON reports it as "user", so the
+ *   dashboard and /health can say whose Trndi they show.
  *)
 (* MODIFICATION NOTICE (2026-08-17): The high/low/urgent-low alert rules are now
    seeded after Connect and the wizard/override adjustments instead of before
@@ -1444,6 +1447,10 @@ begin
   
   Server := TTrndiWebServer.Create(Port, Token, @GetCurrentReadingForWeb,
     @GetPredictionsForWeb, false, @WebCommand);
+  // Several instances serve several accounts, often a port apart: name the
+  // account so /health tells them apart. Single-user stays anonymous.
+  if multi then
+    Server.UserLabel := multinick;
   if not Server.Start(WEB_PORT_ATTEMPTS) then
   begin
     Server.Free;
@@ -1658,6 +1665,11 @@ begin
 
   AReply.Add('unit', IfThen(native.GetSetting('unit', 'mmol') = 'mmol', 'mmol', 'mgdl'));
   AReply.Add('predictions', native.GetBoolSetting('predictions.enable', false));
+  // The account shown, for the dashboard's heading; null in single-user mode.
+  if multi then
+    AReply.Add('user', multinick)
+  else
+    AReply.Add('user', TJSONNull.Create);
 
   // The stored overrides, with the effective limits as the values the page
   // shows while an override is off (mirrors the dialog's ApplyRangeBounds:
