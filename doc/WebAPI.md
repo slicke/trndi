@@ -208,7 +208,7 @@ curl -s http://localhost:8080/predict | jq '.predictions[0] | {mgdl, mmol}'
 Returns the same summary statistics as *Views → Summary report...* in the right-click menu, computed over the readings Trndi currently holds. Unlike the readings endpoints, every glucose value here is in the **display unit** named by `unit`, so the numbers match what the dialog shows.
 
 **Query parameters:**
-- `minutes` (optional): only summarise the last N minutes (1–10080). Omit, or pass 0, for everything Trndi holds.
+- `minutes` (optional): only summarise the last N minutes (1–10080). Omit, or pass 0, for everything Trndi holds: the last day, once the background history fetch has run (shortly after connecting, then every half hour), or just the readings the main window polls for its dots before that.
 
 **Response Format:**
 ```json
@@ -280,7 +280,7 @@ Returns the history graph as a PNG image: the same picture *📈 History* opens,
 **Query parameters:**
 - `width` (optional): image width in pixels, 240–2400 (default 760)
 - `height` (optional): image height in pixels, 160–1600 (default 460)
-- `minutes` (optional): only plot the last N minutes (1–10080). Omit, or pass 0, for everything Trndi holds
+- `minutes` (optional): only plot the last N minutes (1–10080). Omit, or pass 0, for everything Trndi holds (the last day, as for [`/report`](#get-report))
 - `theme` (optional): `light` (default) or `dark`, the colours the image is drawn in. The dashboard passes the browser's own appearance
 
 **Response:** `Content-Type: image/png` with the image bytes. A request with a parameter out of range is answered `400` with a JSON `error`, like the other endpoints; before a backend has connected the reply is `400` with `"No backend connected"`.

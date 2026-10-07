@@ -25,7 +25,6 @@
 {"hash":217524158,"name":"tfbg.milimitexplain.caption","sourcebytes":[69,120,112,108,97,105,110],"value":"Explain"},
 {"hash":6094051,"name":"tfbg.mipref.caption","sourcebytes":[86,105,101,119,115],"value":"Views"},
 {"hash":211148793,"name":"tfbg.mihistory.caption","sourcebytes":[83,104,111,119,32,104,105,115,116,111,114,121],"value":"Show history"},
-{"hash":27616883,"name":"tfbg.mi24h.caption","sourcebytes":[83,104,111,119,32,108,97,115,116,45,100,97,121,32,114,101,97,100,105,110,103,115],"value":"Show last-day readings"},
 {"hash":93823486,"name":"tfbg.mireadingssince.caption","sourcebytes":[83,104,111,119,32,114,101,97,100,105,110,103,115,32,115,105,110,99,101,46,46],"value":"Show readings since.."},
 {"hash":28642414,"name":"tfbg.mifullscreen.caption","sourcebytes":[84,111,103,103,108,101,32,70,117,108,108,115,99,114,101,101,110],"value":"Toggle Fullscreen"},
 {"hash":255690039,"name":"tfbg.mifloaton.caption","sourcebytes":[83,104,111,119,32,70,108,111,97,116,105,110,103,32,87,105,110,100,111,119],"value":"Show Floating Window"},

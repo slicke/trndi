@@ -38,6 +38,9 @@
 (* MODIFICATION NOTICE (2026-10-06): BuildGlucoseReport takes the window to
    summarise, so the web API's /report can ask for the last N minutes; the
    dialog still passes 0 for everything held. *)
+(* MODIFICATION NOTICE (2026-10-07): BuildGlucoseReport summarises
+   HeldReadings, the day-long cache merged with the live readings, instead
+   of bgs alone. *)
 (* The summary report: the readings Trndi currently holds, reduced to the
    figures a wearer would otherwise work out by hand, shown in a dialog and
    saveable as a plain text file.
@@ -236,7 +239,7 @@ begin
     api.cgmRangeHi * BG_CONVERTIONS[un][BGUnit.mgdl],
     hasRange);
 
-  Result := TrndiBuildReport(bgs, un, limits, sinceMinutes);
+  Result := TrndiBuildReport(HeldReadings, un, limits, sinceMinutes);
 end;
 
 // The saveable form: fixed-width, so the bands line up in any text editor and

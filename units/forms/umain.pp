@@ -93,6 +93,12 @@
  * - 2026-10-06: Declared FWebGraph, WebReportToJSON and WebHistoryPNG behind
  *   the web API's /report and /history.png; the overlay helpers take the
  *   graph they fill, and BuildGlucoseReport takes a window.
+ * - 2026-10-07: Declared FHistoryCache and the helpers around it
+ *   (HeldReadings, RefreshHistoryCache, StoreHistoryCache), the day-long
+ *   reading cache the history graph, the summary report and the web API
+ *   read, and the hfmCache fetch mode that fills it. The "Show last-day
+ *   readings" item (mi24h) is gone: "Show history" fetches the day itself
+ *   when the cache has not loaded yet.
  *)
 
 unit umain;
@@ -243,7 +249,7 @@ end;
   Which menu opened the history-graph fetch. Drives the empty-data messages
   and whether the prediction overlay is auto-added once the graph is shown.
 }
-THistoryFetchMode = (hfm24h, hfmDatePicker);
+THistoryFetchMode = (hfm24h, hfmDatePicker, hfmCache);
 
 {**
   Background fetch of a custom-window glucose history for the history graph.
@@ -533,7 +539,6 @@ TfBG = class(TForm)
   tMissed: TTimer;
   tTouch: TTimer;
   tMain: TTimer;
-  mi24h: TMenuItem;
   miAlertSnooze: TMenuItem;
   miAlertSnooze15: TMenuItem;
   miAlertSnooze30: TMenuItem;
@@ -634,7 +639,6 @@ TfBG = class(TForm)
   procedure lValStartDrag({%H-}Sender: TObject; var {%H-}DragObject: TDragObject);
   procedure miAnnounceClick({%H-}Sender: TObject);
   procedure miFloatOnClick({%H-}Sender: TObject);
-  procedure mi24hClick({%H-}Sender: TObject);
   procedure miAlertSnooze15Click({%H-}Sender: TObject);
   procedure miAlertSnooze30Click({%H-}Sender: TObject);
   procedure miAlertSnooze60Click({%H-}Sender: TObject);
@@ -759,6 +763,8 @@ private
   FPendingApiMsg: string;       // APIReceiver marshal slot for a worker-thread
   FPendingApiMsgType: TrndiAPIMsg; // emit, delivered via Synchronize.
   FHistoryFetchThread: THistoryFetchThread;
+  FHistoryCache: BGResults;    // The last day of readings, newest first; see HeldReadings
+  FHistoryCacheAt: TDateTime;  // When FHistoryCache was fetched; 0 = never
   // Shared guard: true while EITHER a TGlucoseFetchThread or
   // THistoryFetchThread is interacting with the TrndiAPI. Both backends
   // mutate api.lastErr (exposed as api.errormsg), so concurrent workers
@@ -1109,6 +1115,24 @@ private
         @false if a request was already pending or the API isn't ready. }
   function RequestHistoryFetch(Minutes, MaxReadings: integer;
     Mode: THistoryFetchMode): boolean;
+    {** The readings the history views work on: the day-long cache merged
+        with the live poll's @code(bgs), newest first, duplicates dropped.
+        Just @code(bgs) until the cache has loaded. }
+  function HeldReadings: BGResults;
+    {** Refill the day-long cache in the background when it is empty or
+        older than HISTORY_CACHE_MINUTES. A no-op while another API call
+        runs; the next poll tries again. }
+  procedure RefreshHistoryCache;
+    {** How many readings a day-long fetch asks for: enough to cover the day
+        at the backend's own cadence. }
+  function DayFetchMaxReadings: integer;
+    {** RefreshHistoryCache from the message loop, queued by the workers'
+        completion handlers, which run inside a Synchronize where the
+        worker still counts as in flight. }
+  procedure DeferredHistoryCacheRefresh({%H-}Data: PtrInt);
+    {** Take a history fetch's result as the new cache. An empty result
+        keeps the old cache and retries sooner. }
+  procedure StoreHistoryCache(const Readings: BGResults);
     {** Apply a set of readings returned by the worker thread. Performs all
         of the post-fetch UI work (cache copy, overrides, warning panel,
         alert engine, dots). Runs only on the main thread. Returns @true
