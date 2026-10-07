@@ -43,6 +43,8 @@
  *   /snooze; StartWebServer hands it to the server.
  * - 2026-10-06: GetPredictionsForWeb returns the forecast WebPublishPredictions
  *   last cached, so /predict is no longer always empty.
+ * - 2026-10-07: WebHistoryPNG hides the graph's interaction hint, which
+ *   only makes sense in the live window.
  * - 2026-10-06: WebCommand serves report.get and history.png (WebReportToJSON,
  *   WebHistoryPNG) behind the web API's /report and /history.png.
  * - 2026-10-07: StartWebServer tries the ports after the configured one when
@@ -1862,6 +1864,7 @@ begin
   FWebGraph.ClientHeight := h;
   FWebGraph.SetPalette(CurrentHistoryGraphPalette);
   FWebGraph.SetThresholds(api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
+  FWebGraph.SetShowHelpPanel(false); // Nobody can hover or right-click a PNG
   FWebGraph.SetRangeMinutes(minutes);
   FWebGraph.SetReadings(bgs, un);
   AutoEnableBasalOverlay(FWebGraph);
