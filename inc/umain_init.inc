@@ -47,6 +47,9 @@
  *   only makes sense in the live window.
  * - 2026-10-06: WebCommand serves report.get and history.png (WebReportToJSON,
  *   WebHistoryPNG) behind the web API's /report and /history.png.
+ * - 2026-10-07: WebHistoryPNG takes a theme parameter (light, the default,
+ *   or dark) and hands it to the graph as SetDarkTheme; the help-banner call
+ *   went with the banner.
  * - 2026-10-07: StartWebServer tries the ports after the configured one when
  *   it is taken (another Trndi, usually) and tells the user which port it
  *   got, or that it got none.
@@ -1824,7 +1827,7 @@ const
 var
   w, h, minutes: integer;
   ms: TMemoryStream;
-  png: string;
+  png, theme: string;
 begin
   Result := false;
   AError := '';
@@ -1837,11 +1840,18 @@ begin
   w := DEFAULT_WIDTH;
   h := DEFAULT_HEIGHT;
   minutes := 0;
+  theme := 'light';
   if AParams <> nil then
   begin
     w := AParams.Get('width', DEFAULT_WIDTH);
     h := AParams.Get('height', DEFAULT_HEIGHT);
     minutes := AParams.Get('minutes', 0);
+    theme := AParams.Get('theme', 'light');
+  end;
+  if (theme <> 'light') and (theme <> 'dark') then
+  begin
+    AError := 'theme must be light or dark';
+    Exit;
   end;
   if (w < MIN_WIDTH) or (w > MAX_WIDTH) or (h < MIN_HEIGHT) or (h > MAX_HEIGHT) then
   begin
@@ -1864,7 +1874,9 @@ begin
   FWebGraph.ClientHeight := h;
   FWebGraph.SetPalette(CurrentHistoryGraphPalette);
   FWebGraph.SetThresholds(api.cgmHi, api.cgmLo, api.cgmRangeHi, api.cgmRangeLo);
-  FWebGraph.SetShowHelpPanel(false); // Nobody can hover or right-click a PNG
+  // The browser's appearance, not this desktop's: the PNG sits in the
+  // dashboard's card, whose colours follow the page.
+  FWebGraph.SetDarkTheme(theme = 'dark');
   FWebGraph.SetRangeMinutes(minutes);
   FWebGraph.SetReadings(bgs, un);
   AutoEnableBasalOverlay(FWebGraph);

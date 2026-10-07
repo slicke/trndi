@@ -55,6 +55,8 @@
  *   SO_EXCLUSIVEADDRUSE, since SO_REUSEADDR there let two Trndis share a port.
  * - 2026-10-07: Added UserLabel, the multi-user account's name, reported as
  *   "user" by /health and /status (null when the owner runs single-user).
+ * - 2026-10-07: GET /history.png passes a theme query parameter through to
+ *   the command, so the dashboard can ask for a dark image.
  *)
 unit trndi.webserver.threaded;
 
@@ -133,7 +135,7 @@ TGetPredictionsFunc = function: BGResults of object;
           @item(@code(settings.set): AParams holds the changes; apply them, then describe the result in AReply)
           @item(@code(snooze): AParams.minutes, 0 to resume; describe the snooze state in AReply)
           @item(@code(report.get): AParams.minutes when the client gave one (0 means everything held); describe the summary statistics in AReply)
-          @item(@code(history.png): AParams.minutes, width and height when the client gave them; put the rendered graph in AReply.png_base64))
+          @item(@code(history.png): AParams.minutes, width, height and theme (light or dark) when the client gave them; put the rendered graph in AReply.png_base64))
       @returns(False to refuse the command; the client then gets 400 with AError.) }
 TWebCommandFunc = function(const ACommand: string; const AParams: TJSONObject;
   AReply: TJSONObject; out AError: string): boolean of object;
@@ -971,6 +973,15 @@ begin
     Params.Add(AName, StrToIntDef(V, -1));
 end;
 
+procedure AddStringQueryParam(Params: TJSONObject; const Query, AName: string);
+var
+  V: string;
+begin
+  V := QueryValue(Query, AName);
+  if V <> '' then
+    Params.Add(AName, V);
+end;
+
 { TWebEventHub }
 
 constructor TWebEventHub.Create;
@@ -1557,6 +1568,7 @@ begin
           AddIntQueryParam(Params, Query, 'minutes');
           AddIntQueryParam(Params, Query, 'width');
           AddIntQueryParam(Params, Query, 'height');
+          AddStringQueryParam(Params, Query, 'theme');
           Result := ServeCommand('history.png', Params, ResponseObj);
         finally
           Params.Free;

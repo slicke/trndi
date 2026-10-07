@@ -281,6 +281,7 @@ Returns the history graph as a PNG image: the same picture *📈 History* opens,
 - `width` (optional): image width in pixels, 240–2400 (default 760)
 - `height` (optional): image height in pixels, 160–1600 (default 460)
 - `minutes` (optional): only plot the last N minutes (1–10080). Omit, or pass 0, for everything Trndi holds
+- `theme` (optional): `light` (default) or `dark`, the colours the image is drawn in. The dashboard passes the browser's own appearance
 
 **Response:** `Content-Type: image/png` with the image bytes. A request with a parameter out of range is answered `400` with a JSON `error`, like the other endpoints; before a backend has connected the reply is `400` with `"No backend connected"`.
 
@@ -288,7 +289,7 @@ The image is rendered on the main thread while the request waits, so keep pollin
 
 **Example:**
 ```bash
-curl -s "http://localhost:8080/history.png?width=1200&height=600&minutes=360" -o history.png
+curl -s "http://localhost:8080/history.png?width=1200&height=600&minutes=360&theme=dark" -o history.png
 ```
 
 ### GET /status

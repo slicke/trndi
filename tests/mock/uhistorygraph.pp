@@ -37,6 +37,8 @@
  *)
 (* MODIFICATION NOTICE (2026-10-06): Added the RenderToStream and
    SetRangeMinutes stubs the real graph grew for the web API's /history.png. *)
+(* MODIFICATION NOTICE (2026-10-07): Added the SetDarkTheme stub, which the
+   web API calls to pick the PNG's theme. *)
 unit uhistorygraph;
 
 {$mode ObjFPC}{$H+}
@@ -76,6 +78,7 @@ type
     procedure SetPredictions(const Predictions: BGResults);
     procedure RenderToStream(AStream: TStream);
     procedure SetRangeMinutes(const AMinutes: integer);
+    procedure SetDarkTheme(const ADark: boolean);
   end;
 
 procedure ShowHistoryGraph(const Readings: BGResults; const UnitPref: BGUnit); overload;
@@ -167,6 +170,11 @@ begin
 end;
 
 procedure TfHistoryGraph.SetRangeMinutes(const AMinutes: integer);
+begin
+  // no-op for tests
+end;
+
+procedure TfHistoryGraph.SetDarkTheme(const ADark: boolean);
 begin
   // no-op for tests
 end;

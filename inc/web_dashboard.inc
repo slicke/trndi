@@ -39,6 +39,8 @@
 // * - 2026-10-07: Added the Summary card (from /report) and the History card
 // *   (the /history.png image, fetched with the token and shown as a blob),
 // *   with a shared time-window picker; both follow each new reading.
+// * - 2026-10-07: The History card asks /history.png for the page's own
+// *   appearance (theme=dark or light).
 //
 //
 // GENERATED FILE - do not edit. Source: assets/web_dashboard.html;
@@ -106,7 +108,7 @@ WEB_DASHBOARD_HTML =
   '</style>' + LineEnding +
   '</head>' + LineEnding +
   '<body>' + LineEnding +
-  '<header><h1 id="appName">Trndi</h1><span id="conn" class="chip">Connecting</span></header>' + LineEnding +
+  '<header><h1>Trndi</h1><span id="conn" class="chip">Connecting</span></header>' + LineEnding +
   '<main>' + LineEnding +
   '<section id="auth" class="card hidden">' + LineEnding +
   '<h2>Access token</h2>' + LineEnding +
@@ -250,7 +252,8 @@ WEB_DASHBOARD_HTML =
   ' var css=Math.max(240,Math.min(720,window.innerWidth)-66),dpr=window.devicePixelRatio||1;' + LineEnding +
   ' var w=Math.max(240,Math.min(2400,Math.round(css*dpr))),h=Math.max(160,Math.min(1600,Math.round(w*0.55)));' + LineEnding +
   ' histBusy=true;' + LineEnding +
-  ' return api("/history.png?width="+w+"&height="+h+(win?"&minutes="+win:"")).then(function(r){' + LineEnding +
+  ' var dark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;' + LineEnding +
+  ' return api("/history.png?width="+w+"&height="+h+"&theme="+(dark?"dark":"light")+(win?"&minutes="+win:"")).then(function(r){' + LineEnding +
   '  if(r.status===501){hasApi=false;return null}' + LineEnding +
   '  return r.ok?r.blob():null}).then(function(b){' + LineEnding +
   '  if(!b)return;' + LineEnding +
@@ -265,9 +268,8 @@ WEB_DASHBOARD_HTML =
   '  if(readings.length&&!last)last=readings[0];' + LineEnding +
   '  render();drawChart()}).catch(function(){})' + LineEnding +
   '}' + LineEnding +
-  'function setUser(u){var t=u?"Trndi \u00B7 "+u:"Trndi";$("appName").textContent=t;document.title=t}' + LineEnding +
   'function applySettings(s){' + LineEnding +
-  ' settings=s;unit=s.unit==="mgdl"?"mgdl":"mmol";setUser(s.user);' + LineEnding +
+  ' settings=s;unit=s.unit==="mgdl"?"mgdl":"mmol";' + LineEnding +
   ' var f=$("settings");' + LineEnding +
   ' f.unit.value=unit;f.ov.checked=!!s.override.enabled;f.rg.checked=!!s.override.range;f.pred.checked=!!s.predictions;' + LineEnding +
   ' f.lo.value=toUnit(s.override.lo);f.hi.value=toUnit(s.override.hi);f.rlo.value=toUnit(s.override.range_lo);f.rhi.value=toUnit(s.override.range_hi);' + LineEnding +
