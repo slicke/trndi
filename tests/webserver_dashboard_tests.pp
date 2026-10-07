@@ -38,6 +38,8 @@
 (* MODIFICATION NOTICE (2026-10-06): Added the /report and /history.png cases:
    the query parameters reach the command callback, the image comes back as
    image/png bytes, and both answer 501 without a callback and 405 to POST. *)
+(* MODIFICATION NOTICE (2026-10-07): The /history.png case also checks that
+   the theme parameter reaches the command. *)
 unit webserver_dashboard_tests;
 
 {$mode objfpc}{$H+}
@@ -440,7 +442,7 @@ var
   P: integer;
 begin
   StartServer;
-  S := Exchange(Get('/history.png?width=300&height=200&minutes=60'));
+  S := Exchange(Get('/history.png?width=300&height=200&minutes=60&theme=dark'));
   AssertEquals('status', 'HTTP/1.1 200 OK', StatusLine(S));
   AssertTrue('png content type', Pos('Content-Type: image/png', S) > 0);
   AssertTrue('content length', Pos('Content-Length: ' + IntToStr(Length(FAKE_PNG)), S) > 0);
@@ -453,6 +455,7 @@ begin
   AssertTrue('width reaches the command', Pos('"width" : 300', FCommands[0]) > 0);
   AssertTrue('height reaches the command', Pos('"height" : 200', FCommands[0]) > 0);
   AssertTrue('minutes reaches the command', Pos('"minutes" : 60', FCommands[0]) > 0);
+  AssertTrue('theme reaches the command', Pos('"theme" : "dark"', FCommands[0]) > 0);
 
   // A refusal is a JSON error, not an image.
   FRefuseWith := 'width must be 240-2400 and height 160-1600';

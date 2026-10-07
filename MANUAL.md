@@ -300,6 +300,24 @@ These are descriptive statistics over whatever Trndi has loaded — nothing more
 They are not a medical assessment, the indicator is not a laboratory A1c, and
 none of it should be acted on without your official device and your care team.
 
+### History Graph
+*Show history* in the right-click menu opens the readings Trndi holds as a
+graph: one dot per reading in its colour, your high/low range as a shaded band
+(with your custom range as a deeper band inside it), a line at each threshold,
+and the forecast as a dashed line past the last reading. A key above the plot
+names the colours; the line under it says how many readings are in view and
+the span they cover.
+
+The toolbar picks the time window — **All**, or the last **1h** to **24h**,
+counted back from now — and, when your source provides them, switches the
+**Basal**, **Insulin** and **Carbs** overlays on and off. Scroll over the plot
+to zoom in around the pointer (hold Shift to slide instead), drag it or use the
+arrow keys to move through time, and press **Home** or **0** to see everything
+again. Hover anywhere over the plot to read the nearest reading's value, time,
+change and arrow; click a dot for its full details. **PNG** saves the picture
+and **CSV** the readings in view (Ctrl+S also saves the picture). The window
+follows your system's light or dark appearance.
+
 ---
 
 ## Alerts and Notifications

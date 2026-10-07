@@ -4656,3 +4656,68 @@ msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "En attente de la fin de la connexion dans le navigateur…"
 
+#: uhistorygraph.rs_history_graph_menu_reset
+msgctxt "uhistorygraph.rs_history_graph_menu_reset"
+msgid "Reset zoom"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_range_hint
+#, object-pascal-format
+msgctxt "uhistorygraph.rs_history_graph_tb_range_hint"
+msgid "Show the last %s"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_all_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_all_hint"
+msgid "Show everything"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_basal
+msgctxt "uhistorygraph.rs_history_graph_tb_basal"
+msgid "Basal"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_basal_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_basal_hint"
+msgid "Show the programmed basal schedule"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_bolus
+msgctxt "uhistorygraph.rs_history_graph_tb_bolus"
+msgid "Insulin"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_bolus_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_bolus_hint"
+msgid "Show insulin deliveries"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_carbs
+msgctxt "uhistorygraph.rs_history_graph_tb_carbs"
+msgid "Carbs"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_carbs_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_carbs_hint"
+msgid "Show carbohydrates"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_png
+msgctxt "uhistorygraph.rs_history_graph_tb_png"
+msgid "PNG"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_png_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_png_hint"
+msgid "Save the graph as an image (Ctrl+S)"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_csv
+msgctxt "uhistorygraph.rs_history_graph_tb_csv"
+msgid "CSV"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_csv_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_csv_hint"
+msgid "Save the readings in view as CSV"
+msgstr ""
