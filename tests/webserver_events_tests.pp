@@ -103,6 +103,7 @@ type
     procedure TestStopClosesStream;
     procedure TestEventStreamLimit;
     procedure TestHubReplayAndRingOverflow;
+    procedure TestHeldPortMovesToNext;
   end;
 
 {** Connect a TCP socket to 127.0.0.1:APort, retrying while the server's
@@ -608,6 +609,42 @@ begin
   finally
     Hub.Free;
   end;
+end;
+
+// A second server asked for a port the first one holds: one attempt fails
+// and leaves it inactive, retries land on the next port, and /health names
+// the port actually bound.
+procedure TWebServerEventsTests.TestHeldPortMovesToNext;
+var
+  Second: TTrndiWebServer;
+  C: TSseClient;
+  S: string;
+begin
+  StartServer;
+  Second := TTrndiWebServer.Create(Port, '', @GetReadings, @GetPredictions, true);
+  try
+    AssertFalse('one attempt on a held port fails', Second.Start(1));
+    AssertFalse('a failed start leaves the server inactive', Second.Active);
+    AssertEquals('the asked-for port is kept until a bind succeeds', Port, Second.Port);
+
+    AssertTrue('with retries the next port is taken', Second.Start(3));
+    AssertTrue('the server is active after a successful retry', Second.Active);
+    AssertEquals('bound one above the held port', Port + 1, Second.Port);
+
+    C := TSseClient.Create(Port + 1, Get('/health'));
+    try
+      AssertTrue('health answers on the new port', C.Reader.WaitForEof(WAIT_MS));
+      S := StringReplace(C.Reader.Snapshot, ' ', '', [rfReplaceAll]);
+      AssertTrue('/health reports the bound port: ' + S,
+        Pos('"port":' + IntToStr(Port + 1), S) > 0);
+    finally
+      C.Free;
+    end;
+  finally
+    Second.Free;
+  end;
+  // Port + 1 was used too; the next StartServer should not land on it.
+  Inc(PortCounter);
 end;
 
 initialization

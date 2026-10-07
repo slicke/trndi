@@ -1893,6 +1893,18 @@ msgstr ""
 msgid "Data source notice"
 msgstr "Avis sur la source de données"
 
+#: trndi.strings.rs_webapi_title
+msgid "Web API"
+msgstr "API Web"
+
+#: trndi.strings.rs_webapi_port_moved
+msgid "Port %d is in use by another program, so Trndi's web server started on port %d instead."
+msgstr "Le port %d est utilisé par un autre programme ; le serveur web de Trndi a donc démarré sur le port %d."
+
+#: trndi.strings.rs_webapi_no_port
+msgid "Trndi could not start its web server: there is no free port between %d and %d."
+msgstr "Trndi n'a pas pu démarrer son serveur web : aucun port libre entre %d et %d."
+
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
 msgstr "Lectures obsolètes !"

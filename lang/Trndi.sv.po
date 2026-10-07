@@ -2169,6 +2169,18 @@ msgstr "Akuta låga varningar kan endast snoozas kortvarigt och återupptas vid 
 msgid "Data source notice"
 msgstr "Datakällenotis"
 
+#: trndi.strings.rs_webapi_title
+msgid "Web API"
+msgstr "Webb-API"
+
+#: trndi.strings.rs_webapi_port_moved
+msgid "Port %d is in use by another program, so Trndi's web server started on port %d instead."
+msgstr "Port %d används av ett annat program, så Trndis webbserver har startat på port %d i stället."
+
+#: trndi.strings.rs_webapi_no_port
+msgid "Trndi could not start its web server: there is no free port between %d and %d."
+msgstr "Trndi kunde inte starta sin webbserver: det finns ingen ledig port mellan %d och %d."
+
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
 msgstr "Utdaterade avläsningar!"

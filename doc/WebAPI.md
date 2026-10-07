@@ -54,6 +54,12 @@ Write the values as plain strings (no `-bool`/`-int`).
 - **port**: Port number for the HTTP server (default: 8080)
 - **token**: Optional authentication token (leave empty for no authentication)
 
+### When the port is taken
+
+If the configured port is held by another program, Trndi tries the following ports in turn (up to 15 ports in all, so `8080` through `8094` by default) and shows a notification naming the port it ended up on, for example *"Port 8080 is in use by another program, so Trndi's web server started on port 8081 instead."* If none of them is free, a notification says so and Trndi runs without the web server. [`/health`](#get-health) always reports the port actually bound.
+
+This is what happens when several Trndi instances run at once (see [multi-user support](../guides/Multiuser.md)): each profile reads its own `webserver.port`, and profiles left on the default all ask for `8080`. The first instance to start gets it and the others move up one port each. To give each user a fixed port instead, set a different `webserver.port` per profile (`anna_webserver.port=8081`, ...).
+
 ## Authentication
 
 If a token is configured, requests must include it in the `Authorization` header:
@@ -339,7 +345,7 @@ Returns a richer health payload suitable for uptime/monitoring checks.
 - `service`: Fixed identifier for the embedded server
 - `timestamp_utc`: Server time in UTC (`YYYY-MM-DDTHH:MM:SSZ`)
 - `uptime_seconds`: Seconds since this web server instance started
-- `port`: Bound listening port
+- `port`: Bound listening port (this differs from `webserver.port` when that port was taken, see [When the port is taken](#when-the-port-is-taken))
 - `auth_required`: Whether bearer token auth is enabled
 - `data_available`: Whether a glucose callback is configured
 - `endpoints`: Current endpoint list exposed by the server

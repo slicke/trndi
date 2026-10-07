@@ -49,7 +49,7 @@ This places dots in the main trend (X instead of O) in the future to allow you t
 Starts Trndi when your PC/Mac starts.
 
 ### Enable Web API
-This is an advanced feature for developers, see [WebAPI](/doc/WebAPI.md). It allows Trndi to provide data to other systems.
+This is an advanced feature for developers, see [WebAPI](/doc/WebAPI.md). It allows Trndi to provide data to other systems. The server listens on port 8080 unless you change it; if that port is already taken (by another Trndi, say), Trndi picks the next free one and tells you which.
 
 ## Extensions
 Extensions are programs developers can write to extend the features of Trndi. They work on Windows and Linux (amd64) and are written in the _JavaScript_ language. 

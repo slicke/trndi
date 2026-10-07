@@ -42,6 +42,8 @@ Adding a user only creates an empty account: it has no server, thresholds or oth
 
 Repeat for every user you added. Each user's settings are stored separately, so changing one never affects another. This is also what makes a user appear in [trndi-multi](https://github.com/slicke/trndi-multi): users without a backend are skipped there.
 
+> If more than one user has the [Web API](../doc/WebAPI.md) enabled, each running instance needs its own port. Instances that find their port taken move to the next free one and show a notification saying which port they got; to make the ports predictable, set `webserver.port` per user instead.
+
 ## Customizing a user
 * In the user list, click the user's username
 * In the __Account Settings__ panel next to the list, choose an account color and nickname

@@ -45,6 +45,9 @@
  *   last cached, so /predict is no longer always empty.
  * - 2026-10-06: WebCommand serves report.get and history.png (WebReportToJSON,
  *   WebHistoryPNG) behind the web API's /report and /history.png.
+ * - 2026-10-07: StartWebServer tries the ports after the configured one when
+ *   it is taken (another Trndi, usually) and tells the user which port it
+ *   got, or that it got none.
  *)
 (* MODIFICATION NOTICE (2026-08-17): The high/low/urgent-low alert rules are now
    seeded after Connect and the wizard/override adjustments instead of before
@@ -1422,19 +1425,41 @@ begin
 end;
 
 procedure TfBG.StartWebServer;
+const
+  // Ports tried in all, starting at the configured one. Each Trndi instance
+  // reads its own profile's webserver.port, and profiles are usually left on
+  // the default, so a second instance finds the port held by the first.
+  WEB_PORT_ATTEMPTS = 15;
 var
-  Port: integer;
+  Port, LastPort: integer;
   Token: string;
+  Server: TTrndiWebServer;
 begin
   if Assigned(FWebServer) then
     Exit; // Already running
     
   Port := native.GetIntSetting('webserver.port', 8080);
   Token := native.GetSetting('webserver.token', '');
+  LastPort := Min(Port + WEB_PORT_ATTEMPTS - 1, High(word));
   
-  FWebServer := TTrndiWebServer.Create(Port, Token, @GetCurrentReadingForWeb,
+  Server := TTrndiWebServer.Create(Port, Token, @GetCurrentReadingForWeb,
     @GetPredictionsForWeb, false, @WebCommand);
-  TTrndiWebServer(FWebServer).Start;
+  if not Server.Start(WEB_PORT_ATTEMPTS) then
+  begin
+    Server.Free;
+    TrndiDLog(Format('Web API: no free port between %d and %d', [Port, LastPort]));
+    native.attention(RS_WEBAPI_TITLE, Format(RS_WEBAPI_NO_PORT, [Port, LastPort]));
+    Exit;
+  end;
+  FWebServer := Server;
+
+  // The user set up their dashboard or script for the configured port, so
+  // a move has to be said out loud.
+  if Server.Port <> Port then
+  begin
+    TrndiDLog(Format('Web API: port %d is in use, listening on %d', [Port, Server.Port]));
+    native.attention(RS_WEBAPI_TITLE, Format(RS_WEBAPI_PORT_MOVED, [Port, Server.Port]));
+  end;
 
   // Seed the /events snapshot with what the UI already knows. The reading
   // itself is not needed here: a subscriber gets it from the cache callback
