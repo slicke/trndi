@@ -104,6 +104,7 @@ type
     procedure TestEventStreamLimit;
     procedure TestHubReplayAndRingOverflow;
     procedure TestHeldPortMovesToNext;
+    procedure TestUserLabelInHealth;
   end;
 
 {** Connect a TCP socket to 127.0.0.1:APort, retrying while the server's
@@ -645,6 +646,38 @@ begin
   end;
   // Port + 1 was used too; the next StartServer should not land on it.
   Inc(PortCounter);
+end;
+
+// /health and /status carry the account name the owner set, and null when
+// it set none, so a probe of several instances can tell them apart.
+procedure TWebServerEventsTests.TestUserLabelInHealth;
+var
+  C: TSseClient;
+  S: string;
+begin
+  StartServer;
+  C := TSseClient.Create(Port, Get('/health'));
+  try
+    AssertTrue(C.Reader.WaitForEof(WAIT_MS));
+    S := StringReplace(C.Reader.Snapshot, ' ', '', [rfReplaceAll]);
+    AssertTrue('single-user health has user null: ' + S, Pos('"user":null', S) > 0);
+  finally
+    C.Free;
+  end;
+  FreeAndNil(FServer);
+
+  Inc(PortCounter);
+  FServer := TTrndiWebServer.Create(Port, '', @GetReadings, @GetPredictions, true);
+  FServer.UserLabel := 'Anna';
+  AssertTrue(FServer.Start);
+  C := TSseClient.Create(Port, Get('/status'));
+  try
+    AssertTrue(C.Reader.WaitForEof(WAIT_MS));
+    S := StringReplace(C.Reader.Snapshot, ' ', '', [rfReplaceAll]);
+    AssertTrue('status names the account: ' + S, Pos('"user":"Anna"', S) > 0);
+  finally
+    C.Free;
+  end;
 end;
 
 initialization

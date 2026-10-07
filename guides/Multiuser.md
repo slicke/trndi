@@ -42,7 +42,7 @@ Adding a user only creates an empty account: it has no server, thresholds or oth
 
 Repeat for every user you added. Each user's settings are stored separately, so changing one never affects another. This is also what makes a user appear in [trndi-multi](https://github.com/slicke/trndi-multi): users without a backend are skipped there.
 
-> If more than one user has the [Web API](../doc/WebAPI.md) enabled, each running instance needs its own port. Instances that find their port taken move to the next free one and show a notification saying which port they got; to make the ports predictable, set `webserver.port` per user instead.
+> If more than one user has the [Web API](../doc/WebAPI.md) enabled, each running instance needs its own port. Instances that find their port taken move to the next free one and show a notification saying which port they got; to make the ports predictable, set `webserver.port` per user instead. Each instance's `/health` names its user, and the web dashboard shows the name in its heading, so you can always see whose data a port serves.
 
 ## Customizing a user
 * In the user list, click the user's username

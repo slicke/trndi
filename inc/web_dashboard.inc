@@ -106,7 +106,7 @@ WEB_DASHBOARD_HTML =
   '</style>' + LineEnding +
   '</head>' + LineEnding +
   '<body>' + LineEnding +
-  '<header><h1>Trndi</h1><span id="conn" class="chip">Connecting</span></header>' + LineEnding +
+  '<header><h1 id="appName">Trndi</h1><span id="conn" class="chip">Connecting</span></header>' + LineEnding +
   '<main>' + LineEnding +
   '<section id="auth" class="card hidden">' + LineEnding +
   '<h2>Access token</h2>' + LineEnding +
@@ -265,8 +265,9 @@ WEB_DASHBOARD_HTML =
   '  if(readings.length&&!last)last=readings[0];' + LineEnding +
   '  render();drawChart()}).catch(function(){})' + LineEnding +
   '}' + LineEnding +
+  'function setUser(u){var t=u?"Trndi \u00B7 "+u:"Trndi";$("appName").textContent=t;document.title=t}' + LineEnding +
   'function applySettings(s){' + LineEnding +
-  ' settings=s;unit=s.unit==="mgdl"?"mgdl":"mmol";' + LineEnding +
+  ' settings=s;unit=s.unit==="mgdl"?"mgdl":"mmol";setUser(s.user);' + LineEnding +
   ' var f=$("settings");' + LineEnding +
   ' f.unit.value=unit;f.ov.checked=!!s.override.enabled;f.rg.checked=!!s.override.range;f.pred.checked=!!s.predictions;' + LineEnding +
   ' f.lo.value=toUnit(s.override.lo);f.hi.value=toUnit(s.override.hi);f.rlo.value=toUnit(s.override.range_lo);f.rhi.value=toUnit(s.override.range_hi);' + LineEnding +
