@@ -42,5 +42,11 @@ public
     sender: NSApplication; hasVisibleWindows: Boolean): Boolean; message 'applicationShouldHandleReopen:hasVisibleWindows:';
   function applicationDockMenu(sender: NSApplication): NSMenu; message 'applicationDockMenu:';
     procedure miSettingsMacClick(sender: id); message 'miSettings:';
+    procedure miForceMacClick(sender: id); message 'miForce:';
+    procedure miFloatMacClick(sender: id); message 'miFloat:';
+    procedure miSnooze15MacClick(sender: id); message 'miSnooze15:';
+    procedure miSnooze30MacClick(sender: id); message 'miSnooze30:';
+    procedure miSnooze60MacClick(sender: id); message 'miSnooze60:';
+    procedure miSnoozeOffMacClick(sender: id); message 'miSnoozeOff:';
 end;
 {** Darwin-specific declarations above }
