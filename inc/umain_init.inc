@@ -459,6 +459,7 @@ begin
     end;
 
     multi := true; // Enable multi user support
+    pnMultiUser.Hint := MultiUserDescription; // Hover names the account; click repeats it
     pnMultiUser.Color := native.GetColorSetting('user.color', clBlack); // Set user's color
     if pnMultiUser.Color <> clBlack then // Act if the panel is not transparent (black)
     begin
@@ -800,6 +801,30 @@ begin
   FAgoBadge.OnClick := @lAgoClick;
   FAgoBadge.OnDblClick := @lDiffDblClick;
   FAgoBadge.OnMouseMove := @FormMouseMove;
+
+  // Everything that answers a click says so: a hand cursor and a hint that
+  // names what the click gives. Before this only the connection badge did,
+  // and the rest had to be found by trying.
+  FAgoBadge.Cursor := crHandPoint;
+  FAgoBadge.ShowHint := true;
+  FAgoBadge.Hint := RS_HINT_AGO;
+  FTirBadge.Cursor := crHandPoint;
+  FTirBadge.ShowHint := true; // CalcRangeTime writes the hint
+  FPredictStrip.Cursor := crHandPoint;
+  FPredictStrip.ShowHint := true;
+  FPredictStrip.Hint := RS_HINT_PREDICT;
+  lDiff.Cursor := crHandPoint;
+  lDiff.ShowHint := true;
+  lDiff.Hint := RS_DIFF;
+  pnOffRange.Cursor := crHandPoint;
+  pnOffRange.ShowHint := true;
+  pnOffRange.Hint := RS_HINT_OFF_RANGE;
+  pnOffRangeBar.Cursor := crHandPoint;
+  pnOffRangeBar.ShowHint := true;
+  pnOffRangeBar.Hint := RS_HINT_OFF_RANGE;
+  pnMultiUser.Cursor := crHandPoint;
+  pnMultiUser.ShowHint := true;
+  pnMultiUser.Hint := RS_HINT_MULTIUSER;
 
   // --kiosk: dedicated-display mode (RPi wall display, bedside screen).
   // FormShow schedules the actual activation: fullscreen, keep-awake, and no

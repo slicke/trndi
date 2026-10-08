@@ -2540,12 +2540,6 @@ msgstr "Under omrode"
 msgid "over"
 msgstr "ôver"
 
-#: trndi.strings.rs_predict
-#, fuzzy
-#| msgid "These are your predicted readings; Time-difference: predicted-reading"
-msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
-msgstr "Detta er dina fôrutspodda avlesningar; Tidsskillnad: fôrutspodd-avlesning"
-
 #: trndi.strings.rs_predictions_stable
 msgid "No change predicted →"
 msgstr "Ingen endring forutspos →"
@@ -4875,3 +4869,46 @@ msgstr ""
 msgctxt "uhistorygraph.rs_history_graph_tb_csv_hint"
 msgid "Save the readings in view as CSV"
 msgstr ""
+
+#: trndi.strings.rs_no_new_readings
+#, object-pascal-format
+msgid "The server answered, but has nothing newer than %s.\n\nIs your phone or receiver uploading?\nIs the sensor warming up or out of range?"
+msgstr "Servern svara, men har int nå nyare än %s.\n\nLadd din telefon eller mottagare opp?\nVärm sensorn opp, eller er han utom räckhåll?"
+
+#: trndi.strings.rs_hint_ago
+msgid "Time since the last reading. Click for sensor and device details."
+msgstr "Tid sen sist avlesninga. Klicka for sensor- å enhetsinfo."
+
+#: trndi.strings.rs_hint_ago_overdue
+msgid "A new reading is overdue. Click for sensor and device details."
+msgstr "En ny avlesning er försena. Klicka for sensor- å enhetsinfo."
+
+#: trndi.strings.rs_hint_tir
+#, object-pascal-format
+msgid "Time in range over the last %s. Click for your limits."
+msgstr "Tid inom målområde dom sist %s. Klicka for dina gränser."
+
+#: trndi.strings.rs_hint_predict
+msgid "Forecast based on the recent trend. Click to learn more."
+msgstr "Prognos ettjer den sist trenden. Klicka for mer info."
+
+#: trndi.strings.rs_predict_notice
+msgid "Forecast for the next 5, 10 and 15 minutes, extrapolated from the recent trend. It is an estimate, not a measurement."
+msgstr "Prognos for dom kommande 5, 10 å 15 minutern, dragen ur den sist trenden. Dä er en gissning, int en mätning."
+
+#: trndi.strings.rs_hint_off_range
+msgid "Outside your personal target range. Click for details."
+msgstr "Utaför ditt eget målområde. Klicka for info."
+
+#: trndi.strings.rs_hint_multiuser
+msgid "The account this window shows. Click for details."
+msgstr "Konto som dä hän fönstre vise. Klicka for info."
+
+#: trndi.strings.rs_trend_window_notice
+#, object-pascal-format
+msgid "Trend: %d readings · %s"
+msgstr "Trend: %d avlesninga · %s"
+
+#: trndi.strings.rs_conn_no_new_data
+msgid "No new data"
+msgstr "Inga nya data"

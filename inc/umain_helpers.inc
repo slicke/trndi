@@ -628,6 +628,129 @@ begin
   native.SetCSVSetting(HINTS_HIDDEN_KEY, hidden);
 end;
 
+{------------------------------------------------------------------------------
+  ShowInlineNotice
+  ----------------
+  A HUD-style box in the middle of the window that states one thing and goes
+  away by itself: the trend window the wheel just picked, or the explanation
+  behind a label the user clicked. Those explanations used to be modal OK
+  dialogs, which is a heavy answer to a tap on a glanceable display and, on a
+  touch screen, the only way to read what a hover hint says. One notice at a
+  time; a new one replaces the old. Click to dismiss early.
+ ------------------------------------------------------------------------------}
+procedure TfBG.ShowInlineNotice(const AText: string);
+const
+  NOTICE_MS = 2600;
+var
+  pad, maxW, w, h: integer;
+  r: TRect;
+  bmp: TBitmap;
+  back: TColor;
+begin
+  if FShuttingDown or FShutdownScreen or (Trim(AText) = '') then
+    Exit;
+
+  if not Assigned(FInlineNotice) then
+  begin
+    FInlineNotice := TPanel.Create(Self);
+    FInlineNotice.Parent := Self;
+    FInlineNotice.BevelOuter := bvNone;
+    FInlineNotice.ParentBackground := false;
+    FInlineNotice.ParentColor := false;
+    FInlineNotice.Visible := false;
+    FInlineNotice.OnClick := @InlineNoticeClick;
+    FInlineNotice.PopupMenu := pmSettings;
+
+    FInlineNoticeText := TLabel.Create(Self);
+    FInlineNoticeText.Parent := FInlineNotice;
+    FInlineNoticeText.AutoSize := false;
+    FInlineNoticeText.WordWrap := true;
+    FInlineNoticeText.Alignment := taCenter;
+    FInlineNoticeText.Layout := tlCenter;
+    FInlineNoticeText.Transparent := true;
+    FInlineNoticeText.OnClick := @InlineNoticeClick;
+    FInlineNoticeText.PopupMenu := pmSettings;
+
+    tInlineNotice := TTimer.Create(Self);
+    tInlineNotice.Enabled := false;
+    tInlineNotice.OnTimer := @tInlineNoticeTimer;
+  end;
+
+  // Dark glass over whatever colour the window has; white text on it clears
+  // the contrast floor on every range background.
+  back := BlendColors(clBlack, fBG.Color, 0.78);
+  FInlineNotice.Color := back;
+  FInlineNoticeText.Font.Assign(FAgoBadge.Font);
+  FInlineNoticeText.Font.Style := [];
+  FInlineNoticeText.Font.Color := clWhite;
+  FInlineNoticeText.Font.Height := -Max(13, ClientHeight div 26);
+  FInlineNoticeText.Caption := AText;
+
+  // Measure off-screen (TLabel.Canvas outside paint SIGABRTs on Cocoa); wrap
+  // to at most ~80% of the window so a sentence stays a box and not a line.
+  pad := Max(10, ClientHeight div 40);
+  maxW := Max(80, round(ClientWidth * 0.8) - 2 * pad);
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font.Assign(FInlineNoticeText.Font);
+    r.Left := 0;
+    r.Top := 0;
+    r.Right := maxW;
+    r.Bottom := 0;
+    LCLIntf.DrawText(bmp.Canvas.Handle, PChar(AText), Length(AText), r,
+      DT_CALCRECT or DT_WORDBREAK or DT_NOPREFIX or DT_CENTER);
+  finally
+    bmp.Free;
+  end;
+  w := Min(maxW, r.Right - r.Left) + 2;
+  h := (r.Bottom - r.Top) + 2;
+
+  FInlineNoticeText.SetBounds(pad, pad, w, h);
+  FInlineNotice.SetBounds((ClientWidth - (w + 2 * pad)) div 2,
+    (ClientHeight - (h + 2 * pad)) div 2, w + 2 * pad, h + 2 * pad);
+  FInlineNotice.Visible := true;
+  FInlineNotice.BringToFront;
+
+  // Restart the clock on every call so a run of wheel notches keeps one box
+  // up, counting, instead of flashing it.
+  tInlineNotice.Enabled := false;
+  tInlineNotice.Interval := NOTICE_MS;
+  tInlineNotice.Enabled := true;
+end;
+
+procedure TfBG.tInlineNoticeTimer(Sender: TObject);
+begin
+  tInlineNotice.Enabled := false;
+  if Assigned(FInlineNotice) then
+    FInlineNotice.Visible := false;
+end;
+
+procedure TfBG.InlineNoticeClick(Sender: TObject);
+begin
+  if Assigned(tInlineNotice) then
+    tInlineNotice.Enabled := false;
+  if Assigned(FInlineNotice) then
+    FInlineNotice.Visible := false;
+end;
+
+function TfBG.FormatSpan(const Minutes: int64): string;
+begin
+  // FormatStaleAge is written for an outage, where "1 d 0 h" is the point;
+  // a window is better read as "24 h".
+  if (Minutes >= 60) and (Minutes mod 60 = 0) then
+    Result := Format(RS_STALE_AGE_HOUR_ONLY, [Minutes div 60])
+  else
+    Result := FormatStaleAge(Minutes);
+end;
+
+function TfBG.TrendWindowNotice(const Count: integer): string;
+begin
+  // The slot grid is INTERVAL_MINUTES wide whatever the backend reports at,
+  // so the span is a property of the count alone.
+  Result := Format(RS_TREND_WINDOW_NOTICE, [Count, FormatSpan(Count * INTERVAL_MINUTES)]);
+end;
+
 procedure ShowOnce(const key, title, str: string);
 begin
   if not native.GetBoolSetting(HINTS_ENABLED_KEY, true) then

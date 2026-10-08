@@ -2350,10 +2350,6 @@ msgstr ""
 msgid "over"
 msgstr ""
 
-#: trndi.strings.rs_predict
-msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
-msgstr ""
-
 #: trndi.strings.rs_predictions_stable
 msgid "No change predicted →"
 msgstr ""
@@ -4643,4 +4639,47 @@ msgstr ""
 #: uhistorygraph.rs_history_graph_tb_csv_hint
 msgctxt "uhistorygraph.rs_history_graph_tb_csv_hint"
 msgid "Save the readings in view as CSV"
+msgstr ""
+
+#: trndi.strings.rs_no_new_readings
+#, object-pascal-format
+msgid "The server answered, but has nothing newer than %s.\n\nIs your phone or receiver uploading?\nIs the sensor warming up or out of range?"
+msgstr ""
+
+#: trndi.strings.rs_hint_ago
+msgid "Time since the last reading. Click for sensor and device details."
+msgstr ""
+
+#: trndi.strings.rs_hint_ago_overdue
+msgid "A new reading is overdue. Click for sensor and device details."
+msgstr ""
+
+#: trndi.strings.rs_hint_tir
+#, object-pascal-format
+msgid "Time in range over the last %s. Click for your limits."
+msgstr ""
+
+#: trndi.strings.rs_hint_predict
+msgid "Forecast based on the recent trend. Click to learn more."
+msgstr ""
+
+#: trndi.strings.rs_predict_notice
+msgid "Forecast for the next 5, 10 and 15 minutes, extrapolated from the recent trend. It is an estimate, not a measurement."
+msgstr ""
+
+#: trndi.strings.rs_hint_off_range
+msgid "Outside your personal target range. Click for details."
+msgstr ""
+
+#: trndi.strings.rs_hint_multiuser
+msgid "The account this window shows. Click for details."
+msgstr ""
+
+#: trndi.strings.rs_trend_window_notice
+#, object-pascal-format
+msgid "Trend: %d readings · %s"
+msgstr ""
+
+#: trndi.strings.rs_conn_no_new_data
+msgid "No new data"
 msgstr ""

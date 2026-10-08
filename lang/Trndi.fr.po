@@ -2488,10 +2488,6 @@ msgstr "En dessous de la cible"
 msgid "over"
 msgstr "au-dessus"
 
-#: trndi.strings.rs_predict
-msgid "Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle"
-msgstr "Vos futures lectures prédites sont affichées en bas à droite de la fenêtre ; la différence par rapport à la dernière lecture est affichée au centre"
-
 #: trndi.strings.rs_predictions_stable
 msgid "No change predicted →"
 msgstr "Aucun changement prévu →"
@@ -4787,3 +4783,46 @@ msgstr ""
 msgctxt "uhistorygraph.rs_history_graph_tb_csv_hint"
 msgid "Save the readings in view as CSV"
 msgstr ""
+
+#: trndi.strings.rs_no_new_readings
+#, object-pascal-format
+msgid "The server answered, but has nothing newer than %s.\n\nIs your phone or receiver uploading?\nIs the sensor warming up or out of range?"
+msgstr "Le serveur a répondu, mais n'a rien de plus récent que %s.\n\nVotre téléphone ou récepteur envoie-t-il les données ?\nLe capteur est-il en préchauffage ou hors de portée ?"
+
+#: trndi.strings.rs_hint_ago
+msgid "Time since the last reading. Click for sensor and device details."
+msgstr "Temps écoulé depuis la dernière lecture. Cliquez pour les détails du capteur et de l'appareil."
+
+#: trndi.strings.rs_hint_ago_overdue
+msgid "A new reading is overdue. Click for sensor and device details."
+msgstr "Une nouvelle lecture est en retard. Cliquez pour les détails du capteur et de l'appareil."
+
+#: trndi.strings.rs_hint_tir
+#, object-pascal-format
+msgid "Time in range over the last %s. Click for your limits."
+msgstr "Temps dans la cible sur les dernières %s. Cliquez pour vos limites."
+
+#: trndi.strings.rs_hint_predict
+msgid "Forecast based on the recent trend. Click to learn more."
+msgstr "Prévision basée sur la tendance récente. Cliquez pour en savoir plus."
+
+#: trndi.strings.rs_predict_notice
+msgid "Forecast for the next 5, 10 and 15 minutes, extrapolated from the recent trend. It is an estimate, not a measurement."
+msgstr "Prévision pour les 5, 10 et 15 prochaines minutes, extrapolée à partir de la tendance récente. C'est une estimation, pas une mesure."
+
+#: trndi.strings.rs_hint_off_range
+msgid "Outside your personal target range. Click for details."
+msgstr "Hors de votre plage cible personnelle. Cliquez pour plus de détails."
+
+#: trndi.strings.rs_hint_multiuser
+msgid "The account this window shows. Click for details."
+msgstr "Le compte affiché dans cette fenêtre. Cliquez pour plus de détails."
+
+#: trndi.strings.rs_trend_window_notice
+#, object-pascal-format
+msgid "Trend: %d readings · %s"
+msgstr "Tendance : %d lectures · %s"
+
+#: trndi.strings.rs_conn_no_new_data
+msgid "No new data"
+msgstr "Pas de nouvelles données"

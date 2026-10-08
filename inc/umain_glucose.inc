@@ -401,6 +401,9 @@ begin
   // afterwards), so any color computed now would be wrong. UpdateUIColors owns
   // it and runs from FinalizeUIUpdate once the background is final.
   tMissed.Enabled := false;
+  // A fresh reading is by definition not overdue; clear the amber before
+  // UpdateUIColors paints the badge, rather than 15 s later on the next tAgo.
+  FAgoOverdue := false;
   // Hand the value's size back to the LCL's fill-the-label logic, which
   // ApplyStaleDisplayState turns off so the card can shrink the dimmed hero.
   lVal.OptimalFill := true;
@@ -522,6 +525,101 @@ begin
   UpdateFloatingWindow;
 end;
 
+procedure TfBG.EnterStaleState(const ErrorMsg: string; const Boot: boolean);
+var
+  msg: string;
+  serverOk: boolean;
+begin
+  NotifyExtensionsLevel(false);
+
+  // A fetch that came back with readings, just none newer than the threshold,
+  // is not a connection problem: the server answered. The usual cause is the
+  // phone or receiver not uploading (sensor warm-up, out of Bluetooth range),
+  // so say that, in the stale card's neutral tint, instead of pointing the
+  // user at their network with a red badge. The same applies when tAgo flips
+  // the window between two fetches (ErrorMsg empty, last fetch had data).
+  serverOk := (Trim(ErrorMsg) = '') and FLastFetchHadData and (Length(bgs) > 0);
+  if serverOk then
+  begin
+    msg := Format(RS_NO_NEW_READINGS, [FormatDateTime('hh:nn', lastDataReading.date)]);
+    FLastConnectionDetail := msg;
+    SetConnectionBadge(RS_CONN_NO_NEW_DATA, StaleBadgeColor);
+  end
+  else
+  begin
+    msg := RS_NO_BACKEND;
+    if Trim(ErrorMsg) <> '' then
+    begin
+      msg := msg + sLineBreak + ErrorMsg;
+      TrndiDLog('Backend error: ' + ErrorMsg);
+    end;
+    FLastConnectionDetail := msg;
+    SetConnectionBadge(ClassifyConnectionStatus(ErrorMsg), RGBToColor(185, 60, 45));
+  end;
+  WebPublishStatus;
+
+  // On boot, prefer the dedicated boot-failure message so the user knows
+  // it's the first fetch that failed (and not a mid-session outage).
+  if Boot then
+    showWarningPanel(RS_NO_BOOT_READING, wsCritical, true)
+  else
+    showWarningPanel(msg, wsCritical, true);
+
+  // No fresh readings means any prior prediction overlay is stale —
+  // hide it so the no-data warning isn't visually contradicted by X
+  // marks that look like fresh predictions.
+  HidePredictionDots;
+  FPredictStrip.Visible := false;
+  WebPublishPredictions(nil);
+
+  // The history itself is still worth showing, but it has to keep moving:
+  // re-place it here (and once a second from tMissed) so the dots slide out
+  // of the newest slots as the outage grows, and pick up the faded stale
+  // coloring FTrendDataStale just turned on.
+  RefreshStaleTrendDots;
+
+  if akMissing in FAlertEngine.EvaluateMissing then
+  begin
+    native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
+    WebPublishAlert([akMissing], lastDataReading);
+    NotifyExtensionsAlert([akMissing], lastDataReading);
+  end;
+end;
+
+procedure TfBG.CheckFreshnessTick;
+begin
+  if firstboot or FShuttingDown then
+    Exit;
+  // Already stale: tMissed owns the card and ApplyFetchedReadings the verdict.
+  if FTrendDataStale then
+    Exit;
+  if Length(bgs) < 1 then
+    Exit;
+  if IsDataFresh then
+    Exit;
+
+  // The threshold passed between two fetches. Without this the window kept
+  // a full-colour value and arrow next to "14 min" until the next fetch
+  // happened to run — up to the poll interval plus the HTTP timeout later,
+  // or indefinitely behind a hung worker.
+  TrndiDLog('CheckFreshnessTick: newest reading crossed the freshness threshold between fetches');
+  FTrendDataStale := true;
+  FLastReadingsHash := 0; // The trace has to repaint faded (see ApplyFetchedReadings)
+  ApplyStaleDisplayState;
+  EnterStaleState('', false);
+end;
+
+function TfBG.StaleBadgeColor: TColor;
+var
+  opacity: byte;
+  layout: TWarnLayout;
+begin
+  // GetWarnSeverityVisual reads the stage from FStaleStage; make it current
+  // first, as showWarningPanel does.
+  FStaleStage := CurrentStaleStage;
+  GetWarnSeverityVisual(wsCritical, Result, opacity, layout);
+end;
+
 function TfBG.NextFetchIntervalMs(const LastReadingTime: TDateTime): int64;
 var
   ageMs: int64;
@@ -579,7 +677,8 @@ var
   range,
   ok,
   no,
-  rangeMinutes: integer;
+  rangeMinutes,
+  spanMinutes: integer;
   cutoffTime: TDateTime;
   ranges: set of trndi.types.BGValLevel;
   meanStr, valueText: string;
@@ -639,10 +738,9 @@ begin
   else
   begin
     // No readings fell inside the TIR window: show a placeholder rather than a
-    // number. -1 marks "nothing to measure" so the hint below stays empty —
-    // the hint carries the percentage that UpdateUIColors (and the settings
-    // dialog's Display preview) tint good/bad by, and a stored 0 made an empty
-    // window indistinguishable from a genuine, alarming 0% in range.
+    // number. -1 marks "nothing to measure" — UpdateUIColors tints good/bad by
+    // the badge's Percent, and a stored 0 made an empty window
+    // indistinguishable from a genuine, alarming 0% in range.
     range := -1;
     valueText := '--%';
   end;
@@ -657,8 +755,16 @@ begin
     meanStr := Format(BG_MSG_SHORT[un], [meanSum / meanCount]);
 
   FTirBadge.SetState(range, valueText, meanStr);
-  if range >= 0 then
-    FTirBadge.Hint := range.toString
+  // The hover hint says what the number is a share of: the window is
+  // range.time, or as much history as there is when that is shorter — the
+  // same cap lTirClick applies.
+  if (range >= 0) and (Length(bgs) > 0) then
+  begin
+    spanMinutes := MinutesBetween(Now, bgs[High(bgs)].date);
+    if spanMinutes > rangeMinutes then
+      spanMinutes := rangeMinutes;
+    FTirBadge.Hint := Format(RS_HINT_TIR, [FormatSpan(spanMinutes)]);
+  end
   else
     FTirBadge.Hint := '';
   FTirBadge.Visible := true;
@@ -666,15 +772,15 @@ begin
   // click target and the bar) matches what is drawn.
   LayoutTirBadge;
 
-  // UpdateUIColors turns this hint into the good/bad tint, but the gate that
-  // decides whether to run it sits in FinalizeUpdate — which runs before this
-  // procedure, so it can only ever see the previous cycle's percentage. Re-tint
-  // here when the number actually moved, otherwise a crossing of good_tir or
-  // bad_tir would not reach the label until the reading after next.
-  if FTirBadge.Hint <> FLastTirHint then
+  // UpdateUIColors turns the percentage into the good/bad tint, but the gate
+  // that decides whether to run it sits in FinalizeUpdate — which runs before
+  // this procedure, so it can only ever see the previous cycle's percentage.
+  // Re-tint here when the number actually moved, otherwise a crossing of
+  // good_tir or bad_tir would not reach the label until the reading after next.
+  if IntToStr(FTirBadge.Percent) <> FLastTirHint then
   begin
     UpdateUIColors;
-    FLastTirHint := FTirBadge.Hint;
+    FLastTirHint := IntToStr(FTirBadge.Percent);
   end;
 end;
 
@@ -739,10 +845,10 @@ begin
 
   UpdatePredictionLabel;
 
-  if ShouldUpdateUI(fBG.Color, lVal.Caption, FTirBadge.Caption, FTirBadge.Hint) then
+  if ShouldUpdateUI(fBG.Color, lVal.Caption, FTirBadge.Caption, IntToStr(FTirBadge.Percent)) then
   begin
     UpdateUIColors;
-    CacheUIState(fBG.Color, lVal.Caption, FTirBadge.Caption, FTirBadge.Hint);
+    CacheUIState(fBG.Color, lVal.Caption, FTirBadge.Caption, IntToStr(FTirBadge.Percent));
   end;
   // The change can move from steady to fast while the value, colour and TIR
   // that gate UpdateUIColors all stay put, so its tint is refreshed on every
@@ -1437,7 +1543,6 @@ end;
 function TfBG.ApplyFetchedReadings(const Readings: BGResults;
 const ErrorMsg: string; Boot: boolean): boolean;
 var
-  msg: string;
   i: integer;
   firstUsable: integer;
   hasData: boolean;
@@ -1578,45 +1683,7 @@ begin
   // this function still has to do.
   if not fresh then
   begin
-    NotifyExtensionsLevel(false);
-
-    msg := RS_NO_BACKEND;
-    if Trim(ErrorMsg) <> '' then
-    begin
-      msg := msg + sLineBreak + ErrorMsg;
-      TrndiDLog('Backend error: ' + ErrorMsg);
-    end;
-
-    FLastConnectionDetail := msg;
-    SetConnectionBadge(ClassifyConnectionStatus(ErrorMsg), RGBToColor(185, 60, 45));
-    WebPublishStatus;
-
-    // On boot, prefer the dedicated boot-failure message so the user knows
-    // it's the first fetch that failed (and not a mid-session outage).
-    if Boot then
-      showWarningPanel(RS_NO_BOOT_READING, wsCritical, true)
-    else
-      showWarningPanel(msg, wsCritical, true);
-
-    // No fresh readings means any prior prediction overlay is stale —
-    // hide it so the no-data warning isn't visually contradicted by X
-    // marks that look like fresh predictions.
-    HidePredictionDots;
-    FPredictStrip.Visible := false;
-    WebPublishPredictions(nil);
-
-    // The history itself is still worth showing, but it has to keep moving:
-    // re-place it here (and once a second from tMissed) so the dots slide out
-    // of the newest slots as the outage grows, and pick up the faded stale
-    // coloring the flag above just turned on.
-    RefreshStaleTrendDots;
-
-    if akMissing in FAlertEngine.EvaluateMissing then
-    begin
-      native.attention(RS_ATTENTION_MISSING, RS_ATTENTION_MISSING_DESC);
-      WebPublishAlert([akMissing], lastDataReading);
-      NotifyExtensionsAlert([akMissing], lastDataReading);
-    end;
+    EnterStaleState(ErrorMsg, Boot);
     Exit;
   end;
 
@@ -1963,6 +2030,7 @@ procedure TfBG.UpdateUIColors;
 const
   clGoodGreen = $00005900;
   TIR_TEXT_CONTRAST = 4.5;
+  AGO_OVERDUE_AMBER = TColor($0032B2E6); // RGB(230, 178, 50), the forecast banner's amber
 var
   r: integer;
 begin
@@ -1977,7 +2045,13 @@ begin
   end;
   lDiff.Font.Color := DiffLabelColor;
   // The age badge: value in the tone the label had, caption a step fainter.
+  // Once the next reading is overdue (tAgoTimer's verdict) the value turns
+  // amber — the one cue, short of the stale card, that the number on screen
+  // is older than it should be. Lifted to the same contrast floor as the TIR
+  // tint so it survives the yellow/orange "high" backgrounds.
   FAgoBadge.AccentColor := GetTextColorForBackground(fBG.color, 0.6, 0.4);
+  if FAgoOverdue then
+    FAgoBadge.AccentColor := EnsureContrast(AGO_OVERDUE_AMBER, fBG.Color, TIR_TEXT_CONTRAST);
   // The badge paints from AccentColor, not Font.Color — but the fullscreen
   // clock overlay copies this Font wholesale, colour included, as it copied
   // lAgo's. Without this it came up in the font's default white.
@@ -2003,7 +2077,8 @@ begin
   FTirBadge.MeanCaption := RS_TIR_MEAN_CAPTION;
   FTirBadge.TrackColor := BlendColors(FTirBadge.TextColor, fBG.Color, 0.35);
   FTirBadge.AccentColor := GetTextColorForBackground(fBG.color, 0.6, 0.4);
-  if TryStrToInt(FTirBadge.Hint, r) then
+  r := FTirBadge.Percent;
+  if r >= 0 then
     if r < bad_tir then
       FTirBadge.AccentColor := EnsureContrast(clMaroon, fBG.Color, TIR_TEXT_CONTRAST)
     else
@@ -2819,8 +2894,8 @@ begin
       cardinal(Trunc(Readings[i].date * 86400));
 end;
 
-// The fourth comparand is lTir's *hint*, not its colour: the hint carries the
-// raw time-in-range percentage, and UpdateUIColors is what turns that into the
+// The fourth comparand is the TIR badge's raw percentage (its Percent, passed
+// as text), not its colour: UpdateUIColors is what turns that into the
 // good/bad font tint. Comparing lTir.Color instead — a background property
 // nothing in the app ever assigns — made the fourth term a constant, so a
 // percentage that crossed good_tir/bad_tir without changing the caption (easy

@@ -40,6 +40,8 @@
  *   splash and shutdown screens.
  * - 2026-08-22: Added DT_EXPANDTABS for the warning panel's tab-expanding
  *   measurement in umain_alerts.inc.
+ * - 2026-10-08: Added DT_CENTER/DT_NOPREFIX for the inline notice's
+ *   measurement in umain_helpers.inc.
  *)
 unit LCLType;
 
@@ -71,9 +73,11 @@ const
   crNone = 1; // hide cursor for screenshots/headless mode
 
 // DrawText flags (Win32 values, as in real LCLType) used by usplash
+  DT_CENTER = $1;
   DT_WORDBREAK = $10;
   DT_EXPANDTABS = $40;
   DT_CALCRECT = $400;
+  DT_NOPREFIX = $800;
 
 // Minimal Mouse global used by umain
 type

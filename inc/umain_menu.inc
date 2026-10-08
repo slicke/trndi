@@ -56,14 +56,16 @@
    Included in the implementation section of umain.pp only.
 *)
 
+// The hover hints on these labels say the same thing; the click is the touch
+// user's way to read it, so it is a notice in the window rather than a modal.
 procedure TfBG.lDiffClick({%H-}Sender: TObject);
 begin
-  ShowOnce('diff', RS_DIFF);
+  ShowInlineNotice(RS_DIFF);
 end;
 
 procedure TfBG.lPredictClick(Sender: TObject);
 begin
-  ShowOnce('predict', RS_PREDICT);
+  ShowInlineNotice(RS_PREDICT_NOTICE);
 end;
 
 // A pump can report two basal rates that disagree -- what the algorithm last
@@ -996,20 +998,25 @@ begin
   last_popup := now;
 end;
 
-procedure TfBG.pnMultiUserClick(Sender: TObject);
+function TfBG.MultiUserDescription: string;
 begin
   if username <> '' then
   begin
     if multinick = username then
-      ShowMessage(Format(RS_MULTINAME, [username]))
+      Result := Format(RS_MULTINAME, [username])
     else
-      ShowMessage(Format(RS_MULTINAME_NAMED, [multinick, username]));
+      Result := Format(RS_MULTINAME_NAMED, [multinick, username]);
   end
   else
   if multinick <> RS_DEFAULT_ACCOUNT then
-    ShowMessage(Format(RS_MULTINAME_DEF_NAMED, [multinick]))
+    Result := Format(RS_MULTINAME_DEF_NAMED, [multinick])
   else
-    ShowMessage(RS_MULTINAME_DEF);
+    Result := RS_MULTINAME_DEF;
+end;
+
+procedure TfBG.pnMultiUserClick(Sender: TObject);
+begin
+  ShowInlineNotice(MultiUserDescription);
 end;
 
 // Handle off range panel click
@@ -1026,6 +1033,6 @@ begin
     Exit;
   {$endif}
 
-  ShowMessage(Format(RS_RANGE_EXPLANATION, [IfThen(ishigh, RS_OVER, RS_UNDER)]));
+  ShowInlineNotice(Format(RS_RANGE_EXPLANATION, [IfThen(ishigh, RS_OVER, RS_UNDER)]));
 end;
 

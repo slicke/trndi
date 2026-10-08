@@ -69,10 +69,14 @@
 *)
 
 procedure TfBG.tAgoTimer(Sender: TObject);
+const
+  // Readings come every INTERVAL_MINUTES; uploaders add a minute or two of
+  // latency on top. Past this the next one is late enough to say so.
+  AGO_OVERDUE_MINUTES = INTERVAL_MINUTES + 2;
 var
   d: TDateTime;
   min: int64;
-  showTimestamp: boolean;
+  showTimestamp, overdue: boolean;
   timeStr: string;
 
   // For prediction time updates
@@ -184,6 +188,12 @@ begin
   // card within fifteen seconds and then flickered it off again on every failed
   // fetch. The rest of the tick still runs: the fullscreen clock below is
   // wall-clock, not reading age.
+  // Freshness is judged here as well as on fetch completion, so the stale
+  // card goes up when the threshold passes and not when the next fetch
+  // happens to return. Flipping sets FTrendDataStale, which the branch below
+  // then honours.
+  CheckFreshnessTick;
+
   if Length(bgs) < 1 then
     SetAgoText(RS_COMPUTE_FAILED_AGO, '')
   else
@@ -191,6 +201,9 @@ begin
   try
     d := lastReading.date;
     showTimestamp := native.GetBoolSetting('display.timestamp');
+    min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;
+    if min < 0 then
+      min := 0;
 
     if showTimestamp then
     begin
@@ -198,13 +211,23 @@ begin
       SetAgoText(timeStr, RS_AGO_TIME_CAPTION);
     end
     else
-    begin
-      min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;
-      if min < 0 then
-        min := 0;
       // No caption: "3 min" says enough on its own, and the word under it
       // was one thing too many in that corner.
       SetAgoText(Format(RS_LAST_UPDATE, [min]), '');
+
+    // Between "on time" and the stale threshold there was no cue at all: a
+    // reading that should have come at five minutes sat in the same muted
+    // tone at ten. Past AGO_OVERDUE_MINUTES the badge turns amber (painted by
+    // UpdateUIColors) and the hint says why.
+    overdue := min >= AGO_OVERDUE_MINUTES;
+    if overdue then
+      FAgoBadge.Hint := RS_HINT_AGO_OVERDUE
+    else
+      FAgoBadge.Hint := RS_HINT_AGO;
+    if overdue <> FAgoOverdue then
+    begin
+      FAgoOverdue := overdue;
+      UpdateUIColors;
     end;
 
     UpdatePredictionTimes;
