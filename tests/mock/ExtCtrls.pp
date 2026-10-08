@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-08: Added TBevelCut and TPanel.BevelOuter/ParentBackground/
+ *   ParentColor for the main window's inline notice (umain_helpers.inc).
  *)
 unit ExtCtrls;
 
@@ -47,7 +51,13 @@ uses Controls, Classes, Graphics, Menus;
 type
   TShapeType = (stRectangle, stSquare, stRoundRect, stRoundSquare, stEllipse, stCircle);
 
+  TBevelCut = (bvNone, bvLowered, bvRaised, bvSpace);
+
   TPanel = class(TWinControl)
+  public
+    BevelOuter: TBevelCut;
+    ParentBackground: boolean;
+    ParentColor: boolean;
   end;
 
   TTimer = class(TComponent)

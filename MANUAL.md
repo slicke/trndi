@@ -75,7 +75,8 @@ no usable previous reading to compare against.
 ### "Ago" Time
 The badge in the top-left corner shows how old the reading is: `3 min` (or
 the reading's clock time over a small `last reading` when the timestamp
-display is on). If this number gets large (like 15 min), it might mean:
+display is on). Once the next reading is a couple of minutes late the number
+turns amber, and hovering over it says so. If this number gets large (like 15 min), it might mean:
 - Your sensor lost connection
 - Your phone/uploader is offline
 - Trndi can't reach the data source
@@ -214,6 +215,11 @@ together. The time span shown does not change — you still see the same history
 picked under *Trend window*, just at a coarser resolution — and the most recent
 reading is always among the dots kept. Widen the window and the rest come back.
 
+**Mouse wheel**: scrolling anywhere over the window adds or removes dots, one
+per notch, and saves the new count as your *Trend window*. A small readout in
+the middle of the window says what you have landed on — `Trend: 24 readings ·
+2 h` — so a stray touchpad flick never changes the history unnoticed.
+
 ### Predictions (Experimental)
 When enabled, Trndi can show where your blood sugar might be heading in the next 5-15 minutes.
 
@@ -278,8 +284,8 @@ caption under it. With *Show mean* on, the average over the same window sits
 to its left as `avg 6.4`. The percentage turns green once you are above the
 good threshold and red below the bad one; in between it stays in the quiet
 sub-text colour. Hover over the badge to see a thin upright bar on its right
-edge filled from the bottom to the same share, and click it to see the window
-it covers and the limits it uses. In a
+edge filled from the bottom to the same share and a tip naming the window it
+covers; click it to see that window and the limits it uses. In a
 narrow window the `avg` word and then the mean give way so the percentage
 always fits.
 - **Good**: Above 70% in range
@@ -441,9 +447,10 @@ setting instead swaps the big reading for the time every 20 seconds.
 
 ### Why is my reading dimmed, with a card at the bottom?
 The reading is older than the freshness threshold (11 minutes by default). Trndi
-keeps the last known value on screen but dims it, and shows a status card along
-the bottom edge with how long data has been missing, when the last reading came
-in, and when the next retry is due.
+checks this every few seconds, not only when it fetches, so the card goes up as
+soon as the threshold passes. It keeps the last known value on screen but dims
+it, and shows a status card along the bottom edge with how long data has been
+missing, when the last reading came in, and when the next retry is due.
 
 The card changes as the outage gets longer:
 - **Slate** — just past the threshold. A missed reading or two is routine.
@@ -451,6 +458,13 @@ The card changes as the outage gets longer:
 - **Red**, with a struck-through clock — over an hour; the card reads
   "Connection lost". At this point the sensor or the follower link is probably
   down rather than just slow.
+
+The small badge at the top tells the two causes apart. When the data source
+answers but simply has nothing newer, it reads **No new data** in the card's
+colour: your server is fine, and it is the phone, receiver or sensor that has
+stopped uploading (warm-up, out of Bluetooth range, app closed). It only turns
+red — **Retrying**, **Auth expired**, **Rate-limited** — when Trndi cannot get
+an answer from the server at all. Click the badge for the details.
 
 Click the card to expand it for the data source's own message and the threshold
 in use. Click again to collapse it.

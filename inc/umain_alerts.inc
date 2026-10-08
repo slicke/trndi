@@ -888,7 +888,10 @@ begin
   begin
     age := MinutesBetween(Now, lastDataReading.date);
     ageText := FormatStaleAge(age);
-    if FStaleStage = stLost then
+    // "Connection lost" is a claim about the link to the server. While the
+    // server keeps answering with nothing new, the honest headline is still
+    // "no data", however long it has been.
+    if (FStaleStage = stLost) and (FLastConnectionStatus <> RS_CONN_NO_NEW_DATA) then
       Headline := Format(RS_STALE_LOST, [ageText])
     else
       Headline := Format(RS_STALE_NO_DATA, [ageText]);
@@ -949,6 +952,9 @@ begin
     // size, not from the text, so they can't drift as the age counts up.
     FStaleStage := newStage;
     fixWarningPanel;
+    // The "no new data" badge wears the card's stage tint; escalate it too.
+    if FLastConnectionStatus = RS_CONN_NO_NEW_DATA then
+      SetConnectionBadge(RS_CONN_NO_NEW_DATA, StaleBadgeColor);
   end
   else
   begin

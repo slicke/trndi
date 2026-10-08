@@ -76,6 +76,7 @@ RS_LAST_RECIEVE = 'Last reading was %s (%s)';
 RS_DAYS_AGO = '%d days ago';
 RS_LAST_RECIEVE_NO = 'There''s no last reading to show';
 RS_LAST_RECIEVE_AGE = 'Threshold: %d minutes';
+RS_NO_NEW_READINGS = 'The server answered, but has nothing newer than %s.'+sLineBreak+sLineBreak+'Is your phone or receiver uploading?'+sLineBreak+'Is the sensor warming up or out of range?';
 
   // Stale-data status card (shown instead of the reading when data is outdated)
 RS_STALE_WAITING = 'Waiting for data';
@@ -113,6 +114,16 @@ RS_TIR_H = 'This is your time in range for the last %s hours and %s minutes';
 RS_TIR_ROW2 = 'Your low limit is %.1f, high is %.1f';
 RS_TIR_ROW3 = 'Your low range is %.1f, high is %.1f';
 RS_DIFF = 'This is the change from the latest reading';
+
+  // Hover hints and click notices on the main window (inc/umain_init.inc, inc/umain_menu.inc)
+RS_HINT_AGO = 'Time since the last reading. Click for sensor and device details.';
+RS_HINT_AGO_OVERDUE = 'A new reading is overdue. Click for sensor and device details.';
+RS_HINT_TIR = 'Time in range over the last %s. Click for your limits.';
+RS_HINT_PREDICT = 'Forecast based on the recent trend. Click to learn more.';
+RS_PREDICT_NOTICE = 'Forecast for the next 5, 10 and 15 minutes, extrapolated from the recent trend. It is an estimate, not a measurement.';
+RS_HINT_OFF_RANGE = 'Outside your personal target range. Click for details.';
+RS_HINT_MULTIUSER = 'The account this window shows. Click for details.';
+RS_TREND_WINDOW_NOTICE = 'Trend: %d readings · %s';
 
   // Summary report (inc/umain_report.inc)
 RS_REPORT_TITLE = 'Glucose summary';
@@ -277,8 +288,6 @@ RS_CLEANUP_WAIT = 'Please wait up to %d seconds...';
 
 RS_RIGHT_CLICK = 'The settings dialog will now open, in the future please right-click the reading to open the menu.';
 
-RS_PREDICT = 'Your predicted future readings are shown on the lower-right-hand-side of the window; the difference from the last reading is shown in the middle';
-
 RS_NODATA_ERROR = 'No data, error(?):';
 RS_NODATA_NONE = '<none>';
 
@@ -316,6 +325,7 @@ RS_STATUS_ITEM_HIDDEN = 'The reading is no longer shown in the menu bar.'+sLineB
 RS_CONN_RETRYING = 'Retrying';
 RS_CONN_AUTH_EXPIRED = 'Auth expired';
 RS_CONN_RATE_LIMITED = 'Rate-limited';
+RS_CONN_NO_NEW_DATA = 'No new data';
 RS_CONN_CLICK_FOR_DETAILS = 'Click for details';
 RS_CONN_NO_DETAILS = 'No connection details available yet.';
 RS_CONN_DETAILS = 'Connection status: %s'+sLineBreak+sLineBreak+'Details:'+sLineBreak+'%s';

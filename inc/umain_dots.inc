@@ -1296,6 +1296,11 @@ begin
     FDotScrollTarget := ACTIVE_DOTS;
   FDotScrollTarget := EnsureRange(FDotScrollTarget + steps, 1, MAX_DOT_COUNT);
 
+  // Say what the wheel is doing. The count is saved as a setting, so a stray
+  // touchpad scroll used to reconfigure the history with nothing on screen to
+  // show that anything had happened, let alone what.
+  ShowInlineNotice(TrendWindowNotice(FDotScrollTarget));
+
   if tDotScroll = nil then
   begin
     tDotScroll := TTimer.Create(Self);

@@ -798,6 +798,14 @@ private
                               // notch (touchpads send many sub-notch deltas)
   FDotScrollTarget: integer;  // Pending dot count while the debounce runs
                               // (0 = nothing pending)
+  FInlineNotice: TPanel;      // Transient in-window notice ("Trend: 24 readings
+                              // · 2 h", a click explanation); hides itself.
+                              // Runtime-created on first use.
+  FInlineNoticeText: TLabel;  // The notice's wrapped text
+  tInlineNotice: TTimer;      // One-shot: hides FInlineNotice
+  FAgoOverdue: boolean;       // The newest reading is older than one interval:
+                              // tAgoTimer tints the age badge amber until the
+                              // next reading lands or the stale card takes over
   lClock: TLabel;             // Persistent clock overlay: time + reading shown
                               // at once while fullscreen with main.clock on
                               // (windowed mode keeps the tClock alternation).
@@ -968,6 +976,32 @@ private
       a free would tear down the widgetset timer whose callback is still on the
       stack. The timers are owned by the form, so the object goes with it. }
   procedure RetireOneShotTimer(var ATimer: TTimer);
+  {** Show a short message inside the window for a couple of seconds — the
+      wheel's trend-window readout, or the explanation behind a click on a
+      label that used to open a modal. Replaces whatever notice is up. }
+  procedure ShowInlineNotice(const AText: string);
+  procedure tInlineNoticeTimer(Sender: TObject);
+  procedure InlineNoticeClick(Sender: TObject);
+  {** A window length as "50 min", "2 h" or "24 h" — FormatStaleAge's
+      vocabulary, but whole hours never become "1 d 0 h". }
+  function FormatSpan(const Minutes: int64): string;
+  {** "Trend: N readings · span" for the wheel/menu readout. }
+  function TrendWindowNotice(const Count: integer): string;
+  {** The sentence pnMultiUserClick shows: which account this window follows. }
+  function MultiUserDescription: string;
+  {** Everything that happens when the data on screen stops being fresh:
+      the stale card, the connection badge, the hidden forecast, the faded
+      trace and the missing-data alert. Called by ApplyFetchedReadings for a
+      stale fetch and by CheckFreshnessTick when the threshold passes between
+      fetches. ErrorMsg is the backend's error, empty when the fetch worked. }
+  procedure EnterStaleState(const ErrorMsg: string; const Boot: boolean);
+  {** tAgo's 15 s freshness watch: flips the window to the stale state as
+      soon as the newest reading crosses the threshold, instead of waiting for
+      the next fetch to notice. }
+  procedure CheckFreshnessTick;
+  {** The connection badge's colour while the server answers but has no new
+      reading: the stale card's stage tint, so the two escalate together. }
+  function StaleBadgeColor: TColor;
   procedure OnSystemWake;
   procedure OnNoticeClick;
   procedure DeferredPostFetchResize(Data: PtrInt);
