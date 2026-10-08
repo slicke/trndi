@@ -759,6 +759,11 @@ private
   FBootConnectError: string;    // Connect failure text handed from the worker
                                 // to DeferredBootConnectFailure.
   FBootFetchAttempts: integer;  // tBootFetch ticks since the last ArmBootFetch
+  FBootRetryPending: boolean;   // A transient boot Connect failure is counting
+                                // down to its next attempt (card on screen).
+  FBootRetryAt: TDateTime;      // When that attempt is due.
+  FBootRetryAttempts: integer;  // Transient Connect failures in a row; drives
+                                // the backoff and is reset once Connect works.
   FSafeModeRequested: boolean;  // Ctrl held at launch: skip extension loading.
   FPendingApiMsg: string;       // APIReceiver marshal slot for a worker-thread
   FPendingApiMsgType: TrndiAPIMsg; // emit, delivered via Synchronize.
@@ -822,6 +827,7 @@ private
   tBootFetch: TTimer;         // One-shot trigger for the first async fetch;
                               // fires only after Application.Run is pumping
                               // the message loop so the form has painted.
+  tBootRetry: TTimer;         // 1 Hz countdown to the next boot Connect attempt
   tBootSpinner: TTimer;       // Animates the braille spinner glyph in lVal
                               // while FBootFetchPending is true; self-stops
                               // on the first tick after the flag clears.
@@ -962,6 +968,18 @@ private
       Runs after the worker has left Synchronize so a quit from the dialog
       does not wait on a parked thread. }
   procedure DeferredBootConnectFailure(Data: PtrInt);
+  {** True when a boot Connect error reads as transient (network down, DNS,
+      timeout, empty answer) rather than something only the user can fix
+      (wrong address, rejected login, unreadable token). }
+  function IsRetryableBootError(const ErrorText: string): boolean;
+  {** Transient boot Connect failure: keep the window up, show the error on
+      the status card with a countdown, and try again with backoff. }
+  procedure BeginBootRetry(const ErrorText: string);
+  {** Stop the countdown and run the boot Connect again right away. }
+  procedure RetryBootNow;
+  {** Called once Connect succeeded: stand the countdown and its card down. }
+  procedure ClearBootRetry;
+  procedure tBootRetryTimer(Sender: TObject);
   {** Queued by ApplyConnectedApi: extension loading raises modal permission
       prompts, which must not run while the worker is parked in Synchronize. }
   procedure DeferredLoadExtensions(Data: PtrInt);

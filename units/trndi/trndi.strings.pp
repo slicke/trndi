@@ -90,6 +90,9 @@ RS_STALE_LAST_AT = 'Last %s at %s';
 RS_STALE_LAST_AT_DAY = 'Last %s at %s, %s';
 RS_STALE_RETRY_IN = 'Retrying in %d s';
 RS_STALE_RETRY_NOW = 'Retrying now…';
+  // Boot-time connect failure that looks transient (network down, DNS, timeout)
+RS_BOOT_UNREACHABLE = 'Can''t reach the server';
+RS_BOOT_RETRY_EXTRA = 'Trndi keeps trying on its own. If the address or login is wrong, open Settings.';
 
 RS_MISSING_LABEL = 'Label %s is missing!';
 RS_MULTIPLE_ACCOUNTS = 'Trndi found multiple accounts. Please choose one for this instance';

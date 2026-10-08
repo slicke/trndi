@@ -4826,3 +4826,11 @@ msgstr "Tendance : %d lectures · %s"
 #: trndi.strings.rs_conn_no_new_data
 msgid "No new data"
 msgstr "Pas de nouvelles données"
+
+#: trndi.strings.rs_boot_unreachable
+msgid "Can't reach the server"
+msgstr "Impossible de joindre le serveur"
+
+#: trndi.strings.rs_boot_retry_extra
+msgid "Trndi keeps trying on its own. If the address or login is wrong, open Settings."
+msgstr "Trndi continue d'essayer tout seul. Si l'adresse ou l'identifiant est incorrect, ouvrez les Réglages."
