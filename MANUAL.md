@@ -333,6 +333,9 @@ follows your system's light or dark appearance.
 ### Snoozing Alerts
 Right-click → *Snooze alerts* pauses the high, low and urgent-low alerts for
 15, 30 or 60 minutes; *Resume alerts* in the same menu ends the pause early.
+On macOS the same submenu is in the Dock icon's menu, next to *Force Update*,
+*Show Floating Window* and *Settings*, so you can snooze without bringing the
+window forward.
 While a snooze is active a purple *Snoozed until hh:mm* chip sits at the top
 of the window (beside the connection status if that is showing a problem), so
 a silent window is never mistaken for a calm one. Urgent-low alerts can only

@@ -410,42 +410,110 @@ begin
     (Application.MainForm as TfBG).miSettingsClick(nil);
 end;
 
+procedure TMyAppDelegate.miForceMacClick(sender: id);
+begin
+  if Application.MainForm is TfBG then
+    (Application.MainForm as TfBG).miForceClick(nil);
+end;
+
+procedure TMyAppDelegate.miFloatMacClick(sender: id);
+begin
+  if Application.MainForm is TfBG then
+    (Application.MainForm as TfBG).miFloatOnClick(nil);
+end;
+
+procedure TMyAppDelegate.miSnooze15MacClick(sender: id);
+begin
+  if Application.MainForm is TfBG then
+    (Application.MainForm as TfBG).miAlertSnooze15Click(nil);
+end;
+
+procedure TMyAppDelegate.miSnooze30MacClick(sender: id);
+begin
+  if Application.MainForm is TfBG then
+    (Application.MainForm as TfBG).miAlertSnooze30Click(nil);
+end;
+
+procedure TMyAppDelegate.miSnooze60MacClick(sender: id);
+begin
+  if Application.MainForm is TfBG then
+    (Application.MainForm as TfBG).miAlertSnooze60Click(nil);
+end;
+
+procedure TMyAppDelegate.miSnoozeOffMacClick(sender: id);
+begin
+  if Application.MainForm is TfBG then
+    (Application.MainForm as TfBG).miAlertSnoozeOffClick(nil);
+end;
+
+{------------------------------------------------------------------------------
+  Builds one dock menu item titled after an LCL menu caption (accelerator
+  ampersands removed), so the dock follows the popup menu's translations.
+  The returned item is owned by Menu.
+ ------------------------------------------------------------------------------}
+function AddDockMenuItem(Menu: NSMenu; const Caption, Selector: string): NSMenuItem;
+var
+  cfStr: CFStringRef;
+  action: SEL;
+begin
+  // An empty selector leaves the item without an action (a submenu parent)
+  if Selector = '' then
+    action := nil
+  else
+    action := sel_registerName(pchar(Selector));
+  cfStr := CFStringCreateWithCString(nil,
+    pchar(Trim(StringReplace(Caption, '&', '', [rfReplaceAll]))),
+    kCFStringEncodingUTF8);
+  Result := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
+    NSString(cfStr), action, NSSTR(''));
+  Menu.addItem(Result);
+  Result.release;
+  CFRelease(cfStr);
+end;
+
 function TMyAppDelegate.applicationDockMenu(sender: NSApplication): NSMenu;
 var
-  dockMenu: NSMenu;
+  dockMenu, snoozeMenu: NSMenu;
   menuItem: NSMenuItem;
-  menuTitle: string;
-  cfStr: CFStringRef;
+  form: TfBG;
 begin
   // During the setup wizard MainForm is nil (or the wizard form); returning
   // nil is required here — a bare Exit leaves Result as garbage and AppKit
   // crashes dereferencing it in the event loop.
   if not (Application.MainForm is TfBG) then
     Exit(nil);
+  form := Application.MainForm as TfBG;
 
-  // Create a custom dock menu
+  // No Quit item: AppKit appends its own Quit below the items returned here.
   dockMenu := NSMenu.alloc.initWithTitle(NSSTR('Trndi'));
 
-  // Add Settings item
-  menuTitle := TrimLeftSet((Application.MainForm as TfBG).miSettings.Caption, ['&', ' ']);
-  cfStr := CFStringCreateWithCString(nil, pchar(menuTitle), kCFStringEncodingUTF8);
-  menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
-    NSString(cfStr), sel_registerName('miSettings:'), NSSTR(''));
-  dockMenu.addItem(menuItem);
-  menuItem.release;
-  CFRelease(cfStr);
+  // Snooze submenu. Refresh the LCL items first so an expired snooze does not
+  // still read "Snoozed until" and the resume item is enabled only when needed.
+  if form.miAlertSnooze <> nil then
+  begin
+    form.UpdateAlertSnoozeMenu;
+    snoozeMenu := NSMenu.alloc.initWithTitle(NSSTR(''));
+    snoozeMenu.setAutoenablesItems(false);
+    AddDockMenuItem(snoozeMenu, form.miAlertSnooze15.Caption, 'miSnooze15:');
+    AddDockMenuItem(snoozeMenu, form.miAlertSnooze30.Caption, 'miSnooze30:');
+    AddDockMenuItem(snoozeMenu, form.miAlertSnooze60.Caption, 'miSnooze60:');
+    snoozeMenu.addItem(NSMenuItem.separatorItem);
+    menuItem := AddDockMenuItem(snoozeMenu, form.miAlertSnoozeOff.Caption, 'miSnoozeOff:');
+    menuItem.setEnabled(form.miAlertSnoozeOff.Enabled);
 
-  // Add separator
+    menuItem := AddDockMenuItem(dockMenu, form.miAlertSnooze.Caption, '');
+    menuItem.setSubmenu(snoozeMenu);
+    snoozeMenu.release;
+  end;
+
+  AddDockMenuItem(dockMenu, form.miForce.Caption, 'miForce:');
+
+  menuItem := AddDockMenuItem(dockMenu, form.miFloatOn.Caption, 'miFloat:');
+  if Assigned(fFloat) and fFloat.Showing then
+    menuItem.setState(NSOnState);
+
   dockMenu.addItem(NSMenuItem.separatorItem);
-
-  // Add Quit item
-  menuTitle := RS_QUIT;
-  cfStr := CFStringCreateWithCString(nil, pchar(menuTitle), kCFStringEncodingUTF8);
-  menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
-    NSString(cfStr), sel_registerName('terminate:'), NSSTR('q'));
-  dockMenu.addItem(menuItem);
-  menuItem.release;
-  CFRelease(cfStr);
+  AddDockMenuItem(dockMenu, form.miSettings.Caption, 'miSettings:');
 
   // AppKit only retains the returned menu while it is shown; hand our
   // owning reference to the autorelease pool or a menu leaks per right-click.
