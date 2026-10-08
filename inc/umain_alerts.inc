@@ -245,6 +245,30 @@ begin
   Result := RS_CONN_RETRYING;
 end;
 
+// Everything that is not plainly the user's to fix counts as retryable: the
+// aim is never to quit over a network that is still coming up. Backend
+// wording varies, so this is a keyword sieve over the known rejection texts
+// (HTTP 401/403, Nightscout's "access code", xDrip's "API secret", Dexcom's
+// "password or account credentials", CareLink's token data, bad addresses).
+function TfBG.IsRetryableBootError(const ErrorText: string): boolean;
+const
+  USER_MUST_FIX: array[0..14] of string = (
+    '401', '403', 'unauthor', 'forbidden', 'not authenticated', 'credential',
+    'access code', 'password', 'secret', 'token', 'jwt', 'invalid address',
+    'must start with', 'must begin with', 'no readings received'
+  );
+var
+  s, k: string;
+begin
+  s := LowerCase(Trim(ErrorText));
+  if s = '' then
+    Exit(true);
+  for k in USER_MUST_FIX do
+    if Pos(k, s) > 0 then
+      Exit(false);
+  Result := true;
+end;
+
 function TfBG.GetSensorBadgeText: string;
 var
   i, pOpen, pClose: integer;
@@ -877,6 +901,23 @@ begin
       bg := lastDataReading;
       val := bg.format(un, BG_MSG_SHORT);
     end;
+  end;
+
+  if FBootConnectPending and (FBootRetryAttempts > 0) then
+  begin
+    // Boot Connect failed for a reason that looks transient: nothing has ever
+    // arrived, so there is no age to show, only the error and the countdown.
+    Headline := RS_BOOT_UNREACHABLE;
+    Detail := '';
+    if FBootRetryPending and (FBootRetryAt > Now) then
+      Detail := Format(RS_STALE_RETRY_IN, [SecondsBetween(FBootRetryAt, Now)])
+    else
+      Detail := RS_STALE_RETRY_NOW;
+    Extra := Trim(FWarnMessage);
+    if Extra <> '' then
+      Extra := Extra + LineEnding;
+    Extra := Extra + RS_BOOT_RETRY_EXTRA;
+    Exit;
   end;
 
   if not haveReading then

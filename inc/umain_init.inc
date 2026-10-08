@@ -1331,6 +1331,10 @@ begin
   api.cgmRangeLo := native.GetIntSetting('override.rangelo', api.cgmRangeLo);
   api.cgmRangeHi := native.GetIntSetting('override.rangehi', api.cgmRangeHi);
 
+  // A transient boot failure may have put the retry card up; Connect works
+  // now, so stand it down before the first reading lands.
+  ClearBootRetry;
+
   // Thresholds are final now - give the alert engine the same limits the UI
   // paints with, and the menu its real captions.
   SeedLevelAlertRules;
@@ -1377,6 +1381,15 @@ begin
     FreeAndNil(FGlucoseFetchThread);
   end;
 
+  // Wi-Fi that is not up yet at login, a DNS hiccup, a server mid-restart:
+  // none of these are the user's to fix, and the dialog-Settings-quit flow
+  // below closed Trndi over them. Keep the window up and try again instead.
+  if IsRetryableBootError(FBootConnectError) then
+  begin
+    BeginBootRetry(FBootConnectError);
+    Exit;
+  end;
+
   ShowMessage(FBootConnectError);
 
   prevSetup := native.GetSetting('remote.type') + '|' + native.GetSetting('remote.target') +
@@ -1419,6 +1432,13 @@ procedure TfBG.ResumeBootAfterCancelledClose;
 begin
   if firstboot or (api = nil) or (not FBootConnectPending) then
     Exit;
+  // A retry countdown was already waiting: let it fire now rather than arm
+  // a second boot fetch beside it.
+  if FBootRetryPending then
+  begin
+    RetryBootNow;
+    Exit;
+  end;
   // The worker is still inside Connect: its ApplyConnectResult now runs with
   // FShuttingDown cleared and takes the normal path.
   if FApiCallInFlight then

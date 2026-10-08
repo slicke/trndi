@@ -1255,6 +1255,99 @@ begin
   tBootFetch.Enabled := true;
 end;
 
+{------------------------------------------------------------------------------
+  Boot retry
+  ----------
+  A boot Connect that failed for a reason that looks transient does not go
+  through the dialog / Settings / quit flow. The window stays up with the
+  status card saying what went wrong and when the next attempt is due, the
+  connection badge reads "Retrying", and tBootRetry counts the seconds down.
+  Attempts back off 5 s, 10 s, 20 s, 40 s and then hold at a minute, so a
+  server that is down for an hour is not hammered, while Wi-Fi coming up a few
+  seconds after login is picked up almost at once. Refresh from the menu (or
+  the keyboard) runs the attempt immediately.
+ ------------------------------------------------------------------------------}
+procedure TfBG.BeginBootRetry(const ErrorText: string);
+const
+  FIRST_DELAY_S = 5;
+  MAX_DELAY_S = 60;
+var
+  delaySecs: integer;
+begin
+  Inc(FBootRetryAttempts);
+  delaySecs := FIRST_DELAY_S;
+  if FBootRetryAttempts > 1 then
+    delaySecs := Min(MAX_DELAY_S, FIRST_DELAY_S shl Min(FBootRetryAttempts - 1, 4));
+  FBootRetryAt := IncSecond(Now, delaySecs);
+  FBootRetryPending := true;
+  TrndiDLog(Format('Boot connect failed (attempt %d), retrying in %d s: %s',
+    [FBootRetryAttempts, delaySecs, ErrorText]));
+
+  FLastConnectionDetail := Trim(ErrorText);
+  SetConnectionBadge(RS_CONN_RETRYING, RGBToColor(185, 60, 45));
+  // The card's "extra" row carries the backend's own words; the headline and
+  // countdown come from BuildStaleCardText's boot branch.
+  showWarningPanel(Trim(ErrorText), wsCritical, false);
+  WebPublishStatus;
+
+  if not Assigned(tBootRetry) then
+  begin
+    tBootRetry := TTimer.Create(Self);
+    tBootRetry.Interval := 1000;
+    tBootRetry.OnTimer := @tBootRetryTimer;
+  end;
+  tBootRetry.Enabled := true;
+end;
+
+procedure TfBG.tBootRetryTimer(Sender: TObject);
+begin
+  if FShuttingDown then
+  begin
+    RetireOneShotTimer(tBootRetry);
+    Exit;
+  end;
+  if not FBootRetryPending then
+  begin
+    RetireOneShotTimer(tBootRetry);
+    Exit;
+  end;
+  if Now >= FBootRetryAt then
+    RetryBootNow
+  else
+    RefreshStaleCard;
+end;
+
+procedure TfBG.RetryBootNow;
+begin
+  if not FBootRetryPending then
+    Exit;
+  RetireOneShotTimer(tBootRetry);
+  FBootRetryPending := false;
+  FBootRetryAt := 0;
+  // The card stays up reading "Retrying now…" until the worker reports back.
+  RefreshStaleCard;
+  // The api object is kept: Connect is the whole of what failed, and every
+  // backend's Connect starts over from its settings. FBootConnectPending is
+  // still raised, so the boot fetch runs Connect first again.
+  ArmBootFetch(50);
+end;
+
+procedure TfBG.ClearBootRetry;
+var
+  wasRetrying: boolean;
+begin
+  wasRetrying := FBootRetryPending or (FBootRetryAttempts > 0);
+  RetireOneShotTimer(tBootRetry);
+  FBootRetryPending := false;
+  FBootRetryAt := 0;
+  FBootRetryAttempts := 0;
+  if wasRetrying then
+  begin
+    hideWarningPanel;
+    FLastConnectionDetail := '';
+  end;
+end;
+
 // Animates the braille-spinner glyph in lVal while the very first fetch is
 // in flight. Self-stops on the first tick after FBootFetchPending clears,
 // leaving whatever caption ApplyFetchedReadings wrote in place.

@@ -4655,3 +4655,11 @@ msgstr "Trend: %d avlesninger · %s"
 #: trndi.strings.rs_conn_no_new_data
 msgid "No new data"
 msgstr "Ingen nye data"
+
+#: trndi.strings.rs_boot_unreachable
+msgid "Can't reach the server"
+msgstr "Får ikke kontakt med serveren"
+
+#: trndi.strings.rs_boot_retry_extra
+msgid "Trndi keeps trying on its own. If the address or login is wrong, open Settings."
+msgstr "Trndi fortsetter å prøve av seg selv. Hvis adressen eller innloggingen er feil, åpne Innstillinger."

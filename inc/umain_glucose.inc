@@ -800,6 +800,16 @@ begin
   if not tAgo.Enabled then
     SetAgoText(RS_UNKNOWN_TIME, '');
 
+  // Refresh while the boot Connect is counting down to its next attempt:
+  // run that attempt now instead of dropping the request at the boot gate
+  // in RequestAsyncFetch. The boot-fetch timer it arms calls back in here
+  // with boot = true.
+  if (not boot) and FBootRetryPending then
+  begin
+    RetryBootNow;
+    Exit(false);
+  end;
+
   // The fetch now runs on TGlucoseFetchThread. The post-fetch UI flow
   // (ApplyFetchedReadings → ProcessCurrentReading → FinalizeReadingUpdate)
   // is dispatched via Synchronize when the worker completes.

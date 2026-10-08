@@ -471,6 +471,19 @@ in use. Click again to collapse it.
 
 - **Fix**: Check that your CGM, phone, or uploader is working
 
+### It says "Can't reach the server" right after starting
+The data source did not answer when Trndi started — typically Wi-Fi that was
+still connecting when you logged in, a DNS hiccup, or a server mid-restart.
+Trndi stays open and keeps trying on its own: the card counts down to the next
+attempt (5 s, then 10, 20, 40 and finally once a minute), and the badge at the
+top reads **Retrying**. Click the card for the data source's own message.
+Choose *Refresh* from the menu to try again at once. Nothing to fix unless the
+address or login is wrong, in which case open Settings.
+
+A rejected login (wrong access code, API secret, password or token) or a bad
+address is a different case: Trndi shows the error and opens Settings, and
+quits if you close Settings without changing the data source.
+
 ### Why does it say "No data" or "?"
 Trndi can't get readings from your data source.
 - **Check**: Your internet connection
