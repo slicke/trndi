@@ -3451,6 +3451,24 @@ msgstr ""
 msgid "Error: spd-say is not installed. Please install speech-dispatcher."
 msgstr ""
 
+#: trndi.strings.rs_about_tagline
+msgid "Your continuous glucose monitor readings on the desktop"
+msgstr ""
+
+#: trndi.strings.rs_about_version
+#, object-pascal-format
+msgctxt "trndi.strings.rs_about_version"
+msgid "Version %s"
+msgstr ""
+
+#: trndi.strings.rs_about_license
+msgid "Free software under the GNU General Public License v3"
+msgstr ""
+
+#: trndi.strings.rs_about_disclaimer
+msgid "Trndi is not a medical device. Always check readings against your official CGM before acting on them."
+msgstr ""
+
 #: uconf.rs_alert_hysteresis_mgdl
 msgctxt "uconf.rs_alert_hysteresis_mgdl"
 msgid "Clear margin (mg/dL)"
@@ -3789,6 +3807,7 @@ msgstr ""
 
 #: uconf.rs_ext_version
 #, object-pascal-format
+msgctxt "uconf.rs_ext_version"
 msgid "Version %s"
 msgstr ""
 

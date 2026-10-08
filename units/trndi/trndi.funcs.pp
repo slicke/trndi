@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-08: Added TrndiVersionString, the one version label the About
+ *   dialog and the Settings window both show.
  * - 2026-09-10: Engine lookups go through TTrndiExtEngine.Existing, which
  *   returns the running engine or nil, so checking for an engine no longer
  *   constructs one.
@@ -85,6 +87,9 @@ function GetNewerVersionURL(const JsonResponse: string;
 IncludePrerelease: boolean = false;
 Platform: string = ''): string;
 function IsPRBuild: boolean;
+{** The version shown to the user: MAJOR.MINOR plus the CI build number, or
+    "-dev (yyyy-mm-dd)" with the compile date for a local build. }
+function TrndiVersionString: string;
 function GetLatestReleaseName(const JsonResponse: string): string;
 
 function privacyIcon(const v: trndi.types.BGValLevel): string;
@@ -163,6 +168,7 @@ TRNDI_DEBUG_LOG_ALERT_SNOOZE: TDateTime;
 implementation
 
 uses
+slicke.versioninfo,
 trndi.funcs.core; // UI-free reading/trend helpers; re-exposed by the forwarders below
 
 procedure CenterPanelToCaption(Panel: TPanel; margin: integer = 10);
@@ -701,6 +707,21 @@ end;
 function IsPRBuild: boolean;
 begin
   Result := CI and (Copy(BUILD_NUMBER, 1, 3) = 'PR-');
+end;
+
+// MAJOR.MINOR from the version resource, then the CI build number or, for a
+// local build, the compile date. CI/BUILD_NUMBER are compile-time constants,
+// so one branch is always "unreachable" per build.
+function TrndiVersionString: string;
+begin
+  Result := GetProductVersionMajorMinor('12.x');
+  {$PUSH}{$WARN 6018 OFF}
+  if CI and (BUILD_NUMBER <> 'dev') then
+    Result := Result + '.' + BUILD_NUMBER
+  else
+    Result := Format('%s-dev (%s)', [Result,
+      StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll])]);
+  {$POP}
 end;
 
 // Extract the display name (or tag) of a release from a GitHub
