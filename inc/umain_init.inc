@@ -129,6 +129,9 @@ begin
   {$ifdef X_MAC}
   MacAppDelegate := TMyAppDelegate.alloc.init;
   NSApp.setDelegate(NSObject(MacAppDelegate));
+  // Quit from the Dock menu (an Apple Event) otherwise ends the app without
+  // the close prompt; see MacQueryEndSession.
+  Application.AddOnQueryEndSessionHandler(@MacQueryEndSession);
 
   Application.Title := 'Trndi';
   {$ENDIF}
