@@ -200,19 +200,128 @@ begin
   Result := Assigned(FAlertEngine) and FAlertEngine.AnySnoozed;
 end;
 
+function TfBG.SnoozeKindName(const AKind: TAlertKind): string;
+begin
+  case AKind of
+    akMissing: Result := RS_ALERT_SNOOZE_ONLY_MISSING;
+    akHigh:    Result := RS_ALERT_SNOOZE_ONLY_HIGH;
+    akLow:     Result := RS_ALERT_SNOOZE_ONLY_LOW;
+  else
+    Result := '';
+  end;
+end;
+
+// The chip and the menu caption used to say "Snoozed until" for any snooze at
+// all. With one kind paused on its own that overstated it: a muted warm-up
+// toast is not a muted low.
+function TfBG.SnoozeStatusText: string;
+const
+  // The kinds the global snooze is about; urgent low is capped and may have
+  // come back already without that making the pause "partial".
+  WHOLE_SET = [akHigh, akLow, akMissing];
+var
+  snoozed: TAlertKindSet;
+  untilText: string;
+begin
+  Result := '';
+  if not AlertsSnoozed then
+    Exit;
+  snoozed := FAlertEngine.SnoozedKinds;
+  untilText := FormatDateTime('hh:nn', FAlertEngine.ActiveSnoozeUntil);
+  if WHOLE_SET * snoozed = WHOLE_SET then
+    Result := Format(RS_ALERT_SNOOZE_ACTIVE, [untilText])
+  else
+    Result := Format(RS_ALERT_SNOOZE_PARTIAL, [untilText]);
+end;
+
+function TfBG.AddKindSnoozeMenu(const AKind: TAlertKind; const ACaption: string): TMenuItem;
+const
+  HOURS: array[0..2] of integer = (1, 2, 4);
+var
+  h: integer;
+  item: TMenuItem;
+begin
+  Result := TMenuItem.Create(miAlertSnooze);
+  Result.Caption := ACaption;
+  Result.Tag := Ord(AKind);
+  for h in HOURS do
+  begin
+    item := TMenuItem.Create(Result);
+    item.Caption := Format(RS_STALE_AGE_HOUR_ONLY, [h]);
+    item.Tag := h * 60;
+    item.OnClick := @miSnoozeKindClick;
+    Result.Add(item);
+  end;
+  item := TMenuItem.Create(Result);
+  item.Caption := '-';
+  Result.Add(item);
+  item := TMenuItem.Create(Result);
+  item.Caption := RS_ALERT_SNOOZE_KIND_RESUME;
+  item.Tag := 0;
+  item.OnClick := @miSnoozeKindClick;
+  Result.Add(item);
+  miAlertSnooze.Add(Result);
+end;
+
+procedure TfBG.miSnoozeKindClick(Sender: TObject);
+var
+  item: TMenuItem;
+  kind: TAlertKind;
+  minutes: integer;
+begin
+  if (FAlertEngine = nil) or not (Sender is TMenuItem) then
+    Exit;
+  item := TMenuItem(Sender);
+  if item.Parent = nil then
+    Exit;
+  kind := TAlertKind(item.Parent.Tag);
+  minutes := item.Tag;
+  if minutes > 0 then
+    FAlertEngine.Snooze(kind, minutes)
+  else
+    FAlertEngine.Resume(kind);
+  UpdateAlertSnoozeMenu;
+  RefreshConnectionBadge;
+  // The stale card names a muted missing-readings alert in its expanded row.
+  RefreshStaleCard;
+  if minutes > 0 then
+    ShowInlineNotice(Format(RS_ALERT_SNOOZE_KIND_DONE, [SnoozeKindName(kind),
+      FormatDateTime('hh:nn', FAlertEngine.SnoozedUntil(kind))]))
+  else
+    ShowInlineNotice(Format(RS_ALERT_SNOOZE_KIND_OFF, [SnoozeKindName(kind)]));
+end;
+
 procedure TfBG.UpdateAlertSnoozeMenu;
+
+  procedure RefreshKindMenu(const AMenu: TMenuItem);
+  var
+    kind: TAlertKind;
+    snoozed: boolean;
+  begin
+    if AMenu = nil then
+      Exit;
+    kind := TAlertKind(AMenu.Tag);
+    snoozed := FAlertEngine.IsSnoozed(kind);
+    if snoozed then
+      AMenu.Caption := Format(RS_ALERT_SNOOZE_KIND_UNTIL, [SnoozeKindName(kind),
+        FormatDateTime('hh:nn', FAlertEngine.SnoozedUntil(kind))])
+    else
+      AMenu.Caption := SnoozeKindName(kind);
+    // The resume item is the last one; it only makes sense while snoozed.
+    if AMenu.Count > 0 then
+      AMenu.Items[AMenu.Count - 1].Enabled := snoozed;
+  end;
+
 var
   isSnoozed: boolean;
-  snoozeUntil: TDateTime;
 begin
   if miAlertSnooze = nil then
     Exit;
 
   isSnoozed  := FAlertEngine.AnySnoozed;
-  snoozeUntil := FAlertEngine.ActiveSnoozeUntil;
 
   if isSnoozed then
-    miAlertSnooze.Caption := Format(RS_ALERT_SNOOZE_ACTIVE, [FormatDateTime('hh:nn', snoozeUntil)])
+    miAlertSnooze.Caption := SnoozeStatusText
   else
     miAlertSnooze.Caption := RS_ALERT_SNOOZE;
 
@@ -224,6 +333,10 @@ begin
     else
       miAlertSnoozeOff.Caption := RS_ALERT_SNOOZE_NOT_ACTIVE;
   end;
+
+  RefreshKindMenu(miSnoozeMissing);
+  RefreshKindMenu(miSnoozeHigh);
+  RefreshKindMenu(miSnoozeLow);
 end;
 
 function TfBG.ClassifyConnectionStatus(const ErrorText: string): string;
@@ -361,8 +474,7 @@ begin
   snoozed := AlertsSnoozed;
   if snoozed then
   begin
-    snoozeText := Format(RS_ALERT_SNOOZE_ACTIVE,
-      [FormatDateTime('hh:nn', FAlertEngine.ActiveSnoozeUntil)]);
+    snoozeText := SnoozeStatusText;
     if isOk and (not forceShowBadge) then
     begin
       displayStatus := snoozeText;
@@ -972,6 +1084,11 @@ begin
     Extra := Extra + LineEnding;
   Extra := Extra + Format(RS_LAST_RECIEVE_AGE,
     [native.GetIntSetting('system.fresh_threshold', DATA_FRESHNESS_THRESHOLD_MINUTES)]);
+  // A muted missing-readings alert is worth a line here: this card is where
+  // someone wondering why the toast stopped will look.
+  if Assigned(FAlertEngine) and FAlertEngine.IsSnoozed(akMissing) then
+    Extra := Extra + LineEnding + Format(RS_STALE_MISSING_MUTED,
+      [FormatDateTime('hh:nn', FAlertEngine.SnoozedUntil(akMissing))]);
 end;
 
 procedure TfBG.RefreshStaleCard;

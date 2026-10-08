@@ -348,6 +348,15 @@ a silent window is never mistaken for a calm one. Urgent-low alerts can only
 be snoozed for a few minutes at a time; the confirmation tells you when they
 come back.
 
+One alert type can be paused on its own: the same submenu has *Only outdated
+readings*, *Only high* and *Only low*, each for 1, 2 or 4 hours. Changing
+sensors is the typical case — the warm-up would otherwise raise *Outdated
+readings* every quarter of an hour, and the only way to quiet it was to mute
+high and low with it. The chip then reads *Some alerts snoozed until hh:mm*,
+the submenu entry shows when its pause ends and offers *Resume these alerts*,
+and the status card's expanded row says that outdated-readings alerts are
+muted. *Only low* leaves the urgent-low alert running.
+
 ### Sound and System Notifications
 Can be configured in settings to:
 - Play a sound when you go high or low

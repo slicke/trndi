@@ -49,6 +49,9 @@
 (* MODIFICATION NOTICE (2026-09-18): Added SnoozedUntil, exposing a single
    rule's snooze end so the UI can tell when a capped rule (urgent low) comes
    back before the others. *)
+(* MODIFICATION NOTICE (2026-10-08): Added Snooze, Resume and SnoozedKinds so
+   one rule can be paused on its own - a sensor warm-up silences the missing-
+   readings toast without also muting high and low. *)
 unit trndi.alert.engine;
 
 {$mode objfpc}{$H+}
@@ -145,8 +148,15 @@ type
     procedure SnoozeActive(const AMinutes: integer);
     {** Snooze every rule regardless of current state. }
     procedure SnoozeAll(const AMinutes: integer);
+    {** Snooze one rule regardless of its current state. The rule's
+      MaxSnoozeMinutes cap is honoured like everywhere else. }
+    procedure Snooze(const AKind: TAlertKind; const AMinutes: integer);
     {** Cancel all active snoozes. }
     procedure ResumeAll;
+    {** Cancel one rule's snooze, leaving the others as they are. }
+    procedure Resume(const AKind: TAlertKind);
+    {** The rules currently snoozed. }
+    function SnoozedKinds: TAlertKindSet;
 
     function IsSnoozed(const AKind: TAlertKind): boolean;
     {** When the rule's current snooze ends, or 0 when it is not snoozed. }
@@ -702,6 +712,34 @@ begin
   NotifyChanged;
 end;
 
+procedure TAlertEngine.Snooze(const AKind: TAlertKind; const AMinutes: integer);
+var
+  snoozeMin: integer;
+begin
+  snoozeMin := AMinutes;
+  if (FRules[AKind].MaxSnoozeMinutes > 0) and (snoozeMin > FRules[AKind].MaxSnoozeMinutes) then
+    snoozeMin := FRules[AKind].MaxSnoozeMinutes;
+  FRules[AKind].SnoozedUntil := IncMinute(Now, snoozeMin);
+  FRules[AKind].LastFired    := 0;
+  NotifyChanged;
+end;
+
+procedure TAlertEngine.Resume(const AKind: TAlertKind);
+begin
+  FRules[AKind].SnoozedUntil := 0;
+  NotifyChanged;
+end;
+
+function TAlertEngine.SnoozedKinds: TAlertKindSet;
+var
+  k: TAlertKind;
+begin
+  Result := [];
+  for k := Low(TAlertKind) to High(TAlertKind) do
+    if IsSnoozed(k) then
+      Include(Result, k);
+end;
+
 procedure TAlertEngine.ResumeAll;
 var
   k: TAlertKind;
@@ -794,7 +832,7 @@ var
   fs: TFormatSettings;
   i, kindOrd: integer;
   k: TAlertKind;
-  snooze, lastFired, vStart: double;
+  snoozeAt, lastFired, vStart: double;
   violating: boolean;
   maxAge: TDateTime;
 begin
@@ -822,13 +860,13 @@ begin
       if (kindOrd < Ord(Low(TAlertKind))) or (kindOrd > Ord(High(TAlertKind))) then Continue;
       k := TAlertKind(kindOrd);
 
-      snooze    := StrToFloatDef(fields[1], 0, fs);
+      snoozeAt    := StrToFloatDef(fields[1], 0, fs);
       lastFired := StrToFloatDef(fields[2], 0, fs);
       vStart    := StrToFloatDef(fields[3], 0, fs);
       violating := fields[4] = '1';
 
       // Drop stale entries — expired snoozes, violations older than cap.
-      if (snooze > 0) and (snooze <= Now) then snooze := 0;
+      if (snoozeAt > 0) and (snoozeAt <= Now) then snoozeAt := 0;
       if (vStart > 0) and (vStart < maxAge) then
       begin
         vStart := 0;
@@ -837,7 +875,7 @@ begin
       end;
       if (lastFired > 0) and (lastFired < maxAge) then lastFired := 0;
 
-      FRules[k].SnoozedUntil       := snooze;
+      FRules[k].SnoozedUntil       := snoozeAt;
       FRules[k].LastFired          := lastFired;
       FRules[k].ViolationStartedAt := vStart;
       if violating then

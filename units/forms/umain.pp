@@ -544,6 +544,9 @@ TfBG = class(TForm)
   miAlertSnooze30: TMenuItem;
   miAlertSnooze60: TMenuItem;
   miAlertSnoozeOff: TMenuItem;
+  miSnoozeMissing: TMenuItem;   // "Only outdated readings" submenu
+  miSnoozeHigh: TMenuItem;      // "Only high" submenu
+  miSnoozeLow: TMenuItem;       // "Only low" submenu
   procedure APIReceiver(const msg: string; etype: TrndiAPIMsg);
   procedure APICredentialsChanged(const newCreds: string);
   procedure bSettingsClick({%H-}Sender: TObject);
@@ -643,6 +646,9 @@ TfBG = class(TForm)
   procedure miAlertSnooze30Click({%H-}Sender: TObject);
   procedure miAlertSnooze60Click({%H-}Sender: TObject);
   procedure miAlertSnoozeOffClick({%H-}Sender: TObject);
+  {** Shared handler for the per-kind snooze submenus: the parent's Tag is
+      the TAlertKind, the item's Tag the minutes (0 = resume that kind). }
+  procedure miSnoozeKindClick(Sender: TObject);
   procedure lInternetClick({%H-}Sender: TObject);
   procedure miHistoryClick({%H-}Sender: TObject);
   procedure miForceClick({%H-}Sender: TObject);
@@ -697,6 +703,13 @@ private
     const DisplayColor: TColor; const IsCentered: boolean);
   procedure SetAlertSnoozeMinutes(const Minutes: integer);
   procedure UpdateAlertSnoozeMenu;
+  {** Build one "Only …" submenu (1 h / 2 h / 4 h / resume) for a kind. }
+  function AddKindSnoozeMenu(const AKind: TAlertKind; const ACaption: string): TMenuItem;
+  {** Menu caption for a per-kind snooze submenu. }
+  function SnoozeKindName(const AKind: TAlertKind): string;
+  {** "Snoozed until hh:mm" when the whole set is paused, "Some alerts snoozed
+      until hh:mm" when only some kinds are, '' when nothing is. }
+  function SnoozeStatusText: string;
   function ClassifyConnectionStatus(const ErrorText: string): string;
   procedure SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
   procedure RefreshConnectionBadge;

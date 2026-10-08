@@ -1261,6 +1261,15 @@ begin
   miAlertSnoozeOff.OnClick := @miAlertSnoozeOffClick;
   miAlertSnooze.Add(miAlertSnoozeOff);
 
+  // One alert type at a time: a sensor warm-up repeats "Outdated readings"
+  // every quarter hour, and the only way to quiet it used to be muting high
+  // and low along with it.
+  miAlertSnooze.Add(TMenuItem.Create(miAlertSnooze));
+  miAlertSnooze.Items[miAlertSnooze.Count - 1].Caption := '-';
+  miSnoozeMissing := AddKindSnoozeMenu(akMissing, RS_ALERT_SNOOZE_ONLY_MISSING);
+  miSnoozeHigh := AddKindSnoozeMenu(akHigh, RS_ALERT_SNOOZE_ONLY_HIGH);
+  miSnoozeLow := AddKindSnoozeMenu(akLow, RS_ALERT_SNOOZE_ONLY_LOW);
+
   if miExit <> nil then
     pmSettings.Items.Insert(miExit.MenuIndex, miAlertSnooze)
   else
@@ -1679,20 +1688,27 @@ end;
 function TfBG.WebSnoozeJSON: TJSONObject;
 var
   untilLocal: TDateTime;
+  kinds: TJSONArray;
+  kind: TAlertKind;
 begin
   Result := TJSONObject.Create;
+  kinds := TJSONArray.Create;
   if Assigned(FAlertEngine) and FAlertEngine.AnySnoozed then
   begin
     untilLocal := FAlertEngine.ActiveSnoozeUntil;
     Result.Add('active', true);
     Result.Add('until_utc', FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss"Z"',
       LocalTimeToUniversal(untilLocal)));
+    // A per-kind snooze is "active" too; the list says which kinds.
+    for kind in FAlertEngine.SnoozedKinds do
+      kinds.Add(WEB_ALERT_KIND_NAMES[kind]);
   end
   else
   begin
     Result.Add('active', false);
     Result.Add('until_utc', '');
   end;
+  Result.Add('kinds', kinds);
 end;
 
 procedure TfBG.WebSettingsToJSON(AReply: TJSONObject);

@@ -1805,8 +1805,12 @@ msgid "Outdated Readings!"
 msgstr "Forældede aflæsninger!"
 
 #: trndi.strings.rs_attention_missing_desc
-msgid "Readings are not fresh, have your phone lost connection to the sensor?"
-msgstr "Aflæsningerne er ikke friske, har din telefon mistet forbindelsen til sensoren?"
+msgid ""
+"Readings are not fresh, have your phone lost connection to the sensor?\n"
+"Changing sensors? Snooze alerts › Only outdated readings."
+msgstr ""
+"Aflæsningerne er ikke friske, har din telefon mistet forbindelsen til sensoren?\n"
+"Skifter du sensor? Sæt alarmer på pause › Kun forældede målinger."
 
 #: trndi.strings.rs_attention_pump_battery
 msgid "Pump battery low"
@@ -4663,3 +4667,44 @@ msgstr "Kan ikke nå serveren"
 #: trndi.strings.rs_boot_retry_extra
 msgid "Trndi keeps trying on its own. If the address or login is wrong, open Settings."
 msgstr "Trndi bliver ved med at prøve af sig selv. Hvis adressen eller loginoplysningerne er forkerte, så åbn Indstillinger."
+
+#: trndi.strings.rs_alert_snooze_partial
+#, object-pascal-format
+msgid "Some alerts snoozed until %s"
+msgstr "Nogle alarmer er sat på pause indtil %s"
+
+#: trndi.strings.rs_alert_snooze_only_missing
+msgid "Only outdated readings"
+msgstr "Kun forældede målinger"
+
+#: trndi.strings.rs_alert_snooze_only_high
+msgid "Only high"
+msgstr "Kun højt"
+
+#: trndi.strings.rs_alert_snooze_only_low
+msgid "Only low"
+msgstr "Kun lavt"
+
+#: trndi.strings.rs_alert_snooze_kind_until
+#, object-pascal-format
+msgid "%s (until %s)"
+msgstr "%s (indtil %s)"
+
+#: trndi.strings.rs_alert_snooze_kind_resume
+msgid "Resume these alerts"
+msgstr "Genoptag disse alarmer"
+
+#: trndi.strings.rs_alert_snooze_kind_done
+#, object-pascal-format
+msgid "%s: snoozed until %s"
+msgstr "%s: sat på pause indtil %s"
+
+#: trndi.strings.rs_alert_snooze_kind_off
+#, object-pascal-format
+msgid "%s: alerts resumed"
+msgstr "%s: alarmer genoptaget"
+
+#: trndi.strings.rs_stale_missing_muted
+#, object-pascal-format
+msgid "Outdated-readings alerts muted until %s"
+msgstr "Alarmer om forældede målinger er slået fra indtil %s"
