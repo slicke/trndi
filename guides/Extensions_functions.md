@@ -1110,6 +1110,10 @@ Trndi.on("alert", (kind, mgdl, mmol) => {
   when not snoozed. The urgent-low alert may come back earlier (it has its
   own cap).
 
+A pause of a single alert type (*Snooze alerts › Only outdated readings* and
+the like) counts as active too; `untilMs` is then the latest end among the
+paused types.
+
 ### connectionCallback
 #### Called when the backend connection status changes
 ```connectionCallback(status, detail)```

@@ -38,6 +38,8 @@
 (* MODIFICATION NOTICE (2026-09-15): Added ReAlertWaitsInsideHysteresisBand
    and MinDurationExpiringInsideBandWaitsForThreshold - a reading inside the
    hysteresis band keeps the excursion alive but must not fire. *)
+(* MODIFICATION NOTICE (2026-10-08): Added the per-kind snooze cases
+   (SnoozeKindOnlyTouchesThatRule and friends) for TAlertEngine.Snooze/Resume. *)
 (* MODIFICATION NOTICE (2026-09-17): Added LowFiresInsideUrgentBand - an urgent
    band that reaches past the low threshold must not silence the regular low. *)
 unit alert_engine_tests;
@@ -101,6 +103,9 @@ type
     procedure SnoozeActiveOnlyTouchesViolatingRules;
     procedure SnoozeClearsLastFiredSoAlertReturns;
     procedure ResumeAllClearsSnoozes;
+    procedure SnoozeKindOnlyTouchesThatRule;
+    procedure ResumeKindLeavesOthersSnoozed;
+    procedure SnoozeKindHonoursCap;
     // Delta, missing, sensor fault
     procedure RapidFallFiresAndClears;
     procedure RapidRiseFiresAndClears;
@@ -577,6 +582,54 @@ begin
   FEngine.ResumeAll;
   AssertTrue('ResumeAll clears every snooze', not FEngine.AnySnoozed);
   AssertEquals('no active snooze remains', 0.0, FEngine.ActiveSnoozeUntil, 0.0);
+end;
+
+procedure TAlertEngineTests.SnoozeKindOnlyTouchesThatRule;
+var
+  mins: integer;
+begin
+  FEngine.SetupRule(akMissing, true, 0, 15);
+  FEngine.SetupRule(akHigh, true, 10.0, 0);
+  FEngine.SetupRule(akLow, true, 4.0, 0);
+
+  FEngine.Snooze(akMissing, 120);
+
+  AssertTrue('missing must be snoozed', FEngine.IsSnoozed(akMissing));
+  AssertFalse('high must not be snoozed', FEngine.IsSnoozed(akHigh));
+  AssertFalse('low must not be snoozed', FEngine.IsSnoozed(akLow));
+  AssertTrue('SnoozedKinds lists only missing', FEngine.SnoozedKinds = [akMissing]);
+  mins := SnoozeMinutesFor(akMissing);
+  AssertTrue('full two hours expected, got ' + IntToStr(mins),
+    (mins >= 118) and (mins <= 120));
+  AssertTrue('a snoozed missing rule must not fire', FEngine.EvaluateMissing = []);
+  AssertTrue('high still fires while missing is snoozed',
+    akHigh in FEngine.EvaluateLevel(12.0));
+end;
+
+procedure TAlertEngineTests.ResumeKindLeavesOthersSnoozed;
+begin
+  FEngine.SetupRule(akMissing, true, 0, 15);
+  FEngine.SetupRule(akHigh, true, 10.0, 0);
+
+  FEngine.SnoozeAll(60);
+  FEngine.Resume(akMissing);
+
+  AssertFalse('missing resumed', FEngine.IsSnoozed(akMissing));
+  AssertTrue('high keeps its snooze', FEngine.IsSnoozed(akHigh));
+  AssertTrue('missing fires again once resumed', akMissing in FEngine.EvaluateMissing);
+end;
+
+procedure TAlertEngineTests.SnoozeKindHonoursCap;
+var
+  mins: integer;
+begin
+  FEngine.SetupRule(akUrgentLow, true, 3.0, 0, 15);
+
+  FEngine.Snooze(akUrgentLow, 240);
+
+  mins := SnoozeMinutesFor(akUrgentLow);
+  AssertTrue('per-kind snooze must respect the cap, got ' + IntToStr(mins),
+    (mins >= 0) and (mins <= 15));
 end;
 
 // ---------------------------------------------------------------------------
