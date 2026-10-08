@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-08: The macOS About dialog is translated, shows the bundled icon
+ *   instead of fetching a logo, uses the Settings window's version label and
+ *   carries the copyright, licence and medical disclaimer.
  * - 2026-09-20: ApplySettingsInstantly broadcasts settingsCallback to
  *   extensions once the new settings are in effect.
  *)
@@ -1163,23 +1166,22 @@ end;
 procedure TfBG.ShowAboutDialog(Sender: TObject);
 var
   html: string;
-  versionInfo: string;
 begin
-  versionInfo := 'Version ' + BUILD_NUMBER;
-  {$if defined(LCLCocoa)}
-  versionInfo := versionInfo + ' (macOS)';
-  {$endif}
+  // app:icon is the bundled app icon (1024x1024); TIpHtmlPanel draws images at
+  // their natural size unless both dimensions are given. The copyright runs
+  // to the year this binary was compiled.
+  html := '<img src="app:icon" width="128" height="128">' + sHTMLLineBreak +
+    '<b>Trndi</b>' + sHTMLLineBreak +
+    '<i>' + RS_ABOUT_TAGLINE + '</i>' + sHTMLLineBreak + sHTMLLineBreak +
+    Format(RS_ABOUT_VERSION, [TrndiVersionString]) + sHTMLLineBreak +
+    'Copyright &copy; 2017&ndash;' + Copy({$I %DATE%}, 1, 4) + ' Bj&ouml;rn Lindh' +
+    sHTMLLineBreak +
+    RS_ABOUT_LICENSE + sHTMLLineBreak +
+    '<a href="https://github.com/slicke/trndi">github.com/slicke/trndi</a>' +
+    sHTMLLineBreak + sHTMLLineBreak +
+    '<small>' + RS_ABOUT_DISCLAIMER + '</small>';
 
-  // The hosted logo is 1024x1024 and TIpHtmlPanel draws images at their
-  // natural size unless both dimensions are given
-  html := '<img src="https://trndi.app/doc/img/trndi-logo.png" width="128" height="128">' + sHTMLLineBreak +
-    '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
-    '<i>Continuous Glucose Monitor data display</i>' + sHTMLLineBreak +
-    'for desktop and embedded devices' + sHTMLLineBreak + sHTMLLineBreak +
-    versionInfo + sHTMLLineBreak +
-    'https://github.com/slicke/trndi';
-
-  SlickeHTMLMsg(sdsAuto, 'About Trndi', html, [mbOK], uxmtInformation, 25);
+  SlickeHTMLMsg(sdsAuto, RS_MENU_ABOUT, html, [mbOK], uxmtInformation, 25);
 end;
 
 procedure TfBG.CheckForUpdatesMenuClick(Sender: TObject);

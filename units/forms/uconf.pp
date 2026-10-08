@@ -3680,16 +3680,7 @@ begin
   cl_lo_txt_cust.OnColorChanged := @RefreshDotPreview;
 
   // Base app version + build date + widgetset + target CPU
-  lVersion.Caption := GetProductVersionMajorMinor('12.x');
-  // If CI embedded a real build number, append it. CI/BUILD_NUMBER are
-  // compile-time constants, so one branch is always "unreachable" per build.
-  {$PUSH}{$WARN 6018 OFF}
-  if CI and (BUILD_NUMBER <> 'dev') then
-    lVersion.Caption := lVersion.Caption + '.' + BUILD_NUMBER
-  else
-    lVersion.Caption := Format('%s-dev (%s)', [lVersion.Caption,
-      StringReplace({$I %DATE%}, '/', '-', [rfReplaceAll])]);
-  {$POP}
+  lVersion.Caption := TrndiVersionString;
   lversion.left := lversion.left - 20;
 
   // Sidebar navigation: header typography, the tree itself, and the landing

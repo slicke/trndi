@@ -447,6 +447,10 @@ RS_WIZARD_PROGRESS_CHECK = 'Show the refresh countdown bar';
 
 RS_QUIT = 'Quit Trndi';
 RS_MENU_ABOUT = 'About Trndi';
+RS_ABOUT_TAGLINE = 'Your continuous glucose monitor readings on the desktop';
+RS_ABOUT_VERSION = 'Version %s';
+RS_ABOUT_LICENSE = 'Free software under the GNU General Public License v3';
+RS_ABOUT_DISCLAIMER = 'Trndi is not a medical device. Always check readings against your official CGM before acting on them.';
 RS_MENU_CHECK_UPDATES = 'Check for Updates...';
 RS_UPDATE_CHECK_FAILED = 'Update check failed.';
 RS_HISTORY_NO_READINGS_24H = 'No readings returned for the last 24 hours.';

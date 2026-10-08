@@ -612,7 +612,8 @@ scale: single = 1; hpadding: single = 1;
 ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult; overload;
 
   {**
-    Alias for @link(SlickeMsg) with HTML data
+    Alias for @link(SlickeMsg) with HTML data. An image whose src is
+    @code(app:icon) shows the application icon, without a network fetch.
   }
 function SlickeHTMLMsg(const dialogsize: TSlickeDialogSize;
 const caption, html: string;
@@ -5498,6 +5499,20 @@ begin
   // A nil Picture tells TIpHtmlPanel to render the image as missing; never
   // let a fetch/decode failure escape into the HTML layout code.
   Picture := nil;
+  // app:icon is the application's own icon, served locally. Copied into a
+  // PNG so the panel scales it to the tag's width/height like any image.
+  if url = 'app:icon' then
+  begin
+    if Application.Icon.Empty then
+      Exit;
+    Picture := TPicture.Create;
+    try
+      Picture.PNG.Assign(Application.Icon);
+    except
+      FreeAndNil(Picture);
+    end;
+    Exit;
+  end;
   if not TrndiNative.getURL(url, res) then
     Exit;
   ms := TStringStream.Create(res);
