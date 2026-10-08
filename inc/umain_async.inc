@@ -656,9 +656,9 @@ begin
       case FMode of
       hfm24h:
         if FErrorMsg <> '' then
-          ShowMessage('No readings returned: ' + FErrorMsg)
+          ShowMessage(Format(RS_DATE_PICKER_NO_READINGS_ERR, [FErrorMsg]))
         else
-          ShowMessage('No readings returned for the last 24 hours.');
+          ShowMessage(RS_HISTORY_NO_READINGS_24H);
       hfmDatePicker:
         if FErrorMsg <> '' then
           ShowMessage(Format(RS_DATE_PICKER_NO_READINGS_ERR, [FErrorMsg]))
@@ -777,7 +777,7 @@ begin
     if not FFetchOK then
     begin
       if FShowUpToDate then
-        ShowMessage('Update check failed.');
+        ShowMessage(RS_UPDATE_CHECK_FAILED);
       Exit;
     end;
 

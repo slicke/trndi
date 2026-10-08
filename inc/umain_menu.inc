@@ -629,7 +629,7 @@ end;
 procedure TfBG.miFloatOnClick(Sender: TObject);
 begin
   {$ifdef LCLGTK3}
-  Dialogs.ShowMessage('Your widgetset does not support this feature, pleae use QT');
+  Dialogs.ShowMessage(RS_FLOAT_UNSUPPORTED);
   Exit;
   {$endif}
   if fFloat.Showing then

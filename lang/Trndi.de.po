@@ -1922,6 +1922,7 @@ msgid "Hide from menu bar"
 msgstr "In der Menüleiste ausblenden"
 
 #: trndi.strings.rs_status_item_quit
+msgctxt "trndi.strings.rs_status_item_quit"
 msgid "Quit Trndi"
 msgstr "Trndi beenden"
 
@@ -3257,6 +3258,56 @@ msgstr ""
 #: trndi.strings.rs_wizard_welcome_head
 msgid "Let's get connected!"
 msgstr "Verbindung herstellen!"
+
+#: trndi.strings.rs_menu_about
+msgid "About Trndi"
+msgstr ""
+
+#: trndi.strings.rs_menu_check_updates
+msgid "Check for Updates..."
+msgstr ""
+
+#: trndi.strings.rs_quit
+msgctxt "trndi.strings.rs_quit"
+msgid "Quit Trndi"
+msgstr ""
+
+#: trndi.strings.rs_update_check_failed
+msgid "Update check failed."
+msgstr ""
+
+#: trndi.strings.rs_history_no_readings_24h
+msgid "No readings returned for the last 24 hours."
+msgstr ""
+
+#: trndi.strings.rs_api_not_ready
+msgid "API not initialized yet."
+msgstr ""
+
+#: trndi.strings.rs_fullscreen_failed
+msgid "Unable to toggle fullscreen. Main window not found."
+msgstr ""
+
+#: trndi.strings.rs_float_unsupported
+msgid "Your widgetset does not support this feature, please use Qt."
+msgstr ""
+
+#: trndi.strings.rs_ext_invalid_manifest
+#, object-pascal-format
+msgid "Invalid extension manifest in %s:"
+msgstr ""
+
+#: trndi.strings.rs_tts_no_say
+msgid "TTS Error: /usr/bin/say not found"
+msgstr ""
+
+#: trndi.strings.rs_tts_no_engine
+msgid "Error: no TTS engine available. Install speech-dispatcher, espeak/espeak-ng or flite."
+msgstr ""
+
+#: trndi.strings.rs_tts_no_spd_say
+msgid "Error: spd-say is not installed. Please install speech-dispatcher."
+msgstr ""
 
 #: uconf.rs_alert_hysteresis_mgdl
 msgctxt "uconf.rs_alert_hysteresis_mgdl"

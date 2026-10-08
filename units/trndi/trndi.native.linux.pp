@@ -345,7 +345,7 @@ end;
 implementation
 
 uses
-LCLType;
+LCLType, trndi.strings;
 
 resourcestring
 RS_NOTICE_SHOW = 'Show Trndi';
@@ -2031,7 +2031,7 @@ begin
   begin
     if not ttsErrorShown then
     begin
-      ShowMessage('Error: spd-say is not installed. Please install speech-dispatcher.');
+      ShowMessage(RS_TTS_NO_SPD_SAY);
       ttsErrorShown := true;
     end;
     Exit;

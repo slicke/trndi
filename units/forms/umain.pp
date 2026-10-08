@@ -2662,7 +2662,7 @@ begin
   if Assigned(macWindow) then
     macWindow.toggleFullScreen(nil)
   else
-    ShowMessage('Unable to toggle fullscreen. Main window not found.');
+    ShowMessage(RS_FULLSCREEN_FAILED);
 end;
 {$endif}
 

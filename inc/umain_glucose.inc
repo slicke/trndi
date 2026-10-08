@@ -1746,7 +1746,7 @@ begin
 
   if api = nil then
   begin
-    ShowMessage('API not initialized yet.');
+    ShowMessage(RS_API_NOT_READY);
     Exit;
   end;
 

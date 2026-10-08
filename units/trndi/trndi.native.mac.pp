@@ -205,7 +205,7 @@ implementation
 uses
   // CGBase carries CGFloat, the type NSRect/NSSize are built from; CocoaAll
   // itself does not re-export it.
-  DateUtils, CGBase, Math, trndi.native.async;
+  DateUtils, CGBase, Math, trndi.native.async, trndi.strings;
 
 { Apple frameworks expect FP exceptions masked. When FPC adopts a GCD thread
   (first threadvar access -- e.g. the stack check in a Debug build's
@@ -626,7 +626,7 @@ begin
   begin
     if not ttsErrorShown then
     begin
-      ShowMessage('TTS Error: /usr/bin/say not found');
+      ShowMessage(RS_TTS_NO_SAY);
       ttsErrorShown := true;
     end;
     Exit;

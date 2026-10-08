@@ -154,7 +154,7 @@ begin
   {$ifdef DARWIN}
   // Add About menu item (standard on macOS)
   AboutMenu := TMenuItem.Create(self);
-  AboutMenu.Caption := 'About Trndi';
+  AboutMenu.Caption := RS_MENU_ABOUT;
   AboutMenu.OnClick := @ShowAboutDialog;
   AppMenu.Insert(0, AboutMenu);
 
@@ -185,12 +185,12 @@ begin
   {$ifdef DARWIN}
   // Add Check for Updates menu item
   CheckUpdatesMenu := TMenuItem.Create(self);
-  CheckUpdatesMenu.Caption := 'Check for Updates...';
+  CheckUpdatesMenu.Caption := RS_MENU_CHECK_UPDATES;
   CheckUpdatesMenu.OnClick := @CheckForUpdatesMenuClick;
   AppMenu.Insert(4, CheckUpdatesMenu);
 
   // On macOS, change "Exit Trndi" to "Quit Trndi" for consistency
-  miExit.Caption := 'Quit Trndi';
+  miExit.Caption := RS_QUIT;
   {$endif}
 
   helpmenu := TMenuItem.Create(self);
