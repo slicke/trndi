@@ -75,6 +75,10 @@
  *   placeForm had read the keys since forever but nothing ever wrote them.
  *   Esc leaves fullscreen instead of toggling it. Added FLastConnectionColor,
  *   FSnoozeBadgeShown and RefreshConnectionBadge for the snooze chip.
+ * - 2026-10-08: Added MacQueryEndSession, registered as an end-session
+ *   handler on macOS: the Dock menu's Quit arrives as an Apple Event that
+ *   LCL answered with a bare Application.Terminate, skipping FormClose and
+ *   its minimize-or-close prompt.
  * - 2026-09-17: FormClose re-arms the boot connect (ResumeBootAfterCancelledClose)
  *   when the quit prompt is declined, since the prompt runs with FShuttingDown
  *   raised and a boot worker finishing meanwhile aborted for good.
@@ -657,6 +661,10 @@ TfBG = class(TForm)
   {$ifdef DARWIN}
   procedure ShowAboutDialog({%H-}Sender: TObject);
   procedure CheckForUpdatesMenuClick({%H-}Sender: TObject);
+  {** Quit requests that arrive as an Apple Event (the Dock menu's Quit, a
+      quit sent by another app) go through Close here, so the user gets the
+      minimize-or-close prompt; Cancel is raised when they decline. }
+  procedure MacQueryEndSession(var Cancel: boolean);
   {$endif}
   procedure pnOffReadingPaint({%H-}Sender: TObject);
   procedure pmSettingsMeasureItem({%H-}Sender: TObject; ACanvas: TCanvas;
@@ -2016,6 +2024,10 @@ procedure TfBG.FormDestroy({%H-}Sender: TObject);
 begin
   // Ensure shutdown flag is set
   FShuttingDown := true;
+
+  {$ifdef DARWIN}
+  Application.RemoveOnQueryEndSessionHandler(@MacQueryEndSession);
+  {$endif}
 
   // Detach OS power-event hooks before we tear down `native` and before
   // the form's HWND/Cocoa peer goes away (Windows subclasses the WndProc,

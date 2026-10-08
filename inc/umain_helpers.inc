@@ -529,6 +529,32 @@ begin
   Application.MainForm.Show;
   Application.MainForm.BringToFront;
 end;
+
+{------------------------------------------------------------------------------
+  Quit from the Dock menu (and a "quit" sent by another app) reaches Trndi as
+  an Apple Event, not as a window close. LCL's Cocoa handler for it asks the
+  Application's end-session handlers and then calls Application.Terminate,
+  which tears the form down without ever running FormClose - so the
+  minimize-or-close prompt the close button shows was skipped and the app
+  just vanished. Run Close from here instead: the prompt appears, and when
+  the user picks Minimize or Cancel the form stays and the quit is cancelled.
+  A logout, restart or shutdown carries a reason parameter; those keep the
+  immediate quit, since a prompt there would only hold up the session end.
+ ------------------------------------------------------------------------------}
+procedure TfBG.MacQueryEndSession(var Cancel: boolean);
+var
+  event: NSAppleEventDescriptor;
+begin
+  if Cancel or Application.Terminated then
+    Exit;
+  event := NSAppleEventManager.sharedAppleEventManager.currentAppleEvent;
+  if (event <> nil) and (event.paramDescriptorForKeyword(kEventParamReason) <> nil) then
+    Exit;
+  Close;
+  // FormClose only terminates the application when the prompt was answered
+  // with Close; Minimize hides the window and Cancel leaves it as it was.
+  Cancel := not Application.Terminated;
+end;
 {$ENDIF}
 
 {------------------------------------------------------------------------------
