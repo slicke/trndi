@@ -439,7 +439,7 @@ begin
   dockMenu.addItem(NSMenuItem.separatorItem);
 
   // Add Quit item
-  menuTitle := 'Quit Trndi';
+  menuTitle := RS_QUIT;
   cfStr := CFStringCreateWithCString(nil, pchar(menuTitle), kCFStringEncodingUTF8);
   menuItem := NSMenuItem.alloc.initWithTitle_action_keyEquivalent(
     NSString(cfStr), sel_registerName('terminate:'), NSSTR('q'));

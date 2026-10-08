@@ -437,7 +437,7 @@ begin
       manifest := ParseExtManifest(string(fileSrc));
       if not manifest.IsValid then
       begin
-        ShowMessage('Invalid extension manifest in ' + ExtractFileName(extFile) + ':' +
+        ShowMessage(Format(RS_EXT_INVALID_MANIFEST, [ExtractFileName(extFile)]) +
           sLineBreak + manifest.ErrorMessage);
         Continue;
       end;

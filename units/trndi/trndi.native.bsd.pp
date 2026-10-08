@@ -101,7 +101,7 @@ implementation
 
 uses
   Classes, SysUtils, DateUtils, Forms, Dialogs, trndi.log, trndi.native.async,
-  trndi.native.wakebridge;
+  trndi.native.wakebridge, trndi.strings;
 
 {------------------------------------------------------------------------------
   BSD: TTS fallback + small helpers.
@@ -253,7 +253,7 @@ begin
   // No engine available — show a single error message to the user.
   if not ttsErrorShown then
   begin
-    ShowMessage('Error: no TTS engine available. Install speech-dispatcher, espeak/espeak-ng or flite.');
+    ShowMessage(RS_TTS_NO_ENGINE);
     ttsErrorShown := true;
   end;
 end;

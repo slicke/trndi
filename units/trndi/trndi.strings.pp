@@ -445,6 +445,19 @@ RS_WIZARD_PROGRESS_BODY =
   'You can change this later via right-click → Settings.';
 RS_WIZARD_PROGRESS_CHECK = 'Show the refresh countdown bar';
 
+RS_QUIT = 'Quit Trndi';
+RS_MENU_ABOUT = 'About Trndi';
+RS_MENU_CHECK_UPDATES = 'Check for Updates...';
+RS_UPDATE_CHECK_FAILED = 'Update check failed.';
+RS_HISTORY_NO_READINGS_24H = 'No readings returned for the last 24 hours.';
+RS_API_NOT_READY = 'API not initialized yet.';
+RS_FULLSCREEN_FAILED = 'Unable to toggle fullscreen. Main window not found.';
+RS_FLOAT_UNSUPPORTED = 'Your widgetset does not support this feature, please use Qt.';
+RS_EXT_INVALID_MANIFEST = 'Invalid extension manifest in %s:';
+RS_TTS_NO_SAY = 'TTS Error: /usr/bin/say not found';
+RS_TTS_NO_ENGINE = 'Error: no TTS engine available. Install speech-dispatcher, espeak/espeak-ng or flite.';
+RS_TTS_NO_SPD_SAY = 'Error: spd-say is not installed. Please install speech-dispatcher.';
+
 implementation
 
 end.
