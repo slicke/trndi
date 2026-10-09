@@ -38,6 +38,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs.
+ * - 2026-10-09: Follows a region redirect answered on the connections and
+ *   graph calls, not only on login.
  *)
 unit trndi.api.librelinkup;
 
@@ -180,6 +182,13 @@ type
         the rate-limit backoff, and re-authenticating once on a 401. }
     function FetchGraph(out ABody: string): boolean;
 
+    {** Act on a region redirect answered by a data endpoint. Returns True
+        when ABody was Abbott's redirect envelope. ARetry then says whether
+        the call can be repeated: True after the session has moved to the
+        named host (or the host was the one already in use), False when the
+        region is unknown or the re-login failed, with @code(errormsg) set. }
+    function FollowRedirect(const ABody, AWhere: string; out ARetry: boolean): boolean;
+
     {** Copy the alarm thresholds and target range out of a connection object
         into the inherited CGM threshold properties. }
     procedure ApplyThresholds(AConnection: TJSONObject);
@@ -258,6 +267,11 @@ function ParseLibreTime(const S: string; AsUTC: boolean; out ADate: TDateTime): 
 {** Resolve a region code from a login redirect to its API host; empty when the
     code is not one Trndi knows. Exposed for the test suite only. }
 function LibreRegionHost(const ACode: string): string;
+
+{** Recognise Abbott's redirect envelope -- a @code(data) object carrying
+    @code(redirect: true) and a @code(region) code -- in a response body.
+    ACode receives the region named. Exposed for the test suite only. }
+function LibreRedirectRegion(const ABody: string; out ACode: string): boolean;
 {$ENDIF}
 
 implementation
@@ -270,6 +284,8 @@ resourcestring
   sErrLLUPrivacy = 'LibreLinkUp needs you to accept its privacy policy. Open the LibreLinkUp app or LibreView website, accept it, then try again.';
   sErrLLUVerifyEmail = 'LibreLinkUp needs you to verify your email address. Check your inbox, verify the account, then try again.';
   sErrLLUUnknownRegion = 'LibreLinkUp redirected this account to an unknown region (%s).';
+  sErrLLURedirected = 'LibreLinkUp redirected this request to region %s instead of answering it.';
+  sErrLLURedirectLoop = 'LibreLinkUp keeps redirecting this account between regions.';
   sErrLLUNoPatients = 'No shared readings found. The person wearing the sensor must invite this account in the LibreLink app, and the invitation must be accepted.';
   sErrLLUNotAuthenticated = 'Not authenticated. Call Connect first.';
   sErrLLURateLimited = 'LibreLinkUp is rate-limiting this account; waiting before the next request.';
@@ -491,6 +507,48 @@ begin
   for i := Low(LLU_REGIONS) to High(LLU_REGIONS) do
     if LLU_REGIONS[i].code = wanted then
       Exit(LLU_REGIONS[i].url);
+end;
+
+{------------------------------------------------------------------------------
+  Recognise Abbott's redirect envelope in a response body.
+
+  Login answers it for accounts homed in another region, but the data
+  endpoints answer it too -- for an account that has moved, and now and then
+  as a transient bounce naming the very host the request went to. Either way
+  it arrives as HTTP 200 with no readings in it, so it has to be told apart
+  from a genuine payload before that is read.
+ ------------------------------------------------------------------------------}
+function LibreRedirectRegion(const ABody: string; out ACode: string): boolean;
+var
+  jsonData, dataObj: TJSONData;
+begin
+  Result := false;
+  ACode := '';
+
+  // A graph payload runs to a hundred kilobytes; skip parsing it twice when
+  // the marker is not even in the text
+  if Pos('redirect', ABody) = 0 then
+    Exit;
+
+  try
+    jsonData := GetJSON(ABody);
+  except
+    Exit;
+  end;
+
+  try
+    if not (jsonData is TJSONObject) then
+      Exit;
+    dataObj := TJSONObject(jsonData).Find('data');
+    if not (dataObj is TJSONObject) then
+      Exit;
+    if not TJSONObject(dataObj).Get('redirect', false) then
+      Exit;
+    ACode := TJSONObject(dataObj).Get('region', '');
+    Result := true;
+  finally
+    jsonData.Free;
+  end;
 end;
 
 {------------------------------------------------------------------------------
@@ -742,6 +800,43 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  Act on a region redirect answered by a data endpoint.
+
+  Abbott's tokens are issued per regional host, so a redirect to a different
+  host means starting a session there. A redirect to the host already in use
+  is a transient bounce on Abbott's side; the token is still good and the
+  call can simply be repeated.
+ ------------------------------------------------------------------------------}
+function LibreLinkUp.FollowRedirect(const ABody, AWhere: string; out ARetry: boolean): boolean;
+var
+  regionCode, newHost: string;
+begin
+  ARetry := false;
+  Result := LibreRedirectRegion(ABody, regionCode);
+  if not Result then
+    Exit;
+
+  log(Format('LibreLinkUp.%s: redirected to region %s', [AWhere, regionCode]));
+  newHost := LibreRegionHost(regionCode);
+  if newHost = '' then
+  begin
+    lastErr := Format(sErrLLUUnknownRegion, [regionCode]);
+    Exit;
+  end;
+
+  if SameText(newHost, FHost) then
+  begin
+    ARetry := true;
+    Exit;
+  end;
+
+  FHost := newHost;
+  FToken := '';
+  FTokenExpires := 0;
+  ARetry := Authenticate;
+end;
+
+{------------------------------------------------------------------------------
   GET llu/connections: the accounts sharing readings with this follower.
 
   Trndi shows one value, so we read the first share. A follower watching more
@@ -755,98 +850,119 @@ var
   root: TJSONObject;
   arr: TJSONArray;
   entry: TJSONObject;
+  attempt: integer;
+  redirected, retry: boolean;
 begin
   Result := false;
 
-  headers := BuildHeaders;
-  try
-    httpResponse := native.RequestExWait(false, FHost + '/llu/connections',
-      [], '', nil, true, 10, headers, false);
-  finally
-    headers.Free;
-  end;
-
-  try
-    log(Format('LibreLinkUp.SelectPatient: status=%d bytes=%d',
-      [httpResponse.StatusCode, Length(httpResponse.Body)]));
-
-    if (httpResponse.StatusCode < 200) or (httpResponse.StatusCode >= 300) or
-      (Trim(httpResponse.Body) = '') then
-    begin
-      lastErr := Format(sErrLLUHttp, [httpResponse.StatusCode]);
-      Exit;
-    end;
-
+  redirected := false;
+  for attempt := 1 to 2 do
+  begin
+    headers := BuildHeaders;
     try
-      jsonData := GetJSON(httpResponse.Body);
-    except
-      lastErr := sErrLLUBadResponse;
-      Exit;
-    end;
-
-    try
-      if not (jsonData is TJSONObject) then
-      begin
-        lastErr := sErrLLUBadResponse;
-        Exit;
-      end;
-      root := TJSONObject(jsonData);
-
-      if not (root.Find('data') is TJSONArray) then
-      begin
-        lastErr := sErrLLUNoPatients;
-        Exit;
-      end;
-      arr := TJSONArray(root.Find('data'));
-
-      if arr.Count = 0 then
-      begin
-        lastErr := sErrLLUNoPatients;
-        Exit;
-      end;
-
-      if not (arr[0] is TJSONObject) then
-      begin
-        lastErr := sErrLLUBadResponse;
-        Exit;
-      end;
-
-      // Taking the first share is deliberate, not a placeholder for a picker.
-      // A window shows one person at a time, so the supported way to follow a
-      // second person is a second LibreLinkUp account run as its own Trndi
-      // user -- that also keeps thresholds and alarms separate, which a picker
-      // on one account could not. See guides/LibreLinkUp.md ("Multiple
-      // people"). The notice below tells the user when the choice was made for
-      // them.
-      entry := TJSONObject(arr[0]);
-      FPatientId := entry.Get('patientId', '');
-      if FPatientId = '' then
-      begin
-        lastErr := sErrLLUNoPatients;
-        Exit;
-      end;
-
-      FPatientName := Trim(entry.Get('firstName', '') + ' ' + entry.Get('lastName', ''));
-      // Thresholds are on the connection object here too, so a follower who
-      // never reaches the graph call still gets sensible limits.
-      ApplyThresholds(entry);
-
-      log(Format('LibreLinkUp.SelectPatient: following %s (%s) of %d',
-        [FPatientName, FPatientId, arr.Count]));
-      // Name who was picked: the user is being told a choice was made for
-      // them, and without the name they cannot tell whether it was the right
-      // person -- nor act on the separate-account advice. Falls back to the id
-      // when Abbott sends a share with no name on it.
-      if arr.Count > 1 then
-        notice(Format(sLLUManyPatients, [arr.Count,
-          IfThen(FPatientName <> '', FPatientName, FPatientId)]));
-
-      Result := true;
+      httpResponse := native.RequestExWait(false, FHost + '/llu/connections',
+        [], '', nil, true, 10, headers, false);
     finally
-      jsonData.Free;
+      headers.Free;
     end;
-  finally
-    FreeResponse(httpResponse);
+
+    try
+      log(Format('LibreLinkUp.SelectPatient: status=%d bytes=%d attempt=%d',
+        [httpResponse.StatusCode, Length(httpResponse.Body), attempt]));
+
+      if (httpResponse.StatusCode < 200) or (httpResponse.StatusCode >= 300) or
+        (Trim(httpResponse.Body) = '') then
+      begin
+        lastErr := Format(sErrLLUHttp, [httpResponse.StatusCode]);
+        Exit;
+      end;
+
+      // This endpoint can answer with a region redirect too; follow it once
+      if FollowRedirect(httpResponse.Body, 'SelectPatient', retry) then
+      begin
+        if not retry then
+          Exit;
+        if redirected then
+        begin
+          lastErr := sErrLLURedirectLoop;
+          Exit;
+        end;
+        redirected := true;
+        Continue;
+      end;
+
+      try
+        jsonData := GetJSON(httpResponse.Body);
+      except
+        lastErr := sErrLLUBadResponse;
+        Exit;
+      end;
+
+      try
+        if not (jsonData is TJSONObject) then
+        begin
+          lastErr := sErrLLUBadResponse;
+          Exit;
+        end;
+        root := TJSONObject(jsonData);
+
+        if not (root.Find('data') is TJSONArray) then
+        begin
+          lastErr := sErrLLUNoPatients;
+          Exit;
+        end;
+        arr := TJSONArray(root.Find('data'));
+
+        if arr.Count = 0 then
+        begin
+          lastErr := sErrLLUNoPatients;
+          Exit;
+        end;
+
+        if not (arr[0] is TJSONObject) then
+        begin
+          lastErr := sErrLLUBadResponse;
+          Exit;
+        end;
+
+        // Taking the first share is deliberate, not a placeholder for a picker.
+        // A window shows one person at a time, so the supported way to follow a
+        // second person is a second LibreLinkUp account run as its own Trndi
+        // user -- that also keeps thresholds and alarms separate, which a picker
+        // on one account could not. See guides/LibreLinkUp.md ("Multiple
+        // people"). The notice below tells the user when the choice was made for
+        // them.
+        entry := TJSONObject(arr[0]);
+        FPatientId := entry.Get('patientId', '');
+        if FPatientId = '' then
+        begin
+          lastErr := sErrLLUNoPatients;
+          Exit;
+        end;
+
+        FPatientName := Trim(entry.Get('firstName', '') + ' ' + entry.Get('lastName', ''));
+        // Thresholds are on the connection object here too, so a follower who
+        // never reaches the graph call still gets sensible limits.
+        ApplyThresholds(entry);
+
+        log(Format('LibreLinkUp.SelectPatient: following %s (%s) of %d',
+          [FPatientName, FPatientId, arr.Count]));
+        // Name who was picked: the user is being told a choice was made for
+        // them, and without the name they cannot tell whether it was the right
+        // person -- nor act on the separate-account advice. Falls back to the id
+        // when Abbott sends a share with no name on it.
+        if arr.Count > 1 then
+          notice(Format(sLLUManyPatients, [arr.Count,
+            IfThen(FPatientName <> '', FPatientName, FPatientId)]));
+
+        Result := true;
+        Exit;
+      finally
+        jsonData.Free;
+      end;
+    finally
+      FreeResponse(httpResponse);
+    end;
   end;
 end;
 
@@ -854,7 +970,8 @@ end;
   GET the graph payload.
 
   Serves the cached body inside the fetch window, respects a rate-limit
-  backoff, and re-authenticates once if the token turns out to be dead.
+  backoff, re-authenticates once if the token turns out to be dead, and
+  follows one region redirect.
  ------------------------------------------------------------------------------}
 function LibreLinkUp.FetchGraph(out ABody: string): boolean;
 var
@@ -862,7 +979,7 @@ var
   httpResponse: THTTPResponse;
   retryAfterSec: integer;
   attempt: integer;
-  retried: boolean;
+  retried, redirected, retry: boolean;
 begin
   Result := false;
   ABody := '';
@@ -889,7 +1006,10 @@ begin
   end;
 
   retried := false;
-  for attempt := 1 to 2 do
+  redirected := false;
+  // Three tries: the first call, plus one repair each for a dead token and a
+  // region redirect
+  for attempt := 1 to 3 do
   begin
     headers := BuildHeaders;
     try
@@ -931,6 +1051,21 @@ begin
       begin
         lastErr := Format(sErrLLUHttp, [httpResponse.StatusCode]);
         Exit;
+      end;
+
+      // A redirect arrives as a 200 with no readings in it; it must neither
+      // be cached nor passed on as an empty payload
+      if FollowRedirect(httpResponse.Body, 'FetchGraph', retry) then
+      begin
+        if not retry then
+          Exit;
+        if redirected then
+        begin
+          lastErr := sErrLLURedirectLoop;
+          Exit;
+        end;
+        redirected := true;
+        Continue;
       end;
 
       ABody := httpResponse.Body;
@@ -1090,6 +1225,13 @@ begin
       Exit;
     end;
     dataObj := TJSONObject(root.Find('data'));
+
+    // A redirect envelope is not a payload with no readings in it
+    if dataObj.Get('redirect', false) then
+    begin
+      lastErr := Format(sErrLLURedirected, [dataObj.Get('region', '')]);
+      Exit;
+    end;
 
     conn := nil;
     if dataObj.Find('connection') is TJSONObject then

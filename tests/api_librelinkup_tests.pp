@@ -65,11 +65,13 @@ published
   procedure TestFixtureThresholdsApplied;
   procedure TestFixtureMaxCountCaps;
   procedure TestEmptyPayloadFails;
+  procedure TestRedirectPayloadFails;
   // Offline: helpers
   procedure TestTrendMapping;
   procedure TestTimeParsing;
   procedure TestTimeParsingRejectsGarbage;
   procedure TestRegionLookup;
+  procedure TestRedirectDetection;
   // Offline: guard rails
   procedure TestGetReadingsWithoutConnect;
   procedure TestConnectWithoutCredentials;
@@ -201,6 +203,19 @@ begin
   AssertTrue('Error message set', FApi.errormsg <> '');
 end;
 
+{ Abbott answers a region redirect as HTTP 200 with no readings in it. Treating
+  that as a payload with zero readings would hide a moved account for good. }
+procedure TAPILibreLinkUpTester.TestRedirectPayloadFails;
+var
+  readings: BGResults;
+begin
+  AssertFalse('Redirect envelope must not parse as a payload',
+    FApi.ParseGraphPayload('{"status":0,"data":{"redirect":true,"region":"eu"}}',
+    0, 0, readings));
+  AssertEquals('No readings from a redirect', 0, Length(readings));
+  AssertTrue('Error names the region', Pos('eu', FApi.errormsg) > 0);
+end;
+
 { Abbott reports five arrows and has no double-arrow state, so the mapping must
   never produce one. }
 procedure TAPILibreLinkUpTester.TestTrendMapping;
@@ -265,6 +280,28 @@ begin
     'https://api.libreview.ru', LibreRegionHost('ru'));
   AssertEquals('Unknown region yields no host', '', LibreRegionHost('atlantis'));
   AssertEquals('Empty region yields no host', '', LibreRegionHost(''));
+end;
+
+{ The redirect envelope has to be told apart from a genuine payload, and from
+  a payload that merely says "redirect": false. }
+procedure TAPILibreLinkUpTester.TestRedirectDetection;
+var
+  code: string;
+begin
+  AssertTrue('Redirect envelope recognised',
+    LibreRedirectRegion('{"status":0,"data":{"redirect":true,"region":"eu"}}', code));
+  AssertEquals('Region code extracted', 'eu', code);
+
+  AssertFalse('redirect:false is not a redirect',
+    LibreRedirectRegion('{"status":0,"data":{"redirect":false}}', code));
+  AssertEquals('No code without a redirect', '', code);
+
+  AssertFalse('Recorded payload is not a redirect',
+    LibreRedirectRegion(LoadFixture, code));
+  AssertFalse('Empty body is not a redirect', LibreRedirectRegion('', code));
+  AssertFalse('Garbage is not a redirect', LibreRedirectRegion('{"data": redirect', code));
+  AssertFalse('Redirect outside data is ignored',
+    LibreRedirectRegion('{"redirect":true,"region":"eu"}', code));
 end;
 
 { Without a patient there is nothing to request; getReadings must say so

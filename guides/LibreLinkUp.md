@@ -51,7 +51,9 @@ Right-click the reading (or the "Setup" text) → **Settings**, then:
 There is no region to choose. Abbott runs a server per region, and a login
 against the wrong one answers with the name of the right one — Trndi follows
 that automatically, whether the account lives in the EU, US, Japan, Australia
-or anywhere else Abbott operates.
+or anywhere else Abbott operates. Abbott occasionally answers a later data
+request with such a redirect too; Trndi moves to the named region and repeats
+the request, so a reading is at most one cycle late.
 
 ---
 
