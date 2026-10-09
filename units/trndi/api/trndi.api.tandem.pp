@@ -82,9 +82,13 @@ const
   TANDEM_REDIRECT_URI_EU = 'https://source.eu.tandemdiabetes.com/authorize/callback';
 
   TANDEM_BASE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36';
-  {** Event-id filter for the BFF pump-logs endpoint; mirrors the Tandem Source
-      web app's getLogIDList() as used by tconnectsync v3 }
-  TANDEM_SOURCE_DEFAULT_EVENT_IDS = '229,5,28,4,26,99,279,3,16,59,21,55,20,280,64,65,66,61,33,371,171,369,460,172,370,461,372,480,399,256,213,406,477,394,212,404,214,405,486,447,313,60,14,6,90,230,140,12,11,53,13,63,203,307,191';
+  {** Event-code filter for the BFF pump-logs endpoint. The first 64 codes
+      mirror the Tandem Source web app's own request (its getLogIDList(), as
+      tconnectsync v3.0.3 sends it). Codes 9, 34, 35 and 81 are added because
+      the driver reads reservoir, battery and basal from them and the server
+      has started honouring the filter. The query key is eventCodes: the old
+      eventIds has been rejected with HTTP 400 since 2026-10-01. }
+  TANDEM_SOURCE_DEFAULT_EVENT_CODES = '229,5,28,4,26,562,563,566,99,279,3,16,59,21,55,20,280,64,65,66,61,33,371,171,369,460,172,370,461,372,480,399,256,213,406,477,394,212,404,214,405,486,447,313,60,14,69,57,6,90,230,140,12,11,53,559,558,565,564,13,63,203,307,191,9,34,35,81';
   TANDEM_EPOCH = 1199145600;
 
 type
@@ -1346,7 +1350,7 @@ end;
   Census of a pump-logs payload: how many of each eventCode came back, and one
   whole sample event per code.
 
-  The driver reads only the four CGM event codes. Everything else the eventIds
+  The driver reads only the four CGM event codes. Everything else the eventCodes
   filter asks for -- boluses, carbohydrates, cartridge and battery events --
   arrives and is dropped, because Tandem does not publish the BFF's property
   names and we have never seen a real payload's non-CGM events. Guessing them
@@ -1354,7 +1358,7 @@ end;
   an account actually returns instead.
 
   One sample per code, not all of them: the number of codes is bounded by the
-  eventIds filter we send, so the output is bounded too, and the second event
+  eventCodes filter we send, so the output is bounded too, and the second event
   of a code says nothing the first did not.
 
   The samples are raw event objects, so they carry that account's glucose,
@@ -1977,7 +1981,7 @@ var
     sourceUrl: string;
     minDateStr: string;
     maxDateStr: string;
-    eventIdsParam: string;
+    eventCodesParam: string;
     jsonData: TJSONData;
     eventsArr: TJSONArray;
     eventObj: TJSONObject;
@@ -2005,7 +2009,7 @@ var
 
     minDateStr := FormatDateTime('yyyy-mm-dd', DateOf(startDate));
     maxDateStr := FormatDateTime('yyyy-mm-dd', DateOf(endDate));
-    eventIdsParam := StringReplace(TANDEM_SOURCE_DEFAULT_EVENT_IDS, ',', '%2C', [rfReplaceAll]);
+    eventCodesParam := StringReplace(TANDEM_SOURCE_DEFAULT_EVENT_CODES, ',', '%2C', [rfReplaceAll]);
 
     // BFF pump-logs endpoint (replaces the retired reportsfacade/pumpevents).
     // The server caps each request at roughly four weeks; Trndi never asks
@@ -2014,7 +2018,7 @@ var
       + '?pumperId=' + FPumperId
       + '&startDate=' + minDateStr + 'T00%3A00%3A00Z'
       + '&endDate=' + maxDateStr + 'T23%3A59%3A59Z'
-      + '&eventIds=' + eventIdsParam;
+      + '&eventCodes=' + eventCodesParam;
 
     sourceHeaders := TStringList.Create;
     try
@@ -2045,7 +2049,7 @@ var
           + '?pumperId=' + FPumperId
           + '&startDate=' + minDateStr + 'T00%3A00%3A00Z'
           + '&endDate=' + maxDateStr + 'T23%3A59%3A59Z'
-          + '&eventIds=' + eventIdsParam;
+          + '&eventCodes=' + eventCodesParam;
         sourceHeaders[0] := 'Authorization: Bearer ' + FAccessToken;
         sourceResponse := native.RequestExWait(false, sourceUrl, [], '', nil, true, 10, sourceHeaders, false);
         log(Format('Tandem.GetReadings: pump-logs retry status=%d bytes=%d',
