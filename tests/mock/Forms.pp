@@ -38,6 +38,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-21: TForm gained Scale96ToForm (1:1) and the AlphaBlend pair,
  *   needed by the reworked splash screen.
+ * - 2026-10-09: TApplication gained no-op Add/RemoveOnQueryEndSessionHandler
+ *   so umain's end-session hook compiles headless.
  *)
 unit Forms;
 
@@ -110,6 +112,7 @@ type
 
   TExceptionEvent = procedure(Sender: TObject; E: Exception) of object;
   TDataEvent = procedure(Data: PtrInt) of object;
+  TQueryEndSessionEvent = procedure(var Cancel: Boolean) of object;
 
   TApplication = class(TComponent)
   private
@@ -142,6 +145,9 @@ type
     procedure BringToFront; virtual;
     procedure QueueAsyncCall(const AMethod: TDataEvent; Data: PtrInt); virtual;
     procedure RemoveAsyncCalls(const AnObject: TObject); virtual;
+    procedure AddOnQueryEndSessionHandler(Handler: TQueryEndSessionEvent;
+      AsFirst: Boolean = true); virtual;
+    procedure RemoveOnQueryEndSessionHandler(Handler: TQueryEndSessionEvent); virtual;
   end;
 
 var
@@ -187,6 +193,18 @@ procedure TApplication.RemoveAsyncCalls(const AnObject: TObject);
 begin
   // no-op in test environment — QueueAsyncCall drops calls, so there is
   // never anything queued to remove.
+end;
+
+procedure TApplication.AddOnQueryEndSessionHandler(Handler: TQueryEndSessionEvent;
+  AsFirst: Boolean);
+begin
+  // no-op in test environment — nothing ends a session headless, so the
+  // handler would never fire.
+end;
+
+procedure TApplication.RemoveOnQueryEndSessionHandler(Handler: TQueryEndSessionEvent);
+begin
+  // no-op in test environment — see AddOnQueryEndSessionHandler.
 end;
 
 function TForm.HandleAllocated: Boolean;
