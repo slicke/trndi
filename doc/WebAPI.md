@@ -379,7 +379,7 @@ Returns the settings the dashboard can change, plus the effective limits. All gl
     "range": false, "range_lo": 80, "range_hi": 160
   },
   "thresholds": { "lo": 70, "hi": 180, "range_lo": null, "range_hi": null },
-  "snooze": { "active": false, "until_utc": "" },
+  "snooze": { "active": false, "until_utc": "", "partial": false, "kinds": [] },
   "writable": true
 }
 ```
@@ -390,7 +390,7 @@ Returns the settings the dashboard can change, plus the effective limits. All gl
 - `user`: The account's name in multi-user mode, `null` otherwise; the dashboard puts it in its heading
 - `override`: The stored personal limits. `enabled` switches the custom high/low limits (`lo`, `hi`) on; `range` switches the custom in-range band (`range_lo`, `range_hi`) on. While an override is off its values show what the page would start from (the effective limits)
 - `thresholds`: The limits readings are classified against right now (the backend's, or the override when enabled). `range_lo`/`range_hi` are `null` when no band applies
-- `snooze`: The alert-snooze state, as the `snooze` event carries it
+- `snooze`: The alert-snooze state. `active` is true while any alert is snoozed, `until_utc` when the last of them ends, `partial` whether the high/low/missing set is only partly muted (one kind snoozed from the desktop menu, say), and `kinds` which kinds are snoozed
 - `writable`: Whether this client may `POST` (see [Who may change settings](#who-may-change-settings))
 
 **Status Codes:**
@@ -423,7 +423,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"minutes":30}' http://loca
 ```
 
 ```json
-{ "snooze": { "active": true, "until_utc": "2026-09-29T09:35:00Z" } }
+{ "snooze": { "active": true, "until_utc": "2026-09-29T09:35:00Z", "partial": false, "kinds": ["high", "low", "missing"] } }
 ```
 
 Same status codes as `POST /settings`. Both `POST` endpoints read the body up to the announced `Content-Length`; the whole request (headers and body) is capped at 16 KB.
@@ -459,7 +459,7 @@ data: { "kinds" : ["low"], "reading" : { ... }, "time_utc" : "2026-09-12T08:05:0
 | `reading` | A fresh reading was applied | The same object `/glucose` returns for the newest reading |
 | `status` | Freshness or connectivity changed | `fresh` (data is current), `connected` (last fetch returned data), `detail` (last error text) |
 | `alert` | The alert engine fired | `kinds`: one or more of `high`, `low`, `urgent_low`, `missing`, `sensor_fault`, `rapid_fall`, `rapid_rise`; `reading`; `time_utc` |
-| `snooze` | Alerts were snoozed or resumed | `active`, `until_utc` |
+| `snooze` | Alerts were snoozed or resumed | `active`, `until_utc`, `partial` (only some of high/low/missing are muted) |
 | `predict` | The forecast was recomputed (or cleared) | `predictions`: array of reading objects |
 
 `reading`, `status`, `snooze` and `predict` describe state: a new subscriber is sent the latest of each as a snapshot right after connecting, and an unchanged state is never resent. `alert` marks a moment and repeats whenever the engine re-fires.

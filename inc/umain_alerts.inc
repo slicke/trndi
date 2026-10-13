@@ -214,24 +214,28 @@ end;
 // The chip and the menu caption used to say "Snoozed until" for any snooze at
 // all. With one kind paused on its own that overstated it: a muted warm-up
 // toast is not a muted low.
-function TfBG.SnoozeStatusText: string;
+function TfBG.SnoozeIsPartial: boolean;
 const
   // The kinds the global snooze is about; urgent low is capped and may have
   // come back already without that making the pause "partial".
   WHOLE_SET = [akHigh, akLow, akMissing];
+begin
+  Result := Assigned(FAlertEngine) and
+    (WHOLE_SET * FAlertEngine.SnoozedKinds <> WHOLE_SET);
+end;
+
+function TfBG.SnoozeStatusText: string;
 var
-  snoozed: TAlertKindSet;
   untilText: string;
 begin
   Result := '';
   if not AlertsSnoozed then
     Exit;
-  snoozed := FAlertEngine.SnoozedKinds;
   untilText := FormatDateTime('hh:nn', FAlertEngine.ActiveSnoozeUntil);
-  if WHOLE_SET * snoozed = WHOLE_SET then
-    Result := Format(RS_ALERT_SNOOZE_ACTIVE, [untilText])
+  if SnoozeIsPartial then
+    Result := Format(RS_ALERT_SNOOZE_PARTIAL, [untilText])
   else
-    Result := Format(RS_ALERT_SNOOZE_PARTIAL, [untilText]);
+    Result := Format(RS_ALERT_SNOOZE_ACTIVE, [untilText]);
 end;
 
 function TfBG.AddKindSnoozeMenu(const AKind: TAlertKind; const ACaption: string): TMenuItem;

@@ -719,6 +719,7 @@ private
   {** "Snoozed until hh:mm" when the whole set is paused, "Some alerts snoozed
       until hh:mm" when only some kinds are, '' when nothing is. }
   function SnoozeStatusText: string;
+  function SnoozeIsPartial: boolean;
   function ClassifyConnectionStatus(const ErrorText: string): string;
   procedure SetConnectionBadge(const StatusText: string; const BadgeColor: TColor);
   procedure RefreshConnectionBadge;

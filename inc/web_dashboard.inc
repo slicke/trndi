@@ -285,7 +285,7 @@ WEB_DASHBOARD_HTML =
   '  if(r.status===501){hasApi=false;return null}' + LineEnding +
   '  return r.ok?r.json():null}).then(function(s){if(s){$("settingsCard").classList.remove("hidden");applySettings(s)}}).catch(function(){})' + LineEnding +
   '}' + LineEnding +
-  'function showSnooze(s){$("snooze").textContent=s.active?"Snoozed until "+hhmm(s.until_utc):"Alerts active"}' + LineEnding +
+  'function showSnooze(s){$("snooze").textContent=s.active?(s.partial?"Some alerts snoozed until ":"Snoozed until ")+hhmm(s.until_utc):"Alerts active"}' + LineEnding +
   'function connect(){' + LineEnding +
   ' if(es)es.close();' + LineEnding +
   ' es=new EventSource("/events"+(token?"?token="+encodeURIComponent(token):""));' + LineEnding +
