@@ -1855,7 +1855,10 @@ begin
   end;
 
   FApiCallInFlight := true;
-  if Assigned(miReadingsSince) then
+  // The date picker is greyed while a fetch the user asked for runs; the
+  // background refill is nothing they can see, so it leaves the menu alone
+  // (a click during it is dropped by the in-flight guard, as before).
+  if Assigned(miReadingsSince) and (Mode <> hfmCache) then
     miReadingsSince.Enabled := false;
 
   TrndiDLog(Format('RequestHistoryFetch: starting worker (minutes=%d, max=%d, mode=%d)',
@@ -1913,6 +1916,7 @@ end;
 procedure TfBG.StoreHistoryCache(const Readings: BGResults);
 var
   i, n: integer;
+  retryAt: TDateTime;
 begin
   n := 0;
   for i := 0 to High(Readings) do
@@ -1922,9 +1926,12 @@ begin
   begin
     // Keep what there is and try again in a few minutes rather than on
     // every poll - a backend that answers the day fetch with nothing is
-    // more likely down than empty.
-    if FHistoryCacheAt = 0 then
-      FHistoryCacheAt := IncMinute(Now, -(HISTORY_CACHE_MINUTES - 5));
+    // more likely down than empty. Applies to a stale cache as much as to
+    // an empty one: left at its old stamp, RefreshHistoryCache would fire
+    // the day fetch again on the very next poll.
+    retryAt := IncMinute(Now, -(HISTORY_CACHE_MINUTES - 5));
+    if FHistoryCacheAt < retryAt then
+      FHistoryCacheAt := retryAt;
     Exit;
   end;
   SetLength(FHistoryCache, n);

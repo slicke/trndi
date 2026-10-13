@@ -652,9 +652,16 @@ begin
       FOwner.StoreHistoryCache(FResults);
       Exit;
     end;
-    // A full day fetched for the menu is as good as a refill.
+    // A full day fetched for the menu is as good as a refill, and the graph
+    // then shows the same merge (live poll first, the day behind it) a later
+    // click would: a day fetch served from a backend cache can trail the
+    // poll by a reading, and an empty one is no reason for a dialog while
+    // the poll has readings to show.
     if FMode = hfm24h then
+    begin
       FOwner.StoreHistoryCache(FResults);
+      FResults := FOwner.HeldReadings;
+    end;
 
     if Length(FResults) = 0 then
     begin

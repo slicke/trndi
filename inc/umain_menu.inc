@@ -175,14 +175,17 @@ begin
   AGraph.SetCarbOverlayEnabled(true);
 end;
 
+// The graph takes the prediction TPredictionThread last stored, never a
+// fresh api.predictReadings: that is a synchronous getReadings on the main
+// thread (the web API's /history.png reaches here from Synchronize, the
+// menu from a click), and it would share the api object with whatever
+// worker is in flight. An empty cache simply means no overlay this time.
 procedure TfBG.AutoAddPredictionOverlay(AGraph: TfHistoryGraph);
-var
-  predictions: BGResults;
 begin
   if (api = nil) or (AGraph = nil) then
     Exit;
-  if api.predictReadings(6, predictions) then
-    AGraph.SetPredictions(predictions);
+  if Length(PredictionCache) > 0 then
+    AGraph.SetPredictions(PredictionCache);
 end;
 
 procedure TfBG.miDNSClick(Sender: TObject);
