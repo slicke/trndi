@@ -530,11 +530,9 @@ begin
   // 10) Convert milliseconds to TDateTime (UnixToDateTime expects seconds).
   UTCDateTime := UnixToDateTime(ServerEpoch div 1000);
 
-  // 11) Compute timeDiff as the difference between server UTC and local UTC.
-  //     This accounts for clock skew only (timezone offset handled separately)
-  TimeDiff := Round((UTCDateTime - LocalTimeToUniversal(Now)) * 86400);
-  // Set tz so JSToDateTime applies the correction to reading timestamps
-  tz := TimeDiff;
+  // 11) Calibrate against the server clock (timeDiff and tz); a difference
+  //     of hours is the server's clock being wrong and is dropped.
+  calibrateClock(UTCDateTime);
 
   Result := true;
 end;

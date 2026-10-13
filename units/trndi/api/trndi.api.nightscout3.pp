@@ -1055,10 +1055,9 @@ begin
   begin
     // Interpret serverEpoch as UTC
     UTCDateTime := UnixToDateTime(serverEpoch div 1000, True);
-    // Calculate time difference: server UTC time minus local UTC time (accounts for clock skew only)
-    timeDiff := Round((UTCDateTime - LocalTimeToUniversal(Now)) * 86400);
-    // Set tz so JSToDateTime applies the correction to reading timestamps (seconds)
-    tz := timeDiff;
+    // Calibrate against the server clock (timeDiff and tz); a difference of
+    // hours is the server's clock being wrong and is dropped
+    calibrateClock(UTCDateTime);
 
     // Debug: log calibration values to help diagnose timezone/sign issues
     {$ifdef DEBUG}
