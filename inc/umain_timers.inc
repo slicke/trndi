@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-13: tAgoTimer takes the reading's age as a signed difference, so
+ *   a future-stamped reading clamps to zero instead of showing overdue.
  * - 2026-09-27: DeltaChevronShown is false for a flat rate, so the delta
  *   keeps its sign instead of a dash that read as a minus.
  * - 2026-09-25: The delta label is laid out by LayoutDeltaPill under the
@@ -201,7 +203,10 @@ begin
   try
     d := lastReading.date;
     showTimestamp := native.GetBoolSetting('display.timestamp');
-    min := MilliSecondsBetween(Now, d) div MILLIS_PER_MINUTE;
+    // Signed, as in umain_paint: MilliSecondsBetween is Abs()-based, so a
+    // reading stamped a few minutes ahead of this clock read as that many
+    // minutes old and lit the overdue badge. Future ages clamp to zero.
+    min := Round((Now - d) * MSecsPerDay) div MILLIS_PER_MINUTE;
     if min < 0 then
       min := 0;
 
