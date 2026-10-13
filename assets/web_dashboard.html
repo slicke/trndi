@@ -41,6 +41,7 @@
  *   with a shared time-window picker; both follow each new reading.
  * - 2026-10-07: The History card asks /history.png for the page's own
  *   appearance (theme=dark or light).
+ * - 2026-10-13: The heading shows the account name from /settings (multi-user).
  -->
 <!doctype html>
 <html lang="en">
@@ -101,7 +102,7 @@ a{color:var(--accent)}
 </style>
 </head>
 <body>
-<header><h1>Trndi</h1><span id="conn" class="chip">Connecting</span></header>
+<header><h1 id="title">Trndi</h1><span id="conn" class="chip">Connecting</span></header>
 <main>
 <section id="auth" class="card hidden">
 <h2>Access token</h2>
@@ -262,6 +263,8 @@ function loadReadings(){
 }
 function applySettings(s){
  settings=s;unit=s.unit==="mgdl"?"mgdl":"mmol";
+ // Multi-user: name the account in the heading; single-user keeps "Trndi".
+ $("title").textContent=s.user?s.user:"Trndi";
  var f=$("settings");
  f.unit.value=unit;f.ov.checked=!!s.override.enabled;f.rg.checked=!!s.override.range;f.pred.checked=!!s.predictions;
  f.lo.value=toUnit(s.override.lo);f.hi.value=toUnit(s.override.hi);f.rlo.value=toUnit(s.override.range_lo);f.rhi.value=toUnit(s.override.range_hi);

@@ -41,6 +41,7 @@
 // *   with a shared time-window picker; both follow each new reading.
 // * - 2026-10-07: The History card asks /history.png for the page's own
 // *   appearance (theme=dark or light).
+// * - 2026-10-13: The heading shows the account name from /settings (multi-user).
 //
 //
 // GENERATED FILE - do not edit. Source: assets/web_dashboard.html;
@@ -108,7 +109,7 @@ WEB_DASHBOARD_HTML =
   '</style>' + LineEnding +
   '</head>' + LineEnding +
   '<body>' + LineEnding +
-  '<header><h1>Trndi</h1><span id="conn" class="chip">Connecting</span></header>' + LineEnding +
+  '<header><h1 id="title">Trndi</h1><span id="conn" class="chip">Connecting</span></header>' + LineEnding +
   '<main>' + LineEnding +
   '<section id="auth" class="card hidden">' + LineEnding +
   '<h2>Access token</h2>' + LineEnding +
@@ -270,6 +271,8 @@ WEB_DASHBOARD_HTML =
   '}' + LineEnding +
   'function applySettings(s){' + LineEnding +
   ' settings=s;unit=s.unit==="mgdl"?"mgdl":"mmol";' + LineEnding +
+  ' // Multi-user: name the account in the heading; single-user keeps "Trndi".' + LineEnding +
+  ' $("title").textContent=s.user?s.user:"Trndi";' + LineEnding +
   ' var f=$("settings");' + LineEnding +
   ' f.unit.value=unit;f.ov.checked=!!s.override.enabled;f.rg.checked=!!s.override.range;f.pred.checked=!!s.predictions;' + LineEnding +
   ' f.lo.value=toUnit(s.override.lo);f.hi.value=toUnit(s.override.hi);f.rlo.value=toUnit(s.override.range_lo);f.rhi.value=toUnit(s.override.range_hi);' + LineEnding +
