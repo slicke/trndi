@@ -343,6 +343,11 @@ begin
   RefreshKindMenu(miSnoozeLow);
 end;
 
+// The badge's "Auth expired" versus "Retrying". The backend's own verdict
+// (TrndiAPI.setUserError) is read first, which is what makes a translated
+// rejection classify; the text is compared so that an error the api has
+// since replaced falls through to the keyword sieve instead of borrowing
+// the newer one's mark.
 function TfBG.ClassifyConnectionStatus(const ErrorText: string): string;
 var
   s: string;
@@ -350,6 +355,9 @@ begin
   s := LowerCase(Trim(ErrorText));
   if s = '' then
     Exit(RS_CONN_RETRYING);
+
+  if Assigned(api) and api.errorNeedsUser and (api.errormsg = ErrorText) then
+    Exit(RS_CONN_AUTH_EXPIRED);
 
   if (Pos('429', s) > 0) or (Pos('rate', s) > 0) or (Pos('too many', s) > 0) then
     Exit(RS_CONN_RATE_LIMITED);
