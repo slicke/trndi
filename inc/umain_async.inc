@@ -47,6 +47,8 @@
  *   day-long reading cache instead of opening the graph, and a menu-driven
  *   day fetch refills the cache too; the glucose and prediction workers
  *   queue a cache refresh when they finish.
+ * - 2026-10-13: The prediction worker queues that refresh even when the
+ *   prediction failed or its reading is stale, not only on success.
  *)
 (* Async helpers: thread implementations moved out of umain_helpers.inc
    This include defines background worker threads used by the main form.
@@ -324,6 +326,12 @@ begin
   if FOwner.FShuttingDown then
     Exit;
 
+  // The cache refresh the glucose worker queued is dropped while this
+  // worker runs, so queue it again now that it is done - whatever the
+  // outcome: a predictor that keeps failing would otherwise starve the
+  // cache on every poll. RefreshHistoryCache has its own guards.
+  Application.QueueAsyncCall(@FOwner.DeferredHistoryCacheRefresh, 0);
+
   if FOwner.lastReading.date <> FPredictionLastReadingTime then
     Exit;
 
@@ -335,9 +343,6 @@ begin
   PredictionLastReadingTime := FOwner.lastReading.date;
   PredictionConfidence := FConfidence;
   FOwner.RenderPredictionCache(FPreds);
-  // The cache refresh the glucose worker queued is dropped while this
-  // worker runs, so queue it again now that it is done.
-  Application.QueueAsyncCall(@FOwner.DeferredHistoryCacheRefresh, 0);
 end;
 
 procedure TPredictionThread.Execute;
