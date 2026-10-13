@@ -417,7 +417,7 @@ begin
     begin
       Result := false;
       if Pos('AccountPassword', LAccountID) > 0 then
-        lastErr := sErrDexPass + ' (Dex1)'
+        setUserError(sErrDexPass + ' (Dex1)')
       else
         lastErr := sErrDexLogin + ' (Dex1a): ' + LAccountID;
       Exit;
@@ -451,7 +451,7 @@ begin
   if DexcomAuthFailureMessage(resp, LAuthErr) then
   begin
     Result := false;
-    lastErr := LAuthErr + ' (Dex1)';
+    setUserError(LAuthErr + ' (Dex1)');
     Exit;
   end;
 
@@ -468,7 +468,7 @@ begin
   if Pos('AccountPassword', FSessionID) > 0 then
   begin
     Result := false;
-    lastErr := sErrDexPass + ' (Dex1)';
+    setUserError(sErrDexPass + ' (Dex1)');
     Exit;
   end;
 
@@ -478,10 +478,10 @@ begin
     Result := false;
     // Null GUID indicates authentication rejection (not wrong password)
     if FSessionID = DEXCOM_NULL_UUID then
-      lastErr := 'Dexcom authentication rejected. Possible causes: ' +
+      setUserError('Dexcom authentication rejected. Possible causes: ' +
         '1) Wrong region (try using another region), ' +
         '2) Dexcom Share not enabled in official app, ' +
-        '3) Account requires action in official Dexcom app. (Dex2)'
+        '3) Account requires action in official Dexcom app. (Dex2)')
     else
       lastErr := sErrDexLogin + ' (Dex2): Received invalid session ID: ' + FSessionID;
     Exit;

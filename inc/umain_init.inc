@@ -1396,7 +1396,9 @@ begin
   // Wi-Fi that is not up yet at login, a DNS hiccup, a server mid-restart:
   // none of these are the user's to fix, and the dialog-Settings-quit flow
   // below closed Trndi over them. Keep the window up and try again instead.
-  if IsRetryableBootError(FBootConnectError) then
+  // The backend's own verdict (a rejected login, a bad address) wins; the
+  // keyword sieve only covers drivers that have not given one.
+  if (not FBootConnectNeedsUser) and IsRetryableBootError(FBootConnectError) then
   begin
     BeginBootRetry(FBootConnectError);
     Exit;

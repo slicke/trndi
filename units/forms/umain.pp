@@ -232,6 +232,7 @@ private
   FConnectFirst: boolean; // Run api.Connect before the fetch (boot only)
   FConnectOK: boolean;
   FConnectErr: string;
+  FConnectNeedsUser: boolean;
   FAbortFetch: boolean;   // Set on the main thread inside ApplyConnectResult;
                           // api may be replaced afterwards, so the worker
                           // must unwind without touching it again
@@ -779,6 +780,8 @@ private
                                 // fetch may use the backend until then.
   FBootConnectError: string;    // Connect failure text handed from the worker
                                 // to DeferredBootConnectFailure.
+  FBootConnectNeedsUser: boolean; // ..and whether the backend called it the
+                                // user's to fix (TrndiAPI.errorNeedsUser)
   FBootFetchAttempts: integer;  // tBootFetch ticks since the last ArmBootFetch
   FBootRetryPending: boolean;   // A transient boot Connect failure is counting
                                 // down to its next attempt (card on screen).

@@ -970,7 +970,7 @@ begin
   // 0) Quick sanity check on URL; avoids a network round-trip on obvious mistakes.
   if Copy(FSiteBase, 1, 4) <> 'http' then
   begin
-    lastErr := 'Invalid address. Must start with http:// or https://!';
+    setUserError('Invalid address. Must start with http:// or https://!');
     Exit;
   end;
 
@@ -1007,7 +1007,7 @@ begin
   if Pos('Unau', resp) > 0 then
     if not TrndiNative.getURL(FSiteBase + '/api/v1/status.json', resp) then
     begin
-      lastErr := 'Unauthorized: invalid or expired token';
+      setUserError('Unauthorized: invalid or expired token');
       Exit;
     end// Fallback to v1 status.json (some setups may allow public status)
   ;

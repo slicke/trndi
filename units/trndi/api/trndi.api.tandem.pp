@@ -1098,8 +1098,8 @@ begin
         log('Tandem.Connect: auth response headers (preview): <nil>');
       if locationHeader <> '' then
         log('Tandem.Connect: auth response Location=' + locationHeader);
-      lastErr := 'Failed to extract authorization code from redirect. ' +
-        'Check credentials or see redirect URL: ' + httpResponse.FinalURL;
+      setUserError('Failed to extract authorization code from redirect. ' +
+        'Check credentials or see redirect URL: ' + httpResponse.FinalURL);
       httpResponse.Headers.Free;
       httpResponse.Cookies.Free;
       Exit;

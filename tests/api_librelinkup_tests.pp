@@ -325,6 +325,7 @@ begin
   try
     AssertFalse('Connect must fail without an email', api.connect);
     AssertTrue('Error message set', api.errormsg <> '');
+    AssertTrue('Missing email is the user''s to fix, not a retry', api.errorNeedsUser);
   finally
     api.Free;
   end;
@@ -333,6 +334,7 @@ begin
   try
     AssertFalse('Connect must fail without a password', api.connect);
     AssertTrue('Error message set', api.errormsg <> '');
+    AssertTrue('Missing password is the user''s to fix, not a retry', api.errorNeedsUser);
   finally
     api.Free;
   end;

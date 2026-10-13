@@ -390,6 +390,7 @@ begin
   FConnectFirst := ConnectFirst;
   FConnectOK := false;
   FConnectErr := '';
+  FConnectNeedsUser := false;
   FAbortFetch := false;
   FErrorMsg := '';
   SetLength(FResults, 0);
@@ -418,7 +419,10 @@ begin
         try
           FConnectOK := api.Connect;
           if not FConnectOK then
+          begin
             FConnectErr := api.errormsg;
+            FConnectNeedsUser := api.errorNeedsUser;
+          end;
         except
           on E: Exception do
           begin
@@ -508,6 +512,7 @@ begin
   if Assigned(native) then
     native.updateDone;
   FOwner.FBootConnectError := FConnectErr;
+  FOwner.FBootConnectNeedsUser := FConnectNeedsUser;
   Application.QueueAsyncCall(@FOwner.DeferredBootConnectFailure, 0);
 end;
 

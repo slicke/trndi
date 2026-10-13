@@ -102,6 +102,7 @@ begin
   try
     AssertFalse('Connect must fail without token data', api.connect);
     AssertTrue('Error message mentions CareLink', Pos('CareLink', api.errormsg) > 0);
+    AssertTrue('Missing token data is the user''s to fix, not a retry', api.errorNeedsUser);
   finally
     api.Free;
   end;
@@ -507,6 +508,8 @@ begin
       AssertFalse('Connect fails when the data endpoint keeps erroring', api.connect);
       AssertTrue('Error message carries the HTTP status',
         Pos('HTTP 500', api.errormsg) > 0);
+      AssertFalse('A server error is transient, not the user''s to fix',
+        api.errorNeedsUser);
     finally
       api.Free;
     end;

@@ -176,6 +176,10 @@ APIParamLabel = (APLUser, APLPass, APLDesc, APLDescHTML, APLCopyright);
   See also: BGReading, BGResults, BGValLevel.
    }
 TrndiAPI = class
+private
+  FLastErr: string;
+  FLastErrNeedsUser: boolean;
+  procedure setLastErr(const msg: string);
 protected
     /// Time difference in seconds used to adjust clock skew vs. data source.
   timeDiff: integer;
@@ -191,9 +195,6 @@ protected
 
     /// Base URL for the API endpoint (subclasses typically set this).
   baseUrl: string;
-
-    /// Last error message reported by operations in this instance.
-  lastErr: string;
 
     /// Wall-clock time when the most recent non-empty BGResults arrived via
     /// @code(noteReadings). Used by @code(checkActive) so the @code(active)
@@ -269,9 +270,16 @@ protected
      }
   function checkActive: boolean;
 
+protected
+    /// Last error message reported by operations in this instance. A plain
+    /// assignment marks it as possibly transient; @code(setUserError) marks
+    /// it as something only the user can put right.
+  property lastErr: string read FLastErr write setLastErr;
 
-
-
+    {** Record an error that retrying cannot cure - rejected credentials, a
+        malformed address, missing token data - so the caller can stop
+        trying rather than hammer a backend with the same bad login. }
+  procedure setUserError(const msg: string);
 private
   emitter: TTrndiAPIEmitter;
   credsEmitter: TTrndiCredentialsChanged;
@@ -662,7 +670,11 @@ published
   property timezone: integer write setTZ;
 
     /// Last error message produced by operations on this instance.
-  property errormsg: string read lastErr;
+  property errormsg: string read FLastErr;
+
+    /// True when @code(errormsg) is the user's to fix (credentials, address,
+    /// token data) rather than a network or server condition worth retrying.
+  property errorNeedsUser: boolean read FLastErrNeedsUser;
 
     /// True when the last predictReadings call found a flat, non-accelerating
     /// trend — the UI can substitute a "no change" label instead of showing
@@ -696,6 +708,20 @@ end;
   TrndiAPIClass = class of TrndiAPI;
 
 implementation
+
+// Every plain write clears the user-must-fix mark, so a later transient
+// failure on the same object is never mistaken for the earlier rejection.
+procedure TrndiAPI.setLastErr(const msg: string);
+begin
+  FLastErr := msg;
+  FLastErrNeedsUser := false;
+end;
+
+procedure TrndiAPI.setUserError(const msg: string);
+begin
+  FLastErr := msg;
+  FLastErrNeedsUser := true;
+end;
 
 procedure TrndiAPI.setEmitter(e: TTrndiAPIEmitter);
 begin
