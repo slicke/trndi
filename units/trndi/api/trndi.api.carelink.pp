@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-13: A 429 on the token refresh is a transient error, not a
+ *   rejected login: it no longer asks the user to fix the account.
  * - 2026-08-16: Uses trndi.funcs.core (UI-free helper split) instead of
  *   trndi.funcs, and the Lazarus-resource asset extraction is gated out of
  *   X_CONSOLE builds; WriteAssets then returns false, sending callers to the
@@ -1017,8 +1019,11 @@ begin
        (Trim(httpResponse.Body) = '') then
     begin
       // A 4xx is the server turning the saved login down; anything else
-      // (0 on a dead network, a 5xx) may clear up on its own
-      if (httpResponse.StatusCode >= 400) and (httpResponse.StatusCode < 500) then
+      // (0 on a dead network, a 5xx) may clear up on its own. 429 is the
+      // one 4xx that is not about the login: the server is asking us to
+      // slow down, so it stays a transient error and the next poll retries.
+      if (httpResponse.StatusCode >= 400) and (httpResponse.StatusCode < 500) and
+         (httpResponse.StatusCode <> 429) then
         setUserError(sErrCareLinkRefresh + ' (HTTP ' + IntToStr(httpResponse.StatusCode) + ')')
       else
         lastErr := sErrCareLinkRefresh + ' (HTTP ' + IntToStr(httpResponse.StatusCode) + ')';
