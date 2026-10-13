@@ -56,6 +56,7 @@ published
   procedure TestBaseLevelClassification;
   procedure TestJSToDateTimeNoCrash;
   procedure TestJSToDateTimeCorrection;
+  procedure TestClockSkewCapped;
   procedure TestPredictReadingsInsufficientData;
   procedure TestPredictReadingsLinearTrend;
   procedure TestPredictReadingsRateLimiter;
@@ -91,6 +92,8 @@ type
     procedure SetReadings(const AReadings: BGResults);
     // Test helper to set tz (minutes) since setTZ is protected
     procedure SetTZPublic(secsMin: integer);
+    procedure CalibrateClockPublic(serverUtc: TDateTime);
+    class function SkewToApply(skewSeconds: int64): integer;
   end;
 
 constructor TFakeAPI.Create;
@@ -134,6 +137,16 @@ begin
 end;
 
 // Test helper to set tz (minutes)
+class function TFakeAPI.SkewToApply(skewSeconds: int64): integer;
+begin
+  Result := clockSkewToApply(skewSeconds);
+end;
+
+procedure TFakeAPI.CalibrateClockPublic(serverUtc: TDateTime);
+begin
+  calibrateClock(serverUtc);
+end;
+
 procedure TFakeAPI.SetTZPublic(secsMin: integer);
 begin
   setTZ(secsMin);
@@ -164,6 +177,33 @@ begin
     AssertEquals('JSToDateTime with tz applied shifts time by tz',
       FormatDateTime('yyyy-mm-dd hh:nn:ss', expected),
       FormatDateTime('yyyy-mm-dd hh:nn:ss', dt));
+  finally
+    api.Free;
+  end;
+end;
+
+// A Nightscout host whose clock was hours off made every reading land hours
+// in the future: the skew was applied to timestamps the uploader had stamped
+// correctly. Only a small difference is worth correcting.
+procedure TAPIGeneralTester.TestClockSkewCapped;
+var
+  api: TFakeAPI;
+begin
+  AssertEquals('Seconds of skew are applied', 42, TFakeAPI.SkewToApply(42));
+  AssertEquals('Negative seconds of skew are applied', -42, TFakeAPI.SkewToApply(-42));
+  AssertEquals('The cap itself is applied', TrndiAPI.MAX_CLOCK_SKEW_SECONDS,
+    TFakeAPI.SkewToApply(TrndiAPI.MAX_CLOCK_SKEW_SECONDS));
+  AssertEquals('Hours of skew are dropped', 0, TFakeAPI.SkewToApply(-4 * 3600 - 51 * 60));
+  AssertEquals('Hours of skew ahead are dropped too', 0, TFakeAPI.SkewToApply(5 * 3600));
+
+  api := TFakeAPI.Create;
+  try
+    // A server claiming the time is five hours ago leaves the readings alone
+    api.CalibrateClockPublic(IncHour(LocalTimeToUniversal(Now), -5));
+    AssertEquals('Offset dropped for a server hours behind', 0, api.offset);
+    // Where a server a few seconds off is corrected for
+    api.CalibrateClockPublic(IncSecond(LocalTimeToUniversal(Now), 30));
+    AssertTrue('Seconds of skew are taken', (api.offset >= 29) and (api.offset <= 31));
   finally
     api.Free;
   end;

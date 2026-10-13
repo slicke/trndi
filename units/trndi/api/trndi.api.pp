@@ -280,6 +280,18 @@ protected
         malformed address, missing token data - so the caller can stop
         trying rather than hammer a backend with the same bad login. }
   procedure setUserError(const msg: string);
+
+    {** Take a server's idea of the current UTC time as the clock-skew
+        calibration (@code(timeDiff) and @code(tz)). Readings are stamped by
+        the uploader, not the server, so the only skew worth correcting is a
+        small one; a difference beyond @code(MAX_CLOCK_SKEW_SECONDS) is a
+        server with a wrong clock, and applying it would date correct
+        readings hours off. Such a difference is logged and dropped to zero. }
+  procedure calibrateClock(serverUtc: TDateTime);
+
+    {** The skew @code(calibrateClock) applies for a measured difference: the
+        difference itself within the cap, zero beyond it. }
+  class function clockSkewToApply(skewSeconds: int64): integer;
 private
   emitter: TTrndiAPIEmitter;
   credsEmitter: TTrndiCredentialsChanged;
@@ -294,6 +306,10 @@ const
   CGM_RANGE_HI_DISABLED = 500;
   {** Sentinel: cgmRangeLo set to this value means "personalised lower bound disabled". }
   CGM_RANGE_LO_DISABLED = 0;
+  {** The largest server-versus-local clock difference @code(calibrateClock)
+      still applies, in seconds. NTP keeps real skew to seconds; beyond this
+      the server's clock is wrong, not this computer's. }
+  MAX_CLOCK_SKEW_SECONDS = 600;
     {** Provide a backend-specific caption for parameter labels in Settings.
         Index mapping (by convention):
         - 1: Label above the first edit (e.g., server URL or username)
@@ -726,6 +742,27 @@ end;
 procedure TrndiAPI.setEmitter(e: TTrndiAPIEmitter);
 begin
   emitter := e;
+end;
+
+class function TrndiAPI.clockSkewToApply(skewSeconds: int64): integer;
+begin
+  if Abs(skewSeconds) > MAX_CLOCK_SKEW_SECONDS then
+    Result := 0
+  else
+    Result := skewSeconds;
+end;
+
+procedure TrndiAPI.calibrateClock(serverUtc: TDateTime);
+var
+  measured: int64;
+begin
+  measured := Round((serverUtc - LocalTimeToUniversal(Now)) * 86400);
+  timeDiff := clockSkewToApply(measured);
+  if timeDiff <> measured then
+    log(Format('Clock calibration ignored: the server reports a time %d s from this computer''s, ' +
+      'beyond the %d s cap; readings are dated as the uploader stamped them',
+      [measured, MAX_CLOCK_SKEW_SECONDS]));
+  tz := timeDiff;
 end;
 
 procedure TrndiAPI.setCredsEmitter(e: TTrndiCredentialsChanged);
