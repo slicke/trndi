@@ -757,7 +757,7 @@ begin
     if DexcomAuthFailureMessage(LResponse, LAuthErr) then
     begin
       Result := false;
-      lastErr := LAuthErr + ' (Dex1a)';
+      setUserError(LAuthErr + ' (Dex1a)');
       Exit;
     end;
 
@@ -793,7 +793,7 @@ begin
     begin
       Result := false;
       if Pos('AccountPassword', LAccountID) > 0 then
-        lastErr := sDexNewErrPass + ' (Dex1)'
+        setUserError(sDexNewErrPass + ' (Dex1)')
       else
         lastErr := sDexNewErrLogin + ' (Dex1a): ' + LAccountID;
       FreeResponse(LHTTPResp);
@@ -823,7 +823,7 @@ begin
       if DexcomAuthFailureMessage(LNameResp, LAuthErr) then
       begin
         Result := false;
-        lastErr := LAuthErr + ' (Dex1b)';
+        setUserError(LAuthErr + ' (Dex1b)');
         Exit;
       end;
       if not TryGetTokenOrError(LNameResp, FSessionID, LParseErr) then
@@ -843,7 +843,7 @@ begin
       if DexcomAuthFailureMessage(LResponse, LAuthErr) then
       begin
         Result := false;
-        lastErr := LAuthErr + ' (Dex1b)';
+        setUserError(LAuthErr + ' (Dex1b)');
         Exit;
       end;
       if not TryGetTokenOrError(LResponse, FSessionID, LParseErr) then
@@ -882,7 +882,7 @@ begin
       if DexcomAuthFailureMessage(LResponse, LAuthErr) then
       begin
         Result := false;
-        lastErr := LAuthErr + ' (Dex1)';
+        setUserError(LAuthErr + ' (Dex1)');
         Exit;
       end;
 
@@ -910,7 +910,7 @@ begin
   if Pos('AccountPassword', FSessionID) > 0 then
   begin
     Result := false;
-    lastErr := sDexNewErrPass + ' (Dex1)';
+    setUserError(sDexNewErrPass + ' (Dex1)');
     Exit;
   end;
 
@@ -920,10 +920,10 @@ begin
     Result := false;
     // Null GUID indicates authentication rejection (not wrong password)
     if FSessionID = DEXCOM_NULL_UUID then
-      lastErr := 'Dexcom authentication rejected. Possible causes: ' +
+      setUserError('Dexcom authentication rejected. Possible causes: ' +
         '1) Wrong region (try using another region), ' +
         '2) Dexcom Share not enabled in official app, ' +
-        '3) Account requires action in official Dexcom app. (Dex2)'
+        '3) Account requires action in official Dexcom app. (Dex2)')
     else
       lastErr := sDexNewErrLogin + ' (Dex2): Received invalid session ID: ' + FSessionID;
     Exit;

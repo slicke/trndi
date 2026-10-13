@@ -187,7 +187,8 @@ type
         the call can be repeated: True after the session has moved to the
         named host (or the host was the one already in use), False when the
         region is unknown or the re-login failed, with @code(errormsg) set. }
-    function FollowRedirect(const ABody, AWhere: string; out ARetry: boolean): boolean;
+    function FollowRedirect(const ABody, AWhere: string; AReselectPatient: boolean;
+      out ARetry: boolean): boolean;
 
     {** Copy the alarm thresholds and target range out of a connection object
         into the inherited CGM threshold properties. }
@@ -692,13 +693,13 @@ begin
         stepType := LowerCase(stepObj.Get('type', ''));
         case stepType of
         'tou':
-          lastErr := sErrLLUTerms;
+          setUserError(sErrLLUTerms);
         'pp':
-          lastErr := sErrLLUPrivacy;
+          setUserError(sErrLLUPrivacy);
         'verifyemail':
-          lastErr := sErrLLUVerifyEmail;
+          setUserError(sErrLLUVerifyEmail);
         else
-          lastErr := sErrLLUBadCredentials;
+          setUserError(sErrLLUBadCredentials);
         end;
         log('LibreLinkUp.Login: blocked by step=' + stepType);
         Exit;
@@ -706,7 +707,7 @@ begin
 
       if not Assigned(dataObj) or not (dataObj.Find('authTicket') is TJSONObject) then
       begin
-        lastErr := sErrLLUBadCredentials;
+        setUserError(sErrLLUBadCredentials);
         Exit;
       end;
 
@@ -714,7 +715,7 @@ begin
       FToken := ticketObj.Get('token', '');
       if FToken = '' then
       begin
-        lastErr := sErrLLUBadCredentials;
+        setUserError(sErrLLUBadCredentials);
         Exit;
       end;
 
@@ -767,12 +768,12 @@ begin
 
   if FEmail = '' then
   begin
-    lastErr := sErrLLUNoEmail;
+    setUserError(sErrLLUNoEmail);
     Exit(false);
   end;
   if FPassword = '' then
   begin
-    lastErr := sErrLLUNoPassword;
+    setUserError(sErrLLUNoPassword);
     Exit(false);
   end;
 
@@ -803,11 +804,15 @@ end;
   Act on a region redirect answered by a data endpoint.
 
   Abbott's tokens are issued per regional host, so a redirect to a different
-  host means starting a session there. A redirect to the host already in use
-  is a transient bounce on Abbott's side; the token is still good and the
-  call can simply be repeated.
+  host means starting a session there: a new login and, when a patient had
+  already been picked, a new look at the share list, since the connection
+  ids are the new host's (AReselectPatient is false when SelectPatient is
+  itself the caller; its own retry does that). A redirect to the host already
+  in use is a transient bounce on Abbott's side; the token is still good and
+  the call can simply be repeated.
  ------------------------------------------------------------------------------}
-function LibreLinkUp.FollowRedirect(const ABody, AWhere: string; out ARetry: boolean): boolean;
+function LibreLinkUp.FollowRedirect(const ABody, AWhere: string; AReselectPatient: boolean;
+  out ARetry: boolean): boolean;
 var
   regionCode, newHost: string;
 begin
@@ -834,6 +839,8 @@ begin
   FToken := '';
   FTokenExpires := 0;
   ARetry := Authenticate;
+  if ARetry and AReselectPatient and (FPatientId <> '') then
+    ARetry := SelectPatient;
 end;
 
 {------------------------------------------------------------------------------
@@ -878,7 +885,7 @@ begin
       end;
 
       // This endpoint can answer with a region redirect too; follow it once
-      if FollowRedirect(httpResponse.Body, 'SelectPatient', retry) then
+      if FollowRedirect(httpResponse.Body, 'SelectPatient', false, retry) then
       begin
         if not retry then
           Exit;
@@ -1055,7 +1062,7 @@ begin
 
       // A redirect arrives as a 200 with no readings in it; it must neither
       // be cached nor passed on as an empty payload
-      if FollowRedirect(httpResponse.Body, 'FetchGraph', retry) then
+      if FollowRedirect(httpResponse.Body, 'FetchGraph', true, retry) then
       begin
         if not retry then
           Exit;

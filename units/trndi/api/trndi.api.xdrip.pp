@@ -319,7 +319,7 @@ begin
   if Copy(baseUrl, 1, 4) <> 'http' then
   begin
     Result := false;
-    lastErr := 'Invalid address. Must begin with http:// or https://!';
+    setUserError('Invalid address. Must begin with http:// or https://!');
     Exit;
   end;
 
@@ -336,7 +336,7 @@ begin
 
   if Pos('uthentication failed', LResponse) > 0 then
   begin
-    lastErr := 'Wrong API secret. xDrip rejected authentication.';
+    setUserError('Wrong API secret. xDrip rejected authentication.');
     Result := false;
     Exit;
   end;

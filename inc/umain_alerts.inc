@@ -359,15 +359,19 @@ begin
 end;
 
 // Everything that is not plainly the user's to fix counts as retryable: the
-// aim is never to quit over a network that is still coming up. Backend
-// wording varies, so this is a keyword sieve over the known rejection texts
-// (HTTP 401/403, Nightscout's "access code", xDrip's "API secret", Dexcom's
-// "password or account credentials", CareLink's token data, bad addresses).
+// aim is never to quit over a network that is still coming up. The drivers
+// mark their own rejections (TrndiAPI.setUserError, read through
+// FBootConnectNeedsUser), which also covers translated texts; this keyword
+// sieve is the fallback for the English-only texts that are not marked
+// (HTTP 401/403, Nightscout's "access code", xDrip's "API secret", bad
+// addresses). "token" and "jwt" are deliberately absent: Tandem's "Token
+// exchange failed: <transport error>" and CareLink's refresh on a dead
+// network are exactly the transient cases this exists to keep retrying.
 function TfBG.IsRetryableBootError(const ErrorText: string): boolean;
 const
-  USER_MUST_FIX: array[0..14] of string = (
+  USER_MUST_FIX: array[0..12] of string = (
     '401', '403', 'unauthor', 'forbidden', 'not authenticated', 'credential',
-    'access code', 'password', 'secret', 'token', 'jwt', 'invalid address',
+    'access code', 'password', 'secret', 'invalid address',
     'must start with', 'must begin with', 'no readings received'
   );
 var

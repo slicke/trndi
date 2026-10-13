@@ -585,21 +585,21 @@ begin
 
   if Trim(FRawCreds) = '' then
   begin
-    lastErr := sErrCareLinkNoCreds;
+    setUserError(sErrCareLinkNoCreds);
     Exit;
   end;
 
   try
     jsonData := GetJSON(FRawCreds);
   except
-    lastErr := sErrCareLinkBadCreds;
+    setUserError(sErrCareLinkBadCreds);
     Exit;
   end;
 
   if not (jsonData is TJSONObject) then
   begin
     jsonData.Free;
-    lastErr := sErrCareLinkBadCreds;
+    setUserError(sErrCareLinkBadCreds);
     Exit;
   end;
 
@@ -621,7 +621,7 @@ begin
 
   if FRefreshToken = '' then
   begin
-    lastErr := sErrCareLinkBadCreds;
+    setUserError(sErrCareLinkBadCreds);
     Exit;
   end;
 
@@ -980,7 +980,7 @@ begin
 
   if FRefreshToken = '' then
   begin
-    lastErr := sErrCareLinkNoCreds;
+    setUserError(sErrCareLinkNoCreds);
     Exit;
   end;
 
@@ -1016,7 +1016,12 @@ begin
     if (httpResponse.StatusCode < 200) or (httpResponse.StatusCode >= 300) or
        (Trim(httpResponse.Body) = '') then
     begin
-      lastErr := sErrCareLinkRefresh + ' (HTTP ' + IntToStr(httpResponse.StatusCode) + ')';
+      // A 4xx is the server turning the saved login down; anything else
+      // (0 on a dead network, a 5xx) may clear up on its own
+      if (httpResponse.StatusCode >= 400) and (httpResponse.StatusCode < 500) then
+        setUserError(sErrCareLinkRefresh + ' (HTTP ' + IntToStr(httpResponse.StatusCode) + ')')
+      else
+        lastErr := sErrCareLinkRefresh + ' (HTTP ' + IntToStr(httpResponse.StatusCode) + ')';
       Exit;
     end;
 
