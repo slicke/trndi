@@ -36,6 +36,10 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-13: Without a token, a loopback peer may write only when its
+ *   Origin and Host name this server: a browser page from another site,
+ *   or a site whose name resolves to 127.0.0.1, is refused. POST bodies
+ *   must be sent as application/json (415 otherwise).
  * - 2026-09-15: SEND_FLAGS uses Haiku's own MSG_NOSIGNAL value ($0800) on
  *   Haiku, since FPC 3.2.2's sockets unit carries the BSD value there.
  * - 2026-09-15: Capped concurrent /events streams at MAX_EVENT_STREAMS with
@@ -111,7 +115,7 @@ interface
 
 uses
 Classes, SysUtils, Math, Sockets, fpjson, jsonparser, syncobjs, trndi.types, DateUtils, sha1, base64
-{$IFNDEF Windows}, BaseUnix{$ELSE}, WinSock2{$IFEND};
+{$IFNDEF Windows}, BaseUnix{$IFNDEF HAIKU}, Unix{$ENDIF}{$ELSE}, WinSock2{$IFEND};
 
 const
   {** Upper bound on concurrent /events subscribers. Every stream holds a
@@ -216,8 +220,9 @@ private
   FStreamCounter: PLongInt;   // open /events streams, capped at MAX_EVENT_STREAMS
   FHub: TWebEventHub;
   FCommand: TWebCommandFunc;
-  FPeerIsLoopback: boolean;
-  FUserLabel: string;   // the connection came from 127.0.0.0/8
+  FPeerIsLoopback: boolean;   // the connection came from 127.0.0.0/8
+  FLocalHostName: string;     // this computer's name, lower-cased ('' if unknown)
+  FUserLabel: string;
   // Parameters of the command in flight, handed across Synchronize.
   FCmdName: string;
   FCmdParams: TJSONObject;
@@ -229,7 +234,7 @@ private
   function CheckNightscoutAuth(const Headers, Query: string): boolean;
   function ServeNightscout(const Method, URIPath, Query, Headers: string;
     out Response: string): boolean;
-  function WriteAllowed: boolean;
+  function WriteAllowed(const Headers: string; out Reason: string): boolean;
   function ServeCommand(const ACommand: string; AParams, AReply: TJSONObject): string;
   procedure RunCommandSync;
   function ReadRequest(out Request: string; out TooLarge: boolean): boolean;
@@ -479,6 +484,115 @@ end;
 function IsLoopbackAddr(const NetAddr: longword): boolean;
 begin
   Result := (NetToHostLong(NetAddr) shr 24) = 127;
+end;
+
+// This computer's own name, lower-cased, or '' when it cannot be read. Looked
+// up once, from the accept thread, and handed to each handler.
+var
+  LocalHostNameCache: string = '';
+  LocalHostNameKnown: boolean = false;
+
+function LocalHostName: string;
+{$IFDEF Windows}
+var
+  Buf: array[0..255] of char;
+{$ENDIF}
+begin
+  if not LocalHostNameKnown then
+  begin
+    {$IF DEFINED(WINDOWS)}
+    FillChar(Buf, SizeOf(Buf), 0);
+    if gethostname(Buf, SizeOf(Buf) - 1) = 0 then
+      LocalHostNameCache := LowerCase(StrPas(Buf));
+    {$ELSEIF DEFINED(HAIKU)}
+    // Not looked up: Haiku's RTL is not known to ship the Unix unit, and the
+    // name only matters for a hosts-file alias of the loopback address.
+    {$ELSE}
+    LocalHostNameCache := LowerCase(Unix.GetHostName);
+    {$ENDIF}
+    LocalHostNameKnown := true;
+  end;
+  Result := LocalHostNameCache;
+end;
+
+// The name in a Host header or an origin's authority, lower-cased and without
+// the port: "localhost:8080" -> "localhost", "[::1]:8080" -> "[::1]".
+function AuthorityHost(const Authority: string): string;
+var
+  P: integer;
+begin
+  Result := LowerCase(Trim(Authority));
+  if (Result <> '') and (Result[1] = '[') then
+  begin
+    P := Pos(']', Result);
+    if P > 0 then
+      Result := Copy(Result, 1, P);
+  end
+  else
+  begin
+    P := Pos(':', Result);
+    if P > 0 then
+      Result := Copy(Result, 1, P - 1);
+  end;
+end;
+
+// The port in an authority, or Default when it names none (or a bad one).
+function AuthorityPort(const Authority: string; const Default: word): word;
+var
+  S: string;
+  P, V: integer;
+begin
+  Result := Default;
+  S := Trim(Authority);
+  P := Pos(']', S);
+  if P > 0 then
+    Delete(S, 1, P);
+  P := Pos(':', S);
+  if P <= 0 then
+    Exit;
+  V := StrToIntDef(Copy(S, P + 1, MaxInt), -1);
+  if (V >= 0) and (V <= 65535) then
+    Result := V;
+end;
+
+// The authority of an Origin value: "http://localhost:8080/" -> "localhost:8080".
+// '' when it is not a URL at all ("null" is what a sandboxed page sends).
+function OriginAuthority(const Origin: string): string;
+var
+  P: integer;
+begin
+  Result := '';
+  P := Pos('://', Origin);
+  if P <= 0 then
+    Exit;
+  Result := Copy(Origin, P + 3, MaxInt);
+  P := Pos('/', Result);
+  if P > 0 then
+    Result := Copy(Result, 1, P - 1);
+end;
+
+// localhost, any 127.x.x.x address, ::1, or OwnName (this computer's name,
+// which a hosts file may point at the loopback address, as Ubuntu's does).
+// StrToNetAddr yields 0 for anything but a dotted quad, so "127.evil.com"
+// does not pass as loopback.
+function IsLocalName(const Name, OwnName: string): boolean;
+begin
+  Result := (Name = 'localhost') or (Name = '[::1]') or
+    IsLoopbackAddr(StrToNetAddr(Name).s_addr) or
+    ((OwnName <> '') and (Name = OwnName));
+end;
+
+// application/json, with or without parameters such as a charset.
+function IsJsonContentType(const Value: string): boolean;
+var
+  S: string;
+  P: integer;
+begin
+  S := LowerCase(Trim(Value));
+  P := Pos(';', S);
+  if P > 0 then
+    S := Trim(Copy(S, 1, P - 1));
+  Result := S = 'application/json';
 end;
 
 // Parses a JSON object body. An empty body counts as an empty object; a
@@ -1153,6 +1267,7 @@ begin
   FHub := AHub;
   FCommand := ACommand;
   FPeerIsLoopback := APeerIsLoopback;
+  FLocalHostName := LocalHostName;
 end;
 
 // "user": the account name, or null for a single-user Trndi. Always present,
@@ -1326,12 +1441,51 @@ end;
 
 // The write policy for /settings and /snooze. Reading glucose off the LAN is
 // what the server is for; changing the app's limits is not something an
-// unauthenticated peer elsewhere on the network gets to do. A loopback peer
-// is the same user as the one at the keyboard; anyone else needs the token
-// (which CheckAuth has verified by the time this is asked).
-function TClientHandlerThread.WriteAllowed: boolean;
+// unauthenticated peer elsewhere on the network gets to do. Anyone with the
+// token may write (CheckAuth has verified it by the time this is asked, and
+// a page on some other site cannot attach a token it does not know).
+//
+// Without a token, a loopback peer is the user at the keyboard - or that
+// user's browser, running a page from anywhere. A browser names the page's
+// site in Origin on a cross-site POST, and a site whose name was pointed at
+// 127.0.0.1 (DNS rebinding) shows up in Host, so neither may name anyone but
+// this server. Reason says why when the answer is no.
+function TClientHandlerThread.WriteAllowed(const Headers: string; out Reason: string): boolean;
+var
+  Origin, Auth: string;
+  DefaultPort: word;
 begin
-  Result := FPeerIsLoopback or (FAuthToken <> '');
+  Result := false;
+  Reason := '';
+  if FAuthToken <> '' then
+    Exit(true);
+  if not FPeerIsLoopback then
+  begin
+    Reason := 'Changes need a localhost connection or a configured token';
+    Exit;
+  end;
+  Origin := HeaderValue(Headers, 'origin');
+  if Origin <> '' then
+  begin
+    Auth := OriginAuthority(Origin);
+    if LowerCase(Copy(Origin, 1, 8)) = 'https://' then
+      DefaultPort := 443
+    else
+      DefaultPort := 80;
+    if not (IsLocalName(AuthorityHost(Auth), FLocalHostName) and
+      (AuthorityPort(Auth, DefaultPort) = FPort)) then
+    begin
+      Reason := 'Changes are not accepted from a page on another site';
+      Exit;
+    end;
+  end;
+  Auth := HeaderValue(Headers, 'host');
+  if (Auth <> '') and not IsLocalName(AuthorityHost(Auth), FLocalHostName) then
+  begin
+    Reason := 'Changes need the server addressed as localhost';
+    Exit;
+  end;
+  Result := true;
 end;
 
 // Body of the callback, on the main thread. The try/except is here rather
@@ -1390,7 +1544,7 @@ end;
 function TClientHandlerThread.HandleRequest(const Request: string): string;
 var
   Lines: TStringList;
-  Method, URIPath, Query, Headers, Body, NsResponse, Png: string;
+  Method, URIPath, Query, Headers, Body, NsResponse, Png, Why: string;
   ResponseObj, Params: TJSONObject;
   CurrentReadings: BGResults;
   Predictions: BGResults;
@@ -1520,15 +1674,24 @@ begin
       begin
         Result := ServeCommand('settings.get', nil, ResponseObj);
         if Result.StartsWith('HTTP/1.1 200') then
-          ResponseObj.Add('writable', WriteAllowed);
+          ResponseObj.Add('writable', WriteAllowed(Headers, Why));
       end
       else
       if ((URIPath = '/settings') or (URIPath = '/snooze')) and (Method = 'POST') then
       begin
-        if not WriteAllowed then
+        if not WriteAllowed(Headers, Why) then
         begin
-          ResponseObj.Add('error', 'Changes need a localhost connection or a configured token');
+          ResponseObj.Add('error', Why);
           Result := 'HTTP/1.1 403 Forbidden'#13#10;
+        end
+        else
+        // A browser sends a form or text/plain body cross-site without
+        // asking first; application/json it will not send without a
+        // preflight, and this is a JSON API anyway.
+        if not IsJsonContentType(HeaderValue(Headers, 'content-type')) then
+        begin
+          ResponseObj.Add('error', 'Body must be sent as application/json');
+          Result := 'HTTP/1.1 415 Unsupported Media Type'#13#10;
         end
         else
         if not ParseJSONBody(Body, Params) then
