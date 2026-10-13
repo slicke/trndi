@@ -1663,7 +1663,7 @@ procedure TfBG.WebPublishSnooze;
 begin
   if Assigned(FWebServer) and Assigned(FAlertEngine) then
     TTrndiWebServer(FWebServer).PublishSnooze(
-      FAlertEngine.AnySnoozed, FAlertEngine.ActiveSnoozeUntil);
+      FAlertEngine.AnySnoozed, SnoozeIsPartial, FAlertEngine.ActiveSnoozeUntil);
 end;
 
 procedure TfBG.WebPublishPredictions(const Preds: BGResults);
@@ -1704,7 +1704,10 @@ begin
     Result.Add('active', true);
     Result.Add('until_utc', FormatDateTime('yyyy"-"mm"-"dd"T"hh":"nn":"ss"Z"',
       LocalTimeToUniversal(untilLocal)));
-    // A per-kind snooze is "active" too; the list says which kinds.
+    // A per-kind snooze is "active" too; "partial" says the high/low/missing
+    // set is not all muted (the desktop chip's "Some alerts snoozed"), and
+    // the list says which kinds are.
+    Result.Add('partial', SnoozeIsPartial);
     for kind in FAlertEngine.SnoozedKinds do
       kinds.Add(WEB_ALERT_KIND_NAMES[kind]);
   end
@@ -1712,6 +1715,7 @@ begin
   begin
     Result.Add('active', false);
     Result.Add('until_utc', '');
+    Result.Add('partial', false);
   end;
   Result.Add('kinds', kinds);
 end;

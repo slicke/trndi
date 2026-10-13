@@ -330,9 +330,10 @@ public
   procedure PublishAlert(const Kinds: array of string; const Reading: BGReading);
   {** Push the data/connection state as a "status" event. }
   procedure PublishStatus(const Fresh, Connected: boolean; const Detail: string);
-  {** Push the alert-snooze state as a "snooze" event. AUntilLocal is ignored
+  {** Push the alert-snooze state as a "snooze" event. APartial says only
+      some of the high/low/missing kinds are muted. AUntilLocal is ignored
       when AActive is false. }
-  procedure PublishSnooze(const AActive: boolean; const AUntilLocal: TDateTime);
+  procedure PublishSnooze(const AActive, APartial: boolean; const AUntilLocal: TDateTime);
 
   {** The port given to Create until Start succeeds; the bound port after. }
   property Port: word read FPort;
@@ -2414,7 +2415,7 @@ begin
   end;
 end;
 
-procedure TTrndiWebServer.PublishSnooze(const AActive: boolean; const AUntilLocal: TDateTime);
+procedure TTrndiWebServer.PublishSnooze(const AActive, APartial: boolean; const AUntilLocal: TDateTime);
 var
   Obj: TJSONObject;
 begin
@@ -2425,6 +2426,7 @@ begin
       Obj.Add('until_utc', FormatUtcIso(AUntilLocal))
     else
       Obj.Add('until_utc', '');
+    Obj.Add('partial', AActive and APartial);
     Publish('snooze', Obj.AsJSON, true, true);
   finally
     Obj.Free;

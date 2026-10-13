@@ -277,7 +277,7 @@ function loadSettings(){
   if(r.status===501){hasApi=false;return null}
   return r.ok?r.json():null}).then(function(s){if(s){$("settingsCard").classList.remove("hidden");applySettings(s)}}).catch(function(){})
 }
-function showSnooze(s){$("snooze").textContent=s.active?"Snoozed until "+hhmm(s.until_utc):"Alerts active"}
+function showSnooze(s){$("snooze").textContent=s.active?(s.partial?"Some alerts snoozed until ":"Snoozed until ")+hhmm(s.until_utc):"Alerts active"}
 function connect(){
  if(es)es.close();
  es=new EventSource("/events"+(token?"?token="+encodeURIComponent(token):""));
