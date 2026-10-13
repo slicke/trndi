@@ -307,6 +307,10 @@ begin
     AMessage := sDexErrMaxAttempts
   else if Pos('accountpasswordinvalid', L) > 0 then
     AMessage := sDexErrCredentials
+  // The SSO route's answer to an email or phone number it does not know;
+  // as terminal as a wrong password, and worded the same for the user
+  else if Pos('sso_authenticateaccountnotfound', L) > 0 then
+    AMessage := sDexErrCredentials
   else if (Pos('sso_internalerror', L) > 0) and
     ((Pos('cannotauthenticatebyaccountname', L) > 0) or
     (Pos('cannotauthenticatebyaccountid', L) > 0)) then
