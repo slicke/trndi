@@ -86,6 +86,8 @@ If no token is configured, all requests are allowed. The dashboard page itself (
 
 `POST /settings` and `POST /snooze` change how Trndi behaves, so they are held to a stricter rule than reading glucose: a request is accepted only when it comes from **the same computer** (a `127.x.x.x` peer) or when **a token is configured** and the request carries it. Without a token, a request from elsewhere on the network gets `403 Forbidden`. The dashboard reads this as the `writable` flag in `/settings` and shows its settings card read-only when writes are not allowed.
 
+The same-computer rule has a browser in mind: a web page from any site, open in a browser on this computer, reaches the server as a loopback peer too. So while no token is set, a write is also refused when the request's `Origin` header names anything but this server (`http://localhost:<port>` or `http://127.0.0.1:<port>`), or when its `Host` header is neither `localhost`, a `127.x.x.x` address nor this computer's own name (which guards against a site whose DNS name points at 127.0.0.1). Requests without these headers, such as `curl` from a terminal, are unaffected. Both `POST` endpoints also require `Content-Type: application/json`; anything else gets `415 Unsupported Media Type`. With a token configured, the token alone decides: a page cannot attach one it does not know.
+
 ## Dashboard
 
 `GET /` (alias `/dashboard`) returns a self-contained HTML page, about 18 KB with no external assets, that works offline on the local network. It subscribes to `/events` for live updates and uses the other endpoints for the rest, so it shows exactly what the API exposes:
@@ -412,6 +414,7 @@ curl -X POST -H "Content-Type: application/json" \
 - `200 OK`: Applied; body is the new state
 - `400 Bad Request`: Malformed JSON, or a value that was refused (`error` says which)
 - `401 Unauthorized`, `403 Forbidden`: See authentication and the write rule above
+- `415 Unsupported Media Type`: The body was not sent as `application/json`
 - `501 Not Implemented`: No settings handler
 
 ### POST /snooze
@@ -750,7 +753,7 @@ template:
 
 The web server binds to all interfaces (`INADDR_ANY`). To restrict to localhost only, you would need to modify the bind address in the code.
 
-Reading endpoints are open to the whole network unless a token is set; the two writing endpoints (`/settings`, `/snooze`) additionally refuse any non-loopback peer while no token is configured, so exposing the API cannot by itself let someone else change your limits. Set a token if you want to change settings from a phone.
+Reading endpoints are open to the whole network unless a token is set; the two writing endpoints (`/settings`, `/snooze`) additionally refuse any non-loopback peer while no token is configured, and a loopback request whose `Origin` or `Host` names another site, so neither exposing the API nor opening a hostile web page on this computer can by itself let someone else change your limits. Set a token if you want to change settings from a phone.
 
 ### Authentication Token
 

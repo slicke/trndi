@@ -40,6 +40,9 @@
    image/png bytes, and both answer 501 without a callback and 405 to POST. *)
 (* MODIFICATION NOTICE (2026-10-07): The /history.png case also checks that
    the theme parameter reaches the command. *)
+(* MODIFICATION NOTICE (2026-10-13): Added the write-policy header cases: a
+   POST needs application/json, and without a token a foreign Origin or Host
+   is refused while a token lets a page from anywhere write. *)
 unit webserver_dashboard_tests;
 
 {$mode objfpc}{$H+}
@@ -98,6 +101,10 @@ type
     procedure TestHistoryPngGet;
     procedure TestReportWithoutCommand;
     procedure TestWebDecimal;
+    procedure TestWriteNeedsJsonContentType;
+    procedure TestWriteRefusesForeignOrigin;
+    procedure TestWriteRefusesForeignHost;
+    procedure TestTokenWritesFromAnywhere;
   end;
 
 implementation
@@ -510,6 +517,110 @@ begin
   AssertEquals('report status', 'HTTP/1.1 501 Not Implemented', StatusLine(S));
   S := Exchange(Get('/history.png'));
   AssertEquals('history status', 'HTTP/1.1 501 Not Implemented', StatusLine(S));
+end;
+
+// The write endpoints take JSON and nothing else: a browser sends a form or
+// text/plain body cross-site without a preflight, application/json it does
+// not.
+procedure TWebServerDashboardTests.TestWriteNeedsJsonContentType;
+var
+  S, Body: string;
+begin
+  StartServer;
+  Body := '{"minutes":15}';
+  S := Exchange('POST /snooze HTTP/1.1'#13#10 +
+    'Host: localhost'#13#10 +
+    'Content-Type: text/plain'#13#10 +
+    'Content-Length: ' + IntToStr(Length(Body)) + #13#10#13#10 + Body);
+  AssertEquals('text/plain', 'HTTP/1.1 415 Unsupported Media Type', StatusLine(S));
+  S := Exchange('POST /snooze HTTP/1.1'#13#10 +
+    'Host: localhost'#13#10 +
+    'Content-Length: ' + IntToStr(Length(Body)) + #13#10#13#10 + Body);
+  AssertEquals('no content type', 'HTTP/1.1 415 Unsupported Media Type', StatusLine(S));
+  AssertEquals('the callback never ran', 0, FCommands.Count);
+  S := Exchange(Post('/snooze', Body));
+  AssertEquals('application/json', 'HTTP/1.1 200 OK', StatusLine(S));
+  S := Exchange('POST /snooze HTTP/1.1'#13#10 +
+    'Host: localhost'#13#10 +
+    'Content-Type: Application/JSON; charset=utf-8'#13#10 +
+    'Content-Length: ' + IntToStr(Length(Body)) + #13#10#13#10 + Body);
+  AssertEquals('with charset', 'HTTP/1.1 200 OK', StatusLine(S));
+  AssertEquals('two commands served', 2, FCommands.Count);
+end;
+
+// Without a token the loopback peer is trusted - unless it is the user's
+// browser running a page from another site, which says so in Origin.
+procedure TWebServerDashboardTests.TestWriteRefusesForeignOrigin;
+var
+  S, Mine: string;
+begin
+  StartServer;
+  Mine := IntToStr(Port);
+  S := Exchange(Post('/snooze', '{"minutes":15}', 'Origin: http://evil.example'#13#10));
+  AssertEquals('other site', 'HTTP/1.1 403 Forbidden', StatusLine(S));
+  AssertTrue('says why', Pos('another site', S) > 0);
+  S := Exchange(Post('/snooze', '{"minutes":15}', 'Origin: null'#13#10));
+  AssertEquals('opaque origin', 'HTTP/1.1 403 Forbidden', StatusLine(S));
+  S := Exchange(Post('/snooze', '{"minutes":15}', 'Origin: http://localhost:9'#13#10));
+  AssertEquals('other local port', 'HTTP/1.1 403 Forbidden', StatusLine(S));
+  S := Exchange(Post('/snooze', '{"minutes":15}', 'Origin: http://127.evil.example:' + Mine + #13#10));
+  AssertEquals('loopback-looking name', 'HTTP/1.1 403 Forbidden', StatusLine(S));
+  AssertEquals('nothing ran', 0, FCommands.Count);
+  S := Exchange(Post('/snooze', '{"minutes":15}', 'Origin: http://localhost:' + Mine + #13#10));
+  AssertEquals('the dashboard itself', 'HTTP/1.1 200 OK', StatusLine(S));
+  S := Exchange(Post('/snooze', '{"minutes":15}', 'Origin: http://127.0.0.1:' + Mine + '/'#13#10));
+  AssertEquals('by address', 'HTTP/1.1 200 OK', StatusLine(S));
+  S := Exchange(Post('/snooze', '{"minutes":15}'));
+  AssertEquals('no origin at all (curl)', 'HTTP/1.1 200 OK', StatusLine(S));
+  AssertEquals('three commands served', 3, FCommands.Count);
+end;
+
+// A site whose name resolves to 127.0.0.1 reaches the loopback listener
+// with its own name in Host; that is not this server's name.
+procedure TWebServerDashboardTests.TestWriteRefusesForeignHost;
+var
+  S, Body: string;
+begin
+  StartServer;
+  Body := '{"minutes":15}';
+  S := Exchange('POST /snooze HTTP/1.1'#13#10 +
+    'Host: evil.example:' + IntToStr(Port) + #13#10 +
+    'Content-Type: application/json'#13#10 +
+    'Content-Length: ' + IntToStr(Length(Body)) + #13#10#13#10 + Body);
+  AssertEquals('rebound name', 'HTTP/1.1 403 Forbidden', StatusLine(S));
+  AssertEquals('nothing ran', 0, FCommands.Count);
+  S := Exchange('GET /settings HTTP/1.1'#13#10 +
+    'Host: evil.example'#13#10#13#10);
+  AssertEquals('settings still readable', 'HTTP/1.1 200 OK', StatusLine(S));
+  AssertTrue('but not writable', Pos('"writable" : false', S) > 0);
+  S := Exchange('POST /snooze HTTP/1.1'#13#10 +
+    'Host: 127.0.0.1:' + IntToStr(Port) + #13#10 +
+    'Content-Type: application/json'#13#10 +
+    'Content-Length: ' + IntToStr(Length(Body)) + #13#10#13#10 + Body);
+  AssertEquals('by address', 'HTTP/1.1 200 OK', StatusLine(S));
+end;
+
+// The token is the whole of the authorization when one is set: a page on
+// another site cannot attach one it does not know, so Origin and Host are
+// not consulted.
+procedure TWebServerDashboardTests.TestTokenWritesFromAnywhere;
+var
+  S, Body: string;
+begin
+  StartServer('secret');
+  Body := '{"minutes":0}';
+  S := Exchange(Post('/snooze', Body,
+    'Authorization: Bearer secret'#13#10'Origin: http://phone.example'#13#10));
+  AssertEquals('foreign origin with token', 'HTTP/1.1 200 OK', StatusLine(S));
+  S := Exchange('POST /snooze HTTP/1.1'#13#10 +
+    'Host: trndi.example:' + IntToStr(Port) + #13#10 +
+    'Authorization: Bearer secret'#13#10 +
+    'Content-Type: application/json'#13#10 +
+    'Content-Length: ' + IntToStr(Length(Body)) + #13#10#13#10 + Body);
+  AssertEquals('foreign host with token', 'HTTP/1.1 200 OK', StatusLine(S));
+  S := Exchange(Post('/snooze', Body, 'Origin: http://phone.example'#13#10));
+  AssertEquals('no token is still no token', 'HTTP/1.1 401 Unauthorized', StatusLine(S));
+  AssertEquals('two commands served', 2, FCommands.Count);
 end;
 
 initialization
