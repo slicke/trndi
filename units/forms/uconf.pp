@@ -39,6 +39,8 @@
 
 (*
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-13: HelpOverflows measures the help text on a temporary bitmap
+ *   instead of the strip's control canvas.
  * - 2026-09-27: Added cbMenuBarReading (macOS menu-bar status item).
  * - 2026-08-21: The {$ifndef X_WIN} around setDarkMode is documented as
  *   purely behavioral - the call compiles everywhere now that the method
@@ -2507,11 +2509,20 @@ end;
 function TfConf.HelpOverflows(const AText: string): boolean;
 var
   r: TRect;
+  bmp: TBitmap;
 begin
   r := Rect(0, 0, lHelpText.Width, 0);
-  pnHelpStrip.Canvas.Font := lHelpText.Font;
-  DrawText(pnHelpStrip.Canvas.Handle, PChar(AText), Length(AText), r,
-    DT_CALCRECT or DT_WORDBREAK or DT_NOPREFIX);
+  // Measure on a temporary bitmap: this runs from hover, not from a paint,
+  // and a control canvas outside paint is unsafe on Cocoa (see ScaleLbl).
+  bmp := TBitmap.Create;
+  try
+    bmp.SetSize(1, 1);
+    bmp.Canvas.Font := lHelpText.Font;
+    DrawText(bmp.Canvas.Handle, PChar(AText), Length(AText), r,
+      DT_CALCRECT or DT_WORDBREAK or DT_NOPREFIX);
+  finally
+    bmp.Free;
+  end;
   Result := r.Bottom > lHelpText.Height;
 end;
 
