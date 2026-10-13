@@ -132,6 +132,10 @@ begin
     DexcomAuthFailureMessage('{"Code":"AccountPasswordInvalid"}', msg));
   AssertTrue('AccountPasswordInvalid has a message', msg <> '');
 
+  AssertTrue('SSO_AuthenticateAccountNotFound recognized',
+    DexcomAuthFailureMessage('{"Code":"SSO_AuthenticateAccountNotFound"}', msg));
+  AssertTrue('Account not found has a message', msg <> '');
+
   AssertTrue('Max attempts recognized',
     DexcomAuthFailureMessage('{"Code":"SSO_AuthenticateMaxAttemptsExceeded"}', msg));
   AssertTrue('Max attempts has a distinct message',

@@ -782,7 +782,7 @@ begin
     if LAccountID = DEXCOM_NULL_UUID then
     begin
       Result := false;
-      lastErr := sDexNewErrNoAccount + ' (Dex1a)';
+      setUserError(sDexNewErrNoAccount + ' (Dex1a)');
       Exit;
     end;
 
