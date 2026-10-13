@@ -40,6 +40,8 @@
  *   Origin and Host name this server: a browser page from another site,
  *   or a site whose name resolves to 127.0.0.1, is refused. POST bodies
  *   must be sent as application/json (415 otherwise).
+ * - 2026-10-13: The dashboard page is sent with X-Frame-Options: DENY and a
+ *   frame-ancestors 'none' policy, so no other page can frame it.
  * - 2026-09-15: SEND_FLAGS uses Haiku's own MSG_NOSIGNAL value ($0800) on
  *   Haiku, since FPC 3.2.2's sockets unit carries the BSD value there.
  * - 2026-09-15: Capped concurrent /events streams at MAX_EVENT_STREAMS with
@@ -1582,9 +1584,14 @@ begin
     // value on it comes from the authenticated endpoints it calls.
     if (Method = 'GET') and ((URIPath = '/') or (URIPath = '/dashboard')) then
     begin
+      // Not to be framed: a page elsewhere could otherwise lay the dashboard
+      // under its own controls (clickjacking). frame-ancestors on its own
+      // restricts nothing else, so the inline script and styles still run.
       Result := 'HTTP/1.1 200 OK'#13#10 +
         'Content-Type: text/html; charset=utf-8'#13#10 +
         'Content-Length: ' + IntToStr(Length(WEB_DASHBOARD_HTML)) + #13#10 +
+        'X-Frame-Options: DENY'#13#10 +
+        'Content-Security-Policy: frame-ancestors ''none'''#13#10 +
         'Cache-Control: no-cache'#13#10 +
         'Connection: close'#13#10#13#10 +
         WEB_DASHBOARD_HTML;

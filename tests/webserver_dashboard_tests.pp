@@ -231,6 +231,8 @@ begin
   S := Exchange(Get('/'));
   AssertEquals('status', 'HTTP/1.1 200 OK', StatusLine(S));
   AssertTrue('html content type', Pos('Content-Type: text/html', S) > 0);
+  AssertTrue('not framable', Pos('X-Frame-Options: DENY', S) > 0);
+  AssertTrue('frame-ancestors none', Pos('Content-Security-Policy: frame-ancestors ''none''', S) > 0);
   AssertTrue('the page', Pos('<title>Trndi</title>', S) > 0);
   AssertTrue('the page talks to /events', Pos('new EventSource("/events"', S) > 0);
   AssertTrue('content length announced', Pos('Content-Length: ', S) > 0);
