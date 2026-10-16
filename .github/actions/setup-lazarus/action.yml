@@ -34,9 +34,9 @@ runs:
         # ---- Pinned toolchain (linux amd64) -----------------------------
         # Bump these three together; the weekly drift scan fails if a Lazarus
         # version elsewhere under .github/ disagrees with them.
-        DEFAULT_FPC_LAZ_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-laz_3.2.2-210709_amd64.deb/download
-        DEFAULT_FPC_SRC_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/fpc-src_3.2.2-210709_amd64.deb/download
-        DEFAULT_LAZ_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%204.8/lazarus-project_4.8.0-0_amd64.deb/download
+        DEFAULT_FPC_LAZ_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%205.0RC1/fpc-laz_3.2.2-210709_amd64.deb/download
+        DEFAULT_FPC_SRC_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%205.0RC1/fpc-src_3.2.2-210709_amd64.deb/download
+        DEFAULT_LAZ_URL: https://sourceforge.net/projects/lazarus/files/Lazarus%20Linux%20amd64%20DEB/Lazarus%205.0RC1/lazarus-project_5.0.0-0_amd64.deb/download
         IN_FPC_LAZ_URL: ${{ inputs.fpc_laz_url }}
         IN_FPC_SRC_URL: ${{ inputs.fpc_src_url }}
         IN_LAZ_URL: ${{ inputs.laz_url }}
