@@ -19,7 +19,10 @@
                 <img src="Trndi.png" alt="Trndi Logo">
                 <span>Trndi</span>
             </a>
-            <div class="nav-links">
+            <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links" id="nav-links">
                 <a href="#download">Download</a>
                 <a href="#setup">Setup</a>
                 <a href="#sources">Sources</a>
@@ -85,15 +88,19 @@
             <h2>See it in action</h2>
             <div class="screenshot-grid">
                 <div class="screenshot-item reveal">
-                    <img src="doc/img/img_win.png" alt="Trndi on Windows 11" loading="lazy">
+                    <img src="doc/img/img_win.png" alt="Trndi on Windows 11" loading="lazy" width="786" height="590">
                     <h3>Windows 11</h3>
                 </div>
                 <div class="screenshot-item reveal">
-                    <img src="doc/img/img_lin_range.png" alt="Trndi on Fedora Linux (KDE)" loading="lazy">
+                    <img src="doc/img/img_macos.png" alt="Trndi on macOS" loading="lazy" width="1280" height="960">
+                    <h3>macOS</h3>
+                </div>
+                <div class="screenshot-item reveal">
+                    <img src="doc/img/img_lin.png" alt="Trndi on Fedora Linux (KDE Plasma)" loading="lazy" width="800" height="600">
                     <h3>Linux</h3>
                 </div>
                 <div class="screenshot-item reveal">
-                    <img src="doc/img/img_rpi.jpg" alt="Trndi on Raspberry Pi with touchscreen" loading="lazy">
+                    <img src="doc/img/img_rpi.jpg" alt="Trndi on Raspberry Pi with touchscreen" loading="lazy" width="2048" height="1542">
                     <h3>Raspberry Pi</h3>
                 </div>
             </div>
@@ -109,7 +116,7 @@
             <!-- Filled in by script when the visitor's computer is recognised; hidden otherwise -->
             <div id="download-primary" class="download-primary" hidden>
                 <div class="download-icon" id="download-primary-icon" aria-hidden="true"></div>
-                <a href="#" id="download-primary-btn" class="btn-download btn-download-big">Download Trndi</a>
+                <a href="https://github.com/slicke/trndi/releases/latest/" id="download-primary-btn" class="btn-download btn-download-big">Download Trndi</a>
                 <!-- Linux gets a row of package buttons instead: the distro decides the file -->
                 <div id="download-primary-pkgs" class="download-pkgs" hidden>
                     <a href="https://github.com/slicke/trndi/releases/latest/" id="download-pkg-deb" class="btn-download btn-download-pkg">
@@ -552,16 +559,38 @@
     </footer>
 
     <script>
+        // Smooth scroll for in-page links. The href is read at click time and
+        // only in-page targets are handled, so a link whose href the download
+        // script later swaps for a real URL still downloads.
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href') || '';
+                if (href.length < 2 || href.charAt(0) !== '#') return;
+                const target = document.getElementById(href.slice(1));
+                if (!target) return;
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+                target.scrollIntoView({ behavior: 'smooth' });
             });
         });
 
         window.addEventListener('scroll', function () {
             document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 100);
         });
+
+        // Hamburger menu on narrow screens; closes again when a link is chosen
+        (function () {
+            const nav = document.querySelector('.navbar');
+            const toggle = nav.querySelector('.nav-toggle');
+            if (!toggle) return;
+            toggle.addEventListener('click', () => {
+                const open = nav.classList.toggle('nav-open');
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+            nav.querySelectorAll('.nav-links a').forEach(a => a.addEventListener('click', () => {
+                nav.classList.remove('nav-open');
+                toggle.setAttribute('aria-expanded', 'false');
+            }));
+        })();
 
         // Fade cards in as they scroll into view (no-op if reduced motion or no support)
         if ('IntersectionObserver' in window &&

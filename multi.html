@@ -16,7 +16,10 @@
                 <img src="trndi-multi.png" alt="trndi-multi logo">
                 <span>Trndi <span class="nav-logo-sub">/ multi</span></span>
             </a>
-            <div class="nav-links">
+            <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links" id="nav-links">
                 <a href="index.html">Desktop app</a>
                 <a href="cli.html">CLI</a>
                 <a href="#features">Features</a>
@@ -268,16 +271,38 @@ trndi-multi --kiosk        wall display: full screen, pointer hidden, Esc ignore
     </footer>
 
     <script>
+        // Smooth scroll for in-page links. The href is read at click time and
+        // only in-page targets are handled, so a link whose href the download
+        // script later swaps for a real URL still downloads.
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href') || '';
+                if (href.length < 2 || href.charAt(0) !== '#') return;
+                const target = document.getElementById(href.slice(1));
+                if (!target) return;
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+                target.scrollIntoView({ behavior: 'smooth' });
             });
         });
 
         window.addEventListener('scroll', function () {
             document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 100);
         });
+
+        // Hamburger menu on narrow screens; closes again when a link is chosen
+        (function () {
+            const nav = document.querySelector('.navbar');
+            const toggle = nav.querySelector('.nav-toggle');
+            if (!toggle) return;
+            toggle.addEventListener('click', () => {
+                const open = nav.classList.toggle('nav-open');
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+            nav.querySelectorAll('.nav-links a').forEach(a => a.addEventListener('click', () => {
+                nav.classList.remove('nav-open');
+                toggle.setAttribute('aria-expanded', 'false');
+            }));
+        })();
 
         if ('IntersectionObserver' in window &&
             !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
