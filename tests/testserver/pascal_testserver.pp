@@ -41,6 +41,11 @@
  *   bind is reported instead of exiting silently. Startup success is now
  *   determined by the listening socket rather than by the existence of a
  *   thread, which could outlive a server that never bound.
+ * - 2026-10-16: The fake Dexcom Share serves the two-step login
+ *   (AuthenticatePublisherAccount, LoginPublisherAccountById) beside the
+ *   by-name one, with accounts that answer as an {"accountId"} object ("g7"),
+ *   as the null GUID ("nobody"), without the authenticate endpoint
+ *   ("noauth"), and with doubled readings ("dupes").
  *)
 unit pascal_testserver;
 
@@ -230,6 +235,22 @@ var
   authCount, entriesSuccessCount: Integer;
   currentToken: string;
   clBase: TDateTime;
+  dexName: string;
+
+  // Value of a string member in a JSON body, e.g. JsonStr(Body, 'accountName').
+  function JsonStr(const body, key: string): string;
+  var
+    kp, qp, ep: Integer;
+  begin
+    Result := '';
+    kp := Pos('"' + key + '"', body);
+    if kp = 0 then Exit;
+    qp := Pos('"', body, kp + Length(key) + 2);   // opening quote of the value
+    if qp = 0 then Exit;
+    ep := Pos('"', body, qp + 1);                   // closing quote
+    if ep = 0 then Exit;
+    Result := Copy(body, qp + 1, ep - qp - 1);
+  end;
 
   function ReadRequest: Boolean;
   var
@@ -414,15 +435,42 @@ begin
     if Pos('/ShareWebServices/Services/', pathOnly) = 1 then
     begin
       sub := Copy(pathOnly, Length('/ShareWebServices/Services/') + 1, MaxInt);
-      if sub = 'General/LoginPublisherAccountByName' then
+      if sub = 'General/AuthenticatePublisherAccount' then
       begin
+        dexName := JsonStr(Body, 'accountName');
+        // "noauth" plays a server without the two-step route, so the driver
+        // has to fall back to LoginPublisherAccountByName.
+        if dexName = 'noauth' then
+          SendResponse('application/json', '{"error":"Unknown Dexcom endpoint","path":"' + sub + '"}', 404)
+        // "g7" answers the way newer accounts do: an object, not a bare GUID.
+        else if dexName = 'g7' then
+          SendResponse('application/json', '{"accountId":"ACCT-g7"}')
+        // "nobody" is an account the server does not know: the null GUID.
+        else if dexName = 'nobody' then
+          SendResponse('application/json', '"00000000-0000-0000-0000-000000000000"')
+        else
+          SendResponse('application/json', '"ACCT-' + dexName + '"');
+      end
+      else if sub = 'General/LoginPublisherAccountById' then
+      begin
+        dexName := JsonStr(Body, 'accountId');
         // Account "expired" simulates Dexcom Share's ~24h session expiry:
         // login succeeds but the issued session is rejected by the glucose
-        // endpoint (see below).
+        // endpoint (see below). "dupes" gets a session whose readings come
+        // back doubled, as a G7 with Direct-to-Watch publishes them.
+        if dexName = 'ACCT-expired' then
+          SendResponse('application/json', '"EXPIRED-SESSION"')
+        else if dexName = 'ACCT-dupes' then
+          SendResponse('application/json', '"DUPES-SESSION"')
+        else
+          SendResponse('application/json', '"BYID-SESSION"');
+      end
+      else if sub = 'General/LoginPublisherAccountByName' then
+      begin
         if Pos('expired', LowerCase(Body)) > 0 then
           SendResponse('application/json', '"EXPIRED-SESSION"')
         else
-          SendResponse('application/json', '"TEST-DEXCOM-SESSION"');
+          SendResponse('application/json', '"BYNAME-SESSION"');
       end
       else if sub = 'General/SystemUtcTime' then
       begin
@@ -441,6 +489,19 @@ begin
           Exit;
         end;
         nowMs := NowMillis;
+        if (Pos('sessionId=DUPES-SESSION', query) > 0) or
+          (Pos('sessionId=DUPES-SESSION', Body) > 0) then
+        begin
+          // Two samples, each uploaded twice one second apart (watch + phone).
+          items := Format('[{"WT":"/Date(%d)/","ST":"/Date(%d)/","Value":120,"Trend":"Flat"},' +
+            '{"WT":"/Date(%d)/","ST":"/Date(%d)/","Value":120,"Trend":"Flat"},' +
+            '{"WT":"/Date(%d)/","ST":"/Date(%d)/","Value":115,"Trend":"Flat"},' +
+            '{"WT":"/Date(%d)/","ST":"/Date(%d)/","Value":115,"Trend":"Flat"}]',
+            [nowMs, nowMs, nowMs - 1000, nowMs - 1000,
+             nowMs - 300000, nowMs - 300000, nowMs - 301000, nowMs - 301000]);
+          SendResponse('application/json', items);
+          Exit;
+        end;
         items := '[';
         for i := 0 to 2 do
         begin

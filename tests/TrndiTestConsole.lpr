@@ -48,6 +48,7 @@ uses
   sysutils, fpcunit, testregistry, testreport,
   dexcom_time_tests,
   dexcom_trend_tests,
+  dexcom_helper_tests,
   tandem_trend_tests,
   tandem_fixture_tests,
   api_tandem_treatment_tests,

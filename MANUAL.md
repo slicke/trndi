@@ -498,7 +498,7 @@ quits if you close Settings without changing the data source.
 Trndi can't get readings from your data source.
 - **Check**: Your internet connection
 - **Check**: Your NightScout URL is correct
-- **Check**: Your Dexcom/xDrip credentials are correct
+- **Check**: Your Dexcom/xDrip credentials are correct. For Dexcom, the wrong region is reported as a wrong password; see the [Dexcom guide](guides/Dexcom.md)
 - **Check**: For CareLink, the stored token may have expired — redo the browser login (see the [CareLink guide](guides/CareLink.md))
 - **Check**: For FreeStyle Libre, the sharing invitation must have been accepted in the LibreLinkUp app, and Abbott may be waiting for you to accept its terms (see the [LibreLinkUp guide](guides/LibreLinkUp.md))
 

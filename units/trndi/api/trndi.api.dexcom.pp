@@ -50,6 +50,16 @@
  *   LCL-free (console) builds.
  * - 2026-09-23: testConnection rejects a null-GUID session instead of
  *   reporting it as a working connection, matching Connect.
+ * - 2026-10-16: Sign-in moved to Login and takes the two-step route
+ *   (AuthenticatePublisherAccount, then LoginPublisherAccountById) for every
+ *   account type, with LoginPublisherAccountByName as the fallback; the
+ *   authenticate reply may now be an {"accountId"} object, which the old
+ *   quote-stripping mangled. testConnection runs Connect on a throwaway
+ *   instance instead of a second copy of the flow, and after a password
+ *   rejection asks the other regions whether they accept the account.
+ *   GetReadings no longer fetches ReadSubscriberAlertSettings on every poll
+ *   (the reply was discarded), clamps the window instead of raising, drops
+ *   duplicate readings, and computes deltas after the dedupe.
  *)
 unit trndi.api.dexcom;
 
@@ -59,7 +69,7 @@ interface
 
 uses
 Classes, SysUtils,   // Trndi units
-trndi.types, trndi.api, trndi.native, {$ifdef debug} trndi.log, trndi.funcs.core,{$endif}
+trndi.types, trndi.api, {$ifdef debug} trndi.log, trndi.funcs.core,{$endif}
   // FPC units
 fpjson, jsonparser, dateutils, StrUtils;
 
@@ -127,9 +137,14 @@ private
   FPassword: string;   /// Dexcom Share account password
   FSessionID: string;   /// Session ID returned by Dexcom after authentication
   FCalcDiff: boolean;  /// If True, compute deltas between consecutive readings
+  FPasswordRejected: boolean; /// Last Login ended in Dexcom's AccountPasswordInvalid
 
     {** Check that the current session token looks valid (non-empty and not dummy). }
   function CheckSession: boolean;
+
+    {** Sign in and store the session id in @code(FSessionID). Sets
+        @code(lastErr) and returns False on failure. }
+  function Login: boolean;
 
     {** Check whether a Dexcom receiver/transmitter serial is assigned to the account. }
   function CheckSerialNumber(const ASerial: string): boolean;
@@ -198,6 +213,9 @@ published
   property Session: string read FSessionID;
     {** Whether this client computes deltas between consecutive readings. }
   property CalculateDiff: boolean read FCalcDiff;
+    {** True when the last sign-in failed with Dexcom's AccountPasswordInvalid,
+        which is also the answer for an account on another region's server. }
+  property PasswordRejected: boolean read FPasswordRejected;
 protected
     {** Get the value which represents the maximum reading for the backend
      }
@@ -239,7 +257,6 @@ implementation
 uses trndi.api.dexcom_helpers;
 
 resourcestring
-sErrDexPass = 'Invalid Dexcom password or account credentials';
 sErrDexLogin = 'Login error: Could not establish a valid session';
 sErrDexNoAccount = 'No Dexcom account matched those details. Check the ' +
   'username or e-mail address.';
@@ -377,115 +394,117 @@ begin
 end;
 
 {------------------------------------------------------------------------------
-  Connect to Dexcom Share and establish a valid session.
-  Performs authentication sequence and time synchronization.
-------------------------------------------------------------------------------}
-function Dexcom.Connect: boolean;
-var
-  LBody, LTimeResponse, LTimeString, LAccountID: string;
-  LServerDateTime: TDateTime;
-  LTimeMs: int64;
-  LUseEmailAuth: boolean;
-  resp: string;
-  LAuthErr: string;
-begin
-  // Detect if user provided email (contains @) or phone (starts with +)
-  // These require two-step auth: AuthenticatePublisherAccount → LoginPublisherAccountById
-  LUseEmailAuth := (Pos('@', FUserName) > 0) or (Pos('+', FUserName) = 1);
+  Sign in and store the session id in FSessionID.
 
-  // Prepare JSON payload for authentication with properly escaped credentials
+  Every account type takes the same route: AuthenticatePublisherAccount
+  resolves the username, e-mail address or phone number to an account id, and
+  LoginPublisherAccountById turns that into a session. It is the only route
+  the Share clients kept current use (pydexcom, xDrip+, Loop since 2023,
+  nightscout-connect). The one-step LoginPublisherAccountByName, which plain
+  usernames took here before, has been seen to answer with no session at all;
+  it stays as the fallback for a server that does not answer the two-step
+  route.
+
+  Credential failures are terminal on every step: a retry would only resend
+  the same rejected password and count toward Dexcom's lockout.
+------------------------------------------------------------------------------}
+function Dexcom.Login: boolean;
+var
+  LBody, LResponse, LAccountID, LAuthErr: string;
+begin
+  Result := false;
+  FSessionID := '';
+  FPasswordRejected := false;
+
   LBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
     [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_ID]);
 
-  // 1) Authenticate to obtain session token
+  // 1) Username / e-mail / phone number -> account id
   // Note: native.Request automatically adds Content-Type and Accept headers when jsondata is provided
-  
-  if LUseEmailAuth then
+  LResponse := native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody);
+  {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_AUTHENTICATE_ENDPOINT, LResponse, '']));{$endif}
+  if DexcomAuthFailureMessage(LResponse, LAuthErr) then
   begin
-    // Two-step authentication for email/phone:
-    // Step 1: Get account ID from email/phone
-    resp := native.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], LBody);
-    LAccountID := StringReplace(
-      resp,
-      '"', '', [rfReplaceAll]);
-    {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_AUTHENTICATE_ENDPOINT, resp, '']));{$endif}
-    
-    // Check for authentication errors
-    if (LAccountID = '') or (Pos('error', LowerCase(LAccountID)) > 0) or
-      (Pos('invalid', LowerCase(LAccountID)) > 0) or
-      (Pos('AccountPassword', LAccountID) > 0) then
-    begin
-      Result := false;
-      if Pos('AccountPassword', LAccountID) > 0 then
-        setUserError(sErrDexPass + ' (Dex1)')
-      else
-        lastErr := sErrDexLogin + ' (Dex1a): ' + LAccountID;
-      Exit;
-    end;
-    
-    // Step 2: Use account ID to get session ID
-    LBody := Format('{ "accountId": "%s", "password": "%s", "applicationId": "%s" }',
-      [LAccountID, JSONEscape(FPassword), DEXCOM_APPLICATION_ID]);
-
-    resp := native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody);
-    FSessionID := StringReplace(
-      resp,
-      '"', '', [rfReplaceAll]);
-        {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_ID_ENDPOINT, resp, '']));{$endif}
-  end
-  else begin
-    resp := native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody);
-    FSessionID := StringReplace(
-    resp,
-      '"', '', [rfReplaceAll]);// Single-step authentication for plain usernames
-
-    {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_NAME_ENDPOINT, resp, '']));{$endif}
-  end;
-
-  // A recognised authentication failure is reported as itself before the
-  // substring checks below get a chance to mistake it for a session token.
-  // SSO_AuthenticateMaxAttemptsExceeded contains neither "error" nor "invalid",
-  // so a locked-out account otherwise reached CheckSession as a live token.
-  // Both branches converge here because this driver has no by-name fallback to
-  // keep open, unlike the new one.
-  if DexcomAuthFailureMessage(resp, LAuthErr) then
-  begin
-    Result := false;
+    FPasswordRejected := DexcomIsPasswordRejected(LResponse);
     setUserError(LAuthErr + ' (Dex1)');
     Exit;
   end;
-
-  // Check for various error responses before validation
-  if (FSessionID = '') or (Pos('error', LowerCase(FSessionID)) > 0) or
-    (Pos('invalid', LowerCase(FSessionID)) > 0) then
+  // The reply is a quoted GUID, or an {"accountId"} object for newer accounts;
+  // DexcomExtractId reads both and yields '' for anything else.
+  LAccountID := DexcomExtractId(LResponse);
+  // A null GUID means the lookup ran but matched no account. Rejected here
+  // rather than sent on to the login call, which would fail with a vaguer
+  // error one step later.
+  if LAccountID = DEXCOM_NULL_UUID then
   begin
-    Result := false;
-    lastErr := sErrDexLogin + ' (Dex1a): ' + FSessionID;
+    setUserError(sErrDexNoAccount + ' (Dex1a)');
     Exit;
   end;
 
-  // If response indicates password/credential issues, fail early
-  if Pos('AccountPassword', FSessionID) > 0 then
+  // 2) Account id -> session
+  if LAccountID <> '' then
   begin
-    Result := false;
-    setUserError(sErrDexPass + ' (Dex1)');
-    Exit;
+    LBody := Format('{ "accountId": "%s", "password": "%s", "applicationId": "%s" }',
+      [LAccountID, JSONEscape(FPassword), DEXCOM_APPLICATION_ID]);
+    LResponse := native.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], LBody);
+    {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_ID_ENDPOINT, LResponse, '']));{$endif}
+    if DexcomAuthFailureMessage(LResponse, LAuthErr) then
+    begin
+      FPasswordRejected := DexcomIsPasswordRejected(LResponse);
+      setUserError(LAuthErr + ' (Dex1b)');
+      Exit;
+    end;
+    FSessionID := DexcomExtractId(LResponse);
   end;
 
-  // 2) Validate current session token
+  // 3) Fallback: one-step login by account name
+  if FSessionID = '' then
+  begin
+    LBody := Format('{ "accountName": "%s", "password": "%s", "applicationId": "%s" }',
+      [JSONEscape(FUserName), JSONEscape(FPassword), DEXCOM_APPLICATION_ID]);
+    LResponse := native.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], LBody);
+    {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_LOGIN_BY_NAME_ENDPOINT, LResponse, '']));{$endif}
+    if DexcomAuthFailureMessage(LResponse, LAuthErr) then
+    begin
+      FPasswordRejected := DexcomIsPasswordRejected(LResponse);
+      setUserError(LAuthErr + ' (Dex1c)');
+      Exit;
+    end;
+    FSessionID := DexcomExtractId(LResponse);
+    if FSessionID = '' then
+    begin
+      lastErr := sErrDexLogin + ' (Dex1c): ' + Copy(Trim(LResponse), 1, 200);
+      Exit;
+    end;
+  end;
+
+  // 4) Validate the session token
   if not CheckSession then
   begin
-    Result := false;
     // Null GUID indicates authentication rejection (not wrong password)
-    if FSessionID = DEXCOM_NULL_UUID then
-      setUserError('Dexcom authentication rejected. Possible causes: ' +
-        '1) Wrong region (try using another region), ' +
-        '2) Dexcom Share not enabled in official app, ' +
-        '3) Account requires action in official Dexcom app. (Dex2)')
-    else
-      lastErr := sErrDexLogin + ' (Dex2): Received invalid session ID: ' + FSessionID;
+    setUserError('Dexcom authentication rejected. Possible causes: ' +
+      '1) Wrong region (try using another region), ' +
+      '2) Dexcom Share not enabled in official app, ' +
+      '3) Account requires action in official Dexcom app. (Dex2)');
     Exit;
   end;
+
+  Result := true;
+end;
+
+{------------------------------------------------------------------------------
+  Connect to Dexcom Share and establish a valid session.
+  Signs in (see Login) and synchronizes time.
+------------------------------------------------------------------------------}
+function Dexcom.Connect: boolean;
+var
+  LTimeResponse, LTimeString: string;
+  LServerDateTime: TDateTime;
+  LTimeMs: int64;
+begin
+  Result := false;
+  if not Login then
+    Exit;
 
   // 3) Retrieve system UTC time for time-diff calibration
   LTimeResponse := native.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
@@ -621,21 +640,19 @@ end;
 
 var
   LParams: array[1..3] of string;
-  LGlucoseJSON, LAlertJSON, LTrendStr: string;
+  LGlucoseJSON, LTrendStr: string;
   LData: TJSONData;
   i: integer;
   noval: MaybeInt;
-  CurVal, PrevVal: double;
-  CurOk, PrevOk: boolean;
+  CurVal: double;
+  CurOk: boolean;
   attempt: integer;
 begin
   // Initialize the noval
   noval.exists := false;
-  // Guard input ranges based on common Share limits
-  if (AMinutes < 1) or (AMinutes > 1440) then
-    raise Exception.Create('GetReadings error: AMinutes out of valid range (1..1440)');
-  if (AMaxCount < 1) or (AMaxCount > 288) then
-    raise Exception.Create('GetReadings error: AMaxCount out of valid range (1..288)');
+  // The window comes from user-editable settings; shrink an oversized one to
+  // what Share accepts instead of refusing the poll.
+  DexcomClampWindow(AMinutes, AMaxCount);
 
   // Build query parameters for Dexcom Share
   LParams[1] := 'sessionId=' + FSessionID;
@@ -646,8 +663,6 @@ begin
   begin
     LGlucoseJSON := native.Request(true, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LParams, '', 'Accept=application/json');
     {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_GLUCOSE_READINGS_ENDPOINT, LGlucoseJSON, debugParams(lparams)]));{$endif}
-    LAlertJSON := native.Request(true, DEXCOM_ALERT_ENDPOINT, LParams, '', 'Accept=application/json');
-    {$ifdef DEBUG} if DEBUG_LOG_ALERT then TrndiDLog(Format('[%s:%s] / %s'#10'%s'#10'[%s]', [{$i %file%}, {$i %Line%}, DEXCOM_ALERT_ENDPOINT, LAlertJSON, debugParams(LPARAMS)]));{$endif}
 
     res := LGlucoseJSON;
 
@@ -724,20 +739,9 @@ begin
 
       if CurOk then
       begin
-        // Dexcom Share returns readings newest-first, so the reading preceding
-        // this one in time is at index i+1. If the neighbor is missing, leave
-        // change = BG_NO_VAL (set by Init) so umain falls back to computing the
-        // delta from bgs[0] - bgs[1] instead of formatting a bogus 0.0.
-        if FCalcDiff and (i < LData.Count - 1) then
-        begin
-          PrevVal := SafeValue(LData.Items[i + 1], PrevOk);
-          if PrevOk then
-            Result[i].update(CurVal, CurVal - PrevVal)
-          else
-            Result[i].update(CurVal, BGPrimary);
-        end
-        else
-          Result[i].update(CurVal, BGPrimary);
+        // Deltas are filled in below, once duplicates are gone; a delta taken
+        // here against a duplicate neighbour would be 0.
+        Result[i].update(CurVal, BGPrimary);
 
         // Classify level per thresholds
         Result[i].level := getLevel(Result[i].val);
@@ -755,6 +759,16 @@ begin
   finally
     LData.Free;
   end;
+
+  // G7 Direct-to-Watch publishes each sample from both the watch and the
+  // phone, a second apart, and Share returns both.
+  DexcomDropDuplicateReadings(Result);
+  // Dexcom Share returns readings newest-first, so the reading preceding
+  // each one in time is the next index. A reading whose neighbour is missing
+  // keeps change = BG_NO_VAL (set by Init), so umain falls back to computing
+  // the delta from bgs[0] - bgs[1] instead of formatting a bogus 0.0.
+  if FCalcDiff then
+    DexcomComputeDeltas(Result);
 
   // Note: Dexcom API does not provide threshold information
   // Thresholds should be set via override settings or use API defaults from Connect()
@@ -783,157 +797,35 @@ end;
 
 {------------------------------------------------------------------------------
   Test connection for Dexcom Share API
-  - Performs authentication sequence similar to Connect to validate credentials
-  - Probes /General/SystemUtcTime to ensure server responds with time info
+  - Runs Connect on a throwaway instance: the same sign-in and time probe the
+    live backend performs, so the test cannot pass what Connect then refuses
+  - After a password rejection, asks the other regions whether they accept
+    the account, since the wrong region is reported as a wrong password
  ------------------------------------------------------------------------------}
 class function Dexcom.testConnection(user, pass: string; var res: string; extra: string): MaybeBool;
 var
-  tn: TrndiNative;
-  base, body, resp, accountId, sessionId, timeResp, timeStr: string;
-  authErr: string;
-  js: TJSONData;
-  useEmailAuth: boolean;
-  LServerDateTime: TDateTime;
-  i: integer;
+  inst: Dexcom;
+  region: string;
 begin
-  Result := maybebool.false; // default failure
+  Result := MaybeBool.false; // default failure
   res := 'An unknown error occured'; // @see DexcomNew
   // Basic parameter checks
   if Trim(user) = '' then
     Exit;
 
-  base := DEXCOM_BASE_URLS[extra = 'usa'];
-  // Create native with same UA as client
-  tn := TrndiNative.Create('Dexcom Share/3.0.2.11 CFNetwork/711.2.23 Darwin/14.0.0', base);
+  inst := DexcomCustom.Create(user, pass, extra);
   try
-    useEmailAuth := (Pos('@', user) > 0) or (Pos('+', user) = 1);
-    body := Format('{"accountName":"%s","password":"%s","applicationId":"%s"}',
-      [JSONEscape(user), JSONEscape(pass), DEXCOM_APPLICATION_ID]);
-
-    // 1) Authenticate
-    if useEmailAuth then
+    if inst.Connect then
     begin
-      resp := tn.Request(true, DEXCOM_AUTHENTICATE_ENDPOINT, [], body);
-
-      // Recognised credential failures are terminal here: this call only looks
-      // the account up, and no other endpoint can do it, so there is nothing to
-      // fall back to. Without this, codes carrying neither "error" nor
-      // "invalid" -- SSO_AuthenticateMaxAttemptsExceeded above all -- survive
-      // the quote-stripping below as a non-empty "account id" and the test
-      // reports a locked-out account as a working connection.
-      if DexcomAuthFailureMessage(resp, authErr) then
-      begin
-        res := authErr;
-        Exit;
-      end;
-
-      accountId := StringReplace(resp, '"', '', [rfReplaceAll]);
-      if (accountId = '') or (Pos('error', LowerCase(accountId)) > 0) or (Pos('invalid', LowerCase(accountId)) > 0) then
-      begin
-        res := sErrDexLogin;
-        Exit;
-      end;
-
-      // A null GUID means the lookup ran but matched no account. Rejected here
-      // rather than sent to the login call, which would fail with a vaguer
-      // error one step later.
-      if accountId = DEXCOM_NULL_UUID then
-      begin
-        res := sErrDexNoAccount;
-        Exit;
-      end;
-
-      body := Format('{"accountId":"%s","password":"%s","applicationId":"%s"}',
-        [accountId, JSONEscape(pass), DEXCOM_APPLICATION_ID]);
-
-      sessionId := StringReplace(tn.Request(true, DEXCOM_LOGIN_BY_ID_ENDPOINT, [], body), '"', '', [rfReplaceAll]);
-    end
-    else
-    begin
-      resp := tn.Request(true, DEXCOM_LOGIN_BY_NAME_ENDPOINT, [], body);
-
-      // Terminal here for the same reason it is on the authenticate call: a
-      // plain username has only this endpoint, so there is no fallback to
-      // protect by letting the failure through.
-      if DexcomAuthFailureMessage(resp, authErr) then
-      begin
-        res := authErr;
-        Exit;
-      end;
-
-      sessionId := StringReplace(resp, '"', '', [rfReplaceAll]);
-    end;
-
-    // Connect rejects the null GUID as a session, so a test that passed it
-    // would report a connection that the real login then refuses (Dex2)
-    if sessionId = DEXCOM_NULL_UUID then
-    begin
-      res := sErrDexLogin + ': Dexcom returned an empty session. Check the region, ' +
-        'and that Dexcom Share is enabled in the official app.';
+      Result := MaybeBool.true;
       Exit;
     end;
-
-    // 2) Basic checks on session token
-    if (sessionId = '') or (Pos('error', LowerCase(sessionId)) > 0) or (Pos('invalid', LowerCase(sessionId)) > 0) or (Pos('AccountPassword', sessionId) > 0) then
-    begin
-      res := sErrDexPass;
-      Exit;
-    end;
-
-    // 3) Time probe
-    timeResp := tn.Request(false, DEXCOM_TIME_ENDPOINT, [], '', 'Accept=application/json');
-    if Trim(timeResp) = '' then
-      Exit;
-
-    // Parse time response: try '<SystemTime>...' or '/Date(ms)/' or JSON object
-    if Pos('>', timeResp) > 0 then
-    begin
-      // Example: <SystemTime>YYYY-MM-DDTHH:mm:ss</SystemTime>
-      timeStr := ExtractDelimited(2, timeResp, ['>', '<']);
-      if timeStr = '' then
-        Exit;
-      try
-        LServerDateTime := ScanDateTime('YYYY-MM-DD"T"hh:nn:ss', Copy(timeStr, 1, 19));
-      except
-        Exit;
-      end;
-    end
-    else
-    begin
-      // JSON or /Date(ms)/ format. Find digits between '(' and ')'
-      timeStr := '';
-      i := Pos('(', timeResp);
-      if i > 0 then
-        timeStr := Copy(timeResp, i + 1, Pos(')', timeResp) - i - 1)
-      else
-      try
-        js := GetJSON(timeResp);
-        try
-          if js.JSONType = jtObject then
-            timeStr := TJSONObject(js).Get('ServerTime', '');
-        finally
-          js.Free;
-        end;
-      except
-        on E: Exception do
-          // Handle JSONDecodeError - malformed JSON from time endpoint
-          timeStr := '';
-      end// Try a simple JSON parse for numeric ServerTime value
-      ;
-
-      if timeStr = '' then
-        Exit;
-      try
-        LServerDateTime := UnixToDateTime(StrToInt64(timeStr) div 1000, false);
-      except
-        Exit;
-      end;
-    end;
-
-    // If all above succeeded, we consider this a success
-    Result := MaybeBool.true;
+    res := inst.errormsg;
+    if inst.PasswordRejected and
+      DexcomFindAccountRegion(user, pass, inst.Remote, region) then
+      res := DexcomWrongRegionMessage(region);
   finally
-    tn.Free;
+    inst.Free;
   end;
 end;
 

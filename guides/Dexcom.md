@@ -22,6 +22,19 @@ Open Trndi and open the settings (if they aren't alredy showing), by right-click
 
 Now close the window, then close Trndi (if it doesn't close itself) and start it again.
 
+## Troubleshooting
+Most Dexcom problems come from the account itself rather than from Trndi. Check these before anything else:
+
+* **"Incorrect username or password" when the password works in the Dexcom app.** The wrong region gives exactly this error. Dexcom answers the same way for a wrong password and for an account that lives on another region's server. The "Test connection" button tries the other regions for you after this error and names the one that accepts your account.
+* **Long passwords.** Dexcom's sharing servers accept passwords of at most 20 characters, even though the app and website let you set longer ones. Change the password to 20 characters or fewer if it keeps being rejected.
+* **Use the sharer's account, not a follower's.** Trndi needs the account of the person wearing the sensor, the one used to log in to the Dexcom app and Clarity. A Follow account cannot read the data.
+* **Children's accounts.** A child's readings are fetched with the child's own username and password, not the parent's.
+* **Sharing must be on, with at least one follower.** If sharing is off, or no follower has been invited, the servers return no readings at all. Trndi then shows no data rather than an error.
+* **No readings but no error.** The Dexcom app on the phone is not uploading. Toggle sharing off and on in the app, or restart it.
+* **Phone number as username.** Write it with the country code, as in `+46701234567`, without spaces.
+* **Too many attempts.** After repeated failed sign-ins Dexcom locks the account for a while. Stop every app that uses the account, wait 10-15 minutes, and try again with the right details. Trying sooner keeps it locked.
+* **Dexcom Stelo** does not use Dexcom Share and cannot be read by Trndi.
+
 # Personal Settings
 ## Setting limits
 Personal limits and goals, such as "values over 10.5 are high", are not provided by the Dexcom servers. 
