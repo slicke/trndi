@@ -124,7 +124,10 @@ If you enable "full arrow set" in settings, you get more precise information:
 ## Display Features
 
 ### The Dots (Trend Graph)
-Those small dots you see across the screen show your recent readings over time:
+Those small dots you see across the screen show your recent readings over time.
+The shaded band behind them is your high/low range, with the two limits written
+in small figures at its left edge, so you can see at a glance which readings
+fell inside it:
 - **Rightmost dot** = Most recent reading (that's now!)
 - **Dots to the left** = Your readings going back in time
 - **Dot color** = The range that *that* reading fell in (green/red/yellow),
