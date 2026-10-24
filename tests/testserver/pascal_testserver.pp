@@ -225,7 +225,7 @@ var
   ms, nowMs, readingMs: Int64;
   pathOnly, query, d, provided, hdrName, hdrVal: string;
   tokenPart, authHeader, bearerToken, expectedToken: string;
-  qpos, count, cnt: Integer;
+  qpos, count, cnt, errorCode: Integer;
   expectedHash: string;
   authCount, entriesSuccessCount: Integer;
   currentToken: string;
@@ -326,7 +326,9 @@ var
       200: status := 'OK';
       302: status := 'Found';
       401: status := 'Unauthorized';
+      403: status := 'Forbidden';
       404: status := 'Not Found';
+      429: status := 'Too Many Requests';
       500: status := 'Internal Server Error';
     else
       status := 'OK';
@@ -408,6 +410,21 @@ begin
     begin
       SendResponse('text/plain', 'Internal Server Error', 500);
       Exit;
+    end;
+
+    // -- /error/<code> (and any subpath): answer every method with that HTTP
+    // status, so a client can be pointed at a server that only ever says
+    // 429, 401, 403 ... A code that is not a number falls through to 404.
+    if Pos('/error/', pathOnly) = 1 then
+    begin
+      sub := Copy(pathOnly, Length('/error/') + 1, MaxInt);
+      if Pos('/', sub) > 0 then
+        sub := Copy(sub, 1, Pos('/', sub) - 1);
+      if TryStrToInt(sub, errorCode) and (errorCode >= 100) and (errorCode <= 599) then
+      begin
+        SendResponse('text/plain', 'Error ' + sub, errorCode);
+        Exit;
+      end;
     end;
 
     // -- Dexcom Share

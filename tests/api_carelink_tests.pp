@@ -72,6 +72,8 @@ published
   procedure TestCareLinkBolusExtraction;
   procedure TestCareLinkCarbExtraction;
   procedure TestTransientServerErrorFailsConnect;
+  procedure TestRateLimitedTokenRefreshIsTransient;
+  procedure TestRejectedTokenRefreshNeedsUser;
 end;
 
 implementation
@@ -509,6 +511,81 @@ begin
       AssertTrue('Error message carries the HTTP status',
         Pos('HTTP 500', api.errormsg) > 0);
       AssertFalse('A server error is transient, not the user''s to fix',
+        api.errorNeedsUser);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+// A 429 on the token refresh is the server asking us to slow down, not a
+// verdict on the saved login: the error must stay transient so the next poll
+// retries instead of the UI telling the user to log in again.
+procedure TAPICareLinkTester.TestRateLimitedTokenRefreshIsTransient;
+var
+  api: TrndiAPI;
+  BaseURL, creds: string;
+begin
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestRateLimitedTokenRefreshIsTransient: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
+
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
+
+  try
+    creds := Format(
+      '{"refresh_token":"initial-refresh","client_id":"test-client",' +
+      '"token_url":"%s/error/429","data_url":"%s/carelink/data"}',
+      [BaseURL, BaseURL]);
+
+    api := CareLinkEU.Create('', creds);
+    try
+      AssertFalse('Connect fails when the token refresh is rate limited', api.connect);
+      AssertTrue('Error message carries the HTTP status',
+        Pos('HTTP 429', api.errormsg) > 0);
+      AssertFalse('Being told to slow down is transient, not the user''s to fix',
+        api.errorNeedsUser);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+// Any other 4xx on the token refresh is the server turning the saved login
+// down, so retrying would only hammer it with the same bad refresh token.
+procedure TAPICareLinkTester.TestRejectedTokenRefreshNeedsUser;
+var
+  api: TrndiAPI;
+  BaseURL, creds: string;
+begin
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping TestRejectedTokenRefreshNeedsUser: embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
+
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
+
+  try
+    creds := Format(
+      '{"refresh_token":"initial-refresh","client_id":"test-client",' +
+      '"token_url":"%s/error/401","data_url":"%s/carelink/data"}',
+      [BaseURL, BaseURL]);
+
+    api := CareLinkEU.Create('', creds);
+    try
+      AssertFalse('Connect fails when the token refresh is rejected', api.connect);
+      AssertTrue('Error message carries the HTTP status',
+        Pos('HTTP 401', api.errormsg) > 0);
+      AssertTrue('A rejected refresh token is the user''s to fix',
         api.errorNeedsUser);
     finally
       api.Free;
