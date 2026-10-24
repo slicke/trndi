@@ -361,6 +361,61 @@ function ValueToY(const Value: single): integer;
     Result := (clientH - Position) - 1;
   end;
 
+  // The two thresholds as small figures at the left edge, just inside the
+  // hi/lo band's edges, so the band reads as "3.9 to 10" at a glance rather
+  // than as a bare tint. In the display unit, whole numbers without a
+  // decimal; clear of whatever bars sit along the left edge (the progress
+  // bar, the account colour, the off-range bar); skipped when the band is
+  // too shallow to hold both without them touching. The right edge stays
+  // with the guide-line scale (PaintGuideLines), which is its own feature.
+  procedure PaintBandLabels(ATopY, ABottomY: integer);
+  const
+    LabelPad = 4;
+  var
+    th, x: integer;
+    bandTone: TColor;
+
+    function Fmt(const AMgdl: single): string;
+    var
+      v: single;
+    begin
+      v := AMgdl * BG_CONVERTIONS[un][mgdl];
+      if (un = mmol) and (Frac(v) <> 0) then
+        Result := Format('%.1f', [v])
+      else
+        Result := Format('%.0f', [v]);
+    end;
+
+  begin
+    if (clientH < 120) or (Self.ClientWidth < 80) then
+      Exit;
+    cnv.Brush.Style := bsClear;
+    cnv.Font.Style := [];
+    // A touch larger than the guide-line scale: those labels sit in a dotted
+    // grid at the far right, these two stand alone and have to carry the
+    // band's meaning on their own.
+    cnv.Font.Height := -Max(11, Round(clientH * 0.03));
+    th := cnv.TextHeight('0');
+    if ABottomY - ATopY < 2 * th + 3 * LabelPad then
+      Exit;
+    x := LabelPad;
+    if pbNextProgress.Visible then
+      Inc(x, pbNextProgress.Width);
+    if pnMultiUser.Visible then
+      Inc(x, pnMultiUser.Width);
+    if pnOffReading.Visible then
+      Inc(x, pnOffReading.Width);
+    // The tone the band shows on the window, the same way the hairlines
+    // derive it, so the figures sit on the band rather than float over it.
+    if tir_bg = -1 then
+      bandTone := DarkenColor(fBG.Color, 0.9)
+    else
+      bandTone := BlendColors(tir_bg, fBG.Color, HiLoAlphaWithColor / 255.0);
+    cnv.Font.Color := BlendColors(GetTextColorForBackground(fBG.Color), bandTone, 0.55);
+    cnv.TextOut(x, ATopY + LabelPad, Fmt(api.cgmHi));
+    cnv.TextOut(x, ABottomY - LabelPad - th, Fmt(api.cgmLo));
+  end;
+
   // "Show Guide Lines" (service menu): a light scale so a dot's height can be
   // read back as a value. Unlike the threshold bands this is a plain reading
   // aid, so it is drawn in the user's display unit, it survives high contrast
@@ -680,6 +735,9 @@ begin
       end;
     end;
   end;
+
+  if drawLo and drawHi then
+    PaintBandLabels(hiY, loY);
 
   // Last, so the scale sits on top of the range bands rather than under them.
   // The delta pill is not painted here but by the trend surface, over lVal.

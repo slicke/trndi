@@ -39,6 +39,9 @@
  * - 2026-08-16: The session-failure matcher test now expects a credential
  *   failure to be terminal rather than a recoverable session error, so a wrong
  *   password is no longer retried into a lockout.
+ * - 2026-10-16: Covers the two-step login, the {"accountId"} authenticate
+ *   reply, the by-name fallback, the null-GUID account, duplicate readings and
+ *   the clamped request window.
  *)
 unit api_dexcom_tests;
 
@@ -63,6 +66,16 @@ published
   procedure TestDexcomLocalServer;
   procedure TestDexcomSessionFailureMatcher;
   procedure TestDexcomExpiredSession;
+  procedure TestDexcomTwoStepLogin;
+  procedure TestDexcomAccountIdObject;
+  procedure TestDexcomByNameFallback;
+  procedure TestDexcomUnknownAccount;
+  procedure TestDexcomDuplicateReadings;
+  procedure TestDexcomWindowClamp;
+private
+    {** Start (or reuse) the fake server; False when integration tests are
+        disabled through TRNDI_NO_TESTSERVER=1. }
+  function ServerUp(const AName: string; out BaseURL: string): boolean;
 end;
 
 implementation
@@ -177,6 +190,165 @@ begin
       AssertEquals('Error object must not become readings', 0, Length(readings));
       AssertTrue('errormsg carries the Dexcom error code',
         Pos('SessionIdNotFound', api.errormsg) > 0);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+function TAPIDexcomTester.ServerUp(const AName: string; out BaseURL: string): boolean;
+begin
+  Result := false;
+  BaseURL := '';
+  if GetEnvironmentVariable('TRNDI_NO_TESTSERVER') = '1' then
+  begin
+    Writeln('Skipping ' + AName + ': embedded test server disabled (TRNDI_NO_TESTSERVER=1)');
+    Exit;
+  end;
+  if not StartOrUseTestServer(BaseURL) then
+    Fail('Failed to start or reach test server');
+  Result := true;
+end;
+
+procedure TAPIDexcomTester.TestDexcomTwoStepLogin;
+var
+  api: Dexcom;
+  BaseURL: string;
+begin
+  if not ServerUp('TestDexcomTwoStepLogin', BaseURL) then
+    Exit;
+  try
+    // A plain username used to go straight to LoginPublisherAccountByName.
+    // Every account type now resolves to an account id first, which the fake
+    // server marks by issuing a different session for that route.
+    api := DexcomCustom.Create('anyuser', 'anypass', BaseURL + '/ShareWebServices/Services/');
+    try
+      AssertTrue('Dexcom connects', api.connect);
+      AssertEquals('Session comes from LoginPublisherAccountById', 'BYID-SESSION', api.Session);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+procedure TAPIDexcomTester.TestDexcomAccountIdObject;
+var
+  api: Dexcom;
+  BaseURL: string;
+begin
+  if not ServerUp('TestDexcomAccountIdObject', BaseURL) then
+    Exit;
+  try
+    // Newer accounts get {"accountId":"..."} from the authenticate call. The
+    // old quote-stripping sent {accountId:...} on as the id and the login failed.
+    api := DexcomCustom.Create('g7', 'anypass', BaseURL + '/ShareWebServices/Services/');
+    try
+      AssertTrue('Dexcom connects with an object-shaped account id', api.connect);
+      AssertEquals('Session issued for the extracted id', 'BYID-SESSION', api.Session);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+procedure TAPIDexcomTester.TestDexcomByNameFallback;
+var
+  api: Dexcom;
+  BaseURL: string;
+begin
+  if not ServerUp('TestDexcomByNameFallback', BaseURL) then
+    Exit;
+  try
+    // A server that does not answer the authenticate call leaves the one-step
+    // login as the way in.
+    api := DexcomCustom.Create('noauth', 'anypass', BaseURL + '/ShareWebServices/Services/');
+    try
+      AssertTrue('Dexcom connects through the by-name fallback', api.connect);
+      AssertEquals('Session comes from LoginPublisherAccountByName', 'BYNAME-SESSION', api.Session);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+procedure TAPIDexcomTester.TestDexcomUnknownAccount;
+var
+  api: Dexcom;
+  BaseURL: string;
+begin
+  if not ServerUp('TestDexcomUnknownAccount', BaseURL) then
+    Exit;
+  try
+    // The null GUID means the lookup ran and matched nothing; it must not be
+    // sent on to the login call, nor fall back to the by-name route.
+    api := DexcomCustom.Create('nobody', 'anypass', BaseURL + '/ShareWebServices/Services/');
+    try
+      AssertFalse('Null-GUID account id is rejected', api.connect);
+      AssertTrue('Error names the missing account: ' + api.errormsg,
+        Pos('No Dexcom account', api.errormsg) > 0);
+      AssertTrue('The error is the user''s to fix', api.errorNeedsUser);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+procedure TAPIDexcomTester.TestDexcomDuplicateReadings;
+var
+  api: Dexcom;
+  readings: BGResults;
+  BaseURL: string;
+  raw: string;
+begin
+  if not ServerUp('TestDexcomDuplicateReadings', BaseURL) then
+    Exit;
+  try
+    // G7 Direct-to-Watch: each sample arrives twice, a second apart. The
+    // duplicate is dropped and the delta is taken against the previous
+    // sample, not its duplicate (which gave 0).
+    api := DexcomCustom.Create('dupes', 'anypass', BaseURL + '/ShareWebServices/Services/');
+    try
+      AssertTrue('Dexcom connects', api.connect);
+      readings := api.getReadings(30, 10, '', raw, false);
+      AssertEquals('Doubled uploads collapse to one reading each', 2, Length(readings));
+      AssertEquals('Newest reading kept', 120.0, readings[0].val, 0.01);
+      AssertEquals('Delta spans the two distinct samples', 5.0, readings[0].delta, 0.01);
+      AssertTrue('Oldest reading has no older neighbour, so no delta', readings[1].deltaEmpty);
+    finally
+      api.Free;
+    end;
+  finally
+    StopLocalTestServer;
+  end;
+end;
+
+procedure TAPIDexcomTester.TestDexcomWindowClamp;
+var
+  api: Dexcom;
+  readings: BGResults;
+  BaseURL: string;
+  raw: string;
+begin
+  if not ServerUp('TestDexcomWindowClamp', BaseURL) then
+    Exit;
+  try
+    // The window comes from user-editable settings. An oversized one used to
+    // raise out of getReadings; it is clamped to Share's limits instead.
+    api := DexcomCustom.Create('anyuser', 'anypass', BaseURL + '/ShareWebServices/Services/');
+    try
+      AssertTrue('Dexcom connects', api.connect);
+      readings := api.getReadings(5000, 1000, '', raw, false);
+      AssertTrue('Oversized window still returns readings', Length(readings) > 0);
     finally
       api.Free;
     end;
