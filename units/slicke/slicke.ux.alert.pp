@@ -5202,14 +5202,17 @@ begin
   ApplyPopupParent;
 
   {$ifdef X_MAC}
-  // Make the title bar blend into the dialog: transparent titlebar + full-size
-  // content view so there's no visible divider between bar and content. Hide
-  // the traffic-light buttons too — SlickeDialog answers come from the on-screen
+  // Make the title bar blend into the dialog: a transparent titlebar painted
+  // in the window background (SetTitleColor sets it to the dialog's color).
+  // No full-size content view: under Lazarus 5 the LCL sizes the window as if
+  // the bar were not there, so it covered the top of the content and the
+  // message text was clipped. Hide the traffic-light buttons too — SlickeDialog answers come from the on-screen
   // buttons, so the red X would be an ambiguous second exit path.
   if HandleAllocated then
   try
     CocoaWin := NSView(Handle).window;
-    SetCocoaUnifiedTitlebar(CocoaWin, True);
+    CocoaWin.setTitlebarAppearsTransparent(True);
+    CocoaWin.setTitleVisibility(NSWindowTitleHidden);
     HideCocoaWindowButtons(CocoaWin);
   except
     // Ignore Cocoa errors silently — degrade to a normal title bar.
