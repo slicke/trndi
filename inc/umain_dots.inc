@@ -74,7 +74,9 @@
    a larger disc with the value inside (FHoverDotIx, ActiveHoverDot,
    PaintHoverDot) instead of the tooltip. The hit box stays the dot's own;
    the surface clears the hover on mouse leave and on press. Predictions
-   keep the tooltip. *)
+   keep the tooltip. Expanded value text is centred on its dot's centre
+   instead of anchored at the dot's top-left, so the values follow the
+   trace. *)
 (* MODIFICATION NOTICE (2026-09-27): TrendSurfacePaint paints the delta pill
    (PaintDeltaPill) before the trace, so the pill lies over the reading and a
    decimal comma's tail no longer covers its chevron. The settings preview
@@ -486,7 +488,8 @@ begin
       cnv.Font.Color := EnsureContrast(
         DotDisplayColor(slot^.ident, DotBandPartner(slot^.ident), fBG.Color,
         lVal.Font.Color, DotColorMode), fBG.Color, DOT_TEXT_MIN_CONTRAST);
-      cnv.TextOut(r.Left, r.Top, slot^.text);
+      // Inset by the padding the layout added around the text.
+      cnv.TextOut(r.Left + 2, r.Top + 1, slot^.text);
       Continue;
     end;
 
@@ -1553,7 +1556,7 @@ end;
 // FTrendLayout/FPredictLayout for the surface's paint and hit test.
 procedure TfBG.UpdateTrendDots;
 var
-  cw, ch, cols, stride, ix, d, pd, y, da, pass, slideBy: integer;
+  cw, ch, cols, stride, ix, d, pd, y, da, pass, slideBy, tw, th, cx, cy: integer;
   infos: array of TDotInfo;
   bmp: TBitmap;
   fontn: string;
@@ -1637,9 +1640,10 @@ begin
       if FDotsExpanded and (TrendSlots[ix].kind = dkReading) then
       begin
         // Expanded value text: sized to the reading at a font derived from
-        // lVal so the dot text tracks the main BG display, anchored at the
-        // circle's top-left. Measured via a temp TBitmap — the surface's
-        // canvas belongs to the paint cycle.
+        // lVal so the dot text tracks the main BG display, centred on the
+        // circle's centre so each value sits where its dot was, whatever its
+        // width. Measured via a temp TBitmap — the surface's canvas belongs
+        // to the paint cycle.
         if bmp = nil then
         begin
           bmp := TBitmap.Create;
@@ -1648,9 +1652,12 @@ begin
             bmp.Canvas.Font.Name := fontn;
           bmp.Canvas.Font.Size := Max(8, lVal.Font.Size div Max(ACTIVE_DOTS, 1));
         end;
-        FTrendLayout[ix] := Classes.Rect(SlotLeft(ix, d), y,
-          SlotLeft(ix, d) + bmp.Canvas.TextWidth(TrendSlots[ix].text) + 4,
-          y + bmp.Canvas.TextHeight(TrendSlots[ix].text) + 2);
+        tw := bmp.Canvas.TextWidth(TrendSlots[ix].text) + 4;
+        th := bmp.Canvas.TextHeight(TrendSlots[ix].text) + 2;
+        cx := SlotLeft(ix, d) + d div 2;
+        cy := y + d div 2;
+        FTrendLayout[ix] := Classes.Rect(cx - tw div 2, cy - th div 2,
+          cx - tw div 2 + tw, cy - th div 2 + th);
       end
       else
         FTrendLayout[ix] := Classes.Rect(SlotLeft(ix, d), y,
