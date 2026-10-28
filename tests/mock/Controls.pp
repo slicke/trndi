@@ -116,6 +116,7 @@ type
     FOnMouseDown: TMouseEvent;
     FOnMouseUp: TMouseEvent;
     FOnMouseMove: TMouseMoveEvent;
+    FOnMouseLeave: TNotifyEvent;
     FCursor: Integer;
     FAutoSize: Boolean;
     FPopupMenu: TComponent;
@@ -153,6 +154,7 @@ type
     property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
     property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
     property OnMouseMove: TMouseMoveEvent read FOnMouseMove write FOnMouseMove;
+    property OnMouseLeave: TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
     property Visible: Boolean read FVisible write FVisible;
     property Cursor: Integer read FCursor write FCursor;
     property PopupMenu: TComponent read FPopupMenu write FPopupMenu;
