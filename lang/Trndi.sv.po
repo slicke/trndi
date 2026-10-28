@@ -1292,6 +1292,11 @@ msgctxt "tfconf.tsproxy.caption"
 msgid "Proxy"
 msgstr "Proxy"
 
+#: tfconf.tsabout.caption
+msgctxt "tfconf.tsabout.caption"
+msgid "About"
+msgstr "Om"
+
 #: tfconf.tssystem.caption
 msgctxt "tfconf.tssystem.caption"
 msgid "System"
@@ -4601,6 +4606,10 @@ msgstr "Finlir"
 msgid "Graph"
 msgstr "Graf"
 
+#: uconf.rs_page_about
+msgid "About"
+msgstr "Om"
+
 #: uconf.rs_page_integrations
 msgid "Music & links"
 msgstr "Musik & länkar"
@@ -4688,6 +4697,10 @@ msgstr "Din enhet, dina höga/låga nivåer och önskvärda område."
 #: uconf.rs_pd_system
 msgid "System information, autostart, web access and settings backup."
 msgstr "Systeminformation, autostart, webbåtkomst och inställningsbackup."
+
+#: uconf.rs_pd_about
+msgid "Version, license, the libraries Trndi uses, and updates."
+msgstr "Version, licens, biblioteken Trndi använder och uppdateringar."
 
 #: uconf.rs_pd_trendgraph
 msgid "How much history the trend dots show, and what is drawn on them."
