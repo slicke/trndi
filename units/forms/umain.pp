@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-28: FHoverDotIx, PaintHoverDot and TrendSurfaceMouseLeave: the
+ *   history dot under the mouse grows into a disc showing its value,
+ *   replacing the tooltip for readings.
  * - 2026-09-27: UpdateStatusItem and the status item's menu handlers
  *   (macOS menu-bar reading), including "Hide from menu bar".
  * - 2026-09-27: PaintDeltaPill and DeltaChevronShown documentation follow the
@@ -933,6 +936,10 @@ private
     // All reading dots expand together into their value text on click; this is
     // that shared state. Relayouts collapse it (see tResizeTimer).
   FDotsExpanded: boolean;
+    // History slot the mouse is over (1-based like TrendSlots; 0 = none).
+    // TrendSurfacePaint draws that reading as a larger disc with its value
+    // inside (PaintHoverDot) instead of showing a tooltip.
+  FHoverDotIx: integer;
   FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user
   multinick: string;
@@ -1151,6 +1158,16 @@ private
     {%H-}Shift: TShiftState; X, Y: integer);
   procedure TrendSurfaceMouseMove({%H-}Sender: TObject; {%H-}Shift: TShiftState;
     X, Y: integer);
+  {** Clears the hovered dot when the mouse leaves it. The surface is
+      hit-transparent between dots, so this also fires dot to dot. }
+  procedure TrendSurfaceMouseLeave({%H-}Sender: TObject);
+  {** The hovered history slot if it should be drawn as a value disc right
+      now (visible reading, not expanded, not in privacy mode), else 0. }
+  function ActiveHoverDot: integer;
+  {** Draw history slot AIx as an enlarged disc with its value inside,
+      centred on its layout box, on top of the rest of the trend. }
+  procedure PaintHoverDot(ACanvas: TCanvas; AIx: integer;
+    AFontName: string);
   {** Mark empty trend slots that provably sit between two real readings as
       sensor gaps (dkGap). Interior emptiness always qualifies; a leading run
       (the oldest slots) qualifies when AHasOlder reports a reading beyond the

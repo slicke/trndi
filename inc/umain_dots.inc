@@ -70,6 +70,11 @@
    shows the delta as the pill under the reading, like the live window.
    Gap markers are drawn by DrawGapMarker as a dotted ring of round beads,
    each with a hairline knockout, at full strength whatever the slot's age. *)
+(* MODIFICATION NOTICE (2026-10-28): Hovering a history reading draws it as
+   a larger disc with the value inside (FHoverDotIx, ActiveHoverDot,
+   PaintHoverDot) instead of the tooltip. The hit box stays the dot's own;
+   the surface clears the hover on mouse leave and on press. Predictions
+   keep the tooltip. *)
 (* MODIFICATION NOTICE (2026-09-27): TrendSurfacePaint paints the delta pill
    (PaintDeltaPill) before the trace, so the pill lies over the reading and a
    decimal comma's tail no longer covers its chevron. The settings preview
@@ -393,7 +398,7 @@ var
   fontn: string;
   slot: PTrendSlot;
   r: TRect;
-  ix, d, dd, ageOff, ringWidth, xSize, xOff, xThick, fs, nPts: integer;
+  ix, d, dd, ageOff, ringWidth, xSize, xOff, xThick, fs, nPts, hoverIx: integer;
   dotColor, ringColor, backdrop: TColor;
   xAlpha, keep: double;
   linePts, curvePts: TPointArray;
@@ -402,6 +407,7 @@ begin
   if FTrendSurface = nil then
     Exit;
   cnv := FTrendSurface.Canvas;
+  hoverIx := ActiveHoverDot;
 
   // The delta pill first: over the reading (this surface sits in front of
   // lVal), under the trace and dots. See PaintDeltaPill.
@@ -454,6 +460,9 @@ begin
   for ix := 1 to Min(High(TrendSlots), High(FTrendLayout)) do
   begin
     if not FTrendVisible[ix] then
+      Continue;
+    // The hovered reading is drawn last, enlarged (PaintHoverDot).
+    if ix = hoverIx then
       Continue;
     slot := @TrendSlots[ix];
     r := FTrendLayout[ix];
@@ -602,6 +611,81 @@ begin
     DrawSmoothX(cnv, xSize, dotColor, xThick, r.Left + xOff, r.Top + xOff,
       xAlpha);
   end;
+
+  // The hovered reading on top of everything, so a grown disc on a dense
+  // trend covers its neighbours rather than sliding under them.
+  if hoverIx > 0 then
+    PaintHoverDot(cnv, hoverIx, fontn);
+end;
+
+function TfBG.ActiveHoverDot: integer;
+begin
+  Result := 0;
+  if (FHoverDotIx < 1) or FDotsExpanded or privacyMode then
+    Exit;
+  if (FHoverDotIx > High(TrendSlots)) or (FHoverDotIx > High(FTrendLayout))
+    or (FHoverDotIx > High(FTrendVisible)) then
+    Exit;
+  if FTrendVisible[FHoverDotIx]
+    and (TrendSlots[FHoverDotIx].kind = dkReading)
+    and (TrendSlots[FHoverDotIx].text <> '') then
+    Result := FHoverDotIx;
+end;
+
+// The hovered reading: a disc wide enough for the value, centred where the
+// dot sits, at full strength (no age fade or shrink). Same color pipeline and
+// knockout halo as the ordinary dots; the value takes the window's own color,
+// lifted until it reads against the disc.
+procedure TfBG.PaintHoverDot(ACanvas: TCanvas; AIx: integer;
+  AFontName: string);
+const
+  HOVER_FONT_MIN_PX = 11;
+var
+  slot: PTrendSlot;
+  r: TRect;
+  d, cx, cy, tw, th, dia, x0, y0, ringWidth: integer;
+  dotColor, ringColor: TColor;
+begin
+  slot := @TrendSlots[AIx];
+  r := FTrendLayout[AIx];
+  d := r.Width;
+  if d < 2 then
+    Exit;
+  cx := r.Left + d div 2;
+  cy := r.Top + r.Height div 2;
+
+  if FontTXTInList(AFontName) then
+    ACanvas.Font.Name := AFontName;
+  ACanvas.Font.Height := -Max(HOVER_FONT_MIN_PX, d);
+  ACanvas.Font.Style := [fsBold];
+  tw := ACanvas.TextWidth(slot^.text);
+  th := ACanvas.TextHeight(slot^.text);
+  // Wide enough for the value plus a margin that scales with the type.
+  dia := Max(d, tw + th div 2 + 4);
+  x0 := cx - dia div 2;
+  y0 := cy - dia div 2;
+
+  dotColor := DotDisplayColor(slot^.ident, DotBandPartner(slot^.ident),
+    fBG.Color, lVal.Font.Color, DotColorMode);
+  if DotColorMode = dcmOutline then
+  begin
+    ringWidth := Max(1, dia div 14);
+    ringColor := DotOutlineColor(fBG.Color);
+  end
+  else
+  begin
+    ringWidth := 0;
+    ringColor := dotColor;
+  end;
+
+  DrawDotHalo(ACanvas, dia, x0, y0, TrendBackdropColorAt(cy));
+  DrawSmoothCircle(ACanvas, dia, dotColor, ringColor, ringWidth, x0, y0);
+
+  ACanvas.Brush.Style := bsClear;
+  ACanvas.Font.Color := EnsureContrast(fBG.Color, dotColor,
+    DOT_TEXT_MIN_CONTRAST);
+  ACanvas.TextOut(cx - tw div 2, cy - th div 2, slot^.text);
+  ACanvas.Font.Style := [];
 end;
 
 procedure TfBG.TrendSurfaceMouseDown(Sender: TObject; Button: TMouseButton;
@@ -610,6 +694,13 @@ begin
   // Remember which dot the press landed on: release must hit the same dot to
   // count as a click (mirrors the old per-control Click semantics).
   DotHitAt(MkPoint(X, Y), FDownIsPredict, FDownDotIx);
+  // A press ends the hover: a touch tap never sends a mouse leave, and a
+  // click expands the dots anyway.
+  if FHoverDotIx <> 0 then
+  begin
+    FHoverDotIx := 0;
+    FTrendSurface.Invalidate;
+  end;
 end;
 
 procedure TfBG.TrendSurfaceMouseUp(Sender: TObject; Button: TMouseButton;
@@ -662,19 +753,29 @@ begin
   {$endif}
 end;
 
-// Hover tooltip: the surface's Hint follows whichever dot the cursor is over.
-// Between dots the surface is hit-transparent, so leaving a dot leaves the
-// control and the next dot re-arms the hint like the per-dot controls did.
+// Hover: a history reading under the cursor grows into a disc showing its
+// value (PaintHoverDot). Forecast marks, and readings while the dots are
+// expanded, keep the tooltip in the surface's Hint. Between dots the surface
+// is hit-transparent, so leaving a dot leaves the control and the next dot
+// re-arms the hover like the per-dot controls did.
 procedure TfBG.TrendSurfaceMouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: integer);
 var
   slot: PTrendSlot;
   isPredict: boolean;
-  ix: integer;
+  ix, newHover: integer;
 begin
   if FTrendSurface = nil then
     Exit;
   slot := DotHitAt(MkPoint(X, Y), isPredict, ix);
+  newHover := 0;
+  if (slot <> nil) and not isPredict and (slot^.kind = dkReading)
+    and (slot^.text <> '') and not privacyMode and not FDotsExpanded then
+  begin
+    newHover := ix;
+    FTrendSurface.ShowHint := false;
+  end
+  else
   if (slot <> nil) and (slot^.text <> '') and not privacyMode then
   begin
     FTrendSurface.Hint := slot^.text;
@@ -682,6 +783,21 @@ begin
   end
   else
     FTrendSurface.ShowHint := false;
+
+  if newHover <> FHoverDotIx then
+  begin
+    FHoverDotIx := newHover;
+    FTrendSurface.Invalidate;
+  end;
+end;
+
+procedure TfBG.TrendSurfaceMouseLeave(Sender: TObject);
+begin
+  if (FTrendSurface <> nil) and (FHoverDotIx <> 0) then
+  begin
+    FHoverDotIx := 0;
+    FTrendSurface.Invalidate;
+  end;
 end;
 
 // The sample strip under the settings dialog's dot-coloring options: three
@@ -1225,6 +1341,7 @@ begin
       OnMouseDown := @TrendSurfaceMouseDown;
       OnMouseUp := @TrendSurfaceMouseUp;
       OnMouseMove := @TrendSurfaceMouseMove;
+      OnMouseLeave := @TrendSurfaceMouseLeave;
       PopupMenu := pmSettings;
       Visible := true;
     end;
