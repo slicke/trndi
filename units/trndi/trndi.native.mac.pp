@@ -52,7 +52,7 @@ interface
 uses
   Classes, SysUtils, Graphics, nsutils.nsmisc, nsutils.web.urlrequest, CocoaAll, nsutils.simpledarkmode,
   nsutils.nshelpers, nsutils.cocoahelpers, IniFiles, dialogs, StrUtils, Forms,
-  ctypes, trndi.native.base, trndi.native.wakebridge,
+  ctypes, trndi.native.base, trndi.native.wakebridge, ExtCtrls,
   Process; // TProcess field (kiosk keep-awake caffeinate child)
 
 type
@@ -67,6 +67,14 @@ type
     // Kiosk keep-awake: the power assertion lives exactly as long as this
     // `caffeinate -d -i` child, so it can never outlive the process.
     FCaffeinateProc: TProcess;
+    // Dock tile progress bar shown while a fetch runs (updateBegin/Done).
+    // The Dock only repaints a custom tile on display, so the bar creeps
+    // forward on a timer rather than relying on Cocoa's own animation.
+    FDockProgressView: NSImageView;
+    FDockProgressBar: NSProgressIndicator;
+    FDockProgressTimer: TTimer;
+    procedure DockProgressTick(Sender: TObject);
+    procedure DockProgressClear;
   public
     {** Release the keep-awake child if kiosk mode never disabled it. }
     destructor Destroy; override;
@@ -138,6 +146,10 @@ type
     {** Ignore extra params and delegate to simple overload. }
     procedure SetBadge(const Value: string; BadgeColor: TColor;
       badge_size_ratio: double; min_font_size: integer); overload; override;
+    {** Show a progress bar on the Dock icon while a fetch runs. }
+    procedure updateBegin; override;
+    {** Fill the Dock progress bar and restore the plain icon. }
+    procedure updateDone; override;
   {** Simple HTTP GET using NS HTTP helper with default UA.
       @param(url URL to fetch)
       @param(res Out parameter receiving response body or error message)
@@ -456,6 +468,13 @@ destructor TTrndiNativeMac.Destroy;
 begin
   // Release the keep-awake child if kiosk mode never disabled it.
   SetKeepAwake(false);
+  FreeAndNil(FDockProgressTimer);
+  if Assigned(FDockProgressView) then
+  begin
+    NSApp.dockTile.setContentView(nil);
+    FDockProgressBar.release;
+    FDockProgressView.release;
+  end;
   inherited Destroy;
 end;
 
@@ -1104,6 +1123,97 @@ procedure TTrndiNativeMac.SetBadge(const Value: string; BadgeColor: TColor;
 begin
   // Ignore extra params on macOS and delegate to the simple overload
   SetBadge(Value, BadgeColor);
+end;
+
+{------------------------------------------------------------------------------
+  updateBegin
+  -----------
+  Swap the Dock tile for the app icon with a progress bar along its bottom
+  edge. The badge label is drawn by the Dock on top of either, so it stays.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeMac.updateBegin;
+var
+  tile: NSSize;
+begin
+  try
+    tile := NSApp.dockTile.size;
+    if not Assigned(FDockProgressView) then
+    begin
+      FDockProgressView := NSImageView.alloc.initWithFrame(
+        NSMakeRect(0, 0, tile.width, tile.height));
+      FDockProgressBar := NSProgressIndicator.alloc.initWithFrame(
+        NSMakeRect(tile.width * 0.12, tile.height * 0.06,
+        tile.width * 0.76, tile.height * 0.14));
+      FDockProgressBar.setStyle(NSProgressIndicatorBarStyle);
+      FDockProgressBar.setIndeterminate(False);
+      FDockProgressBar.setMinValue(0);
+      FDockProgressBar.setMaxValue(100);
+      FDockProgressView.addSubview(FDockProgressBar);
+    end;
+    if not Assigned(FDockProgressTimer) then
+    begin
+      FDockProgressTimer := TTimer.Create(nil);
+      FDockProgressTimer.Interval := 100;
+      FDockProgressTimer.OnTimer := @DockProgressTick;
+    end;
+    // Re-read the icon each time; start() swaps it for the bundle artwork.
+    FDockProgressView.setImage(NSApp.applicationIconImage);
+    FDockProgressTimer.Tag := 0;
+    FDockProgressBar.setDoubleValue(5);
+    NSApp.dockTile.setContentView(FDockProgressView);
+    NSApp.dockTile.display;
+    FDockProgressTimer.Enabled := True;
+  except
+    // Cosmetic only
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  updateDone
+  ----------
+  Show the bar full for a moment, then hand the tile back to the plain icon.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeMac.updateDone;
+begin
+  if not Assigned(FDockProgressView) or not Assigned(FDockProgressTimer) or
+    not FDockProgressTimer.Enabled then
+    Exit;
+  try
+    FDockProgressBar.setDoubleValue(100);
+    NSApp.dockTile.display;
+    FDockProgressTimer.Tag := 1; // clear on the next tick
+  except
+    DockProgressClear;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  DockProgressTick
+  ----------------
+  Ease the bar towards the end without reaching it; we don't know how long
+  the fetch takes, only when it is over.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeMac.DockProgressTick(Sender: TObject);
+begin
+  if FDockProgressTimer.Tag = 1 then
+  begin
+    DockProgressClear;
+    Exit;
+  end;
+  FDockProgressBar.setDoubleValue(FDockProgressBar.doubleValue +
+    (90 - FDockProgressBar.doubleValue) * 0.15);
+  NSApp.dockTile.display;
+end;
+
+procedure TTrndiNativeMac.DockProgressClear;
+begin
+  if Assigned(FDockProgressTimer) then
+  begin
+    FDockProgressTimer.Enabled := False;
+    FDockProgressTimer.Tag := 0;
+  end;
+  NSApp.dockTile.setContentView(nil);
+  NSApp.dockTile.display;
 end;
 
 {------------------------------------------------------------------------------
