@@ -155,6 +155,8 @@ type
     FFont: TFont;
     FHandle: PtrUInt;
     FTextStyle: TTextStyle;
+    FClipRect: TRect;
+    FClipping: Boolean;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -163,6 +165,9 @@ type
     property Font: TFont read FFont write FFont;
     property Handle: PtrUInt read FHandle;
     property TextStyle: TTextStyle read FTextStyle write FTextStyle;
+    // Stored only: nothing is drawn here, so nothing is clipped either.
+    property ClipRect: TRect read FClipRect write FClipRect;
+    property Clipping: Boolean read FClipping write FClipping;
 
     function TextWidth(const S: string): Integer; virtual;
     function TextHeight(const S: string): Integer; virtual;
