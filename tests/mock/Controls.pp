@@ -38,6 +38,7 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-21: Parenting now tracks children so ControlCount/Controls[]
  *   (used by umain's shutdown-screen sweep) enumerate something real.
+ * - 2026-10-29: TCaption, for utabularlabel's RealSetText override.
  *)
 (* MODIFICATION NOTICE (2026-08-05): Added Screen.Fonts to mirror the LCL
    screen font list used by Linux-specific UI initialization in headless tests. *)
@@ -97,6 +98,10 @@ type
 
   TControlStyleType = (csOpaque, csClickEvents, csCaptureMouse);
   TControlStyle = set of TControlStyleType;
+
+  // The LCL's caption type (TTranslateString): utabularlabel overrides
+  // RealSetText with it, so the mock TLabel's hook must take the same type.
+  TCaption = type string;
 
   TControl = class(TComponent)
   private

@@ -34,6 +34,10 @@
  *   license terms.
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *
+ * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-29: TLabel.Caption writes go through a virtual RealSetText, as in
+ *   the LCL, so utabularlabel's override sees changes in the test build.
  *)
 unit StdCtrls;
 
@@ -55,11 +59,16 @@ type
     FAutoSize: Boolean;
     FTransparent: Boolean;
     FShowAccelChar: Boolean;
+    procedure SetCaption(const AValue: string);
+  protected
+    // The LCL's caption hook: Caption writes land here, so an interposer that
+    // overrides it (utabularlabel) sees every change in the test build too.
+    procedure RealSetText(const AValue: TCaption); virtual;
   public
     constructor Create(AOwner: Controls.TComponent = nil);
     destructor Destroy; override;
     procedure AdjustSize; override; // macOS AutoSize helper
-    property Caption: string read FCaption write FCaption;
+    property Caption: string read FCaption write SetCaption;
     property Font: TFont read FFont write FFont;
     property Alignment: Graphics.TAlignment read FAlignment write FAlignment;
     property Layout: Graphics.TTextLayout read FLayout write FLayout;
@@ -195,6 +204,18 @@ begin
   if Assigned(FCanvas) then
     FCanvas.Free;
   inherited Destroy;
+end;
+
+procedure TLabel.SetCaption(const AValue: string);
+begin
+  if FCaption = AValue then
+    Exit;
+  RealSetText(AValue);
+end;
+
+procedure TLabel.RealSetText(const AValue: TCaption);
+begin
+  FCaption := AValue;
 end;
 
 procedure TLabel.AdjustSize;
