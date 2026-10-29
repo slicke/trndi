@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-10-29: FHoverPredictIx and ActivePredictHover: a prediction mark
+ *   under the mouse grows into a hollow ring showing its value; PaintHoverDot
+ *   takes the slot and box so it draws both kinds.
  * - 2026-10-28: FHoverDotIx, PaintHoverDot and TrendSurfaceMouseLeave: the
  *   history dot under the mouse grows into a disc showing its value,
  *   replacing the tooltip for readings.
@@ -947,6 +950,9 @@ private
     // TrendSurfacePaint draws that reading as a larger disc with its value
     // inside (PaintHoverDot) instead of showing a tooltip.
   FHoverDotIx: integer;
+    // Prediction slot the mouse is over, as its PredictionSlots index + 1
+    // (0 = none). Drawn as a hollow ring with the value inside.
+  FHoverPredictIx: integer;
   FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user
   multinick: string;
@@ -1172,10 +1178,14 @@ private
   {** The hovered history slot if it should be drawn as a value disc right
       now (visible reading, not expanded, not in privacy mode), else 0. }
   function ActiveHoverDot: integer;
-  {** Draw history slot AIx as an enlarged disc with its value inside,
-      centred on its layout box, on top of the rest of the trend. }
-  procedure PaintHoverDot(ACanvas: TCanvas; AIx: integer;
-    AFontName: string);
+  {** The hovered prediction slot (0-based) if it should be drawn as a value
+      ring right now (visible forecast, not in privacy mode), else -1. }
+  function ActivePredictHover: integer;
+  {** Draw ASlot as an enlarged mark with its value inside, centred on its
+      layout box ARect, on top of the rest of the trend: a solid disc for a
+      reading, a hollow ring for a forecast (APredict). }
+  procedure PaintHoverDot(ACanvas: TCanvas; ASlot: PTrendSlot;
+    const ARect: TRect; APredict: boolean; AFontName: string);
   {** Mark empty trend slots that provably sit between two real readings as
       sensor gaps (dkGap). Interior emptiness always qualifies; a leading run
       (the oldest slots) qualifies when AHasOlder reports a reading beyond the

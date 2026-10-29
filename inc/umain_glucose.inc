@@ -1165,8 +1165,9 @@ procedure TfBG.RenderPredictionDots(const bgr: BGResults;
       begin
         kind := dkPredict;
         value := bgr[Idx].convert(mmol);
-        // Hover shows this via the surface's tooltip, like the history dots;
-        // clicking still shows the confidence.
+        // Hover shows this in a value ring (PaintHoverDot), the forecast's
+        // counterpart to the history dots' disc; clicking still shows the
+        // confidence.
         text := bgr[Idx].format(un, BG_MSG_SHORT, BGPrimary);
         // The predicted time, so the right-click menu can show it.
         time := bgr[Idx].date;
