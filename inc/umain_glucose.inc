@@ -2656,7 +2656,7 @@ begin
     // the window mutes to match without further plumbing.
     if (bg = bg_color_ok) and NightDimActive then
       bg := BlendColors(bg, clBlack, NIGHT_DIM_KEEP);
-    fBG.Color := bg;
+    FadeBackgroundTo(bg);
   end;
 
   // Consume the flag up front: whichever rule below claims the bar owns it from
@@ -2736,9 +2736,11 @@ begin
   // the window so it stops making a claim the data no longer supports. Only
   // runs for a tint this function actually applied, so a bar the app never
   // touched is left alone.
+  // FBgTarget rather than fBG.Color: mid-fade the window shows a tone on
+  // its way to the one the reading calls for, and the bar takes that one.
   if wasBannerTinted then
-    if native.SetTitleColor(handle, fBG.Color,
-      IfThen(IsLightColor(fBG.Color), clBlack, clWhite)) then
+    if native.SetTitleColor(handle, FBgTarget,
+      IfThen(IsLightColor(FBgTarget), clBlack, clWhite)) then
       Exit(true);
 
   // The handle is used by per-window theming (Windows DWM) and ignored by
@@ -2751,8 +2753,84 @@ end;
 
 function TfBG.setSingleColorMode: boolean;
 begin
-  Result := native.SetTitleColor(handle, fBG.color,
-    IfThen(IsLightColor(fBG.color), clBlack, clWhite));
+  // The colour the window is heading for, not the frame it is on: the bar
+  // is set once per change, and would otherwise sit on a half-way tone.
+  Result := native.SetTitleColor(handle, FBgTarget,
+    IfThen(IsLightColor(FBgTarget), clBlack, clWhite));
+end;
+
+// Eases the window background from the tone on screen to ATarget, so a
+// range change reads as the window turning rather than blinking. Every
+// dependent colour is re-derived each frame — the labels and badges through
+// UpdateUIColors, the bands and dots at paint time — since all of them take
+// fBG.Color as their source. The first colour of the session, a hidden or
+// minimised window and a target already showing are applied in one step.
+procedure TfBG.FadeBackgroundTo(ATarget: TColor);
+begin
+  if (ATarget = FBgTarget) and Assigned(tBgFade) and tBgFade.Enabled then
+    Exit;
+  FBgTarget := ATarget;
+  if (not FBgColorSet) or (not Visible) or (WindowState = wsMinimized)
+    or FShuttingDown or (fBG.Color = ATarget) then
+  begin
+    FBgColorSet := true;
+    if Assigned(tBgFade) then
+      tBgFade.Enabled := false;
+    fBG.Color := ATarget;
+    Exit;
+  end;
+
+  if tBgFade = nil then
+  begin
+    tBgFade := TTimer.Create(Self);
+    tBgFade.Enabled := false;
+    tBgFade.Interval := BG_FADE_TICK_MS;
+    tBgFade.OnTimer := @tBgFadeTimer;
+  end;
+  // A fade still running carries on from the tone it has reached.
+  FBgFadeFrom := fBG.Color;
+  FBgFadeStart := GetTickCount64;
+  tBgFade.Enabled := true;
+end;
+
+procedure TfBG.tBgFadeTimer(Sender: TObject);
+var
+  t: double;
+begin
+  if FShuttingDown then
+  begin
+    tBgFade.Enabled := false;
+    Exit;
+  end;
+  t := Min(1.0, (GetTickCount64 - FBgFadeStart) / BG_FADE_MS);
+  // Ease-in-out rather than the drain's ease-out: colour has nothing to
+  // land, and the soft start keeps the change from reading as a jolt that
+  // then trails off.
+  if t < 0.5 then
+    t := 4 * t * t * t
+  else
+    t := 1 - 4 * (1 - t) * (1 - t) * (1 - t);
+  if t >= 1.0 then
+  begin
+    tBgFade.Enabled := false;
+    fBG.Color := FBgTarget;
+  end
+  else
+    fBG.Color := BlendColors(FBgTarget, FBgFadeFrom, t);
+  UpdateUIColors;
+  if Assigned(FTrendSurface) then
+    FTrendSurface.Invalidate;
+  Invalidate;
+  // The float mirrors the window: just the tone on the way, the full mirror
+  // once the fade lands so its text colours settle with it.
+  if Assigned(fFloat) then
+    if tBgFade.Enabled then
+    begin
+      fFloat.Color := fBG.Color;
+      fFloat.SetBackdrop(BackdropColorAt(ClientHeight, false));
+    end
+    else
+      UpdateFloatingWindow;
 end;
 
 procedure TfBG.UserBadgeClicked;

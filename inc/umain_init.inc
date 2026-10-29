@@ -773,6 +773,8 @@ begin
   // from *this* — never to an already-prefixed caption — as the title-bar
   // badge appears or disappears (see RefreshUserBadge).
   FBaseCaption := Caption;
+  // What the title bar mirrors until the first reading colours the window.
+  FBgTarget := Color;
 
   // The forecast text lives in a custom-painted strip rather than an LFM
   // label: it fits its own fonts and colours its cells by range, which a

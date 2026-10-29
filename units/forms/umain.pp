@@ -929,6 +929,13 @@ private
   FTrendSlideStart: QWord;
   tTrendSlide: TTimer;        // Frame tick of the slide; runtime-created on
                               // the first slide, disabled between slides.
+    // Background fade (FadeBackgroundTo): on a range change the window colour
+    // eases from the tone on screen to the new one instead of snapping.
+  FBgTarget: TColor;          // Colour the window is heading for; fBG.Color once the fade lands. The title bar follows this, not the frames
+  FBgFadeFrom: TColor;        // Tone the running fade started from
+  FBgFadeStart: QWord;        // GetTickCount64 when it started
+  FBgColorSet: boolean;       // A reading colour has been shown; the first is applied without a fade
+  tBgFade: TTimer;            // Frame tick of the fade; runtime-created on the first fade
     // Which dot the last surface mouse-press landed on, so release-on-the-
     // same-dot can be required before acting (mirrors per-control Click).
   FDownIsPredict: boolean;
@@ -970,6 +977,7 @@ private
   procedure tKioskApplyTimer(Sender: TObject);
   procedure tDotScrollTimer({%H-}Sender: TObject);
   procedure tTrendSlideTimer({%H-}Sender: TObject);
+  procedure tBgFadeTimer({%H-}Sender: TObject);
   procedure tClockOverlayTimer(Sender: TObject);
   {** Show/hide/refresh the persistent fullscreen clock. Cheap to call often:
       it only re-renders on a minute flip, on first show, or when ForceLayout
@@ -1480,6 +1488,10 @@ private
   {** Start the short drain animation from the last painted fill level down to
       the level of the reading that just arrived. }
   procedure StartProgressDrain;
+  {** Ease the window background from the colour on screen to ATarget over
+      BG_FADE_MS, re-deriving the dependent colours each frame; the first
+      colour of the session and a hidden window take it in one step. }
+  procedure FadeBackgroundTo(ATarget: TColor);
   {** Mirror the bar's state onto the floating window's slim progress strip. }
   procedure UpdateFloatProgress;
   {** Refresh labels and menu captions that display API-derived thresholds
@@ -1894,6 +1906,12 @@ PROGRESS_DRAIN_TICK_MS = 40;
 // frame tick. Short enough to read as the row stepping on, not as a scroll.
 TREND_SLIDE_MS = 380;
 TREND_SLIDE_TICK_MS = 16;
+// Background fade on a range change (FadeBackgroundTo): length and frame
+// tick. Twice the roll and the slide: a whole window turning reads as a
+// blink at their pace, and the colour is a mood, not an event. Still well
+// under a second, so a low is red before the eye has come up to it.
+BG_FADE_MS = 700;
+BG_FADE_TICK_MS = 16;
 DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
 // Prediction-dot × opacity: the mark fades as the engine's confidence drops
 // (never below the base, so it stays findable) and steps down once per horizon
