@@ -194,6 +194,11 @@ class var touchOverride: TTrndiBool;
         notification, so callers can always ask. }
   procedure attention(topic, message: string;
     urgency: TTrndiNoticeUrgency); virtual; overload;
+    {** Take down the critical notice raised by @link(attention) once the
+        condition behind it is over, so a desktop that keeps critical notices
+        up until dismissed does not leave a stale alert on screen. No-op where
+        notices expire by themselves. }
+  procedure withdrawAttention; virtual;
   {**
     Send an HTTP request to the configured @code(baseurl).
     @param(post) True for POST, False for GET.
@@ -1473,6 +1478,15 @@ procedure TTrndiNativeBase.attention(topic, message: string;
 {%H-}urgency: TTrndiNoticeUrgency);
 begin
   attention(topic, message);
+end;
+
+{------------------------------------------------------------------------------
+  withdrawAttention
+  -----------------
+  Default no-op: only Linux keeps critical notices up until dismissed.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.withdrawAttention;
+begin
 end;
 
 {------------------------------------------------------------------------------

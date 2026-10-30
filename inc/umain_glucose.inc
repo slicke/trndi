@@ -1466,6 +1466,7 @@ end;
 procedure TfBG.HandleHighGlucose(const reading: BGReading; const fired: TAlertKindSet);
 begin
   setColorMode(bg_color_hi);
+  native.withdrawAttention;
 
   if akHigh in fired then
     RaiseHighLevelAlert;
@@ -1487,6 +1488,8 @@ var
   go: boolean = false;
 begin
   SetColorMode(bg_color_ok);
+  // The hypo is over: take its notice down (it does not expire by itself).
+  native.withdrawAttention;
 
   // The engine has already been evaluated for this reading (see
   // UpdateUIBasedOnGlucose): an in-range value outside every hysteresis band
