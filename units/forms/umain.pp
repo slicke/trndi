@@ -1492,6 +1492,9 @@ private
   {** Colour of the overtime part — the retry window's red, breathing once
       both fills are full, steady before that. }
   function ProgressOvertimeColor(const APulsing: boolean): TColor;
+  {** Position within the overdue breath, 0..1 (bright → dark), shared by
+      the fill colour and the head glow. }
+  function ProgressPulsePhase: double;
   {** True when the bar would paint differently from its last painted frame —
       lets tProgressTimer skip repaints that would reproduce the same pixels. }
   function ProgressFrameChanged: boolean;

@@ -138,6 +138,14 @@ type
     Color: TColor;
   end;
 
+  {** One vertical rod for DrawGlowRods: a capsule-topped bar rising from the
+      bottom of the raster, with a soft glow around its head. }
+  TGlowRod = record
+    Level: integer;     // Height of the rod in canvas pixels; 0 draws nothing
+    Color: TColor;      // Body colour; the glow is this lifted toward white
+    HeadAlpha: double;  // Glow opacity at the head's centre (0..1; 0 = no glow)
+  end;
+
   {** One horizontal band for DrawRangeBands. Top and Bottom are rows inside
       the band raster, inclusive; rows outside the raster are clipped. }
   TRangeBand = record
@@ -249,6 +257,19 @@ procedure DrawSmoothPolyline(ACanvas: TCanvas; const APts: array of TPoint;
 procedure DrawSmoothDashedPolyline(ACanvas: TCanvas;
   const APts: array of TPoint; AColor: TColor; AThickness, ADashPx,
   AGapPx: integer);
+
+{** Paint vertical glowing rods into an AWidth by AHeight box whose origin is
+    at (ADestX, ADestY) on ACanvas.
+
+    Each rod is ARodWidth wide, centred horizontally, rises Level pixels from
+    the bottom edge of the box and ends in a round cap. Around the cap sits an
+    elliptical glow: half the box wide, so it fades to nothing exactly at the
+    box's sides and never leaves a clipped edge, and a few rod widths tall.
+    Rods composite in array order with Porter-Duff "over", so a later rod and
+    its glow lie on top of an earlier one. There is no track: where no rod
+    reaches, the box stays transparent. }
+procedure DrawGlowRods(ACanvas: TCanvas; AWidth, AHeight, ARodWidth: integer;
+  const ARods: array of TGlowRod; ADestX: integer = 0; ADestY: integer = 0);
 
 {** Paint a set of horizontal alpha bands, AWidth by AHeight, with the
     raster's origin at (ADestX, ADestY) on ACanvas.
@@ -1230,6 +1251,153 @@ begin
   SetLength(strokes, n);
   if n > 0 then
     DrawSmoothStrokes(ACanvas, strokes, AThickness);
+end;
+
+// ---------------------------------------------------------------------------
+// Glowing rods
+// ---------------------------------------------------------------------------
+
+// A rod is a capsule stroke along the box's vertical centre line whose lower
+// end is pushed below the bottom edge, so the bottom is cut flat by the raster
+// while the top keeps its round cap. Coverage is the distance to that axis
+// segment, the same analytical edge the other shapes here use. The glow is a
+// quadratic falloff over an ellipse centred on the cap; quadratic rather than
+// linear so the halo thins out quickly and reads as light, not as a smear.
+procedure DrawGlowRods(ACanvas: TCanvas; AWidth, AHeight, ARodWidth: integer;
+  const ARods: array of TGlowRod; ADestX: integer; ADestY: integer);
+const
+  ROD_ALPHA = 0.9;      // body opacity: the backdrop shows faintly through
+  GLOW_REACH = 2.5;     // vertical glow radius, in rod widths
+  GLOW_WHITEN = 0.5;    // the glow is the rod colour lifted this far toward white
+var
+  intf: TLazIntfImage;
+  img: TAlphaImage;
+  accR, accG, accB, accA: array of single;   // premultiplied accumulator
+  pw, ph, x, y, i, y0, y1, idx: integer;
+  scale, cx, r, bottom, top, axisTop, rx, ry, px, py, ay, d, e: double;
+  cov, srcA, invA: double;
+  cr, cg, cb: byte;
+  gr, gg, gb: double;
+  any: boolean;
+begin
+  if (AWidth <= 0) or (AHeight <= 0) or (ARodWidth <= 0) then
+    Exit;
+  any := false;
+  for i := Low(ARods) to High(ARods) do
+    if ARods[i].Level > 0 then
+      any := true;
+  if not any then
+    Exit;
+
+  scale := CanvasDeviceScale(ACanvas);
+  pw := Max(1, Round(AWidth * scale));
+  ph := Max(1, Round(AHeight * scale));
+  SetLength(accR, pw * ph);
+  SetLength(accG, pw * ph);
+  SetLength(accB, pw * ph);
+  SetLength(accA, pw * ph);
+  for idx := 0 to pw * ph - 1 do
+  begin
+    accR[idx] := 0; accG[idx] := 0; accB[idx] := 0; accA[idx] := 0;
+  end;
+
+  cx := pw / 2.0;
+  r := Min(ARodWidth * scale, pw) / 2.0;
+  bottom := ph;                       // the flat bottom edge, in device rows
+  rx := pw / 2.0;                     // glow reaches the sides at zero alpha
+  ry := GLOW_REACH * ARodWidth * scale;
+
+  for i := Low(ARods) to High(ARods) do
+  begin
+    if ARods[i].Level <= 0 then
+      Continue;
+    cr := Red(ColorToRGB(ARods[i].Color));
+    cg := Green(ColorToRGB(ARods[i].Color));
+    cb := Blue(ColorToRGB(ARods[i].Color));
+    top := bottom - ARods[i].Level * scale;
+    axisTop := top + r;               // centre of the round cap
+
+    // Body: capsule from the cap centre down past the bottom edge.
+    y0 := Math.Floor(top - 1);
+    if y0 < 0 then
+      y0 := 0;
+    y1 := Math.Ceil(bottom);
+    if y1 > ph - 1 then
+      y1 := ph - 1;
+    for y := y0 to y1 do
+    begin
+      py := y + 0.5;
+      if py >= bottom then
+        Break;
+      ay := Max(py, axisTop);         // nearest point on the axis segment
+      for x := 0 to pw - 1 do
+      begin
+        px := x + 0.5;
+        d := Sqrt(Sqr(px - cx) + Sqr(py - ay));
+        cov := r + 0.5 - d;
+        if cov <= 0 then
+          Continue;
+        if cov > 1 then
+          cov := 1;
+        srcA := cov * ROD_ALPHA;
+        invA := 1.0 - srcA;
+        idx := y * pw + x;
+        accR[idx] := cr * srcA + accR[idx] * invA;
+        accG[idx] := cg * srcA + accG[idx] * invA;
+        accB[idx] := cb * srcA + accB[idx] * invA;
+        accA[idx] := srcA + accA[idx] * invA;
+      end;
+    end;
+
+    // Glow: ellipse on the cap centre, whitened body colour, quadratic falloff.
+    if ARods[i].HeadAlpha <= 0 then
+      Continue;
+    gr := cr + (255 - cr) * GLOW_WHITEN;
+    gg := cg + (255 - cg) * GLOW_WHITEN;
+    gb := cb + (255 - cb) * GLOW_WHITEN;
+    y0 := Math.Floor(axisTop - ry);
+    if y0 < 0 then
+      y0 := 0;
+    y1 := Math.Ceil(axisTop + ry);
+    if y1 > ph - 1 then
+      y1 := ph - 1;
+    for y := y0 to y1 do
+    begin
+      py := y + 0.5;
+      for x := 0 to pw - 1 do
+      begin
+        px := x + 0.5;
+        e := Sqrt(Sqr((px - cx) / rx) + Sqr((py - axisTop) / ry));
+        if e >= 1 then
+          Continue;
+        srcA := ARods[i].HeadAlpha * Sqr(1 - e);
+        invA := 1.0 - srcA;
+        idx := y * pw + x;
+        accR[idx] := gr * srcA + accR[idx] * invA;
+        accG[idx] := gg * srcA + accG[idx] * invA;
+        accB[idx] := gb * srcA + accB[idx] * invA;
+        accA[idx] := srcA + accA[idx] * invA;
+      end;
+    end;
+  end;
+
+  intf := NewAlphaRaster(pw, ph);
+  try
+    for y := 0 to ph - 1 do
+      for x := 0 to pw - 1 do
+      begin
+        idx := y * pw + x;
+        PutPremultipliedPixel(intf, x, y, accR[idx], accG[idx], accB[idx], accA[idx]);
+      end;
+    img := AlphaImageFromIntf(intf, pw, ph);
+    try
+      BlitAlphaImage(ACanvas, img, pw, ph, ADestX, ADestY, AWidth, AHeight);
+    finally
+      img.Free;
+    end;
+  finally
+    intf.Free;
+  end;
 end;
 
 // ---------------------------------------------------------------------------

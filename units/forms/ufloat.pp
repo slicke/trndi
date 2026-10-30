@@ -54,7 +54,7 @@ interface
 
 uses
 Classes, ExtCtrls, Menus, StdCtrls, SysUtils, Math, Forms, Controls, Graphics,
-Dialogs, LCLIntf, LCLType, InterfaceBase, trndi.native, trndi.shared, utrendarrow,
+Dialogs, LCLIntf, LCLType, InterfaceBase, trndi.native, trndi.shared, trndi.raster, utrendarrow,
 // After StdCtrls on purpose: utabularlabel's TLabel interposer must win the
 // name so the value can typeset its digits in equal cells like the main window
 utabularlabel
@@ -965,31 +965,43 @@ begin
 end;
 
 procedure TfFloat.ProgressBoxPaint(Sender: TObject);
+const
+  HEAD_ALPHA = 0.85;   // same head glow as the main window's bar
 var
   w, h, lvl: integer;
-  track: TColor;
+  cvs: TCanvas;
+  rod: TGlowRod;
 begin
   w := FProgressBox.Width;
   h := FProgressBox.Height;
-  // Recessed track against the float's own background — the float mirrors the
-  // main window's range colour, so derive per paint rather than caching.
-  if IsLightColor(Color) then
-    track := BlendColors(clBlack, Color, 0.14)
+  // Backdrop first: the strip has no track, so the float's own ground shows
+  // wherever the rod has not reached. The gradient slice where FormPaint
+  // draws one, the flat colour otherwise (and always flat on Qt6, where the
+  // style sheet owns the background and FormPaint stays out of it).
+  cvs := FProgressBox.Canvas;
+  cvs.Brush.Style := bsSolid;
+  cvs.Pen.Style := psClear;
+  {$IFNDEF LCLQt6}
+  if (FBackdropBottom <> clNone) and (ClientHeight > 0) then
+    cvs.GradientFill(Classes.Rect(0, 0, w, h),
+      BlendColors(FBackdropBottom, Color, FProgressBox.Top / ClientHeight),
+      BlendColors(FBackdropBottom, Color, (FProgressBox.Top + h) / ClientHeight),
+      gdVertical)
   else
-    track := BlendColors(clWhite, Color, 0.10);
-  with FProgressBox.Canvas do
+  {$ENDIF}
   begin
-    Brush.Style := bsSolid;
-    Pen.Style := psClear;
-    Brush.Color := track;
-    FillRect(Classes.Rect(0, 0, w, h));
-    lvl := Round(FProgFrac * h);
-    if lvl > 0 then
-    begin
-      Brush.Color := FProgFill;
-      FillRect(Classes.Rect(0, h - lvl, w, h));
-    end;
+    cvs.Brush.Color := Color;
+    cvs.FillRect(Classes.Rect(0, 0, w, h));
   end;
+  lvl := Round(FProgFrac * h);
+  if lvl <= 0 then
+    Exit;
+  // A rod of light like the main bar's, a hair in from the strip's sides so
+  // the cap's glow has an edge to fade across.
+  rod.Level := lvl;
+  rod.Color := FProgFill;
+  rod.HeadAlpha := HEAD_ALPHA;
+  DrawGlowRods(cvs, w, h, Max(2, w - 2), [rod], 0, 0);
 end;
 
 {$IFDEF LCLQt6}
