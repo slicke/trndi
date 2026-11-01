@@ -1,0 +1,103 @@
+name: Fetch toolchain downloads
+description: Download release files (Lazarus/FPC installers) with a SourceForge fallback, kept in the Actions cache.
+
+# Every toolchain download in CI goes through here: setup-lazarus (Linux),
+# and the macOS and Windows legs of build.yml.
+#
+# - The Lazarus project's own server (download.lazarus-ide.org) is the fast
+#   one; SourceForge, whose mirrors flake and crawl, takes every other
+#   attempt. Its URL is derived from the download.lazarus-ide.org one, which
+#   uses the same folder layout.
+# - --connect-timeout and the speed guard abort a stalled, half-open or
+#   crawling transfer (which is not an error to curl, so it would wait on it
+#   forever), and the next attempt goes on from where it stopped (-C -), from
+#   either source, so nothing fetched is lost.
+# - The files are kept in the Actions cache under a key hashed from the URLs,
+#   so bumping a pin fetches the new files without a manual key change. The
+#   cache is saved here, right after the download, so a build that fails
+#   later still keeps the files for the next run.
+# - Files are stored under their own names (the last URL segment), outside
+#   the checkout: the upload steps glob *.dmg/*.zip from the workspace root,
+#   which once shipped the FPC installer as a release asset.
+
+inputs:
+  urls:
+    description: Download URLs, one per line.
+    required: true
+
+outputs:
+  dir:
+    description: Directory holding the downloaded files.
+    value: ${{ steps.key.outputs.dir }}
+
+runs:
+  using: composite
+  steps:
+    - name: Compute the cache key
+      id: key
+      shell: bash
+      env:
+        URLS: ${{ inputs.urls }}
+      run: |
+        set -euo pipefail
+        echo "dir=$RUNNER_TEMP/toolchain" >> "$GITHUB_OUTPUT"
+        echo "key=toolchain-$RUNNER_OS-$(printf '%s' "$URLS" | git hash-object --stdin)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore the toolchain downloads
+      id: restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ runner.temp }}/toolchain
+        key: ${{ steps.key.outputs.key }}
+
+    - name: Download the toolchain files
+      shell: bash
+      env:
+        URLS: ${{ inputs.urls }}
+        DL: ${{ steps.key.outputs.dir }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$DL"
+        CURL_OPTS=(--connect-timeout 30 --speed-limit 102400 --speed-time 30)
+        LAZ=https://download.lazarus-ide.org/
+        SF=https://sourceforge.net/projects/lazarus/files/
+        while IFS= read -r URL; do
+          URL="${URL//[[:space:]]/}"
+          [ -n "$URL" ] || continue
+          NAME="${URL##*/}"
+          if [ -s "$DL/$NAME" ]; then
+            echo "$NAME from the cache"
+            continue
+          fi
+          ALT="$URL"
+          case "$URL" in "$LAZ"*) ALT="$SF${URL#"$LAZ"}/download" ;; esac
+          OK=0
+          for TRY in 1 2 3 4 5 6 7 8 9 10; do
+            if [ $((TRY % 2)) = 1 ]; then SRC="$URL"; else SRC="$ALT"; fi
+            if curl -fsSL -C - "${CURL_OPTS[@]}" \
+              -w "$NAME: %{size_download} bytes at %{speed_download} B/s from %{url_effective}\n" \
+              -o "$DL/$NAME.part" "$SRC"; then
+              # A mirror sometimes answers 200 with a web page. Catch it here,
+              # before it is cached.
+              if head -c 512 "$DL/$NAME.part" | grep -qaiE '<!doctype|<html'; then
+                echo "$NAME: got a web page instead of the file; starting over"
+                rm -f "$DL/$NAME.part"
+              else
+                mv "$DL/$NAME.part" "$DL/$NAME"
+                OK=1
+                break
+              fi
+            else
+              echo "$NAME: attempt $TRY stopped at $(wc -c 2>/dev/null < "$DL/$NAME.part" || echo 0) bytes"
+            fi
+            sleep 5
+          done
+          [ "$OK" = 1 ] || { echo "Downloading $NAME failed" >&2; exit 1; }
+        done <<< "$URLS"
+
+    - name: Save the toolchain downloads
+      if: steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ runner.temp }}/toolchain
+        key: ${{ steps.key.outputs.key }}

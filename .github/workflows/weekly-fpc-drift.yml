@@ -54,7 +54,7 @@ jobs:
               continue
             fi
 
-            if [[ ! "$url" =~ (/download$|\.(deb|exe|7z|pkg|asc|png|git|json)$) ]]; then
+            if [[ ! "$url" =~ (/download$|\.(deb|exe|dmg|zip|7z|pkg|asc|png|git|json)$) ]]; then
               echo "SKIP $url (non-artifact base URL)" >> "$REPORT"
               skipped=$((skipped + 1))
               continue
