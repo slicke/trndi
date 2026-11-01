@@ -2414,7 +2414,8 @@ end;
   ---------------------------
   clock_gettime(CLOCK_MONOTONIC) straight from libc. Unaffected by wall-clock
   adjustments, unlike gettimeofday. Falls back to the inherited tick count if
-  the call fails.
+  the call fails. TTrndiNativeBSD inherits this, and the BSDs number the clock
+  differently: 1 there is CLOCK_VIRTUAL, the process's CPU time.
  ------------------------------------------------------------------------------}
 type
   TTrndiTimespec = record
@@ -2427,11 +2428,12 @@ function trndi_clock_gettime(clk_id: cint; tp: pointer): cint;
 
 class function TTrndiNativeLinux.MonotonicMicroseconds: int64;
 const
-  CLOCK_MONOTONIC_LINUX = 1;
+  CLOCK_MONOTONIC_ID = {$IF DEFINED(FREEBSD) OR DEFINED(DRAGONFLY)}4
+    {$ELSEIF DEFINED(OPENBSD) OR DEFINED(NETBSD)}3{$ELSE}1{$ENDIF};
 var
   ts: TTrndiTimespec;
 begin
-  if trndi_clock_gettime(CLOCK_MONOTONIC_LINUX, @ts) = 0 then
+  if trndi_clock_gettime(CLOCK_MONOTONIC_ID, @ts) = 0 then
     Result := int64(ts.tv_sec) * 1000000 + (int64(ts.tv_nsec) div 1000)
   else
     Result := inherited MonotonicMicroseconds;
