@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-01: MonotonicMicroseconds picks the BSDs' CLOCK_MONOTONIC id
+ *   (TTrndiNativeBSD inherits it); 1 is CLOCK_VIRTUAL on FreeBSD.
  * - 2026-08-21: Structural refactor. The INI settings backend moved verbatim
  *   to the shared trndi.native.settings.ini store (the six overrides are
  *   now delegates; ResolveIniPath stays). FindInPath delegates to base's
