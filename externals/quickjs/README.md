@@ -117,6 +117,11 @@ TRNDI_QJS_MAC_ARCHS='arm64;x86_64' ./build.sh mac       # universal libraries
 A universal build still lands in the host's directory; copy it to the other
 target's directory as well if you want both to link against it.
 
+`./build.sh mac-x86_64` builds the Intel libraries into `x86_64-darwin` on any
+Mac, Apple Silicon included (clang cross-compiles the slice). Each
+architecture gets its own build folder, since cmake caches the architectures
+it was configured for.
+
 ## Platform coverage
 
 | target | how |
@@ -124,16 +129,14 @@ target's directory as well if you want both to link against it.
 | `x86_64-linux` | `build.sh linux`, or cross from any host |
 | `x86_64-win64` | `build.sh win` (mingw cross), or `build.sh winhost` in MSYS2 |
 | `aarch64-win64` | `build.sh winarm` (llvm-mingw cross), or `build.sh winhost` in MSYS2 |
-| `aarch64-darwin`, `x86_64-darwin` | `build.sh mac`, on a Mac |
+| `aarch64-darwin` | `build.sh mac`, on a Mac |
+| `x86_64-darwin` | `build.sh mac-x86_64` on any Mac, or `build.sh mac` on an Intel Mac |
 | `aarch64-linux` | build natively on the target (e.g. a Raspberry Pi) |
 | `x86_64-haiku` | `build.sh haiku` on Haiku, or `build.sh shim` against the `quickjs_ng` package |
 | `x86_64-freebsd` | `build.sh freebsd` on FreeBSD (ports has Bellard's quickjs, not ng — build it) |
 
-`x86_64-linux`, `aarch64-linux`, `x86_64-win64`, `aarch64-win64`,
-`aarch64-darwin`, `x86_64-haiku` and `x86_64-freebsd` are committed. The only
-missing one is `x86_64-darwin` (Intel Mac), which has to be built on the target
-itself; until it is, that host can only build Trndi's "No Ext" modes. Anything
-`build.sh` produces is safe to commit — that is the point of `prebuilt/`.
+All of the targets above are committed. Anything `build.sh` produces is safe
+to commit — that is the point of `prebuilt/`.
 
 Nothing is shared between platforms here, and a near miss is worth naming: a
 native FreeBSD build links `libc.so.7` and cannot load the Linux `libqjs`.
