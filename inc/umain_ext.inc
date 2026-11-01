@@ -348,7 +348,7 @@ var
   fileStream: TFileStream;
   ss: TStringStream;
   manifest: TExtManifest;
-  extId, hash: string;
+  extId, hash, modDigest: string;
   granted: TExtPermSet;
   extInfo: PExtContextInfo;
   nativeRef: TrndiNative;
@@ -403,6 +403,9 @@ begin
     Exit;
   end;
 
+  // The modules in the subfolders run under their importer's grant, so they
+  // are part of every grant hash: an edited module asks again.
+  modDigest := ModulesDigest(extdir);
   nativeRef := TrndiNative.Create;
   seenIds := TStringList.Create;
   seenFiles := TStringList.Create;
@@ -442,7 +445,7 @@ begin
         Continue;
       end;
       extId := ExtIdFromPath(extFile);
-      hash := HashScript(string(fileSrc));
+      hash := ExtensionGrantHash(string(fileSrc), modDigest);
 
       // User-toggled enable flag (Extensions settings tab). Default true so
       // existing extensions keep loading without an opt-in step.

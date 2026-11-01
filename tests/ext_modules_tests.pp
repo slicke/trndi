@@ -56,7 +56,7 @@ unit ext_modules_tests;
 interface
 
 uses
-  fpcunit, testregistry, SysUtils, Classes, trndi.ext.modules
+  fpcunit, testregistry, SysUtils, Classes, trndi.ext.modules, trndi.ext.perm
   {$IFDEF UNIX}, BaseUnix{$ENDIF};
 
 type
@@ -64,6 +64,7 @@ type
   private
     FRoot: string;
     procedure Touch(const RelPath: string);
+    procedure Put(const RelPath, Content: string);
   protected
     procedure SetUp; override;
     procedure TearDown; override;
@@ -79,11 +80,13 @@ type
     procedure TestRelativeResolvesAgainstImporter;
     procedure TestEntryWithoutDirectoryUsesRoot;
     procedure TestParentInsideRootIsAllowed;
+    procedure TestTopLevelFileIsRejected;
     procedure TestEscapingRootIsRejected;
     procedure TestSymlinkEscapeIsRejected;
     procedure TestBareSpecifierIsRejected;
     procedure TestMissingExtensionFallsBackToJs;
     procedure TestNoRootRejectsFileImports;
+    procedure TestModulesDigestFollowsSubfolders;
     procedure TestJSStringLiteralEscapes;
     procedure TestBootstrapQuotesEntryPath;
     procedure TestTrndiModuleSourceExportsFacade;
@@ -98,21 +101,55 @@ begin
   ForceDirectories(FRoot + DirectorySeparator + 'lib');
 end;
 
+{ Removes Dir and everything in it, not following links. }
+procedure DeleteTree(const Dir: string);
+var
+  sr: TSearchRec;
+  path: string;
+begin
+  if FindFirst(IncludeTrailingPathDelimiter(Dir) + AllFilesMask,
+    faAnyFile or faSymLink, sr) = 0 then
+  try
+    repeat
+      if (sr.Name = '.') or (sr.Name = '..') then
+        Continue;
+      path := IncludeTrailingPathDelimiter(Dir) + sr.Name;
+      if ((sr.Attr and faDirectory) <> 0) and ((sr.Attr and faSymLink) = 0) then
+        DeleteTree(path)
+      else if not DeleteFile(path) then
+        RemoveDir(path);
+    until FindNext(sr) <> 0;
+  finally
+    FindClose(sr);
+  end;
+  RemoveDir(Dir);
+end;
+
 procedure TExtModulesTests.TearDown;
 begin
-  DeleteFile(FRoot + DirectorySeparator + 'lib' + DirectorySeparator + 'util.js');
-  DeleteFile(FRoot + DirectorySeparator + 'main.js');
-  RemoveDir(FRoot + DirectorySeparator + 'lib');
-  RemoveDir(FRoot);
+  DeleteTree(FRoot);
 end;
 
 procedure TExtModulesTests.Touch(const RelPath: string);
+begin
+  Put(RelPath, '');
+end;
+
+procedure TExtModulesTests.Put(const RelPath, Content: string);
 var
   f: TFileStream;
+  path: string;
 begin
-  f := TFileStream.Create(FRoot + DirectorySeparator +
-    StringReplace(RelPath, '/', DirectorySeparator, [rfReplaceAll]), fmCreate);
-  f.Free;
+  path := FRoot + DirectorySeparator +
+    StringReplace(RelPath, '/', DirectorySeparator, [rfReplaceAll]);
+  ForceDirectories(ExtractFileDir(path));
+  f := TFileStream.Create(path, fmCreate);
+  try
+    if Content <> '' then
+      f.WriteBuffer(Content[1], Length(Content));
+  finally
+    f.Free;
+  end;
 end;
 
 {******************************************************************************
@@ -217,11 +254,32 @@ procedure TExtModulesTests.TestParentInsideRootIsAllowed;
 var
   resolved: string;
 begin
-  Touch('main.js');
+  Touch('lib/fmt.js');
   AssertEquals('no error', '', ResolveModuleSpecifier(
-    FRoot + DirectorySeparator + 'lib' + DirectorySeparator + 'util.js',
-    '../main.js', FRoot, resolved));
-  AssertEquals('collapsed ..', FRoot + DirectorySeparator + 'main.js', resolved);
+    FRoot + DirectorySeparator + 'lib' + DirectorySeparator + 'sub' +
+    DirectorySeparator + 'util.js', '../fmt.js', FRoot, resolved));
+  AssertEquals('collapsed ..', FRoot + DirectorySeparator + 'lib' +
+    DirectorySeparator + 'fmt.js', resolved);
+end;
+
+procedure TExtModulesTests.TestTopLevelFileIsRejected;
+var
+  resolved, err: string;
+begin
+  // Another extension at the top runs under its own grant, not the importer's.
+  Touch('other.js');
+  err := ResolveModuleSpecifier(FRoot + DirectorySeparator + 'main.js',
+    './other.js', FRoot, resolved);
+  AssertTrue('another extension rejected: ' + err,
+    Pos('extension of its own', err) > 0);
+  AssertEquals('nothing resolved', '', resolved);
+  err := ResolveModuleSpecifier(FRoot + DirectorySeparator + 'lib' +
+    DirectorySeparator + 'util.js', '../other.js', FRoot, resolved);
+  AssertTrue('from a module too: ' + err, Pos('extension of its own', err) > 0);
+  // A module extension's bootstrap imports the extension's own file.
+  AssertEquals('its own file allowed', '', ResolveModuleSpecifier('<bootstrap>',
+    FRoot + DirectorySeparator + 'other.js', FRoot, resolved,
+    FRoot + DirectorySeparator + 'other.js'));
 end;
 
 procedure TExtModulesTests.TestEscapingRootIsRejected;
@@ -286,6 +344,33 @@ begin
     FRoot + DirectorySeparator + 'main.js', './lib/util', FRoot, resolved));
   AssertEquals('.js appended', FRoot + DirectorySeparator + 'lib' +
     DirectorySeparator + 'util.js', resolved);
+end;
+
+procedure TExtModulesTests.TestModulesDigestFollowsSubfolders;
+var
+  first, d: string;
+begin
+  // Only an empty lib/ so far: no modules, and the grant hash is the script's.
+  AssertEquals('no modules', '', ModulesDigest(FRoot));
+  AssertEquals('script hash alone', HashScript('x'), ExtensionGrantHash('x', ''));
+
+  Put('main.js', 'top');
+  AssertEquals('top-level files are extensions, not modules', '',
+    ModulesDigest(FRoot));
+
+  Put('lib/util.js', 'export const x = 1;');
+  first := ModulesDigest(FRoot);
+  AssertTrue('a module gives a digest', first <> '');
+  AssertEquals('stable', first, ModulesDigest(FRoot));
+  AssertTrue('the grant hash changes with it',
+    ExtensionGrantHash('x', first) <> HashScript('x'));
+
+  Put('lib/util.js', 'export const x = 2;');
+  d := ModulesDigest(FRoot);
+  AssertTrue('an edit changes it', d <> first);
+
+  Put('lib/deep/more.js', '');
+  AssertTrue('nested folders count', ModulesDigest(FRoot) <> d);
 end;
 
 procedure TExtModulesTests.TestNoRootRejectsFileImports;

@@ -102,7 +102,7 @@ interface
 uses
 Classes, Types, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls, LazUTF8, LCLType, LCLVersion, LMessages,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
-slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, trndi.theme, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
+slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, trndi.theme, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm, trndi.ext.modules{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -1881,8 +1881,8 @@ begin
 
   path := FExtPaths[lbExtensions.ItemIndex];
   scriptText := '';
-  // Raw read (no TStringList line-ending normalization) so HashScript below
-  // produces the same digest as the load-time grant flow in umain_ext.inc.
+  // Raw read (no TStringList line-ending normalization) so ExtensionGrantHash
+  // below produces the same digest as the load-time grant flow in umain_ext.inc.
   try
     fileStream := TFileStream.Create(path, fmOpenRead or fmShareDenyWrite);
     ss := TStringStream.Create;
@@ -1948,7 +1948,8 @@ begin
   permsCsv := PermSetToCSV(manifest.Requested * PermPromptable);
   if permsCsv <> '' then
   begin
-    if (storedHash <> '') and (storedHash = HashScript(scriptText)) then
+    if (storedHash <> '') and (storedHash = ExtensionGrantHash(scriptText,
+      ModulesDigest(ExtractFilePath(path)))) then
     begin
       granted := CSVToPermSet(
         tnative.GetSetting('ext.perm.' + extId + '.granted', '')) * PermPromptable;
