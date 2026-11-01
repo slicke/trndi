@@ -122,7 +122,7 @@ jobs:
             upload_name: macos-arm64-build
             os_target: macos
             arch: arm64
-            runner: macos-14
+            runner: macos-26
 
           # -------- Windows x64 --------
           - name: windows-x64
