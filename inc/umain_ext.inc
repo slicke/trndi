@@ -43,6 +43,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-20: Trndi.events maps the alert, snooze, connection, device,
  *   settings and wake events to their callback globals.
+ * - 2026-11-01: The grant hash covers the modules in the extensions folder's
+ *   subfolders (ExtensionGrantHash), so an edited module asks again.
  *)
  // Extension loading and helper functions
 {$ifdef TrndiExt}

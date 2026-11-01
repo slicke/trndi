@@ -44,6 +44,8 @@
  * - 2026-09-20: Extensions with static import/export are evaluated as ES
  *   modules (ExtExecuteModule). Added the module name normalizer, the built-in
  *   "trndi" module and ModuleRootForContext; see trndi.ext.modules.
+ * - 2026-11-01: ModuleEntryForContext, so the normalizer lets an extension
+ *   import its own top-level file and no other.
  *)
 unit trndi.ext.engine;
 

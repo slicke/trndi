@@ -39,6 +39,9 @@
  * - 2026-09-25: JSStringLiteral converts its input to UTF-8 before escaping
  *   instead of copying the bytes of a system-codepage string under a UTF-8
  *   label, which handed QuickJS invalid UTF-8 for non-ASCII paths on Windows.
+ * - 2026-11-01: ResolveModuleSpecifier refuses another top-level file (an
+ *   extension with its own grant); ModulesDigest and ExtensionGrantHash put
+ *   the subfolders' modules into the grant hash.
  *)
 
 {** ES module support for extensions: the pure, engine-independent half.
