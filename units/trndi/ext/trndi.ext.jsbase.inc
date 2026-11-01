@@ -544,8 +544,7 @@ begin
   if promise.IsException then
   begin
     ExtError(sdsAuto, 'Init failed');
-    cb^.params.values.Data.Free;
-    cb^.params.values.Data := nil;
+    FreeJSParameters(cb^.params.values.Data);
     // Hand the marker back rather than undefined: the exception is already
     // pending on the context, and swallowing it here would leave it to surface
     // at some unrelated point later.
@@ -573,8 +572,7 @@ begin
     ctx^.FreeInlined(PJSValue(@funcs[JprResolve]));
     ctx^.FreeInlined(PJSValue(@funcs[JprReject]));
 
-    cb^.params.values.Data.Free;
-    cb^.params.values.Data := nil;
+    FreeJSParameters(cb^.params.values.Data);
     res^ := promise;
     Exit;
   end;

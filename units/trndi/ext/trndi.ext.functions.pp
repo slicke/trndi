@@ -283,6 +283,9 @@ function JSParseParameters(ctx: JSContext; argc: integer;
 argv: PJSValueConst): JSParameters; overload;
 function JSDumpObject(ctx: JSContext; obj: JSValueConst; var dump: string): boolean;
 function JSTryToString(ctx: JSContext; Data: JSValue; out str: string): boolean;
+{** Frees a list JSParseParameters made, each entry and the arrays in
+    them too; nil does nothing. }
+procedure FreeJSParameters(var AParams: JSParameters);
 function JSStringifyValue(val: JSValueVal): string;
 // Natives are plain Pascal procedures now: they write their result through
 // `res` and are reached via the shim's trampoline, so none of them returns a
@@ -681,12 +684,28 @@ begin
       Result.Add(pVal);
     end;
   except
-    // Free allocated pVal pointers in case of exception
-    for i := 0 to Result.Count - 1 do
-      Dispose(Result[i]);
-    Result.Free;
+    FreeJSParameters(Result);
     raise;
   end;
+end;
+
+procedure FreeJSParameters(var AParams: JSParameters);
+var
+  i: integer;
+  Inner: JSParameters;
+begin
+  if AParams = nil then
+    Exit;
+  for i := 0 to AParams.Count - 1 do
+  begin
+    if AParams[i]^.Data.match = JD_ARRAY then
+    begin
+      Inner := JSParameters(AParams[i]^.Data.ArrayVal);
+      FreeJSParameters(Inner);
+    end;
+    Dispose(AParams[i]);
+  end;
+  FreeAndNil(AParams);
 end;
 
 function JSParseParameters(ctx: JSContext; argc: integer;
@@ -704,10 +723,7 @@ begin
       Result.Add(pVal);
     end;
   except
-    // Free allocated pVal pointers in case of exception
-    for i := 0 to Result.Count - 1 do
-      Dispose(Result[i]);
-    Result.Free;
+    FreeJSParameters(Result);
     raise;
   end;
 end;
@@ -727,16 +743,19 @@ end;
 
 function JSParseValue(ctx: JSContext; val: JSValue): JSValueVal;
 var
-  arrVal: JSValueRaw;
+  arrVal, elem: JSValueRaw;
   len, i: integer;
   pVal: PJSValueVal;
+  isArr: boolean;
 begin
   // If val is an object or recognized as an array
   // quickjs-ng's JS_IsArray takes no context and returns a plain boolean.
   if val.IsObject or JS_IsArray(val) then
   begin
     arrVal := JS_GetPropertyStr(ctx, val.Raw, 'length');
-    if (not val.IsUndefined) and (JS_ToInt32(ctx, @len, arrVal) = 0) then
+    isArr := (not val.IsUndefined) and (JS_ToInt32(ctx, @len, arrVal) = 0);
+    JS_FreeValue(ctx, arrVal);
+    if isArr then
     begin
       // It's an array
       Result.Data.match := JD_ARRAY;
@@ -745,8 +764,12 @@ begin
       // Extract elements
       for i := 0 to len - 1 do
       begin
+        // The element's reference is ours; what is kept of it is copied
+        // (an object, as a top-level argument, by a pointer it does not own).
+        elem := JS_GetPropertyUint32(ctx, val.Raw, i);
         New(pVal);
-        pVal^ := JSParseValue(ctx, JS_GetPropertyUint32(ctx, val.Raw, i));
+        pVal^ := JSParseValue(ctx, elem);
+        JS_FreeValue(ctx, elem);
         Result.Data.ArrayVal.Add(pVal);
       end;
     end
