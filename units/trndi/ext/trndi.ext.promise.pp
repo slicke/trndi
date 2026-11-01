@@ -302,39 +302,41 @@ var
   xres: JSValue;
   callRes: JSValueRaw;
 begin
-  // Final check before making JS calls
-  if Application.Terminated or IsExtShuttingDown then
-    Exit;
-
-  if (FContext = nil) then
-    Exit;
-
   try
-    // Convert and resolve/reject the promise
-    xres := JSValueValToValue(FContext, FResult);
-    if FSuccess then
-      callRes := JS_Call(FContext, funcs[JprResolve], JS_UNDEFINED, 1, @xres)
-    else
-      callRes := JS_Call(FContext, funcs[JprReject], JS_UNDEFINED, 1, @xres);
-    // Release the call result, the marshalled argument, and the resolve/reject
-    // pair captured by JS_NewPromiseCapability — all leaked before this fix.
-    FContext^.FreeInlined(PJSValue(@callRes));
-    FContext^.Free(xres);
-    FContext^.FreeInlined(PJSValue(@funcs[JprResolve]));
-    FContext^.FreeInlined(PJSValue(@funcs[JprReject]));
+    // Final check before making JS calls
+    if Application.Terminated or IsExtShuttingDown then
+      Exit;
 
-    // Settling the promise only queued its .then/.catch reactions; drain the
-    // job queue here (main thread) so the extension's continuation runs now
-    // instead of up to 50ms later at the engine's timer tick.
-    DrainPendingJobs(FContext);
-  except
-    // Silently ignore JS calls that fail during shutdown
-    // This prevents crashes when the runtime is being destroyed
+    if (FContext = nil) then
+      Exit;
+
+    try
+      // Convert and resolve/reject the promise
+      xres := JSValueValToValue(FContext, FResult);
+      if FSuccess then
+        callRes := JS_Call(FContext, funcs[JprResolve], JS_UNDEFINED, 1, @xres)
+      else
+        callRes := JS_Call(FContext, funcs[JprReject], JS_UNDEFINED, 1, @xres);
+      // Release the call result, the marshalled argument, and the resolve/reject
+      // pair captured by JS_NewPromiseCapability — all leaked before this fix.
+      FContext^.FreeInlined(PJSValue(@callRes));
+      FContext^.Free(xres);
+      FContext^.FreeInlined(PJSValue(@funcs[JprResolve]));
+      FContext^.FreeInlined(PJSValue(@funcs[JprReject]));
+
+      // Settling the promise only queued its .then/.catch reactions; drain the
+      // job queue here (main thread) so the extension's continuation runs now
+      // instead of up to 50ms later at the engine's timer tick.
+      DrainPendingJobs(FContext);
+    except
+      // Silently ignore JS calls that fail during shutdown
+      // This prevents crashes when the runtime is being destroyed
+    end;
+  finally
+    // The parsed parameters go on every path, the early exits too, and only
+    // after FResult (which may share their data) has been converted.
+    FreeJSParameters(FPromise.params.values.Data);
   end;
-
-  // Free parsed parameters captured earlier
-  if Assigned(FPromise.params.values.Data) then
-    FPromise.params.values.Data.Free;
 end;
 
 end.
