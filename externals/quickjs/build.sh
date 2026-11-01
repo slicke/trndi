@@ -5,6 +5,7 @@
 #   ./build.sh          host target, plus the win64 cross-build on Linux
 #   ./build.sh linux    host linux only
 #   ./build.sh mac      host macOS only
+#   ./build.sh mac-x86_64  the Intel macOS libraries, cross from Apple Silicon
 #   ./build.sh win      x86_64 Windows, cross from Linux through mingw-w64
 #   ./build.sh winarm   aarch64 Windows, cross from Linux through llvm-mingw
 #   ./build.sh winhost  natively on Windows, in an MSYS2 shell (either arch)
@@ -44,7 +45,7 @@ case "$what" in
     if [ "$host" != Linux ]; then
       echo "cannot build Linux libraries on $host"; exit 1
     fi ;;
-  mac)
+  mac|mac-x86_64)
     if [ "$host" != Darwin ]; then
       echo "the macOS libraries must be built on macOS"; exit 1
     fi ;;
@@ -65,6 +66,9 @@ case "$what" in
       MINGW*|MSYS*|CLANGARM64*) ;;
       *) echo "winhost builds on Windows itself; use 'win' or 'winarm' to cross from $host"; exit 1 ;;
     esac ;;
+  win|winarm|shim) ;;
+  *)
+    echo "unknown target '$what'; see the list at the top of $0"; exit 1 ;;
 esac
 
 # FreeBSD's base compiler is clang and there may be no 'gcc' at all, so do not
@@ -80,7 +84,12 @@ fi
 
 # Only the branches that compile the engine need the source tree; a shim-only
 # build takes its header from whichever engine is already installed.
+# A clone of another tag (QJS_TAG was bumped) is cloned again.
 fetch_src() {
+  if [ -d "$SRC" ] && \
+     [ "$(git -C "$SRC" describe --tags --exact-match 2>/dev/null)" != "$QJS_TAG" ]; then
+    rm -rf "$SRC"
+  fi
   if [ ! -d "$SRC" ]; then
     echo "--> fetching quickjs-ng $QJS_TAG"
     git clone --depth 1 --branch "$QJS_TAG" \
@@ -359,11 +368,18 @@ if [ "$what" = shim ]; then
   echo "    -> $out"
 fi
 
-if [ "$what" = mac ]; then
+if [ "$what" = mac ] || [ "$what" = mac-x86_64 ]; then
   # FPC calls Apple Silicon aarch64; uname calls it arm64. The directory name has
   # to match FPC, because the .lpi library path is $(TargetCPU)-$(TargetOS).
   arch="$(uname -m)"
   if [ "$arch" = arm64 ]; then arch=aarch64; fi
+  # mac-x86_64 builds the Intel slice on any Mac (clang cross-compiles it), for
+  # the Intel build CI makes with make CPU=x86_64: one architecture per
+  # directory, since the .lpi resolves the directory from the target CPU.
+  if [ "$what" = mac-x86_64 ]; then
+    arch=x86_64
+    TRNDI_QJS_MAC_ARCHS=x86_64
+  fi
   out="$HERE/prebuilt/${arch}-darwin"
   mkdir -p "$out"
 
@@ -381,15 +397,17 @@ if [ "$what" = mac ]; then
     for a in ${TRNDI_QJS_MAC_ARCHS//;/ }; do shim_args+=(-arch "$a"); done
   fi
 
-  build_engine mac "${mac_args[@]}"
+  # A build folder per architecture: cmake keeps CMAKE_OSX_ARCHITECTURES in its
+  # cache, so a shared one would build the other slice again.
+  build_engine "mac-$arch" "${mac_args[@]}"
 
   # Unlike the Linux build, flatten the versioned dylib into a single unversioned
   # file. FPC links these by name (-lqjs) and there is nothing here to version
   # against, so this avoids storing symlinks in git — they do not survive a
   # checkout onto a Windows filesystem.
-  engine="$WORK/b-mac/libqjs.dylib"
+  engine="$WORK/b-mac-$arch/libqjs.dylib"
   if [ ! -e "$engine" ]; then
-    engine="$(ls "$WORK"/b-mac/libqjs.*.dylib 2>/dev/null | head -1)"
+    engine="$(ls "$WORK"/b-mac-$arch/libqjs.*.dylib 2>/dev/null | head -1)"
   fi
   cp -L "$engine" "$out/libqjs.dylib"
   # cmake stamps the install name as @rpath/libqjs.<soversion>.dylib; retarget it
