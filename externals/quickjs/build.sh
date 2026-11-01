@@ -84,11 +84,13 @@ fi
 
 # Only the branches that compile the engine need the source tree; a shim-only
 # build takes its header from whichever engine is already installed.
-# A clone of another tag (QJS_TAG was bumped) is cloned again.
+# A clone of another tag (QJS_TAG was bumped) is cloned again, and the build
+# folders go with it: install_engine picks the first libqjs.so.x.y.z it finds,
+# which could be the old tag's.
 fetch_src() {
   if [ -d "$SRC" ] && \
      [ "$(git -C "$SRC" describe --tags --exact-match 2>/dev/null)" != "$QJS_TAG" ]; then
-    rm -rf "$SRC"
+    rm -rf "$SRC" "$WORK"/b-*
   fi
   if [ ! -d "$SRC" ]; then
     echo "--> fetching quickjs-ng $QJS_TAG"
