@@ -457,6 +457,8 @@ Trndi.setSetting("extval.myext.property", "true")
 ```
 Stores a settings value, you can store anything under ```extval```.*, modifying other keys will cause Trndi to ask the user's approval before saving!
 
+The key and the value must each be one line: a value with a line break (or a key with `=`, a control character, spaces at its edges, or starting with `;` or `[`) throws an error instead of being saved. `JSON.stringify` output without indentation is one line, so `Trndi.storage.setJSON` is unaffected.
+
 ### setLevelColor
 #### Sets the UX colors
 Accepts **3, 6 or 10** colors; any other argument count is rejected and the call returns `false`. Note that the last group is ordered high, low, then their text colors — unlike the ok/high/low grouping used by the first six.
