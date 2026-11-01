@@ -1493,7 +1493,8 @@ begin
 
   exc := JS_GetException(ctx);
   try
-    Result := not exc.IsNull and not exc.IsUndefined;
+    { No exception pending is uninitialized; a script may throw null. }
+    Result := not exc.IsUninitialized;
     if not Result then
       Exit;
     aMessage := JS_ToUtf8(ctx, exc);
