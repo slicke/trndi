@@ -429,7 +429,30 @@ begin
   res^ := obj;
 end;
 
-// Returns a settings value
+{ On Linux, BSD and Haiku the settings are an ini file that is written as it
+  is, so a key or value with a line end (or a key with "=", or one starting a
+  comment or a section) would add lines of its own to it, read back at the
+  next start as Trndi's own settings: an extval.* write, which asks nothing,
+  could set any key. Such keys and values are refused on every platform, so an
+  extension behaves the same everywhere. }
+function ValidSettingKey(const AKey: string): boolean;
+var
+  c: char;
+begin
+  Result := (AKey <> '') and (AKey[1] > ' ') and (AKey[Length(AKey)] > ' ') and
+    (AKey[1] <> ';') and (AKey[1] <> '[');
+  if Result then
+    for c in AKey do
+      if (c < ' ') or (c = '=') then
+        Exit(false);
+end;
+
+function ValidSettingValue(const AValue: string): boolean;
+begin
+  Result := (Pos(#10, AValue) = 0) and (Pos(#13, AValue) = 0);
+end;
+
+// Stores a settings value
 procedure JSSetSetting(res: PJSValue; ctx: JSContext; this_val: PJSValue; argc: integer; argv: PJSValues; magic: integer);
 var
   sect, key, val, curr: string;
@@ -442,6 +465,18 @@ begin
   end;
   key := ctx^.ToUtf8(argv^[0]);
   val := ctx^.ToUtf8(argv^[1]);
+  if not ValidSettingKey(key) then
+  begin
+    res^ := JS_ThrowError(ctx, RawUtf8('setSetting: the key "' + key +
+      '" cannot be stored: a key is one line without "=", not starting with ";" or "[", and no space at its edges'));
+    Exit;
+  end;
+  if not ValidSettingValue(val) then
+  begin
+    res^ := JS_ThrowError(ctx, RawUtf8('setSetting: the value for "' + key +
+      '" cannot be stored: a value is one line (JSON.stringify gives one)'));
+    Exit;
+  end;
   if not native.TryGetSetting(key, curr) then
     curr := '<empty>';
 

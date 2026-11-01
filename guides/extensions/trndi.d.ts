@@ -402,7 +402,9 @@ declare const Trndi: {
   getSetting?(key: string): string | false;
   /**
    * Write a settings value. Keys outside `extval.*` prompt the user for
-   * approval; prefer `Trndi.storage` for private extension state.
+   * approval; prefer `Trndi.storage` for private extension state. Throws
+   * when the value holds a line break or the key is not a single plain line
+   * (no `=`, not starting with `;` or `[`, no spaces at the edges).
    */
   setSetting?(key: string, value: string): void;
   /** Max minutes and max reading count to fetch from the backend. */
