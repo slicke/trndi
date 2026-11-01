@@ -135,7 +135,7 @@ Trndi.native.base, trndi.shared, trndi.theme, trndi.report, buildinfo, fpjson, j
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, trndi.ext.perm,
-trndi.ext.grant, trndi.ext.quickjs,
+trndi.ext.grant, trndi.ext.quickjs, trndi.ext.modules,
 {$endif}
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
