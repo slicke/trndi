@@ -65,6 +65,9 @@
  * - 2026-09-20: Added DrawSmoothConvexPolygon, a signed-distance rasterizer
  *   for filled convex shapes with an optional mitred outline, so the warning
  *   triangle and the expand chevrons can leave Canvas.Polygon.
+ * - 2026-11-02: DrawSmoothStrokes takes an optional overall opacity, so the
+ *   main window's countdown bar can lay a translucent track and fill over
+ *   the window gradient.
  *)
 
 unit trndi.raster;
@@ -227,9 +230,12 @@ procedure DrawSmoothCircle(ACanvas: TCanvas; ASize: integer;
 {** Antialiased capsule strokes, AThickness pixels wide, with round caps and
     round joints wherever strokes meet: overlapping strokes keep the strongest
     coverage, so joints never double-blend. Uncached — meant for shapes that
-    are either drawn once into a cached surface or change every paint. }
+    are either drawn once into a cached surface or change every paint.
+    AAlpha scales the whole set's opacity, for strokes that let the surface
+    beneath show through. }
 procedure DrawSmoothStrokes(ACanvas: TCanvas;
-  const AStrokes: array of TSmoothStroke; AThickness: integer);
+  const AStrokes: array of TSmoothStroke; AThickness: integer;
+  AAlpha: double = 1.0);
 
 {** Antialiased filled convex polygon through APts, optionally outlined by an
     AOutlineWidth-pixel stroke in AOutlineColor centred on the edge with
@@ -801,7 +807,7 @@ end;
 // tracks the ink rather than the raster's area.
 function RasterizeStrokes(const AStrokes: array of TSmoothStroke;
   AThickness: integer; AScale: double;
-  out AX, AY, AW, AH, ARW, ARH: integer): TLazIntfImage;
+  out AX, AY, AW, AH, ARW, ARH: integer; AAlpha: double = 1.0): TLazIntfImage;
 var
   cov: array of single;
   col: array of TColor;
@@ -890,19 +896,19 @@ begin
     for x := 0 to ARW - 1 do
     begin
       c := ColorToRGB(col[y * ARW + x]);
-      PutAlphaPixel(Result, x, y, Red(c), Green(c), Blue(c), cov[y * ARW + x]);
+      PutAlphaPixel(Result, x, y, Red(c), Green(c), Blue(c), cov[y * ARW + x] * AAlpha);
     end;
 end;
 
 procedure DrawSmoothStrokes(ACanvas: TCanvas;
-  const AStrokes: array of TSmoothStroke; AThickness: integer);
+  const AStrokes: array of TSmoothStroke; AThickness: integer; AAlpha: double);
 var
   intf: TLazIntfImage;
   img: TAlphaImage;
   x, y, w, h, rw, rh: integer;
 begin
   intf := RasterizeStrokes(AStrokes, AThickness, CanvasDeviceScale(ACanvas),
-    x, y, w, h, rw, rh);
+    x, y, w, h, rw, rh, AAlpha);
   if intf = nil then
     Exit;
   try

@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-02: The countdown bar is drawn in the reading's ink on a light
+ *   track instead of as a teal glowing rod, wider and closer to the window
+ *   edge, so the window colour stays the only colour signal.
  * - 2026-09-27: The delta pill is painted by the trend surface, in front of
  *   lVal, instead of by FormPaint behind it: a decimal comma's tail covered
  *   the chevron. PaintDeltaPill now draws the delta text over its capsule,
@@ -1042,10 +1045,11 @@ begin
   if pulsing or draining then
     Exit(true);
   // Same quantisation the paint records, so equal values mean equal frames.
-  span := pbNextProgress.Height - 2 * Max(1, pbNextProgress.Width div 10);
+  span := pbNextProgress.Height - pbNextProgress.Width -
+    pbNextProgress.Width div 2;
   Result := (Round(frac1 * span) <> FProgressPaintedLvl1) or
     (Round(frac2 * span) <> FProgressPaintedLvl2) or
-    (ProgressFillColor(frac1, false) <> FProgressPaintedColor);
+    (lVal.Font.Color <> FProgressPaintedColor);
 end;
 
 // Called from SetNextUpdateTimer when a fresh reading has landed: arm the
@@ -1077,88 +1081,90 @@ end;
 
 // Paint handler for the left-side "next reading" progress indicator.
 //
-// A rod of light on the window backdrop, no track: only what has elapsed is
-// drawn. The primary rod rises bottom-up over one refresh cycle (full exactly
-// when the next fetch fires) and ends in a round cap with a soft glow, so the
-// head is findable even when the bar is a few pixels wide. The retry window
-// after that is a second rod in the overtime red rising over the first one,
-// glow and all — a late reading relights the bar it already filled instead of
-// opening a second channel beside it. Once both are full the rods breathe red
-// and the primary head's glow breathes with them. Rendered through
-// trndi.raster so the cap and the glow are antialiased on every widgetset.
+// A capsule track along the window edge, filled bottom-up in the same ink as
+// the reading, so the bar belongs with the number and the window colour stays
+// the only colour signal. The primary fill rises over one refresh cycle (full
+// exactly when the next fetch fires); the retry window after that is a second
+// fill in a warmer ink rising over the first. Once both are full the fills
+// breathe until a reading lands. Everything is laid over the backdrop with
+// alpha, so the window gradient shows through the track and the fills alike.
 procedure TfBG.pbNextProgressPaint(Sender: TObject);
 const
-  HEAD_ALPHA = 0.85;        // glow strength at a rod's head
-  HEAD_BREATH_MIN = 0.45;   // the primary head breathes between these two
-  HEAD_BREATH_MAX = 0.95;   //   while a reading is overdue
+  TRACK_ALPHA = 0.28;       // light track, as faint as the dots' halo
+  FILL_ALPHA = 0.85;        // ink fill: the backdrop shows faintly through
+  OVERTIME_ALPHA = 0.9;
+  BREATH_MIN = 0.45;        // the fills breathe between these two
+  BREATH_MAX = 0.95;        //   while a reading is overdue
 var
   box: TPaintBox;
   cvs: TCanvas;
-  frac1, frac2: double;
+  frac1, frac2, breath: double;
   pulsing, draining: boolean;
-  m, w, h, span, rodW, n: integer;
-  rods: array[0..1] of TGlowRod;
+  w, h, y0, y1, span, thick, cx: integer;
+  ink: TColor;
+
+  // A capsule from ATop to ABottom; its round caps are the stroke's own, so
+  // the endpoints sit half a thickness inside. A fill shorter than the
+  // thickness is drawn as the bottom cap alone.
+  procedure Capsule(ATop, ABottom: integer; AColor: TColor; AAlpha: double);
+  var
+    s: array[0..0] of TSmoothStroke;
+  begin
+    s[0].X1 := cx;
+    s[0].X2 := cx;
+    s[0].Y2 := ABottom - thick / 2;
+    s[0].Y1 := Min(s[0].Y2, ATop + thick / 2);
+    s[0].Color := AColor;
+    DrawSmoothStrokes(cvs, s, thick, AAlpha);
+  end;
+
 begin
   box := Sender as TPaintBox;
   cvs := box.Canvas;
   w := box.Width;
   h := box.Height;
 
-  // The box is painted edge to edge every time — the rods are drawn onto the
-  // window backdrop, so nothing of the previous frame can survive around them.
+  // The box is painted edge to edge every time — the bar is drawn onto the
+  // window backdrop, so nothing of the previous frame can survive around it.
   // The backdrop slice, not a flat fill: the window behind is a gradient.
   PaintBackdrop(cvs, Classes.Rect(0, 0, w, h), box.Top);
 
   if (bgs = nil) or (Length(bgs) = 0) then
     Exit;
 
-  m := Max(1, w div 10);          // bottom margin, so the rod never touches the box edge
-  span := h - 2 * m;              // full-fill height of the rod
-  // The rod sits in from the box sides so its glow has somewhere to fall off;
-  // at the narrowest the box can be it is three pixels, still a readable line.
-  rodW := Max(3, w - 2 * Max(2, w div 4));
-  if (rodW > w) or (span < 8) then
+  // Two thirds of the box wide, close to the window edge. The bottom margin is
+  // a full box width so the bar clears a rounded window corner.
+  thick := Max(4, (w * 2) div 3);
+  cx := Max(2, w div 5) + thick div 2;
+  y0 := w div 2;
+  y1 := h - w;
+  span := y1 - y0;              // full-fill height; ProgressFrameChanged matches it
+  if span < 2 * thick then
     Exit;
 
   // Elapsed/span/drain arithmetic lives in ComputeProgressState so the
   // timer's skip check and the drain trigger see exactly what will be painted.
   ComputeProgressState(frac1, frac2, pulsing, draining);
   FProgressPulsing := pulsing;
+  if pulsing then
+    breath := BREATH_MIN + (BREATH_MAX - BREATH_MIN) * (1 - ProgressPulsePhase)
+  else
+    breath := 1;
 
-  // The primary rod carries the cycle colours (teal → amber as the reading
-  // falls due); the overtime rod carries the retry red. Once both are full the
-  // breathing blend takes the fill over, which is the whole "overdue" signal,
-  // and the primary head glows in step with it.
+  ink := lVal.Font.Color;
+  Capsule(y0, y1, clWhite, TRACK_ALPHA);
   // Same quantisation as the recorded levels, so visibility and the frame-skip
-  // gate agree on when a rod winks in and out.
-  n := 0;
+  // gate agree on when a fill winks in and out.
   if Round(frac1 * span) > 0 then
-  begin
-    rods[n].Level := Round(frac1 * span);
-    rods[n].Color := ProgressFillColor(frac1, pulsing);
-    if pulsing then
-      rods[n].HeadAlpha := HEAD_BREATH_MIN +
-        (HEAD_BREATH_MAX - HEAD_BREATH_MIN) * (1 - ProgressPulsePhase)
-    else
-      rods[n].HeadAlpha := HEAD_ALPHA;
-    Inc(n);
-  end;
+    Capsule(y1 - Round(frac1 * span), y1, ink, FILL_ALPHA * breath);
   if Round(frac2 * span) > 0 then
-  begin
-    rods[n].Level := Round(frac2 * span);
-    rods[n].Color := ProgressOvertimeColor(pulsing);
-    rods[n].HeadAlpha := HEAD_ALPHA;
-    Inc(n);
-  end;
-  // The raster ends at the bottom margin so the rods rise from there; the
-  // glow above a full rod is clipped at the box top, which is where it ends.
-  if n > 0 then
-    DrawGlowRods(cvs, w, h - m, rodW, Slice(rods, n), 0, 0);
+    Capsule(y1 - Round(frac2 * span), y1,
+      BlendColors(RGBToColor(200, 60, 20), ink, 0.55), OVERTIME_ALPHA * breath);
 
   // Record what this frame showed: ProgressFrameChanged compares against these
   // to skip identical repaints, and StartProgressDrain animates from the total.
   FProgressPaintedFrac := frac1 + frac2;
   FProgressPaintedLvl1 := Round(frac1 * span);
   FProgressPaintedLvl2 := Round(frac2 * span);
-  FProgressPaintedColor := ProgressFillColor(frac1, false);
+  FProgressPaintedColor := ink;
 end;

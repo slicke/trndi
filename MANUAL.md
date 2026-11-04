@@ -248,19 +248,18 @@ When enabled, Trndi can show where your blood sugar might be heading in the next
 
 ### Refresh Countdown Bar
 *Settings → Display → Display progress to next update on the left* (also offered
-during first-run setup): a slim rod of light along the window's left edge that
-grows from the bottom, with a soft glow at its tip. There is no track — only
-the time that has passed is drawn.
+during first-run setup): a slim bar along the window's left edge that fills
+from the bottom, drawn in the same ink as the reading on a faint light track,
+so the window colour stays the only colour signal.
 
-- The **rod** covers one refresh cycle — **teal** for most of it, warming to
-  **amber** as the reading falls due. It is full exactly when Trndi fetches the
-  next reading.
-- If the reading runs late, a **red rod** rises over the first one from the
+- The **fill** covers one refresh cycle. It is full exactly when Trndi fetches
+  the next reading.
+- If the reading runs late, a **warmer fill** rises over the first one from the
   bottom, across the retry window while Trndi keeps trying (it goes away again
-  once a reading lands). Both rods only ever rise — nothing jumps back when a
+  once a reading lands). Both fills only ever rise — nothing jumps back when a
   retry is rescheduled.
-- Once the red rod reaches the top the bar **breathes red**, glow included,
-  until a reading arrives.
+- Once the warm fill reaches the top the bar **breathes** until a reading
+  arrives.
 - When a fresh reading arrives the fill drains down with a short animation.
 - While the bar is enabled, the floating window mirrors it as a thin strip along
   its left edge (the strip shows both stages end to end: its first half is the
