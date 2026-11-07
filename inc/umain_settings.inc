@@ -338,7 +338,7 @@ begin
       native.badgeTrend := lastReading.trend.Img
     else
       native.badgeTrend := '';
-    native.setBadge(lVal.Caption, fBG.Color
+    native.setBadge(lVal.Caption, FBgTarget
       {$ifdef lclwin32}
       ,badge_width,badge_font
       {$endif}

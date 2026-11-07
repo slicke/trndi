@@ -871,7 +871,9 @@ begin
     native.badgeTrend := lastReading.trend.Img
   else
     native.badgeTrend := '';
-  native.setBadge(lVal.Caption, fBG.Color
+  // FBgTarget, not fBG.Color: a fade may have just started, and nothing
+  // refreshes the badge when it lands.
+  native.setBadge(lVal.Caption, FBgTarget
     {$ifdef lclwin32}
     ,badge_width,badge_font
     {$endif}
@@ -2822,6 +2824,13 @@ begin
   else
     fBG.Color := BlendColors(FBgTarget, FBgFadeFrom, t);
   UpdateUIColors;
+  // UpdateUIColors derives the hero from the background; during an outage
+  // ApplyStaleDisplayState's dimmed hero must win, here and in the float.
+  if FTrendDataStale then
+    lVal.Font.Color := BlendColors(clWhite, STALE_BG_COLOR, 0.58);
+  // The status item was set while the fade was starting, from its first frame.
+  if not tBgFade.Enabled then
+    UpdateStatusItem;
   if Assigned(FTrendSurface) then
     FTrendSurface.Invalidate;
   Invalidate;
