@@ -129,7 +129,7 @@ it was configured for.
 | `x86_64-linux` | `build.sh linux`, or cross from any host |
 | `x86_64-win64` | `build.sh win` (mingw cross), or `build.sh winhost` in MSYS2 |
 | `aarch64-win64` | `build.sh winarm` (llvm-mingw cross), or `build.sh winhost` in MSYS2 |
-| `aarch64-darwin` | `build.sh mac`, on a Mac |
+| `aarch64-darwin` | `build.sh mac`, on an Apple Silicon Mac |
 | `x86_64-darwin` | `build.sh mac-x86_64` on any Mac, or `build.sh mac` on an Intel Mac |
 | `aarch64-linux` | build natively on the target (e.g. a Raspberry Pi) |
 | `x86_64-haiku` | `build.sh haiku` on Haiku, or `build.sh shim` against the `quickjs_ng` package |

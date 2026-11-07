@@ -5212,7 +5212,10 @@ begin
   try
     CocoaWin := NSView(Handle).window;
     CocoaWin.setTitlebarAppearsTransparent(True);
-    CocoaWin.setTitleVisibility(NSWindowTitleHidden);
+    // A notification stack keeps its title: it names the stack and counts
+    // its entries ("Title (n)").
+    if not (Self is TSlickeStackForm) then
+      CocoaWin.setTitleVisibility(NSWindowTitleHidden);
     HideCocoaWindowButtons(CocoaWin);
   except
     // Ignore Cocoa errors silently — degrade to a normal title bar.
