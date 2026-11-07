@@ -57,6 +57,7 @@ type
     procedure TearDown; override;
   published
     procedure TestQuotedValuesRoundTrip;
+    procedure TestQuotedValuesSurviveExportImport;
   end;
 
 implementation
@@ -98,6 +99,28 @@ begin
   IniSettingsReload;
   for i := 0 to High(Values) do
     AssertEquals('from the file: ' + Values[i], Values[i],
+      IniSettingsGet(@Resolve, 'k' + IntToStr(i), '?'));
+end;
+
+procedure TNativeIniTests.TestQuotedValuesSurviveExportImport;
+const
+  Values: array[0..6] of string = ('"a\nb"', '''x''', '""', '"', '"half',
+    'plain', '"a"b"');
+var
+  i: integer;
+  exported: string;
+begin
+  // The export writes each logical value as it is; the import must guard
+  // the quoted ones again, as IniSettingsSet does.
+  for i := 0 to High(Values) do
+    IniSettingsSet(@Resolve, 'k' + IntToStr(i), Values[i]);
+  exported := IniSettingsExport(@Resolve);
+  IniSettingsReload;
+  DeleteFile(FPath);
+  IniSettingsImport(@Resolve, exported);
+  IniSettingsReload;
+  for i := 0 to High(Values) do
+    AssertEquals('after import: ' + Values[i], Values[i],
       IniSettingsGet(@Resolve, 'k' + IntToStr(i), '?'));
 end;
 

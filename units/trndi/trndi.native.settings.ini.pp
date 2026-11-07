@@ -275,8 +275,10 @@ begin
       for j := 0 to keys.Count - 1 do
       begin
         key := keys[j];
+        // TMemIniFile keeps the quotes the export wrote; guard them as
+        // IniSettingsSet does, or gIniStore strips them on the way back.
         value := ini.ReadString(section, key, '');
-        gIniStore.WriteString(section, key, value);
+        gIniStore.WriteString(section, key, QuoteGuard(value));
       end;
     end;
     gIniStore.UpdateFile;
