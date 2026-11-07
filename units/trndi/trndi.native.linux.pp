@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-01: MonotonicMicroseconds picks the BSDs' CLOCK_MONOTONIC id
+ *   (TTrndiNativeBSD inherits it); 1 is CLOCK_VIRTUAL on FreeBSD.
  * - 2026-08-21: Structural refactor. The INI settings backend moved verbatim
  *   to the shared trndi.native.settings.ini store (the six overrides are
  *   now delegates; ResolveIniPath stays). FindInPath delegates to base's
@@ -61,6 +63,8 @@
  * - 2026-08-17: attention's RunAndCapture helper now checks for child exit
  *   before draining the pipes rather than after, so output written just
  *   before exit can no longer be lost.
+ * - 2026-10-30: withdrawAttention closes the critical (low) notice once the
+ *   reading is no longer low; KDE kept it on screen for days otherwise.
  *)
 unit trndi.native.linux;
 
@@ -144,6 +148,9 @@ protected
     // instead of stacking another copy behind it.
   FLastNoticeId: cardinal;
   FLastNoticeTopic: string;
+    // Id of the critical toast still up, closed by withdrawAttention once the
+    // condition is over: critical toasts never expire by themselves.
+  FCriticalNoticeId: cardinal;
     // Notification-click support. GNOME directs ActionInvoked at whichever
     // connection posted the toast, so posting and listening must share one
     // connection: this private one, created when a click callback registers
@@ -170,10 +177,13 @@ public
   procedure attention(topic, message: string); override; overload;
   {** Notification with an urgency. Over libdbus, @code(tnuCritical) becomes
       the freedesktop @code(urgency=2) hint: the desktop shows it through Do
-      Not Disturb and leaves it up until dismissed. The older gdbus and
-      notify-send paths cannot carry hints and ignore it. }
+      Not Disturb and leaves it up until dismissed or @link(withdrawAttention)
+      takes it down. The older gdbus and notify-send paths cannot carry hints
+      and ignore it. }
   procedure attention(topic, message: string;
     urgency: TTrndiNoticeUrgency); override; overload;
+  {** Close the critical toast over the bus (CloseNotification). }
+  procedure withdrawAttention; override;
     {** Free tray resources, shutdown KDE badge if needed, and close INI store. }
   destructor Destroy; override;
     {** Speaks @param(Text) using spd-say, if available.
@@ -1412,6 +1422,11 @@ begin
     begin
       FLastNoticeId := NewId;
       FLastNoticeTopic := topic;
+      // A normal toast that replaced the critical one took over its id.
+      if urgency = tnuCritical then
+        FCriticalNoticeId := NewId
+      else if NewId = FCriticalNoticeId then
+        FCriticalNoticeId := 0;
       Exit;
     end;
     // libdbus missing or the server did not answer: fall through to the gdbus
@@ -2401,7 +2416,8 @@ end;
   ---------------------------
   clock_gettime(CLOCK_MONOTONIC) straight from libc. Unaffected by wall-clock
   adjustments, unlike gettimeofday. Falls back to the inherited tick count if
-  the call fails.
+  the call fails. TTrndiNativeBSD inherits this, and the BSDs number the clock
+  differently: 1 there is CLOCK_VIRTUAL, the process's CPU time.
  ------------------------------------------------------------------------------}
 type
   TTrndiTimespec = record
@@ -2414,11 +2430,12 @@ function trndi_clock_gettime(clk_id: cint; tp: pointer): cint;
 
 class function TTrndiNativeLinux.MonotonicMicroseconds: int64;
 const
-  CLOCK_MONOTONIC_LINUX = 1;
+  CLOCK_MONOTONIC_ID = {$IF DEFINED(FREEBSD) OR DEFINED(DRAGONFLY)}4
+    {$ELSEIF DEFINED(OPENBSD) OR DEFINED(NETBSD)}3{$ELSE}1{$ENDIF};
 var
   ts: TTrndiTimespec;
 begin
-  if trndi_clock_gettime(CLOCK_MONOTONIC_LINUX, @ts) = 0 then
+  if trndi_clock_gettime(CLOCK_MONOTONIC_ID, @ts) = 0 then
     Result := int64(ts.tv_sec) * 1000000 + (int64(ts.tv_nsec) div 1000)
   else
     Result := inherited MonotonicMicroseconds;
@@ -2959,6 +2976,56 @@ begin
   {$ENDIF}
 end;
 
+{------------------------------------------------------------------------------
+  withdrawAttention
+  -----------------
+  Close the critical toast posted by attention. KDE (and GNOME) keep an
+  urgency=2 notice up until it is dismissed, so without this a low alert
+  outlived the low by hours or days. Fire-and-forget: if the user already
+  closed it, the server's error reply is of no interest.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeLinux.withdrawAttention;
+{$IFDEF LCLQt6}
+var
+  id: cardinal;
+  conn: TDBusConn;
+  call: TDBusMessage;
+  ownConn: boolean;
+{$ENDIF}
+begin
+  {$IFDEF LCLQt6}
+  if FCriticalNoticeId = 0 then
+    Exit;
+  id := FCriticalNoticeId;
+  FCriticalNoticeId := 0;
+  // A closed toast must not be the replace target for the next alert.
+  if id = FLastNoticeId then
+  begin
+    FLastNoticeId := 0;
+    FLastNoticeTopic := '';
+  end;
+  if not DBusAvailable then
+    Exit;
+  ownConn := (FNotifyConn = nil) or (not FNotifyConn.Connected);
+  if ownConn then
+    conn := TDBusConn.Create(dbSession)
+  else
+    conn := FNotifyConn;
+  try
+    call := conn.NewCall('org.freedesktop.Notifications',
+      '/org/freedesktop/Notifications', 'org.freedesktop.Notifications',
+      'CloseNotification');
+    if call = nil then
+      Exit;
+    call.AddUInt32(id);
+    conn.Send(call);
+  finally
+    if ownConn then
+      conn.Free;
+  end;
+  {$ENDIF}
+end;
+
 procedure TTrndiNativeLinux.NotifyPumpTick(Sender: TObject);
 begin
   if FNotifyConn <> nil then
@@ -2996,6 +3063,8 @@ begin
     if msg.ReadUInt32(id) then
     begin
       ForgetNoticeId(id);
+      if id = FCriticalNoticeId then
+        FCriticalNoticeId := 0;
       // A dismissed toast must not be the replace target for the next alert
       // of the same topic; the server would silently resurrect it.
       if id = FLastNoticeId then

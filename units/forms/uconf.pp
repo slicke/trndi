@@ -39,6 +39,7 @@
 
 (*
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-04: Added cbHideFromCapture (hide Trndi from screen sharing).
  * - 2026-10-13: HelpOverflows measures the help text on a temporary bitmap
  *   instead of the strip's control canvas.
  * - 2026-09-27: Added cbMenuBarReading (macOS menu-bar status item).
@@ -102,7 +103,7 @@ interface
 uses
 Classes, Types, CheckLst, ComCtrls, ExtCtrls, Spin, StdCtrls, SysUtils, Forms, Controls, LazUTF8, LCLType, LCLVersion, LMessages,
 Graphics, Dialogs, LCLTranslator, trndi.native, lclintf, process, FileUtil, trndi.weblogin{$ifdef X_MAC}, CocoaAll, nsutils.nshelpers{$endif},
-slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, trndi.theme, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm{$endif}{$ifdef X_WIN}, ComObj{$endif};
+slicke.ux.alert, slicke.ux.native, slicke.versioninfo, trndi.funcs, buildinfo, StrUtils, trndi.api, trndi.api.registry, razer.chroma, razer.chroma.factory, math, trndi.types, trndi.theme, base64, Variants{$ifdef TrndiExt}, trndi.ext.perm, trndi.ext.modules{$endif}{$ifdef X_WIN}, ComObj{$endif};
 
 {$I ../../inc/defines.inc}
 type
@@ -203,6 +204,7 @@ TfConf = class(TForm)
   cbLang: TComboBox;
   cbMoveDIffRight: TCheckBox;
   cbNoBorders: TCheckBox;
+  cbHideFromCapture: TCheckBox;
   cbOnTop: TCheckBox;
   cbPredictDots: TCheckBox;
   cbProgress: TCheckBox;
@@ -492,6 +494,7 @@ TfConf = class(TForm)
   fsAlertHystUrg: TFloatSpinEdit;
   tsAccess: TTabSheet;
   tsProxy: TTabSheet;
+  tsAbout: TTabSheet;
   tsCommon: TTabSheet;
   tsAdvanced: TTabSheet;
   tsPredictions: TTabSheet;
@@ -871,6 +874,7 @@ RS_PAGE_ACCESS = 'Accessibility';
 RS_PAGE_ACCOUNTS = 'Accounts';
 RS_PAGE_SYSTEM = 'System';
 RS_PAGE_GRAPH_COLORS = 'Graph';
+RS_PAGE_ABOUT = 'About';
 RS_PD_ESSENTIALS = 'The settings most people look for, collected in one place.';
 RS_PD_DATASOURCE = 'Where Trndi fetches your readings from, and the login it uses.';
 RS_PD_PROXY = 'Route Trndi''s network traffic through a proxy server.';
@@ -887,6 +891,7 @@ RS_PD_EXTENSIONS = 'JavaScript plugins that extend Trndi.';
 RS_PD_ACCESS = 'Text-to-speech, high contrast and in-app explanations.';
 RS_PD_ACCOUNTS = 'Track more than one person from the same Trndi.';
 RS_PD_SYSTEM = 'System information, autostart, web access and settings backup.';
+RS_PD_ABOUT = 'Version, license, the libraries Trndi uses, and updates.';
 RS_ESSENTIALS_INTRO = 'The settings most people look for. Each one also lives on its own page in the list to the left.';
 
 RS_GB_TREND_DOTS = 'Trend dots';
@@ -929,6 +934,7 @@ RS_DISPLAY_ADVANCED_HELP = 'When supported by the backend, the sensor expiration
 
 RS_RANGE_COLOR_HELP = 'Fills the window background with the color of your current range: in range, high or low.';
 RS_ON_TOP_HELP = 'Keeps the Trndi window above every other window.';
+RS_HIDE_FROM_CAPTURE_HELP = 'You still see Trndi, but screen sharing in meetings, recordings and screenshots leave its windows out. The Dock, taskbar and notifications can still show your reading.';
 RS_NO_BORDERS_HELP = 'Hides the window frame and title bar. Whether this works depends on the operating system.';
 RS_WINDOW_POS_HELP = 'Where on the screen Trndi opens when it starts.';
 RS_REMEMBER_SIZE_HELP = 'Restores the window to the size it had when Trndi was last closed.';
@@ -1344,6 +1350,7 @@ begin
   tsMulti.Caption := RS_PAGE_ACCOUNTS;
   tsSystem.Caption := RS_PAGE_SYSTEM;
   tsGraphColors.Caption := RS_PAGE_GRAPH_COLORS;
+  tsAbout.Caption := RS_PAGE_ABOUT;
   Label17.Caption := RS_ESSENTIALS_INTRO;
   edSearch.TextHint := RS_NAV_SEARCH;
   lHelpMore.Caption := RS_HELP_MORE;
@@ -1492,6 +1499,7 @@ begin
     AddPage(grp, tsAccess);
     AddPage(grp, tsMulti);
     AddPage(grp, tsSystem);
+    AddPage(nil, tsAbout);
   finally
     tvNav.Items.EndUpdate;
   end;
@@ -1547,6 +1555,9 @@ begin
   else
   if APage = tsSystem then
     Result := RS_PD_SYSTEM
+  else
+  if APage = tsAbout then
+    Result := RS_PD_ABOUT
   else
     Result := '';
 end;
@@ -1873,8 +1884,8 @@ begin
 
   path := FExtPaths[lbExtensions.ItemIndex];
   scriptText := '';
-  // Raw read (no TStringList line-ending normalization) so HashScript below
-  // produces the same digest as the load-time grant flow in umain_ext.inc.
+  // Raw read (no TStringList line-ending normalization) so ExtensionGrantHash
+  // below produces the same digest as the load-time grant flow in umain_ext.inc.
   try
     fileStream := TFileStream.Create(path, fmOpenRead or fmShareDenyWrite);
     ss := TStringStream.Create;
@@ -1940,7 +1951,8 @@ begin
   permsCsv := PermSetToCSV(manifest.Requested * PermPromptable);
   if permsCsv <> '' then
   begin
-    if (storedHash <> '') and (storedHash = HashScript(scriptText)) then
+    if (storedHash <> '') and (storedHash = ExtensionGrantHash(scriptText,
+      ModulesDigest(ExtractFilePath(path)))) then
     begin
       granted := CSVToPermSet(
         tnative.GetSetting('ext.perm.' + extId + '.granted', '')) * PermPromptable;
@@ -2467,6 +2479,7 @@ begin
   cbMenuBarReading.Hint := RS_MENUBAR_READING_HELP;
   cbRangeColor.Hint := RS_RANGE_COLOR_HELP;
   cbOnTop.Hint := RS_ON_TOP_HELP;
+  cbHideFromCapture.Hint := RS_HIDE_FROM_CAPTURE_HELP;
   cbNoBorders.Hint := RS_NO_BORDERS_HELP;
   Label4.Hint := RS_WINDOW_POS_HELP;
   cbPos.Hint := RS_WINDOW_POS_HELP;
@@ -3692,7 +3705,6 @@ begin
 
   // Base app version + build date + widgetset + target CPU
   lVersion.Caption := TrndiVersionString;
-  lversion.left := lversion.left - 20;
 
   // Sidebar navigation: header typography, the tree itself, and the landing
   // page.
@@ -3973,7 +3985,7 @@ end;
 
 procedure TfConf.lLicenseClick(Sender: TObject);
 const
-  txt ={$ifndef HAIKU}'<img src="https://trndi.app/doc/img/trndi-logo.png">' + sHTMLLineBreak +{$endif}
+  txt ={$ifndef HAIKU}'<img src="https://trndi.app/doc/img/trndi-logo.png" width="96" height="96">' + sHTMLLineBreak +{$endif}
     '<b>Trndi - CGM viewer</b>' + sHTMLLineBreak +
     '<i>A re-imagination of TrayTrend by Björn Lindh</i>' + sHTMLLineBreak +
     'Copyright (C) 2017-2026 Björn Lindh' + sHTMLLineBreak + sHTMLLineBreak +

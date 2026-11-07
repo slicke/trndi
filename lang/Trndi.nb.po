@@ -427,10 +427,6 @@ msgstr "Start med systemet"
 msgid "Show trend arrow in taskbar/dock"
 msgstr "Vis trendpil i oppgavelinjen/dock"
 
-#: tfconf.cbmenubarreading.caption
-msgid "Show reading in the menu bar"
-msgstr "Vis verdien i menylinjen"
-
 #: tfconf.cbbolusoverlay.caption
 msgid "Show insulin doses on the history graph"
 msgstr ""
@@ -514,6 +510,10 @@ msgstr "Blink ved perfekt avlesning (5,5mmol/L / 100mg/dL)"
 msgid "High Contrast"
 msgstr "Høy kontrast"
 
+#: tfconf.cbhidefromcapture.caption
+msgid "Hide Trndi from screen sharing and screenshots"
+msgstr ""
+
 #: tfconf.cbhints.caption
 #, fuzzy
 msgctxt "tfconf.cbhints.caption"
@@ -523,6 +523,10 @@ msgstr "Forklar deler av vinduet når du klikker på dem"
 #: tfconf.cbmediadisable.caption
 msgid "Disable the entire media system"
 msgstr "Deaktiver hele mediesystemet"
+
+#: tfconf.cbmenubarreading.caption
+msgid "Show reading in the menu bar"
+msgstr "Vis verdien i menylinjen"
 
 #: tfconf.cbmovediffright.caption
 msgid "Move to right"
@@ -1301,10 +1305,6 @@ msgstr "Stor"
 msgid "Show clock"
 msgstr "Vis klokke"
 
-#: tffloat.midelta.caption
-msgid "Show delta"
-msgstr "Vis delta"
-
 #: tffloat.micustomsize.caption
 msgctxt "tffloat.micustomsize.caption"
 msgid "Custom"
@@ -1314,6 +1314,10 @@ msgstr "Tilpasset"
 msgctxt "tffloat.micustomvisible.caption"
 msgid "Custom"
 msgstr "Tilpasset"
+
+#: tffloat.midelta.caption
+msgid "Show delta"
+msgstr "Vis delta"
 
 #: tffloat.mifontblack.caption
 msgid "Black"
@@ -1433,10 +1437,6 @@ msgstr "Innloggingsfeil: Kunne ikke opprette en gyldig økt"
 msgid "No Dexcom account matched those details. Check the username or e-mail address."
 msgstr ""
 
-#: trndi.api.dexcom.serrdexpass
-msgid "Invalid Dexcom password or account credentials"
-msgstr "Ugyldig Dexcom-passord eller kontoinformasjon"
-
 #: trndi.api.dexcom.sparamdesc
 msgid ""
 "Dexcom region selection:\n"
@@ -1510,12 +1510,18 @@ msgstr "Dexcom-kontobrukernavn"
 
 #: trndi.api.dexcom_helpers.sdexerrcredentials
 #, fuzzy
+#| msgid "Incorrect username or password combination"
 msgctxt "trndi.api.dexcom_helpers.sdexerrcredentials"
-msgid "Incorrect username or password combination"
+msgid "Incorrect username or password combination, or the account belongs to another Dexcom region"
 msgstr "Feil brukernavn eller passordkombinasjon"
 
 #: trndi.api.dexcom_helpers.sdexerrmaxattempts
 msgid "Too many failed Dexcom sign-in attempts. The account is temporarily locked - wait before trying again, as further attempts keep it locked."
+msgstr ""
+
+#: trndi.api.dexcom_helpers.sdexerrwrongregion
+#, object-pascal-format
+msgid "The password was accepted by the \"%s\" Dexcom region. Choose the Dexcom backend for that region instead."
 msgstr ""
 
 #: trndi.api.librelinkup.serrllubadcredentials
@@ -1553,6 +1559,15 @@ msgstr ""
 
 #: trndi.api.librelinkup.serrlluratelimited
 msgid "LibreLinkUp is rate-limiting this account; waiting before the next request."
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluredirected
+#, object-pascal-format
+msgid "LibreLinkUp redirected this request to region %s instead of answering it."
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluredirectloop
+msgid "LibreLinkUp keeps redirecting this account between regions."
 msgstr ""
 
 #: trndi.api.librelinkup.serrlluterms
@@ -1749,6 +1764,24 @@ msgctxt "trndi.ext.functions.sexttitle"
 msgid "Extension error"
 msgstr "Utvidelsesfeil"
 
+#: trndi.strings.rs_about_disclaimer
+msgid "Trndi is not a medical device. Always check readings against your official CGM before acting on them."
+msgstr ""
+
+#: trndi.strings.rs_about_license
+msgid "Free software under the GNU General Public License v3"
+msgstr ""
+
+#: trndi.strings.rs_about_tagline
+msgid "Your continuous glucose monitor readings on the desktop"
+msgstr ""
+
+#: trndi.strings.rs_about_version
+#, object-pascal-format
+msgctxt "trndi.strings.rs_about_version"
+msgid "Version %s"
+msgstr ""
+
 #: trndi.strings.rs_ago_time_caption
 msgid "last reading"
 msgstr ""
@@ -1767,6 +1800,25 @@ msgstr "Varsler utsatt til %s"
 msgid "Alerts snoozed for %d minutes"
 msgstr "Varsler utsatt i %d minutter"
 
+#: trndi.strings.rs_alert_snooze_kind_done
+#, object-pascal-format
+msgid "%s: snoozed until %s"
+msgstr "%s: pauset til %s"
+
+#: trndi.strings.rs_alert_snooze_kind_off
+#, object-pascal-format
+msgid "%s: alerts resumed"
+msgstr "%s: varsler gjenopptatt"
+
+#: trndi.strings.rs_alert_snooze_kind_resume
+msgid "Resume these alerts"
+msgstr "Gjenoppta disse varslene"
+
+#: trndi.strings.rs_alert_snooze_kind_until
+#, object-pascal-format
+msgid "%s (until %s)"
+msgstr "%s (til %s)"
+
 #: trndi.strings.rs_alert_snooze_not_active
 msgid "Snooze is not active"
 msgstr "Utsettelse av varsler er ikke aktiv"
@@ -1774,6 +1826,23 @@ msgstr "Utsettelse av varsler er ikke aktiv"
 #: trndi.strings.rs_alert_snooze_off
 msgid "Alert snooze disabled"
 msgstr "Varselutsettelse deaktivert"
+
+#: trndi.strings.rs_alert_snooze_only_high
+msgid "Only high"
+msgstr "Bare høyt"
+
+#: trndi.strings.rs_alert_snooze_only_low
+msgid "Only low"
+msgstr "Bare lavt"
+
+#: trndi.strings.rs_alert_snooze_only_missing
+msgid "Only outdated readings"
+msgstr "Bare utdaterte målinger"
+
+#: trndi.strings.rs_alert_snooze_partial
+#, object-pascal-format
+msgid "Some alerts snoozed until %s"
+msgstr "Noen varsler pauset til %s"
 
 #: trndi.strings.rs_alert_snooze_resume
 msgid "Resume alerts"
@@ -1788,17 +1857,9 @@ msgstr ""
 msgid "Data source notice"
 msgstr "Merknad om datakilde"
 
-#: trndi.strings.rs_webapi_title
-msgid "Web API"
-msgstr "Web-API"
-
-#: trndi.strings.rs_webapi_port_moved
-msgid "Port %d is in use by another program, so Trndi's web server started on port %d instead."
-msgstr "Port %d brukes av et annet program, så Trndis webserver har startet på port %d i stedet."
-
-#: trndi.strings.rs_webapi_no_port
-msgid "Trndi could not start its web server: there is no free port between %d and %d."
-msgstr "Trndi kunne ikke starte webserveren sin: det finnes ingen ledig port mellom %d og %d."
+#: trndi.strings.rs_api_not_ready
+msgid "API not initialized yet."
+msgstr ""
 
 #: trndi.strings.rs_attention_missing
 msgid "Outdated Readings!"
@@ -1867,6 +1928,14 @@ msgid ""
 "Open Settings and pick a data source. Your other settings are kept."
 msgstr ""
 
+#: trndi.strings.rs_boot_retry_extra
+msgid "Trndi keeps trying on its own. If the address or login is wrong, open Settings."
+msgstr "Trndi fortsetter å prøve av seg selv. Hvis adressen eller innloggingen er feil, åpne Innstillinger."
+
+#: trndi.strings.rs_boot_unreachable
+msgid "Can't reach the server"
+msgstr "Får ikke kontakt med serveren"
+
 #: trndi.strings.rs_changes_apply
 msgctxt "trndi.strings.rs_changes_apply"
 msgid "Apply this value when Trndi starts?"
@@ -1906,33 +1975,14 @@ msgstr ""
 msgid "No connection details available yet."
 msgstr "Ingen tilkoblingsdetaljer tilgjengelig ennå."
 
+#: trndi.strings.rs_conn_no_new_data
+msgid "No new data"
+msgstr "Ingen nye data"
+
 #: trndi.strings.rs_conn_ok
 msgctxt "trndi.strings.rs_conn_ok"
 msgid "OK"
 msgstr "OK"
-
-#: trndi.strings.rs_status_item_hidden
-msgid ""
-"The reading is no longer shown in the menu bar.\n"
-"\n"
-"You can turn it back on under Settings > Display > \"Show reading in the menu bar\"."
-msgstr ""
-"Verdien vises ikke lenger i menylinjen.\n"
-"\n"
-"Du kan slå den på igjen under Innstillinger > Visning > \"Vis verdien i menylinjen\"."
-
-#: trndi.strings.rs_status_item_hide
-msgid "Hide from menu bar"
-msgstr "Skjul fra menylinjen"
-
-#: trndi.strings.rs_status_item_quit
-msgctxt "trndi.strings.rs_status_item_quit"
-msgid "Quit Trndi"
-msgstr "Avslutt Trndi"
-
-#: trndi.strings.rs_status_item_show
-msgid "Show Trndi"
-msgstr "Vis Trndi"
 
 #: trndi.strings.rs_conn_ok_info
 msgid "Connection is currently healthy. Detailed diagnostics will appear here if a connectivity issue occurs."
@@ -2040,6 +2090,11 @@ msgctxt "trndi.strings.rs_ext_file"
 msgid "File \"%s\" not found"
 msgstr "Filen \"%s\" ble ikke funnet"
 
+#: trndi.strings.rs_ext_invalid_manifest
+#, object-pascal-format
+msgid "Invalid extension manifest in %s:"
+msgstr ""
+
 #: trndi.strings.rs_ext_msg
 msgctxt "trndi.strings.rs_ext_msg"
 msgid "Extension Message"
@@ -2058,6 +2113,10 @@ msgstr "Brukerinformasjon"
 msgctxt "trndi.strings.rs_ext_warn"
 msgid "Extension Warning"
 msgstr "Utvidelseadvarsel"
+
+#: trndi.strings.rs_float_unsupported
+msgid "Your widgetset does not support this feature, please use Qt."
+msgstr ""
 
 #: trndi.strings.rs_font_error
 #, object-pascal-format
@@ -2084,9 +2143,38 @@ msgctxt "trndi.strings.rs_force_refresh_detail"
 msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
 msgstr "Tvungen oppdatering omgår bufferen og utfører et umiddelbart API-kall. Å vente lar systemet bruke bufrede data effektivt."
 
+#: trndi.strings.rs_fullscreen_failed
+msgid "Unable to toggle fullscreen. Main window not found."
+msgstr ""
+
 #: trndi.strings.rs_high
 msgid "HIGH"
 msgstr "HØYT"
+
+#: trndi.strings.rs_hint_ago
+msgid "Time since the last reading. Click for sensor and device details."
+msgstr "Tid siden siste avlesning. Klikk for sensor- og enhetsdetaljer."
+
+#: trndi.strings.rs_hint_ago_overdue
+msgid "A new reading is overdue. Click for sensor and device details."
+msgstr "En ny avlesning er forsinket. Klikk for sensor- og enhetsdetaljer."
+
+#: trndi.strings.rs_hint_multiuser
+msgid "The account this window shows. Click for details."
+msgstr "Kontoen dette vinduet viser. Klikk for detaljer."
+
+#: trndi.strings.rs_hint_off_range
+msgid "Outside your personal target range. Click for details."
+msgstr "Utenfor ditt personlige målområde. Klikk for detaljer."
+
+#: trndi.strings.rs_hint_predict
+msgid "Forecast based on the recent trend. Click to learn more."
+msgstr "Prognose basert på den siste trenden. Klikk for mer informasjon."
+
+#: trndi.strings.rs_hint_tir
+#, object-pascal-format
+msgid "Time in range over the last %s. Click for your limits."
+msgstr "Tid i målområdet de siste %s. Klikk for grensene dine."
 
 #: trndi.strings.rs_history_item
 #, object-pascal-format
@@ -2098,6 +2186,10 @@ msgid ""
 "〰️ Noise: %s\n"
 "ℹ Source: %s\n"
 "💻 Device: %s"
+msgstr ""
+
+#: trndi.strings.rs_history_no_readings_24h
+msgid "No readings returned for the last 24 hours."
 msgstr ""
 
 #: trndi.strings.rs_hi_level
@@ -2271,6 +2363,14 @@ msgstr "Lavt forutsagt om %d minutter!"
 msgid "Low Predicted soon!"
 msgstr "Lavt forutsagt snart!"
 
+#: trndi.strings.rs_menu_about
+msgid "About Trndi"
+msgstr ""
+
+#: trndi.strings.rs_menu_check_updates
+msgid "Check for Updates..."
+msgstr ""
+
 #: trndi.strings.rs_menu_force
 msgid "Force update"
 msgstr "Tving oppdatering"
@@ -2354,6 +2454,19 @@ msgstr "Ingen nylige data tilgjengelig!"
 msgid "Your internet connection is not working, Trndi cannot fetch readings!"
 msgstr "Internettforbindelsen din fungerer ikke. Trndi kan ikke hente avlesninger!"
 
+#: trndi.strings.rs_no_new_readings
+#, object-pascal-format
+msgid ""
+"The server answered, but has nothing newer than %s.\n"
+"\n"
+"Is your phone or receiver uploading?\n"
+"Is the sensor warming up or out of range?"
+msgstr ""
+"Serveren svarte, men har ikke noe nyere enn %s.\n"
+"\n"
+"Laster telefonen eller mottakeren opp?\n"
+"Varmer sensoren opp, eller er den utenfor rekkevidde?"
+
 #: trndi.strings.rs_no_trace
 msgctxt "trndi.strings.rs_no_trace"
 msgid "No stack trace available"
@@ -2404,11 +2517,21 @@ msgstr "Tving en prediksjon"
 msgid "+%d min"
 msgstr "+%d min"
 
+#: trndi.strings.rs_predict_notice
+msgid "Forecast for the next 5, 10 and 15 minutes, extrapolated from the recent trend. It is an estimate, not a measurement."
+msgstr "Prognose for de neste 5, 10 og 15 minuttene, ekstrapolert fra den siste trenden. Det er et anslag, ikke en måling."
+
 #: trndi.strings.rs_prom_err_capt
 #, object-pascal-format
 msgctxt "trndi.strings.rs_prom_err_capt"
 msgid "The asynchronous function %s failed to complete"
 msgstr "Den asynkrone funksjonen %s klarte ikke å fullføres"
+
+#: trndi.strings.rs_quit
+#, fuzzy
+msgctxt "trndi.strings.rs_quit"
+msgid "Quit Trndi"
+msgstr "Avslutt Trndi"
 
 #: trndi.strings.rs_quit_caption
 msgid "Exit Trndi?"
@@ -2759,18 +2882,6 @@ msgid ""
 "Default Separator: %s"
 msgstr ""
 
-#: trndi.strings.rs_settings_save
-msgid "Save settings?"
-msgstr "Lagre innstillinger?"
-
-#: trndi.strings.rs_settings_saved
-msgid "Settings saved and applied. Some settings may require a restart"
-msgstr "Innstillinger lagret og anvendt. Noen innstillinger kan kreve en omstart"
-
-#: trndi.strings.rs_settings_save_desc
-msgid "Would you like to save any changes made?"
-msgstr "Vil du lagre eventuelle endringer?"
-
 #: trndi.strings.rs_setup
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
@@ -2856,6 +2967,11 @@ msgstr ""
 msgid "Connection lost — %s"
 msgstr ""
 
+#: trndi.strings.rs_stale_missing_muted
+#, object-pascal-format
+msgid "Outdated-readings alerts muted until %s"
+msgstr "Varsler om utdaterte målinger dempet til %s"
+
 #: trndi.strings.rs_stale_no_data
 #, object-pascal-format
 msgid "No data for %s"
@@ -2873,6 +2989,29 @@ msgstr ""
 #: trndi.strings.rs_stale_waiting
 msgid "Waiting for data"
 msgstr ""
+
+#: trndi.strings.rs_status_item_hidden
+msgid ""
+"The reading is no longer shown in the menu bar.\n"
+"\n"
+"You can turn it back on under Settings > Display > \"Show reading in the menu bar\"."
+msgstr ""
+"Verdien vises ikke lenger i menylinjen.\n"
+"\n"
+"Du kan slå den på igjen under Innstillinger > Visning > \"Vis verdien i menylinjen\"."
+
+#: trndi.strings.rs_status_item_hide
+msgid "Hide from menu bar"
+msgstr "Skjul fra menylinjen"
+
+#: trndi.strings.rs_status_item_quit
+msgctxt "trndi.strings.rs_status_item_quit"
+msgid "Quit Trndi"
+msgstr "Avslutt Trndi"
+
+#: trndi.strings.rs_status_item_show
+msgid "Show Trndi"
+msgstr "Vis Trndi"
 
 #: trndi.strings.rs_tir_caption
 msgid "in range"
@@ -2927,9 +3066,26 @@ msgstr "Siste posisjon"
 msgid "Top Right"
 msgstr "Øvre høyre"
 
+#: trndi.strings.rs_trend_window_notice
+#, object-pascal-format
+msgid "Trend: %d readings · %s"
+msgstr "Trend: %d avlesninger · %s"
+
 #: trndi.strings.rs_trndi_gihub
 msgid "Trndi on GitHub"
 msgstr "Trndi på GitHub"
+
+#: trndi.strings.rs_tts_no_engine
+msgid "Error: no TTS engine available. Install speech-dispatcher, espeak/espeak-ng or flite."
+msgstr ""
+
+#: trndi.strings.rs_tts_no_say
+msgid "TTS Error: /usr/bin/say not found"
+msgstr ""
+
+#: trndi.strings.rs_tts_no_spd_say
+msgid "Error: spd-say is not installed. Please install speech-dispatcher."
+msgstr ""
 
 #: trndi.strings.rs_type_error_msg
 msgctxt "trndi.strings.rs_type_error_msg"
@@ -2966,6 +3122,10 @@ msgstr "Ukjent feil"
 #: trndi.strings.rs_unknown_time
 msgid "Loading"
 msgstr "Laster"
+
+#: trndi.strings.rs_update_check_failed
+msgid "Update check failed."
+msgstr ""
 
 #: trndi.strings.rs_user_caption
 #, object-pascal-format
@@ -3125,6 +3285,20 @@ msgstr "Lavt blodsukker! Nåværende: %s"
 msgid "Blood sugar low"
 msgstr "Lavt blodsukker"
 
+#: trndi.strings.rs_webapi_no_port
+#, object-pascal-format
+msgid "Trndi could not start its web server: there is no free port between %d and %d."
+msgstr "Trndi kunne ikke starte webserveren sin: det finnes ingen ledig port mellom %d og %d."
+
+#: trndi.strings.rs_webapi_port_moved
+#, object-pascal-format
+msgid "Port %d is in use by another program, so Trndi's web server started on port %d instead."
+msgstr "Port %d brukes av et annet program, så Trndis webserver har startet på port %d i stedet."
+
+#: trndi.strings.rs_webapi_title
+msgid "Web API"
+msgstr "Web-API"
+
 #: trndi.strings.rs_wizard_back
 msgid "← Back"
 msgstr "← Tilbake"
@@ -3259,74 +3433,6 @@ msgstr ""
 msgid "Let's get connected!"
 msgstr "La oss koble til!"
 
-#: trndi.strings.rs_menu_about
-msgid "About Trndi"
-msgstr ""
-
-#: trndi.strings.rs_menu_check_updates
-msgid "Check for Updates..."
-msgstr ""
-
-#: trndi.strings.rs_quit
-msgctxt "trndi.strings.rs_quit"
-msgid "Quit Trndi"
-msgstr ""
-
-#: trndi.strings.rs_update_check_failed
-msgid "Update check failed."
-msgstr ""
-
-#: trndi.strings.rs_history_no_readings_24h
-msgid "No readings returned for the last 24 hours."
-msgstr ""
-
-#: trndi.strings.rs_api_not_ready
-msgid "API not initialized yet."
-msgstr ""
-
-#: trndi.strings.rs_fullscreen_failed
-msgid "Unable to toggle fullscreen. Main window not found."
-msgstr ""
-
-#: trndi.strings.rs_float_unsupported
-msgid "Your widgetset does not support this feature, please use Qt."
-msgstr ""
-
-#: trndi.strings.rs_ext_invalid_manifest
-#, object-pascal-format
-msgid "Invalid extension manifest in %s:"
-msgstr ""
-
-#: trndi.strings.rs_tts_no_say
-msgid "TTS Error: /usr/bin/say not found"
-msgstr ""
-
-#: trndi.strings.rs_tts_no_engine
-msgid "Error: no TTS engine available. Install speech-dispatcher, espeak/espeak-ng or flite."
-msgstr ""
-
-#: trndi.strings.rs_tts_no_spd_say
-msgid "Error: spd-say is not installed. Please install speech-dispatcher."
-msgstr ""
-
-#: trndi.strings.rs_about_tagline
-msgid "Your continuous glucose monitor readings on the desktop"
-msgstr ""
-
-#: trndi.strings.rs_about_version
-#, object-pascal-format
-msgctxt "trndi.strings.rs_about_version"
-msgid "Version %s"
-msgstr ""
-
-#: trndi.strings.rs_about_license
-msgid "Free software under the GNU General Public License v3"
-msgstr ""
-
-#: trndi.strings.rs_about_disclaimer
-msgid "Trndi is not a medical device. Always check readings against your official CGM before acting on them."
-msgstr ""
-
 #: uconf.rs_alert_hysteresis_mgdl
 msgctxt "uconf.rs_alert_hysteresis_mgdl"
 msgid "Clear margin (mg/dL)"
@@ -3335,6 +3441,10 @@ msgstr "Frigrense (mg/dL)"
 #: uconf.rs_alert_hysteresis_mmol
 msgid "Clear margin (mmol/L)"
 msgstr "Frigrense (mmol/L)"
+
+#: uconf.rs_alternate_help
+msgid "Swaps the positions of the reading and the trend arrow at every update."
+msgstr ""
 
 #: uconf.rs_announce_not_available
 #, object-pascal-format
@@ -3364,6 +3474,10 @@ msgstr ""
 msgid "This controls how Trndi's icon in the status bar and/or tray will notify you visually."
 msgstr "Dette styrer hvordan Trndis ikon i statuslinjen og/eller skuffen gir deg visuelt varsel."
 
+#: uconf.rs_badge_trend_help
+msgid "Puts the current trend arrow on Trndi's taskbar or Dock icon."
+msgstr ""
+
 #: uconf.rs_beta
 msgid ""
 "This backend is in a beta stage, it may not work as intended!\n"
@@ -3384,6 +3498,10 @@ msgstr "Velg ditt CGM-system i listen, og angi deretter dine opplysninger"
 #: uconf.rs_clear_margin_help
 msgid "Once an alert triggers, the reading must recover this many units past the threshold before the alert can fire again."
 msgstr "Når et varsel utløses, må avlesningen komme dette antall enheter forbi grensen før varselet kan utløses igjen."
+
+#: uconf.rs_clock_help
+msgid "Every 20 seconds the reading gives way to the current time for 5 seconds. In fullscreen and kiosk mode the time shows at the top instead."
+msgstr ""
 
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."
@@ -3435,8 +3553,8 @@ msgstr "Når den forrige avlesningen mangler, bruk neste tilgjengelige avlesning
 
 #: uconf.rs_dex
 msgid ""
-"Dexcom servers do not provide custom high and low blood sugar values.\n"
-"Please set your own thresholds in the Customization tab."
+"Dexcom servers do not provide high and low limits.\n"
+"Set your own on the Glucose & ranges page, or under Essentials."
 msgstr ""
 
 #: uconf.rs_dex_old
@@ -3454,20 +3572,6 @@ msgstr "Dette slår av alle medierelaterte funksjoner. Kan fremskynde oppstart."
 #: uconf.rs_display_advanced_help
 msgid "When supported by the backend, the sensor expiration time can be shown in Trndi"
 msgstr "Når det støttes av backend, kan sensorens utløpstid vises i Trndi"
-
-#: uconf.rs_display_general_help
-msgid ""
-"- A progressbar can show the time until the next update on the left hand side of the screen\n"
-"- The time can we displayed every 20 seconds, instead of the Reading\n"
-"- The reading and trend arrow can alternate positions"
-msgstr ""
-
-#: uconf.rs_display_window_help
-msgid ""
-"- The background color can be set to the current glucose range color\n"
-"- The window can stay over other windows\n"
-"- The window's borders can be hidden (may depend on operating system)"
-msgstr ""
 
 #: uconf.rs_dots_auto
 msgid "Adapt to background"
@@ -3675,6 +3779,18 @@ msgstr ""
 msgid "Shows if Trndi detected a touch screen"
 msgstr "Viser om Trndi oppdaget en berøringsskjerm"
 
+#: uconf.rs_help_idle
+msgid "Point at a setting, or tab to it, to read what it does."
+msgstr ""
+
+#: uconf.rs_help_more
+msgid "More..."
+msgstr ""
+
+#: uconf.rs_hide_from_capture_help
+msgid "You still see Trndi, but screen sharing in meetings, recordings and screenshots leave its windows out. The Dock, taskbar and notifications can still show your reading."
+msgstr ""
+
 #: uconf.rs_hints_enable
 msgctxt "uconf.rs_hints_enable"
 msgid "Explain parts of the window when they are clicked"
@@ -3713,6 +3829,10 @@ msgid ""
 "This backend is in alpha stage, it may not work as intended!\n"
 "Sign in with your LibreLinkUp (follower) account, not the LibreLink account on the phone wearing the sensor.\n"
 "Sharing must already be set up and the invitation accepted — see the LibreLinkUp guide."
+msgstr ""
+
+#: uconf.rs_menubar_reading_help
+msgid "Shows the current reading in the system menu bar, where the platform has one."
 msgstr ""
 
 #: uconf.rs_min_minutes
@@ -3801,6 +3921,10 @@ msgstr "Et varslingssystem er påkrevd"
 msgid "Trndi uses a system called \"%s\" to send desktop notices, you need to have this system installed in order to receive notices."
 msgstr "Trndi bruker et system kalt \"%s\" for å sende skrivebordsvarsler; du må ha dette systemet installert for å motta varsler."
 
+#: uconf.rs_no_borders_help
+msgid "Hides the window frame and title bar. Whether this works depends on the operating system."
+msgstr ""
+
 #: uconf.rs_no_copyright
 msgid "- Extension has no copyright info -"
 msgstr "- Utvidelsen har ingen opphavsrettinfo -"
@@ -3818,19 +3942,21 @@ msgstr "Vennligst last ned en versjon av Trndi som støtter utvidelser"
 msgid "Due to hardware limitations, %s on %s cannot support extensions"
 msgstr "På grunn av maskinvarebegrensninger kan %s på %s ikke støtte utvidelser"
 
+#: uconf.rs_on_top_help
+msgid "Keeps the Trndi window above every other window."
+msgstr ""
+
 #: uconf.rs_outdated_help
 msgid "This is the time after which Trndi will show the \"no recent\" readings overlay. Trndi checks this when updating from the remote server, not every minute."
 msgstr "Dette er tiden etter hvilken Trndi viser overlay'et \"ingen nylige\" avlesninger. Trndi sjekker dette ved oppdatering fra fjernserveren, ikke hvert minutt."
 
 #: uconf.rs_override_help
 msgid ""
-"Setting values here allows you to define your own high and low blood sugar limits in Trndi.\n"
+"Set your own high and low limits here. They take precedence over whatever your data source reports.\n"
 "\n"
-"NightScout:\n"
-"Trndi automatically retrieves your custom high and low settings from NightScout, so manually setting them here is usually unnecessary.\n"
+"Nightscout, xDrip, CareLink and LibreLinkUp all send their own limits, so with those this is normally not needed.\n"
 "\n"
-"Dexcom:\n"
-"Dexcom servers do not provide custom high and low values. By setting them here, you can establish your own thresholds for Dexcom data."
+"Dexcom and Tandem Source do not provide any limits, so with those you set them here."
 msgstr ""
 
 #: uconf.rs_override_language
@@ -3840,6 +3966,11 @@ msgstr "Velg hvilket språk Trndi skal kjøres på. Hvis du velger feil, kan du 
 #: uconf.rs_override_ns
 msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
 msgstr "Du bruker NightScout-backend; du bør sette disse verdiene på serveren din (hvis mulig), da Trndi bruker dine NightScout-innstillinger som standard"
+
+#: uconf.rs_page_about
+msgctxt "uconf.rs_page_about"
+msgid "About"
+msgstr "Om"
 
 #: uconf.rs_page_access
 #, fuzzy
@@ -3924,6 +4055,10 @@ msgstr "System"
 #: uconf.rs_page_trendgraph
 msgid "Trend graph"
 msgstr ""
+
+#: uconf.rs_pd_about
+msgid "Version, license, the libraries Trndi uses, and updates."
+msgstr "Versjon, lisens, bibliotekene Trndi bruker, og oppdateringer."
 
 #: uconf.rs_pd_access
 msgid "Text-to-speech, high contrast and in-app explanations."
@@ -4044,6 +4179,18 @@ msgstr "Velg hvilken blodsukkertilstand forhåndsvisningen viser"
 #: uconf.rs_privacy_help
 msgid "When in Privacy Mode, the actual blood glucose value is hidden. Trndi will only tell the user if it's good, high or low."
 msgstr "I personvernmodus er den faktiske blodglukoseverdien skjult. Trndi forteller bare om verdien er god, høy eller lav."
+
+#: uconf.rs_progress_help
+msgid "Shows a bar along the left edge that counts down to the next update."
+msgstr ""
+
+#: uconf.rs_range_color_help
+msgid "Fills the window background with the color of your current range: in range, high or low."
+msgstr ""
+
+#: uconf.rs_remember_size_help
+msgid "Restores the window to the size it had when Trndi was last closed."
+msgstr ""
 
 #: uconf.rs_remove_acc
 msgid "Removed accounts are made inactive, and can be restored by adding the same name again"
@@ -4284,6 +4431,10 @@ msgctxt "uconf.rs_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Venter på at nettleserinnloggingen skal fullføres…"
 
+#: uconf.rs_window_pos_help
+msgid "Where on the screen Trndi opens when it starts."
+msgstr ""
+
 #: uconf.rs_xdrip
 msgid ""
 "Make sure you are on the same network as the xDrip app.\n"
@@ -4300,11 +4451,6 @@ msgctxt "ufloat.rs_custom_size"
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr "Du kan holde nede skift og pluss (+) eller minus (-) for å justere vinduestørrelsen"
 
-#: uhistorygraph.rs_history_graph_axis_time
-msgctxt "uhistorygraph.rs_history_graph_axis_time"
-msgid "Time"
-msgstr "Tidspunkt"
-
 #: uhistorygraph.rs_history_graph_csv_title
 msgid "Save readings as CSV"
 msgstr "Lagre avlesninger som CSV"
@@ -4313,15 +4459,8 @@ msgstr "Lagre avlesninger som CSV"
 msgid "No history data to plot"
 msgstr "Ingen historiske data å plotte"
 
-#: uhistorygraph.rs_history_graph_help
-msgid "Click a dot to see the full reading details"
-msgstr "Klikk på en prikk for å se fullstendige avlesningsdetaljer"
-
-#: uhistorygraph.rs_history_graph_help_interact
-msgid "Hover or click dots for details. Right-click to choose a time range."
-msgstr "Hold musen over eller klikk på prikker for detaljer. Høyreklikk for å velge et tidsintervall."
-
 #: uhistorygraph.rs_history_graph_key_basal
+msgctxt "uhistorygraph.rs_history_graph_key_basal"
 msgid "Basal"
 msgstr "Basal"
 
@@ -4364,10 +4503,6 @@ msgstr "Høyt område"
 msgid "Range low"
 msgstr "Lavt område"
 
-#: uhistorygraph.rs_history_graph_key_title
-msgid "Legend"
-msgstr "Forklaring"
-
 #: uhistorygraph.rs_history_graph_key_unknown
 msgctxt "uhistorygraph.rs_history_graph_key_unknown"
 msgid "Unknown"
@@ -4402,6 +4537,11 @@ msgctxt "uhistorygraph.rs_history_graph_menu_range_all"
 msgid "All"
 msgstr "Alle"
 
+#: uhistorygraph.rs_history_graph_menu_reset
+msgctxt "uhistorygraph.rs_history_graph_menu_reset"
+msgid "Reset zoom"
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_menu_save
 msgid "Save as Image..."
 msgstr "Lagre som bilde..."
@@ -4415,32 +4555,80 @@ msgstr "Lagre som CSV..."
 msgid "%d readings"
 msgstr "%d avlesninger"
 
-#: uhistorygraph.rs_history_graph_range
-#, object-pascal-format
-msgid "%s – %s"
-msgstr "%s - %s"
-
 #: uhistorygraph.rs_history_graph_save_error
 #, object-pascal-format
 msgid "Failed to save graph: %s"
 msgstr "Kunne ikke lagre grafen: %s"
 
-#: uhistorygraph.rs_history_graph_save_success
-msgid "Graph saved successfully"
-msgstr "Grafen ble lagret"
-
 #: uhistorygraph.rs_history_graph_save_title
 msgid "Save graph as PNG"
 msgstr "Lagre graf som PNG"
 
+#: uhistorygraph.rs_history_graph_tb_all_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_all_hint"
+msgid "Show everything"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_basal
+#, fuzzy
+msgctxt "uhistorygraph.rs_history_graph_tb_basal"
+msgid "Basal"
+msgstr "Basal"
+
+#: uhistorygraph.rs_history_graph_tb_basal_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_basal_hint"
+msgid "Show the programmed basal schedule"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_bolus
+msgctxt "uhistorygraph.rs_history_graph_tb_bolus"
+msgid "Insulin"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_bolus_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_bolus_hint"
+msgid "Show insulin deliveries"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_carbs
+msgctxt "uhistorygraph.rs_history_graph_tb_carbs"
+msgid "Carbs"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_carbs_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_carbs_hint"
+msgid "Show carbohydrates"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_csv
+msgctxt "uhistorygraph.rs_history_graph_tb_csv"
+msgid "CSV"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_csv_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_csv_hint"
+msgid "Save the readings in view as CSV"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_png
+msgctxt "uhistorygraph.rs_history_graph_tb_png"
+msgid "PNG"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_png_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_png_hint"
+msgid "Save the graph as an image (Ctrl+S)"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_range_hint
+#, object-pascal-format
+msgctxt "uhistorygraph.rs_history_graph_tb_range_hint"
+msgid "Show the last %s"
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_title
 msgid "History graph"
 msgstr "Historikkgraf"
-
-#: uhistorygraph.rs_history_graph_unit_fmt
-#, object-pascal-format
-msgid "Readings (%s)"
-msgstr "Avlesninger (%s)"
 
 #: uwizard.wz_err_address
 msgctxt "uwizard.wz_err_address"
@@ -4551,160 +4739,3 @@ msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr "Venter på at nettleserinnloggingen skal fullføres…"
 
-#: uhistorygraph.rs_history_graph_menu_reset
-msgctxt "uhistorygraph.rs_history_graph_menu_reset"
-msgid "Reset zoom"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_range_hint
-#, object-pascal-format
-msgctxt "uhistorygraph.rs_history_graph_tb_range_hint"
-msgid "Show the last %s"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_all_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_all_hint"
-msgid "Show everything"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_basal
-msgctxt "uhistorygraph.rs_history_graph_tb_basal"
-msgid "Basal"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_basal_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_basal_hint"
-msgid "Show the programmed basal schedule"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_bolus
-msgctxt "uhistorygraph.rs_history_graph_tb_bolus"
-msgid "Insulin"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_bolus_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_bolus_hint"
-msgid "Show insulin deliveries"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_carbs
-msgctxt "uhistorygraph.rs_history_graph_tb_carbs"
-msgid "Carbs"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_carbs_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_carbs_hint"
-msgid "Show carbohydrates"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_png
-msgctxt "uhistorygraph.rs_history_graph_tb_png"
-msgid "PNG"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_png_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_png_hint"
-msgid "Save the graph as an image (Ctrl+S)"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_csv
-msgctxt "uhistorygraph.rs_history_graph_tb_csv"
-msgid "CSV"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_csv_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_csv_hint"
-msgid "Save the readings in view as CSV"
-msgstr ""
-
-#: trndi.strings.rs_no_new_readings
-#, object-pascal-format
-msgid "The server answered, but has nothing newer than %s.\n\nIs your phone or receiver uploading?\nIs the sensor warming up or out of range?"
-msgstr "Serveren svarte, men har ikke noe nyere enn %s.\n\nLaster telefonen eller mottakeren opp?\nVarmer sensoren opp, eller er den utenfor rekkevidde?"
-
-#: trndi.strings.rs_hint_ago
-msgid "Time since the last reading. Click for sensor and device details."
-msgstr "Tid siden siste avlesning. Klikk for sensor- og enhetsdetaljer."
-
-#: trndi.strings.rs_hint_ago_overdue
-msgid "A new reading is overdue. Click for sensor and device details."
-msgstr "En ny avlesning er forsinket. Klikk for sensor- og enhetsdetaljer."
-
-#: trndi.strings.rs_hint_tir
-#, object-pascal-format
-msgid "Time in range over the last %s. Click for your limits."
-msgstr "Tid i målområdet de siste %s. Klikk for grensene dine."
-
-#: trndi.strings.rs_hint_predict
-msgid "Forecast based on the recent trend. Click to learn more."
-msgstr "Prognose basert på den siste trenden. Klikk for mer informasjon."
-
-#: trndi.strings.rs_predict_notice
-msgid "Forecast for the next 5, 10 and 15 minutes, extrapolated from the recent trend. It is an estimate, not a measurement."
-msgstr "Prognose for de neste 5, 10 og 15 minuttene, ekstrapolert fra den siste trenden. Det er et anslag, ikke en måling."
-
-#: trndi.strings.rs_hint_off_range
-msgid "Outside your personal target range. Click for details."
-msgstr "Utenfor ditt personlige målområde. Klikk for detaljer."
-
-#: trndi.strings.rs_hint_multiuser
-msgid "The account this window shows. Click for details."
-msgstr "Kontoen dette vinduet viser. Klikk for detaljer."
-
-#: trndi.strings.rs_trend_window_notice
-#, object-pascal-format
-msgid "Trend: %d readings · %s"
-msgstr "Trend: %d avlesninger · %s"
-
-#: trndi.strings.rs_conn_no_new_data
-msgid "No new data"
-msgstr "Ingen nye data"
-
-#: trndi.strings.rs_boot_unreachable
-msgid "Can't reach the server"
-msgstr "Får ikke kontakt med serveren"
-
-#: trndi.strings.rs_boot_retry_extra
-msgid "Trndi keeps trying on its own. If the address or login is wrong, open Settings."
-msgstr "Trndi fortsetter å prøve av seg selv. Hvis adressen eller innloggingen er feil, åpne Innstillinger."
-
-#: trndi.strings.rs_alert_snooze_partial
-#, object-pascal-format
-msgid "Some alerts snoozed until %s"
-msgstr "Noen varsler pauset til %s"
-
-#: trndi.strings.rs_alert_snooze_only_missing
-msgid "Only outdated readings"
-msgstr "Bare utdaterte målinger"
-
-#: trndi.strings.rs_alert_snooze_only_high
-msgid "Only high"
-msgstr "Bare høyt"
-
-#: trndi.strings.rs_alert_snooze_only_low
-msgid "Only low"
-msgstr "Bare lavt"
-
-#: trndi.strings.rs_alert_snooze_kind_until
-#, object-pascal-format
-msgid "%s (until %s)"
-msgstr "%s (til %s)"
-
-#: trndi.strings.rs_alert_snooze_kind_resume
-msgid "Resume these alerts"
-msgstr "Gjenoppta disse varslene"
-
-#: trndi.strings.rs_alert_snooze_kind_done
-#, object-pascal-format
-msgid "%s: snoozed until %s"
-msgstr "%s: pauset til %s"
-
-#: trndi.strings.rs_alert_snooze_kind_off
-#, object-pascal-format
-msgid "%s: alerts resumed"
-msgstr "%s: varsler gjenopptatt"
-
-#: trndi.strings.rs_stale_missing_muted
-#, object-pascal-format
-msgid "Outdated-readings alerts muted until %s"
-msgstr "Varsler om utdaterte målinger dempet til %s"

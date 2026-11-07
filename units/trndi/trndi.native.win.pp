@@ -17,6 +17,8 @@
  * GitHub: https://github.com/slicke/trndi
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-04: SupportsCaptureExclusion/SetCaptureExcluded via
+ *   SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE), Windows 10 2004+.
  * - 2026-09-18: The WinHTTP transport (getURL, postURL, TestProxyURL,
  *   request, requestEx) moved verbatim to the new
  *   trndi.native.request.winhttp unit as free functions; the methods here now
@@ -107,6 +109,13 @@ public
     {** Applies caption (@param(bg)) and text (@param(text)) colors via DWM.
         @returns(True if both attributes are set successfully) }
   class function SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean; override;
+    {** @true on Windows 10 2004 (build 19041) and later, where
+        WDA_EXCLUDEFROMCAPTURE exists. }
+  class function SupportsCaptureExclusion: boolean; override;
+    {** Exclude the window from capture via SetWindowDisplayAffinity
+        (WDA_EXCLUDEFROMCAPTURE), or restore WDA_NONE.
+        @returns(True if the affinity was set) }
+  class function SetCaptureExcluded(form: PtrUInt; exclude: boolean): boolean; override;
     {** @true — the multi-user name is shown as a layered title-bar badge. }
   class function SupportsUserBadge: boolean; override;
     {** Create/refresh a clickable layered badge on the title bar. See base. }
@@ -983,6 +992,9 @@ end;
 function UpdateLayeredWindow(hWnd: HWND; hdcDst: HDC; pptDst: Pointer;
   psize: Pointer; hdcSrc: HDC; pptSrc: Pointer; crKey: DWORD;
   pblend: Pointer; dwFlags: DWORD): BOOL; stdcall; external 'user32.dll';
+// Not declared by FPC 3.2.2's Windows unit (user32, Windows 7+).
+function SetWindowDisplayAffinity(hWnd: HWND; dwAffinity: DWORD): BOOL;
+  stdcall; external 'user32.dll';
 {$endif}
 
 {------------------------------------------------------------------------------
@@ -1169,6 +1181,35 @@ begin
   hrText := SetDwmAttr(form, DWMWA_TEXT_COLOR, textColor, SizeOf(textColor));
 
   Result := HrSucceeded(hrCaption) and HrSucceeded(hrText);
+end;
+
+{------------------------------------------------------------------------------
+  SupportsCaptureExclusion / SetCaptureExcluded
+  ---------------------------------------------
+  WDA_EXCLUDEFROMCAPTURE (Windows 10 2004+) removes the window from captures
+  while it stays visible locally. Older builds only have WDA_MONITOR, which
+  paints a black box into the capture instead; we don't offer that.
+ ------------------------------------------------------------------------------}
+const
+  WDA_NONE = $00;
+  WDA_EXCLUDEFROMCAPTURE = $11;
+  MIN_EXCLUDE_CAPTURE_BUILD = 19041; // Win10 2004 (2020-05)
+
+class function TTrndiNativeWindows.SupportsCaptureExclusion: boolean;
+begin
+  Result := (Win32MajorVersion > 10) or ((Win32MajorVersion = 10) and
+    (Win32BuildNumber >= MIN_EXCLUDE_CAPTURE_BUILD));
+end;
+
+class function TTrndiNativeWindows.SetCaptureExcluded(form: PtrUInt;
+  exclude: boolean): boolean;
+begin
+  if (form = 0) or not SupportsCaptureExclusion then
+    Exit(false);
+  if exclude then
+    Result := SetWindowDisplayAffinity(HWND(form), WDA_EXCLUDEFROMCAPTURE)
+  else
+    Result := SetWindowDisplayAffinity(HWND(form), WDA_NONE);
 end;
 
 {------------------------------------------------------------------------------

@@ -44,6 +44,8 @@
  * - 2026-09-20: Extensions with static import/export are evaluated as ES
  *   modules (ExtExecuteModule). Added the module name normalizer, the built-in
  *   "trndi" module and ModuleRootForContext; see trndi.ext.modules.
+ * - 2026-11-01: ModuleEntryForContext, so the normalizer lets an extension
+ *   import its own top-level file and no other.
  *)
 unit trndi.ext.engine;
 
@@ -630,6 +632,10 @@ public
         or '' for the admin/template context. Module imports are confined
         to it. }
   function ModuleRootForContext(ctx: JSContext): string;
+    {** The script of the extension owning @code(ctx), '' for none: the one
+        top-level file its context may import (a module extension's
+        bootstrap does). }
+  function ModuleEntryForContext(ctx: JSContext): string;
 
     {** Tear down every per-extension context: cancel JS timers, drain pending
         jobs, free each @code(JSContext) and clear the registry. The shared
@@ -1090,15 +1096,19 @@ end;
 function TrndiModuleNormalizer(ctx: JSContext; base_name, name: pansichar;
 opaque: pointer): pansichar; cdecl;
 var
-  root, resolved, err: string;
+  root, entry, resolved, err: string;
 begin
   Result := nil;
   // Runs inside a C frame: no Pascal exception may unwind out of here.
   try
     root := '';
+    entry := '';
     if opaque <> nil then
+    begin
       root := TTrndiExtEngine(opaque).ModuleRootForContext(ctx);
-    err := ResolveModuleSpecifier(string(base_name), string(name), root, resolved);
+      entry := TTrndiExtEngine(opaque).ModuleEntryForContext(ctx);
+    end;
+    err := ResolveModuleSpecifier(string(base_name), string(name), root, resolved, entry);
     if err <> '' then
       resolved := ModuleErrorPrefix + err;
     Result := js_strdup(ctx, pansichar(RawUtf8(resolved)));
@@ -2310,6 +2320,18 @@ begin
   for i := 0 to FExtContexts.Count - 1 do
     if (FExtContexts[i] <> nil) and (FExtContexts[i]^.Ctx = ctx) then
       Exit(ExtractFilePath(FExtContexts[i]^.FileName));
+end;
+
+function TTrndiExtEngine.ModuleEntryForContext(ctx: JSContext): string;
+var
+  i: integer;
+begin
+  Result := '';
+  if (ctx = nil) or (not Assigned(FExtContexts)) then
+    Exit;
+  for i := 0 to FExtContexts.Count - 1 do
+    if (FExtContexts[i] <> nil) and (FExtContexts[i]^.Ctx = ctx) then
+      Exit(FExtContexts[i]^.FileName);
 end;
 
 procedure TTrndiExtEngine.NotifyUnloadAll;

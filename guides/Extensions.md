@@ -253,7 +253,12 @@ How it works:
 - **Only top-level `.js` files are extensions.** Trndi does not look into
   subfolders, so put shared modules in one — `lib/` is the convention. A
   helper placed next to the entry file would be loaded as an extension of its
-  own.
+  own, and importing it is refused: it runs under its own permissions, not
+  the importer's.
+- **Modules share the importer's permissions.** Every file in the
+  subfolders is part of the hash a permission grant is stored under, so
+  adding or editing a module asks for the permissions again, as editing the
+  extension itself does.
 - **Imports are relative** (`./` or `../`), resolved from the importing file,
   and must stay inside the plugin folder. Bare names (`import x from "lodash"`)
   are rejected with an error that says so. A specifier without an extension

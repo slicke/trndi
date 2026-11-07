@@ -70,6 +70,7 @@ type
     procedure SetTrendArrow(AEnabled: boolean; AAngle: single; AColor: TColor); virtual;
     procedure SetNextProgress(AShow: boolean; AFrac: double; AFill: TColor); virtual;
     procedure SetBackdrop(ABottom: TColor); virtual;
+    procedure ApplyCaptureExclusion; virtual;
     procedure SetTextColor(AColor: TColor); virtual;
     procedure SetDelta(const AText: string; AColor: TColor); virtual;
     class function Instance: TfFloat; static;
@@ -111,6 +112,11 @@ begin
 end;
 
 procedure TfFloat.SetBackdrop(ABottom: TColor);
+begin
+  // no-op for headless tests
+end;
+
+procedure TfFloat.ApplyCaptureExclusion;
 begin
   // no-op for headless tests
 end;

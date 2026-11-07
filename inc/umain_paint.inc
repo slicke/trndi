@@ -36,6 +36,9 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-02: The countdown bar is drawn in the reading's ink on a light
+ *   track instead of as a teal glowing rod, wider and closer to the window
+ *   edge, so the window colour stays the only colour signal.
  * - 2026-09-27: The delta pill is painted by the trend surface, in front of
  *   lVal, instead of by FormPaint behind it: a decimal comma's tail covered
  *   the chevron. PaintDeltaPill now draws the delta text over its capsule,
@@ -904,8 +907,8 @@ end;
 //
 // The bar is two fills on a shared time scale of one refresh cycle each: the
 // primary fill rises over the cycle the scheduler targets (full exactly when
-// the next fetch fires), then the overtime overlay — diagonal stripes on top
-// of it — rises over a second cycle-length, the retry window. Both are
+// the next fetch fires), then the overtime overlay — a second rod drawn on
+// top of it — rises over a second cycle-length, the retry window. Both are
 // strictly monotone; v1's
 // stretched-scale-plus-marker rework of the level on every reschedule read as
 // the gauge running backwards.
@@ -961,6 +964,11 @@ begin
   AFrac2 := Max(0.0, total - 1.0);
 end;
 
+// One full breath of the overdue pulse. Shared by the fill colour and the
+// head glow so the two breathe in step.
+const
+  PROGRESS_PULSE_PERIOD_MS = 1600;
+
 // Fill colour: teal for most of the cycle → amber as the reading falls due →
 // pomegranate once it is late. The teal stage only brightens as it rises;
 // blending teal straight into amber across the whole cycle would spend
@@ -968,17 +976,14 @@ end;
 function TfBG.ProgressFillColor(const AFrac: double; const APulsing: boolean): TColor;
 const
   WARM_FROM = 0.90;     // fraction at which the fill starts warming toward amber
-  PULSE_MS  = 1600;     // one full breath while the reading is overdue
 var
-  warmth, pulse: double;
+  warmth: double;
 begin
   if APulsing then
-  begin
     // Breathe rather than flash: tProgressTimer speeds up while a reading is
     // overdue, so this ramp is sampled often enough to read as continuous.
-    pulse := 0.5 - 0.5 * cos(2 * Pi * ((GetTickCount64 mod PULSE_MS) / PULSE_MS));
-    Result := BlendColors(RGBToColor(255, 105, 66), RGBToColor(183, 47, 36), pulse);
-  end
+    Result := BlendColors(RGBToColor(255, 105, 66), RGBToColor(183, 47, 36),
+      ProgressPulsePhase)
   else if AFrac >= WARM_FROM then
   begin
     warmth := (AFrac - WARM_FROM) / (1.0 - WARM_FROM);
@@ -994,13 +999,21 @@ end;
 // so it reads as "the late part", distinct from the primary fill's cycle
 // colours. Steady mid-tone while it is still filling, the breathing blend once
 // both are full (the pulse ramp is the same one ProgressFillColor uses). The
-// bar's stripes are a darkened shade of it; the float's strip uses it as is.
+// bar's overtime rod and the float's strip both use it as is.
 function TfBG.ProgressOvertimeColor(const APulsing: boolean): TColor;
 begin
   if APulsing then
     Result := ProgressFillColor(1.0, true)
   else
     Result := BlendColors(RGBToColor(255, 105, 66), RGBToColor(183, 47, 36), 0.5);
+end;
+
+// Where in its breath the overdue pulse is right now: 0 at the bright end,
+// 1 at the dark end, a raised cosine in between so the turnarounds are soft.
+function TfBG.ProgressPulsePhase: double;
+begin
+  Result := 0.5 - 0.5 * cos(2 * Pi *
+    ((GetTickCount64 mod PROGRESS_PULSE_PERIOD_MS) / PROGRESS_PULSE_PERIOD_MS));
 end;
 
 // Whether repainting the bar now would produce different pixels than the
@@ -1032,10 +1045,11 @@ begin
   if pulsing or draining then
     Exit(true);
   // Same quantisation the paint records, so equal values mean equal frames.
-  span := pbNextProgress.Height - 2 * Max(1, pbNextProgress.Width div 10);
+  span := pbNextProgress.Height - pbNextProgress.Width -
+    pbNextProgress.Width div 2;
   Result := (Round(frac1 * span) <> FProgressPaintedLvl1) or
     (Round(frac2 * span) <> FProgressPaintedLvl2) or
-    (ProgressFillColor(frac1, false) <> FProgressPaintedColor);
+    (lVal.Font.Color <> FProgressPaintedColor);
 end;
 
 // Called from SetNextUpdateTimer when a fresh reading has landed: arm the
@@ -1067,72 +1081,41 @@ end;
 
 // Paint handler for the left-side "next reading" progress indicator.
 //
-// One vertical line on a recessed track, filling bottom-up over one refresh
-// cycle (full exactly when the next fetch fires). The retry window after that
-// is drawn onto the same line as an overlay of diagonal stripes, rising from
-// the bottom again — a late reading restripes the bar it already filled
-// instead of opening a second channel beside it. Flat FillRects only — the
-// line is a few pixels wide, so any capsule/shading treatment just reads as
-// noise at this size.
+// A capsule track along the window edge, filled bottom-up in the same ink as
+// the reading, so the bar belongs with the number and the window colour stays
+// the only colour signal. The primary fill rises over one refresh cycle (full
+// exactly when the next fetch fires); the retry window after that is a second
+// fill in a warmer ink rising over the first. Once both are full the fills
+// breathe until a reading lands. Everything is laid over the backdrop with
+// alpha, so the window gradient shows through the track and the fills alike.
 procedure TfBG.pbNextProgressPaint(Sender: TObject);
+const
+  TRACK_ALPHA = 0.28;       // light track, as faint as the dots' halo
+  FILL_ALPHA = 0.85;        // ink fill: the backdrop shows faintly through
+  OVERTIME_ALPHA = 0.9;
+  BREATH_MIN = 0.45;        // the fills breathe between these two
+  BREATH_MAX = 0.95;        //   while a reading is overdue
 var
   box: TPaintBox;
   cvs: TCanvas;
-  bgCol, trackCol, fillCol, overCol: TColor;
-  frac1, frac2: double;
+  frac1, frac2, breath: double;
   pulsing, draining: boolean;
-  m, w, h, span, iw: integer;
+  w, h, y0, y1, span, thick, cx: integer;
+  ink: TColor;
 
-  // The line: recessed track over the full span, fill from the bottom.
-  procedure DrawLine(x0, lineW: integer; const frac: double; col: TColor);
+  // A capsule from ATop to ABottom; its round caps are the stroke's own, so
+  // the endpoints sit half a thickness inside. A fill shorter than the
+  // thickness is drawn as the bottom cap alone.
+  procedure Capsule(ATop, ABottom: integer; AColor: TColor; AAlpha: double);
   var
-    lvl: integer;
+    s: array[0..0] of TSmoothStroke;
   begin
-    cvs.Brush.Color := trackCol;
-    cvs.FillRect(Classes.Rect(x0, m, x0 + lineW, h - m));
-    lvl := Round(frac * span);
-    if lvl > 0 then
-    begin
-      cvs.Brush.Color := col;
-      cvs.FillRect(Classes.Rect(x0, h - m - lvl, x0 + lineW, h - m));
-    end;
-  end;
-
-  // The overtime overlay: 45° stripes over the bottom lvl rows of the line.
-  // Drawn by hand, one pixel row at a time, and not with a bsFDiagonal brush —
-  // hatch brushes differ between GDI, Qt and Cocoa and ignore the DPI, while
-  // this gives the same stripes everywhere and scales them with the bar. The
-  // pattern is anchored to the bottom of the line, so a rising level reveals
-  // more of it and the stripes themselves never crawl.
-  procedure DrawStripes(x0, lineW, lvl: integer; col: TColor);
-  var
-    band, period, xx, yy, y, runStart: integer;
-    lit: boolean;
-  begin
-    band := Max(2, lineW div 3);    // stripe thickness; the gaps are as wide
-    period := 2 * band;
-    cvs.Brush.Color := col;
-    for yy := 0 to lvl - 1 do
-    begin
-      y := h - m - 1 - yy;
-      runStart := -1;
-      // xx = lineW is a sentinel that closes a run touching the right edge.
-      for xx := 0 to lineW do
-      begin
-        // lineW keeps the dividend positive; it only shifts the phase.
-        lit := (xx < lineW) and ((yy + lineW - xx) mod period < band);
-        if lit then
-        begin
-          if runStart < 0 then
-            runStart := xx;
-        end
-        else if runStart >= 0 then
-        begin
-          cvs.FillRect(Classes.Rect(x0 + runStart, y, x0 + xx, y + 1));
-          runStart := -1;
-        end;
-      end;
-    end;
+    s[0].X1 := cx;
+    s[0].X2 := cx;
+    s[0].Y2 := ABottom - thick / 2;
+    s[0].Y1 := Min(s[0].Y2, ATop + thick / 2);
+    s[0].Color := AColor;
+    DrawSmoothStrokes(cvs, s, thick, AAlpha);
   end;
 
 begin
@@ -1140,56 +1123,48 @@ begin
   cvs := box.Canvas;
   w := box.Width;
   h := box.Height;
-  bgCol := fBG.Color;
 
-  // The box is painted edge to edge every time — the line is drawn onto the
+  // The box is painted edge to edge every time — the bar is drawn onto the
   // window backdrop, so nothing of the previous frame can survive around it.
   // The backdrop slice, not a flat fill: the window behind is a gradient.
   PaintBackdrop(cvs, Classes.Rect(0, 0, w, h), box.Top);
-  cvs.Brush.Style := bsSolid;
-  cvs.Pen.Style := psClear;
 
   if (bgs = nil) or (Length(bgs) = 0) then
     Exit;
 
-  m := Max(1, w div 10);          // margin, so the line never touches the box edge
-  iw := w - 2 * m;                // inner width of the line
-  span := h - 2 * m;              // full-fill height of the line
-  if (iw < 3) or (span < 8) then
+  // Two thirds of the box wide, close to the window edge. The bottom margin is
+  // a full box width so the bar clears a rounded window corner.
+  thick := Max(4, (w * 2) div 3);
+  cx := Max(2, w div 5) + thick div 2;
+  y0 := w div 2;
+  y1 := h - w;
+  span := y1 - y0;              // full-fill height; ProgressFrameChanged matches it
+  if span < 2 * thick then
     Exit;
 
   // Elapsed/span/drain arithmetic lives in ComputeProgressState so the
   // timer's skip check and the drain trigger see exactly what will be painted.
   ComputeProgressState(frac1, frac2, pulsing, draining);
   FProgressPulsing := pulsing;
-
-  // Track: a recessed channel, darker than the window on light backgrounds and
-  // lighter on dark ones, so the empty part of the line stays visible either way.
-  if IsLightColor(bgCol) then
-    trackCol := BlendColors(clBlack, bgCol, 0.16)
+  if pulsing then
+    breath := BREATH_MIN + (BREATH_MAX - BREATH_MIN) * (1 - ProgressPulsePhase)
   else
-    trackCol := BlendColors(clWhite, bgCol, 0.10);
+    breath := 1;
 
-  // The fill carries the cycle colours (teal → amber as the reading falls
-  // due); the overlay carries the retry red. Once both are full the breathing
-  // blend takes the fill over, which is the whole "overdue" signal.
-  fillCol := ProgressFillColor(frac1, pulsing);
-  overCol := ProgressOvertimeColor(pulsing);
-
-  DrawLine(m, iw, frac1, fillCol);
-  // While the overlay shows, the fill under it is always pegged full — amber,
-  // then the breathing red. The stripes are the overtime red darkened, which
-  // stands out against the amber and stays visible through the whole breath
-  // (undarkened, they would be the very colour of the fill once it pulses).
-  // Same quantisation as the recorded level, so visibility and the frame-skip
-  // gate agree on when the stripes wink in and out.
+  ink := lVal.Font.Color;
+  Capsule(y0, y1, clWhite, TRACK_ALPHA);
+  // Same quantisation as the recorded levels, so visibility and the frame-skip
+  // gate agree on when a fill winks in and out.
+  if Round(frac1 * span) > 0 then
+    Capsule(y1 - Round(frac1 * span), y1, ink, FILL_ALPHA * breath);
   if Round(frac2 * span) > 0 then
-    DrawStripes(m, iw, Round(frac2 * span), BlendColors(clBlack, overCol, 0.35));
+    Capsule(y1 - Round(frac2 * span), y1,
+      BlendColors(RGBToColor(200, 60, 20), ink, 0.55), OVERTIME_ALPHA * breath);
 
   // Record what this frame showed: ProgressFrameChanged compares against these
   // to skip identical repaints, and StartProgressDrain animates from the total.
   FProgressPaintedFrac := frac1 + frac2;
   FProgressPaintedLvl1 := Round(frac1 * span);
   FProgressPaintedLvl2 := Round(frac2 * span);
-  FProgressPaintedColor := ProgressFillColor(frac1, false);
+  FProgressPaintedColor := ink;
 end;

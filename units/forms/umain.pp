@@ -36,6 +36,14 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-04: CreateWnd override and ApplyCaptureExclusion keep the
+ *   windows out of screen capture when main.hide_from_capture is on.
+ * - 2026-10-29: FHoverPredictIx and ActivePredictHover: a prediction mark
+ *   under the mouse grows into a hollow ring showing its value; PaintHoverDot
+ *   takes the slot and box so it draws both kinds.
+ * - 2026-10-28: FHoverDotIx, PaintHoverDot and TrendSurfaceMouseLeave: the
+ *   history dot under the mouse grows into a disc showing its value,
+ *   replacing the tooltip for readings.
  * - 2026-09-27: UpdateStatusItem and the status item's menu handlers
  *   (macOS menu-bar reading), including "Hide from menu bar".
  * - 2026-09-27: PaintDeltaPill and DeltaChevronShown documentation follow the
@@ -129,7 +137,7 @@ Trndi.native.base, trndi.shared, trndi.theme, trndi.report, buildinfo, fpjson, j
 slicke.systemmediacontroller,
 {$ifdef TrndiExt}
 trndi.Ext.Engine, trndi.Ext.jsfuncs, trndi.ext.promise, trndi.ext.perm,
-trndi.ext.grant, trndi.ext.quickjs,
+trndi.ext.grant, trndi.ext.quickjs, trndi.ext.modules,
 {$endif}
 {$ifdef Darwin}
 CocoaAll, MacOSAll,
@@ -926,6 +934,13 @@ private
   FTrendSlideStart: QWord;
   tTrendSlide: TTimer;        // Frame tick of the slide; runtime-created on
                               // the first slide, disabled between slides.
+    // Background fade (FadeBackgroundTo): on a range change the window colour
+    // eases from the tone on screen to the new one instead of snapping.
+  FBgTarget: TColor;          // Colour the window is heading for; fBG.Color once the fade lands. The title bar follows this, not the frames
+  FBgFadeFrom: TColor;        // Tone the running fade started from
+  FBgFadeStart: QWord;        // GetTickCount64 when it started
+  FBgColorSet: boolean;       // A reading colour has been shown; the first is applied without a fade
+  tBgFade: TTimer;            // Frame tick of the fade; runtime-created on the first fade
     // Which dot the last surface mouse-press landed on, so release-on-the-
     // same-dot can be required before acting (mirrors per-control Click).
   FDownIsPredict: boolean;
@@ -933,6 +948,13 @@ private
     // All reading dots expand together into their value text on click; this is
     // that shared state. Relayouts collapse it (see tResizeTimer).
   FDotsExpanded: boolean;
+    // History slot the mouse is over (1-based like TrendSlots; 0 = none).
+    // TrendSurfacePaint draws that reading as a larger disc with its value
+    // inside (PaintHoverDot) instead of showing a tooltip.
+  FHoverDotIx: integer;
+    // Prediction slot the mouse is over, as its PredictionSlots index + 1
+    // (0 = none). Drawn as a hollow ring with the value inside.
+  FHoverPredictIx: integer;
   FDotWindowMenu: TMenuItem; // Trend window submenu (built once on first popup)
   multi: boolean; // Multi user
   multinick: string;
@@ -963,6 +985,7 @@ private
   procedure tKioskApplyTimer(Sender: TObject);
   procedure tDotScrollTimer({%H-}Sender: TObject);
   procedure tTrendSlideTimer({%H-}Sender: TObject);
+  procedure tBgFadeTimer({%H-}Sender: TObject);
   procedure tClockOverlayTimer(Sender: TObject);
   {** Show/hide/refresh the persistent fullscreen clock. Cheap to call often:
       it only re-renders on a minute flip, on first show, or when ForceLayout
@@ -1151,6 +1174,20 @@ private
     {%H-}Shift: TShiftState; X, Y: integer);
   procedure TrendSurfaceMouseMove({%H-}Sender: TObject; {%H-}Shift: TShiftState;
     X, Y: integer);
+  {** Clears the hovered dot when the mouse leaves it. The surface is
+      hit-transparent between dots, so this also fires dot to dot. }
+  procedure TrendSurfaceMouseLeave({%H-}Sender: TObject);
+  {** The hovered history slot if it should be drawn as a value disc right
+      now (visible reading, not expanded, not in privacy mode), else 0. }
+  function ActiveHoverDot: integer;
+  {** The hovered prediction slot (0-based) if it should be drawn as a value
+      ring right now (visible forecast, not in privacy mode), else -1. }
+  function ActivePredictHover: integer;
+  {** Draw ASlot as an enlarged mark with its value inside, centred on its
+      layout box ARect, on top of the rest of the trend: a solid disc for a
+      reading, a hollow ring for a forecast (APredict). }
+  procedure PaintHoverDot(ACanvas: TCanvas; ASlot: PTrendSlot;
+    const ARect: TRect; APredict: boolean; AFontName: string);
   {** Mark empty trend slots that provably sit between two real readings as
       sensor gaps (dkGap). Interior emptiness always qualifies; a leading run
       (the oldest slots) qualifies when AHasOlder reports a reading beyond the
@@ -1457,12 +1494,19 @@ private
   {** Colour of the overtime part — the retry window's red, breathing once
       both fills are full, steady before that. }
   function ProgressOvertimeColor(const APulsing: boolean): TColor;
+  {** Position within the overdue breath, 0..1 (bright → dark), shared by
+      the fill colour and the head glow. }
+  function ProgressPulsePhase: double;
   {** True when the bar would paint differently from its last painted frame —
       lets tProgressTimer skip repaints that would reproduce the same pixels. }
   function ProgressFrameChanged: boolean;
   {** Start the short drain animation from the last painted fill level down to
       the level of the reading that just arrived. }
   procedure StartProgressDrain;
+  {** Ease the window background from the colour on screen to ATarget over
+      BG_FADE_MS, re-deriving the dependent colours each frame; the first
+      colour of the session and a hidden window take it in one step. }
+  procedure FadeBackgroundTo(ATarget: TColor);
   {** Mirror the bar's state onto the floating window's slim progress strip. }
   procedure UpdateFloatProgress;
   {** Refresh labels and menu captions that display API-derived thresholds
@@ -1688,8 +1732,14 @@ private
   procedure DressModalForm(AForm: TCustomForm);
     {** Sync bar/grip visibility with the window state (fullscreen etc.). }
   procedure UpdateOwnTitleBarState;
+protected
+  procedure CreateWnd; override;
 public
   firstboot: boolean;
+    {** Keep the main and floating windows out of screen sharing and
+        screenshots when main.hide_from_capture is on (or let them be
+        captured again). No-op where the platform cannot do it. }
+  procedure ApplyCaptureExclusion;
     {** Generic application exception handler used for reporting unhandled
       exceptions during runtime to a unified error dialog.
      }
@@ -1877,6 +1927,12 @@ PROGRESS_DRAIN_TICK_MS = 40;
 // frame tick. Short enough to read as the row stepping on, not as a scroll.
 TREND_SLIDE_MS = 380;
 TREND_SLIDE_TICK_MS = 16;
+// Background fade on a range change (FadeBackgroundTo): length and frame
+// tick. Twice the roll and the slide: a whole window turning reads as a
+// blink at their pace, and the colour is a mood, not an event. Still well
+// under a second, so a low is red before the eye has come up to it.
+BG_FADE_MS = 700;
+BG_FADE_TICK_MS = 16;
 DEFAULT_PREDICTION_FUTURE_LIMIT = 7;
 // Prediction-dot × opacity: the mark fades as the engine's confidence drops
 // (never below the base, so it stays findable) and steps down once per horizon
@@ -2657,6 +2713,8 @@ end;
 
 procedure TfBG.FormShow(Sender: TObject);
 begin
+  // In case the handle was created before native existed (CreateWnd skipped).
+  ApplyCaptureExclusion;
   placeForm;
   placed := true;
   lVal.font.Quality := fqCleartype;

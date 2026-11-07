@@ -278,6 +278,8 @@ begin
     'https://api-eu2.libreview.io', LibreRegionHost('EU2'));
   AssertEquals('Russia is on its own domain',
     'https://api.libreview.ru', LibreRegionHost('ru'));
+  AssertEquals('US is not the directory host',
+    'https://api-us.libreview.io', LibreRegionHost('us'));
   AssertEquals('Unknown region yields no host', '', LibreRegionHost('atlantis'));
   AssertEquals('Empty region yields no host', '', LibreRegionHost(''));
 end;

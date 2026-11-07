@@ -38,6 +38,7 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-21: Parenting now tracks children so ControlCount/Controls[]
  *   (used by umain's shutdown-screen sweep) enumerate something real.
+ * - 2026-10-29: TCaption, for utabularlabel's RealSetText override.
  *)
 (* MODIFICATION NOTICE (2026-08-05): Added Screen.Fonts to mirror the LCL
    screen font list used by Linux-specific UI initialization in headless tests. *)
@@ -98,6 +99,10 @@ type
   TControlStyleType = (csOpaque, csClickEvents, csCaptureMouse);
   TControlStyle = set of TControlStyleType;
 
+  // The LCL's caption type (TTranslateString): utabularlabel overrides
+  // RealSetText with it, so the mock TLabel's hook must take the same type.
+  TCaption = type string;
+
   TControl = class(TComponent)
   private
     FLeft: Integer;
@@ -116,6 +121,7 @@ type
     FOnMouseDown: TMouseEvent;
     FOnMouseUp: TMouseEvent;
     FOnMouseMove: TMouseMoveEvent;
+    FOnMouseLeave: TNotifyEvent;
     FCursor: Integer;
     FAutoSize: Boolean;
     FPopupMenu: TComponent;
@@ -153,6 +159,7 @@ type
     property OnMouseDown: TMouseEvent read FOnMouseDown write FOnMouseDown;
     property OnMouseUp: TMouseEvent read FOnMouseUp write FOnMouseUp;
     property OnMouseMove: TMouseMoveEvent read FOnMouseMove write FOnMouseMove;
+    property OnMouseLeave: TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
     property Visible: Boolean read FVisible write FVisible;
     property Cursor: Integer read FCursor write FCursor;
     property PopupMenu: TComponent read FPopupMenu write FPopupMenu;
@@ -210,8 +217,12 @@ type
     FChildControls: TList; // children reference themselves here; not owned
     function GetControlCount: Integer;
     function GetControlByIndex(Index: Integer): TControl;
+  protected
+    // umain/ufloat override it to re-apply per-window native state
+    procedure CreateWnd; virtual;
   public
     destructor Destroy; override;
+    function HandleAllocated: boolean;
     procedure AddChildControl(AControl: TControl);
     procedure RemoveChildControl(AControl: TControl);
     // Real LCL child enumeration used by umain's shutdown-screen sweep
@@ -321,6 +332,16 @@ begin
 end;
 
 { TWinControl }
+
+procedure TWinControl.CreateWnd;
+begin
+  // no native window in headless tests
+end;
+
+function TWinControl.HandleAllocated: boolean;
+begin
+  Result := Handle <> 0;
+end;
 
 destructor TWinControl.Destroy;
 begin

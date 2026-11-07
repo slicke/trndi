@@ -117,6 +117,7 @@
 {"hash":223767806,"name":"tfconf.label4.caption","sourcebytes":[87,105,110,100,111,119,32,115,116,97,114,116,45,117,112,32,112,111,115,105,116,105,111,110],"value":"Window start-up position"},
 {"hash":139375349,"name":"tfconf.label6.caption","sourcebytes":[76,97,110,103,117,97,103,101],"value":"Language"},
 {"hash":248929013,"name":"tfconf.cbsize.caption","sourcebytes":[82,101,109,101,109,98,101,114,32,119,105,110,100,111,119,32,115,105,122,101],"value":"Remember window size"},
+{"hash":163141011,"name":"tfconf.cbhidefromcapture.caption","sourcebytes":[72,105,100,101,32,84,114,110,100,105,32,102,114,111,109,32,115,99,114,101,101,110,32,115,104,97,114,105,110,103,32,97,110,100,32,115,99,114,101,101,110,115,104,111,116,115],"value":"Hide Trndi from screen sharing and screenshots"},
 {"hash":95044196,"name":"tfconf.cbhints.caption","sourcebytes":[69,120,112,108,97,105,110,32,112,97,114,116,115,32,111,102,32,116,104,101,32,119,105,110,100,111,119,32,119,104,101,110,32,116,104,101,121,32,97,114,101,32,99,108,105,99,107,101,100],"value":"Explain parts of the window when they are clicked"},
 {"hash":153113971,"name":"tfconf.bresethints.caption","sourcebytes":[83,104,111,119,32,104,105,100,100,101,110,32,101,120,112,108,97,110,97,116,105,111,110,115],"value":"Show hidden explanations"},
 {"hash":86286359,"name":"tfconf.cbflash.caption","sourcebytes":[66,97,100,103,101,32,70,108,97,115,104,105,110,103],"value":"Badge Flashing"},

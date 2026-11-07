@@ -40,6 +40,8 @@
  *   trndi.funcs.
  * - 2026-10-09: Follows a region redirect answered on the connections and
  *   graph calls, not only on login.
+ * - 2026-10-28: Points the US region at api-us.libreview.io; the bare
+ *   api.libreview.io only answers logins with a redirect.
  *)
 unit trndi.api.librelinkup;
 
@@ -127,7 +129,7 @@ const
     (code: 'jp';  url: 'https://api-jp.libreview.io'),
     (code: 'la';  url: 'https://api-la.libreview.io'),
     (code: 'ru';  url: 'https://api.libreview.ru'),
-    (code: 'us';  url: 'https://api.libreview.io')
+    (code: 'us';  url: 'https://api-us.libreview.io')
   );
 
 type

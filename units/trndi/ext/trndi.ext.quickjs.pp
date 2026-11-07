@@ -38,6 +38,8 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-09-20: Bound js_strdup so a module normalizer can hand QuickJS a
  *   name it releases with js_free.
+ * - 2026-11-01: ErrorMessage tests for a pending exception with
+ *   IsUninitialized, so a script that throws null or undefined is reported.
  *)
 
 {** Direct QuickJS binding for Trndi, replacing @code(mormot.lib.quickjs).
@@ -1493,7 +1495,8 @@ begin
 
   exc := JS_GetException(ctx);
   try
-    Result := not exc.IsNull and not exc.IsUndefined;
+    { No exception pending is uninitialized; a script may throw null. }
+    Result := not exc.IsUninitialized;
     if not Result then
       Exit;
     aMessage := JS_ToUtf8(ctx, exc);

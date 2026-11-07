@@ -831,13 +831,16 @@ end;
   trndi.ext.engine's TrndiModuleNormalizer/TrndiModuleLoader do. }
 var
   FileModuleRoot: string;
+  // The extension's own file, the one top-level file its bootstrap imports
+  FileModuleEntry: string;
 
 function FileModuleNormalizer(ctx: JSContext; base_name, name: pansichar;
 opaque: pointer): pansichar; cdecl;
 var
   resolved, err: string;
 begin
-  err := ResolveModuleSpecifier(string(base_name), string(name), FileModuleRoot, resolved);
+  err := ResolveModuleSpecifier(string(base_name), string(name), FileModuleRoot, resolved,
+    FileModuleEntry);
   if err <> '' then
     resolved := ModuleErrorPrefix + err;
   Result := js_strdup(ctx, pansichar(RawUtf8(resolved)));
@@ -930,6 +933,7 @@ begin
     'trndi-bootstrap-' + IntToStr(GetProcessID);
   ForceDirectories(FileModuleRoot + DirectorySeparator + 'lib');
   entry := FileModuleRoot + DirectorySeparator + 'main.js';
+  FileModuleEntry := entry;
   WriteTextFile(FileModuleRoot + DirectorySeparator + 'lib' + DirectorySeparator + 'util.js',
     'export const twice = (n) => n * 2;');
   WriteTextFile(entry,
@@ -990,6 +994,7 @@ begin
     'trndi-bootstrap-err-' + IntToStr(GetProcessID);
   ForceDirectories(FileModuleRoot);
   entry := FileModuleRoot + DirectorySeparator + 'main.js';
+  FileModuleEntry := entry;
   WriteTextFile(entry, 'import x from "lodash";' + LineEnding + 'export function clockView() {}');
   try
     JS_SetModuleLoaderFunc(FRuntime, @FileModuleNormalizer, @FileModuleLoader, nil);

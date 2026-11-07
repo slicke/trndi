@@ -1,0 +1,129 @@
+(*
+ * Trndi
+ * Medical and Non-Medical Usage Alert
+ *
+ * Copyright (c) Björn Lindh
+ * GitHub: https://github.com/slicke/trndi
+ *
+ * This program is distributed under the terms of the GNU General Public License,
+ * Version 3, as published by the Free Software Foundation. You may redistribute
+ * and/or modify the software under the terms of this license.
+ *
+ * A copy of the GNU General Public License should have been provided with this
+ * program. If not, see <http://www.gnu.org/licenses/gpl.html>.
+ *
+ * ================================== IMPORTANT ==================================
+ * MEDICAL DISCLAIMER:
+ * - This software is NOT a medical device and must NOT replace official continuous
+ *   glucose monitoring (CGM) systems or any healthcare decision-making process.
+ * - The data provided may be delayed, inaccurate, or unavailable.
+ * - DO NOT make medical decisions based on this software.
+ * - VERIFY all data using official devices and consult a healthcare professional for
+ *   medical concerns or emergencies.
+ *
+ * LIABILITY LIMITATION:
+ * - The software is provided "AS IS" and without any warranty—expressed or implied.
+ * - Users assume all risks associated with its use. The developers disclaim all
+ *   liability for any damage, injury, or harm, direct or incidental, arising
+ *   from its use.
+ *
+ * INSTRUCTIONS TO DEVELOPERS & USERS:
+ * - Any modifications to this file must include a prominent notice outlining what was
+ *   changed and the date of modification (as per GNU GPL Section 5).
+ * - Distribution of a modified version must include this header and comply with the
+ *   license terms.
+ *
+ * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
+ *)
+
+{ Tests for trndi.native.settings.ini, the settings store of Linux, BSD and
+  Haiku: values come back as they were written. }
+unit native_ini_tests;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  fpcunit, testregistry, SysUtils, trndi.native.settings.ini;
+
+type
+  TNativeIniTests = class(TTestCase)
+  private
+    FPath: string;
+    function Resolve: string;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestQuotedValuesRoundTrip;
+    procedure TestQuotedValuesSurviveExportImport;
+  end;
+
+implementation
+
+function TNativeIniTests.Resolve: string;
+begin
+  Result := FPath;
+end;
+
+procedure TNativeIniTests.SetUp;
+begin
+  FPath := IncludeTrailingPathDelimiter(GetTempDir(false)) +
+    'trndi-ini-' + IntToStr(GetProcessID) + '.ini';
+  DeleteFile(FPath);
+  // The store is process-wide; point it at this file.
+  IniSettingsReload;
+end;
+
+procedure TNativeIniTests.TearDown;
+begin
+  IniSettingsReload;
+  DeleteFile(FPath);
+end;
+
+procedure TNativeIniTests.TestQuotedValuesRoundTrip;
+const
+  Values: array[0..6] of string = ('"a\nb"', '''x''', '""', '"', '"half',
+    'plain', '"a"b"');
+var
+  i: integer;
+begin
+  // TIniFile.ReadString strips one pair of matching outer quotes, so a JSON
+  // string (Trndi.storage.setJSON) lost its quotes.
+  for i := 0 to High(Values) do
+    IniSettingsSet(@Resolve, 'k' + IntToStr(i), Values[i]);
+  for i := 0 to High(Values) do
+    AssertEquals('in memory: ' + Values[i], Values[i],
+      IniSettingsGet(@Resolve, 'k' + IntToStr(i), '?'));
+  IniSettingsReload;
+  for i := 0 to High(Values) do
+    AssertEquals('from the file: ' + Values[i], Values[i],
+      IniSettingsGet(@Resolve, 'k' + IntToStr(i), '?'));
+end;
+
+procedure TNativeIniTests.TestQuotedValuesSurviveExportImport;
+const
+  Values: array[0..6] of string = ('"a\nb"', '''x''', '""', '"', '"half',
+    'plain', '"a"b"');
+var
+  i: integer;
+  exported: string;
+begin
+  // The export writes each logical value as it is; the import must guard
+  // the quoted ones again, as IniSettingsSet does.
+  for i := 0 to High(Values) do
+    IniSettingsSet(@Resolve, 'k' + IntToStr(i), Values[i]);
+  exported := IniSettingsExport(@Resolve);
+  IniSettingsReload;
+  DeleteFile(FPath);
+  IniSettingsImport(@Resolve, exported);
+  IniSettingsReload;
+  for i := 0 to High(Values) do
+    AssertEquals('after import: ' + Values[i], Values[i],
+      IniSettingsGet(@Resolve, 'k' + IntToStr(i), '?'));
+end;
+
+initialization
+  RegisterTest(TNativeIniTests);
+end.

@@ -18,6 +18,8 @@
  * GitHub: https://github.com/slicke/trndi
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-04: Added SupportsCaptureExclusion and SetCaptureExcluded
+ *   (keep a window out of screen capture); base is a no-op.
  * - 2026-09-27: Added the menu-bar status item contract (SupportsStatusItem,
  *   StatusItemDefault, SetStatusItemMenu, ShowStatusItem, HideStatusItem);
  *   base is a no-op.
@@ -194,6 +196,11 @@ class var touchOverride: TTrndiBool;
         notification, so callers can always ask. }
   procedure attention(topic, message: string;
     urgency: TTrndiNoticeUrgency); virtual; overload;
+    {** Take down the critical notice raised by @link(attention) once the
+        condition behind it is over, so a desktop that keeps critical notices
+        up until dismissed does not leave a stale alert on screen. No-op where
+        notices expire by themselves. }
+  procedure withdrawAttention; virtual;
   {**
     Send an HTTP request to the configured @code(baseurl).
     @param(post) True for POST, False for GET.
@@ -500,6 +507,16 @@ class var touchOverride: TTrndiBool;
         @true is returned. Platforms with real native support (Windows/macOS)
         override this and never consult the registry. }
   class function SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean; virtual;
+    {** True when this platform can keep a window out of screen sharing and
+        screenshots (see @link(SetCaptureExcluded)). Base: @false. }
+  class function SupportsCaptureExclusion: boolean; virtual;
+    {** Keep the window @param(form) (an LCL form handle) out of screen
+        sharing, recordings and screenshots while it stays visible on the
+        local screen, or let it be captured again when @param(exclude) is
+        @false. The setting belongs to the native window, so call it again
+        whenever the handle is recreated.
+        @returns(@true if the request was applied; base: @false) }
+  class function SetCaptureExcluded(form: PtrUInt; exclude: boolean): boolean; virtual;
     {** True when this platform cannot decorate/tint native title bars and the
         application should draw its own bar (Linux/BSD under Wayland, where the
         compositor owns the decorations — excluding tiling compositors, which
@@ -1476,6 +1493,15 @@ begin
 end;
 
 {------------------------------------------------------------------------------
+  withdrawAttention
+  -----------------
+  Default no-op: only Linux keeps critical notices up until dismissed.
+ ------------------------------------------------------------------------------}
+procedure TTrndiNativeBase.withdrawAttention;
+begin
+end;
+
+{------------------------------------------------------------------------------
   request (base)
   --------------
   Default: report that no platform implementation is wired in. Platform units
@@ -2121,6 +2147,24 @@ begin
       TitleSinks[i].Sink(bg, Text);
       Exit(true);
     end;
+  Result := false;
+end;
+
+{------------------------------------------------------------------------------
+  SupportsCaptureExclusion / SetCaptureExcluded
+  ---------------------------------------------
+  No portable way to keep a window out of screen capture (X11 and the Wayland
+  screencast portal have none), so the base answers no; Windows and macOS
+  override both.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeBase.SupportsCaptureExclusion: boolean;
+begin
+  Result := false;
+end;
+
+class function TTrndiNativeBase.SetCaptureExcluded(form: PtrUInt;
+  exclude: boolean): boolean;
+begin
   Result := false;
 end;
 

@@ -39,6 +39,9 @@
  * - 2026-09-25: JSStringLiteral converts its input to UTF-8 before escaping
  *   instead of copying the bytes of a system-codepage string under a UTF-8
  *   label, which handed QuickJS invalid UTF-8 for non-ASCII paths on Windows.
+ * - 2026-11-01: ResolveModuleSpecifier refuses another top-level file (an
+ *   extension with its own grant); ModulesDigest and ExtensionGrantHash put
+ *   the subfolders' modules into the grant hash.
  *)
 
 {** ES module support for extensions: the pure, engine-independent half.
@@ -97,9 +100,24 @@ function ScriptLooksLikeModule(const Src: UTF8String): boolean;
     @param(Root The extension folder. Every resolved file must stay inside it,
       and no path component below it may be a symbolic link or junction.)
     @param(Resolved Receives the absolute path (or @link(TrndiModuleSpecifier)).)
+    @param(Entry The importing extension's own file: the one file at the top
+      of Root that may be imported, by the bootstrap of a module extension.
+      Any other file there is an extension of its own, with its own grant.)
     @returns(An empty string on success, otherwise the error message.) }
 function ResolveModuleSpecifier(const BaseName, Name, Root: string;
-  out Resolved: string): string;
+  out Resolved: string; const Entry: string = ''): string;
+
+{** Digest of every file in the subfolders of @code(Folder) (the extensions
+    folder), path and content, skipping symbolic links; '' when there is none.
+    An extension imports its modules from there and they run under its grant,
+    so the digest goes into the grant hash (@link(ExtensionGrantHash)). }
+function ModulesDigest(const Folder: string): string;
+
+{** The hash an extension's grant is stored under: its script's, combined with
+    @link(ModulesDigest) so an edited module asks again as an edited script
+    does. With no modules it is @code(HashScript(Script)) alone, so a
+    single-file extension's existing grant still holds. }
+function ExtensionGrantHash(const Script, AModulesDigest: string): string;
 
 {** Quote @code(S) as a JavaScript string literal (double quoted, escaped). }
 function JSStringLiteral(const S: string): UTF8String;
@@ -120,6 +138,9 @@ function ModuleBootstrapScript(const EntryPath: string): UTF8String;
 function TrndiModuleSource: UTF8String;
 
 implementation
+
+uses
+  Classes, trndi.ext.perm;
 
 {******************************************************************************
   Module detection
@@ -267,7 +288,7 @@ begin
 end;
 
 function ResolveModuleSpecifier(const BaseName, Name, Root: string;
-out Resolved: string): string;
+out Resolved: string; const Entry: string): string;
 var
   baseDir, rootDir, candidate: string;
 begin
@@ -311,6 +332,14 @@ begin
     Exit(Format('cannot import "%s": modules must live inside the extension ' +
       'folder %s', [Name, Root]));
 
+  // A file at the top of the folder is an extension of its own, with its own
+  // grant; a module is in a subfolder, which the importer's grant covers
+  // (ModulesDigest is part of its grant hash).
+  if SamePathText(ExtractFilePath(candidate), rootDir) and
+    not ((Entry <> '') and SamePathText(candidate, ExpandFileName(Entry))) then
+    Exit(Format('cannot import "%s": a file at the top of the extensions ' +
+      'folder is an extension of its own; put modules in a subfolder', [Name]));
+
   // The check above is textual; a symlink or junction inside the folder could
   // still lead out of it, so refuse module paths that pass through one.
   if PathHasLinkBelowRoot(rootDir, candidate) then
@@ -318,6 +347,89 @@ begin
       'symbolic link', [Name]));
 
   Resolved := candidate;
+end;
+
+{ Adds the files under Dir (ending in a delimiter), not through a link, to
+  Files as paths after the extensions folder's FolderLen characters. }
+procedure ListModules(const Dir: string; FolderLen: integer; Files: TStrings);
+var
+  sr: TSearchRec;
+begin
+  if FindFirst(Dir + AllFilesMask, faAnyFile, sr) <> 0 then
+    Exit;
+  try
+    repeat
+      if (sr.Name = '.') or (sr.Name = '..') or IsLinkPath(Dir + sr.Name) then
+        Continue;
+      if (sr.Attr and faDirectory) <> 0 then
+        ListModules(Dir + sr.Name + DirectorySeparator, FolderLen, Files)
+      else
+        Files.Add(Copy(Dir + sr.Name, FolderLen + 1, MaxInt));
+    until FindNext(sr) <> 0;
+  finally
+    FindClose(sr);
+  end;
+end;
+
+{ Raw bytes, as the loader reads the script itself. }
+function ReadModuleFile(const FileName: string): string;
+var
+  fs: TFileStream;
+begin
+  fs := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+  try
+    SetLength(Result, fs.Size);
+    if fs.Size > 0 then
+      fs.ReadBuffer(Result[1], fs.Size);
+  finally
+    fs.Free;
+  end;
+end;
+
+function ModulesDigest(const Folder: string): string;
+var
+  sr: TSearchRec;
+  files: TStringList;
+  dir, all, path: string;
+begin
+  Result := '';
+  dir := IncludeTrailingPathDelimiter(Folder);
+  files := TStringList.Create;
+  try
+    if FindFirst(dir + AllFilesMask, faDirectory, sr) = 0 then
+    try
+      repeat
+        if ((sr.Attr and faDirectory) <> 0) and (sr.Name <> '.') and
+          (sr.Name <> '..') and not IsLinkPath(dir + sr.Name) then
+          ListModules(dir + sr.Name + DirectorySeparator, Length(dir), files);
+      until FindNext(sr) <> 0;
+    finally
+      FindClose(sr);
+    end;
+    if files.Count = 0 then
+      Exit;
+    files.CaseSensitive := true;
+    files.Sort;
+    all := '';
+    for path in files do
+    try
+      all := all + path + #0 + ReadModuleFile(dir + path) + #0;
+    except
+      // Unreadable: still part of the digest, so it changes when it reappears
+      all := all + path + #0#1#0;
+    end;
+    Result := HashScript(all);
+  finally
+    files.Free;
+  end;
+end;
+
+function ExtensionGrantHash(const Script, AModulesDigest: string): string;
+begin
+  if AModulesDigest = '' then
+    Result := HashScript(Script)
+  else
+    Result := HashScript(Script + #0 + AModulesDigest);
 end;
 
 {******************************************************************************

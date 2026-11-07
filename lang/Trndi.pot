@@ -416,10 +416,6 @@ msgstr ""
 msgid "Show trend arrow in taskbar/dock"
 msgstr ""
 
-#: tfconf.cbmenubarreading.caption
-msgid "Show reading in the menu bar"
-msgstr ""
-
 #: tfconf.cbbolusoverlay.caption
 msgid "Show insulin doses on the history graph"
 msgstr ""
@@ -501,6 +497,10 @@ msgstr ""
 msgid "High Contrast"
 msgstr ""
 
+#: tfconf.cbhidefromcapture.caption
+msgid "Hide Trndi from screen sharing and screenshots"
+msgstr ""
+
 #: tfconf.cbhints.caption
 msgctxt "tfconf.cbhints.caption"
 msgid "Explain parts of the window when they are clicked"
@@ -508,6 +508,10 @@ msgstr ""
 
 #: tfconf.cbmediadisable.caption
 msgid "Disable the entire media system"
+msgstr ""
+
+#: tfconf.cbmenubarreading.caption
+msgid "Show reading in the menu bar"
 msgstr ""
 
 #: tfconf.cbmovediffright.caption
@@ -1287,10 +1291,6 @@ msgstr ""
 msgid "Show clock"
 msgstr ""
 
-#: tffloat.midelta.caption
-msgid "Show delta"
-msgstr ""
-
 #: tffloat.micustomsize.caption
 msgctxt "tffloat.micustomsize.caption"
 msgid "Custom"
@@ -1299,6 +1299,10 @@ msgstr ""
 #: tffloat.micustomvisible.caption
 msgctxt "tffloat.micustomvisible.caption"
 msgid "Custom"
+msgstr ""
+
+#: tffloat.midelta.caption
+msgid "Show delta"
 msgstr ""
 
 #: tffloat.mifontblack.caption
@@ -1419,10 +1423,6 @@ msgstr ""
 msgid "No Dexcom account matched those details. Check the username or e-mail address."
 msgstr ""
 
-#: trndi.api.dexcom.serrdexpass
-msgid "Invalid Dexcom password or account credentials"
-msgstr ""
-
 #: trndi.api.dexcom.sparamdesc
 msgctxt "trndi.api.dexcom.sparamdesc"
 msgid ""
@@ -1497,11 +1497,16 @@ msgstr ""
 
 #: trndi.api.dexcom_helpers.sdexerrcredentials
 msgctxt "trndi.api.dexcom_helpers.sdexerrcredentials"
-msgid "Incorrect username or password combination"
+msgid "Incorrect username or password combination, or the account belongs to another Dexcom region"
 msgstr ""
 
 #: trndi.api.dexcom_helpers.sdexerrmaxattempts
 msgid "Too many failed Dexcom sign-in attempts. The account is temporarily locked - wait before trying again, as further attempts keep it locked."
+msgstr ""
+
+#: trndi.api.dexcom_helpers.sdexerrwrongregion
+#, object-pascal-format
+msgid "The password was accepted by the \"%s\" Dexcom region. Choose the Dexcom backend for that region instead."
 msgstr ""
 
 #: trndi.api.librelinkup.serrllubadcredentials
@@ -1539,6 +1544,15 @@ msgstr ""
 
 #: trndi.api.librelinkup.serrlluratelimited
 msgid "LibreLinkUp is rate-limiting this account; waiting before the next request."
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluredirected
+#, object-pascal-format
+msgid "LibreLinkUp redirected this request to region %s instead of answering it."
+msgstr ""
+
+#: trndi.api.librelinkup.serrlluredirectloop
+msgid "LibreLinkUp keeps redirecting this account between regions."
 msgstr ""
 
 #: trndi.api.librelinkup.serrlluterms
@@ -1734,6 +1748,24 @@ msgctxt "trndi.ext.functions.sexttitle"
 msgid "Extension error"
 msgstr ""
 
+#: trndi.strings.rs_about_disclaimer
+msgid "Trndi is not a medical device. Always check readings against your official CGM before acting on them."
+msgstr ""
+
+#: trndi.strings.rs_about_license
+msgid "Free software under the GNU General Public License v3"
+msgstr ""
+
+#: trndi.strings.rs_about_tagline
+msgid "Your continuous glucose monitor readings on the desktop"
+msgstr ""
+
+#: trndi.strings.rs_about_version
+#, object-pascal-format
+msgctxt "trndi.strings.rs_about_version"
+msgid "Version %s"
+msgstr ""
+
 #: trndi.strings.rs_ago_time_caption
 msgid "last reading"
 msgstr ""
@@ -1752,12 +1784,48 @@ msgstr ""
 msgid "Alerts snoozed for %d minutes"
 msgstr ""
 
+#: trndi.strings.rs_alert_snooze_kind_done
+#, object-pascal-format
+msgid "%s: snoozed until %s"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_kind_off
+#, object-pascal-format
+msgid "%s: alerts resumed"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_kind_resume
+msgid "Resume these alerts"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_kind_until
+#, object-pascal-format
+msgid "%s (until %s)"
+msgstr ""
+
 #: trndi.strings.rs_alert_snooze_not_active
 msgid "Snooze is not active"
 msgstr ""
 
 #: trndi.strings.rs_alert_snooze_off
 msgid "Alert snooze disabled"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_only_high
+msgid "Only high"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_only_low
+msgid "Only low"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_only_missing
+msgid "Only outdated readings"
+msgstr ""
+
+#: trndi.strings.rs_alert_snooze_partial
+#, object-pascal-format
+msgid "Some alerts snoozed until %s"
 msgstr ""
 
 #: trndi.strings.rs_alert_snooze_resume
@@ -1773,16 +1841,8 @@ msgstr ""
 msgid "Data source notice"
 msgstr ""
 
-#: trndi.strings.rs_webapi_title
-msgid "Web API"
-msgstr ""
-
-#: trndi.strings.rs_webapi_port_moved
-msgid "Port %d is in use by another program, so Trndi's web server started on port %d instead."
-msgstr ""
-
-#: trndi.strings.rs_webapi_no_port
-msgid "Trndi could not start its web server: there is no free port between %d and %d."
+#: trndi.strings.rs_api_not_ready
+msgid "API not initialized yet."
 msgstr ""
 
 #: trndi.strings.rs_attention_missing
@@ -1850,6 +1910,14 @@ msgid ""
 "Open Settings and pick a data source. Your other settings are kept."
 msgstr ""
 
+#: trndi.strings.rs_boot_retry_extra
+msgid "Trndi keeps trying on its own. If the address or login is wrong, open Settings."
+msgstr ""
+
+#: trndi.strings.rs_boot_unreachable
+msgid "Can't reach the server"
+msgstr ""
+
 #: trndi.strings.rs_changes_apply
 msgctxt "trndi.strings.rs_changes_apply"
 msgid "Apply this value when Trndi starts?"
@@ -1889,29 +1957,13 @@ msgstr ""
 msgid "No connection details available yet."
 msgstr ""
 
+#: trndi.strings.rs_conn_no_new_data
+msgid "No new data"
+msgstr ""
+
 #: trndi.strings.rs_conn_ok
 msgctxt "trndi.strings.rs_conn_ok"
 msgid "OK"
-msgstr ""
-
-#: trndi.strings.rs_status_item_hidden
-msgid ""
-"The reading is no longer shown in the menu bar.\n"
-"\n"
-"You can turn it back on under Settings > Display > \"Show reading in the menu bar\"."
-msgstr ""
-
-#: trndi.strings.rs_status_item_hide
-msgid "Hide from menu bar"
-msgstr ""
-
-#: trndi.strings.rs_status_item_quit
-msgctxt "trndi.strings.rs_status_item_quit"
-msgid "Quit Trndi"
-msgstr ""
-
-#: trndi.strings.rs_status_item_show
-msgid "Show Trndi"
 msgstr ""
 
 #: trndi.strings.rs_conn_ok_info
@@ -2020,6 +2072,11 @@ msgctxt "trndi.strings.rs_ext_file"
 msgid "File \"%s\" not found"
 msgstr ""
 
+#: trndi.strings.rs_ext_invalid_manifest
+#, object-pascal-format
+msgid "Invalid extension manifest in %s:"
+msgstr ""
+
 #: trndi.strings.rs_ext_msg
 msgctxt "trndi.strings.rs_ext_msg"
 msgid "Extension Message"
@@ -2037,6 +2094,10 @@ msgstr ""
 #: trndi.strings.rs_ext_warn
 msgctxt "trndi.strings.rs_ext_warn"
 msgid "Extension Warning"
+msgstr ""
+
+#: trndi.strings.rs_float_unsupported
+msgid "Your widgetset does not support this feature, please use Qt."
 msgstr ""
 
 #: trndi.strings.rs_font_error
@@ -2064,8 +2125,37 @@ msgctxt "trndi.strings.rs_force_refresh_detail"
 msgid "Force refresh will bypass the cache and make an immediate API call. Waiting allows the system to use cached data efficiently."
 msgstr ""
 
+#: trndi.strings.rs_fullscreen_failed
+msgid "Unable to toggle fullscreen. Main window not found."
+msgstr ""
+
 #: trndi.strings.rs_high
 msgid "HIGH"
+msgstr ""
+
+#: trndi.strings.rs_hint_ago
+msgid "Time since the last reading. Click for sensor and device details."
+msgstr ""
+
+#: trndi.strings.rs_hint_ago_overdue
+msgid "A new reading is overdue. Click for sensor and device details."
+msgstr ""
+
+#: trndi.strings.rs_hint_multiuser
+msgid "The account this window shows. Click for details."
+msgstr ""
+
+#: trndi.strings.rs_hint_off_range
+msgid "Outside your personal target range. Click for details."
+msgstr ""
+
+#: trndi.strings.rs_hint_predict
+msgid "Forecast based on the recent trend. Click to learn more."
+msgstr ""
+
+#: trndi.strings.rs_hint_tir
+#, object-pascal-format
+msgid "Time in range over the last %s. Click for your limits."
 msgstr ""
 
 #: trndi.strings.rs_history_item
@@ -2078,6 +2168,10 @@ msgid ""
 "〰️ Noise: %s\n"
 "ℹ Source: %s\n"
 "💻 Device: %s"
+msgstr ""
+
+#: trndi.strings.rs_history_no_readings_24h
+msgid "No readings returned for the last 24 hours."
 msgstr ""
 
 #: trndi.strings.rs_hi_level
@@ -2251,6 +2345,14 @@ msgstr ""
 msgid "Low Predicted soon!"
 msgstr ""
 
+#: trndi.strings.rs_menu_about
+msgid "About Trndi"
+msgstr ""
+
+#: trndi.strings.rs_menu_check_updates
+msgid "Check for Updates..."
+msgstr ""
+
 #: trndi.strings.rs_menu_force
 msgid "Force update"
 msgstr ""
@@ -2335,6 +2437,15 @@ msgstr ""
 msgid "Your internet connection is not working, Trndi cannot fetch readings!"
 msgstr ""
 
+#: trndi.strings.rs_no_new_readings
+#, object-pascal-format
+msgid ""
+"The server answered, but has nothing newer than %s.\n"
+"\n"
+"Is your phone or receiver uploading?\n"
+"Is the sensor warming up or out of range?"
+msgstr ""
+
 #: trndi.strings.rs_no_trace
 msgctxt "trndi.strings.rs_no_trace"
 msgid "No stack trace available"
@@ -2385,10 +2496,19 @@ msgstr ""
 msgid "+%d min"
 msgstr ""
 
+#: trndi.strings.rs_predict_notice
+msgid "Forecast for the next 5, 10 and 15 minutes, extrapolated from the recent trend. It is an estimate, not a measurement."
+msgstr ""
+
 #: trndi.strings.rs_prom_err_capt
 #, object-pascal-format
 msgctxt "trndi.strings.rs_prom_err_capt"
 msgid "The asynchronous function %s failed to complete"
+msgstr ""
+
+#: trndi.strings.rs_quit
+msgctxt "trndi.strings.rs_quit"
+msgid "Quit Trndi"
 msgstr ""
 
 #: trndi.strings.rs_quit_caption
@@ -2740,18 +2860,6 @@ msgid ""
 "Default Separator: %s"
 msgstr ""
 
-#: trndi.strings.rs_settings_save
-msgid "Save settings?"
-msgstr ""
-
-#: trndi.strings.rs_settings_saved
-msgid "Settings saved and applied. Some settings may require a restart"
-msgstr ""
-
-#: trndi.strings.rs_settings_save_desc
-msgid "Would you like to save any changes made?"
-msgstr ""
-
 #: trndi.strings.rs_setup
 msgctxt "trndi.strings.rs_setup"
 msgid "Setup"
@@ -2837,6 +2945,11 @@ msgstr ""
 msgid "Connection lost — %s"
 msgstr ""
 
+#: trndi.strings.rs_stale_missing_muted
+#, object-pascal-format
+msgid "Outdated-readings alerts muted until %s"
+msgstr ""
+
 #: trndi.strings.rs_stale_no_data
 #, object-pascal-format
 msgid "No data for %s"
@@ -2853,6 +2966,26 @@ msgstr ""
 
 #: trndi.strings.rs_stale_waiting
 msgid "Waiting for data"
+msgstr ""
+
+#: trndi.strings.rs_status_item_hidden
+msgid ""
+"The reading is no longer shown in the menu bar.\n"
+"\n"
+"You can turn it back on under Settings > Display > \"Show reading in the menu bar\"."
+msgstr ""
+
+#: trndi.strings.rs_status_item_hide
+msgid "Hide from menu bar"
+msgstr ""
+
+#: trndi.strings.rs_status_item_quit
+msgctxt "trndi.strings.rs_status_item_quit"
+msgid "Quit Trndi"
+msgstr ""
+
+#: trndi.strings.rs_status_item_show
+msgid "Show Trndi"
 msgstr ""
 
 #: trndi.strings.rs_tir_caption
@@ -2913,8 +3046,25 @@ msgctxt "trndi.strings.rs_tpotopright"
 msgid "Top Right"
 msgstr ""
 
+#: trndi.strings.rs_trend_window_notice
+#, object-pascal-format
+msgid "Trend: %d readings · %s"
+msgstr ""
+
 #: trndi.strings.rs_trndi_gihub
 msgid "Trndi on GitHub"
+msgstr ""
+
+#: trndi.strings.rs_tts_no_engine
+msgid "Error: no TTS engine available. Install speech-dispatcher, espeak/espeak-ng or flite."
+msgstr ""
+
+#: trndi.strings.rs_tts_no_say
+msgid "TTS Error: /usr/bin/say not found"
+msgstr ""
+
+#: trndi.strings.rs_tts_no_spd_say
+msgid "Error: spd-say is not installed. Please install speech-dispatcher."
 msgstr ""
 
 #: trndi.strings.rs_type_error_msg
@@ -2951,6 +3101,10 @@ msgstr ""
 
 #: trndi.strings.rs_unknown_time
 msgid "Loading"
+msgstr ""
+
+#: trndi.strings.rs_update_check_failed
+msgid "Update check failed."
 msgstr ""
 
 #: trndi.strings.rs_user_caption
@@ -3119,6 +3273,20 @@ msgstr ""
 msgid "Blood sugar low"
 msgstr ""
 
+#: trndi.strings.rs_webapi_no_port
+#, object-pascal-format
+msgid "Trndi could not start its web server: there is no free port between %d and %d."
+msgstr ""
+
+#: trndi.strings.rs_webapi_port_moved
+#, object-pascal-format
+msgid "Port %d is in use by another program, so Trndi's web server started on port %d instead."
+msgstr ""
+
+#: trndi.strings.rs_webapi_title
+msgid "Web API"
+msgstr ""
+
 #: trndi.strings.rs_wizard_back
 msgid "← Back"
 msgstr ""
@@ -3251,74 +3419,6 @@ msgstr ""
 
 #: trndi.strings.rs_wizard_welcome_head
 msgid "Let's get connected!"
-msgstr ""
-
-#: trndi.strings.rs_menu_about
-msgid "About Trndi"
-msgstr ""
-
-#: trndi.strings.rs_menu_check_updates
-msgid "Check for Updates..."
-msgstr ""
-
-#: trndi.strings.rs_quit
-msgctxt "trndi.strings.rs_quit"
-msgid "Quit Trndi"
-msgstr ""
-
-#: trndi.strings.rs_update_check_failed
-msgid "Update check failed."
-msgstr ""
-
-#: trndi.strings.rs_history_no_readings_24h
-msgid "No readings returned for the last 24 hours."
-msgstr ""
-
-#: trndi.strings.rs_api_not_ready
-msgid "API not initialized yet."
-msgstr ""
-
-#: trndi.strings.rs_fullscreen_failed
-msgid "Unable to toggle fullscreen. Main window not found."
-msgstr ""
-
-#: trndi.strings.rs_float_unsupported
-msgid "Your widgetset does not support this feature, please use Qt."
-msgstr ""
-
-#: trndi.strings.rs_ext_invalid_manifest
-#, object-pascal-format
-msgid "Invalid extension manifest in %s:"
-msgstr ""
-
-#: trndi.strings.rs_tts_no_say
-msgid "TTS Error: /usr/bin/say not found"
-msgstr ""
-
-#: trndi.strings.rs_tts_no_engine
-msgid "Error: no TTS engine available. Install speech-dispatcher, espeak/espeak-ng or flite."
-msgstr ""
-
-#: trndi.strings.rs_tts_no_spd_say
-msgid "Error: spd-say is not installed. Please install speech-dispatcher."
-msgstr ""
-
-#: trndi.strings.rs_about_tagline
-msgid "Your continuous glucose monitor readings on the desktop"
-msgstr ""
-
-#: trndi.strings.rs_about_version
-#, object-pascal-format
-msgctxt "trndi.strings.rs_about_version"
-msgid "Version %s"
-msgstr ""
-
-#: trndi.strings.rs_about_license
-msgid "Free software under the GNU General Public License v3"
-msgstr ""
-
-#: trndi.strings.rs_about_disclaimer
-msgid "Trndi is not a medical device. Always check readings against your official CGM before acting on them."
 msgstr ""
 
 #: uconf.rs_alert_hysteresis_mgdl
@@ -3459,20 +3559,6 @@ msgstr ""
 
 #: uconf.rs_display_advanced_help
 msgid "When supported by the backend, the sensor expiration time can be shown in Trndi"
-msgstr ""
-
-#: uconf.rs_display_general_help
-msgid ""
-"- A progressbar can show the time until the next update on the left hand side of the screen\n"
-"- The time can we displayed every 20 seconds, instead of the Reading\n"
-"- The reading and trend arrow can alternate positions"
-msgstr ""
-
-#: uconf.rs_display_window_help
-msgid ""
-"- The background color can be set to the current glucose range color\n"
-"- The window can stay over other windows\n"
-"- The window's borders can be hidden (may depend on operating system)"
 msgstr ""
 
 #: uconf.rs_dots_auto
@@ -3687,6 +3773,10 @@ msgstr ""
 msgid "More..."
 msgstr ""
 
+#: uconf.rs_hide_from_capture_help
+msgid "You still see Trndi, but screen sharing in meetings, recordings and screenshots leave its windows out. The Dock, taskbar and notifications can still show your reading."
+msgstr ""
+
 #: uconf.rs_hints_enable
 msgctxt "uconf.rs_hints_enable"
 msgid "Explain parts of the window when they are clicked"
@@ -3859,6 +3949,11 @@ msgstr ""
 msgid "You are using the NightScout backend, you should set these values on your server (if possible), as Trndi uses your NightScout preferences by default"
 msgstr ""
 
+#: uconf.rs_page_about
+msgctxt "uconf.rs_page_about"
+msgid "About"
+msgstr ""
+
 #: uconf.rs_page_access
 msgctxt "uconf.rs_page_access"
 msgid "Accessibility"
@@ -3933,6 +4028,10 @@ msgstr ""
 
 #: uconf.rs_page_trendgraph
 msgid "Trend graph"
+msgstr ""
+
+#: uconf.rs_pd_about
+msgid "Version, license, the libraries Trndi uses, and updates."
 msgstr ""
 
 #: uconf.rs_pd_access
@@ -4326,11 +4425,6 @@ msgctxt "ufloat.rs_custom_size"
 msgid "You can hold down shift and plus (+) or minus (-) to change the window size"
 msgstr ""
 
-#: uhistorygraph.rs_history_graph_axis_time
-msgctxt "uhistorygraph.rs_history_graph_axis_time"
-msgid "Time"
-msgstr ""
-
 #: uhistorygraph.rs_history_graph_csv_title
 msgid "Save readings as CSV"
 msgstr ""
@@ -4339,15 +4433,8 @@ msgstr ""
 msgid "No history data to plot"
 msgstr ""
 
-#: uhistorygraph.rs_history_graph_help
-msgid "Click a dot to see the full reading details"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_help_interact
-msgid "Hover or click dots for details. Right-click to choose a time range."
-msgstr ""
-
 #: uhistorygraph.rs_history_graph_key_basal
+msgctxt "uhistorygraph.rs_history_graph_key_basal"
 msgid "Basal"
 msgstr ""
 
@@ -4390,10 +4477,6 @@ msgstr ""
 msgid "Range low"
 msgstr ""
 
-#: uhistorygraph.rs_history_graph_key_title
-msgid "Legend"
-msgstr ""
-
 #: uhistorygraph.rs_history_graph_key_unknown
 msgctxt "uhistorygraph.rs_history_graph_key_unknown"
 msgid "Unknown"
@@ -4428,6 +4511,11 @@ msgctxt "uhistorygraph.rs_history_graph_menu_range_all"
 msgid "All"
 msgstr ""
 
+#: uhistorygraph.rs_history_graph_menu_reset
+msgctxt "uhistorygraph.rs_history_graph_menu_reset"
+msgid "Reset zoom"
+msgstr ""
+
 #: uhistorygraph.rs_history_graph_menu_save
 msgid "Save as Image..."
 msgstr ""
@@ -4441,31 +4529,78 @@ msgstr ""
 msgid "%d readings"
 msgstr ""
 
-#: uhistorygraph.rs_history_graph_range
-#, object-pascal-format
-msgid "%s – %s"
-msgstr ""
-
 #: uhistorygraph.rs_history_graph_save_error
 #, object-pascal-format
 msgid "Failed to save graph: %s"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_save_success
-msgid "Graph saved successfully"
 msgstr ""
 
 #: uhistorygraph.rs_history_graph_save_title
 msgid "Save graph as PNG"
 msgstr ""
 
-#: uhistorygraph.rs_history_graph_title
-msgid "History graph"
+#: uhistorygraph.rs_history_graph_tb_all_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_all_hint"
+msgid "Show everything"
 msgstr ""
 
-#: uhistorygraph.rs_history_graph_unit_fmt
+#: uhistorygraph.rs_history_graph_tb_basal
+msgctxt "uhistorygraph.rs_history_graph_tb_basal"
+msgid "Basal"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_basal_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_basal_hint"
+msgid "Show the programmed basal schedule"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_bolus
+msgctxt "uhistorygraph.rs_history_graph_tb_bolus"
+msgid "Insulin"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_bolus_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_bolus_hint"
+msgid "Show insulin deliveries"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_carbs
+msgctxt "uhistorygraph.rs_history_graph_tb_carbs"
+msgid "Carbs"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_carbs_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_carbs_hint"
+msgid "Show carbohydrates"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_csv
+msgctxt "uhistorygraph.rs_history_graph_tb_csv"
+msgid "CSV"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_csv_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_csv_hint"
+msgid "Save the readings in view as CSV"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_png
+msgctxt "uhistorygraph.rs_history_graph_tb_png"
+msgid "PNG"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_png_hint
+msgctxt "uhistorygraph.rs_history_graph_tb_png_hint"
+msgid "Save the graph as an image (Ctrl+S)"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_tb_range_hint
 #, object-pascal-format
-msgid "Readings (%s)"
+msgctxt "uhistorygraph.rs_history_graph_tb_range_hint"
+msgid "Show the last %s"
+msgstr ""
+
+#: uhistorygraph.rs_history_graph_title
+msgid "History graph"
 msgstr ""
 
 #: uwizard.wz_err_address
@@ -4577,160 +4712,3 @@ msgctxt "uwizard.wz_weblogin_waiting"
 msgid "Waiting for the browser sign-in to complete…"
 msgstr ""
 
-#: uhistorygraph.rs_history_graph_menu_reset
-msgctxt "uhistorygraph.rs_history_graph_menu_reset"
-msgid "Reset zoom"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_range_hint
-#, object-pascal-format
-msgctxt "uhistorygraph.rs_history_graph_tb_range_hint"
-msgid "Show the last %s"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_all_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_all_hint"
-msgid "Show everything"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_basal
-msgctxt "uhistorygraph.rs_history_graph_tb_basal"
-msgid "Basal"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_basal_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_basal_hint"
-msgid "Show the programmed basal schedule"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_bolus
-msgctxt "uhistorygraph.rs_history_graph_tb_bolus"
-msgid "Insulin"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_bolus_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_bolus_hint"
-msgid "Show insulin deliveries"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_carbs
-msgctxt "uhistorygraph.rs_history_graph_tb_carbs"
-msgid "Carbs"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_carbs_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_carbs_hint"
-msgid "Show carbohydrates"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_png
-msgctxt "uhistorygraph.rs_history_graph_tb_png"
-msgid "PNG"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_png_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_png_hint"
-msgid "Save the graph as an image (Ctrl+S)"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_csv
-msgctxt "uhistorygraph.rs_history_graph_tb_csv"
-msgid "CSV"
-msgstr ""
-
-#: uhistorygraph.rs_history_graph_tb_csv_hint
-msgctxt "uhistorygraph.rs_history_graph_tb_csv_hint"
-msgid "Save the readings in view as CSV"
-msgstr ""
-
-#: trndi.strings.rs_no_new_readings
-#, object-pascal-format
-msgid "The server answered, but has nothing newer than %s.\n\nIs your phone or receiver uploading?\nIs the sensor warming up or out of range?"
-msgstr ""
-
-#: trndi.strings.rs_hint_ago
-msgid "Time since the last reading. Click for sensor and device details."
-msgstr ""
-
-#: trndi.strings.rs_hint_ago_overdue
-msgid "A new reading is overdue. Click for sensor and device details."
-msgstr ""
-
-#: trndi.strings.rs_hint_tir
-#, object-pascal-format
-msgid "Time in range over the last %s. Click for your limits."
-msgstr ""
-
-#: trndi.strings.rs_hint_predict
-msgid "Forecast based on the recent trend. Click to learn more."
-msgstr ""
-
-#: trndi.strings.rs_predict_notice
-msgid "Forecast for the next 5, 10 and 15 minutes, extrapolated from the recent trend. It is an estimate, not a measurement."
-msgstr ""
-
-#: trndi.strings.rs_hint_off_range
-msgid "Outside your personal target range. Click for details."
-msgstr ""
-
-#: trndi.strings.rs_hint_multiuser
-msgid "The account this window shows. Click for details."
-msgstr ""
-
-#: trndi.strings.rs_trend_window_notice
-#, object-pascal-format
-msgid "Trend: %d readings · %s"
-msgstr ""
-
-#: trndi.strings.rs_conn_no_new_data
-msgid "No new data"
-msgstr ""
-
-#: trndi.strings.rs_boot_unreachable
-msgid "Can't reach the server"
-msgstr ""
-
-#: trndi.strings.rs_boot_retry_extra
-msgid "Trndi keeps trying on its own. If the address or login is wrong, open Settings."
-msgstr ""
-
-#: trndi.strings.rs_alert_snooze_partial
-#, object-pascal-format
-msgid "Some alerts snoozed until %s"
-msgstr ""
-
-#: trndi.strings.rs_alert_snooze_only_missing
-msgid "Only outdated readings"
-msgstr ""
-
-#: trndi.strings.rs_alert_snooze_only_high
-msgid "Only high"
-msgstr ""
-
-#: trndi.strings.rs_alert_snooze_only_low
-msgid "Only low"
-msgstr ""
-
-#: trndi.strings.rs_alert_snooze_kind_until
-#, object-pascal-format
-msgid "%s (until %s)"
-msgstr ""
-
-#: trndi.strings.rs_alert_snooze_kind_resume
-msgid "Resume these alerts"
-msgstr ""
-
-#: trndi.strings.rs_alert_snooze_kind_done
-#, object-pascal-format
-msgid "%s: snoozed until %s"
-msgstr ""
-
-#: trndi.strings.rs_alert_snooze_kind_off
-#, object-pascal-format
-msgid "%s: alerts resumed"
-msgstr ""
-
-#: trndi.strings.rs_stale_missing_muted
-#, object-pascal-format
-msgid "Outdated-readings alerts muted until %s"
-msgstr ""

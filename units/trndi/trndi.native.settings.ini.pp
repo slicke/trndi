@@ -42,6 +42,10 @@
  *   consolidation: the two class-wide stores became one process-wide store —
  *   unobservable in practice, since any real binary only ever instantiates
  *   one platform class.
+ * - 2026-11-01: IniSettingsSet doubles the outer quotes of a value that both
+ *   starts and ends with the same quote, since TIniFile.ReadString strips one
+ *   such pair: a quoted value (Trndi.storage.setJSON of a string) came back
+ *   without its quotes.
  *)
 
 {**
@@ -132,6 +136,17 @@ begin
   end;
 end;
 
+// TIniFile.ReadString strips one pair of matching outer quotes, so such a
+// value is written with one more pair and reads back as it was.
+function QuoteGuard(const val: string): string;
+begin
+  if (Length(val) >= 2) and (val[1] in ['"', '''']) and
+    (val[Length(val)] = val[1]) then
+    Result := val[1] + val + val[1]
+  else
+    Result := val;
+end;
+
 procedure IniSettingsSet(const resolver: TIniPathResolver;
   const fullKey, val: string);
 begin
@@ -145,7 +160,7 @@ begin
       (gIniStore.ReadString('trndi', fullKey, '') = val) then
       Exit;
     // Write under a canonical section
-    gIniStore.WriteString('trndi', fullKey, val);
+    gIniStore.WriteString('trndi', fullKey, QuoteGuard(val));
     gIniStore.UpdateFile;
   finally
     LeaveCriticalSection(gIniLock);
@@ -260,8 +275,10 @@ begin
       for j := 0 to keys.Count - 1 do
       begin
         key := keys[j];
+        // TMemIniFile keeps the quotes the export wrote; guard them as
+        // IniSettingsSet does, or gIniStore strips them on the way back.
         value := ini.ReadString(section, key, '');
-        gIniStore.WriteString(section, key, value);
+        gIniStore.WriteString(section, key, QuoteGuard(value));
       end;
     end;
     gIniStore.UpdateFile;

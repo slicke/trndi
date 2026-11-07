@@ -58,6 +58,8 @@
  * - 2026-10-07: The web server is handed the multi-user account name
  *   (UserLabel) and WebSettingsToJSON reports it as "user", so the
  *   dashboard and /health can say whose Trndi they show.
+ * - 2026-10-29: lVal.RollOnChange is set, so a reading rolls over into the
+ *   next one (utabularlabel).
  *)
 (* MODIFICATION NOTICE (2026-08-17): The high/low/urgent-low alert rules are now
    seeded after Connect and the wizard/override adjustments instead of before
@@ -229,7 +231,12 @@ begin
   // resolved the .lfm's TLabel to the stock class would make the property
   // write land past the object.
   if lVal is TLabel then
+  begin
     lVal.TabularDigits := native.GetBoolSetting('ux.tabular_digits', true);
+    // A reading giving way to the next rolls over like the minute badge
+    // (see utabularlabel) rather than blinking into the new number.
+    lVal.RollOnChange := true;
+  end;
   fontName := native.GetSetting('font.arrow', 'default');
   if fontName <> 'default' then
     lArrow.Font.Name := fontName;
@@ -773,6 +780,8 @@ begin
   // from *this* — never to an already-prefixed caption — as the title-bar
   // badge appears or disappears (see RefreshUserBadge).
   FBaseCaption := Caption;
+  // What the title bar mirrors until the first reading colours the window.
+  FBgTarget := Color;
 
   // The forecast text lives in a custom-painted strip rather than an LFM
   // label: it fits its own fonts and colours its cells by range, which a

@@ -61,6 +61,12 @@ unit ustatbadge;
 
   Caption is kept in sync with the old labels' text ("6.4 | 85%", "3 min")
   because the extension hook and the settings preview read it.
+
+  When the value changes while one is showing, the part that differs rolls
+  over like an odometer wheel: the old digits slide up and out while the new
+  ones rise in from below, the unchanged rest ("min", the hour) staying put.
+  It is what makes the minute count read as ticking rather than blinking.
+  Clipped to the value's own line so nothing crosses into the caption.
 *}
 
 {$mode objfpc}{$H+}
@@ -68,7 +74,7 @@ unit ustatbadge;
 interface
 
 uses
-  Classes, SysUtils, Controls, Graphics, Math;
+  Classes, SysUtils, Controls, Graphics, Math, ExtCtrls;
 
 type
   {** Value over caption, optional mean beside it, optional hover bar. }
@@ -85,6 +91,10 @@ type
     FHover: boolean;        // Pointer over the badge: the bar is drawn
     FShowBar: boolean;      // Whether a bar is drawn at all (on hover)
     FAlignment: TAlignment; // Edge the stack hugs: taLeftJustify or taRightJustify
+    FRollFrom: string;      // Value text being rolled away; '' when no roll is running
+    FRollStart: QWord;      // GetTickCount64 when the roll began
+    FRollTimer: TTimer;     // Frame tick of the roll; off between rolls
+    procedure RollTick({%H-}Sender: TObject);
     procedure SetTextColor(AValue: TColor);
     procedure SetAccentColor(AValue: TColor);
     procedure SetTrackColor(AValue: TColor);
@@ -144,6 +154,8 @@ type
 implementation
 
 const
+  ROLL_MS = 320;            // Length of the value roll: short enough to read as a tick
+  ROLL_TICK_MS = 16;        // Its frame tick
   CAPTION_MAX_RATIO = 0.7;  // Caption font never taller than this share of the value font
   MIN_CAPTION_PX = 6;
   MEAN_RATIO = 0.62;        // Mean font height as a fraction of the value font
@@ -166,7 +178,50 @@ begin
   FHover := false;
   FShowBar := true;
   FAlignment := taRightJustify;
+  FRollFrom := '';
+  FRollTimer := TTimer.Create(Self);
+  FRollTimer.Interval := ROLL_TICK_MS;
+  FRollTimer.Enabled := false;
+  FRollTimer.OnTimer := @RollTick;
   ControlStyle := ControlStyle - [csOpaque];
+end;
+
+procedure TStatBadge.RollTick(Sender: TObject);
+begin
+  if GetTickCount64 - FRollStart >= ROLL_MS then
+  begin
+    FRollFrom := '';
+    FRollTimer.Enabled := false;
+  end;
+  Invalidate;
+end;
+
+// Splits an old and a new value into the bytes they share at either end and
+// the differing middle, so only "3" rolls in "3 min" -> "4 min" and only the
+// last digit in "12:34" -> "12:35". The cuts are backed off to UTF-8 code
+// point starts so a glyph that differs in its tail bytes rolls whole.
+procedure SplitRoll(const AOld, ANew: string; out APrefix, AOldMid, ANewMid,
+  ASuffix: string);
+var
+  p, sfx, oldLen, newLen: integer;
+begin
+  oldLen := Length(AOld);
+  newLen := Length(ANew);
+  p := 0;
+  while (p < oldLen) and (p < newLen) and (AOld[p + 1] = ANew[p + 1]) do
+    Inc(p);
+  while (p > 0) and (p < oldLen) and (Ord(AOld[p + 1]) and $C0 = $80) do
+    Dec(p);
+  sfx := 0;
+  while (sfx < oldLen - p) and (sfx < newLen - p) and
+    (AOld[oldLen - sfx] = ANew[newLen - sfx]) do
+    Inc(sfx);
+  while (sfx > 0) and (Ord(AOld[oldLen - sfx + 1]) and $C0 = $80) do
+    Dec(sfx);
+  APrefix := Copy(AOld, 1, p);
+  AOldMid := Copy(AOld, p + 1, oldLen - p - sfx);
+  ANewMid := Copy(ANew, p + 1, newLen - p - sfx);
+  ASuffix := Copy(AOld, oldLen - sfx + 1, sfx);
 end;
 
 procedure TStatBadge.SetShowBar(AValue: boolean);
@@ -207,6 +262,16 @@ procedure TStatBadge.SetState(APercent: integer; const AValueText, AMeanText: st
 begin
   if (FPercent = APercent) and (FValueText = AValueText) and (FMeanText = AMeanText) then
     Exit;
+  // One showing value giving way to another rolls over; the first value,
+  // a clear and a re-arm after one just appear. A roll already under way
+  // restarts from the value it was heading for.
+  if (FValueText <> '') and (AValueText <> '') and (FValueText <> AValueText)
+    and Visible and Assigned(Parent) then
+  begin
+    FRollFrom := FValueText;
+    FRollStart := GetTickCount64;
+    FRollTimer.Enabled := true;
+  end;
   FPercent := APercent;
   FValueText := AValueText;
   FMeanText := AMeanText;
@@ -384,7 +449,9 @@ var
   valueW, valueH, capPx, capW, capH, meanPx, meanW, meanH, gap, barW, barGap,
   totalW, totalH: integer;
   showMeanCaption, showMean: boolean;
-  stackX, x, capY, barX, barCol, fillH: integer;
+  stackX, x, capY, barX, barCol, fillH, dy, oldMidW, newMidW: integer;
+  prefix, oldMid, newMid, suffix: string;
+  t: double;
 begin
   inherited Paint;
   if (FValueText = '') or (Width <= 0) or (Height <= 0) then
@@ -416,7 +483,36 @@ begin
   Canvas.Font.Assign(Font);
   Canvas.Font.Style := [];
   Canvas.Font.Color := FAccentColor;
-  Canvas.TextOut(stackX, 0, FValueText);
+  if FRollFrom = '' then
+    Canvas.TextOut(stackX, 0, FValueText)
+  else
+  begin
+    // Mid-roll: the shared head and tail stand still while the differing
+    // middle turns over, old sliding up out of the line as new rises into
+    // it from below. Ease-out, so it lands rather than stops. The tail
+    // glides between the two middles' widths when they differ ("9" -> "10").
+    // Clipped to the value's line; the parent's SaveDC/RestoreDC pair around
+    // Paint scopes the change, and the box clip is put back for the rest.
+    t := Min(1.0, (GetTickCount64 - FRollStart) / ROLL_MS);
+    t := 1 - (1 - t) * (1 - t) * (1 - t);
+    dy := Round(t * valueH);
+    SplitRoll(FRollFrom, FValueText, prefix, oldMid, newMid, suffix);
+    oldMidW := Canvas.TextWidth(oldMid);
+    newMidW := Canvas.TextWidth(newMid);
+    Canvas.ClipRect := Rect(0, 0, Width, valueH);
+    Canvas.Clipping := true;
+    x := stackX;
+    if prefix <> '' then
+    begin
+      Canvas.TextOut(x, 0, prefix);
+      Inc(x, Canvas.TextWidth(prefix));
+    end;
+    Canvas.TextOut(x, -dy, oldMid);
+    Canvas.TextOut(x, valueH - dy, newMid);
+    if suffix <> '' then
+      Canvas.TextOut(x + Round(oldMidW + (newMidW - oldMidW) * t), 0, suffix);
+    Canvas.ClipRect := Rect(0, 0, Width, Height);
+  end;
 
   // Its caption, centred under it and tucked up into the descender space so
   // the two read as one unit.

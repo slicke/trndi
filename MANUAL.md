@@ -248,17 +248,17 @@ When enabled, Trndi can show where your blood sugar might be heading in the next
 
 ### Refresh Countdown Bar
 *Settings → Display → Display progress to next update on the left* (also offered
-during first-run setup): a slim line along the window's left edge that fills
-from the bottom.
+during first-run setup): a slim bar along the window's left edge that fills
+from the bottom, drawn in the same ink as the reading on a faint light track,
+so the window colour stays the only colour signal.
 
-- The **fill** covers one refresh cycle — **teal** for most of it, warming to
-  **amber** as the reading falls due. It is full exactly when Trndi fetches the
-  next reading.
-- If the reading runs late, **dark red diagonal stripes** rise over the full
-  line from the bottom, across the retry window while Trndi keeps trying (they
-  go away again once a reading lands). Fill and stripes only ever rise —
-  nothing jumps back when a retry is rescheduled.
-- Once the stripes reach the top the bar **breathes red** until a reading
+- The **fill** covers one refresh cycle. It is full exactly when Trndi fetches
+  the next reading.
+- If the reading runs late, a **warmer fill** rises over the first one from the
+  bottom, across the retry window while Trndi keeps trying (it goes away again
+  once a reading lands). Both fills only ever rise — nothing jumps back when a
+  retry is rescheduled.
+- Once the warm fill reaches the top the bar **breathes** until a reading
   arrives.
 - When a fresh reading arrives the fill drains down with a short animation.
 - While the bar is enabled, the floating window mirrors it as a thin strip along
@@ -279,6 +279,21 @@ Hides your actual numbers, showing only dots and arrows. Useful when:
 - You want less detail at a glance
 
 Enable it by right-clicking → Privacy Mode.
+
+### Hiding Trndi From Screen Sharing
+*Settings → Window → Hide Trndi from screen sharing and screenshots* (Windows 10
+version 2004 or later, and macOS). You keep seeing Trndi as usual, but when you
+share your screen in Teams, Zoom, Meet and similar apps, or record or screenshot
+it, the main and floating windows are left out — the others see whatever is
+behind them. Nothing has to be switched on before a call.
+
+Good to know:
+- The Dock badge, taskbar icon, menu-bar reading and notifications are drawn by
+  the system, not by Trndi's windows, so they can still show your reading in a
+  full-screen share.
+- Your own screenshots leave Trndi out too while this is on.
+- On Linux the desktop offers no way to do this, so the setting isn't shown —
+  use Privacy Mode instead.
 
 ### Time In Range (TIR)
 The badge in the top-right corner shows what percentage of time your blood
