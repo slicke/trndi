@@ -280,6 +280,21 @@ Hides your actual numbers, showing only dots and arrows. Useful when:
 
 Enable it by right-clicking → Privacy Mode.
 
+### Hiding Trndi From Screen Sharing
+*Settings → Window → Hide Trndi from screen sharing and screenshots* (Windows 10
+version 2004 or later, and macOS). You keep seeing Trndi as usual, but when you
+share your screen in Teams, Zoom, Meet and similar apps, or record or screenshot
+it, the main and floating windows are left out — the others see whatever is
+behind them. Nothing has to be switched on before a call.
+
+Good to know:
+- The Dock badge, taskbar icon, menu-bar reading and notifications are drawn by
+  the system, not by Trndi's windows, so they can still show your reading in a
+  full-screen share.
+- Your own screenshots leave Trndi out too while this is on.
+- On Linux the desktop offers no way to do this, so the setting isn't shown —
+  use Privacy Mode instead.
+
 ### Time In Range (TIR)
 The badge in the top-right corner shows what percentage of time your blood
 sugar has been in your target range: the percentage with a small `in range`

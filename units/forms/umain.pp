@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-04: CreateWnd override and ApplyCaptureExclusion keep the
+ *   windows out of screen capture when main.hide_from_capture is on.
  * - 2026-10-29: FHoverPredictIx and ActivePredictHover: a prediction mark
  *   under the mouse grows into a hollow ring showing its value; PaintHoverDot
  *   takes the slot and box so it draws both kinds.
@@ -1730,8 +1732,14 @@ private
   procedure DressModalForm(AForm: TCustomForm);
     {** Sync bar/grip visibility with the window state (fullscreen etc.). }
   procedure UpdateOwnTitleBarState;
+protected
+  procedure CreateWnd; override;
 public
   firstboot: boolean;
+    {** Keep the main and floating windows out of screen sharing and
+        screenshots when main.hide_from_capture is on (or let them be
+        captured again). No-op where the platform cannot do it. }
+  procedure ApplyCaptureExclusion;
     {** Generic application exception handler used for reporting unhandled
       exceptions during runtime to a unified error dialog.
      }
@@ -2705,6 +2713,8 @@ end;
 
 procedure TfBG.FormShow(Sender: TObject);
 begin
+  // In case the handle was created before native existed (CreateWnd skipped).
+  ApplyCaptureExclusion;
   placeForm;
   placed := true;
   lVal.font.Quality := fqCleartype;

@@ -17,6 +17,8 @@
  * GitHub: https://github.com/slicke/trndi
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-04: SupportsCaptureExclusion/SetCaptureExcluded via
+ *   NSWindow.sharingType.
  * - 2026-09-27: Optional menu-bar status item (NSStatusItem) showing the
  *   reading as a coloured pill next to the clock, with a Show/Hide/Quit
  *   menu; on by default while the Dock auto-hides. Each pill image rep owns
@@ -98,6 +100,12 @@ type
         untouched so it can keep encoding the blood-glucose reading.
         @returns(True if the NSWindow was reachable and the color was applied) }
     class function SetTitleColor(form: PtrUInt; bg, Text: TColor): boolean; override;
+    {** @true — @code(NSWindow.sharingType) is available. }
+    class function SupportsCaptureExclusion: boolean; override;
+    {** Set the form's NSWindow sharingType to none (or back to read-only),
+        which ScreenCaptureKit and screencapture honor for full-screen captures.
+        @returns(True if the NSWindow was reachable) }
+    class function SetCaptureExcluded(form: PtrUInt; exclude: boolean): boolean; override;
     {** @true — the multi-user name is shown as a title-bar accessory view. }
     class function SupportsUserBadge: boolean; override;
     {** Create/refresh a clickable pill in the title bar, carried by an
@@ -1045,6 +1053,44 @@ begin
     UseDark := ColorToRGB(Text) = ColorToRGB(clWhite);
 
     SetCocoaTitleBarColor(Win, R, G, B, UseDark);
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+
+{------------------------------------------------------------------------------
+  SupportsCaptureExclusion / SetCaptureExcluded
+  ---------------------------------------------
+  NSWindowSharingNone keeps the window out of full-screen captures (verified
+  with ScreenCaptureKit and screencapture on macOS 27); it remains listed in
+  SCShareableContent, so sharing this exact window may still capture it.
+  NSWindowSharingReadOnly is the AppKit default.
+ ------------------------------------------------------------------------------}
+class function TTrndiNativeMac.SupportsCaptureExclusion: boolean;
+begin
+  Result := True;
+end;
+
+class function TTrndiNativeMac.SetCaptureExcluded(form: PtrUInt;
+  exclude: boolean): boolean;
+var
+  View: NSView;
+  Win : NSWindow;
+begin
+  Result := False;
+  if form = 0 then
+    Exit;
+  try
+    // Same hop as SetTitleColor: the LCL form handle is the content view.
+    View := NSView(form);
+    if View = nil then Exit;
+    Win := View.window;
+    if Win = nil then Exit;
+    if exclude then
+      Win.setSharingType(NSWindowSharingNone)
+    else
+      Win.setSharingType(NSWindowSharingReadOnly);
     Result := True;
   except
     Result := False;

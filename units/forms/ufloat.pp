@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-04: CreateWnd override and ApplyCaptureExclusion (screen
+ *   capture exclusion for the floating window).
  * - 2026-09-15: FormMouseDown detects a Wayland session through
  *   TrndiNative.IsWaylandSession instead of reading XDG_SESSION_TYPE itself.
  *)
@@ -156,7 +158,13 @@ private
   procedure ApplyQtStyle;
   procedure CMColorChanged(var Message: TLMessage); message CM_COLORCHANGED;
   {$ENDIF}
+protected
+  procedure CreateWnd; override;
 public
+  {** Keep the float out of screen sharing and screenshots when the
+      main.hide_from_capture setting asks for it (or let it be captured
+      again). Re-applied on every handle (re)creation. }
+  procedure ApplyCaptureExclusion;
   {** Mirror the main window's backdrop gradient: Color at the top edge
       running to ABottom at the bottom edge, the same slope the main window
       paints. Pass Color itself (or clNone) for a flat fill, which is what
@@ -322,6 +330,21 @@ end;
 procedure SaveFloatSetting(const key: string; val: single);
 begin
   GetSettingsNative.SetFloatSetting(key, val, false);
+end;
+
+// The capture-exclusion flag belongs to the native window, so a recreated
+// handle (border or stay-on-top changes) needs it again.
+procedure TfFloat.CreateWnd;
+begin
+  inherited CreateWnd;
+  ApplyCaptureExclusion;
+end;
+
+procedure TfFloat.ApplyCaptureExclusion;
+begin
+  if HandleAllocated then
+    TrndiNative.SetCaptureExcluded(Handle,
+      GetSettingsNative.GetBoolSetting('main.hide_from_capture', false));
 end;
 
 procedure TfFloat.FormCreate({%H-}Sender: TObject);

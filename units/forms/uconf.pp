@@ -39,6 +39,7 @@
 
 (*
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-04: Added cbHideFromCapture (hide Trndi from screen sharing).
  * - 2026-10-13: HelpOverflows measures the help text on a temporary bitmap
  *   instead of the strip's control canvas.
  * - 2026-09-27: Added cbMenuBarReading (macOS menu-bar status item).
@@ -203,6 +204,7 @@ TfConf = class(TForm)
   cbLang: TComboBox;
   cbMoveDIffRight: TCheckBox;
   cbNoBorders: TCheckBox;
+  cbHideFromCapture: TCheckBox;
   cbOnTop: TCheckBox;
   cbPredictDots: TCheckBox;
   cbProgress: TCheckBox;
@@ -932,6 +934,7 @@ RS_DISPLAY_ADVANCED_HELP = 'When supported by the backend, the sensor expiration
 
 RS_RANGE_COLOR_HELP = 'Fills the window background with the color of your current range: in range, high or low.';
 RS_ON_TOP_HELP = 'Keeps the Trndi window above every other window.';
+RS_HIDE_FROM_CAPTURE_HELP = 'You still see Trndi, but screen sharing in meetings, recordings and screenshots leave its windows out. The Dock, taskbar and notifications can still show your reading.';
 RS_NO_BORDERS_HELP = 'Hides the window frame and title bar. Whether this works depends on the operating system.';
 RS_WINDOW_POS_HELP = 'Where on the screen Trndi opens when it starts.';
 RS_REMEMBER_SIZE_HELP = 'Restores the window to the size it had when Trndi was last closed.';
@@ -2476,6 +2479,7 @@ begin
   cbMenuBarReading.Hint := RS_MENUBAR_READING_HELP;
   cbRangeColor.Hint := RS_RANGE_COLOR_HELP;
   cbOnTop.Hint := RS_ON_TOP_HELP;
+  cbHideFromCapture.Hint := RS_HIDE_FROM_CAPTURE_HELP;
   cbNoBorders.Hint := RS_NO_BORDERS_HELP;
   Label4.Hint := RS_WINDOW_POS_HELP;
   cbPos.Hint := RS_WINDOW_POS_HELP;

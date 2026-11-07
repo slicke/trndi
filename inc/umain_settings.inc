@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-04: Load/save main.hide_from_capture and apply it to the
+ *   main and floating windows (TfBG.CreateWnd, ApplyCaptureExclusion).
  * - 2026-10-08: The macOS About dialog is translated, shows the bundled icon
  *   instead of fetching a logo, uses the Settings window's version label and
  *   carries the copyright, licence and medical disclaimer.
@@ -71,6 +73,28 @@
    Extracted from units/forms/umain.pp.
    Included in the implementation section of umain.pp only.
 *)
+
+{------------------------------------------------------------------------------
+  Keep both windows out of screen capture per main.hide_from_capture. The
+  flag lives on the native window, so CreateWnd re-applies it whenever the
+  handle is recreated.
+------------------------------------------------------------------------------}
+procedure TfBG.CreateWnd;
+begin
+  inherited CreateWnd;
+  ApplyCaptureExclusion;
+end;
+
+procedure TfBG.ApplyCaptureExclusion;
+begin
+  if native = nil then
+    Exit;
+  if HandleAllocated then
+    native.SetCaptureExcluded(Handle,
+      native.GetBoolSetting('main.hide_from_capture', false));
+  if Assigned(fFloat) then
+    fFloat.ApplyCaptureExclusion;
+end;
 
 {------------------------------------------------------------------------------
   Apply configuration changes that can take effect immediately without restart.
@@ -240,6 +264,10 @@ begin
   {$else}
     Self.BorderStyle := bsSizeToolWin;
   {$endif}
+
+  // After the border/stay-on-top changes above: those may already have
+  // recreated the handle (CreateWnd re-applies), this covers a plain toggle.
+  ApplyCaptureExclusion;
 
   // ResizeUIElements lays out and ScaleLbl:s all the labels (with the correct
   // alignment/padding for each) using the fonts applied above, and re-hides
@@ -639,6 +667,9 @@ procedure LoadUserSettings(f: TfConf);
       cbAlternate.Checked  := native.GetBoolSetting('main.alternate', false);
       cbOnTop.Checked      := native.GetBoolSetting('main.ontop', false);
       cbNoBorders.Checked  := native.GetBoolSetting('main.noborders', false);
+      // Only offered where the platform can keep a window out of capture.
+      cbHideFromCapture.Visible := native.SupportsCaptureExclusion;
+      cbHideFromCapture.Checked := native.GetBoolSetting('main.hide_from_capture', false);
 
       cbAlertHiLo.Checked := native.getBoolSetting('alerts.notice.hilo', true);
       cbAlertMissing.Checked := native.getBoolSetting('alerts.notice.missing', true);
@@ -834,6 +865,8 @@ procedure SaveUserSettings(f: TfConf);
       native.SetSetting('main.alternate', cbAlternate.Checked);
       native.SetSetting('main.ontop',     cbOnTop.Checked);
       native.SetSetting('main.noborders', cbNoBorders.Checked);
+      if cbHideFromCapture.Visible then
+        native.SetSetting('main.hide_from_capture', cbHideFromCapture.Checked);
 
       // Persist the Multi User tab's staged edits and pending erasures while
       // lbUsers still holds the default row (the commit checks the list to

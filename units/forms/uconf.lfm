@@ -1101,12 +1101,12 @@ object fConf: TfConf
         end
         object GroupBox13: TGroupBox
           Left = 0
-          Height = 190
+          Height = 210
           Top = 140
           Width = 635
           Align = alTop
           Caption = 'Window'
-          ClientHeight = 161
+          ClientHeight = 181
           ClientWidth = 631
           TabOrder = 1
           object cbRangeColor: TCheckBox
@@ -1159,6 +1159,14 @@ object fConf: TfConf
             Width = 250
             Caption = 'Remember window size'
             TabOrder = 2
+          end
+          object cbHideFromCapture: TCheckBox
+            Left = 16
+            Height = 22
+            Top = 144
+            Width = 330
+            Caption = 'Hide Trndi from screen sharing and screenshots'
+            TabOrder = 3
           end
         end
       end

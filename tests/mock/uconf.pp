@@ -202,6 +202,7 @@ type
     cbAlternate: TCheckBox;
     cbOnTop: TCheckBox;
     cbNoBorders: TCheckBox;
+    cbHideFromCapture: TCheckBox;
     rbTrendWindow: TRadioGroup;
     rgDots: TRadioGroup;
     cbFlashHi: TCheckBox;
@@ -437,6 +438,7 @@ begin
   cbAlternate := TCheckBox.Create(nil);
   cbOnTop := TCheckBox.Create(nil);
   cbNoBorders := TCheckBox.Create(nil);
+  cbHideFromCapture := TCheckBox.Create(nil);
   rbTrendWindow := TRadioGroup.Create(nil);
   rgDots := TRadioGroup.Create(nil);
   cbFlashHi := TCheckBox.Create(nil);
@@ -555,6 +557,7 @@ begin
   rgDots.Free;
   rbTrendWindow.Free;
   cbNoBorders.Free;
+  cbHideFromCapture.Free;
   cbOnTop.Free;
   cbAlternate.Free;
   cbClock.Free;

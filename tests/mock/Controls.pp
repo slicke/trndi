@@ -217,8 +217,12 @@ type
     FChildControls: TList; // children reference themselves here; not owned
     function GetControlCount: Integer;
     function GetControlByIndex(Index: Integer): TControl;
+  protected
+    // umain/ufloat override it to re-apply per-window native state
+    procedure CreateWnd; virtual;
   public
     destructor Destroy; override;
+    function HandleAllocated: boolean;
     procedure AddChildControl(AControl: TControl);
     procedure RemoveChildControl(AControl: TControl);
     // Real LCL child enumeration used by umain's shutdown-screen sweep
@@ -328,6 +332,16 @@ begin
 end;
 
 { TWinControl }
+
+procedure TWinControl.CreateWnd;
+begin
+  // no native window in headless tests
+end;
+
+function TWinControl.HandleAllocated: boolean;
+begin
+  Result := Handle <> 0;
+end;
 
 destructor TWinControl.Destroy;
 begin
