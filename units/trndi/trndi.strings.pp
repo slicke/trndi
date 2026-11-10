@@ -204,6 +204,7 @@ RS_QUIT_MINIMIZE = 'Would you like to minimize to the Dock, or close Trndi?';
 RS_QUIT_MINIMIZE_WIN = 'Would you like Trndi to to hide in the Taskbar, or close?';
 RS_QUIT_MSG = 'Quit the app?';
 RS_LAST_UPDATE = '%d min';
+RS_LAST_UPDATE_NOW = 'Now'; // Age badge when the reading is under a minute old
 RS_COMPUTE_FAILED_AGO = 'Long ago';
 RS_FORCE_QUIT_SETUP = 'Trndi will now shut down to apply settings, please re-start it manually!';
 

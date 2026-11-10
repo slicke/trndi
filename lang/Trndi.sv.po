@@ -2416,6 +2416,10 @@ msgctxt "trndi.strings.rs_last_update"
 msgid "%d min"
 msgstr "%d min"
 
+#: trndi.strings.rs_last_update_now
+msgid "Now"
+msgstr "Nyss"
+
 #: trndi.strings.rs_latest_reading
 #, object-pascal-format
 msgid "Latest Reading: Value = %.2f, Date = %s"

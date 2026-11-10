@@ -218,7 +218,13 @@ begin
     else
       // No caption: "3 min" says enough on its own, and the word under it
       // was one thing too many in that corner.
-      SetAgoText(Format(RS_LAST_UPDATE, [min]), '');
+      // Under a minute there is no number worth showing: "0 min" read as a
+      // measurement that happened to be zero, where the point is that the
+      // value is fresh.
+      if min = 0 then
+        SetAgoText(RS_LAST_UPDATE_NOW, '')
+      else
+        SetAgoText(Format(RS_LAST_UPDATE, [min]), '');
 
     // Between "on time" and the stale threshold there was no cue at all: a
     // reading that should have come at five minutes sat in the same muted

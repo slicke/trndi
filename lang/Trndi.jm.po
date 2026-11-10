@@ -2450,6 +2450,10 @@ msgctxt "trndi.strings.rs_last_update"
 msgid "%d min"
 msgstr "__PHc5ea6896-a003-472c-bef8-5f38cc657a13__ min"
 
+#: trndi.strings.rs_last_update_now
+msgid "Now"
+msgstr "Nyss"
+
 #: trndi.strings.rs_latest_reading
 #, object-pascal-format, fuzzy, badformat
 msgid "Latest Reading: Value = %.2f, Date = %s"
