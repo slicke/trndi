@@ -1301,9 +1301,12 @@ begin
       pnWarnLast.Visible := false;
 
     // Keep the dimmed hero clear of the card. lVal is alClient and vertically
-    // centered, so it can only be as tall as the band left above the card —
-    // counted on both sides of center. ResizeUIElements' ScaleLbl takes the
-    // font back over once fresh data restores the normal layout.
+    // centered, so its bottom edge is lifted to the top of the card and the
+    // value centers in the band above it. Centering in the whole form instead
+    // cost the card's height twice (once below center, once mirrored above),
+    // so an expanded card — up to 48% of the form — left the value a 24px
+    // sliver. hideWarningPanel gives the space back; ResizeUIElements'
+    // ScaleLbl takes the font back over once fresh data restores the layout.
     // The centering is asserted rather than assumed: a cold boot that lands
     // straight on stale data gets here before ScaleLbl has ever touched lVal
     // (tResizeTimer bails out while bgs is empty), so the label still has its
@@ -1311,14 +1314,20 @@ begin
     // the top edge, under the connection badge, instead of in the band.
     lVal.Alignment := taCenter;
     lVal.Layout := tlCenter;
+    lVal.BorderSpacing.Bottom := cardH + padding;
+    // Margin on both sides of the band's center, so the value also stays off
+    // the drawn title bar at the top.
     lVal.Font.Size := FitFontSize(lVal.Font, lVal.Caption,
       Max(20, ClientWidth - 16),
-      Max(24, ClientHeight - (2 * (cardH + padding))), 150, 8);
+      Max(24, ClientHeight - (cardH + padding) -
+        (2 * Max(padding, TitleBarOffset))), 150, 8);
     lVal.Refresh;
   end
   else
   begin
     // ----- Info/Soon: slim filled banner anchored at the top -----
+    // The banner overlays the value; only the status card reserves a band.
+    lVal.BorderSpacing.Bottom := 0;
     // Compose the "last reading" detail caption for the banner's expanded row.
     detailCaption := '';
     if WarnShowDetails then
@@ -1470,6 +1479,8 @@ procedure TfBG.hideWarningPanel;
 begin
   pnWarning.Visible := false;
   FWarnExpanded := false;
+  // Hand back the band the stale card reserved under the value.
+  lVal.BorderSpacing.Bottom := 0;
   // Stop tProgress only if pbNextProgress doesn't still need it. The pulse was
   // the only reason it might be on while pbNextProgress was hidden.
   if Assigned(tProgress) and tProgress.Enabled and
