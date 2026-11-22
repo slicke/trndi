@@ -555,7 +555,14 @@ begin
   // resize tick — wrong place to do I/O. `bgs` already reflects the latest
   // applied readings; if it's empty we have nothing to lay out.
   if Length(bgs) = 0 then
+  begin
+    // The no-reading card is up exactly when bgs is empty, and it sizes both
+    // itself and the '--' above it from the form. Without this a maximize or
+    // restore left them at the old window's size and position.
+    if pnWarning.Visible then
+      fixWarningPanel;
     Exit;
+  end;
 
   ResizeUIElements;
 
