@@ -20,7 +20,7 @@ on:
 #    Each platform produces its own artifact (.zip, .deb/.rpm for Linux, .dmg for macOS)
 #
 # 2b. "build-freebsd" builds in a FreeBSD VM. Best effort: it does not hold up
-#    a release, and its package is a run artifact only.
+#    a release; "publish-freebsd" adds its package to one afterwards.
 #
 # 3. "publish" job runs only when every build leg succeeded (no "if: always()").
 #    A failed leg would otherwise publish a release with that platform's assets
@@ -846,8 +846,8 @@ jobs:
       
       - uses: actions/download-artifact@v8
         with:
-          # The build matrix only: the best-effort FreeBSD package stays a run
-          # artifact.
+          # The build matrix only: publish-freebsd adds the best-effort
+          # FreeBSD package, if there is one.
           pattern: '*-build'
           path: ./release-files
 
@@ -1126,3 +1126,44 @@ jobs:
             echo "::warning::Discord notification failed; the release itself published fine."
           fi
 
+  # ===================== ADD FREEBSD TO THE RELEASE =====================
+  # After publish, whatever became of the FreeBSD leg: no package, no change.
+  publish-freebsd:
+    name: Add the FreeBSD package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [version, publish, build-freebsd]
+    continue-on-error: true
+    permissions:
+      contents: write
+    if: always() && needs.publish.result == 'success'
+    steps:
+      - uses: actions/download-artifact@v8
+        id: package
+        continue-on-error: true
+        with:
+          name: freebsd-amd64
+          path: freebsd
+
+      - name: Upload and list it
+        if: steps.package.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: build-${{ needs.version.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          NAME=Trndi-freebsd-amd64.tar.gz
+          gh release upload "$TAG" --clobber --repo "$GITHUB_REPOSITORY" "freebsd/$NAME"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body | tr -d '\r' > notes.md
+          # A rerun uploads again but does not list it twice.
+          if grep -qF "$NAME" notes.md; then exit 0; fi
+          {
+            echo '### FreeBSD (amd64, experimental)'
+            echo "- **$NAME** — FreeBSD 15.1 or later, Qt 6. Needs \`pkg install qt6pas curl\`. Built and tested in CI, not yet tried on a desktop. Unpack anywhere and run Trndi."
+            echo
+          } > freebsd.md
+          # Ahead of the rule before the signing notes, else at the end.
+          awk '/^---$/ && !done { while ((getline line < "freebsd.md") > 0) print line; done = 1 }
+               { print }
+               END { if (!done) while ((getline line < "freebsd.md") > 0) print line }' notes.md > notes.new
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file notes.new
