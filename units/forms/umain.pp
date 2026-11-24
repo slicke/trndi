@@ -36,6 +36,7 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-24: ToggleFullscreenMac no longer crashes in the background.
  * - 2026-11-24: The clock trades places with the reading, in a window and in
  *   fullscreen alike (SetClockSwap); lVal.Caption is never the time any more.
  * - 2026-11-04: CreateWnd override and ApplyCaptureExclusion keep the
@@ -2813,14 +2814,10 @@ procedure TfBG.ToggleFullscreenMac;
 var
   macWindow: NSWindow;
 begin
-  // Try to get the main window or fallback to the key window
-  macWindow := NSApplication.sharedApplication.mainWindow;
-  if macWindow = nil then
-    macWindow := NSApplication.sharedApplication.keyWindow;
-
-  // If still nil, try to bridge from the Lazarus form handle
-  if macWindow = nil then
-    macWindow := NSWindow(Tfbg(self).Handle);
+  // The form's own window, through its view: on Cocoa a form's Handle is its
+  // content view, not the NSWindow. Asking the application for its main window
+  // instead gives nil while Trndi is in the background (a kiosk autostart).
+  macWindow := NSView(Handle).window;
 
   if Assigned(macWindow) then
     macWindow.toggleFullScreen(nil)
