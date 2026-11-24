@@ -35,6 +35,8 @@
  *
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *)
+(* MODIFICATION NOTICE (2026-11-24): The time-in-range dialog counts its own
+   percentage instead of showing the badge's. *)
 (* MODIFICATION NOTICE (2026-10-06): BuildGlucoseReport takes the window to
    summarise, so the web API's /report can ask for the last N minutes; the
    dialog still passes 0 for everything held. *)
@@ -457,7 +459,8 @@ end;
 
 // The dialog behind the time-in-range badge. It counts what CalcRangeTime
 // counts - bgs inside range.time, by each reading's own level - and not
-// BuildGlucoseReport's day-long history, so the two can never disagree.
+// BuildGlucoseReport's day-long history. The percentage is counted here too:
+// the badge's dates from the last update, and the window has moved since.
 procedure TfBG.lTirClick(Sender: TObject);
 const
   // Width of a full bar, and of the narrowest
@@ -467,7 +470,7 @@ const
   BAND_ORDER: array[0..4] of BGValLevel =
     (BGHigh, BGRangeHI, BGRange, BGRangeLO, BGLow);
 var
-  minTotal, rangeMinutes, count, spanMinutes, i: integer;
+  minTotal, rangeMinutes, count, inRange, spanMinutes, i: integer;
   bands: array[BGValLevel] of integer;
   counted: set of BGValLevel;
   labels: array[BGValLevel] of string;
@@ -527,6 +530,7 @@ begin
       Inc(count);
     end;
 
+  // A cleared badge (stale data) withholds the statistic, so this does too
   if (count = 0) or (FTirBadge.Percent < 0) then
   begin
     SlickeHTMLMsg(sdsAuto, RS_TIR_TITLE, RS_REPORT_NODATA);
@@ -560,8 +564,11 @@ begin
   counted := [BGRange];
   if native.GetBoolSetting('range.custom', false) then
     counted := [BGRange, BGRangeHI, BGRangeLO];
+  inRange := 0;
+  for level in counted do
+    Inc(inRange, bands[level]);
 
-  html := '<font size="5"><b>' + FTirBadge.Percent.ToString + '%</b></font> ' +
+  html := '<font size="5"><b>' + Round(inRange * 100 / count).ToString + '%</b></font> ' +
     Format(RS_TIR_SPAN, [FormatSpan(spanMinutes)]) + '<br><br>' +
     '<table border="0" cellpadding="2" cellspacing="0" width="100%">';
   for i := Low(BAND_ORDER) to High(BAND_ORDER) do
