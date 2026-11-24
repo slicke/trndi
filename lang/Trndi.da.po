@@ -3188,6 +3188,18 @@ msgstr "Angiv en værdi, prikkestørrelsen ganges med dette"
 msgid "No reading received around %.2d:%.2d"
 msgstr ""
 
+#: trndi.strings.rs_ux_last_reading
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_last_reading"
+msgid "🕑 Last reading: %s"
+msgstr "🕑 Seneste aflæsning: %s"
+
+#: trndi.strings.rs_ux_next_update
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_next_update"
+msgid "⟳ Next update: %s"
+msgstr "⟳ Næste opdatering: %s"
+
 #: trndi.strings.rs_ux_noise
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
@@ -3213,6 +3225,11 @@ msgstr ""
 msgctxt "trndi.strings.rs_ux_reading_here"
 msgid "Reading here: %s at %.2d:%.2d"
 msgstr "Aflæsning her: %s kl. %.2d:%.2d"
+
+#: trndi.strings.rs_ux_reading_info
+msgctxt "trndi.strings.rs_ux_reading_info"
+msgid "Reading and device details"
+msgstr "Aflæsning og enhed"
 
 #: trndi.strings.rs_ux_reservoir
 #, object-pascal-format
@@ -3250,15 +3267,22 @@ msgstr ""
 msgid "less than an hour left"
 msgstr ""
 
+#: trndi.strings.rs_ux_sensor_state
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_sensor_state"
+msgid "⚠️ Sensor status: %s"
+msgstr "⚠️ Sensorstatus: %s"
+
+#: trndi.strings.rs_ux_system_status
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_system_status"
+msgid "📋 System status: %s"
+msgstr "📋 Systemstatus: %s"
+
 #: trndi.strings.rs_ux_transmitter_battery
 #, object-pascal-format
 msgid "📡 Transmitter battery: %d%%"
 msgstr ""
-
-#: trndi.strings.rs_ux_transmitter_info
-msgctxt "trndi.strings.rs_ux_transmitter_info"
-msgid "Transmitter information"
-msgstr "Senderinformation"
 
 #: trndi.strings.rs_ux_trend_window
 msgctxt "trndi.strings.rs_ux_trend_window"

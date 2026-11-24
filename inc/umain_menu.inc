@@ -458,30 +458,88 @@ end;
 
 procedure TfBG.lAgoClick(Sender: TObject);
 var
-  displayMsg, dm, deviceStr, expiryStr, lowerSensor: string;
-  s: system.utf8char;
-  i, pOpen, pClose: integer;
+  alerts, rows, ageStr, deviceStr, expiryStr, lowerSensor: string;
+  i, pOpen, pClose, ageMin: integer;
+  reading: BGReading;
   status: TCGMDeviceStatus;
-  hasStatus: boolean;
+  hasReading, hasStatus: boolean;
+
+  // Backend text is shown as-is, so it must not be read as markup.
+  function Escape(const S: string): string;
+  begin
+    Result := StringReplace(S, '&', '&amp;', [rfReplaceAll]);
+    Result := StringReplace(Result, '<', '&lt;', [rfReplaceAll]);
+    Result := StringReplace(Result, '>', '&gt;', [rfReplaceAll]);
+  end;
+
+  // The strings are "icon label: value"; the first colon divides the columns.
+  procedure AddRow(const ALine: string);
+  var
+    p: integer;
+  begin
+    p := Pos(':', ALine);
+    if p = 0 then
+      rows += '<tr><td colspan="2">' + Escape(ALine) + '</td></tr>'
+    else
+      rows += '<tr><td>' + Escape(Trim(Copy(ALine, 1, p - 1))) +
+        '</td><td><b>' + Escape(Trim(Copy(ALine, p + 1, MaxInt))) +
+        '</b></td></tr>';
+  end;
+
+  // Sets one group of rows apart from the next.
+  procedure AddGap;
+  begin
+    rows += '<tr><td colspan="2">&nbsp;</td></tr>';
+  end;
+
+  procedure AddAlert(const ALine: string);
+  begin
+    alerts += '<b>' + Escape(ALine) + '</b><br>';
+  end;
+
+  // CareLink reports codes such as SENSOR_WARM_UP.
+  function Readable(const S: string): string;
+  begin
+    Result := StringReplace(S, '_', ' ', [rfReplaceAll]);
+    if Result <> S then
+      Result := LowerCase(Result);
+  end;
+
 begin
-  dm := '';
   if firstboot then
     exit;
 
-  displayMsg := miRefresh.Caption + sHTMLLineBreak + sHTMLLineBreak;
-  for s in displayMsg do
-    if s in ['0'..'9']  then
-      dm += Format('<b>%s</b>', [s])
+  alerts := '';
+  rows := '';
+  reading := lastReading;
+  hasReading := Length(bgs) > 0;
+
+  if hasReading then
+  begin
+    // Signed, so a reading stamped ahead of this clock clamps to "now"
+    ageMin := Max(0, Trunc((Now - reading.date) * MinsPerDay));
+    if ageMin = 0 then
+      ageStr := RS_LAST_UPDATE_NOW
+    else if ageMin < MinsPerDay then
+      ageStr := Format(RS_LAST_UPDATE, [ageMin])
     else
-      dm += s;
-  displayMsg := dm;
+      ageStr := Format(RS_DAYS_AGO, [ageMin div MinsPerDay]);
+    if ageMin < MinsPerDay then
+      ageStr += ' (' + TimeToStr(reading.date) + ')'
+    else
+      ageStr += ' (' + DateTimeToStr(reading.date) + ')';
+    AddRow(Format(RS_UX_LAST_READING, [ageStr]));
+  end
+  else
+    AddRow(RS_LAST_RECIEVE_NO);
 
-  if lastReading.TryGetRSSI(i) then
-    displayMsg += sHTMLLineBreak + Format(RS_UX_RSSI, [i]);
-  if lastReading.TryGetNoise(i) then
-    displayMsg += sHTMLLineBreak + Format(RS_UX_NOISE, [i]);
+  if FNextFetchAt > Now then
+    AddRow(Format(RS_UX_NEXT_UPDATE, [TimeToStr(FNextFetchAt)]));
+  AddGap;
 
-  deviceStr := lastReading.sensor;
+  deviceStr := '';
+  if hasReading then
+    deviceStr := reading.sensor;
   expiryStr := '';
   lowerSensor := LowerCase(deviceStr);
   pOpen := Pos('(sensor ', lowerSensor);
@@ -514,32 +572,48 @@ begin
     else
       expiryStr := RS_UX_SENSOR_LEFT_ONE;
 
-  displayMsg += sHTMLLineBreak + Format(RS_UX_DEVICE, [deviceStr]);
   if expiryStr <> '' then
-    displayMsg += sHTMLLineBreak + Format(RS_UX_SENSOR_EXPIRY, [expiryStr]);
+    AddRow(Format(RS_UX_SENSOR_EXPIRY, [expiryStr]));
 
   // Pump housekeeping, when the backend reports any (pump-aware followers do)
   if hasStatus then
   begin
-    if status.reservoirUnits >= 0 then
-      displayMsg += sHTMLLineBreak + Format(RS_UX_RESERVOIR,
-        [FormatFloat('0.#', status.reservoirUnits)])
-    else if status.reservoirPercent >= 0 then
-      displayMsg += sHTMLLineBreak + Format(RS_UX_RESERVOIR_PERCENT,
-        [status.reservoirPercent]);
-    if status.pumpBatteryPercent >= 0 then
-      displayMsg += sHTMLLineBreak + Format(RS_UX_PUMP_BATTERY,
-        [status.pumpBatteryPercent]);
     if status.transmitterBatteryPercent >= 0 then
-      displayMsg += sHTMLLineBreak + Format(RS_UX_TRANSMITTER_BATTERY,
-        [status.transmitterBatteryPercent]);
+      AddRow(Format(RS_UX_TRANSMITTER_BATTERY, [status.transmitterBatteryPercent]));
+    if status.reservoirUnits >= 0 then
+      AddRow(Format(RS_UX_RESERVOIR, [FormatFloat('0.#', status.reservoirUnits)]))
+    else if status.reservoirPercent >= 0 then
+      AddRow(Format(RS_UX_RESERVOIR_PERCENT, [status.reservoirPercent]));
+    if status.pumpBatteryPercent >= 0 then
+      AddRow(Format(RS_UX_PUMP_BATTERY, [status.pumpBatteryPercent]));
+    if status.statusMessage <> '' then
+      AddRow(Format(RS_UX_SYSTEM_STATUS, [Readable(status.statusMessage)]));
+
+    // What needs acting on leads the dialog. A state such as warm-up is not OK
+    // either, so the line quotes the backend rather than calling it a fault.
     if status.pumpSuspended then
-      displayMsg += sHTMLLineBreak + RS_UX_PUMP_SUSPENDED;
+      AddAlert(RS_UX_PUMP_SUSPENDED);
+    if (not status.sensorOK) and (status.sensorState <> '') then
+      AddAlert(Format(RS_UX_SENSOR_STATE, [Readable(status.sensorState)]));
   end;
+  if not rows.EndsWith('&nbsp;</td></tr>') then
+    AddGap;
 
-  displayMsg += sHTMLLineBreak + Format(RS_UX_API, [api.systemName]);
+  // A reading without a device name answers '<unknown>', which says nothing
+  if (deviceStr <> '') and (deviceStr <> '<unknown>') then
+    AddRow(Format(RS_UX_DEVICE, [deviceStr]));
+  if hasReading and reading.TryGetRSSI(i) then
+    AddRow(Format(RS_UX_RSSI, [i]));
+  if hasReading and reading.TryGetNoise(i) then
+    AddRow(Format(RS_UX_NOISE, [i]));
+  if Assigned(api) then
+    AddRow(Format(RS_UX_API, [api.systemName]));
 
-  SlickeHTMLMsg(sdsAuto, RS_UX_TRANSMITTER_INFO, displayMsg, [mbOK], uxmtInformation, 10);
+  if alerts <> '' then
+    alerts += '<br>';
+  SlickeHTMLMsg(sdsAuto, RS_UX_READING_INFO, alerts +
+    '<table border="0" cellpadding="2" cellspacing="0" width="100%">' + rows +
+    '</table>', [mbOK], uxmtInformation);
 end;
 
 procedure TfBG.lArrowClick(Sender: TObject);

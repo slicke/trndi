@@ -387,7 +387,11 @@ RS_UX_PUMP_BATTERY = '🔋 Pump battery: %d%%';
 RS_UX_TRANSMITTER_BATTERY = '📡 Transmitter battery: %d%%';
 RS_UX_PUMP_SUSPENDED = '⏸️ Insulin delivery is suspended';
 RS_UX_API = '⚙️ Trndi API Interface: %s';
-RS_UX_TRANSMITTER_INFO = 'Transmitter information';
+RS_UX_LAST_READING = '🕑 Last reading: %s';
+RS_UX_NEXT_UPDATE = '⟳ Next update: %s';
+RS_UX_READING_INFO = 'Reading and device details';
+RS_UX_SENSOR_STATE = '⚠️ Sensor status: %s';
+RS_UX_SYSTEM_STATUS = '📋 System status: %s';
 
 RS_REFRESH_PROMPT = 'Refresh?';
 RS_FORCE_REFRESH = 'Forcefully refresh the reading?';

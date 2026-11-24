@@ -600,7 +600,7 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
     @param html HTML content to display in the dialog.
     @param buttons Buttons to display, in left-to-right order (default [mbAbort]).
     @param icon Emoji icon (default gear).
-    @param scale Content height multiplier (default 1).
+    @param scale Raises the minimum content height to 20 px times this (default 1).
     @returns Modal result based on user button selection.
     @remarks This variant displays only HTML content without title/description sections.
   }
@@ -1612,6 +1612,46 @@ begin
 
     searchPos := closePos + Length('</a>') + Length('</font></u>');
   end;
+end;
+
+{ IpHtml's table rows drop the body text colour, which leaves cells black on a
+  dark dialog, so every cell is given the colour explicitly. }
+function DecorateCells(const Src, TextColorHtml: string): string;
+var
+  openPos, tagEndPos: SizeInt;
+begin
+  Result := StringReplace(Src, '</td>', '</font></td>', [rfReplaceAll, rfIgnoreCase]);
+  openPos := PosEx('<td', LowerCase(Result), 1);
+  while openPos > 0 do
+  begin
+    tagEndPos := PosEx('>', Result, openPos);
+    if tagEndPos = 0 then
+      Break;
+    Insert('<font color="' + TextColorHtml + '">', Result, tagEndPos + 1);
+    openPos := PosEx('<td', LowerCase(Result), tagEndPos);
+  end;
+end;
+
+type
+  { Reaches TIpHtml.GetPageRect, which is protected. }
+  TIpHtmlAccess = class(TIpHtml);
+
+{ Height the loaded HTML needs at AWidth. The viewer's own GetContentSize stays
+  zero until its first paint, which is after the dialog has been sized. Laid out
+  on a bitmap since a form canvas outside a paint event can SIGABRT on Cocoa;
+  IpHtml keeps a reference to the canvas, so AOwner keeps the bitmap alive. }
+function MeasureHtmlHeight(AOwner: TComponent; AViewer: TIpHtmlPanel;
+const AWidth: integer): integer;
+var
+  holder: TImage;
+begin
+  Result := 0;
+  if (AViewer.MasterFrame = nil) or (AViewer.MasterFrame.Html = nil) then
+    Exit;
+  holder := TImage.Create(AOwner);
+  holder.Picture.Bitmap.SetSize(1, 1);
+  Result := TIpHtmlAccess(AViewer.MasterFrame.Html).GetPageRect(
+    holder.Picture.Bitmap.Canvas, AWidth, 0).Bottom;
 end;
 
 { ---------------------------------------------------------------------------
@@ -4107,7 +4147,8 @@ begin
     
     // Load HTML content with system font and colors
     FontTXTInList(sysfont);
-    htmlstr := DecorateLinks(html, TColorToHTML(getBaseColor));
+    htmlstr := DecorateCells(DecorateLinks(html, TColorToHTML(getBaseColor)),
+      TColorToHTML(getBaseColor));
     htmldata := '<html><body bgcolor="' + TColorToHTML(bgcol) + '" text="' + TColorToHTML(getBaseColor) + '" style="font-family: ' + sysfont + ';">' +
       htmlstr +
       '</body></html>';
@@ -4144,7 +4185,10 @@ begin
 
     // --- Content gets the height left over after the icon row and buttons ---
     maxHeight := Round(ScreenUsableHeight * 0.8);
-    contentHeight := Round((HtmlViewer.GetContentSize.cy + 20) * scale);  // Apply scale multiplier to height
+    // Callers pass scale to ask for a taller dialog. It is a floor rather than a
+    // factor: multiplying the measured height would fill the screen.
+    contentHeight := Max(Round(20 * scale),
+      MeasureHtmlHeight(Dialog, HtmlViewer, HtmlPanel.Width) + 20);
     // Was a flat "maxHeight - 200", which silently underestimated once the
     // button block could be several stacked touch-sized rows tall.
     availableHeight := maxHeight - HtmlPanel.Top - buttonBlockHeight - (padding * 2);

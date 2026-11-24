@@ -3325,6 +3325,18 @@ msgstr "Skriv in ett värde, punktstorleken kommer att gångras med detta"
 msgid "No reading received around %.2d:%.2d"
 msgstr "Ingen avläsning mottogs runt %.2d:%.2d"
 
+#: trndi.strings.rs_ux_last_reading
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_last_reading"
+msgid "🕑 Last reading: %s"
+msgstr "🕑 Senaste värde: %s"
+
+#: trndi.strings.rs_ux_next_update
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_next_update"
+msgid "⟳ Next update: %s"
+msgstr "⟳ Nästa uppdatering: %s"
+
 #: trndi.strings.rs_ux_noise
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
@@ -3352,6 +3364,11 @@ msgstr "⏸️ Insulinleverans är pausad"
 msgctxt "trndi.strings.rs_ux_reading_here"
 msgid "Reading here: %s at %.2d:%.2d"
 msgstr "Avläsning här: %s kl %.2d:%.2d"
+
+#: trndi.strings.rs_ux_reading_info
+msgctxt "trndi.strings.rs_ux_reading_info"
+msgid "Reading and device details"
+msgstr "Värde och enhet"
 
 #: trndi.strings.rs_ux_reservoir
 #, object-pascal-format
@@ -3394,16 +3411,23 @@ msgctxt "trndi.strings.rs_ux_sensor_left_one"
 msgid "less than an hour left"
 msgstr "mindre än en timme kvar"
 
+#: trndi.strings.rs_ux_sensor_state
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_sensor_state"
+msgid "⚠️ Sensor status: %s"
+msgstr "⚠️ Sensorstatus: %s"
+
+#: trndi.strings.rs_ux_system_status
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_system_status"
+msgid "📋 System status: %s"
+msgstr "📋 Systemstatus: %s"
+
 #: trndi.strings.rs_ux_transmitter_battery
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_transmitter_battery"
 msgid "📡 Transmitter battery: %d%%"
 msgstr "📡 Sändarbatteri: %d%%"
-
-#: trndi.strings.rs_ux_transmitter_info
-msgctxt "trndi.strings.rs_ux_transmitter_info"
-msgid "Transmitter information"
-msgstr "Sändarinformation"
 
 #: trndi.strings.rs_ux_trend_window
 msgctxt "trndi.strings.rs_ux_trend_window"
