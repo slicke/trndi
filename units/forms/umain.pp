@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-24: The clock trades places with the reading, in a window and in
+ *   fullscreen alike (SetClockSwap); lVal.Caption is never the time any more.
  * - 2026-11-04: CreateWnd override and ApplyCaptureExclusion keep the
  *   windows out of screen capture when main.hide_from_capture is on.
  * - 2026-10-29: FHoverPredictIx and ActivePredictHover: a prediction mark
@@ -844,14 +846,18 @@ private
   FAgoOverdue: boolean;       // The newest reading is older than one interval:
                               // tAgoTimer tints the age badge amber until the
                               // next reading lands or the stale card takes over
-  lClock: TLabel;             // Persistent clock overlay: time + reading shown
-                              // at once while fullscreen with main.clock on
-                              // (windowed mode keeps the tClock alternation).
-                              // Runtime-created on first use.
+  lClock: TLabel;             // The clock's slot at the top of the window.
+                              // Shown while fullscreen with main.clock on;
+                              // in a window it only marks where the clock
+                              // swap starts and ends. Runtime-created.
   tClockOverlay: TTimer;      // 1 s caption refresh; runs only while lClock
                               // is visible so it costs nothing otherwise
   FClockOverlayMinute: integer; // Minute last rendered — gates the JS/relayout
                                 // work to actual minute flips
+  tClockSwap: TTimer;         // Frame tick of the clock/reading swap
+  FClockSwapOn: boolean;      // The clock is, or is moving to, the hero place
+  FClockSwapFrom: double;     // Swap position when the running move began
+  FClockSwapStart: QWord;     // GetTickCount64 at that moment
   FUpdateCheckThread: TUpdateCheckThread;
   FUpdateCheckInFlight: boolean; // True while a TUpdateCheckThread is running.
                                  // Main-thread-only; gates the menu/keyboard
@@ -991,6 +997,19 @@ private
       it only re-renders on a minute flip, on first show, or when ForceLayout
       says geometry changed (resize, fullscreen toggle). }
   procedure UpdateClockOverlay(const ForceLayout: boolean = false);
+  procedure tClockSwapTimer({%H-}Sender: TObject);
+  {** Start moving the clock to the hero place (AOn) or back to its slot. }
+  procedure SetClockSwap(AOn: boolean);
+  {** Put the reading back at once, without the move. }
+  procedure StopClockSwap;
+  {** True from the first frame of the move out to the last of the move back. }
+  function ClockSwapActive: boolean;
+  {** 0 with the reading in the hero place, 1 with the clock there. }
+  function ClockSwapPosition: double;
+  {** Keep the trend arrow hidden behind the clock; layout re-shows it. }
+  procedure HideArrowForClockSwap;
+  {** lVal's painting while the swap is active: both texts on their way. }
+  procedure PaintClockSwap({%H-}Sender: TObject);
   {** True when the form is effectively fullscreen — the same multi-condition
       test DoFullScreen toggles on, extracted so kiosk activation and the
       clock overlay agree with it about what "fullscreen" means. }
@@ -1927,6 +1946,10 @@ PROGRESS_DRAIN_TICK_MS = 40;
 // frame tick. Short enough to read as the row stepping on, not as a scroll.
 TREND_SLIDE_MS = 380;
 TREND_SLIDE_TICK_MS = 16;
+// Clock and reading trading places (SetClockSwap): length of one move and its
+// frame tick. Slow enough for the eye to follow which text went where.
+CLOCK_SWAP_MS = 900;
+CLOCK_SWAP_TICK_MS = 16;
 // Background fade on a range change (FadeBackgroundTo): length and frame
 // tick. Twice the roll and the slide: a whole window turning reads as a
 // blink at their pace, and the colour is a mood, not an event. Still well
@@ -2393,6 +2416,7 @@ begin
       tProgress.Enabled := false;
     if Assigned(tClock) then
       tClock.Enabled := false;
+    StopClockSwap;
     if Assigned(tSwap) then
       tSwap.Enabled := false;
     if Assigned(tResize) then

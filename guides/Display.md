@@ -53,7 +53,7 @@ Kiosk mode:
 - **Keeps the system awake**: on Windows and macOS the native power APIs are used; on Linux, see [the note below](#keep-awake-on-linux). Released when Trndi exits.
 - **Skips the update popup** — an unattended display has nobody to click it away
 
-**Tip — clock:** enable *Clock* in Settings and a fullscreen Trndi shows the current time permanently at the top of the screen, next to the reading. (In a normal window the same setting instead alternates the big reading with the time every 20 seconds — on a bedside display you want both visible at once.)
+**Tip — clock:** enable *Clock* in Settings and a fullscreen Trndi keeps the current time at the top of the screen, next to the reading. Every 20 seconds the two trade places for 5 seconds, so the time can be read from across the room while the reading stays visible at the top. (A normal window does the same, but shows no clock in between.)
 
 Everything else works as normal: the first-run setup, the right-click menu and Settings are all still available, so you can configure a fresh kiosk on the device itself. To leave fullscreen, use the right-click menu's *Full screen* toggle — keep-awake stays active until Trndi exits.
 

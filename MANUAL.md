@@ -467,9 +467,10 @@ keeps the computer and screen awake while it runs, and skips the update popup.
 See the [display guide](guides/Display.md) for a full walkthrough.
 > On macOS, run ```open -a Trndi --args --kiosk``` — the `--args` part passes the flag on to Trndi.
 
-With the *Clock* setting enabled, fullscreen Trndi shows the time permanently
-at the top of the screen alongside the reading — in a normal window the same
-setting instead swaps the big reading for the time every 20 seconds.
+With the *Clock* setting enabled, the time and the reading trade places every
+20 seconds: for 5 seconds the time fills the window while the reading moves to
+the top. In fullscreen the time rests at the top in between; in a normal window
+it only appears for the swap. While data is stale they do not trade places.
 ---
 
 ## Troubleshooting Common Questions

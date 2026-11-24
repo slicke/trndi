@@ -135,6 +135,7 @@ begin
     if Assigned(FTrendArrow) then
       FTrendArrow.Visible := false;
     lArrow.Visible := true;
+    HideArrowForClockSwap;
     Exit;
   end;
 
@@ -152,6 +153,7 @@ begin
   lArrow.Visible := false;
   FTrendArrow.Visible := true;
   FTrendArrow.SendToBack;
+  HideArrowForClockSwap;
 end;
 
 // Request data from the backend and update GUI
@@ -425,6 +427,7 @@ begin
   if firstboot then
     Exit;
 
+  StopClockSwap; // the hero belongs to the stale card from here
   haveReading := Length(bgs) > 0;
 
   if haveReading then

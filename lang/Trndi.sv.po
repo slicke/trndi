@@ -3689,8 +3689,8 @@ msgid "Once an alert triggers, the reading must recover this many units past the
 msgstr "När en varning har utlösts måste avläsningen återhämta sig detta antal enheter förbi tröskeln innan varningen kan utlösas igen."
 
 #: uconf.rs_clock_help
-msgid "Every 20 seconds the reading gives way to the current time for 5 seconds. In fullscreen and kiosk mode the time shows at the top instead."
-msgstr "Var 20:e minut ersätts avläsningen av nuvarande tid under 5 sekunder. Vid fullskärms-/kioskläge visas tiden högst upp istället."
+msgid "Every 20 seconds the time and the reading trade places for 5 seconds: the time fills the window while the reading moves to the top. In fullscreen and kiosk mode the time rests at the top in between."
+msgstr "Var 20:e sekund byter klockan och avläsningen plats i 5 sekunder: klockan fyller fönstret medan avläsningen flyttar upp till överkanten. I fullskärms-/kioskläge ligger klockan högst upp däremellan."
 
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."

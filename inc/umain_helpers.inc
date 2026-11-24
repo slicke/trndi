@@ -895,6 +895,7 @@ var
   i: integer;
 begin
   FShutdownScreen := true;
+  StopClockSwap;
 
   // Everything except the two message labels goes — trend dots, panels and
   // the touch menu are all direct children, so one sweep covers them.

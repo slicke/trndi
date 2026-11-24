@@ -36,6 +36,8 @@
  * BY USING THIS SOFTWARE, YOU AGREE TO THE TERMS AND DISCLAIMERS STATED HERE.
  *
  * MODIFICATION NOTICE (GPLv3 Section 5):
+ * - 2026-11-24: The clock trades places with the reading in an animated swap,
+ *   in fullscreen too, instead of replacing lVal's caption.
  * - 2026-10-13: tAgoTimer takes the reading's age as a signed difference, so
  *   a future-stamped reading clamps to zero instead of showing overdue.
  * - 2026-09-27: DeltaChevronShown is false for a flat rate, so the delta
@@ -325,28 +327,31 @@ end;
 {------------------------------------------------------------------------------
   UpdateClockOverlay
   ------------------
-  The persistent fullscreen clock: time and reading visible at once, which is
-  what a wall/bedside display wants — the windowed alternation makes the
-  viewer wait out a 20 s cycle to see the time. Shown while main.clock is on
-  AND the form is fullscreen (however it got there: menu toggle, --kiosk,
-  double-click); windowed mode keeps the classic alternation.
+  The clock's slot at the top of the window. Fullscreen shows the time there
+  permanently while main.clock is on; in a window the slot is laid out only
+  for the clock swap, as the place the two texts trade through.
 
   Label and timer are created on first need and the timer only runs while the
-  overlay shows. A minute gate keeps the 1 s tick nearly free: the clockView
+  slot is in use. A minute gate keeps the 1 s tick nearly free: the clockView
   extension call and the ScaleLbl font search only run on a minute flip, on
-  first show, or when the caller says geometry changed (ForceLayout).
+  first use, or when the caller says geometry changed (ForceLayout).
 ------------------------------------------------------------------------------}
 procedure TfBG.UpdateClockOverlay(const ForceLayout: boolean);
 var
   clockText: string;
+  full, wasOn: boolean;
+  room: integer;
   {$ifdef TrndiExt}
   ex: boolean;
   {$endif}
 begin
-  if firstboot or FShuttingDown or (not Assigned(native)) then
+  if firstboot or FShuttingDown or FShutdownScreen or (not Assigned(native)) then
     Exit;
 
-  if not (native.GetBoolSetting('main.clock', false) and IsFullscreenNow) then
+  full := IsFullscreenNow;
+  if not native.GetBoolSetting('main.clock', false) then
+    StopClockSwap;
+  if not (native.GetBoolSetting('main.clock', false) and (full or ClockSwapActive)) then
   begin
     if Assigned(lClock) then
       lClock.Visible := false;
@@ -358,6 +363,7 @@ begin
   if not Assigned(lClock) then
   begin
     lClock := TLabel.Create(Self);
+    lClock.Visible := false;
     lClock.Name := 'lClock'; // gives it a ux.labels.lclock.scale hook
     lClock.Parent := Self;
     lClock.Transparent := true;
@@ -366,18 +372,19 @@ begin
   if not Assigned(tClockOverlay) then
   begin
     tClockOverlay := TTimer.Create(Self);
+    tClockOverlay.Enabled := false;
     tClockOverlay.Interval := 1000;
     tClockOverlay.OnTimer := @tClockOverlayTimer;
   end;
+  wasOn := tClockOverlay.Enabled;
   tClockOverlay.Enabled := true;
+  // During the swap the time is drawn by PaintClockSwap instead.
+  lClock.Visible := full and not ClockSwapActive;
 
-  if lClock.Visible and (FClockOverlayMinute = MinuteOf(Now)) and
-    (not ForceLayout) then
+  if wasOn and (FClockOverlayMinute = MinuteOf(Now)) and (not ForceLayout) then
     Exit;
   FClockOverlayMinute := MinuteOf(Now);
 
-  // Same text pipeline as the alternating clock below, so a clockView
-  // extension styles the overlay and the flash alike.
   {$ifdef TrndiExt}
   // Also fall back when clockView exists but returned no text (undefined/'')
   clockText := callFuncWithBGReadings('clockView', [DateTimeToStr(Now)], ex);
@@ -390,14 +397,26 @@ begin
 
   // Top-center band, same strip the age (left) and TIR (right) badges occupy;
   // the font mirrors the age badge so UpdateUIColors' color choices carry over.
-  lClock.Width := ClientWidth div 4;
+  // A narrow window may leave less than a quarter between the two badges.
+  room := ClientWidth div 4;
+  if FAgoBadge.Visible then
+    room := Min(room, ClientWidth - 2 * (FAgoBadge.Left + FAgoBadge.Width) - 8);
+  if FTirBadge.Visible then
+    room := Min(room, 2 * FTirBadge.Left - ClientWidth - 8);
+  lClock.Width := Max(room, Scale96ToForm(40));
   lClock.Height := ClientHeight div 9;
   lClock.Top := TitleBarOffset + 1 + IfThen(pnOffRange.Visible, pnOffRange.Height, 3);
   lClock.Font.Assign(FAgoBadge.Font);
-  lClock.Visible := true;
-  ScaleLbl(lClock, taCenter, tlCenter, true);
+  ScaleLbl(lClock, taCenter, tlCenter, true); // force-shows the label
+  lClock.Visible := full and not ClockSwapActive;
   lClock.Left := (ClientWidth - lClock.Width) div 2;
   lClock.BringToFront;
+
+  if ClockSwapActive then
+  begin
+    HideArrowForClockSwap;
+    lVal.Invalidate;
+  end;
 end;
 
 procedure TfBG.tClockOverlayTimer(Sender: TObject);
@@ -405,54 +424,209 @@ begin
   UpdateClockOverlay;
 end;
 
+// The reading keeps the hero place for clockInterval, then the clock has it
+// for clockDisplay. Same cycle in a window and in fullscreen.
 procedure TfBG.tClockTimer(Sender: TObject);
-var
-  clockText: string;
-  {$ifdef TrndiExt}
-  ex: boolean;
-  {$endif}
 begin
   tClock.Enabled := false;
-  // While the fullscreen overlay shows the time permanently, flashing the
-  // hero over to the clock would just hide the glucose for 5 s per cycle.
-  // Normalize back to "reading shown" if the flash was mid-cycle when the
-  // overlay appeared, and idle until the overlay goes away again.
-  if Assigned(lClock) and lClock.Visible then
+  SetClockSwap(not FClockSwapOn);
+  if FClockSwapOn then
+    tClock.Interval := clockDisplay
+  else
+    tClock.Interval := clockInterval;
+  tClock.Enabled := true;
+end;
+
+// The clock swap: the clock grows out of its slot at the top into the hero
+// place while the reading shrinks into the slot, then the reverse. The
+// reading is thus never off screen, which is what lets fullscreen take part.
+// lVal only lends its canvas -- its caption stays the reading, so speech, the
+// badge, the float window and alerts never pick up the time by mistake.
+function TfBG.ClockSwapActive: boolean;
+begin
+  Result := Assigned(tClockSwap) and Assigned(lVal.OnOverridePaint);
+end;
+
+function TfBG.ClockSwapPosition: double;
+var
+  t: double;
+begin
+  t := Min(1.0, (GetTickCount64 - FClockSwapStart) / CLOCK_SWAP_MS);
+  t := t * t * (3 - 2 * t);
+  Result := FClockSwapFrom + (Ord(FClockSwapOn) - FClockSwapFrom) * t;
+end;
+
+procedure TfBG.SetClockSwap(AOn: boolean);
+begin
+  if AOn = FClockSwapOn then
+    Exit;
+  if AOn then
   begin
-    if tClock.Interval = clockDisplay then
+    // Nothing to trade with, or the stale card owns the hero.
+    if firstboot or FShuttingDown or FShutdownScreen or FTrendDataStale
+      or (Length(bgs) = 0) or (lVal.Caption = '') or (not lVal.Visible)
+      or (WindowState = wsMinimized) then
+      Exit;
+    if tClockSwap = nil then
     begin
-      lVal.Caption := lVal.Hint;
-      tClock.Interval := clockInterval;
-      lArrow.Visible := true;
+      tClockSwap := TTimer.Create(Self);
+      tClockSwap.Enabled := false;
+      tClockSwap.Interval := CLOCK_SWAP_TICK_MS;
+      tClockSwap.OnTimer := @tClockSwapTimer;
     end;
-    tClock.Enabled := true;
+  end;
+
+  // A move still under way turns round where it is.
+  if ClockSwapActive then
+    FClockSwapFrom := ClockSwapPosition
+  else
+    FClockSwapFrom := 0;
+  FClockSwapOn := AOn;
+  FClockSwapStart := GetTickCount64;
+  lVal.OnOverridePaint := @PaintClockSwap;
+  UpdateClockOverlay(true);
+  if ClockSwapActive then // UpdateClockOverlay stops it when main.clock is off
+    tClockSwap.Enabled := true;
+end;
+
+procedure TfBG.StopClockSwap;
+begin
+  FClockSwapOn := false;
+  if not ClockSwapActive then
+    Exit;
+  tClockSwap.Enabled := false;
+  lVal.OnOverridePaint := nil;
+  tClock.Interval := clockInterval;
+  if FShuttingDown or FShutdownScreen then
+    Exit;
+  if RotatingArrow and Assigned(FTrendArrow) then
+    FTrendArrow.Visible := not FTrendDataStale
+  else
+    lArrow.Visible := true;
+  if Assigned(lClock) then
+    lClock.Visible := IsFullscreenNow;
+end;
+
+procedure TfBG.HideArrowForClockSwap;
+begin
+  // A trend arrow behind the time would read as belonging to it.
+  if not ClockSwapActive then
+    Exit;
+  lArrow.Visible := false;
+  if Assigned(FTrendArrow) then
+    FTrendArrow.Visible := false;
+end;
+
+procedure TfBG.tClockSwapTimer(Sender: TObject);
+begin
+  if FShuttingDown or FShutdownScreen then
+  begin
+    tClockSwap.Enabled := false;
     Exit;
   end;
-  if tClock.Interval <> clockDisplay then
+  if GetTickCount64 - FClockSwapStart >= CLOCK_SWAP_MS then
   begin
-    {$ifdef TrndiExt}
-    clockText := '';
-    clockText := callFuncWithBGReadings('clockView', [DateTimeToStr(Now)], ex);
-    // Fall back when no extension handles clockView, and also when a handler
-    // exists but returned no text (undefined/'') — otherwise the label went
-    // blank (or showed 'undefined' before callFuncWithBGReadings filtered it).
-    if (ex = false) or (clockText = '') then
-      lval.caption := FormatDateTime(FormatSettings.ShortTimeFormat, Now)
-    else
-      lval.caption := clockText;
-    {$else}
-    lval.Caption := FormatDateTime(FormatSettings.ShortTimeFormat, Now);
-    {$endif}
-    tClock.Interval := clockDisplay;
-    lArrow.Visible := false;
-  end
-  else
-  begin
-    lval.Caption := lval.hint;
-    tClock.Interval := clockInterval;
-    lArrow.Visible := true;
+    tClockSwap.Enabled := false;
+    if not FClockSwapOn then
+    begin
+      StopClockSwap;
+      Exit;
+    end;
   end;
-  tClock.Enabled := true;
+  lVal.Invalidate;
+end;
+
+// One frame. Sizes move geometrically, so the change looks even at both ends
+// and both texts are modest when they pass; each swings out to its own side
+// just far enough not to run through the other.
+procedure TfBG.PaintClockSwap(Sender: TObject);
+const
+  REF_HEIGHT = 100; // Font height the texts are measured at
+var
+  c: TCanvas;
+  pos, swing, sep: double;
+  slotX, slotY, heroX, heroY, valH, clockH, valW, clockW: integer;
+  heroH, slotH, clockHeroH: integer;
+  clockText: string;
+
+  // Sets AFont on the canvas, sized so a line of AText is AHeight tall.
+  procedure UseFont(AFont: TFont; const AText: string; AHeight: integer);
+  begin
+    c.Font.Assign(AFont);
+    c.Font.Height := -REF_HEIGHT;
+    c.Font.Height := -Max(1, Round(REF_HEIGHT * AHeight /
+      Max(1, c.TextHeight(AText))));
+  end;
+
+  function Mix(a, b: integer; t: double): integer;
+  begin
+    Result := Round(a + (b - a) * t);
+  end;
+
+  function MixSize(a, b: integer; t: double): integer;
+  begin
+    Result := Round(a * Power(b / a, t));
+  end;
+
+  function ClockFont: TFont;
+  begin
+    if pos < 0.5 then
+      Result := lClock.Font
+    else
+      Result := lVal.Font;
+  end;
+
+begin
+  if not Assigned(lClock) then
+    Exit;
+  c := lVal.Canvas;
+  pos := ClockSwapPosition;
+  clockText := lClock.Caption;
+
+  if not lVal.Transparent then
+  begin
+    c.Brush.Style := bsSolid;
+    c.Brush.Color := lVal.Color;
+    c.FillRect(0, 0, lVal.Width, lVal.Height);
+  end;
+
+  c.Font.Assign(lVal.Font);
+  heroH := Max(1, c.TextHeight(lVal.Caption));
+  c.Font.Height := -REF_HEIGHT;
+  // The time is usually the longer text, so it may have to be smaller.
+  clockHeroH := Max(1, Min(heroH, Trunc(c.TextHeight(clockText) * 0.94 * lVal.Width /
+    Max(1, TLabel.TabularTextWidth(c, clockText)))));
+  c.Font.Assign(lClock.Font);
+  slotH := Max(1, c.TextHeight(clockText));
+
+  heroX := lVal.Width div 2;
+  heroY := lVal.Height div 2;
+  slotX := lClock.Left + lClock.Width div 2 - lVal.Left;
+  slotY := lClock.Top + lClock.Height div 2 - lVal.Top;
+
+  valH := MixSize(heroH, slotH, pos);
+  clockH := MixSize(slotH, clockHeroH, pos);
+  UseFont(lVal.Font, lVal.Caption, valH);
+  valW := TLabel.TabularTextWidth(c, lVal.Caption);
+  UseFont(ClockFont, clockText, clockH);
+  clockW := TLabel.TabularTextWidth(c, clockText);
+
+  // Flatter than a plain sine: they must stay apart until one is above the other.
+  swing := Power(Max(0.0, Sin(Pi * pos)), 0.6);
+  sep := ((valW + clockW) / 2 + Min(valH, clockH) / 3) * swing;
+
+  UseFont(lVal.Font, lVal.Caption, valH);
+  c.Font.Color := lVal.Font.Color;
+  lVal.PaintTextCentered(Mix(heroX, slotX, pos) + Round(sep / 2),
+    Mix(heroY, slotY, pos), lVal.Caption);
+
+  UseFont(ClockFont, clockText, clockH);
+  c.Font.Color := BlendColors(lVal.Font.Color, lClock.Font.Color, pos);
+  // In a window the slot is empty at rest, so the time fades in from it.
+  if not IsFullscreenNow then
+    c.Font.Color := BlendColors(c.Font.Color, fBG.Color, Min(1.0, pos * 3));
+  lVal.PaintTextCentered(Mix(slotX, heroX, pos) - Round(sep / 2),
+    Mix(slotY, heroY, pos), clockText);
 end;
 
 procedure TfBG.tEdgesTimer(Sender: TObject);
@@ -1431,7 +1605,6 @@ end;
 procedure TfBG.tSwapTimer(Sender: TObject);
 var
   c: TColor;
-  currentCaption: string;
 begin
   if fsStrikeOut in Lval.Font.Style then
   begin
@@ -1440,9 +1613,7 @@ begin
   end;
 
   tSwap.Enabled := false;
-  currentCaption := lval.Caption;
-
-  if currentCaption.IndexOf(':') > 0 then
+  if ClockSwapActive then
     UpdateUIColors
   else
   if lVal.font.color <> lArrow.font.color then
