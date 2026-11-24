@@ -925,7 +925,7 @@ RS_DRIVER_CONTRIBUTOR = 'Driver contributor: ';
 RS_DEBUG_BACKEND_LABEL = '(Ignored for debug backend)';
 
 RS_PROGRESS_HELP = 'Shows a bar along the left edge that counts down to the next update.';
-RS_CLOCK_HELP = 'Every 20 seconds the reading gives way to the current time for 5 seconds. In fullscreen and kiosk mode the time shows at the top instead.';
+RS_CLOCK_HELP = 'Every 20 seconds the time and the reading trade places for 5 seconds: the time fills the window while the reading moves to the top. In fullscreen and kiosk mode the time rests at the top in between.';
 RS_ALTERNATE_HELP = 'Swaps the positions of the reading and the trend arrow at every update.';
 RS_BADGE_TREND_HELP = 'Puts the current trend arrow on Trndi''s taskbar or Dock icon.';
 RS_MENUBAR_READING_HELP = 'Shows the current reading in the system menu bar, where the platform has one.';

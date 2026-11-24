@@ -2416,6 +2416,10 @@ msgctxt "trndi.strings.rs_last_update"
 msgid "%d min"
 msgstr "%d min"
 
+#: trndi.strings.rs_last_update_now
+msgid "Now"
+msgstr "Nyss"
+
 #: trndi.strings.rs_latest_reading
 #, object-pascal-format
 msgid "Latest Reading: Value = %.2f, Date = %s"
@@ -3149,34 +3153,30 @@ msgstr "Visa Trndi"
 msgid "in range"
 msgstr "inom mål"
 
-#: trndi.strings.rs_tir_h
-#, object-pascal-format
-msgid "This is your time in range for the last %s hours and %s minutes"
-msgstr "Detta är din tid i målområdet under de senaste %s timmarna och %s minuterna"
-
-#: trndi.strings.rs_tir_h1
-#, object-pascal-format
-msgid "This is your time in range for the last hour and %s minutes"
-msgstr "Detta är din tid i målområdet under den senaste timmen och %s minuterna"
-
-#: trndi.strings.rs_tir_m
-#, object-pascal-format
-msgid "This is your time in range for the last %s minutes"
-msgstr "Detta är din tid i målområdet under de senaste %s minuterna"
+#: trndi.strings.rs_tir_counted
+msgctxt "trndi.strings.rs_tir_counted"
+msgid "Rows in bold count as in range."
+msgstr "Rader i fetstil räknas som inom mål."
 
 #: trndi.strings.rs_tir_mean_caption
 msgid "avg"
 msgstr "snitt"
 
-#: trndi.strings.rs_tir_row2
-#, object-pascal-format
-msgid "Your low limit is %.1f, high is %.1f"
-msgstr "Din låga gräns är %.1f, hög är %.1f"
+#: trndi.strings.rs_tir_readings
+msgctxt "trndi.strings.rs_tir_readings"
+msgid "Readings"
+msgstr "Antal värden"
 
-#: trndi.strings.rs_tir_row3
+#: trndi.strings.rs_tir_span
 #, object-pascal-format
-msgid "Your low range is %.1f, high is %.1f"
-msgstr "Ditt låga område är %.1f, hög är %.1f"
+msgctxt "trndi.strings.rs_tir_span"
+msgid "in range over the last %s"
+msgstr "inom mål under senaste %s"
+
+#: trndi.strings.rs_tir_title
+msgctxt "trndi.strings.rs_tir_title"
+msgid "Time in range"
+msgstr "Tid inom mål"
 
 #: trndi.strings.rs_tpobottomleft
 msgctxt "trndi.strings.rs_tpobottomleft"
@@ -3321,6 +3321,18 @@ msgstr "Skriv in ett värde, punktstorleken kommer att gångras med detta"
 msgid "No reading received around %.2d:%.2d"
 msgstr "Ingen avläsning mottogs runt %.2d:%.2d"
 
+#: trndi.strings.rs_ux_last_reading
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_last_reading"
+msgid "🕑 Last reading: %s"
+msgstr "🕑 Senaste värde: %s"
+
+#: trndi.strings.rs_ux_next_update
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_next_update"
+msgid "⟳ Next update: %s"
+msgstr "⟳ Nästa uppdatering: %s"
+
 #: trndi.strings.rs_ux_noise
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_noise"
@@ -3348,6 +3360,11 @@ msgstr "⏸️ Insulinleverans är pausad"
 msgctxt "trndi.strings.rs_ux_reading_here"
 msgid "Reading here: %s at %.2d:%.2d"
 msgstr "Avläsning här: %s kl %.2d:%.2d"
+
+#: trndi.strings.rs_ux_reading_info
+msgctxt "trndi.strings.rs_ux_reading_info"
+msgid "Reading and device details"
+msgstr "Värde och enhet"
 
 #: trndi.strings.rs_ux_reservoir
 #, object-pascal-format
@@ -3390,16 +3407,23 @@ msgctxt "trndi.strings.rs_ux_sensor_left_one"
 msgid "less than an hour left"
 msgstr "mindre än en timme kvar"
 
+#: trndi.strings.rs_ux_sensor_state
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_sensor_state"
+msgid "⚠️ Sensor status: %s"
+msgstr "⚠️ Sensorstatus: %s"
+
+#: trndi.strings.rs_ux_system_status
+#, object-pascal-format
+msgctxt "trndi.strings.rs_ux_system_status"
+msgid "📋 System status: %s"
+msgstr "📋 Systemstatus: %s"
+
 #: trndi.strings.rs_ux_transmitter_battery
 #, object-pascal-format
 msgctxt "trndi.strings.rs_ux_transmitter_battery"
 msgid "📡 Transmitter battery: %d%%"
 msgstr "📡 Sändarbatteri: %d%%"
-
-#: trndi.strings.rs_ux_transmitter_info
-msgctxt "trndi.strings.rs_ux_transmitter_info"
-msgid "Transmitter information"
-msgstr "Sändarinformation"
 
 #: trndi.strings.rs_ux_trend_window
 msgctxt "trndi.strings.rs_ux_trend_window"
@@ -3665,8 +3689,8 @@ msgid "Once an alert triggers, the reading must recover this many units past the
 msgstr "När en varning har utlösts måste avläsningen återhämta sig detta antal enheter förbi tröskeln innan varningen kan utlösas igen."
 
 #: uconf.rs_clock_help
-msgid "Every 20 seconds the reading gives way to the current time for 5 seconds. In fullscreen and kiosk mode the time shows at the top instead."
-msgstr "Var 20:e minut ersätts avläsningen av nuvarande tid under 5 sekunder. Vid fullskärms-/kioskläge visas tiden högst upp istället."
+msgid "Every 20 seconds the time and the reading trade places for 5 seconds: the time fills the window while the reading moves to the top. In fullscreen and kiosk mode the time rests at the top in between."
+msgstr "Var 20:e sekund byter klockan och avläsningen plats i 5 sekunder: klockan fyller fönstret medan avläsningen flyttar upp till överkanten. I fullskärms-/kioskläge ligger klockan högst upp däremellan."
 
 #: uconf.rs_color_bg
 msgid "Trndi can draw a rectangle/background in the graph's background, to visually represent your high and low limits."

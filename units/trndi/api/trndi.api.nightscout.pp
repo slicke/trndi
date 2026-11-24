@@ -685,7 +685,7 @@ begin
       else
       begin
         rssiValue.value := 0;
-        rssivalue.exists := true;
+        rssivalue.exists := false;
       end;
       if Assigned(noiseField) then
       begin
@@ -695,7 +695,7 @@ begin
       else
       begin
         noiseValue.value := 0;
-        noisevalue.exists := true;
+        noisevalue.exists := false;
       end;
       Result[w].updateEnv(dev, rssiValue, noiseValue);
 

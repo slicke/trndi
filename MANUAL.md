@@ -303,7 +303,8 @@ to its left as `avg 6.4`. The percentage turns green once you are above the
 good threshold and red below the bad one; in between it stays in the quiet
 sub-text colour. Hover over the badge to see a thin upright bar on its right
 edge filled from the bottom to the same share and a tip naming the window it
-covers; click it to see that window and the limits it uses. In a
+covers; click it to see how the readings in that window split across your
+limits, with the average, lowest and highest. In a
 narrow window the `avg` word and then the mean give way so the percentage
 always fits.
 - **Good**: Above 70% in range
@@ -466,9 +467,11 @@ keeps the computer and screen awake while it runs, and skips the update popup.
 See the [display guide](guides/Display.md) for a full walkthrough.
 > On macOS, run ```open -a Trndi --args --kiosk``` — the `--args` part passes the flag on to Trndi.
 
-With the *Clock* setting enabled, fullscreen Trndi shows the time permanently
-at the top of the screen alongside the reading — in a normal window the same
-setting instead swaps the big reading for the time every 20 seconds.
+With the *Clock* setting enabled, the time and the reading trade places every
+20 seconds: for 5 seconds the time fills the window while the reading moves to
+the top. In fullscreen the time rests at the top in between; in a normal window
+it only appears for the swap. While data is stale they do not trade places.
+
 ---
 
 ## Troubleshooting Common Questions

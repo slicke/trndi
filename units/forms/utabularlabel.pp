@@ -41,6 +41,7 @@
  *   stock rendering.
  * - 2026-10-29: RollOnChange: a number giving way to another rolls over like
  *   an odometer wheel instead of blinking.
+ * - 2026-11-24: OnOverridePaint and PaintTextCentered, for the clock swap.
  *)
 
 unit utabularlabel;
@@ -88,9 +89,11 @@ type
   private
     FTabularDigits: boolean;
     FRollOnChange: boolean;
+    FOnOverridePaint: TNotifyEvent;
     FRollFrom: string;      // Caption being rolled away; '' when no roll is running
     FRollStart: QWord;      // GetTickCount64 when the roll began
     FRollTimer: TTimer;     // Frame tick of the roll; nil until the first roll, off between rolls
+    procedure SetOnOverridePaint(AValue: TNotifyEvent);
     procedure SetTabularDigits(AValue: boolean);
     procedure RollTick({%H-}Sender: TObject);
     // Width of ACh in the canvas's font: the digit cell when tabular, the
@@ -112,6 +115,14 @@ type
         (ScaleLbl) can size the font against the tabular width instead of
         the proportional one. }
     class function TabularTextWidth(ACanvas: TCanvas; const AText: string): integer;
+    {** Draw AText with the canvas's current font, centred on (ACX, ACY) and
+        with tabular digits when the label has them. Only valid while the
+        label paints, i.e. from OnOverridePaint. }
+    procedure PaintTextCentered(ACX, ACY: integer; const AText: string);
+    {** When assigned, paints in place of the caption. Caption, font and mouse
+        handling are untouched, so the label stays what it was to the rest of
+        the form. }
+    property OnOverridePaint: TNotifyEvent read FOnOverridePaint write SetOnOverridePaint;
     {** Typeset digits in equal-width cells. Off, the label paints exactly as
         a stock TLabel does. Ignored for word-wrapped or rotated text, and
         whenever the cells would not fit the label's width. }
@@ -224,6 +235,23 @@ begin
     Invalidate;
 end;
 
+procedure TLabel.SetOnOverridePaint(AValue: TNotifyEvent);
+begin
+  FOnOverridePaint := AValue;
+  if not (csDestroying in ComponentState) then
+    Invalidate;
+end;
+
+procedure TLabel.PaintTextCentered(ACX, ACY: integer; const AText: string);
+var
+  cell: integer;
+begin
+  cell := DigitCellWidth(Canvas);
+  Canvas.Brush.Style := bsClear;
+  DrawRun(Canvas, ACX - RunWidth(Canvas, AText, cell) div 2,
+    ACY - Canvas.TextHeight(AText) div 2, AText, cell);
+end;
+
 destructor TLabel.Destroy;
 begin
   if Assigned(FRollTimer) then
@@ -326,6 +354,11 @@ var
   rolling: boolean;
   t: double;
 begin
+  if Assigned(FOnOverridePaint) then
+  begin
+    FOnOverridePaint(Self);
+    Exit;
+  end;
   txt := Caption;
   rolling := FRollFrom <> '';
   // Only the plain single-line case is typeset here; everything else -- and a

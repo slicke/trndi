@@ -149,6 +149,7 @@ private
   procedure ApplyRoundedCorners;
   procedure ApplyClock(AEnabled: boolean);
   procedure ApplyDelta(AEnabled: boolean);
+  function IsOnAnyMonitor: boolean;
   procedure SyncSizeMenu;
   procedure SyncOpacityMenu(AOpacity: single);
   procedure ProgressBoxPaint({%H-}Sender: TObject);
@@ -487,10 +488,37 @@ begin
   SaveFloatSetting('ux.float.opacity', Opacity);
 end;
 
+const
+  MIN_FLOAT_SIZE = 10; // px; anything smaller is not a usable window
+
+{------------------------------------------------------------------------------
+  True when enough of the window lies on some connected monitor to be seen
+  and grabbed.
+ ------------------------------------------------------------------------------}
+function TfFloat.IsOnAnyMonitor: boolean;
+const
+  MIN_VISIBLE = 20; // px that must be on screen in each direction
+var
+  i: integer;
+  r, m, x: TRect;
+begin
+  Result := false;
+  r := BoundsRect;
+  for i := 0 to Screen.MonitorCount - 1 do
+  begin
+    m := Screen.Monitors[i].BoundsRect;
+    if IntersectRect(x, r, m) and
+      (x.Width >= Min(MIN_VISIBLE, r.Width)) and
+      (x.Height >= Min(MIN_VISIBLE, r.Height)) then
+      Exit(true);
+  end;
+end;
+
 procedure TfFloat.FormShow(Sender: TObject);
 var
   storedH, storedW, storedLeft, storedTop: integer;
   storedOp: single;
+  wa: TRect;
 begin
   // Do not auto-center here; respect current position so user dragging stays stable
   ApplyRoundedCorners;
@@ -501,10 +529,30 @@ begin
   storedLeft := ReadIntSetting('position.float.left', Left);
   storedTop := ReadIntSetting('position.float.top', Top);
 
-  Height := storedH;
-  Width := storedW;
+  // A stored size shrunk to (almost) nothing leaves a window nobody can find
+  // or grab again: keep the design size in that case.
+  if (storedH >= MIN_FLOAT_SIZE) and (storedW >= MIN_FLOAT_SIZE) then
+  begin
+    Height := storedH;
+    Width := storedW;
+  end;
   Left := storedLeft;
   Top := storedTop;
+
+  // The stored position may belong to a monitor that is gone or rearranged.
+  // The float has no title bar and no taskbar entry, so off-screen means lost:
+  // bring it back to the middle of the main window's monitor.
+  if not IsOnAnyMonitor then
+  begin
+    if Assigned(Application.MainForm) and Assigned(Application.MainForm.Monitor) then
+      wa := Application.MainForm.Monitor.WorkareaRect
+    else
+      wa := Screen.WorkAreaRect;
+    Left := wa.Left + (wa.Width - Width) div 2;
+    Top := wa.Top + (wa.Height - Height) div 2;
+    SaveSetting('position.float.left', Left);
+    SaveSetting('position.float.top', Top);
+  end;
 
   // Ensure labels/fonts are scaled for the restored size
   FormResize(Self);
@@ -1152,6 +1200,7 @@ begin
     if key <> 189 then // not -
       Height := Height + 5
     else
+    if Height - 5 >= MIN_FLOAT_SIZE then
       Height := Height - 5;
     miNormalClick(miCustomSize);
   end;

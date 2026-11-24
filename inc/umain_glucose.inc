@@ -135,6 +135,7 @@ begin
     if Assigned(FTrendArrow) then
       FTrendArrow.Visible := false;
     lArrow.Visible := true;
+    HideArrowForClockSwap;
     Exit;
   end;
 
@@ -152,6 +153,7 @@ begin
   lArrow.Visible := false;
   FTrendArrow.Visible := true;
   FTrendArrow.SendToBack;
+  HideArrowForClockSwap;
 end;
 
 // Request data from the backend and update GUI
@@ -403,7 +405,15 @@ begin
   tMissed.Enabled := false;
   // A fresh reading is by definition not overdue; clear the amber before
   // UpdateUIColors paints the badge, rather than 15 s later on the next tAgo.
-  FAgoOverdue := false;
+  // The flag alone is not enough: a late reading that repeats the previous
+  // value, colour and TIR passes ShouldUpdateUI as "nothing changed", and
+  // tAgo only repaints on a flip it can no longer see — so the amber stayed
+  // on a fresh "2 min". Invalidate the UI-state cache as the stale path does.
+  if FAgoOverdue then
+  begin
+    FAgoOverdue := false;
+    FLastUIColor := TColor(-1);
+  end;
   // Hand the value's size back to the LCL's fill-the-label logic, which
   // ApplyStaleDisplayState turns off so the card can shrink the dimmed hero.
   lVal.OptimalFill := true;
@@ -417,6 +427,7 @@ begin
   if firstboot then
     Exit;
 
+  StopClockSwap; // the hero belongs to the stale card from here
   haveReading := Length(bgs) > 0;
 
   if haveReading then
