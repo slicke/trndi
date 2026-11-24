@@ -2837,9 +2837,8 @@ begin
   IconBox.Left := Padding;     // default gap on other platforms
   IconBox.Top  := Padding;
   {$IFDEF DARWIN}
-  // Drop the icon row below the blended macOS title bar so it doesn't sit
-  // flush against the empty titlebar strip.
-  IconBox.Top := IconBox.Top + Padding;
+  // The blended, empty title bar above the content is the top margin.
+  IconBox.Top := 0;
   {$ENDIF}
   {$ENDIF}
   AssignEmoji(IconBox, Icon, bgcol);
@@ -4067,8 +4066,8 @@ begin
     IconBox.Left := padding;
     IconBox.Top := padding;
     {$ifdef Darwin}
-    // Drop the icon below the blended macOS title bar.
-    IconBox.Top := IconBox.Top + padding;
+    // The blended, empty title bar above the content is the top margin.
+    IconBox.Top := 0;
     {$endif}
     IconBox.Width := ifthen((size = sdsBig) , 80, 48);
     IconBox.Height := IconBox.Width;
@@ -4190,6 +4189,8 @@ ADefault: TSlickeMsgDlgBtn = mbSlickeNone): TModalResult;
 const
   btnWidth = 75;
   padding  = 10;
+  // On macOS the blended, empty title bar above the content is the top margin.
+  topPad   = {$ifdef Darwin}0{$else}padding{$endif};
   memoPadLeft = 10;
   memoPadTop  = 8;
 var
@@ -4251,10 +4252,6 @@ begin
     TopPanel.BevelOuter := bvNone;
     TopPanel.Color := bgcol;
     TopPanel.AutoSize := true;
-    {$ifdef Darwin}
-    // Drop the icon/text row below the blended macOS title bar.
-    TopPanel.BorderSpacing.Top := padding;
-    {$endif}
 
     // Icon
     IconBox := TImage.Create(TopPanel);
@@ -4449,7 +4446,7 @@ begin
         TitleLabel.Font.Style := [fsBold];
         TitleLabel.Caption := title;
         TitleLabel.Font.Color := getBaseColor;
-        TitleLabel.Top := padding;
+        TitleLabel.Top := topPad;
         TitleLabel.Left := padding;
         TitleLabel.Width := MsgWidth;
         TitleLabel.Height := CalcWrappedHeight(TitleLabel);
@@ -4466,7 +4463,7 @@ begin
         if Assigned(TitleLabel) then
           MsgScroll.Top := TitleLabel.Top + TitleLabel.Height + padding
         else
-          MsgScroll.Top := padding;
+          MsgScroll.Top := topPad;
         MsgScroll.Left := padding;
         MsgScroll.Width := MsgWidth;
         MsgScroll.Height := MaxDialogHeight div 2;
@@ -4502,7 +4499,7 @@ begin
         if Assigned(TitleLabel) then
           MsgLabel.Top := TitleLabel.Top + TitleLabel.Height + padding
         else
-          MsgLabel.Top := padding;
+          MsgLabel.Top := topPad;
         MsgLabel.Left := padding;
         MsgLabel.Width := MsgWidth;
         MsgLabel.Height := NeededHeight;
