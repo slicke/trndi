@@ -301,6 +301,10 @@ looks like a sensor or backend problem; it is the clock.
 ## BSD
 Trndi can be built for FreeBSD, OpenBSD, and NetBSD using Lazarus.
 
+An experimental FreeBSD build (15.1 or later, amd64, Qt 6) is added to the
+releases when it succeeds, as `Trndi-freebsd-amd64.tar.gz`. It needs
+`pkg install qt6pas curl`; unpack it anywhere and run `Trndi`.
+
 **Requirements:**
 - Free Pascal Compiler
 - Lazarus build tools
@@ -312,7 +316,7 @@ Trndi can be built for FreeBSD, OpenBSD, and NetBSD using Lazarus.
 **Building from source:**
 ```bash
 # Install dependencies (FreeBSD example)
-pkg install fpc lazarus curl openssl gmake
+pkg install fpc lazarus-qt6 qt6pas curl openssl gmake
 
 # Clone and build
 git clone https://github.com/slicke/trndi.git
@@ -376,7 +380,7 @@ If Trndi is useful to you, consider supporting its development:
 Development tools can be obtained via most distros package managers:
 - Fedora/RHEL: ```dnf install lazarus```
 - Ubuntu/Debian: ```apt install lazarus```
-- FreeBSD: ```pkg install editors/lazarus```
+- FreeBSD: ```pkg install lazarus-qt6 qt6pas```
 
 ## Building
 ### GUI
