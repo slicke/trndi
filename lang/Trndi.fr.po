@@ -3150,34 +3150,30 @@ msgstr "Afficher Trndi"
 msgid "in range"
 msgstr ""
 
-#: trndi.strings.rs_tir_h
-#, object-pascal-format
-msgid "This is your time in range for the last %s hours and %s minutes"
-msgstr "Voici votre temps dans la cible pour les %s dernières heures et %s minutes"
-
-#: trndi.strings.rs_tir_h1
-#, object-pascal-format
-msgid "This is your time in range for the last hour and %s minutes"
-msgstr "Voici votre temps dans la cible pour la dernière heure et %s minutes"
-
-#: trndi.strings.rs_tir_m
-#, object-pascal-format
-msgid "This is your time in range for the last %s minutes"
-msgstr "Voici votre temps dans la cible pour les %s dernières minutes"
+#: trndi.strings.rs_tir_counted
+msgctxt "trndi.strings.rs_tir_counted"
+msgid "Rows in bold count as in range."
+msgstr "Les lignes en gras comptent comme dans la cible."
 
 #: trndi.strings.rs_tir_mean_caption
 msgid "avg"
 msgstr ""
 
-#: trndi.strings.rs_tir_row2
-#, object-pascal-format
-msgid "Your low limit is %.1f, high is %.1f"
-msgstr "Votre limite basse est %.1f, la haute est %.1f"
+#: trndi.strings.rs_tir_readings
+msgctxt "trndi.strings.rs_tir_readings"
+msgid "Readings"
+msgstr "Lectures"
 
-#: trndi.strings.rs_tir_row3
+#: trndi.strings.rs_tir_span
 #, object-pascal-format
-msgid "Your low range is %.1f, high is %.1f"
-msgstr "Votre plage basse est %.1f, la haute est %.1f"
+msgctxt "trndi.strings.rs_tir_span"
+msgid "in range over the last %s"
+msgstr "dans la cible, sur %s"
+
+#: trndi.strings.rs_tir_title
+msgctxt "trndi.strings.rs_tir_title"
+msgid "Time in range"
+msgstr "Temps dans la cible"
 
 #: trndi.strings.rs_tpobottomleft
 msgctxt "trndi.strings.rs_tpobottomleft"

@@ -454,3 +454,151 @@ begin
     langs[mbSlickeOpenFile] := saved;
   end;
 end;
+
+// The dialog behind the time-in-range badge. It counts what CalcRangeTime
+// counts - bgs inside range.time, by each reading's own level - and not
+// BuildGlucoseReport's day-long history, so the two can never disagree.
+procedure TfBG.lTirClick(Sender: TObject);
+const
+  // Width of a full bar, and of the narrowest
+  BAR_PX = 120;
+  BAR_MIN_PX = 4;
+  // Top to bottom as on the graph
+  BAND_ORDER: array[0..4] of BGValLevel =
+    (BGHigh, BGRangeHI, BGRange, BGRangeLO, BGLow);
+var
+  minTotal, rangeMinutes, count, spanMinutes, i: integer;
+  bands: array[BGValLevel] of integer;
+  counted: set of BGValLevel;
+  labels: array[BGValLevel] of string;
+  colors: array[BGValLevel] of TColor;
+  reading, lowest, highest: BGReading;
+  oldest, cutoff: TDateTime;
+  sum, pct: double;
+  lo, hi, rlo, rhi, html, lbl, bar: string;
+  hasLo, hasHi: boolean;
+  level: BGValLevel;
+
+  // A limit as the user reads it; they are held in mg/dL.
+  function Limit(const mg: integer): string;
+  begin
+    Result := Format(BG_MSG_SHORT[un], [mg * BG_CONVERTIONS[un][BGUnit.mgdl]]);
+  end;
+
+  procedure Row(const name, value: string);
+  begin
+    html += '<tr><td>' + name + '</td><td><b>' + value + '</b></td></tr>';
+  end;
+
+begin
+  if (Length(bgs) = 0) or (api = nil) then
+    Exit;
+  minTotal := MinutesBetween(now, bgs[High(bgs)].date);
+  rangeMinutes := native.GetIntSetting('range.time', 9999);
+  if minTotal > rangeMinutes then
+    minTotal := rangeMinutes;
+
+  {$ifdef TrndiExt}
+  if not funcBool('uxClick',[
+    'tir',
+    mintotal,
+    FTirBadge.Caption
+    ], true) then
+    Exit;
+  {$endif}
+
+  for level in BGValLevel do
+    bands[level] := 0;
+  count := 0;
+  sum := 0;
+  oldest := Now;
+  cutoff := IncMinute(Now, -rangeMinutes);
+  for reading in bgs do
+    if (reading.date >= cutoff) and (not reading.empty) then
+    begin
+      Inc(bands[reading.level]);
+      sum := sum + reading.convert(un);
+      if (count = 0) or (reading.convert(un) < lowest.convert(un)) then
+        lowest := reading;
+      if (count = 0) or (reading.convert(un) > highest.convert(un)) then
+        highest := reading;
+      if reading.date < oldest then
+        oldest := reading.date;
+      Inc(count);
+    end;
+
+  if (count = 0) or (FTirBadge.Percent < 0) then
+  begin
+    SlickeHTMLMsg(sdsAuto, RS_TIR_TITLE, RS_REPORT_NODATA);
+    Exit;
+  end;
+  spanMinutes := MinutesBetween(Now, oldest);
+
+  // Either side of the personal range can be off on its own
+  hasLo := api.cgmRangeLo <> TrndiAPI.CGM_RANGE_LO_DISABLED;
+  hasHi := api.cgmRangeHi <> TrndiAPI.CGM_RANGE_HI_DISABLED;
+  lo := Limit(api.cgmLo);
+  hi := Limit(api.cgmHi);
+  rlo := lo;
+  rhi := hi;
+  if hasLo then
+    rlo := Limit(api.cgmRangeLo);
+  if hasHi then
+    rhi := Limit(api.cgmRangeHi);
+
+  labels[BGHigh] := Format(RS_REPORT_BAND_HIGH, [hi]);
+  labels[BGRangeHI] := Format(RS_REPORT_BAND_OVER, [rhi, hi]);
+  labels[BGRange] := Format(RS_REPORT_BAND_IN, [rlo, rhi]);
+  labels[BGRangeLO] := Format(RS_REPORT_BAND_UNDER, [lo, rlo]);
+  labels[BGLow] := Format(RS_REPORT_BAND_LOW, [lo]);
+  colors[BGHigh] := bg_color_hi;
+  colors[BGRangeHI] := bg_rel_color_hi;
+  colors[BGRange] := bg_color_ok;
+  colors[BGRangeLO] := bg_rel_color_lo;
+  colors[BGLow] := bg_color_lo;
+
+  counted := [BGRange];
+  if native.GetBoolSetting('range.custom', false) then
+    counted := [BGRange, BGRangeHI, BGRangeLO];
+
+  html := '<font size="5"><b>' + FTirBadge.Percent.ToString + '%</b></font> ' +
+    Format(RS_TIR_SPAN, [FormatSpan(spanMinutes)]) + '<br><br>' +
+    '<table border="0" cellpadding="2" cellspacing="0" width="100%">';
+  for i := Low(BAND_ORDER) to High(BAND_ORDER) do
+  begin
+    level := BAND_ORDER[i];
+    if (bands[level] = 0) and (((level = BGRangeHI) and (not hasHi)) or
+      ((level = BGRangeLO) and (not hasLo))) then
+      continue;
+    pct := bands[level] * 100 / count;
+    // A solid bar is a one-cell table as wide as the share. A band holding
+    // something never looks empty.
+    bar := '&nbsp;';
+    if bands[level] > 0 then
+      bar := Format('<table border="0" cellpadding="0" cellspacing="0" ' +
+        'width="%d"><tr><td bgcolor="%s">&nbsp;</td></tr></table>',
+        [Max(BAR_MIN_PX, Round(pct * BAR_PX / 100)),
+        ReportColorHex(colors[level])]);
+    lbl := labels[level];
+    if level in counted then
+      lbl := '<b>' + lbl + '</b>';
+    html += '<tr><td width="' + BAR_PX.ToString + '">' + bar +
+      '</td><td align="right" width="50">' + Format('%.0f%%', [pct]) +
+      '&nbsp;&nbsp;</td><td>' + lbl + '</td></tr>';
+  end;
+  html += '</table>';
+  // Only worth saying when more than the band named "in range" counts
+  if (BGRangeHI in counted) and (hasLo or hasHi) then
+    html += '<i>' + RS_TIR_COUNTED + '</i><br>';
+
+  html += '<br><table border="0" cellpadding="2" cellspacing="0" width="100%">';
+  Row(RS_REPORT_MEAN, Format(BG_MSG_DEF[un], [sum / count]));
+  Row(RS_REPORT_LOWEST, Format(RS_REPORT_AT, [Format(BG_MSG_DEF[un],
+    [lowest.convert(un)]), ReportStamp(lowest.date, spanMinutes)]));
+  Row(RS_REPORT_HIGHEST, Format(RS_REPORT_AT, [Format(BG_MSG_DEF[un],
+    [highest.convert(un)]), ReportStamp(highest.date, spanMinutes)]));
+  Row(RS_TIR_READINGS, count.ToString);
+  html += '</table>';
+
+  SlickeHTMLMsg(sdsAuto, RS_TIR_TITLE, html);
+end;

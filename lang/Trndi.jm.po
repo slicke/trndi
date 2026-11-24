@@ -3203,61 +3203,30 @@ msgstr "Visa Trndi"
 msgid "in range"
 msgstr ""
 
-#: trndi.strings.rs_tir_h
-#, object-pascal-format, fuzzy, badformat
-#| msgid ""
-#| "This is your time in range for the last %d hours and %d minutes\n"
-#| "\n"
-#| "Your low limit is %.1f, high is %.1f\n"
-#| "Your low range is %.1f, high is %.1f"
-msgid "This is your time in range for the last %s hours and %s minutes"
-msgstr ""
-"Detta är din tid i målområdet under de senaste %d timmarna och %d minuterna\n"
-"\n"
-"Din låga gräns är %.1f, hög är %.1f.\n"
-"Ditt låga område är %.1f, hög är %.1f"
-
-#: trndi.strings.rs_tir_h1
-#, object-pascal-format, fuzzy, badformat
-#| msgid ""
-#| "This is your time in range for the last hour and %d minutes\n"
-#| "\n"
-#| "Your low limit is %.1f, high is %.1f\n"
-#| "Your low range is %.1f, high is %.1f"
-msgid "This is your time in range for the last hour and %s minutes"
-msgstr ""
-"Detta är din tid i målområdet under den senaste timmen och %d minuterna\n"
-"\n"
-"Din låga gräns är %.1f, hög är %.1f\n"
-"Ditt låga område är %.1f, hög är %.1f"
-
-#: trndi.strings.rs_tir_m
-#, object-pascal-format, fuzzy, badformat
-#| msgid ""
-#| "This is your time in range for the last %d minutes\n"
-#| "\n"
-#| "Your low limit is %.1f, high is %.1f\n"
-#| "Your low range is %.1f, high is %.1f"
-msgid "This is your time in range for the last %s minutes"
-msgstr ""
-"Detta är din tid i målområdet under de senaste %d minuterna\n"
-"\n"
-"Din låga gräns är %.1f, hög är %.1f\n"
-"Ditt låga område är %.1f, hög är %.1f"
+#: trndi.strings.rs_tir_counted
+msgctxt "trndi.strings.rs_tir_counted"
+msgid "Rows in bold count as in range."
+msgstr "Rader i fetstil räknes som innom mål."
 
 #: trndi.strings.rs_tir_mean_caption
 msgid "avg"
 msgstr ""
 
-#: trndi.strings.rs_tir_row2
-#, object-pascal-format
-msgid "Your low limit is %.1f, high is %.1f"
-msgstr "Din loge grense er %.1f, hôg er %.1f"
+#: trndi.strings.rs_tir_readings
+msgctxt "trndi.strings.rs_tir_readings"
+msgid "Readings"
+msgstr "Antal verden"
 
-#: trndi.strings.rs_tir_row3
+#: trndi.strings.rs_tir_span
 #, object-pascal-format
-msgid "Your low range is %.1f, high is %.1f"
-msgstr "Ditt loge omrode er %.1f, hôg er %.1f"
+msgctxt "trndi.strings.rs_tir_span"
+msgid "in range over the last %s"
+msgstr "innom mål senaste %s"
+
+#: trndi.strings.rs_tir_title
+msgctxt "trndi.strings.rs_tir_title"
+msgid "Time in range"
+msgstr "Tid innom mål"
 
 #: trndi.strings.rs_tpobottomleft
 msgctxt "trndi.strings.rs_tpobottomleft"

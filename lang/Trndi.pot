@@ -2996,33 +2996,29 @@ msgstr ""
 msgid "in range"
 msgstr ""
 
-#: trndi.strings.rs_tir_h
-#, object-pascal-format
-msgid "This is your time in range for the last %s hours and %s minutes"
-msgstr ""
-
-#: trndi.strings.rs_tir_h1
-#, object-pascal-format
-msgid "This is your time in range for the last hour and %s minutes"
-msgstr ""
-
-#: trndi.strings.rs_tir_m
-#, object-pascal-format
-msgid "This is your time in range for the last %s minutes"
+#: trndi.strings.rs_tir_counted
+msgctxt "trndi.strings.rs_tir_counted"
+msgid "Rows in bold count as in range."
 msgstr ""
 
 #: trndi.strings.rs_tir_mean_caption
 msgid "avg"
 msgstr ""
 
-#: trndi.strings.rs_tir_row2
-#, object-pascal-format
-msgid "Your low limit is %.1f, high is %.1f"
+#: trndi.strings.rs_tir_readings
+msgctxt "trndi.strings.rs_tir_readings"
+msgid "Readings"
 msgstr ""
 
-#: trndi.strings.rs_tir_row3
+#: trndi.strings.rs_tir_span
 #, object-pascal-format
-msgid "Your low range is %.1f, high is %.1f"
+msgctxt "trndi.strings.rs_tir_span"
+msgid "in range over the last %s"
+msgstr ""
+
+#: trndi.strings.rs_tir_title
+msgctxt "trndi.strings.rs_tir_title"
+msgid "Time in range"
 msgstr ""
 
 #: trndi.strings.rs_tpobottomleft

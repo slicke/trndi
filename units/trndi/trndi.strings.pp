@@ -111,11 +111,10 @@ RS_LOW = 'LOW';
 RS_OFF_HI = 'Over range';
 RS_OFF_LO = 'Under range';
 RS_RANGE_COLOR = 'The entire window will now change color when out of range, instead of just displaying a colored notification in the top. Applies after the next sync.';
-RS_TIR_M = 'This is your time in range for the last %s minutes';
-RS_TIR_H1 = 'This is your time in range for the last hour and %s minutes';
-RS_TIR_H = 'This is your time in range for the last %s hours and %s minutes';
-RS_TIR_ROW2 = 'Your low limit is %.1f, high is %.1f';
-RS_TIR_ROW3 = 'Your low range is %.1f, high is %.1f';
+RS_TIR_COUNTED = 'Rows in bold count as in range.';
+RS_TIR_READINGS = 'Readings';
+RS_TIR_SPAN = 'in range over the last %s';
+RS_TIR_TITLE = 'Time in range';
 RS_DIFF = 'This is the change from the latest reading';
 
   // Hover hints and click notices on the main window (inc/umain_init.inc, inc/umain_menu.inc)

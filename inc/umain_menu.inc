@@ -624,59 +624,6 @@ procedure TfBG.lgMainClick(Sender: TObject);
 begin
 end;
 
-procedure TfBG.lTirClick(Sender: TObject);
-var
-  minTotal, hours, mins, rangeMinutes: integer;
-  msg, row2, row3: string;
-  hi, lo, rhi, rlo: double;
-begin
-  if Length(bgs) = 0 then
-    Exit;
-  minTotal := MinutesBetween(now, bgs[High(bgs)].date);
-  rangeMinutes := native.GetIntSetting('range.time', 9999);
-  if minTotal > rangeMinutes then
-    minTotal := rangeMinutes;
-
-  {$ifdef TrndiExt}
-  if not funcBool('uxClick',[
-    'tir',
-    mintotal,
-    FTirBadge.Caption
-    ], true) then
-    Exit;
-  {$endif}
-
-  hi := api.cgmHi * BG_CONVERTIONS[un][mgdl];
-  lo := api.cgmLo * BG_CONVERTIONS[un][mgdl];
-  rhi := api.cgmRangeHi * BG_CONVERTIONS[un][mgdl];
-  rlo := api.cgmRangeLo * BG_CONVERTIONS[un][mgdl];
-
-  row2 := Format(RS_TIR_ROW2, [lo, hi]);
-  // Without a personal range the backend reports the disabled sentinels, which
-  // would read as "your low range is 0.0, high is 27.8" - drop the line.
-  if (api.cgmRangeLo <> TrndiAPI.CGM_RANGE_LO_DISABLED) and
-    (api.cgmRangeHi <> TrndiAPI.CGM_RANGE_HI_DISABLED) then
-    row3 := Format(RS_TIR_ROW3, [rlo, rhi])
-  else
-    row3 := '';
-  if minTotal < 60 then
-    msg := Format(RS_TIR_M, ['<b>'+minTotal.toString+'</b>'])
-  else
-  begin
-    hours := minTotal div 60;
-    mins := minTotal mod 60;
-    if hours < 2 then
-      msg := Format(RS_TIR_H1, ['<b>'+mins.toString+'</b>'])
-    else
-      msg := Format(RS_TIR_H, ['<b>'+hours.toString+'</b>', '<b>'+mins.toString+'</b>']);
-  end;
-
-  if row3 <> '' then
-    row3 := '<br>' + row3;
-
-  SlickeHTMLMsg(sdsAuto, 'Trndi', msg+'<br><br><i>'+row2+row3+'</i>');
-end;
-
 procedure TfBG.lValClick(Sender: TObject);
 begin
   if (lVal.Caption = RS_SETUP) then
