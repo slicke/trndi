@@ -471,6 +471,7 @@ With the *Clock* setting enabled, the time and the reading trade places every
 20 seconds: for 5 seconds the time fills the window while the reading moves to
 the top. In fullscreen the time rests at the top in between; in a normal window
 it only appears for the swap. While data is stale they do not trade places.
+
 ---
 
 ## Troubleshooting Common Questions
