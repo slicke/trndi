@@ -38,6 +38,7 @@
  * MODIFICATION NOTICE (GPLv3 Section 5):
  * - 2026-08-21: Parenting now tracks children so ControlCount/Controls[]
  *   (used by umain's shutdown-screen sweep) enumerate something real.
+ * - 2026-11-24: TControl.BorderSpacing, for the stale card's hero margin.
  * - 2026-10-29: TCaption, for utabularlabel's RealSetText override.
  *)
 (* MODIFICATION NOTICE (2026-08-05): Added Screen.Fonts to mirror the LCL
@@ -103,6 +104,18 @@ type
   // RealSetText with it, so the mock TLabel's hook must take the same type.
   TCaption = type string;
 
+  // Holds the margins umain writes; nothing lays out in a headless build.
+  TControlBorderSpacing = class
+  private
+    FLeft, FTop, FRight, FBottom, FAround: Integer;
+  public
+    property Left: Integer read FLeft write FLeft;
+    property Top: Integer read FTop write FTop;
+    property Right: Integer read FRight write FRight;
+    property Bottom: Integer read FBottom write FBottom;
+    property Around: Integer read FAround write FAround;
+  end;
+
   TControl = class(TComponent)
   private
     FLeft: Integer;
@@ -132,6 +145,7 @@ type
     FHandle: PtrUInt; // Mock window handle for Windows-specific code
     FAnchors: TAnchors;
     FShowHint: Boolean;
+    FBorderSpacing: TControlBorderSpacing;
     procedure SetParentControl(AValue: TWinControl);
   protected
     FCanvas: TCanvas;
@@ -170,6 +184,7 @@ type
     property Handle: PtrUInt read FHandle write FHandle; // Provide a mock Handle for Windows-specific APIs
     property Anchors: TAnchors read FAnchors write FAnchors;
     property ShowHint: Boolean read FShowHint write FShowHint;
+    property BorderSpacing: TControlBorderSpacing read FBorderSpacing;
     function IsEnabled: Boolean; // checks parent too, like the LCL
     function ClientRect: TRect; virtual;
     function GetClientWidth: Integer; virtual;
@@ -295,6 +310,7 @@ begin
   FHandle := 0; // default mock handle
   FAnchors := [akLeft, akTop];
   FShowHint := False;
+  FBorderSpacing := TControlBorderSpacing.Create;
 end;
 
 constructor TMonitor.Create;
@@ -317,6 +333,7 @@ begin
     FCanvas.Free;
   if Assigned(FFont) then
     FFont.Free;
+  FBorderSpacing.Free;
   inherited Destroy;
 end;
 
