@@ -19,6 +19,9 @@ on:
 #    - Windows (x64)
 #    Each platform produces its own artifact (.zip, .deb/.rpm for Linux, .dmg for macOS)
 #
+# 2b. "build-freebsd" builds in a FreeBSD VM. Best effort: it does not hold up
+#    a release, and its package is a run artifact only.
+#
 # 3. "publish" job runs only when every build leg succeeded (no "if: always()").
 #    A failed leg would otherwise publish a release with that platform's assets
 #    silently missing.
@@ -719,6 +722,107 @@ jobs:
           # GitHub Release by the publish job, PR artifacts are throwaway.
           retention-days: 7
 
+  # ===================== FREEBSD (BEST EFFORT) =====================
+  # GitHub has no FreeBSD runner, so vmactions boots a VM, syncs the workspace
+  # in and copies it back. 15.1, where the committed x86_64-freebsd QuickJS
+  # libraries were built; an older FreeBSD may refuse them. FreeBSD's own
+  # Lazarus is older than the 5.0RC1 the other legs use, so lazbuild is built
+  # from the release tarball and cached. amd64 only, as FreeBSD's fpc package.
+  build-freebsd:
+    name: Build (freebsd-amd64, best effort)
+    needs: version
+    if: always()
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The workspace, .git and all, is synced into the VM; the token is
+          # not to go with it.
+          persist-credentials: false
+
+      - name: Write buildinfo
+        uses: ./.github/actions/write-buildinfo
+        with:
+          event_name: ${{ github.event_name }}
+          github_ref: ${{ github.ref }}
+          build_number: ${{ needs.version.outputs.build_number }}
+          pr_number: ${{ github.event.pull_request.number }}
+          ref_name: ${{ github.ref_name }}
+
+      - name: Restore the Lazarus build
+        id: lazarus-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: lazarus-freebsd
+          key: toolchain-freebsd-qt6-lazarus-5.0RC1-fpc3.2
+
+      # The fpc package alone: the other fpc-* packages bring a 3.3.1 snapshot
+      # that takes its place. FreeBSD's fpc.cfg does not search the package
+      # library folders, so ~/.fpc.cfg includes it and adds them.
+      - name: Build, test and package in the FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: '15.1'
+          usesh: true
+          prepare: |
+            pkg install -y bash gmake curl git perl5 qt6pas fpc
+          run: |
+            set -eu
+            fpc -iV
+            FPCCFG=$(ls /usr/local/etc/fpc.cfg /etc/fpc.cfg 2>/dev/null | head -1)
+            printf '#INCLUDE %s\n-Fl/usr/local/lib\n-Fl/usr/local/lib/qt6\n' "$FPCCFG" > ~/.fpc.cfg
+            if [ -x lazarus-freebsd/lazbuild ]; then
+              echo "lazbuild from the cache"
+            else
+              mkdir -p lazarus-freebsd
+              curl -fsSL --connect-timeout 30 --retry 3 -o lazarus.tar.gz \
+                "https://download.lazarus-ide.org/Lazarus%20Zip%20_%20GZip/Lazarus%205.0RC1/lazarus-5.0RC1-0.tar.gz"
+              tar xzf lazarus.tar.gz -C lazarus-freebsd --strip-components=1
+              rm lazarus.tar.gz
+              (cd lazarus-freebsd && gmake lazbuild LCL_PLATFORM=qt6)
+            fi
+            # lazbuild does not find its own folder here, and the Makefile
+            # wants one command name, so a wrapper passes --lazarusdir.
+            printf '#!/bin/sh\nexec "%s/lazarus-freebsd/lazbuild" --lazarusdir="%s/lazarus-freebsd" "$@"\n' "$PWD" "$PWD" > lazbuild-freebsd
+            chmod +x lazbuild-freebsd
+            LAZBUILD="$PWD/lazbuild-freebsd"
+            gmake release WIDGETSET=qt6 LAZBUILD="$LAZBUILD"
+            test -x build/Trndi
+            # Under a time limit, so a hung test does not burn the job's.
+            timeout 900 gmake test WIDGETSET=qt6 LAZBUILD="$LAZBUILD"
+            mkdir -p pkg/Trndi
+            cp build/Trndi pkg/Trndi/
+            cp -r lang pkg/Trndi/
+            sh dist/linux/stage-qjs.sh externals/quickjs/prebuilt/x86_64-freebsd pkg/Trndi
+            cp LICENSE.md DISCLAIMER.md THIRD-PARTY.md externals/quickjs/LICENSE.quickjs-ng pkg/Trndi/
+            # Without a display Trndi cannot start, so ldd checks that the
+            # libraries resolve, the two beside it through the rpath.
+            ldd pkg/Trndi/Trndi
+            if ldd pkg/Trndi/Trndi | grep -q 'not found'; then
+              echo "::error::Trndi cannot find its libraries on FreeBSD"; exit 1
+            fi
+            tar -C pkg -czf Trndi-freebsd-amd64.tar.gz Trndi
+            ls -l Trndi-freebsd-amd64.tar.gz
+
+      - name: Save the Lazarus build
+        if: always() && steps.lazarus-cache.outputs.cache-hit != 'true' && hashFiles('lazarus-freebsd/lazbuild') != ''
+        uses: actions/cache/save@v6
+        with:
+          path: lazarus-freebsd
+          key: ${{ steps.lazarus-cache.outputs.cache-primary-key }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: freebsd-amd64
+          path: Trndi-freebsd-amd64.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
   # ===================== PUBLISH =====================
   publish:
     runs-on: ubuntu-latest
@@ -742,6 +846,9 @@ jobs:
       
       - uses: actions/download-artifact@v8
         with:
+          # The build matrix only: the best-effort FreeBSD package stays a run
+          # artifact.
+          pattern: '*-build'
           path: ./release-files
 
       - name: Create or update GitHub Release
